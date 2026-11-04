@@ -35,7 +35,7 @@ Each domain has a dedicated agent (see [Agents & herdr](#agents--herdr)).
 5. Every task ships with unit tests (JUnit 5 + mockk). **No integration tests for now.** Name tests `Area_Behavior`.
 6. Keep the build green: `cmd.exe /c gradlew.bat test` from WSL/herdr, or `.\gradlew.bat test` on Windows.
 7. Only `skate-lead` edits checkbox state in this file. Domain agents report status back to the lead.
-8. No backward compatibility while the engine is a work in progress: don't add migrations or upgrade-on-load code for old saved scenes/projects; the human recreates content. Instead, keep the **default projects** current: when a feature lands, update the default skate project (`PrefabsGenerator` default scenes) and the CLI samples to use it, and remove test-only content from them.
+8. No backward compatibility while the engine is a work in progress: don't add migrations or upgrade-on-load code for old saved scenes/projects; the human recreates content. Instead, keep the **default projects** current: when a feature lands, update the default skate project (`PrefabsGenerator` default scenes) and the CLI samples to use it, and remove test-only content from them. The default editor project includes the **Feature Showcase** scene(s), which the human uses for manual testing: every new user-visible component or feature adds a small, labeled demo there in the same task.
 
 ---
 
@@ -151,6 +151,10 @@ The renderer works but needs cleaner APIs, caching, dynamic shaders, better mate
   - Do: Fix `picking.glsl` reading `aTexId`/`aEntityId` at locations 8/9 while `RenderBatch2D` feeds 3/4 (2D sprite picking reads 0), the same mismatch GUI-07 fixed in `shader_2d_batch.glsl`. Draw runtime UI after post-processing and the debug pass so bloom/FXAA and grid lines don't affect it. Review EDT-31's `SelectionHighlight`/`GeometryPass` change (highlight inherited from ancestors).
   - Done when: 2D sprites are pickable, UI is unaffected by post effects and debug lines, attribute layout guarded by a test.
   - Deps: GUI-07, EDT-31, REN-18
+- [x] **REN-22** `P0` Frame rate dropped to ~40 FPS in round 11
+  - Do: Human-reported on PR #13: FPS fell drastically (to ~40) in the editor. Profile per pass and per system (CPU and GPU) on the default project, bisect across the round-11 merges (REN-07 shadows, REN-21 UiPass, PHY-11 transform sync, ANI-09 procedural poses, EDT-30, ECS-11, REN-10), find the cause(s) and fix them; report causes outside render as NEEDS.
+  - Done when: The default project runs at the pre-round-11 frame rate (or better) at MEDIUM shadows; per-pass timings visible in the Render Graph window; a regression guard where feasible.
+  - Deps: REN-07
 
 ### Asset management — `AST` (`skate-assets`)
 
@@ -443,6 +447,10 @@ The player controller was hardcoded at first and needs a big overhaul. Some skat
   - Do: Human-reported on PR #12: when riding, the skater is misaligned with the board, has no riding pose/animation, and skater and board float. Snap the skater to the deck pose, play a riding animation via the ANI-02 state machine, and fix the floating root cause.
   - Done when: Riding in the default project looks grounded and aligned with a riding pose; mount pose math and physics state switch unit-tested; `docs/testing/GPL-15.md`.
   - Deps: GPL-14
+- [ ] **GPL-16** `P1` Game-ready skateboard mesh
+  - Do: From REN-22: the skateboard prefab's model has 2.57M indices (~858K triangles, 55 parts); its shadow costs ~1.5 ms and picking ~1 ms per frame. Replace it with a decimated/game-ready mesh under ~20K triangles, keeping the GPL-14 orientation and collider fit.
+  - Done when: The board renders the same at a glance with under 20K triangles; the frame time while orbiting is below the pre-round-11 baseline.
+  - Deps: REN-22
 
 ### In-game UI — `GUI` (`skate-gameui`)
 
@@ -655,6 +663,9 @@ All editor mutations must go through `Command` classes and the service layer (se
   - Do: From ECS-11: `SceneHierarchyWindow` mixes `obj.parent == null` and `obj.parent == scene` to detect top-level objects, while `addGameObject` does not set `parent`. Decide with skate-ecs (prefer `parent == scene`, set by `addGameObject`) and make every caller consistent.
   - Done when: Top-level detection uses one helper everywhere; drag/drop and reparenting tests pass.
   - Deps: ECS-11
+- [x] **EDT-34** `P1` Frame-rate independent editor camera
+  - Do: Human-reported on PR #13: editor camera movement (fly, orbit, pan, zoom, focus lerp) is tied to the frame rate. Scale every camera motion by real frame delta time, with clamping for hitches.
+  - Done when: Camera speed is the same at 30, 60 and 144 FPS; unit-tested with simulated frame times.
 
 ## Testing & tooling
 
@@ -684,6 +695,10 @@ All editor mutations must go through `Command` classes and the service layer (se
   - Do: Update the default skate project scenes (`PrefabsGenerator`) to show current features (e.g. UI canvas/button, environment) and remove test-only content (2D `SpriteRenderer` objects, camera sprite). Document it in `docs/samples.md`. Repeat whenever features land (rule 8).
   - Done when: A new project opens a clean, working skate scene without sprites; a test checks the generated scene content.
   - Deps: GUI-05
+- [x] **TLG-08** `P1` Feature showcase in the default editor project
+  - Do: Human request on PR #13: new projects created in the editor include the Feature Showcase scene(s) (TLG-05, today only generated by the CLI) next to the skate `MainScene`, built from the same builder so both stay in sync, including round-11 features (shadows, particles, prefab library, UI). Rule 8: future features add their demo there.
+  - Done when: A new editor project contains a working showcase scene covering current features, documented in `docs/samples.md`; a test checks the generated project contains it.
+  - Deps: TLG-05, TLG-07
 
 ### Quality — `QA` (`skate-qa`)
 
