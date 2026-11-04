@@ -172,8 +172,10 @@ class ViewportActionHandler(
             undoRedoManager.executeCommand(LockToggleCommand(event.gameObject, event.locked))
         }
         eventSystem.subscribe<Reparent> { event ->
-            undoRedoManager.executeCommand(ReparentGameObjectCommand(event.child, event.newParent))
-            sceneManager.currentScene?.isDirty = true
+            val scene = sceneManager.currentScene ?: return@subscribe
+            if (!ReparentGameObjectCommand.isValid(event.child, event.newParent)) return@subscribe
+            undoRedoManager.executeCommand(ReparentGameObjectCommand(event.child, event.newParent, scene))
+            scene.isDirty = true
         }
         eventSystem.subscribe<ViewportAction.CreateUi> { event ->
             val scene = sceneManager.currentScene ?: return@subscribe
@@ -292,8 +294,7 @@ class ViewportActionHandler(
         val scene = sceneManager.currentScene ?: return
         val childObj = GameObject("GameObject")
         childObj.addComponent(Transform())
-        childObj.parent = parent
-        undoRedoManager.executeCommand(CreateGameObjectCommand(childObj, scene, gameObjectManager))
+        undoRedoManager.executeCommand(CreateGameObjectCommand(childObj, scene, gameObjectManager, parent))
     }
 
     private fun handleCutClipboard(go: GameObject) {
@@ -305,9 +306,8 @@ class ViewportActionHandler(
     private fun handlePasteClipboard(parent: GameObject?) {
         val scene = sceneManager.currentScene ?: return
         val cloned = clipboardService.paste() ?: return
-        parent?.let { cloned.parent = it }
         cloned.getComponent<Transform>()?.translation?.set(0f, 0f, 0f)
-        undoRedoManager.executeCommand(CreateGameObjectCommand(cloned, scene, gameObjectManager))
+        undoRedoManager.executeCommand(CreateGameObjectCommand(cloned, scene, gameObjectManager, parent ?: scene))
     }
 
     private var playSnapshot: ScenePlaySnapshot? = null

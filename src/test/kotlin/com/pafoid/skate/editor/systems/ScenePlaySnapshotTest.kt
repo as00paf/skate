@@ -84,4 +84,19 @@ class ScenePlaySnapshotTest {
         assertEquals(Vector3f(1f, 2f, 3f), fresh.children[0].getComponent<Transform>()!!.translation)
         assertEquals(listOf("Parent"), fresh.selectedGameObjects.map { it.name })
     }
+
+    @Test
+    fun ScenePlaySnapshot_Restore_KeepsTheTopLevelRule() {
+        val manager = SceneManager(mockk(relaxed = true), EventSystem(), serializer, mockk(relaxed = true), mockk(relaxed = true))
+        val playing = scene()
+        manager.openScene(playing)
+        val snap = ScenePlaySnapshot.capture(playing, serializer)
+
+        val fresh = snap.restore(manager, serializer, playing) // Stop after Play
+
+        val parent = fresh.children.single()
+        assertTrue(parent.isTopLevel)
+        assertSame(fresh, parent.parent)
+        assertSame(parent, parent.children.single().parent)
+    }
 }

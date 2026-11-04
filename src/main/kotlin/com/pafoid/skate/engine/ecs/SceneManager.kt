@@ -61,6 +61,8 @@ class SceneManager(
         envComponent?.skyTexture?.filePath?.let { filePath ->
             envComponent.skyTexture = assetsManager.getTexture(filePath)
         }
+        // Parent links are not serialized: top-level objects point at the scene, nested ones at their parent.
+        scene.linkChildren()
         scene.children.forEach { obj ->
             try {
                 obj.components.forEach { it.init(obj) }
@@ -83,7 +85,6 @@ class SceneManager(
         obj.children.forEach { child ->
             child.components.forEach { it.init(child) }
             resolveObjectReferences(child)
-            child.parent = obj
         }
     }
 

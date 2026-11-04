@@ -53,12 +53,6 @@ object PickResolver {
         findByUid(scene, uid)?.let { selectionTarget(it, current) }
 
     private fun ancestorChain(hit: GameObject): List<GameObject> {
-        val chain = ArrayDeque<GameObject>()
-        var node: GameObject? = hit
-        while (node != null && node !is Scene) {
-            chain.addFirst(node)
-            node = node.parent
-        }
-        return chain
+        return (listOf(hit) + hit.ancestors()).asReversed()
     }
 }
