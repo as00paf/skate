@@ -2,6 +2,7 @@ package com.pafoid.skate.cli
 
 import com.pafoid.skate.engine.ecs.components.JointComponent
 import com.pafoid.skate.engine.ecs.components.JointType
+import com.pafoid.skate.game.samples.FeatureShowcase
 import java.nio.file.Files
 import kotlin.test.assertFailsWith
 import kotlin.test.Test
@@ -11,33 +12,33 @@ import kotlin.test.assertTrue
 class ShowcaseProjectBuilderTest {
 
     @Test
-    fun Showcase_GeneratesValidProjectWithOneScenePerFeature() {
+    fun Showcase_GeneratesValidProjectWithTheSharedShowcaseScene() {
         val dir = Files.createTempDirectory("skate-showcase").toFile()
         try {
             val project = ShowcaseProjectBuilder().build(dir)
             val service = SkateCliService(out = {})
             val report = service.validate(project.path)
             assertTrue(report.isValid, report.toString())
-            assertEquals(ShowcaseProjectBuilder.SCENE_NAMES.size, report.sceneCount)
-            ShowcaseProjectBuilder.SCENE_NAMES.forEach {
-                service.run(project.path, it, 2, 0.016f)
-            }
+            assertEquals(1, report.sceneCount)
+            val stats = service.run(project.path, FeatureShowcase.SCENE_NAME, 2, 0.016f)
+            assertTrue(stats.gameObjects > 40, stats.toString())
         } finally {
             dir.deleteRecursively()
         }
     }
 
     @Test
-    fun Showcase_UiSceneHasWidgetsAndStrings() {
+    fun Showcase_SavedSceneKeepsEveryAreaAndTheUiOverlay() {
         val dir = Files.createTempDirectory("skate-showcase-ui").toFile()
         try {
             val project = ShowcaseProjectBuilder().build(dir)
             val service = SkateCliService(out = {})
-            val scene = service.loadScenes(service.loadProject(project.path)).first { it.name == "UI" }
-            val types = scene.children.first { it.name == "Canvas" }.children.flatMap { it.components }.map { it::class.simpleName }
-            listOf("UITextComponent", "UIImageComponent", "UIButtonComponent", "UIProgressBarComponent", "UISliderComponent")
+            val scene = service.loadScenes(service.loadProject(project.path)).single()
+            FeatureShowcase.AREAS.forEach { area -> assertTrue(scene.children.any { it.name == "[${area.label}] Area" }, area.key) }
+            val types = scene.children.first { it.name == "[UI] Canvas" }.children.flatMap { it.components }.map { it::class.simpleName }
+            listOf("UITextComponent", "UIImageComponent", "UIButtonComponent", "UIProgressBarComponent", "UISliderComponent", "UIListComponent")
                 .forEach { assertTrue(it in types, "missing $it") }
-            assertTrue(java.io.File(dir, "FeatureShowcase/Assets/strings.properties").readText().contains("showcase.title"))
+            assertTrue(java.io.File(dir, "FeatureShowcase/Assets/${FeatureShowcase.TONE_FILE}").exists())
         } finally {
             dir.deleteRecursively()
         }

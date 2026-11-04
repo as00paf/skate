@@ -49,14 +49,14 @@ class SkateMcpServerTest {
         try {
             val project = ShowcaseProjectBuilder().build(dir).path.replace("\\", "\\\\")
             val (e1, scenes) = call(10, "list_scenes", """{"project":"$project"}""")
-            assertTrue(!e1 && scenes.contains("Physics"), scenes)
+            assertTrue(!e1 && scenes.contains("FeatureShowcase"), scenes)
 
-            val (e2, entities) = call(11, "list_entities", """{"project":"$project","scene":"Physics"}""")
+            val (e2, entities) = call(11, "list_entities", """{"project":"$project","scene":"FeatureShowcase"}""")
             assertTrue(!e2 && entities.contains("Box_0") && entities.contains("RigidBody3D"), entities)
 
-            val (e3, entity) = call(12, "get_entity", """{"project":"$project","scene":"Physics","path":"Box_0"}""")
+            val (e3, entity) = call(12, "get_entity", """{"project":"$project","scene":"FeatureShowcase","path":"[Physics] Box_0"}""")
             assertTrue(!e3 && entity.contains("Box_0"), entity)
-            assertTrue(call(13, "get_entity", """{"project":"$project","scene":"Physics","path":"Nope"}""").first)
+            assertTrue(call(13, "get_entity", """{"project":"$project","scene":"FeatureShowcase","path":"Nope"}""").first)
 
             val out = dir.resolve("out").path.replace("\\", "\\\\")
             val (e4, export) = call(14, "export_project", """{"project":"$project","out":"$out"}""")

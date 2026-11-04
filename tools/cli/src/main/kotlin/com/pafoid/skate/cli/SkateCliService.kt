@@ -5,6 +5,8 @@ import com.pafoid.skate.editor.project.Project
 import com.pafoid.skate.editor.project.ProjectWizard
 import com.pafoid.skate.engine.assets.serialization.Serializer
 import com.pafoid.skate.engine.core.Engine
+import com.pafoid.skate.engine.ecs.components.EnvironmentComponent
+import com.pafoid.skate.engine.getComponent
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.utils.AssetsPacker
@@ -157,6 +159,8 @@ class SkateCliService(
             scenes.firstOrNull { it.name == defaultName } ?: scenes.first()
         }
 
+        // Nothing is drawn headless, and resolving the sky would upload a GL texture with no context (JVM abort).
+        scene.getComponent<EnvironmentComponent>()?.skyTexture = null
         engine.sceneManager.openScene(scene, forceSingle = true)
         scene.start()
         val start = System.nanoTime()
