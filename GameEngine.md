@@ -330,6 +330,10 @@ The animation system needs improvements.
   - Do: From GPL-15: no skateboarding clips are bundled, so riding falls back to idle/walking. Source or author riding idle, push and ollie clips for the skater (the human may need to provide assets) and a controller asset wiring them into the ANI-02 state machine for `SkateBehavior`.
   - Done when: The skater uses a riding pose/push/ollie in the default project; the controller loads in a test.
   - Deps: GPL-15
+- [~] @skate-animation **ANI-10** `P1` Use the real skateboard riding clip
+  - Do: The human provided `assets/characters/animations/skate riding.fbx` (first real skateboarding clip). Import it for the skater (retarget if needed), put it in the ANI-09 controller's riding slot(s) instead of the procedural pose, and keep the procedural fallback for slots still missing clips.
+  - Done when: Riding in the default project uses the clip (aligned on the deck, facing the nose, looping cleanly); the clip loads and maps to its slot in a test.
+  - Deps: ANI-09
 
 ### Audio — `AUD` (`skate-audio`)
 
