@@ -1,5 +1,6 @@
 package com.pafoid.skate.engine.assets.procedural
 
+import org.joml.Matrix4f
 import org.joml.Vector2f
 import org.joml.Vector3f
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -88,6 +89,44 @@ class MeshBuilderTest {
         assertEquals(12, faces.size)
         val indices = faces.flatMap { f -> f.removePrefix("f ").split(' ').map { it.substringBefore('/').toInt() } }
         assertEquals(1, indices.min()); assertEquals(24, indices.max())
+    }
+
+    @Test
+    fun MeshBuilder_ObjWritesVertexColoursOnlyWhenColoured() {
+        val plain = MeshBuilder().box(Vector3f(0f), Vector3f(1f)).toObj("plain").lines().first { it.startsWith("v ") }
+        val red = MeshBuilder().apply { color = Vector3f(1f, 0f, 0f) }.box(Vector3f(0f), Vector3f(1f))
+            .toObj("red").lines().first { it.startsWith("v ") }
+
+        assertEquals(4, plain.split(' ').size)
+        assertEquals(listOf("1.0000", "0.0000", "0.0000"), red.split(' ').takeLast(3))
+    }
+
+    @Test
+    fun MeshBuilder_AppendMovesTheOtherMeshAndKeepsItsColours() {
+        val part = MeshBuilder().apply { color = Vector3f(0f, 1f, 0f) }.box(Vector3f(-0.5f), Vector3f(0.5f))
+        val mesh = MeshBuilder().box(Vector3f(0f), Vector3f(1f))
+
+        mesh.append(part, Matrix4f().translate(10f, 0f, 0f).rotateZ((Math.PI / 2).toFloat()))
+
+        assertEquals(24, mesh.triangleCount)
+        assertEquals(10.5f, mesh.bounds().second.x, 1e-5f)
+        assertEquals(Vector3f(0f, 1f, 0f), mesh.vertexColors().last())
+        assertEquals(2f, mesh.signedVolume(), 1e-4f)
+    }
+
+    @Test
+    fun MeshBuilder_GridShadesSmoothlyAndCollapsesToATip() {
+        // Dome-like sheet: rows of 3 points, the last row collapsed to one point.
+        val rows = listOf(
+            listOf(Vector3f(-1f, 0f, 0f), Vector3f(0f, 0.2f, 0f), Vector3f(1f, 0f, 0f)),
+            listOf(Vector3f(-0.5f, 0f, 1f), Vector3f(0f, 0.2f, 1f), Vector3f(0.5f, 0f, 1f)),
+            listOf(Vector3f(0f, 0f, 2f), Vector3f(0f, 0f, 2f), Vector3f(0f, 0f, 2f)),
+        )
+
+        val mesh = MeshBuilder().grid(rows) { MeshBuilder.UP }
+
+        assertEquals(6, mesh.triangleCount)
+        assertTrue(mesh.faceNormals().all { it.y > 0f })
     }
 
     @Test
