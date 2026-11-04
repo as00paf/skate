@@ -7,7 +7,7 @@
 #          scripting online editor tooling qa   (default: all)
 #
 # Options:
-#   --kind copilot|opencode  Agent CLI to run (default: copilot)
+#   --kind copilot|opencode|claude  Agent CLI to run (default: copilot)
 #   --worktrees              One git worktree + herdr workspace per domain agent
 #                            (branch agents/<domain>) instead of tabs in one workspace
 #   --no-lead                Don't start the skate-lead orchestrator
@@ -45,7 +45,7 @@ while (($#)); do
   esac
 done
 ((${#domains[@]})) || domains=("${ALL_DOMAINS[@]}")
-[[ "$kind" == copilot || "$kind" == opencode ]] || { echo "--kind must be copilot or opencode" >&2; exit 2; }
+[[ "$kind" == copilot || "$kind" == opencode || "$kind" == claude ]] || { echo "--kind must be copilot, opencode or claude" >&2; exit 2; }
 
 for bin in herdr jq git "$kind"; do
   command -v "$bin" >/dev/null || { echo "missing required command: $bin" >&2; exit 1; }
@@ -53,11 +53,15 @@ done
 herdr status server >/dev/null 2>&1 || { echo "herdr server is not running (run 'herdr' first)" >&2; exit 1; }
 
 repo="$(git -C "$(dirname "${BASH_SOURCE[0]}")" rev-parse --show-toplevel)"
-[[ "$kind" == opencode ]] && "$repo/tools/herdr/sync-agents.sh"
+[[ "$kind" != copilot ]] && "$repo/tools/herdr/sync-agents.sh"
 
 if ((worktrees)); then
   # Worktrees only contain committed files, so the agent definitions must be committed.
-  agent_dir=".github/agents"; [[ "$kind" == opencode ]] && agent_dir=".opencode/agents"
+  case "$kind" in
+    opencode) agent_dir=".opencode/agents" ;;
+    claude) agent_dir=".claude/agents" ;;
+    *) agent_dir=".github/agents" ;;
+  esac
   if ! git -C "$repo" ls-tree -r --name-only HEAD -- "$agent_dir" | grep -q .; then
     echo "--worktrees: $agent_dir is not committed; commit it first so worktrees contain the agents." >&2
     exit 1
@@ -96,7 +100,7 @@ start_agent() { # name pane
   local name="$1" pane="$2" i
   ((start)) || { echo "  $name -> $pane (layout only)"; return; }
   local args=(agent start "$name" --kind "$kind" --pane "$pane" --timeout 120000 --)
-  if [[ "$kind" == copilot ]]; then
+  if [[ "$kind" == copilot || "$kind" == claude ]]; then
     args+=(--agent "$name")
   else
     # OpenCode's TUI has no --agent flag: select the primary agent through inline config,
