@@ -53,23 +53,27 @@ class ShadowRenderer(
     private val casters = ArrayList<ShadowCaster>()
     private var previousCull = false
 
-    /** Gathers visible, enabled objects with `castShadow` and computes their bounds. */
-    fun collect(gameObjects: List<GameObject>): List<ShadowCaster> {
+    /**
+     * Gathers every rendered object under [root] at any depth ([RenderTraversal]: hidden or disabled subtrees are
+     * skipped) with an enabled `castShadow` render component, and computes its bounds.
+     */
+    fun collect(root: GameObject): List<ShadowCaster> {
         casters.clear()
-        for (go in gameObjects) {
-            if (!go.isVisible) continue
-            val rc = go.getComponent<RenderComponent>()?.takeIf { it.enabled && it.castShadow } ?: continue
-            val model = rc.model ?: continue
-            val transform = go.getComponent<Transform>() ?: continue
-            val caster = if (casters.size < pool.size) pool[casters.size] else ShadowCaster().also { pool.add(it) }
-            caster.renderComponent = rc
-            caster.transform = transform
-            caster.skeleton = go.getComponent<SkeletonComponent>()
-            caster.radius = ModelBounds.of(model).toWorld(transform.worldMatrix, caster.center) *
-                (if (caster.skeleton != null) SKINNED_BOUNDS_SCALE else 1f)
-            casters.add(caster)
-        }
+        RenderTraversal.forEachRendered(root) { go -> collectOne(go) }
         return casters
+    }
+
+    private fun collectOne(go: GameObject) {
+        val rc = go.getComponent<RenderComponent>()?.takeIf { it.enabled && it.castShadow } ?: return
+        val model = rc.model ?: return
+        val transform = go.getComponent<Transform>()?.takeIf { it.enabled } ?: return
+        val caster = if (casters.size < pool.size) pool[casters.size] else ShadowCaster().also { pool.add(it) }
+        caster.renderComponent = rc
+        caster.transform = transform
+        caster.skeleton = go.getComponent<SkeletonComponent>()
+        caster.radius = ModelBounds.of(model).toWorld(transform.worldMatrix, caster.center) *
+            (if (caster.skeleton != null) SKINNED_BOUNDS_SCALE else 1f)
+        casters.add(caster)
     }
 
     fun begin() {
