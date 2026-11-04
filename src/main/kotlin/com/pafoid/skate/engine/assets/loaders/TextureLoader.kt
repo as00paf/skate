@@ -1,6 +1,7 @@
 package com.pafoid.skate.engine.assets.loaders
 
 import com.pafoid.skate.engine.assets.data.Texture
+import com.pafoid.skate.engine.render.GpuResource
 import org.lwjgl.BufferUtils
 import org.lwjgl.opengl.GL11.GL_LINEAR
 import org.lwjgl.opengl.GL11.GL_LINEAR_MIPMAP_LINEAR
@@ -59,7 +60,8 @@ class TextureLoader() {
     }
 
     fun delete(texture: Texture) {
-        if (texture.texId >= 0) org.lwjgl.opengl.GL11.glDeleteTextures(texture.texId)
+        texture.gpu?.close()
+        texture.gpu = null
         texture.texId = -1
     }
 
@@ -88,7 +90,9 @@ class TextureLoader() {
     }
 
     private fun uploadToGPU(texture: Texture, pixels: ByteBuffer?) {// Must be called on GL thread
-        texture.texId = glGenTextures()
+        texture.gpu?.close()
+        texture.gpu = GpuResource.texture(glGenTextures())
+        texture.texId = texture.gpu!!.id
 
         glBindTexture(GL_TEXTURE_2D, texture.texId)
 
