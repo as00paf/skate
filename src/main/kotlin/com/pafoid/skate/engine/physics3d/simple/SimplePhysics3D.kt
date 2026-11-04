@@ -34,6 +34,8 @@ class SimplePhysics3D : IPhysics3D {
     private val bodies = ArrayList<SimpleBody>()
     private val touching = HashSet<Pair<SimpleBody, SimpleBody>>()
 
+    override val rigidBodyCount: Int get() = bodies.size
+
     override fun getGravity(): Vector3f = Vector3f(gravity)
     override fun setGravity(gravity: Vector3f) {
         this.gravity = Vector3f(gravity)

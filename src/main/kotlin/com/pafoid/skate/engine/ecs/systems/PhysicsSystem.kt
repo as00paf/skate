@@ -29,6 +29,8 @@ import com.pafoid.skate.engine.render.renderer.DebugRenderer
 import com.pafoid.skate.engine.utils.toDegreesF
 import org.joml.Quaternionf
 import org.joml.Vector3f
+import java.util.Collections
+import java.util.IdentityHashMap
 
 class PhysicsSystem(
     private val debugRenderer: DebugRenderer,
@@ -39,11 +41,14 @@ class PhysicsSystem(
     override val phase = SystemPhase.FIXED_UPDATE
 
     private val bodies = query(RigidBody3D::class, topLevelOnly = true, includeDisabled = true)
-    private val activeJoints = mutableMapOf<JointComponent, IPhysicsConstraint>()
+    // Identity-keyed: joint/ragdoll components are data classes, so a reloaded scene's copy would equal the old one
+    private val activeJoints = IdentityHashMap<JointComponent, IPhysicsConstraint>()
+    /** Static world anchors created for joints with no connected body; removed with their joint. */
+    private val jointAnchors = IdentityHashMap<JointComponent, IRigidBodyHandle>()
     private val ragdolls = query(RagdollComponent::class, topLevelOnly = true, includeDisabled = true)
     private val vehicles = query(VehicleComponent::class, RigidBody3D::class, topLevelOnly = true)
     private val vehicleSolver = RaycastVehicleSolver(physics3d)
-    private val activeRagdolls = HashSet<RagdollComponent>()
+    private val activeRagdolls: MutableSet<RagdollComponent> = Collections.newSetFromMap(IdentityHashMap())
 
     init {
         physics3d.contactListener = object : PhysicsContactListener {
@@ -64,8 +69,7 @@ class PhysicsSystem(
 
     override fun init(scene: Scene) {
         super.init(scene)
-        states.clear()
-        stateList.clear()
+        releaseObjectsOutsideScene()
         bodies.forEach {
             trackedState(it)
             physics3d.add(it)
@@ -198,6 +202,27 @@ class PhysicsSystem(
         }
     }
 
+    /** Number of rigid bodies in the physics world; each scene body must be registered exactly once. */
+    val worldBodyCount: Int get() = physics3d.rigidBodyCount
+
+    /**
+     * On (re)load, removes every body, joint and ragdoll registered for objects that are not in the newly loaded scene.
+     * Without this, opening another scene instance (new project, scene switch, play snapshot restore) left the old
+     * instance's bodies in the world, overlapping the new ones.
+     */
+    private fun releaseObjectsOutsideScene() {
+        val live: MutableSet<GameObject> = Collections.newSetFromMap(IdentityHashMap())
+        live.addAll(bodies.entities)
+        val stale = stateList.filter { it.go !in live }
+        stale.forEach {
+            physics3d.remove(it.go)
+            states.remove(it.go)
+        }
+        stateList.removeAll(stale.toSet())
+        removeStaleJoints()
+        removeStaleRagdolls()
+    }
+
     /** Drops bodies whose object left the scene or lost its RigidBody3D; only runs when membership changed. */
     private fun removeStaleBodies(stamp: Long) {
         val stale = stateList.filter { it.stamp != stamp }
@@ -228,6 +253,7 @@ class PhysicsSystem(
             joint.constraint?.let { physics3d.removeConstraint(it) }
             joint.constraint = null
             activeJoints.remove(joint)
+            jointAnchors.remove(joint)?.let { physics3d.removeRigidBody(it) }
         }
     }
 
@@ -237,7 +263,7 @@ class PhysicsSystem(
             // Static world anchor placed at this body's anchor point
             val worldAnchor = Vector3f(joint.anchor).add(bodyA.getLocation(Vector3f()))
             joint.connectedAnchor.set(0f, 0f, 0f)
-            physics3d.createStaticAnchor(worldAnchor)
+            physics3d.createStaticAnchor(worldAnchor).also { jointAnchors[joint] = it }
         } else {
             bodies.entities.firstOrNull { it.uId == joint.connectedBodyId }?.getComponent<RigidBody3D>()?.rawBody ?: return
         }

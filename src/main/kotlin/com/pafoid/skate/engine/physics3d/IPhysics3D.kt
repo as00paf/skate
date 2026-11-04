@@ -10,6 +10,9 @@ interface IPhysics3D {
     fun setGravity(gravity: Vector3f)
     var contactListener: PhysicsContactListener?
 
+    /** Number of rigid bodies currently in the world (GameObject bodies, standalone bodies and anchors). */
+    val rigidBodyCount: Int
+
     /** Fraction of the closest ray hit, or null. Triggers are ignored. */
     fun raycastClosest(from: Vector3f, to: Vector3f, excludeBody: IPhysicsBody3D? = null): Float? =
         raycast(from, to, ALL_LAYERS, excludeBody)?.fraction
