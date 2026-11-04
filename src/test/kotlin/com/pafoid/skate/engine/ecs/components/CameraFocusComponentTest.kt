@@ -60,7 +60,7 @@ class CameraFocusComponentTest {
         assertEquals(at60.x, at30.x, 1e-3f)
         assertEquals(at60.x, at144.x, 1e-3f)
         assertEquals(10f * (1f - kotlin.math.exp(-2f)), at60.x, 1e-3f)
-        assertEquals(CameraFocusComponent.smoothing(4f, CameraFocusComponent.MAX_DT), CameraFocusComponent.smoothing(4f, 5f))
+        assertEquals(CameraFocusComponent.smoothing(4f, com.pafoid.skate.engine.utils.CameraMotion.MAX_DT), CameraFocusComponent.smoothing(4f, 5f))
         assertEquals(0f, CameraFocusComponent.smoothing(4f, -1f))
     }
 
@@ -74,25 +74,60 @@ class CameraFocusComponentTest {
     }
 
     @Test
-    fun `clicking a bound UI button flies the camera to its target and stops there`() {
-        val root = GameObject("Scene")
+    fun `the control system binds buttons of a loaded scene (no parent links) and moves the camera there`() {
+        val scene = com.pafoid.skate.engine.ecs.Scene("S")
         val button = UIButtonComponent("label")
-        root.addChild(GameObject("Canvas").also { it.addChild(GameObject("GoThere").addComponent(button)) })
+        // Like a scene decoded from disk: top-level objects are in children but have no parent.
+        scene.children.add(GameObject("Canvas").also { it.addChild(GameObject("GoThere").addComponent(button)) })
         val target = CameraFocusTarget("there", "GoThere", Vector3f(4f, 5f, 6f), Vector3f(30f, 45f, 0f))
         val focus = CameraFocusComponent(mutableListOf(target))
         val camera = GameObject("Camera").addComponent(Transform(Vector3f())).addComponent(focus)
-        root.addChild(camera)
+        scene.children.add(camera)
         val transform = camera.components.filterIsInstance<Transform>().single()
+        val system = com.pafoid.skate.engine.ecs.systems.CameraControlSystem { com.pafoid.skate.engine.ecs.systems.FlyInput() }
+        system.init(scene)
+        scene.isRunning = true
 
-        focus.update(0.016f)
+        system.update(0.016f)
         assertNull(focus.active)
         button.onClick!!.invoke()
         assertSame(target, focus.active)
-        repeat(300) { focus.update(1f / 60f) }
+        repeat(300) { system.update(1f / 60f) }
 
         assertNull(focus.active)
         assertEquals(Vector3f(4f, 5f, 6f), transform.translation)
         assertEquals(Vector3f(30f, 45f, 0f), transform.rotation)
         assertFalse(focus.focus("missing"))
+    }
+
+    @Test
+    fun `fly or look input cancels a focus move`() {
+        val scene = com.pafoid.skate.engine.ecs.Scene("S")
+        val focus = CameraFocusComponent(mutableListOf(CameraFocusTarget("far", position = Vector3f(100f, 0f, 0f))))
+        val camera = GameObject("Camera").addComponent(Transform(Vector3f())).addComponent(focus)
+            .addComponent(FreeFlyCameraComponent())
+        scene.children.add(camera)
+        var input = com.pafoid.skate.engine.ecs.systems.FlyInput()
+        val system = com.pafoid.skate.engine.ecs.systems.CameraControlSystem { input }
+        system.init(scene)
+        scene.isRunning = true
+        focus.focus("far")
+        system.update(1f / 60f)
+        assertSame(focus.targets[0], focus.active)
+
+        input = com.pafoid.skate.engine.ecs.systems.FlyInput(lookDx = 1f)
+        system.update(1f / 60f)
+        assertNull(focus.active)
+    }
+
+    @Test
+    fun `nothing moves while the scene is not running`() {
+        val scene = com.pafoid.skate.engine.ecs.Scene("S")
+        val transform = Transform(Vector3f())
+        scene.children.add(GameObject("Camera").addComponent(transform).addComponent(FreeFlyCameraComponent()))
+        val system = com.pafoid.skate.engine.ecs.systems.CameraControlSystem { com.pafoid.skate.engine.ecs.systems.FlyInput(forward = 1f) }
+        system.init(scene)
+        system.update(1f / 60f)
+        assertEquals(Vector3f(), transform.translation)
     }
 }

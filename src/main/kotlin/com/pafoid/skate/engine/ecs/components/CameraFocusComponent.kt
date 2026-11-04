@@ -1,14 +1,11 @@
 package com.pafoid.skate.engine.ecs.components
 
-import com.pafoid.skate.engine.ecs.GameObject
-import com.pafoid.skate.engine.getComponent
-import com.pafoid.skate.engine.ui.UIButtonComponent
+import com.pafoid.skate.engine.utils.CameraMotion
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import org.joml.Vector3f
 import kotlin.math.abs
-import kotlin.math.exp
 
 /** A named camera viewpoint: [position] and Euler [rotation] in degrees, in the camera's (parent's) space. */
 @Serializable
@@ -30,9 +27,10 @@ class CameraFocusTarget(
 
 /**
  * Put on a camera object to fly it between named viewpoints while the scene runs (Play in the editor, or the game).
- * Each [targets] entry can be bound to a runtime UI button by name; clicking it calls [focus]. The move is exponential
- * smoothing of position and rotation at [sharpness] per second (frame-rate independent, frame delta clamped for
- * hitches), yaw taking the short way round.
+ * Each [targets] entry can be bound to a runtime UI button by name; clicking it calls [focus]. `CameraControlSystem`
+ * binds the buttons (by name, from the scene, so it also works after a scene is loaded from disk) and moves the
+ * camera: exponential smoothing of position and rotation at [sharpness] per second (frame-rate independent, frame
+ * delta clamped for hitches), yaw taking the short way round. Free-fly input ([FreeFlyCameraComponent]) cancels it.
  */
 @Serializable
 class CameraFocusComponent(
@@ -43,9 +41,6 @@ class CameraFocusComponent(
 
     /** The viewpoint being approached, or null when the camera is left alone. */
     @Transient var active: CameraFocusTarget? = null
-        private set
-
-    @Transient private var buttonsBound = false
 
     /** Starts flying to the target called [name]; false when there is no such target. */
     fun focus(name: String): Boolean {
@@ -53,38 +48,18 @@ class CameraFocusComponent(
         return true
     }
 
-    override fun update(dt: Float) {
-        super.update(dt)
-        if (!buttonsBound) bindButtons()
+    /** Advances the active move on [transform] by one frame of [dt] seconds; clears [active] on arrival. */
+    fun advance(transform: Transform, dt: Float) {
         val target = active ?: return
-        val transform = gameObject?.getComponent<Transform>() ?: return
         if (step(transform, target, smoothing(sharpness, dt))) active = null
     }
 
-    private fun bindButtons() {
-        val owner = gameObject ?: return
-        var root: GameObject = owner
-        while (true) root = root.parent ?: break
-        val byName = HashMap<String, UIButtonComponent>()
-        fun collect(go: GameObject) {
-            go.getComponent<UIButtonComponent>()?.let { byName[go.name] = it }
-            go.children.forEach { collect(it) }
-        }
-        collect(root)
-        targets.filter { it.buttonName.isNotEmpty() }.forEach { target ->
-            byName[target.buttonName]?.onClick = { focus(target.name) }
-        }
-        buttonsBound = true
-    }
-
     companion object {
-        /** Longest frame step applied, so a hitch does not jump the camera. */
-        const val MAX_DT = 0.1f
         private const val SNAP_DISTANCE = 0.01f
         private const val SNAP_DEGREES = 0.05f
 
         /** Fraction of the remaining distance to cover this frame; composes across frame splits. */
-        fun smoothing(sharpness: Float, dt: Float): Float = 1f - exp(-sharpness * dt.coerceIn(0f, MAX_DT))
+        fun smoothing(sharpness: Float, dt: Float): Float = CameraMotion.smoothing(sharpness, dt)
 
         /** Signed shortest difference `to - from` in degrees, in (-180, 180]. */
         fun deltaDegrees(from: Float, to: Float): Float {
