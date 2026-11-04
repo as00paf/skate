@@ -88,7 +88,7 @@ class InputTestingWindow(
         ImGui.textWrapped("  " + s("lbl.input_testing.keys_down").format(down.ifEmpty { "-" }))
 
         ImGui.text(s("lbl.input_testing.mouse"))
-        ImGui.text("  " + s("lbl.input_testing.mouse_pos").format(input.getMouseScreenX(), input.getMouseScreenY()))
+        ImGui.text("  " + s("lbl.input_testing.mouse_pos").format(input.getMouseViewPos().x, input.getMouseViewPos().y))
         ImGui.text("  " + s("lbl.input_testing.mouse_delta").format(input.getMouseDx(), input.getMouseDy()))
         ImGui.text("  " + s("lbl.input_testing.mouse_buttons").format(
             mouseDown.indices.filter { mouseDown[it] }.joinToString(", ").ifEmpty { "-" },
