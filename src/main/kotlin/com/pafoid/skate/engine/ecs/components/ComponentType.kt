@@ -10,6 +10,7 @@ enum class ComponentType {
     BOX_COLLIDER_3D,
     CAMERA,
     CAPSULE_COLLIDER,
+    COMPOUND_HULL_COLLIDER,
     CUSTOM_COLLIDER,
     CYLINDER_COLLIDER,
     DAY_NIGHT_CYCLE,
@@ -18,6 +19,7 @@ enum class ComponentType {
     GRID_LINES,
     INPUT_STATE,
     JOINT,
+    MESH_COLLIDER,
     NATIVE_SCRIPT,
     NON_PICKABLE,
     PARTICLE_EMITTER,
@@ -52,6 +54,7 @@ enum class ComponentType {
             BOX_COLLIDER_3D -> BoxCollider3D()
             CAMERA -> CameraComponent()
             CAPSULE_COLLIDER -> CapsuleCollider3D()
+            COMPOUND_HULL_COLLIDER -> CompoundHullCollider3D()
             CUSTOM_COLLIDER -> CustomCollider3D()
             CYLINDER_COLLIDER -> CylinderCollider3D()
             DAY_NIGHT_CYCLE -> DayNightCycleComponent()
@@ -60,6 +63,7 @@ enum class ComponentType {
             GRID_LINES -> GridLines()
             INPUT_STATE -> InputStateComponent()
             JOINT -> JointComponent()
+            MESH_COLLIDER -> MeshCollider3D()
             NATIVE_SCRIPT -> NativeScriptComponent()
             NON_PICKABLE -> NonPickable()
             PARTICLE_EMITTER -> ParticleEmitter()

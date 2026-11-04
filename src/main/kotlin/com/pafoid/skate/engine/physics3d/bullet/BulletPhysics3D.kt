@@ -19,9 +19,12 @@ import com.jme3.bullet.collision.shapes.CompoundCollisionShape
 import com.jme3.bullet.collision.shapes.CylinderCollisionShape
 import com.jme3.bullet.collision.shapes.HullCollisionShape
 import com.jme3.bullet.collision.shapes.MeshCollisionShape
+import com.jme3.bullet.collision.shapes.infos.IndexedMesh
+import com.jme3.bullet.util.DebugShapeFactory
 import com.jme3.bullet.objects.PhysicsRigidBody
 import com.jme3.math.Matrix3f
 import com.jme3.math.Quaternion
+import java.util.WeakHashMap
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.components.BoxCollider3D
 import com.pafoid.skate.engine.ecs.components.Collider3D
@@ -180,7 +183,10 @@ class BulletPhysics3D(
     override fun add(go: GameObject) {
         val rb = go.getComponent<RigidBody3D>()
         if (rb != null) {
-            val desiredMass = if (rb.bodyType == BodyType.Static) 0f else rb.mass
+            val colliders = go.components.filterIsInstance<Collider3D>()
+            // Triangle meshes only collide on static bodies (Bullet rejects them on dynamic ones)
+            val staticOnly = colliders.any { it.staticOnly }
+            val desiredMass = if (rb.bodyType == BodyType.Static || staticOnly) 0f else rb.mass
             
             // Check if we need to rebuild due to mass change
             val rawBody = (rb.rawBody as? BulletRigidBodyHandle)?.body
@@ -197,31 +203,15 @@ class BulletPhysics3D(
                 }
             }
 
-            val colliders = go.components.filterIsInstance<Collider3D>()
-            val shape: CollisionShape = if (colliders.size == 1 && colliders[0].offset.lengthSquared() == 0f) {
-                // Bullet only sweeps convex shapes for CCD, so avoid wrapping a lone collider in a compound
-                createShape(colliders[0].toShape())
-            } else {
-                val compound = CompoundCollisionShape()
-                colliders.forEach { c ->
-                    compound.addChildShape(createShape(c.toShape()), JmeVector3f(c.offset.x, c.offset.y, c.offset.z))
-                }
-
-                // If no colliders, provide a default box
-                if (colliders.isEmpty()) {
-                    val box = BoxCollisionShape(JmeVector3f(1f, 1f, 1f))
-                    box.margin = 0.04f
-                    compound.addChildShape(box, JmeVector3f(0f, 0f, 0f))
-                }
-                compound
-            }
+            val shapes = colliders.map { it to it.toShape() }
+            val shape = bodyShape(shapes)
 
             // Scale before creating the body so its inertia matches the scaled shape
             go.getComponent<Transform>()?.let { applyScale(shape, it.scale) }
             val body = PhysicsRigidBody(shape, desiredMass)
             rb.rawBody = BulletRigidBodyHandle(body)
 
-            if (rb.bodyType == BodyType.Kinematic) {
+            if (rb.bodyType == BodyType.Kinematic && !staticOnly) {
                 body.isKinematic = true
             }
 
@@ -231,16 +221,34 @@ class BulletPhysics3D(
             handle.collisionMask = rb.collisionMask
             handle.isTrigger = rb.isTrigger
             if (rb.useCCD) {
-                val radius = ccdRadius(colliders, go.getComponent<Transform>()?.scale ?: JomlVector3f(1f))
+                val radius = ccdRadius(shapes.map { it.second }, go.getComponent<Transform>()?.scale ?: JomlVector3f(1f))
                 handle.setContinuousCollision(radius, radius)
             }
             body.userObject = go
+            // Pose first: the space computes the broadphase bounds on add, and queries see stale bounds until a step
+            syncBodyProperties(body, rb, go)
             physicsSpace.add(body)
             contactBodies.add(body)
-            syncBodyProperties(body, rb, go)// Initial property sync
         }
     }
 
+
+    /**
+     * Builds one body's shape from its colliders. A lone collider without offset keeps its own shape (Bullet only sweeps
+     * convex shapes for CCD); otherwise every collider becomes a compound child at its offset, with compound-hull
+     * colliders flattened into one child per hull since Bullet cannot nest compounds. No collider gives a unit box.
+     */
+    internal fun bodyShape(shapes: List<Pair<Collider3D, ColliderShape>>): CollisionShape {
+        if (shapes.size == 1 && shapes[0].first.offset.lengthSquared() == 0f) return createShape(shapes[0].second)
+        val compound = CompoundCollisionShape()
+        shapes.forEach { (collider, shape) ->
+            val offset = collider.offset.toJme()
+            if (shape is ColliderShape.CompoundHull) shape.hulls.forEach { compound.addChildShape(hullShape(it), offset) }
+            else compound.addChildShape(createShape(shape), offset)
+        }
+        if (shapes.isEmpty()) compound.addChildShape(BoxCollisionShape(1f).also { it.margin = 0.04f }, JmeVector3f(0f, 0f, 0f))
+        return compound
+    }
 
     /**
      * Synchronizes properties from our component-based representation ([RigidBody3D], [GameObject] transform)
@@ -286,6 +294,12 @@ class BulletPhysics3D(
         body.setAngularVelocity(JmeVector3f.ZERO)
         body.clearForces()
         body.activate(true)
+        // Re-insert so ray and shape queries see the new pose before the next step recomputes the broadphase bounds.
+        // Bodies held by joints keep their entry; the next step refreshes them.
+        if (body.isInWorld && body.countJoints() == 0) {
+            physicsSpace.remove(body)
+            physicsSpace.add(body)
+        }
     }
 
     /**
@@ -328,8 +342,16 @@ class BulletPhysics3D(
         is ColliderShape.Capsule -> CapsuleCollisionShape(shape.radius, shape.height, shape.axis)
         is ColliderShape.Cylinder ->
             CylinderCollisionShape(shape.radius, shape.height, shape.axis).also { it.margin = shape.margin }
-        is ColliderShape.ConvexHull -> HullCollisionShape(*shape.points.map { it.toJme() }.toTypedArray())
+        is ColliderShape.ConvexHull -> hullShape(shape.points)
+        is ColliderShape.CompoundHull -> CompoundCollisionShape(shape.hulls.size).also { compound ->
+            shape.hulls.forEach { compound.addChildShape(hullShape(it), JmeVector3f(0f, 0f, 0f)) }
+        }
+        is ColliderShape.TriangleMesh -> MeshCollisionShape(
+            true, IndexedMesh(shape.vertices.map { it.toJme() }.toTypedArray(), shape.indices.toIntArray()),
+        )
     }
+
+    private fun hullShape(points: List<JomlVector3f>) = HullCollisionShape(*points.map { it.toJme() }.toTypedArray())
 
     override fun addConstraint(constraint: IPhysicsConstraint) {
         val joint = (constraint.rawJoint as? PhysicsJoint) ?: createJoint(constraint)
@@ -415,14 +437,14 @@ class BulletPhysics3D(
     }
 
     /** Half of the thinnest collider dimension: a swept sphere this size cannot skip over geometry thinner than the body. */
-    private fun ccdRadius(colliders: List<Collider3D>, scale: JomlVector3f): Float {
-        val smallest = colliders.minOfOrNull {
-            when (val shape = it.toShape()) {
+    private fun ccdRadius(shapes: List<ColliderShape>, scale: JomlVector3f): Float {
+        val smallest = shapes.minOfOrNull { shape ->
+            when (shape) {
                 is ColliderShape.Box ->
                     minOf(shape.halfExtents.x * scale.x, shape.halfExtents.y * scale.y, shape.halfExtents.z * scale.z)
                 is ColliderShape.Capsule -> shape.radius * minOf(scale.x, scale.z)
                 is ColliderShape.Cylinder -> minOf(shape.radius * minOf(scale.x, scale.z), shape.height / 2f * scale.y)
-                is ColliderShape.ConvexHull -> 0.1f
+                is ColliderShape.ConvexHull, is ColliderShape.CompoundHull, is ColliderShape.TriangleMesh -> 0.1f
             }
         } ?: 0.1f
         return (smallest * 0.5f).coerceAtLeast(0.01f)
@@ -577,13 +599,7 @@ class BulletPhysics3D(
     }
 
     /**
-     * Draws a placeholder for complex collision shapes (like meshes or hulls) since rendering them
-     * vertex-by-vertex would be too slow for a simple debug view.
-     *
-     * @param shape The complex collision shape.
-     * @param pos The world position.
-     * @param rot The world rotation.
-     * @param color The drawing color.
+     * Draws the feature edges of a hull or triangle mesh (see [ShapeWireframe]), computed once per shape and scale.
      */
     private fun drawComplexShapes(
         shape: CollisionShape,
@@ -591,11 +607,31 @@ class BulletPhysics3D(
         rot: Quaternionf,
         color: JomlVector3f
     ) {
-        // Complex shapes - just draw a small cross for now to indicate position
-        debugRenderer.addLine3D(JomlVector3f(pos).add(-0.5f, 0f, 0f), JomlVector3f(pos).add(0.5f, 0f, 0f), color)
-        debugRenderer.addLine3D(JomlVector3f(pos).add(0f, -0.5f, 0f), JomlVector3f(pos).add(0f, 0.5f, 0f), color)
-        debugRenderer.addLine3D(JomlVector3f(pos).add(0f, 0f, -0.5f), JomlVector3f(pos).add(0f, 0f, 0.5f), color)
+        val scale = shape.getScale(null)
+        val cached = wireframes[shape]?.takeIf { it.first == scale }
+        val edges = cached?.second ?: wireframe(shape, scale).also { wireframes[shape] = scale to it }
+        val from = JomlVector3f()
+        val to = JomlVector3f()
+        for (i in edges.indices step 6) {
+            rot.transform(from.set(edges[i], edges[i + 1], edges[i + 2])).add(pos)
+            rot.transform(to.set(edges[i + 3], edges[i + 4], edges[i + 5])).add(pos)
+            debugRenderer.addLine3D(from, to, color)
+        }
     }
+
+    /** Hulls are outlined from their own points; Bullet's debug triangles for hulls are a margin-rounded approximation. */
+    private fun wireframe(shape: CollisionShape, scale: JmeVector3f): FloatArray {
+        if (shape is HullCollisionShape && shape.countHullVertices() <= ShapeWireframe.MAX_HULL_POINTS) {
+            val points = shape.copyHullVertices()
+            for (i in points.indices) points[i] *= when (i % 3) { 0 -> scale.x; 1 -> scale.y; else -> scale.z }
+            return ShapeWireframe.hullEdges(points)
+        }
+        val triangles = DebugShapeFactory.getDebugTriangles(shape, DebugShapeFactory.lowResolution)
+        return ShapeWireframe.featureEdges(FloatArray(triangles.limit()).also { triangles.get(0, it) })
+    }
+
+    /** Debug wireframes keyed by shape, with the scale they were built at. */
+    private val wireframes = WeakHashMap<CollisionShape, Pair<JmeVector3f, FloatArray>>()
 
     /**
      * Recursively draws the child shapes of a [CompoundCollisionShape].

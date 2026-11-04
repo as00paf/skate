@@ -81,6 +81,7 @@ abstract class Component {
                 is BoxCollider3D -> BOX_COLLIDER_3D
                 is CameraComponent -> ComponentType.CAMERA
                 is CapsuleCollider3D -> CAPSULE_COLLIDER
+                is CompoundHullCollider3D -> ComponentType.COMPOUND_HULL_COLLIDER
                 is CustomCollider3D -> CUSTOM_COLLIDER
                 is CylinderCollider3D -> CYLINDER_COLLIDER
                 is DayNightCycleComponent -> DAY_NIGHT_CYCLE
@@ -89,6 +90,7 @@ abstract class Component {
                 is GridLines -> ComponentType.GRID_LINES
                 is InputStateComponent -> INPUT_STATE
                 is JointComponent -> JOINT
+                is MeshCollider3D -> ComponentType.MESH_COLLIDER
                 is PointLightComponent -> POINT_LIGHT
                 is NonPickable -> NON_PICKABLE
                 is ParticleEmitter -> ComponentType.PARTICLE_EMITTER
