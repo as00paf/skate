@@ -58,7 +58,7 @@ class PlatformApiGuardTest {
     @Test
     fun PlatformApi_OpenAlOnlyInAudioAndAssetLayers() {
         val allowedPrefixes = listOf("engine/audio/", "engine/assets/")
-        val exceptions = setOf("engine/ecs/systems/AudioSystem.kt")
+        val exceptions = emptySet<String>()
         val violators = mainFiles()
             .filter { (path, text) -> allowedPrefixes.none { path.startsWith(it) } && text.contains("org.lwjgl.openal") }
             .map { it.first }
