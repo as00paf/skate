@@ -179,7 +179,7 @@ class RenderResourcesFactory(
             if (useFbo) frameBuffer.bind() else glBindFramebuffer(GL_FRAMEBUFFER, 0)
             glViewport(0, 0, frameBuffer.width, frameBuffer.height)
         }
-        val debugPass = DebugPass(renderers.debug, cameraManager, bindTarget = bindPresentedTarget)
+        val debugPass = DebugPass(renderers.debug, cameraManager, bindTarget = bindPresentedTarget, targetHeight = { frameBuffer.height })
         val uiPass = UiPass(
             renderer2D = renderer2D,
             batchShader = shaders.batch,

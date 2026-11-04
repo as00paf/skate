@@ -2,6 +2,7 @@ package com.pafoid.skate.engine.render.utils
 
 import org.lwjgl.opengl.GL11.GL_TEXTURE_2D
 import org.lwjgl.opengl.GL11.glBindTexture
+import org.lwjgl.opengl.GL11
 import org.lwjgl.opengl.GL13
 import org.lwjgl.opengl.GL20
 import org.lwjgl.opengl.GL30
@@ -68,6 +69,19 @@ inline fun withBlendState(enabled: Boolean, block: () -> Unit) {
     } finally {
         GLStateTracker.setBlendEnabled(previousBlendEnabled)
     }
+}
+
+/**
+ * Straight-alpha blending over the opaque scene target (REN-19): colour uses (SRC_ALPHA, ONE_MINUS_SRC_ALPHA) and
+ * alpha uses (ONE, ONE_MINUS_SRC_ALPHA), so the target keeps alpha 1. The editor viewport composites the scene
+ * texture with its alpha, so plain (SRC_ALPHA, ONE_MINUS_SRC_ALPHA) on alpha (a^2 + (1 - a) < 1) let the viewport
+ * background show through transparent materials whenever post-processing (which writes alpha 1) was off.
+ * Used by transparent materials, particles and the runtime UI.
+ */
+fun setAlphaBlendKeepingTargetOpaque() {
+    GLStateTracker.setBlendFuncSeparate(
+        GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA, GL11.GL_ONE, GL11.GL_ONE_MINUS_SRC_ALPHA,
+    )
 }
 
 /**
