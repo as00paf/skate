@@ -147,7 +147,7 @@ The renderer works but needs cleaner APIs, caching, dynamic shaders, better mate
   - Do: From EDT-31: `ShadowPass` only renders top-level objects, so child models (e.g. the skateboard's visual child) cast no shadows; also review EDT-31's `PickingPass` change (whole-hierarchy traversal, no skip while selected). Do it on top of REN-07.
   - Done when: Child models cast shadows; picking pass reviewed; traversal test.
   - Deps: REN-07, EDT-31
-- [ ] **REN-21** `P1` 2D/UI render follow-ups from GUI-07 and EDT-31
+- [~] @skate-render **REN-21** `P1` 2D/UI render follow-ups from GUI-07 and EDT-31
   - Do: Fix `picking.glsl` reading `aTexId`/`aEntityId` at locations 8/9 while `RenderBatch2D` feeds 3/4 (2D sprite picking reads 0), the same mismatch GUI-07 fixed in `shader_2d_batch.glsl`. Draw runtime UI after post-processing and the debug pass so bloom/FXAA and grid lines don't affect it. Review EDT-31's `SelectionHighlight`/`GeometryPass` change (highlight inherited from ancestors).
   - Done when: 2D sprites are pickable, UI is unaffected by post effects and debug lines, attribute layout guarded by a test.
   - Deps: GUI-07, EDT-31, REN-18
@@ -232,7 +232,7 @@ The ECS is in good working shape but needs a complete review. It is probably mis
   - Do: From ECS-04: add `tag` and `layer` to `GameObject`, `Scene.findByTag/findByLayer`, and a layer-mask parameter on `System.query`/`ComponentQuery`. Follow-ups: EDT inspector field, REN camera culling mask, PHY layer-to-collision-group mapping.
   - Done when: Tag/layer lookups and layer-mask queries are unit-tested.
   - Deps: ECS-04
-- [ ] **ECS-11** `P1` Find child objects by id
+- [~] @skate-ecs **ECS-11** `P1` Find child objects by id
   - Do: From EDT-31: `GameObjectManager.getGameObject(id)` only searches top-level objects, so hierarchy drag-and-drop and search providers can't find children. Search the whole hierarchy (indexed by id).
   - Done when: Lookups find objects at any depth; unit-tested.
 
@@ -274,7 +274,7 @@ Physics needs overall improvements, a swappable physics engine, and a joint comp
   - Do: Human-reported on PR #12: the physics debug toggle no longer draws rigid body colliders in the editor. Find the root cause (round 10 or earlier render changes) and fix it.
   - Done when: Collider boxes draw again with debug on in editor and play; regression test.
   - Deps: PHY-09
-- [ ] **PHY-11** `P1` Sync physics bodies when a transform is edited in the editor
+- [~] @skate-physics **PHY-11** `P1` Sync physics bodies when a transform is edited in the editor
   - Do: Human-reported: editing a GameObject's position/rotation/scale in the inspector (or with gizmos/undo) does not update its `RigidBody3D`/collider in the physics world, so the body stays at its old pose. When a transform changes outside the simulation (edit mode, inspector/command edits, undo/redo, scene load), teleport the body to the new pose (reset velocities, rebuild the collider for scale changes) and keep the interpolation state consistent. Coordinate the editor-side change notification with `skate-editor`.
   - Done when: Moving, rotating or scaling an object in the editor moves its collider (visible with physics debug on), and Play starts from the edited pose; tests for teleport on transform change, scale rebuild and undo.
   - Deps: PHY-10
@@ -310,7 +310,7 @@ The animation system needs improvements.
   - Do: Save the ANI-02 controller asset reference on `Animator` and resolve it when a scene loads.
   - Done when: An animator's controller survives save/load, covered by a test.
   - Deps: ANI-02
-- [ ] **ANI-09** `P1` Skateboarding animation clips and controller
+- [~] @skate-animation **ANI-09** `P1` Skateboarding animation clips and controller
   - Do: From GPL-15: no skateboarding clips are bundled, so riding falls back to idle/walking. Source or author riding idle, push and ollie clips for the skater (the human may need to provide assets) and a controller asset wiring them into the ANI-02 state machine for `SkateBehavior`.
   - Done when: The skater uses a riding pose/push/ollie in the default project; the controller loads in a test.
   - Deps: GPL-15
@@ -389,7 +389,7 @@ The player controller was hardcoded at first and needs a big overhaul. Some skat
 - [x] **GPL-03** `P1` Fix wrong skate prefab models
   - Do: Audit `Skater`, `Skateboard`, `Floor` and `PrefabsGenerator` against their source assets, and fix scale, pivots, orientation and materials.
   - Done when: All prefabs spawn correctly oriented and scaled. A checklist is in the PR.
-- [ ] **GPL-04** `P2` Prefab library expansion
+- [~] @skate-gameplay **GPL-04** `P2` Prefab library expansion
   - Do: Add skatepark prefabs (ramps, quarter/half pipes, rails, ledges, stairs, boxes, bowls) and generic prefabs (lights, props, triggers, spawn points). See `docs/obstacles.md`.
   - Done when: The prefabs appear in the editor's prefab picker with thumbnails.
   - Deps: GPL-03
@@ -423,7 +423,7 @@ The player controller was hardcoded at first and needs a big overhaul. Some skat
   - Do: Human-reported: the skateboard model and its rigid body/collider are misaligned (offset, rotation, scale, centre of mass), causing many gameplay issues. Fix the prefab, collider shape and offsets, and the controller's use of them; add a debug check (collider vs mesh bounds) test. Coordinate with GPL-03 (same prefab files) — do GPL-03 and GPL-12 together.
   - Done when: Board mesh, collider and rigid body coincide in the sample; ride, mount (GPL-11) and collisions behave; bounds-alignment unit test.
   - Deps: GPL-03
-- [~] @skate-gameplay **GPL-13** `P1` Ride the board (stance on deck) and fix board scale
+- [x] **GPL-13** `P1` Ride the board (stance on deck) and fix board scale
   - Do: Human-reported after GPL-11: mounting leaves the board standing between the player's legs; the player must RIDE on top of it. Define a deck anchor/stance (feet on the deck, board under the player, facing along the board, centre of mass and collider matched), with the character parented/posed on the board while mounted (engine-generic `Mountable` seat/stance data, not skateboard-only). Also fix scale: the skateboard model is huge relative to the player; normalise model scale in the prefab/importer so board length fits the character, and make sure the collider and its physics-debug wireframe match the mesh (the human now sees extra wireframes and the board's own wireframe is missing; check for duplicated or mis-scaled collider/child bodies introduced by GPL-03/12).
   - Done when: Mounted player visibly stands on the deck, board scale is proportionate, physics debug shows one collider matching the board; tests for stance placement and scale.
   - Deps: GPL-11, GPL-12
@@ -512,7 +512,7 @@ Multiplayer and Steam support need to be added.
 - [x] **NET-04** `P2` Steam integration
   - Do: Integrate Steamworks via steamworks4j behind a `PlatformServices` interface (achievements, stats, leaderboards, rich presence, lobbies), with a no-op fallback when Steam is absent.
   - Done when: The game runs with and without Steam. The fallback and the interface have unit tests.
-- [ ] **NET-05** `P3` Steam networking transport
+- [~] @skate-online **NET-05** `P3` Steam networking transport
   - Do: Implement the NET-02 transport over Steam networking sockets and lobbies.
   - Deps: NET-02, NET-04
 - [x] **NET-06** `P2` Update NET-01 design for Netty
@@ -632,7 +632,7 @@ All editor mutations must go through `Command` classes and the service layer (se
   - Do: From REN-07: wherever `GraphicsSettings` is applied, set `ShadowSettings.quality = ShadowQualityLevel.fromName(graphicsSettings.shadowQuality.name)`; add a LOW/MEDIUM/HIGH selector for `ShadowPass` in `RenderGraphWindow`.
   - Done when: Changing shadow quality in settings or the render graph window switches shadows at runtime; test for the mapping.
   - Deps: REN-07
-- [ ] **EDT-30** `P1` Unify editor mouse coordinates
+- [~] @skate-editor **EDT-30** `P1` Unify editor mouse coordinates
   - Do: From GUI-06: `MouseListener` mixes GLFW window coordinates with ImGui desktop coordinates, so code comparing `getMouseX()` with `gameViewportPos` (e.g. `InputProvider` lines 91-92) is off when the window is not at the desktop origin or with multi-viewports. Give the editor one viewport-relative pointer source and retire the GUI-06 `Engine.uiPointer` workaround onto it.
   - Done when: Picking, gizmos and UI hover hit the cursor exactly with the editor window anywhere on screen; mapping unit-tested.
   - Deps: GUI-06
