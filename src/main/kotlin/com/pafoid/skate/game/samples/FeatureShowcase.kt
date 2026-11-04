@@ -16,6 +16,8 @@ import com.pafoid.skate.engine.ecs.components.CameraComponent
 import com.pafoid.skate.engine.ecs.components.CameraFocusComponent
 import com.pafoid.skate.engine.ecs.components.CameraFocusTarget
 import com.pafoid.skate.engine.ecs.components.CapsuleCollider3D
+import com.pafoid.skate.engine.ecs.components.Collider3D
+import com.pafoid.skate.engine.ecs.components.MeshCollider3D
 import com.pafoid.skate.engine.ecs.components.DirectionalLightComponent
 import com.pafoid.skate.engine.ecs.components.EmissionShape
 import com.pafoid.skate.engine.ecs.components.FreeFlyCameraComponent
@@ -40,6 +42,7 @@ import com.pafoid.skate.engine.ui.UIProgressBarComponent
 import com.pafoid.skate.engine.ui.UISliderComponent
 import com.pafoid.skate.engine.ui.UITextComponent
 import com.pafoid.skate.game.prefabs.MaterialType
+import com.pafoid.skate.game.prefabs.PrefabCatalog
 import com.pafoid.skate.game.prefabs.PrefabType
 import org.joml.Vector3f
 import org.joml.Vector4f
@@ -257,6 +260,22 @@ class FeatureShowcase(private val prefabs: PrefabsGenerator) {
             .addComponent(RigidBody3D(2f)).addComponent(CapsuleCollider3D(0.7f, 0.01f)))
         add(prefabs.spawn(PrefabType.CRATE, at("physics", 2f, 0f, 2f)).labelled("Physics"))
         add(prefabs.spawn(PrefabType.BARREL, at("physics", -2f, 0f, -2f)).labelled("Physics"))
+        colliderKinds()
+    }
+
+    /** PHY-13: the same bank with a compound-hull collider and with a static triangle-mesh one, a ball rolling down each. */
+    private fun colliderKinds() {
+        add(prefabs.spawn(PrefabType.BANK, at("physics", -4f, 0f, 3.5f)).apply { name = "[Physics] Compound hull bank" })
+        val meshCollider = MeshCollider3D.fromTriangles(PrefabCatalog.shape(PrefabType.BANK)!!.mesh.triangles())
+        add(prefabs.spawn(PrefabType.BANK, at("physics", 4f, 0f, 3.5f)).apply {
+            name = "[Physics] Triangle mesh bank"
+            components.removeAll { it is Collider3D }
+        }.addComponent(meshCollider))
+        listOf("hull" to -4f, "mesh" to 4f).forEach { (kind, x) ->
+            add(mesh("[Physics] Ball on $kind bank", Assets.Bundled.SPHERE, at("physics", x, 2.5f, 3.2f), Vector3f(0.3f),
+                Material(baseColor = Vector4f(0.3f, 0.6f, 0.9f, 1f)))
+                .addComponent(RigidBody3D(1f)).addComponent(CapsuleCollider3D(0.7f, 0.01f)))
+        }
     }
 
     private fun joints() {

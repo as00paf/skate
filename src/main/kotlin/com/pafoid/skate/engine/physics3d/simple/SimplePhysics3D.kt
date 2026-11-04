@@ -49,10 +49,10 @@ class SimplePhysics3D : IPhysics3D {
         val scale = go.getComponent<Transform>()?.scale ?: Vector3f(1f)
         val radius = if (colliders.isEmpty()) 1f else colliders.maxOf { boundingRadius(it.toShape()) }
         val body = SimpleBody(
-            mass = if (rb.bodyType == BodyType.Static) 0f else rb.mass,
+            mass = if (rb.bodyType == BodyType.Static || colliders.any { it.staticOnly }) 0f else rb.mass,
             radius = radius * max(scale.x, max(scale.y, scale.z)),
         )
-        body.isKinematic = rb.bodyType == BodyType.Kinematic
+        body.isKinematic = rb.bodyType == BodyType.Kinematic && colliders.none { it.staticOnly }
         body.restitution = rb.restitution
         body.friction = rb.friction
         body.collisionLayer = rb.collisionLayer
@@ -211,6 +211,8 @@ class SimplePhysics3D : IPhysics3D {
         is ColliderShape.Capsule -> shape.radius + shape.height / 2f
         is ColliderShape.Cylinder -> sqrt(shape.radius * shape.radius + shape.height * shape.height / 4f)
         is ColliderShape.ConvexHull -> shape.points.maxOfOrNull { it.length() } ?: 0.5f
+        is ColliderShape.CompoundHull -> shape.hulls.flatten().maxOfOrNull { it.length() } ?: 0.5f
+        is ColliderShape.TriangleMesh -> shape.vertices.maxOfOrNull { it.length() } ?: 0.5f
     }
 }
 

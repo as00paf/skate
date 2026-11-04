@@ -13,6 +13,7 @@ import com.pafoid.skate.engine.ecs.components.CameraComponent
 import com.pafoid.skate.engine.ecs.components.CapsuleCollider3D
 import com.pafoid.skate.engine.ecs.components.Component
 import com.pafoid.skate.engine.ecs.components.ComponentType
+import com.pafoid.skate.engine.ecs.components.CompoundHullCollider3D
 import com.pafoid.skate.engine.ecs.components.CustomCollider3D
 import com.pafoid.skate.engine.ecs.components.CylinderCollider3D
 import com.pafoid.skate.engine.ecs.components.DayNightCycleComponent
@@ -25,6 +26,7 @@ import com.pafoid.skate.engine.ecs.components.NonPickable
 import com.pafoid.skate.engine.ecs.components.PlayerController
 import com.pafoid.skate.engine.ecs.components.PointLightComponent
 import com.pafoid.skate.engine.ecs.components.JointComponent
+import com.pafoid.skate.engine.ecs.components.MeshCollider3D
 import com.pafoid.skate.engine.ecs.components.ScriptComponent
 import com.pafoid.skate.engine.ecs.components.RagdollComponent
 import com.pafoid.skate.engine.ecs.components.ParticleEmitter
@@ -49,6 +51,7 @@ fun GameObject.getComponent(type: ComponentType) =
         ComponentType.BOX_COLLIDER_3D -> getComponent<BoxCollider3D>()
         ComponentType.CAMERA -> getComponent<CameraComponent>()
         ComponentType.CAPSULE_COLLIDER -> getComponent<CapsuleCollider3D>()
+        ComponentType.COMPOUND_HULL_COLLIDER -> getComponent<CompoundHullCollider3D>()
         ComponentType.CUSTOM_COLLIDER -> getComponent<CustomCollider3D>()
         ComponentType.CYLINDER_COLLIDER -> getComponent<CylinderCollider3D>()
         ComponentType.DAY_NIGHT_CYCLE -> getComponent<DayNightCycleComponent>()
@@ -57,6 +60,7 @@ fun GameObject.getComponent(type: ComponentType) =
         ComponentType.GRID_LINES -> getComponent<GridLines>()
         ComponentType.INPUT_STATE -> getComponent<InputStateComponent>()
         ComponentType.JOINT -> getComponent<JointComponent>()
+        ComponentType.MESH_COLLIDER -> getComponent<MeshCollider3D>()
         ComponentType.POINT_LIGHT -> getComponent<PointLightComponent>()
         ComponentType.NATIVE_SCRIPT -> getComponent<NativeScriptComponent>()
         ComponentType.SCRIPT -> getComponent<ScriptComponent>()

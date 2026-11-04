@@ -29,7 +29,8 @@ import com.pafoid.skate.engine.ecs.components.SpriteRenderer
 import com.pafoid.skate.engine.ui.UIButtonComponent
 import com.pafoid.skate.engine.ui.UICanvasComponent
 import com.pafoid.skate.engine.ui.UITextComponent
-import com.pafoid.skate.engine.ecs.components.CustomCollider3D
+import com.pafoid.skate.engine.ecs.components.Collider3D
+import com.pafoid.skate.engine.ecs.components.CompoundHullCollider3D
 import com.pafoid.skate.engine.ecs.components.PointLightComponent
 import com.pafoid.skate.engine.ecs.components.RenderComponent
 import com.pafoid.skate.engine.ecs.components.SpotLightComponent
@@ -145,16 +146,15 @@ class PrefabsGeneratorTest {
     }
 
     @Test
-    fun PrefabSpawn_GeneratedObstaclesAreStaticWithOneHullColliderPerPiece() {
+    fun PrefabSpawn_GeneratedObstaclesAreStaticWithOneCompoundHullCollider() {
         val generator = PrefabsGenerator(engine)
 
         PrefabType.entries.mapNotNull { type -> PrefabCatalog.shape(type)?.let { type to it } }.forEach { (type, shape) ->
             val go = generator.spawn(type)
             assertEquals(BodyType.Static, go.getComponent<RigidBody3D>()?.bodyType, "$type not static")
-            val hulls = go.components.filterIsInstance<CustomCollider3D>()
-            assertEquals(shape.hulls.size, hulls.size, "$type collider count")
-            assertEquals(hulls.size, hulls.map { it.uId }.distinct().size, "$type colliders share an id")
-            assertTrue(hulls.all { it.gameObject === go })
+            val colliders = go.components.filterIsInstance<Collider3D>()
+            assertEquals(1, colliders.size, "$type collider count")
+            assertEquals(shape.hulls, (colliders.single() as CompoundHullCollider3D).hulls, "$type hulls")
         }
         assertEquals(PrefabsGenerator.GRINDABLE_TAG, generator.spawn(PrefabType.HANDRAIL).tag)
     }
@@ -168,8 +168,8 @@ class PrefabsGeneratorTest {
         val reloaded = serializer.decode<Scene>(serializer.encode(scene))
 
         val pipe = reloaded.children.single()
-        val hulls = pipe.components.filterIsInstance<CustomCollider3D>()
-        assertEquals(PrefabCatalog.shape(PrefabType.HALF_PIPE)!!.hulls.size, hulls.size)
+        val collider = pipe.components.filterIsInstance<Collider3D>().single() as CompoundHullCollider3D
+        assertEquals(PrefabCatalog.shape(PrefabType.HALF_PIPE)!!.hulls, collider.hulls)
         assertEquals(BodyType.Static, pipe.getComponent<RigidBody3D>()!!.bodyType)
     }
 
