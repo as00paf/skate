@@ -100,7 +100,7 @@ The renderer works but needs cleaner APIs, caching, dynamic shaders, better mate
   - Do: HDR render target, tonemapping (ACES), gamma, bloom, FXAA and SSAO as render-graph passes that can be toggled per camera/environment.
   - Done when: Effects can be toggled at runtime and from the editor. Pass ordering and enable/disable have unit tests.
   - Deps: REN-03
-- [ ] **REN-09** `P2` Fog improvements
+- [~] @skate-render **REN-09** `P2` Fog improvements
   - Do: Move fog from `SkyDomeRenderer`/`LightingUniformsLoader` into a shared shader include. Support linear/exp/exp² and height fog, configured from `EnvironmentComponent`/`EnvironmentPreset`.
   - Done when: Fog looks the same on models, terrain and sky, and fog parameter math is unit-tested.
   - Deps: REN-05
@@ -354,6 +354,10 @@ Audio needs a more complete implementation.
   - Do: Data side of EDT-25: `Mixer.snapshot()` and `AudioEngine.currentConfig` so the editor can undo and persist bus settings.
   - Done when: Snapshot/restore round-trip is unit-tested.
   - Deps: AUD-02
+- [~] @skate-audio **AUD-09** `P0` Showcase audio is silent
+  - Do: Human-reported after PR #14: no sound when approaching the FeatureShowcase Audio sphere in Play. Lead's lead (unverified): `AudioComponent.playOnAwake` defaults to false, the showcase never sets it, and nothing calls `play()`; also check the tone path (`projectAssetsDir` + `tone.wav`, Windows separator), WAV loading, OpenAL init/device, bus/master volumes and the 3D rolloff/maxDistance. Fix the root cause in audio and set the showcase demo up correctly.
+  - Done when: In a new project, Play on FeatureShowcase plays the ambient tone and the 3D emitter gets louder/pans as the camera approaches; Stop silences them; a test through the real path (generate, save, load from disk, Play) asserts both sources are playing with the expected gains.
+  - Deps: TLG-09
 
 ### Input — `INP` (`skate-input`)
 
@@ -405,7 +409,7 @@ The player controller was hardcoded at first and needs a big overhaul. Some skat
   - Do: Add skatepark prefabs (ramps, quarter/half pipes, rails, ledges, stairs, boxes, bowls) and generic prefabs (lights, props, triggers, spawn points). See `docs/obstacles.md`.
   - Done when: The prefabs appear in the editor's prefab picker with thumbnails.
   - Deps: GPL-03
-- [ ] **GPL-05** `P2` Camera system
+- [~] @skate-gameplay **GPL-05** `P2` Camera system
   - Do: Make `GameCamera` data-driven (follow, orbit, collision avoidance, spring arm, shake).
   - Done when: Camera parameters can be tuned in the editor, and spring-arm collision has unit tests.
   - Deps: GPL-01
@@ -663,7 +667,7 @@ All editor mutations must go through `Command` classes and the service layer (se
 - [x] **EDT-32** `P1` Redo after a gizmo drag does nothing
   - Do: From PHY-11: `TransformCommand` stores a shallow `newTransform.copy()` and `Gizmo.commitSnapshot` passes the live `Transform`, so old/new share vectors with the object and redo has nothing to reapply. Snapshot both deeply (`Transform().apply { copyFrom(x) }`).
   - Done when: Undo/redo of gizmo moves, inspector edits and multi-selection transforms round-trip; tests.
-- [ ] **EDT-33** `P1` One rule for top-level objects in the hierarchy
+- [~] @skate-editor **EDT-33** `P1` One rule for top-level objects in the hierarchy
   - Do: From ECS-11 (also bit TLG-09: lookups climbing parent links fail on scenes loaded from disk): `SceneHierarchyWindow` mixes `obj.parent == null` and `obj.parent == scene` to detect top-level objects, while `addGameObject` does not set `parent`. Decide with skate-ecs (prefer `parent == scene`, set by `addGameObject`) and make every caller consistent.
   - Done when: Top-level detection uses one helper everywhere; drag/drop and reparenting tests pass.
   - Deps: ECS-11
@@ -753,6 +757,10 @@ A lot of features are broken. Many unit tests are missing (**no integration test
   - Do: From REN-07/REN-10: add `engine/render/shadow/` pure maths and `engine/render/particles/ParticleSimulator.kt`, `ParticlePool.kt` to `PureLogicIsolationGuardTest`.
   - Done when: The guard covers those files and the suite is green.
   - Deps: REN-07, REN-10
+- [~] @skate-qa **QA-13** `P1` Feature Showcase play smoke test
+  - Do: The audio demo shipped silent because no test exercised the showcase the way the human does. Add an automated smoke test that generates a new project, loads `FeatureShowcase` from disk, starts Play and steps frames, then asserts each demo's observable effect: audio sources playing, particles alive, physics bodies settled (no falling through), joints moving, vehicle resting, animation advancing, UI legend buttons bound and focusing the camera. Use fakes where GL/OpenAL aren't available, but keep the scene/systems real.
+  - Done when: The smoke test runs in `gradlew test`, fails if any demo is inert (verify by temporarily breaking one), and is documented for future demos (rule 8).
+  - Deps: TLG-09
 
 ## Agents & herdr
 

@@ -20,11 +20,9 @@ object SelectionHighlight {
         if (scene.isRunning) return NONE
         val hovered = scene.hoveredGameObject
         var isHovered = false
-        var node: GameObject? = go
-        while (node != null && node !is Scene) {
+        for (node in sequenceOf(go) + go.ancestors()) {
             if (scene.isSelected(node)) return SELECTED
             if (node === hovered) isHovered = true
-            node = node.parent
         }
         return if (isHovered) HOVERED else NONE
     }

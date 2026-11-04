@@ -330,9 +330,9 @@ class FeatureShowcase(private val prefabs: PrefabsGenerator) {
     private fun audio() {
         add(mesh("[Audio] Emitter3D", Assets.Bundled.SPHERE, at("audio", 0f, 1f, 0f), Vector3f(0.6f),
             Material(emissiveFactor = Vector3f(0.2f, 0.8f, 0.8f)))
-            .addComponent(AudioComponent(assets + TONE_FILE, is3D = true, loops = true, volume = 0.6f, maxDistance = 25f)))
+            .addComponent(AudioComponent(assets + TONE_FILE, is3D = true, loops = true, volume = 0.6f, maxDistance = 25f, playOnAwake = true)))
         add(GameObject("[Audio] Ambient2D")
-            .addComponent(AudioComponent(assets + TONE_FILE, is3D = false, loops = true, volume = 0.1f)))
+            .addComponent(AudioComponent(assets + TONE_FILE, is3D = false, loops = true, volume = 0.1f, playOnAwake = true)))
     }
 
     private fun prefabLibrary() {

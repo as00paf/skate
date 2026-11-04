@@ -23,7 +23,11 @@ data class AudioComponent(
     /** When not empty, a random clip (never the same twice in a row) is played instead of [soundFilePath]. */
     var clips: List<String> = emptyList(),
     var streamMode: StreamMode = StreamMode.AUTO,
-    var playOnAwake: Boolean = false
+    /**
+     * Start playing when the scene starts running (Play), like Unity's AudioSource. On by default so an emitter or
+     * ambience placed in the editor is heard in game; set it to false for sounds that a script triggers with [play].
+     */
+    var playOnAwake: Boolean = true
 ) : Component() {
 
     @Transient

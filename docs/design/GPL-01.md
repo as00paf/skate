@@ -126,7 +126,7 @@ Status: **approved and implemented** (see §8 for deviations from the approved d
 
 ## 11. GPL-11: mount toggle wiring
 
-`PlayerMotionSystem.syncMount` runs every frame for a `Mountable` character: the mount body goes on `MountMath.MOUNT_LAYER`, characters ignore that layer (walk over/away from a parked board), and while ridden the board is carried at the character's feet with its heading, zero velocity and collision mask 0. Dismounting restores the board's mask so it stays where it was left. `Mountable.cameraPreset` (walk/ride framing from the `mount` config) is pushed to `PlayerMotionSystem.onCameraPreset` on every mode change; `GameCamera.applyPreset` consumes it.
+`PlayerMotionSystem.syncMount` runs every frame for a `Mountable` character: the mount body goes on `MountMath.MOUNT_LAYER`, characters ignore that layer (walk over/away from a parked board), and while ridden the board is carried at the character's feet with its heading, zero velocity and collision mask 0. Dismounting restores the board's mask so it stays where it was left. `Mountable.cameraPreset` (walk/ride framing from the `mount` config) is read every frame by `FollowCameraSystem` (GPL-05), which blends the follow camera to it.
 
 ## 12. GPL-13 — ride ON the board, board physics/visual split
 
