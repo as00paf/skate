@@ -1,7 +1,6 @@
 package com.pafoid.skate.engine.assets
 
 import com.pafoid.skate.engine.addComponent
-import com.pafoid.skate.engine.assets.data.Sprite
 import com.pafoid.skate.engine.assets.data.models.`3dModel`
 import com.pafoid.skate.engine.assets.data.models.Material
 import com.pafoid.skate.engine.core.Engine
@@ -18,16 +17,17 @@ import com.pafoid.skate.engine.ecs.components.GridLines
 import com.pafoid.skate.engine.ecs.components.RenderComponent
 import com.pafoid.skate.engine.ecs.components.RigidBody3D
 import com.pafoid.skate.engine.ecs.components.ScenePhysicsComponent
-import com.pafoid.skate.engine.ecs.components.SpotLightComponent
-import com.pafoid.skate.engine.ecs.components.SpriteRenderer
 import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.physics3d.BodyType
+import com.pafoid.skate.engine.ui.UIButtonComponent
+import com.pafoid.skate.engine.ui.UICanvasComponent
+import com.pafoid.skate.engine.ui.UIElementComponent
+import com.pafoid.skate.engine.ui.UITextComponent
 import com.pafoid.skate.game.prefabs.Floor
 import com.pafoid.skate.game.prefabs.MaterialType
 import com.pafoid.skate.game.prefabs.Skateboard
 import com.pafoid.skate.game.prefabs.Skater
 import org.joml.Vector3f
-import org.joml.Vector4f
 import java.io.File
 
 class PrefabsGenerator(
@@ -63,14 +63,6 @@ class PrefabsGenerator(
         return Floor("Floor", model, material)
     }
 
-    fun spawnSprite(): GameObject {
-        val texture = assetsManager.getBundledTexture(Assets.Bundled.APP_ICON)
-        val spriteRenderer = SpriteRenderer(Vector4f(1f), Sprite(texture))
-        return GameObject("Sprite")
-            .addComponent(spriteRenderer)
-            .addComponent(Transform(Vector3f(5f, 1.5f, 5f)))
-    }
-
     fun spawnRail(position: Vector3f = Vector3f(), material: MaterialType?): GameObject {
         val modelPath = projectAssetsDir + Assets.Bundled.RAIL
 
@@ -95,7 +87,7 @@ class PrefabsGenerator(
         val ledge = GameObject("${mat.displayName}_Ledge")
         ledge.addComponent(Transform(position))
         val baseModel = assetsManager.loadModel(modelPath)
-        val texture = assetsManager.getTexture(mat.texturePath)
+        val texture = assetsManager.getTexture(projectAssetsDir + mat.texturePath)
         val model = `3dModel`(
             path = modelPath,
             mesh = baseModel.mesh.map { it.copy(material = Material(texture)) }
@@ -112,7 +104,7 @@ class PrefabsGenerator(
         val kicker = GameObject("Kicker")
         kicker.addComponent(Transform(position))
         val baseModel = assetsManager.loadModel(modelPath)
-        val texture = assetsManager.getTexture(mat.texturePath)
+        val texture = assetsManager.getTexture(projectAssetsDir + mat.texturePath)
         val model = `3dModel`(
             mesh = baseModel.mesh.map { it.copy(material = Material(texture)) },
             path = modelPath,
@@ -129,7 +121,7 @@ class PrefabsGenerator(
         go.addComponent(Transform(position))
         val baseModel = assetsManager.loadModel(modelPath)
         val model = `3dModel`(path = modelPath, mesh = baseModel.mesh)
-        go.addComponent(RenderComponent(model, Material(baseColorTexture = assetsManager.getTexture(mat.texturePath))))
+        go.addComponent(RenderComponent(model, Material(baseColorTexture = assetsManager.getTexture(projectAssetsDir + mat.texturePath))))
         go.addComponent(RigidBody3D(0f).apply { friction = 0.6f; bodyType = BodyType.Static })
         go.addComponent(BoxCollider3D(Vector3f(1f, 0.1f, 1f)))
         return go
@@ -145,7 +137,7 @@ class PrefabsGenerator(
         go.addComponent(
             RenderComponent(
                 model = model,
-                Material(assetsManager.getTexture(mat.texturePath)),
+                Material(assetsManager.getTexture(projectAssetsDir + mat.texturePath)),
                 castShadow = true,
                 receiveShadow = true
             )
@@ -162,13 +154,17 @@ class PrefabsGenerator(
         go.addComponent(Transform(position))
         val baseModel = assetsManager.loadModel(modelPath)
         val model = `3dModel`(path = modelPath, mesh = baseModel.mesh)
-        go.addComponent(RenderComponent(model, Material(assetsManager.getTexture(mat.texturePath))))
+        go.addComponent(RenderComponent(model, Material(assetsManager.getTexture(projectAssetsDir + mat.texturePath))))
         go.addComponent(RigidBody3D(0f).apply { friction = 0.5f; bodyType = BodyType.Static })
         return go
     }
 
+    /**
+     * The scenes of a new project: a single `MainScene` with sky, sun, day/night cycle, the skater and board on an
+     * asphalt floor, a concrete ledge to grind and a HUD canvas. See docs/samples.md ("Default project").
+     */
     fun createDefaultScenes(sceneDir: File): List<Scene> {
-        val scene = sceneManager.createNewScene("MainScene", sceneDir.path)
+        val scene = sceneManager.createNewScene(DEFAULT_SCENE, sceneDir.path)
         val skyTexture = assetsManager.getTexture(projectAssetsDir + Assets.Bundled.SKY)
         scene.addComponent(ScenePhysicsComponent())
             .addComponent(GridLines())
@@ -180,67 +176,39 @@ class PrefabsGenerator(
         spawnDefaultsSync().forEach { scene.addChild(it) }
         sceneManager.saveScene(scene, sceneDir.path)
 
-        val openGlScene = sceneManager.createNewScene("OpenGLTest", sceneDir.path)
-        openGlScene
-            .addComponent(GridLines())
-            .addComponent(AmbientLightComponent(intensity = 0.1f))
-            .addComponent(DirectionalLightComponent(color = Vector3f(0.195f, 0.163f, 0.68f)))
-        val camera = GameObject("Camera")
-            .addComponent(CameraComponent(isDefault = true))
-            .addComponent(Transform(Vector3f(0f, 5f, 25f)))
-        openGlScene.addChild(camera)
-        //Cube 1
-        val cube = GameObject("Cube")
-        val cubeModel = assetsManager.getModel(projectAssetsDir + Assets.Bundled.CUBE)
-        cube
-            .addComponent(RenderComponent(cubeModel, Material(baseColor = Vector4f(1f, 0f, 0f, 1f))))
-            .addComponent(Transform(translation = Vector3f(0f, 10f, 0f), scale = Vector3f(0.4f)))
-        openGlScene.addChild(cube)
-
-        // Cube 2
-        val lightCube = GameObject("LightCube")
-        lightCube
-            .addComponent(RenderComponent(cubeModel, Material(baseColor = Vector4f(1f, 1f, 1f, 1f))))
-            .addComponent(Transform(translation = Vector3f(-5f, 5f, 0f), scale = Vector3f(0.3f)))
-            .addComponent(SpotLightComponent())
-        openGlScene.addChild(lightCube)
-
-        //Plane
-        val plane = GameObject("Plane")
-        plane
-            .addComponent(RenderComponent(cubeModel, Material(baseColor = Vector4f(.5f, .5f, 1f, 1f))))
-            .addComponent(Transform(translation = Vector3f(0f, 1f, 0f), scale = Vector3f(5f, 0.001f, 5f)))
-        openGlScene.addChild(plane)
-
-        sceneManager.saveScene(openGlScene, sceneDir.path)
-
-        val result = listOf(scene, openGlScene)
+        val result = listOf(scene)
         sceneManager.openScenes(result)
-
         return result
     }
 
     fun spawnDefaultsSync(): List<GameObject> {
-        val cameraTexture = assetsManager.getTexture(Assets.Textures.CAMERA)
-        val skater = spawnSkater()
         val camera = GameObject("Camera")
             .addComponent(CameraComponent(isDefault = true))
-            //.addComponent(Transform(Vector3f(0f, 5f, -20f)))
             .addComponent(Transform(Vector3f(0f, 3f, 10f)))
-            .addComponent(SpriteRenderer(sprite = Sprite(cameraTexture).also {
-                it.width = cameraTexture.width.toFloat()
-                it.height = cameraTexture.height.toFloat()
-            }))
-        /*.addComponent(NativeScriptComponent(
-            onUpdate = { me, dt ->
-                me.gameObject?.getComponent<Transform>()?.lookAt(skater.transform.translation)
-            }
-        ))*/
+        val skater = spawnSkater()
         val skate = spawnSkateboard()
-        //skater.addChild(camera)
         val floor = spawnFloor()
-        val sprite = spawnSprite()
+        val ledge = spawnLedge(Vector3f(3f, 0.25f, -3f), MaterialType.CONCRETE)
+        return listOf(camera, skate, skater, floor, ledge, spawnHud())
+    }
 
-        return listOfNotNull(camera, skate, skater, floor, sprite)
+    /** In-game (non-ImGui) HUD: a score line top-left and a restart button top-right. */
+    fun spawnHud(): GameObject {
+        val canvas = GameObject("HUD").addComponent(UICanvasComponent())
+        canvas.addChild(
+            GameObject("ScoreText")
+                .addComponent(UIElementComponent().placed(0f, 0f, 40f, 30f, 500f, 60f))
+                .addComponent(UITextComponent("hud.score", listOf("0"), fontSize = 44f))
+        )
+        canvas.addChild(
+            GameObject("RestartButton")
+                .addComponent(UIElementComponent().placed(1f, 0f, -40f, 30f, 260f, 70f))
+                .addComponent(UIButtonComponent("pause.restart"))
+        )
+        return canvas
+    }
+
+    companion object {
+        const val DEFAULT_SCENE = "MainScene"
     }
 }

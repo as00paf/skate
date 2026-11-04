@@ -1,5 +1,20 @@
 # Sample projects
 
+## Default project (`New Project` in the editor)
+
+`ProjectManager.createProject` copies the engine-bundled assets into `Assets/EngineDefaults` and calls `PrefabsGenerator.createDefaultScenes`, which writes a single scene, `MainScene` (also the project's default scene). Keep it current with engine features; old projects are not migrated (GameEngine.md rule 8).
+
+| Part | Contents |
+|------|----------|
+| Scene components | `ScenePhysicsComponent` (gravity, debug draw off: toggle it to see colliders), `GridLines`, `EnvironmentComponent` with the bundled HDRI sky, `AmbientLightComponent`, `DayNightCycleComponent`, `DirectionalLightComponent` (sun). |
+| `Camera` | Default `CameraComponent` at (0, 3, 10), behind the skater. |
+| `Skateboard`, `Skater` | Bundled board and character prefabs (`Skateboard`, `Skater` with the default animation set). |
+| `Floor` | 20 x 20 m static asphalt slab, top surface at y = 0, box collider. |
+| `Concrete_Ledge` | Static concrete ledge at (3, 0.25, -3) with a box collider, to grind. |
+| `HUD` | In-game UI canvas: `ScoreText` top-left (`hud.score`, "Score 0") and `RestartButton` top-right (`pause.restart`). Both keys exist in the bundled game and editor string tables. |
+
+No 2D sprites, test cubes or extra scenes. Particles and shadow tuning are not part of the default project yet.
+
 ## Feature showcase (`FeatureShowcase`)
 
 A manual regression suite: one scene per engine feature, built only from public engine components.
