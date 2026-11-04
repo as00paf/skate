@@ -18,6 +18,7 @@ import com.pafoid.skate.engine.render.renderer.SplashRenderer
 import com.pafoid.skate.engine.render.renderer.ThumbnailRenderer
 import com.pafoid.skate.engine.render.renderer.passes.DebugPass
 import com.pafoid.skate.engine.render.renderer.passes.GeometryPass
+import com.pafoid.skate.engine.render.renderer.passes.ParticlePass
 import com.pafoid.skate.engine.render.renderer.passes.PickingPass
 import com.pafoid.skate.engine.render.renderer.passes.PostProcessPass
 import com.pafoid.skate.engine.render.renderer.passes.RenderPass
@@ -67,6 +68,7 @@ class RenderResourcesFactory(
             .addPass(renderPasses.shadow)
             .addPass(renderPasses.picking)
             .addPass(renderPasses.geometry)
+            .addPass(renderPasses.particles)
             .addPass(renderPasses.postProcess)
             .addPass(renderPasses.debug)
             .build()
@@ -165,6 +167,13 @@ class RenderResourcesFactory(
             shadowMapResolution = shadowMapRes
         )
         val debugPass = DebugPass(renderers.debug, cameraManager)
+        val particlePass = ParticlePass(
+            shader = assetsManager.getShader("/shaders/particles.glsl"),
+            frameBuffer = frameBuffer,
+            useFbo = useFbo,
+            cameraManager = cameraManager,
+            textureId = { path -> assetsManager.getTexture(path).texId },
+        )
 
         val postProcessPass = PostProcessPass(
             frameBuffer = frameBuffer,
@@ -195,7 +204,8 @@ class RenderResourcesFactory(
             geometry = geometryPass,
             debug = debugPass,
             shadow = shadowPass,
-            postProcess = postProcessPass
+            postProcess = postProcessPass,
+            particles = particlePass,
         )
     }
 }

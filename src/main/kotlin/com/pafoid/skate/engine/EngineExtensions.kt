@@ -27,6 +27,7 @@ import com.pafoid.skate.engine.ecs.components.PointLightComponent
 import com.pafoid.skate.engine.ecs.components.JointComponent
 import com.pafoid.skate.engine.ecs.components.ScriptComponent
 import com.pafoid.skate.engine.ecs.components.RagdollComponent
+import com.pafoid.skate.engine.ecs.components.ParticleEmitter
 import com.pafoid.skate.engine.ecs.components.RenderComponent
 import com.pafoid.skate.engine.ecs.components.RigidBody3D
 import com.pafoid.skate.engine.ecs.components.SceneComponent
@@ -58,6 +59,7 @@ fun GameObject.getComponent(type: ComponentType) =
         ComponentType.NATIVE_SCRIPT -> getComponent<NativeScriptComponent>()
         ComponentType.SCRIPT -> getComponent<ScriptComponent>()
         ComponentType.NON_PICKABLE -> getComponent<NonPickable>()
+        ComponentType.PARTICLE_EMITTER -> getComponent<ParticleEmitter>()
         ComponentType.PLAYER_CONTROLLER -> getComponent<PlayerController>()
         ComponentType.RAGDOLL -> getComponent<RagdollComponent>()
         ComponentType.RENDER -> getComponent<RenderComponent>()

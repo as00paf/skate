@@ -11,6 +11,7 @@ import com.pafoid.skate.engine.ecs.systems.AnimationSystem
 import com.pafoid.skate.engine.ecs.systems.AudioSystem
 import com.pafoid.skate.engine.ecs.systems.CameraManager
 import com.pafoid.skate.engine.ecs.systems.DayNightCycleSystem
+import com.pafoid.skate.engine.ecs.systems.ParticleSystem
 import com.pafoid.skate.engine.ecs.systems.DirectionalLightSystem
 import com.pafoid.skate.engine.ecs.systems.EnvironmentSystem
 import com.pafoid.skate.engine.ecs.systems.GameObjectManager
@@ -119,6 +120,7 @@ class Engine {
                 it.ikDebugSink = IkDebugSink { from, to, color -> debugRenderer.addLine3D(from, to, color) }
             },
             RagdollSystem(),
+            ParticleSystem(),
             ScriptingSystem(
                 logger, eventSystem,
                 ScriptServices(input = ReaderScriptInput(inputSystem.reader)),
