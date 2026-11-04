@@ -5,8 +5,10 @@ import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.getComponent
 
 /**
- * Server-authoritative replication. Drive it from a single thread: call [poll] then [tick] once per fixed step.
- * Snapshots are sent every `snapshotIntervalTicks`, delta compressed against the last snapshot each client acked.
+ * Server-authoritative replication. Drive it from a single thread, once per fixed step: [poll], then
+ * [processInputs] (the game steps each client's objects with that input), then [tick].
+ * Snapshots are sent every `snapshotIntervalTicks`, delta compressed against the last snapshot each client acked,
+ * and tell each client the last input sequence applied for it (client-side prediction, NET-03).
  */
 class ReplicationServer(
     private val transport: Transport,
@@ -18,6 +20,7 @@ class ReplicationServer(
         var ready = false
         var lastAckedTick = 0
         val history = ArrayDeque<Pair<Int, Map<Int, IntArray>>>()
+        val inputs = ServerInputQueue()
     }
 
     private val objects = LinkedHashMap<Int, GameObject>()
@@ -31,8 +34,9 @@ class ReplicationServer(
     var onClientJoined: (clientId: Int, name: String) -> Unit = { _, _ -> }
     var onClientLeft: (clientId: Int) -> Unit = {}
 
-    /** Receives opaque game input from a client; the payload format is game-defined. */
-    var onInput: (clientId: Int, clientTick: Int, payload: ByteArray) -> Unit = { _, _, _ -> }
+    /** Per-tick states kept for lag compensation ([NetConfig.lagCompensationMs]). */
+    val stateHistory = StateHistory(schema, maxOf(1, config.lagCompensationMs * config.tickRate / 1000 + 1))
+    private val rewinder = Rewinder(schema)
 
     val clientCount: Int get() = slots.values.count { it.ready }
 
@@ -63,11 +67,49 @@ class ReplicationServer(
 
     fun gameObject(netId: Int): GameObject? = objects[netId]
 
+    /** Objects owned by [clientId] (e.g. its player), in net id order. */
+    fun ownedBy(clientId: Int): List<GameObject> =
+        objects.entries.sortedBy { it.key }.filter { it.value.getComponent<NetworkIdentity>()?.ownerClientId == clientId }.map { it.value }
+
+    /**
+     * Applies at most one queued input per connected client: calls [handler] with the client id and the game-defined
+     * payload. Clients without a queued input this tick are skipped. Call between [poll] and [tick].
+     */
+    fun processInputs(handler: (clientId: Int, payload: ByteArray) -> Unit) {
+        for (slot in slots.values.sortedBy { it.clientId }) {
+            if (!slot.ready) continue
+            val cmd = slot.inputs.take() ?: continue
+            handler(slot.clientId, cmd.payload)
+        }
+    }
+
+    /** Last input sequence applied for [clientId], or 0. */
+    fun lastProcessedInput(clientId: Int): Int = slotOf(clientId)?.inputs?.lastProcessedSeq ?: 0
+
+    /** Server tick [clientId] was rendering when it sent the input applied last, clamped to the lag compensation window. */
+    fun viewTickOf(clientId: Int): Double {
+        val view = slotOf(clientId)?.inputs?.viewTick ?: return currentTick.toDouble()
+        return view.coerceIn(stateHistory.oldestTick.toDouble(), currentTick.toDouble())
+    }
+
+    /**
+     * Lag compensation: runs [block] with every object not owned by [clientId] moved back to where that client saw
+     * it ([viewTickOf]); Transforms are restored exactly afterwards. Use for hit tests on that client's input.
+     */
+    fun <T> rewound(clientId: Int, block: () -> T): T = rewinder.rewound(objects, stateHistory, viewTickOf(clientId),
+        skip = { _, go -> go.getComponent<NetworkIdentity>()?.ownerClientId == clientId }, block = block)
+
+    private fun slotOf(clientId: Int): Slot? = slots.values.firstOrNull { it.clientId == clientId }
+
     /** Advances one fixed step and sends snapshots when due. */
     fun tick() {
         currentTick++
-        if (currentTick % config.snapshotIntervalTicks != 0) return
+        val record = config.lagCompensationMs > 0
+        val snapshot = currentTick % config.snapshotIntervalTicks == 0
+        if (!record && !snapshot) return
         val states = objects.keys.sorted().associateWith { schema.capture(objects.getValue(it)) }
+        if (record) stateHistory.record(currentTick, states)
+        if (!snapshot) return
         for (slot in slots.values) if (slot.ready) sendSnapshot(slot, states)
     }
 
@@ -102,6 +144,7 @@ class ReplicationServer(
             w.writeByte(MessageType.SNAPSHOT)
             w.writeVarInt(currentTick)
             w.writeVarInt(baseline?.first ?: 0)
+            w.writeVarInt(slot.inputs.lastProcessedSeq)
             w.writeByte(i); w.writeByte(parts.size)
             w.writeVarInt(objs.size)
             objs.forEach { SnapshotCodec.writeObject(w, it) }
@@ -127,10 +170,7 @@ class ReplicationServer(
             when (r.readByte()) {
                 MessageType.HELLO -> onHello(slot, r)
                 MessageType.SNAPSHOT_ACK -> if (slot.ready) slot.lastAckedTick = maxOf(slot.lastAckedTick, r.readVarInt())
-                MessageType.INPUT -> if (slot.ready) {
-                    val tick = r.readVarInt()
-                    onInput(slot.clientId, tick, r.readBytes(r.remaining))
-                }
+                MessageType.INPUT -> if (slot.ready) slot.inputs.receive(InputCodec.read(r))
             }
         } catch (_: IllegalArgumentException) {
             // malformed message from a client: ignore

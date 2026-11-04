@@ -52,7 +52,7 @@ Reliability/packet header: protocol id/version, sequence, ack + ack bitfield (32
 - Server validates sender (owner check, rate limit, argument bounds); invalid ⇒ dropped + counted, repeated ⇒ kick.
 - Scripts (SCR) get the same through the language-agnostic script API later (reported as `NEEDS SCR` when NET-02 is done).
 
-## 7. Prediction & lag compensation (NET-03, design only)
+## 7. Prediction & lag compensation (NET-03, implemented: see §15)
 
 - Client keeps a ring of (tick, input, predicted state). On each snapshot containing the local object, compare at the acked tick; if error > threshold, snap/ smooth-correct and replay remaining inputs. Requires a deterministic-enough player step function (`PlayerController` fixed step with no Bullet dependency or with kinematic character controller) → **NEEDS GPL/PHY** later.
 - Lag compensation for hit queries: server keeps 250 ms history of collider transforms per netId and rewinds for the query. Not in v1 MVP.
@@ -99,3 +99,12 @@ Unit only, no sockets: codec round-trips and golden bytes, delta encode/decode a
 - `PeerTransport` is a `DatagramTransport`, so the handshake, reliability layer and timeouts are the same as over UDP. Its address is the host's peer id as a decimal string; the port is ignored. `DatagramTransport` now caps datagrams at `maxDatagramSize` (default 1200, kind byte included) and releases platform sessions through `onRemoteDropped`.
 - `PlatformServices.peerNetwork` is null for `NoOpPlatformServices`.
 - `LobbySession` (net) picks the transport and address. With Steam, the host creates a lobby and publishes `skate_host_peer` and `skate_protocol`; a client joins, checks the protocol and connects to the host peer. Without Steam, `host` returns a UDP transport on a port at once, `joinDirect(ip, port)` connects by IP and `join(lobbyId)` fails.
+
+## 15. NET-03 implementation notes (prediction and lag compensation)
+
+- **Inputs.** `ReplicationClient.sendInput(payload)` is called once per client fixed step (`NetClientInputSystem`). It numbers the input (`seq`) and sends the newest `NetConfig.inputRedundancy` (3) unacknowledged inputs, plus the client's view tick (×16), on the sequenced channel. Payloads are at most 200 B. The server's `ServerInputQueue` drops duplicates and keeps order. `processInputs(handler)` applies at most one input per client per tick, between `poll` and `tick`. When more than 8 inputs are queued, the oldest are skipped and counted as processed.
+- **Ack.** Every snapshot part carries `lastProcessedSeq` for its client (protocol version 2).
+- **Prediction.** `ReplicationClient(prediction = step)` predicts the object the server spawned with `ownerClientId == clientId`; every other object is still interpolated. `ClientPredictor.predict` runs the `PredictionStep` at once. `reconcile(ack, state)` drops acknowledged inputs, resets to the server state and replays the rest. The position difference between the old and new prediction becomes a visual offset that decays over `smoothingTimeS` (0.1 s), or is dropped above `snapDistance` (2 m). Simulation state stays quantized, so sub-cm rounding corrections are normal. Only differences above `VISIBLE_ERROR` (1 cm) count as mispredictions.
+- **Step determinism.** The step must only read replicated state (put velocity and similar into `NetState` or a custom replicator) and must not depend on Bullet. Wiring the skater needs a kinematic step from GPL/PHY.
+- **Lag compensation.** The server records every tick's states in `StateHistory` (`lagCompensationMs` = 250 ms). `rewound(clientId) { ... }` moves every object not owned by that client to the client's view tick (blended, clamped to the window). It runs the block and then restores the Transforms bit-exact. Only Transforms are rewound, and physics colliders are not synced, so hit tests inside the block must read Transforms.
+- **NET-02 fix.** Several sequenced messages in one packet (for example a snapshot ack and an input) were all dropped except the first; now all are delivered.
