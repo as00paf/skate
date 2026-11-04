@@ -2,6 +2,7 @@ package com.pafoid.skate.editor.ui.windows
 
 import com.pafoid.skate.editor.imgui.EditorWindow
 import com.pafoid.skate.editor.imgui.MImGui
+import com.pafoid.skate.editor.systems.ProjectManager
 import com.pafoid.skate.engine.addComponent
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.ecs.components.AudioComponent
@@ -10,14 +11,16 @@ import com.pafoid.skate.engine.removeComponent
 import imgui.ImGui
 import imgui.type.ImString
 
-class AudioInspectorWindow(engine: Engine) : EditorWindow("window.audio_inspector") {
+class AudioInspectorWindow(engine: Engine, projectManager: ProjectManager) : EditorWindow("window.audio_inspector") {
 
     private val stringManager = engine.stringManager
     private val sceneManager = engine.sceneManager
+    private val mixerPanel = AudioMixerPanel(stringManager, engine.eventSystem, projectManager)
 
     override fun imgui() {
         ImGui.begin(stringManager.getString("window.audio_inspector"))
         renderAudioComponentInspector()
+        if (ImGui.collapsingHeader(stringManager.getString("lbl.audio.mixer"))) mixerPanel.render()
         ImGui.end()
     }
 

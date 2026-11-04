@@ -83,11 +83,11 @@ The renderer works but needs cleaner APIs, caching, dynamic shaders, better mate
   - Do: Data-driven `Material` (shader ref + typed parameter block + texture slots). Support PBR metallic/roughness as the default and serialize materials as assets.
   - Done when: Models render through materials instead of hardcoded uniforms, materials can be edited and saved, and parameter binding has unit tests.
   - Deps: REN-02
-- [~] @skate-render **REN-05** `P1` Dynamic shaders and shader variants
+- [x] **REN-05** `P1` Dynamic shaders and shader variants
   - Do: Add shader `#include` and `#define` permutations (skinned, shadowed, fog, etc.) to `ShaderLoader`, compile variants on demand and cache them, and hot-reload shaders in editor builds.
   - Done when: Editing a `.glsl` file under `resources/shaders` updates the running editor, and variant keys plus preprocessor output are unit-tested.
   - Deps: REN-02
-- [~] @skate-render **REN-06** `P2` REWRITE Lighting
+- [x] **REN-06** `P2` REWRITE Lighting
   - Do: Replace `LightingUniformsLoader` with a light buffer (UBO/SSBO) supporting N point/spot/directional lights. Add light culling per object (forward+) or a clustered approach.
   - Done when: The scene supports at least 64 dynamic lights without shader changes, and light culling math is unit-tested.
   - Deps: REN-04
@@ -95,7 +95,7 @@ The renderer works but needs cleaner APIs, caching, dynamic shaders, better mate
   - Do: Cascaded shadow maps for directional lights, spot/point shadow maps and PCF filtering, with quality driven by `ShadowQuality`.
   - Done when: There is no shadow acne or peter-panning on the sample scene, every `ShadowQuality` level works, and cascade split math is unit-tested.
   - Deps: REN-06
-- [ ] **REN-08** `P2` Post-processing stack
+- [x] **REN-08** `P2` Post-processing stack
   - Do: HDR render target, tonemapping (ACES), gamma, bloom, FXAA and SSAO as render-graph passes that can be toggled per camera/environment.
   - Done when: Effects can be toggled at runtime and from the editor. Pass ordering and enable/disable have unit tests.
   - Deps: REN-03
@@ -126,7 +126,7 @@ The renderer works but needs cleaner APIs, caching, dynamic shaders, better mate
 - [x] **REN-15** `P1` `GpuResource : AutoCloseable`
   - Do: Introduce a `GpuResource : AutoCloseable` base (id, idempotent `close()`) for textures, buffers, VAOs, FBOs; make `CubeMap`, `DebugRenderer`, `PickingRenderer` own and free theirs (QA-04 findings).
   - Done when: No GL object is created without an owner that deletes it; tests with mocked GL.
-- [ ] **REN-16** `P2` Review SDF font branch of `shader_2d_batch.glsl`
+- [x] **REN-16** `P2` Review SDF font branch of `shader_2d_batch.glsl`
   - Do: Review the SDF branch added by GUI-04 for correctness, batching and edge/outline quality.
   - Done when: Findings fixed or documented; test or screenshot check recorded.
   - Deps: GUI-04
@@ -154,7 +154,7 @@ Asset management works but needs a complete review.
   - Do: Watch the file system (reuse `FileSystemScanner`) and reload changed textures, models and sounds in place.
   - Done when: Editing a texture on disk updates the editor viewport.
   - Deps: AST-03
-- [~] @skate-assets **AST-06** `P2` Export and asset packing improvements
+- [x] **AST-06** `P2` Export and asset packing improvements
   - Do: Rework `AssetsPacker` and `ProjectExporter`: pack only referenced assets, compress, write a manifest and checksums, and produce a runnable `gameJar`.
   - Done when: An exported sample project runs standalone, and packing and manifest generation have unit tests.
   - Deps: AST-02
@@ -466,7 +466,7 @@ All editor mutations must go through `Command` classes and the service layer (se
 - [x] **EDT-03** `P1` Modernize gizmos
   - Do: Rework the translate/rotate/scale gizmos (`editor/gizmos`): screen-space constant size, plane handles, local/world toggle, snapping, multi-selection pivot, hover highlight and correct picking.
   - Done when: All gizmos work under any camera angle, and gizmo math has unit tests.
-- [ ] **EDT-04** `P1` Visual representation of cameras and lights
+- [x] **EDT-04** `P1` Visual representation of cameras and lights
   - Do: Billboard icons plus wire gizmos (camera frustum, light range/cone, direction arrow), all selectable.
   - Done when: Every camera and light is visible and clickable in the scene view.
   - Deps: EDT-03
