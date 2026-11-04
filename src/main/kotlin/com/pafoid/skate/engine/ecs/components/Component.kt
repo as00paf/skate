@@ -96,6 +96,7 @@ abstract class Component {
                 is RigidBody3D -> RIGID_BODY_3D
                 is ReverbZone -> ComponentType.REVERB_ZONE
                 is RagdollComponent -> RAGDOLL
+                is VehicleComponent -> ComponentType.VEHICLE
                 is ScenePhysicsComponent -> SCENE_PHYSICS
                 is ScriptComponent -> ComponentType.SCRIPT
                 is SkeletonComponent -> SKELETON

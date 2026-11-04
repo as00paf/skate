@@ -6,6 +6,8 @@ import com.pafoid.skate.engine.ecs.components.JointComponent
 import com.pafoid.skate.engine.ecs.components.PlayerController
 import com.pafoid.skate.engine.ecs.components.RagdollComponent
 import com.pafoid.skate.engine.ecs.components.RagdollState
+import com.pafoid.skate.engine.ecs.components.VehicleComponent
+import com.pafoid.skate.engine.physics3d.RaycastVehicleSolver
 import com.pafoid.skate.engine.gameplay.MotionMath
 import com.pafoid.skate.engine.gameplay.ground.GroundDetector
 import com.pafoid.skate.engine.gameplay.ik.FootPlacement
@@ -39,6 +41,8 @@ class PhysicsSystem(
     private val bodies = query(RigidBody3D::class, topLevelOnly = true, includeDisabled = true)
     private val activeJoints = mutableMapOf<JointComponent, IPhysicsConstraint>()
     private val ragdolls = query(RagdollComponent::class, topLevelOnly = true, includeDisabled = true)
+    private val vehicles = query(VehicleComponent::class, RigidBody3D::class, topLevelOnly = true)
+    private val vehicleSolver = RaycastVehicleSolver(physics3d)
     private val activeRagdolls = HashSet<RagdollComponent>()
 
     init {
@@ -131,6 +135,11 @@ class PhysicsSystem(
 
     override fun fixedUpdate(fixedDt: Float) {
         if (!scene.isRunning) return
+        vehicles.forEach { go ->
+            val vehicle = go.getComponent<VehicleComponent>() ?: return@forEach
+            val body = go.getComponent<RigidBody3D>() ?: return@forEach
+            vehicleSolver.step(vehicle, body, fixedDt)
+        }
         physics3d.step(fixedDt)
 
         scene.getComponent<ScenePhysicsComponent>()?.let { component ->

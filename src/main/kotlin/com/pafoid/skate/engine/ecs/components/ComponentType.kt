@@ -39,7 +39,8 @@ enum class ComponentType {
     UI_LIST,
     UI_PROGRESS_BAR,
     UI_SLIDER,
-    UI_TEXT;
+    UI_TEXT,
+    VEHICLE;
 
     fun instantiate(): Component? {
         return when (this) {
@@ -66,6 +67,7 @@ enum class ComponentType {
             RIGID_BODY_3D -> RigidBody3D()
             REVERB_ZONE -> ReverbZone()
             RAGDOLL -> RagdollComponent()
+            VEHICLE -> VehicleComponent()
             SCENE_PHYSICS -> ScenePhysicsComponent()
             SCRIPT -> ScriptComponent()
             SKELETON -> null

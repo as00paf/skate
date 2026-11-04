@@ -27,6 +27,7 @@ import com.pafoid.skate.engine.ecs.components.PointLightComponent
 import com.pafoid.skate.engine.ecs.components.JointComponent
 import com.pafoid.skate.engine.ecs.components.ScriptComponent
 import com.pafoid.skate.engine.ecs.components.RagdollComponent
+import com.pafoid.skate.engine.ecs.components.VehicleComponent
 import com.pafoid.skate.engine.ecs.components.RenderComponent
 import com.pafoid.skate.engine.ecs.components.RigidBody3D
 import com.pafoid.skate.engine.ecs.components.SceneComponent
@@ -61,6 +62,7 @@ fun GameObject.getComponent(type: ComponentType) =
         ComponentType.NON_PICKABLE -> getComponent<NonPickable>()
         ComponentType.PLAYER_CONTROLLER -> getComponent<PlayerController>()
         ComponentType.RAGDOLL -> getComponent<RagdollComponent>()
+        ComponentType.VEHICLE -> getComponent<VehicleComponent>()
         ComponentType.RENDER -> getComponent<RenderComponent>()
         ComponentType.RIGID_BODY_3D -> getComponent<RigidBody3D>()
         ComponentType.REVERB_ZONE -> getComponent<ReverbZone>()
