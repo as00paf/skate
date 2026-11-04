@@ -246,6 +246,10 @@ Physics needs overall improvements, a swappable physics engine, and a joint comp
   - Do: `VehicleComponent` (+ `WheelConfig`) on a `RigidBody3D` chassis, solved by a backend-agnostic `RaycastVehicleSolver` (raycast suspension, engine/brake, lateral grip) from `PhysicsSystem.fixedUpdate`; see `docs/design/PHY-09.md`.
   - Done when: Suspension, drive and grip are unit-tested and the component is serializable.
   - Deps: PHY-02, PHY-06
+- [~] @skate-physics **PHY-10** `P0` Fix physics debug view not drawing collider boxes
+  - Do: Human-reported on PR #12: the physics debug toggle no longer draws rigid body colliders in the editor. Find the root cause (round 10 or earlier render changes) and fix it.
+  - Done when: Collider boxes draw again with debug on in editor and play; regression test.
+  - Deps: PHY-09
 
 ### Animation — `ANI` (`skate-animation`)
 
@@ -411,6 +415,10 @@ In-game UI components need to be added (separate from the ImGui editor).
   - Do: SDF font rendering, plus localized strings and plurals via `StringManager`.
   - Done when: Text stays crisp at all sizes, and switching locale updates the UI.
   - Deps: GUI-02
+- [~] @skate-gameui **GUI-05** `P0` UI components added by hand do not show
+  - Do: Human-reported on PR #12: adding `UICanvasComponent`/`UIButtonComponent` to an empty GameObject via Add Component shows nothing in the editor or in game. Make that path work (auto-add required components or show a clear hint) and keep the create-UI menu path working.
+  - Done when: A hand-built canvas + button renders in editor and game, is editable with the rect gizmo and survives save/reload; tests; `docs/testing/GUI-03.md` updated.
+  - Deps: GUI-03
 
 ### Scripting — `SCR` (`skate-scripting`)
 
