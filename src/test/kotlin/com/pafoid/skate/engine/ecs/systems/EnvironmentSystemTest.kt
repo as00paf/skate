@@ -222,4 +222,34 @@ class EnvironmentSystemTest {
         assertEquals(true, component.renderFog)
         assertEquals(com.pafoid.skate.engine.ecs.config.FogMode.LINEAR, component.fogMode)
     }
+
+    @Test
+    fun `system applyPreset reaches the scene component`() {
+        val system = EnvironmentSystem()
+        val scene = createTestScene()
+        val component = EnvironmentComponent()
+        scene.addComponent(component)
+        system.init(scene)
+
+        system.applyPreset(EnvironmentPreset.FOGGY)
+
+        assertEquals(0.04f, component.fogDensity, 0.001f)
+    }
+
+    @Test
+    fun `fog cycle button acts on the current component after it is replaced`() {
+        val system = EnvironmentSystem()
+        val scene = createTestScene()
+        scene.addComponent(EnvironmentComponent(renderFog = false, fogCycleButton = "FogToggle"))
+        val button = com.pafoid.skate.engine.ui.UIButtonComponent("showcase.fog_toggle")
+        scene.addChild(com.pafoid.skate.engine.ecs.GameObject("FogToggle").addComponent(button))
+        system.init(scene)
+        system.update(0f)
+
+        val replacement = EnvironmentComponent(renderFog = false, fogCycleButton = "FogToggle")
+        scene.addComponent(replacement)
+        button.onClick!!.invoke()
+
+        assertTrue(replacement.renderFog)
+    }
 }

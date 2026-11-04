@@ -67,6 +67,7 @@ open class GameObject(
             child.parent = this
             child.linkChildren()
         }
+        EcsChanges.touch()
     }
 
     /** Reports (see [MainThread]) a scene mutation attempted off the main thread while attached to a [Scene]. */
