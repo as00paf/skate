@@ -12,11 +12,13 @@ abstract class DatagramTransport(
     private val timeoutMs: Long = 10_000,
     private val connectRetryMs: Long = 200,
     private val connectTimeoutMs: Long = 5_000,
+    /** Largest datagram [sendRaw] may emit (1 byte kind + reliability packet). */
+    private val maxDatagramSize: Int = 1200,
 ) : Transport {
     protected class Datagram(val remote: Any, val data: ByteArray)
 
     private inner class Conn(val remote: Any, override val id: ConnectionId) : Connection {
-        val layer = ReliabilityLayer()
+        val layer = ReliabilityLayer(maxPacketSize = maxDatagramSize - 1)
         var lastReceiveMs = 0L
         var closed = false
         var closeReason: String? = null
@@ -46,6 +48,9 @@ abstract class DatagramTransport(
     protected abstract fun sendRaw(remote: Any, data: ByteArray)
     protected abstract fun drain(): List<Datagram>
     protected abstract fun closeSocket()
+
+    /** Called after a connection to [remote] is removed (any reason). */
+    protected open fun onRemoteDropped(remote: Any) {}
 
     override fun listen(port: Int) {
         serverMode = true
@@ -95,6 +100,7 @@ abstract class DatagramTransport(
         if (connections.remove(c.remote) == null) return
         if (notifyPeer) sendRaw(c.remote, byteArrayOf(DISCONNECT.toByte()))
         listener.onDisconnected(c, reason)
+        onRemoteDropped(c.remote)
     }
 
     private fun handle(d: Datagram, listener: TransportListener, nowMs: Long) {
@@ -146,8 +152,10 @@ abstract class DatagramTransport(
         Conn(remote, ConnectionId(nextId++)).also { it.lastReceiveMs = nowMs; connections[remote] = it }
 
     override fun close() {
-        connections.values.toList().forEach { sendRaw(it.remote, byteArrayOf(DISCONNECT.toByte())) }
+        val remotes = connections.keys.toList()
+        remotes.forEach { sendRaw(it, byteArrayOf(DISCONNECT.toByte())) }
         connections.clear()
+        remotes.forEach { onRemoteDropped(it) }
         pendingRemote = null
         closeSocket()
     }
