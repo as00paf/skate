@@ -26,7 +26,7 @@ interface Connection { val id: ConnectionId; fun send(channel: Channel, payload:
 enum class Channel { RELIABLE_ORDERED, UNRELIABLE_SEQUENCED, UNRELIABLE }
 ```
 
-**Decision (approved): Netty, UDP** (`netty-transport` NIO datagram channel, `io.netty:netty-transport`, `netty-buffer`). Netty owns socket IO/threads only; the reliability layer (sequence, ack + 32-bit ack bitfield, reliable-ordered resend, fragmentation) is ours on top of `DatagramPacket`, since Netty provides none for UDP. Netty event-loop threads only enqueue received datagrams; `Transport.poll` is called from the ECS PreUpdate phase so game state is touched on one thread. Netty is confined to `UdpTransport`; `InMemoryTransport` (loopback, listen server, tests) and the later `SteamTransport` (NET-05) implement the same `Transport` interface. Rejected: KryoNet (unmaintained, reflective serialization), own `DatagramChannel` layer.
+**Decision (approved): Netty, UDP** (`netty-transport` NIO datagram channel, `io.netty:netty-transport`, `netty-buffer`). Netty owns socket IO/threads only; the reliability layer (sequence, ack + 32-bit ack bitfield, reliable-ordered resend, fragmentation) is ours on top of `DatagramPacket`, since Netty provides none for UDP. Netty event-loop threads only enqueue received datagrams; `Transport.poll` is called from the ECS PreUpdate phase so game state is touched on one thread. Netty is confined to `UdpTransport`; `InMemoryTransport` (loopback, listen server, tests) and `PeerTransport` over Steam P2P (NET-05, see §14) implement the same `Transport` interface. Rejected: KryoNet (unmaintained, reflective serialization), own `DatagramChannel` layer.
 
 Reliability/packet header: protocol id/version, sequence, ack + ack bitfield (32). Connection handshake: `Hello(protocolVersion, buildHash, name)` → `Welcome(clientId, tick, tickRate)` / `Reject(reason)`; challenge token to prevent spoofed-source floods. MTU budget 1200 bytes; fragmentation only for reliable channel (scene/state bootstrap).
 
@@ -92,3 +92,10 @@ Unit only, no sockets: codec round-trips and golden bytes, delta encode/decode a
 - Delta compression is generic: a state is a flat `IntArray` of quantized fields (`ReplicationSchema`); a per-object `Long` mask plus zig-zag varint deltas against the last client-acked snapshot.
 - Client render time is `estimatedServerTick - 100 ms`, bounded to the buffered range (hold, no extrapolation yet).
 - Not in NET-02: RPCs, connect challenge/anti-spoof token, relevancy filtering, velocity replication. Listen server = host runs `ReplicationServer` on its own scene; other clients connect over UDP (or `InMemoryNetwork` in-process).
+
+## 14. NET-05 implementation notes (Steam transport and lobbies)
+
+- steamworks4j 1.9.0 exposes only the legacy `ISteamNetworking` P2P API (no `ISteamNetworkingSockets`). `SteamPeerNetwork` (platform) wraps it as a `PeerNetwork` (net): unreliable datagrams on channel 0, at most 1200 bytes, relay allowed. Incoming sessions are accepted only from members of the current lobby.
+- `PeerTransport` is a `DatagramTransport`, so the handshake, reliability layer and timeouts are the same as over UDP. Its address is the host's peer id as a decimal string; the port is ignored. `DatagramTransport` now caps datagrams at `maxDatagramSize` (default 1200, kind byte included) and releases platform sessions through `onRemoteDropped`.
+- `PlatformServices.peerNetwork` is null for `NoOpPlatformServices`.
+- `LobbySession` (net) picks the transport and address. With Steam, the host creates a lobby and publishes `skate_host_peer` and `skate_protocol`; a client joins, checks the protocol and connects to the host peer. Without Steam, `host` returns a UDP transport on a port at once, `joinDirect(ip, port)` connects by IP and `join(lobbyId)` fails.
