@@ -10,9 +10,11 @@ import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.physics3d.BodyType
 import org.joml.Vector3f
 
+/** Orientation: the deck is +Y up and the long axis is Z with the nose toward +Z, the same as a character at yaw 0. */
 class Skateboard(
     model: `3dModel`,
-    position: Vector3f = Vector3f(0f, 1f, 0f),
+    /** Default: resting on the ground one meter ahead of a default Skater (which faces +Z). */
+    position: Vector3f = Vector3f(0f, 0.06f, 1f),
     scale: Vector3f = Vector3f(MODEL_SCALE, MODEL_SCALE, MODEL_SCALE),
     mass: Float = 1.8f,// 1.8kg mass
     /** Collider half extents in world meters (x = width, y = height, z = length). */

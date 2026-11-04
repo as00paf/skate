@@ -33,4 +33,20 @@ class PrefabGeometryTest {
         // Unit cube spans y in [-1, 1].
         assertEquals(0f, t.translation.y + t.scale.y, 1e-4f)
     }
+
+    @Test
+    fun Prefab_SkaterFacesBoardNoseAndBoardIsAheadOnGround() {
+        val model = `3dModel`(skeleton = com.pafoid.skate.engine.assets.data.models.animations.Skeleton(com.pafoid.skate.engine.assets.data.models.animations.Bone(0, "root"), 1))
+        val skater = Skater("Skater", model)
+        val board = Skateboard(`3dModel`())
+        val yaw = Math.toRadians(skater.transform.rotation.y.toDouble()).toFloat()
+        val forward = com.pafoid.skate.engine.gameplay.MotionMath.directionOfYaw(yaw)
+        val toBoard = org.joml.Vector3f(board.getComponent<Transform>()!!.translation).sub(skater.transform.translation).apply { y = 0f }.normalize()
+
+        // Skater yaw 0 faces +Z (the board's nose) and the board lies ahead of it, long axis along the facing.
+        assertEquals(1f, forward.dot(toBoard), 1e-4f)
+        assertEquals(0f, board.getComponent<Transform>()!!.rotation.y, 0f)
+        val box = board.getComponent<BoxCollider3D>()!!
+        assertEquals(board.getComponent<Transform>()!!.translation.y, box.halfExtents.y + 0.01f, 0.02f)
+    }
 }
