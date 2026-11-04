@@ -1,5 +1,6 @@
 package com.pafoid.skate.engine.gameplay
 
+import com.pafoid.skate.engine.animation.graph.AnimParameters
 import com.pafoid.skate.engine.gameplay.ground.GroundConfig
 import org.joml.Vector2f
 import org.joml.Vector3f
@@ -21,6 +22,10 @@ data class CharacterInput(
     val grounded: Boolean = true,
     /** Horizontal speed of the body in m/s. */
     val horizontalSpeed: Float = 0f,
+    /** Vertical speed of the body in m/s, + up. */
+    val verticalSpeed: Float = 0f,
+    /** [GameObject.tag] of the surface under the feet (rails, ledges...), null when none or untagged. */
+    val groundTag: String? = null,
     /** Heading of the horizontal velocity in radians, NaN when (almost) standing still. */
     val velocityYaw: Float = Float.NaN,
     /** Current heading around Y in radians (0 = +Z). */
@@ -54,6 +59,12 @@ interface CharacterBehavior {
     val ground: GroundConfig get() = GroundConfig()
 
     fun update(input: CharacterInput, dt: Float): CharacterMotion
+
+    /** Fade time in seconds into each animation request / controller state (see [CharacterMotion.animation]). */
+    val animationBlendTimes: Map<String, Float> get() = emptyMap()
+
+    /** Writes per-frame values (speed, air time...) to the animation controller's parameters, after [update]. */
+    fun writeAnimationParameters(parameters: AnimParameters) {}
 }
 
 /** Registry of behaviors by id so engine components can reference game-specific logic by name. */

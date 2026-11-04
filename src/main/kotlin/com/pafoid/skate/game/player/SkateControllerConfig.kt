@@ -30,6 +30,20 @@ data class SkateControllerConfig(
         "MANUAL" to "manual",
         "BAIL" to "bail",
     ),
+    /**
+     * Fade time in seconds into each controller state (request names above, plus the controller-only `land`). It
+     * replaces the controller's own transition durations; states not listed keep them.
+     */
+    val blendTimes: Map<String, Float> = mapOf(
+        "ride_idle" to 0.2f,
+        "push" to 0.2f,
+        "ride" to 0.2f,
+        "ollie" to 0.05f,
+        "land" to 0.05f,
+        "grind" to 0.15f,
+        "manual" to 0.2f,
+        "bail" to 0.1f,
+    ),
 )
 
 @Serializable
@@ -82,13 +96,16 @@ data class RideTuning(
 
 @Serializable
 data class AirTuning(
-    val ollieImpulse: Float = 300f,
+    /** Upward impulse (N·s) of an ollie; with the 180 kg skater about 0.76 m, enough to get onto a 0.5 m ledge at ride height. */
+    val ollieImpulse: Float = 700f,
     /** Seconds after leaving the ground before landing can be detected. */
     val minAirTime: Float = 0.15f,
     val coyoteTime: Float = 0.1f,
     val airTurnRate: Float = 1.5f,
     /** Landing heading error in degrees (facing vs travel direction) above which the skater bails. */
     val landingToleranceDeg: Float = 60f,
+    /** Touchdown fall speed in m/s at or above which the skater bails (about a 3.7 m drop at 8.5 m/s). */
+    val bailImpactSpeed: Float = 8.5f,
 )
 
 @Serializable

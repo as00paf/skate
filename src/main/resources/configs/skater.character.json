@@ -61,11 +61,12 @@
         "fastSpeed": 10.0
     },
     "air": {
-        "ollieImpulse": 300.0,
+        "ollieImpulse": 700.0,
         "minAirTime": 0.15,
         "coyoteTime": 0.1,
         "airTurnRate": 1.5,
-        "landingToleranceDeg": 60.0
+        "landingToleranceDeg": 60.0,
+        "bailImpactSpeed": 8.5
     },
     "grind": {
         "minEntrySpeed": 2.0,
@@ -90,5 +91,15 @@
         "GRIND": "grind",
         "MANUAL": "manual",
         "BAIL": "bail"
+    },
+    "blendTimes": {
+        "ride_idle": 0.2,
+        "push": 0.2,
+        "ride": 0.2,
+        "ollie": 0.05,
+        "land": 0.05,
+        "grind": 0.15,
+        "manual": 0.2,
+        "bail": 0.1
     }
 }

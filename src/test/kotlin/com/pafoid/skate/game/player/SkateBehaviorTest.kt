@@ -1,9 +1,11 @@
 package com.pafoid.skate.game.player
 
+import com.pafoid.skate.engine.assets.PrefabsGenerator
 import com.pafoid.skate.engine.gameplay.CharacterBehaviors
 import com.pafoid.skate.engine.gameplay.CharacterConfigs
 import com.pafoid.skate.engine.gameplay.CharacterInput
 import com.pafoid.skate.engine.gameplay.LocomotionBehavior
+import com.pafoid.skate.engine.getComponent
 import com.pafoid.skate.game.prefabs.Skater
 import org.joml.Vector2f
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -25,9 +27,12 @@ class SkateBehaviorTest {
         manual: Boolean = false,
         stick: Vector2f = Vector2f(),
         velocityYaw: Float = Float.NaN,
+        vertical: Float = 0f,
+        rail: Boolean = false,
     ) = CharacterInput(
         move = stick, sprint = push, jumpPressed = jump, crouch = manual,
         grounded = grounded, horizontalSpeed = speed, velocityYaw = velocityYaw,
+        verticalSpeed = vertical, groundTag = if (rail) PrefabsGenerator.GRINDABLE_TAG else null,
     )
 
     private fun SkateBehavior.step(i: CharacterInput, time: Float = dt) = update(i, time).state
@@ -101,23 +106,21 @@ class SkateBehaviorTest {
     }
 
     @Test
-    fun Skate_GrindNeedsSensorAndSpeedAndEndsOnJump() {
+    fun Skate_GrindNeedsAGrindableSurfaceAndSpeedAndEndsOnJump() {
         val b = mounted()
         b.step(input(speed = 3f))
         assertEquals("RIDE", b.step(input(speed = 3f)))
-        b.grindSensor = { true }
-        assertEquals("RIDE", b.step(input(speed = 1f)))
-        assertEquals("GRIND", b.step(input(speed = 3f)))
-        assertEquals("AIR", b.step(input(speed = 3f, jump = true)))
+        assertEquals("RIDE", b.step(input(speed = 1f, rail = true)))
+        assertEquals("GRIND", b.step(input(speed = 3f, rail = true)))
+        assertEquals("AIR", b.step(input(speed = 3f, rail = true, jump = true)))
     }
 
     @Test
     fun Skate_GrindBailsWhenTooSlow() {
         val b = mounted()
         b.step(input(speed = 3f))
-        b.grindSensor = { true }
-        b.step(input(speed = 3f))
-        assertEquals("BAIL", b.step(input(speed = 0.2f)))
+        b.step(input(speed = 3f, rail = true))
+        assertEquals("BAIL", b.step(input(speed = 0.2f, rail = true)))
     }
 
     @Test
@@ -163,5 +166,70 @@ class SkateBehaviorTest {
         assertTrue(turn.targetYaw < 0f)
         val brake = b.update(input(speed = 3f, stick = Vector2f(0f, -1f)), 0.1f)
         assertTrue(brake.horizontalVelocity!!.length() < 3f - cfg.ride.rollingDrag * 0.1f)
+    }
+
+    @Test
+    fun Skate_UntaggedOrOtherSurfacesAreNotGrindable() {
+        val b = mounted()
+        b.step(input(speed = 3f))
+        assertEquals("RIDE", b.step(input(speed = 3f).copy(groundTag = "SpawnPoint")))
+    }
+
+    @Test
+    fun Skate_OllieOutOfAGrindDoesNotRelockWhileRising() {
+        val b = mounted()
+        b.step(input(speed = 3f))
+        b.step(input(speed = 3f, rail = true))
+        assertEquals("AIR", b.step(input(speed = 3f, rail = true, jump = true)))
+        // Still over the rail on the way up: stays airborne.
+        assertEquals("AIR", b.step(input(speed = 3f, grounded = false, rail = true, vertical = 3f)))
+        // Coming back down onto it: grinds again.
+        assertEquals("GRIND", b.step(input(speed = 3f, grounded = false, rail = true, vertical = -1f)))
+    }
+
+    @Test
+    fun Skate_HardLandingBailsAndSoftLandingRides() {
+        fun land(fall: Float): String {
+            val b = mounted()
+            b.step(input(speed = 3f))
+            b.step(input(speed = 3f, jump = true))
+            b.step(input(speed = 3f, grounded = false, vertical = -fall), cfg.air.minAirTime)
+            return b.step(input(speed = 3f, grounded = true, vertical = 0f))
+        }
+        assertEquals("RIDE", land(cfg.air.bailImpactSpeed - 1f))
+        assertEquals("BAIL", land(cfg.air.bailImpactSpeed + 1f))
+    }
+
+    @Test
+    fun Skate_WritesRidingValuesToTheAnimationController() {
+        val b = mounted()
+        val params = com.pafoid.skate.engine.animation.graph.AnimParameters()
+        b.step(input(speed = 3f))
+        b.step(input(speed = 3f, jump = true))
+        b.step(input(speed = 3f, grounded = false, vertical = -5f), cfg.air.minAirTime)
+        b.step(input(speed = 4f, grounded = true, stick = Vector2f(0.5f, 0f)))
+        b.writeAnimationParameters(params)
+
+        assertEquals(4f, params.getFloat("speed"))
+        assertEquals(5f, params.getFloat("landImpact"), 1e-5f)
+        assertEquals(0.5f, params.getFloat("turn"))
+        assertEquals(0f, params.getFloat("airTime"))
+        assertEquals(cfg.blendTimes, b.animationBlendTimes)
+    }
+
+    @Test
+    fun Skate_OllieClearsTheDefaultLedgeAtRideHeight() {
+        val model = com.pafoid.skate.engine.assets.data.models.`3dModel`(
+            skeleton = com.pafoid.skate.engine.assets.data.models.animations.Skeleton(
+                com.pafoid.skate.engine.assets.data.models.animations.Bone(0, "root"), 1,
+            ),
+        )
+        val mass = Skater("Skater", model).getComponent<com.pafoid.skate.engine.ecs.components.RigidBody3D>()!!.mass
+        val takeoff = cfg.air.ollieImpulse / mass
+        val height = takeoff * takeoff / (2f * 9.81f)
+        val ledgeTop = 0.5f
+
+        assertTrue(height > ledgeTop + cfg.mount.rideHeight + 0.1f, "ollie reaches only $height m")
+        assertTrue(takeoff < cfg.air.bailImpactSpeed, "landing an ollie on flat ground would bail")
     }
 }
