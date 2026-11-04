@@ -38,6 +38,8 @@
         "targetName": "Skateboard",
         "offsetY": -0.05,
         "rideHeight": 0.1,
+        "stanceOffsetX": 0.0,
+        "stanceOffsetZ": 0.0,
         "walkCamera": { "distance": 4.0, "height": 1.4 },
         "rideCamera": { "distance": 6.0, "height": 1.0 }
     },
@@ -81,12 +83,12 @@
         "drag": 4.0
     },
     "animations": {
-        "IDLE": "idle",
+        "IDLE": "idle_1",
         "PUSH": "walking",
-        "RIDE": "idle",
+        "RIDE": "idle_1",
         "AIR": "falling idle",
-        "GRIND": "idle",
-        "MANUAL": "idle",
+        "GRIND": "idle_1",
+        "MANUAL": "idle_1",
         "BAIL": "falling idle"
     }
 }
