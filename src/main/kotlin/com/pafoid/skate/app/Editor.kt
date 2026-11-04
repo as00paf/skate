@@ -11,7 +11,8 @@ import com.pafoid.skate.editor.systems.UndoRedoManager
 import com.pafoid.skate.editor.ui.handlers.EditorActionHandler
 import com.pafoid.skate.editor.ui.handlers.EditorEventHandler
 import com.pafoid.skate.editor.ui.handlers.EditorInputHandler
-import com.pafoid.skate.engine.assets.Assets.Strings.EDITOR_STRINGS_EN
+import com.pafoid.skate.engine.assets.Assets.Strings.EDITOR_STRINGS
+import com.pafoid.skate.engine.assets.Assets.Strings.GAME_STRINGS
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.core.Window
 import com.pafoid.skate.engine.input.PointerSource
@@ -63,7 +64,8 @@ class Editor(
 
         engine.jobSystem.runIO {
             settingsManager.loadSettings()
-            engine.stringManager.loadStrings(EDITOR_STRINGS_EN)
+            engine.stringManager.loadStrings(EDITOR_STRINGS)
+            engine.stringManager.addStrings(GAME_STRINGS) // runtime UI in the viewport (HUD, showcase)
             engine.stringManager.setLocale(settingsManager.editorSettings.language)
         }
 

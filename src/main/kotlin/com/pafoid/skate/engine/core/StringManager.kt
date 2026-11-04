@@ -21,30 +21,42 @@ class StringManager(
         localeListeners.add(listener)
     }
 
+    /**
+     * Loads the default strings from [path]: one table, or a directory of per-area tables merged together
+     * (see [StringTables]). Translations for the current locale are applied by [setLocale].
+     */
     fun loadStrings(path: String): Boolean {
         basePath = path
-        return loadFile(path)
+        return loadSource(path, null)
     }
 
-    /** Merges another strings file (e.g. the game's) into the loaded ones; it is reloaded per locale by [setLocale]. */
+    /** Merges another strings source (e.g. the game's tables) into the loaded ones; reloaded per locale by [setLocale]. */
     fun addStrings(path: String): Boolean {
         if (path !in extraPaths) extraPaths.add(path)
-        return loadFile(path)
+        return loadSource(path, null)
     }
 
-    private fun localized(path: String, locale: String): String {
-        val file = File(path)
-        return file.absolutePath.replace(".${file.extension}", "_$locale.${file.extension}")
+    /** Loads every table of [path]; with a [locale], only their existing translations. */
+    private fun loadSource(path: String, locale: String?): Boolean {
+        val tables = StringTables.baseTables(File(path))
+        if (tables.isEmpty()) {
+            logger.log("No string tables found at $path", LogLevel.ERROR, source = "editor")
+            return false
+        }
+        if (locale == null) {
+            StringTables.duplicateKeys(tables).forEach { (key, files) ->
+                logger.log("String key $key is defined in several tables: $files", LogLevel.WARN, source = "editor")
+            }
+            return tables.map { loadFile(it.path) }.all { it }
+        }
+        return tables.map { loadFile(StringTables.localized(it, locale).path, optional = true) }.any { it }
     }
 
     private fun loadFile(path: String, optional: Boolean = false): Boolean {
         currentPath = path
         if (optional && !File(path).exists()) return false
         try {
-            val inputFile = File(path)
-            inputFile.inputStream().use {
-                properties.load(it)
-            }
+            File(path).reader(Charsets.UTF_8).use { properties.load(it) }
         } catch (e: Exception) {
             logger.log(
                 "Failed to load strings for baseName $path and locale $currentLocale",
@@ -60,10 +72,10 @@ class StringManager(
             currentLocale = locale
             properties.clear() // Clear existing properties before reloading
             // Default strings first so keys missing from a translation fall back instead of showing !!key!!
-            if (basePath.isNotEmpty()) loadFile(basePath)
-            extraPaths.forEach { loadFile(it) }
-            val loaded = basePath.isNotEmpty() && loadFile(localized(basePath, locale), optional = true)
-            extraPaths.forEach { loadFile(localized(it, locale), optional = true) }
+            if (basePath.isNotEmpty()) loadSource(basePath, null)
+            extraPaths.forEach { loadSource(it, null) }
+            val loaded = basePath.isNotEmpty() && loadSource(basePath, locale)
+            extraPaths.forEach { loadSource(it, locale) }
             localeListeners.toList().forEach { it(locale) }
             return loaded
         }
