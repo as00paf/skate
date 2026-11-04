@@ -16,6 +16,7 @@ enum class ComponentType {
     DAY_NIGHT_CYCLE,
     DIRECTIONAL_LIGHT,
     ENVIRONMENT,
+    FOLLOW_CAMERA,
     GRID_LINES,
     INPUT_STATE,
     JOINT,
@@ -60,6 +61,7 @@ enum class ComponentType {
             DAY_NIGHT_CYCLE -> DayNightCycleComponent()
             DIRECTIONAL_LIGHT -> DirectionalLightComponent()
             ENVIRONMENT -> EnvironmentComponent()
+            FOLLOW_CAMERA -> FollowCameraComponent()
             GRID_LINES -> GridLines()
             INPUT_STATE -> InputStateComponent()
             JOINT -> JointComponent()

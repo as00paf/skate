@@ -20,7 +20,10 @@ import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.events.Collision
 import com.pafoid.skate.engine.events.TriggerEntered
 import com.pafoid.skate.engine.events.TriggerExited
+import com.pafoid.skate.engine.physics3d.ALL_LAYERS
+import com.pafoid.skate.engine.physics3d.ColliderShape
 import com.pafoid.skate.engine.physics3d.IPhysics3D
+import com.pafoid.skate.engine.physics3d.IPhysicsBody3D
 import com.pafoid.skate.engine.physics3d.IRigidBodyHandle
 import com.pafoid.skate.engine.physics3d.PhysicsContactListener
 import com.pafoid.skate.engine.physics3d.Physics3DFactory
@@ -390,6 +393,18 @@ class PhysicsSystem(
     }
 
     fun isDebugEnabled(): Boolean = scene.getComponent<ScenePhysicsComponent>()?.debugEnabled ?: physics3d.debugEnabled
+
+    /**
+     * Sweeps a sphere of [radius] from [from] to [to] against solid bodies (triggers ignored), skipping [exclude];
+     * returns the hit fraction (0..1) or null when clear. Used by camera spring arms.
+     */
+    fun sphereCast(from: Vector3f, to: Vector3f, radius: Float, exclude: IPhysicsBody3D? = null): Float? =
+        physics3d.shapeCast(ColliderShape.Capsule(radius, SPHERE_CAPSULE_HEIGHT, 1), from, to, ALL_LAYERS, exclude)?.fraction
+
+    private companion object {
+        /** A capsule this short is a sphere for every practical purpose (not every backend has a sphere shape). */
+        const val SPHERE_CAPSULE_HEIGHT = 1e-3f
+    }
 }
 
 /** Per-frame companion of [PhysicsSystem], which itself only runs in the fixed-update phase. */
