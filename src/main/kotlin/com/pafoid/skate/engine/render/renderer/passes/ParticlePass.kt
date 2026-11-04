@@ -1,5 +1,9 @@
 package com.pafoid.skate.engine.render.renderer.passes
 
+import com.pafoid.skate.engine.ecs.components.EnvironmentComponent
+import com.pafoid.skate.engine.render.fog.FogUniforms
+import com.pafoid.skate.engine.utils.ShaderConst.Uniforms
+import com.pafoid.skate.engine.getComponent
 import com.pafoid.skate.engine.assets.data.Shader
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.components.ParticleEmitter
@@ -72,6 +76,8 @@ class ParticlePass(
     private val color = Vector4f()
     private val uv = FloatArray(4)
 
+    private val cameraPosition = org.joml.Vector3f()
+
     override fun execute(scene: Scene) {
         val emitters = scene.getAllComponents<ParticleEmitter>()
             .filter { it.enabled && it.runtime.pool.count > 0 && it.gameObject?.isVisible == true }
@@ -86,6 +92,8 @@ class ParticlePass(
         shader.uploadMat4f("uProjection", camera.projection)
         shader.uploadMat4f("uView", camera.view)
         shader.uploadInt("uTexture", 0)
+        FogUniforms.upload(shader, scene.getComponent<EnvironmentComponent>()?.takeIf { it.enabled })
+        shader.uploadVec3f(Uniforms.CAMERA_POSITION, cameraManager.transform.worldMatrix.getTranslation(cameraPosition))
 
         withDepthTest(true) {
             withDepthMask(false) {
@@ -122,6 +130,7 @@ class ParticlePass(
         val tex = emitter.texturePath.takeIf { it.isNotBlank() }
             ?.let { path -> textureIds.getOrPut(path) { textureId(path) } } ?: 0
         shader.uploadInt("uHasTexture", if (tex > 0) 1 else 0)
+        shader.uploadInt("uAdditive", if (emitter.additive) 1 else 0)
         glActiveTexture(GL_TEXTURE0)
         glBindTexture(GL_TEXTURE_2D, tex)
 

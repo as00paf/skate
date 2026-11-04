@@ -37,10 +37,10 @@ uniform sampler2D u_hdriTexture; // Lat-Long HDRI map
 uniform vec3 u_skyTint;
 uniform float u_exposure;
 
-uniform vec3 uFogColor;
-uniform float uFogDensity;
-uniform float uFogGradient;
 uniform vec3 uCameraPos;
+uniform float uFogSkyDistance; // the camera far plane: the sky fogs like geometry at the far plane
+
+#include "fog.glsl"
 
 void main()
 {
@@ -54,6 +54,10 @@ void main()
     // This helps ground the scene and hide the sphere's edge.
     float horizonFactor = smoothstep(0.4, 0.55, fTexCoords.y);
     finalSkyColor = mix(uFogColor, finalSkyColor, horizonFactor);
+
+    // Scene fog (fog.glsl), evaluated at the far plane along this view ray
+    vec3 skyPoint = uCameraPos + normalize(fWorldPos - uCameraPos) * uFogSkyDistance;
+    finalSkyColor = applyFog(finalSkyColor, uCameraPos, skyPoint);
 
     color = vec4(finalSkyColor, 1.0);
 }
