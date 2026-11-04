@@ -82,7 +82,7 @@ class AudioHandleLifetimeTest {
     @Test
     fun AudioEngine_CloseReleasesContextAndDeviceOnceAndIsIdempotent() {
         val alc = FakeAlc()
-        val engine = AudioEngine(logger, alc)
+        val engine = AudioEngine(logger, AudioBackend(alc = alc))
         assertTrue(engine.init())
         engine.close()
         engine.close()
@@ -96,7 +96,7 @@ class AudioHandleLifetimeTest {
     @Test
     fun AudioEngine_FailedContextCreationDoesNotLeakDevice() {
         val alc = FakeAlc(contextResult = 0L)
-        val engine = AudioEngine(logger, alc)
+        val engine = AudioEngine(logger, AudioBackend(alc = alc))
         assertFalse(engine.init())
         assertEquals(1, alc.devicesClosed)
         engine.close()
@@ -106,7 +106,7 @@ class AudioHandleLifetimeTest {
     @Test
     fun AudioEngine_FailureAfterContextCreationReleasesBoth() {
         val alc = FakeAlc().apply { capabilitiesFail = true }
-        val engine = AudioEngine(logger, alc)
+        val engine = AudioEngine(logger, AudioBackend(alc = alc))
         assertFalse(engine.init())
         assertEquals(1, alc.contextsDestroyed)
         assertEquals(1, alc.devicesClosed)
@@ -115,7 +115,7 @@ class AudioHandleLifetimeTest {
     @Test
     fun AudioEngine_UseBlockClosesAndClearsVoices() {
         val alc = FakeAlc()
-        val engine = AudioEngine(logger, alc)
+        val engine = AudioEngine(logger, AudioBackend(alc = alc))
         engine.use {
             it.init()
             it.voices.request(1, 1, 1f)
@@ -127,7 +127,7 @@ class AudioHandleLifetimeTest {
     @Test
     fun AudioEngine_ReinitAfterCloseWorks() {
         val alc = FakeAlc()
-        val engine = AudioEngine(logger, alc)
+        val engine = AudioEngine(logger, AudioBackend(alc = alc))
         engine.init(); engine.close()
         assertTrue(engine.init())
         engine.close()

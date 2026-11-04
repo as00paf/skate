@@ -13,6 +13,7 @@ uniform mat4 uView;
 out vec4 fColor;
 out vec2 fTexCoords;
 out vec2 fLocal;
+out vec3 fWorldPos;
 
 void main()
 {
@@ -22,6 +23,7 @@ void main()
     vec3 world = aPosSize.xyz + (right * aCorner.x + up * aCorner.y) * aPosSize.w;
 
     fColor = aColor;
+    fWorldPos = world;
     fLocal = aCorner;
     fTexCoords = vec2(aUvRect.x + (aCorner.x + 0.5) * aUvRect.z, aUvRect.y + (0.5 - aCorner.y) * aUvRect.w);
     gl_Position = uProjection * uView * vec4(world, 1.0);
@@ -33,9 +35,14 @@ void main()
 in vec4 fColor;
 in vec2 fTexCoords;
 in vec2 fLocal;
+in vec3 fWorldPos;
 
 uniform sampler2D uTexture;
 uniform int uHasTexture;
+uniform int uAdditive;
+uniform vec3 uCameraPos;
+
+#include "fog.glsl"
 
 out vec4 color;
 
@@ -49,4 +56,8 @@ void main()
         color = vec4(fColor.rgb, fColor.a * (1.0 - smoothstep(0.4, 1.0, d)));
     }
     if (color.a < 0.004) discard;
+    // Fog like the rest of the scene: blended particles fade to the fog colour, additive ones fade out
+    float fog = fogAmount(uCameraPos, fWorldPos);
+    if (uAdditive == 1) color.rgb *= 1.0 - fog;
+    else color.rgb = mix(color.rgb, uFogColor, fog);
 }

@@ -1,6 +1,7 @@
 package com.pafoid.skate.engine.ecs.components
 
 import com.pafoid.skate.engine.ecs.config.EnvironmentPreset
+import com.pafoid.skate.engine.ecs.config.FogMode
 import org.joml.Vector3f
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
@@ -61,7 +62,8 @@ class EnvironmentComponentTest {
         assertEquals(0.0f, component.fogDensity, epsilon, "Fog density should be 0.0 (no fog)")
 
         // Assert - Fog gradient
-        assertEquals(1.5f, component.fogGradient, epsilon, "Fog gradient should be 1.5")
+        assertEquals(FogMode.EXP2, component.fogMode, "Fog mode should default to EXP2")
+        assertEquals(0f, component.fogHeightFalloff, epsilon, "Height fog should be off by default")
     }
 
     @Test
@@ -88,7 +90,8 @@ class EnvironmentComponentTest {
             skyRotation = 180.0f
             fogColor.set(0.0f, 0.0f, 0.0f)
             fogDensity = 0.1f
-            fogGradient = 5.0f
+            fogMode = FogMode.LINEAR
+            fogHeightFalloff = 0.5f
             renderSky = false
             renderFog = false
         }
@@ -111,7 +114,8 @@ class EnvironmentComponentTest {
         assertEquals(0.8f, component.fogColor.y, epsilon)
         assertEquals(0.8f, component.fogColor.z, epsilon)
         assertEquals(0.0f, component.fogDensity, epsilon)
-        assertEquals(1.5f, component.fogGradient, epsilon)
+        assertEquals(FogMode.EXP2, component.fogMode)
+        assertEquals(0f, component.fogHeightFalloff, epsilon)
 
         // Assert - Render toggles restored
         assertTrue(component.renderSky)
@@ -151,7 +155,7 @@ class EnvironmentComponentTest {
         assertEquals(0.6f, component.skyColor.x, epsilon)
         assertEquals(0.7f, component.skyColor.y, epsilon)
         assertEquals(0.9f, component.skyColor.z, epsilon)
-        assertEquals(0.0008f, component.fogDensity, 0.0001f)
+        assertEquals(0.004f, component.fogDensity, 0.0001f)
         assertTrue(component.renderSky)
         assertTrue(component.renderFog)
     }
@@ -168,7 +172,8 @@ class EnvironmentComponentTest {
         assertEquals(0.5f, component.skyColor.x, epsilon)
         assertEquals(0.5f, component.skyColor.y, epsilon)
         assertEquals(0.5f, component.skyColor.z, epsilon)
-        assertEquals(0.02f, component.fogDensity, 0.001f)
+        assertEquals(FogMode.EXP, component.fogMode)
+        assertEquals(0.01f, component.fogDensity, 0.001f)
     }
 
     @Test
@@ -180,8 +185,8 @@ class EnvironmentComponentTest {
         component.applyPreset(EnvironmentPreset.FOGGY)
 
         // Assert - Foggy should have high fog density
-        assertEquals(0.05f, component.fogDensity, 0.001f)
-        assertEquals(0.5f, component.fogGradient, epsilon)
+        assertEquals(0.04f, component.fogDensity, 0.001f)
+        assertTrue(component.fogHeightFalloff > 0f, "Foggy is ground (height) fog")
     }
 
     @Test
@@ -254,7 +259,9 @@ class EnvironmentComponentTest {
             skyRotation = 45.0f
             fogColor.set(0.9f, 0.8f, 0.7f)
             fogDensity = 0.03f
-            fogGradient = 3.0f
+            fogMode = FogMode.LINEAR
+            fogStart = 3f
+            fogEnd = 30f
             renderSky = false
             renderFog = false
         }
@@ -272,7 +279,9 @@ class EnvironmentComponentTest {
         assertEquals(0.8f, component.fogColor.y, epsilon)
         assertEquals(0.7f, component.fogColor.z, epsilon)
         assertEquals(0.03f, component.fogDensity, epsilon)
-        assertEquals(3.0f, component.fogGradient, epsilon)
+        assertEquals(FogMode.LINEAR, component.fogMode)
+        assertEquals(3f, component.fogStart, epsilon)
+        assertEquals(30f, component.fogEnd, epsilon)
         assertFalse(component.renderSky)
         assertFalse(component.renderFog)
     }

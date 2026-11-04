@@ -29,6 +29,7 @@ import com.pafoid.skate.engine.ecs.components.JointComponent
 import com.pafoid.skate.engine.ecs.components.MeshCollider3D
 import com.pafoid.skate.engine.ecs.components.ScriptComponent
 import com.pafoid.skate.engine.ecs.components.RagdollComponent
+import com.pafoid.skate.engine.ecs.components.FollowCameraComponent
 import com.pafoid.skate.engine.ecs.components.ParticleEmitter
 import com.pafoid.skate.engine.ecs.components.VehicleComponent
 import com.pafoid.skate.engine.ecs.components.RenderComponent
@@ -57,6 +58,7 @@ fun GameObject.getComponent(type: ComponentType) =
         ComponentType.DAY_NIGHT_CYCLE -> getComponent<DayNightCycleComponent>()
         ComponentType.DIRECTIONAL_LIGHT -> getComponent<DirectionalLightComponent>()
         ComponentType.ENVIRONMENT -> getComponent<EnvironmentComponent>()
+        ComponentType.FOLLOW_CAMERA -> getComponent<FollowCameraComponent>()
         ComponentType.GRID_LINES -> getComponent<GridLines>()
         ComponentType.INPUT_STATE -> getComponent<InputStateComponent>()
         ComponentType.JOINT -> getComponent<JointComponent>()

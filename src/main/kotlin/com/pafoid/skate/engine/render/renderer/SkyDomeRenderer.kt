@@ -7,6 +7,7 @@ import com.pafoid.skate.engine.ecs.components.CameraComponent
 import com.pafoid.skate.engine.ecs.components.DayNightCycleComponent
 import com.pafoid.skate.engine.ecs.components.DirectionalLightComponent
 import com.pafoid.skate.engine.ecs.components.EnvironmentComponent
+import com.pafoid.skate.engine.render.fog.FogUniforms
 import com.pafoid.skate.engine.getComponent
 import com.pafoid.skate.engine.render.VAOLoader
 import com.pafoid.skate.engine.utils.ShaderConst.Uniforms
@@ -130,10 +131,9 @@ class SkyDomeRenderer(private val shader: Shader, loader: VAOLoader) {
         shader.uploadVec3f(Uniforms.SKY_TINT, environmentComponent.skyTint)
         shader.uploadFloat(Uniforms.SKY_EXPOSURE, environmentComponent.skyExposure)
 
-        // Upload fog settings from EnvironmentComponent
-        shader.uploadVec3f(Uniforms.FOG_COLOR, environmentComponent.fogColor)
-        shader.uploadFloat(Uniforms.FOG_DENSITY, environmentComponent.fogDensity)
-        shader.uploadFloat(Uniforms.FOG_GRADIENT, environmentComponent.fogGradient)
+        // Same fog as the models (fog.glsl), evaluated at the far plane along each view ray
+        FogUniforms.upload(shader, environmentComponent)
+        shader.uploadFloat(Uniforms.FOG_SKY_DISTANCE, camera.farPlane)
         shader.uploadVec3f(Uniforms.CAMERA_POSITION, cameraPosition)
 
         // Draw sky texture

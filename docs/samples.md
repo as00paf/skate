@@ -7,10 +7,11 @@
 | Part | Contents |
 |------|----------|
 | Scene components | `ScenePhysicsComponent` (gravity, debug draw off: toggle it to see colliders), `GridLines`, `EnvironmentComponent` with the bundled HDRI sky, `AmbientLightComponent`, `DayNightCycleComponent`, `DirectionalLightComponent` (sun). |
-| `Camera` | Default `CameraComponent` at (0, 3, 10), behind the skater. |
+| `Camera` | Default `CameraComponent` with a `FollowCameraComponent` (GPL-05) on `Skater`: it follows and orbits the skater, blends the walk/ride framing, pulls in when its spring arm hits an obstacle and shakes on hard impacts. Tune it in Properties (docs/camera.md). |
 | `Skateboard`, `Skater` | Bundled board and character prefabs (`Skateboard`, `Skater` with the default animation set). |
 | `Floor` | 20 x 20 m static asphalt slab, top surface at y = 0, box collider. |
 | `Concrete_Ledge` | Static concrete ledge at (3, 0.25, -3) with a box collider, to grind. |
+| `QuarterPipe`, `Funbox` | GPL-04 prefabs: a wooden quarter pipe 6 m behind the spawn (riding face toward the skater) and a concrete funbox at (-4, 0, 4). They also give the follow camera's spring arm something to collide with. |
 | `HUD` | In-game UI canvas: `ScoreText` top-left (`hud.score`, "Score 0") and `RestartButton` top-right (`pause.restart`). Both keys exist in the bundled game and editor string tables. |
 
 No 2D sprites or test cubes. Feature demos live in `FeatureShowcase`, not in `MainScene`.
@@ -27,6 +28,8 @@ skate run <folder>/FeatureShowcase --frames 120
 
 One builder serves both: `FeatureShowcase` in `src/main/kotlin/com/pafoid/skate/game/samples/`. The editor calls it from `PrefabsGenerator.createDefaultScenes` with assets loaded; the CLI's `ShowcaseProjectBuilder` calls it with a path-only `PrefabsGenerator(engine, loadAssets = false)` (headless). **When a feature lands, add an area there and a row below** (GameEngine.md rule 8).
 
+`FeatureShowcaseSmokeTest` (QA-13, `src/test/kotlin/com/pafoid/skate/game/samples/`) creates a new project, loads this scene from disk and plays 5 s with the real systems, then checks each area's visible effect (particles alive, bodies settled, joints moving, car on its wheels, animation time advancing, audio sources started, every legend button flying the camera). **A new area also adds a `Showcase_<Area>_<Effect>` test there**, so a demo that ships inert fails `gradlew test`.
+
 Layout: a 60 x 40 m grey floor. The default camera starts at an overview of every pad, from (0, 32, 55) looking down at the floor centre. Each area has a coloured ground pad named `[Area] Area`, and every object in it is named `[Area] ...`, so the Hierarchy groups them by name and selecting the pad highlights the area. Objects are top-level because physics and animation only drive top-level objects. The UI overlay legend (top-left) has one button per area plus **Overview**. In **Play** (editor or game), clicking one smoothly flies the camera to frame that area's pad from the +Z side, 35 degrees down; **Overview** returns to the start view. Press **Play** for anything that moves.
 
 **Free-fly in Play** (`FreeFlyCameraComponent` on `Camera`), like the editor camera: W/S move along the view, A/D strafe, E/Q go up and down, Shift is 4x faster, and right-mouse drag over the game view looks around. Any fly or look input cancels a focus glide, so you can click an area and keep flying from there.
@@ -42,9 +45,10 @@ Both components are driven by the engine's `CameraControlSystem`, in editor Play
 | `Physics` (middle row, far left) | Play: five stacked boxes settle without jitter or tunnelling, the ball drops and rolls, the `Crate` and `Barrel` prefabs stay upright and can be knocked over. Turn on debug draw in the scene's `ScenePhysicsComponent` to see colliders. |
 | `Joints` (middle row, centre left) | Play: `HingePendulum` swings in its plane within about +/-69 degrees; `ConeTwistLamp` swings and circles under its pivot; `SliderBlock` drops 2 m along a vertical rail and stops. All are anchored to the world. |
 | `Vehicle` (middle row, centre right) | Play: the blue `Car` (`VehicleComponent`, four raycast wheels, PHY-09) drops onto its suspension, bounces once or twice and rests level. It is not driven: scripts cannot set throttle/steering yet. |
-| `Audio` (middle row, far right) | Play: a 440 Hz tone (`Assets/tone.wav`). `Emitter3D` is positional (louder and panned as the camera approaches); `Ambient2D` is a quiet non-positional layer. Stopping play silences both. |
+| `Audio` (middle row, far right) | Play: a 440 Hz tone (`Assets/tone.wav`). `Emitter3D` is positional (louder and panned as the camera approaches); `Ambient2D` is a quiet non-positional layer. Both use `playOnAwake` (the default), so they start on Play and are silent while editing. Stopping play silences both. |
 | `Prefabs` (front row, left) | The prefab library (GPL-04): ledge, hubba, manual pad, grind box, funbox, rail, handrail, kinked rail, 3- and 5-stair sets, kicker, bank, quarter pipe, crate, barrel and bench, in concrete and two woods. Each is static with its hull colliders (debug draw shows them). |
 | `Animation` (front row, right) | The bundled character looping the walking clip in place. |
+| `Fog` (front row, far right) | Eight orange `Post_*` pillars recede along the right edge of the floor. In Play, the overlay's **Cycle fog** button (top right) steps the scene fog through off, linear, exp, exp² and exp² with height fog. Models, the floor, the sky and particles fog alike. The sky fogs like geometry at the far plane, and height fog keeps the sky clear overhead. In the editor, set the same options on the scene's `EnvironmentComponent` (`renderFog`, `fogMode`, `fogDensity`, `fogStart`/`fogEnd`, `fogHeight`, `fogHeightFalloff`) (REN-09). |
 | `UI` (screen overlay) | In-game (non-ImGui) canvas: title and hint, the area legend (Overview plus one focus button per area), and bottom-right a tinted panel, formatted text ("Formatted text: 42"), a button with solid hover/press backgrounds (GUI-07), a 60% progress bar and a draggable slider. No `!!key!!` text; the layout keeps its corners when the window is resized. |
 
 Overlay strings are `showcase.*` keys in the bundled `game_strings` and `editor_strings` tables (EN and FR); projects' own `Assets/strings.properties` are not loaded by the engine yet.

@@ -332,6 +332,8 @@ class BulletPhysics3D(
 
     override fun createStaticAnchor(location: JomlVector3f): IRigidBodyHandle {
         val body = PhysicsRigidBody(BoxCollisionShape(0.01f), 0f)
+        // A pivot, not an obstacle: the jointed body usually overlaps it, and joints let linked bodies collide
+        body.isContactResponse = false
         body.setPhysicsLocation(location.toJme())
         physicsSpace.add(body)
         return BulletRigidBodyHandle(body)
@@ -416,8 +418,9 @@ class BulletPhysics3D(
                 constraint.pivotA.toJme(), constraint.pivotB.toJme(),
                 xAxisFrame(constraint.axisA), xAxisFrame(constraint.axisB), true
             ).also {
-                it.setLowerLinLimit(constraint.lowerLimit)
-                it.setUpperLinLimit(constraint.upperLimit)
+                // Bullet measures B's frame relative to A's, the opposite sign of A's displacement: negate and swap
+                it.setLowerLinLimit(-constraint.upperLimit)
+                it.setUpperLinLimit(-constraint.lowerLimit)
             }
 
             else -> throw IllegalArgumentException("Unsupported constraint ${constraint::class.simpleName}")

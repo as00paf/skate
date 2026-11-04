@@ -120,6 +120,13 @@ class TetrisProjectBuilderTest {
     }
 
     @Test
+    fun Tetris_SoundEffectsWaitForTheScriptInsteadOfPlayingOnStart() {
+        val sfx = scene.children.filter { it.name.startsWith("Sfx") }.map { it.getComponent<AudioComponent>()!! }
+        assertEquals(3, sfx.size)
+        assertTrue(sfx.none { it.playOnAwake })
+    }
+
+    @Test
     fun Tetris_GameOverRequestsGameOverSceneAndPlaysSound() {
         frame()
         repeat(30) { frame(32) }
