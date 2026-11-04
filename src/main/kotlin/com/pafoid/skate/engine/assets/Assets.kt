@@ -57,6 +57,10 @@ object Assets {
         const val SKATEBOARD = "assets/obj/skateboard.obj"
         const val JAMES = "assets/characters/james.glb"
     }
+    object Sounds {
+        /** Background music for the default MainScene (by the project author), copied into new projects. */
+        const val MUSIC = "assets/sounds/music/aquarela do brasil.mp3"
+    }
     object Fonts {
         const val FONTS_FILE = "/fonts/Font Awesome 7 Free-Solid-900.otf"
     }
@@ -149,6 +153,8 @@ object Assets {
         const val WOOD_TAN = "EngineDefaults\\Textures\\wood_tan.png"
         const val WOOD_DARK = "EngineDefaults\\Textures\\wood_dark.png"
 
+        const val MUSIC = "EngineDefaults\\Sounds\\Music\\aquarela do brasil.mp3"
+
         const val SKY = "EngineDefaults\\Textures\\sky_hdri.png"
         const val APP_ICON = "/app_icon.png"
 
@@ -216,6 +222,8 @@ object Assets {
             WOOD_TAN to Textures.WOOD_TAN,
             WOOD_DARK to Textures.WOOD_DARK,
             SKY to Textures.SKY_HDRI,
+            // Sounds
+            MUSIC to Sounds.MUSIC,
             // Game
             "..\\builds\\skate-game.jar" to "build\\libs\\skate-game.jar",
         )

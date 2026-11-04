@@ -5,7 +5,7 @@ import com.pafoid.skate.engine.assets.data.SoundSource
 import com.pafoid.skate.engine.audio.AudioEngine
 import com.pafoid.skate.engine.audio.ClipPicker
 import com.pafoid.skate.engine.audio.ReverbZoneResolver
-import com.pafoid.skate.engine.audio.StbVorbisDecoder
+import com.pafoid.skate.engine.audio.PcmDecoders
 import com.pafoid.skate.engine.audio.ZoneShape
 import com.pafoid.skate.engine.audio.StreamPolicy
 import com.pafoid.skate.engine.audio.StreamingPlayer
@@ -59,6 +59,7 @@ class AudioSystem(
     private val playbacks = mutableMapOf<Int, Playback>()
     private val clipPicker = ClipPicker()
     private val failedClips = mutableSetOf<String>()
+    private val missingClips = mutableSetOf<String>()
     private var wasRunning = false
 
     override fun update(dt: Float) {
@@ -152,7 +153,7 @@ class AudioSystem(
         audioEngine.effects.setReverb(active?.params)
     }
 
-    private class Playback(val source: SoundSource, val stream: StreamingPlayer?) : AutoCloseable {
+    private class Playback(val clip: String, val source: SoundSource, val stream: StreamingPlayer?) : AutoCloseable {
         override fun close() {
             source.stop()
             stream?.close()
@@ -229,7 +230,10 @@ class AudioSystem(
                 return@forEach
             }
             applyParams(pb, ac, spatial)
-            pb.stream?.update()
+            if (!updateStream(id, pb)) {
+                ac.isPlaying = false
+                return@forEach
+            }
             audioEngine.voices.updateAudibility(id, spatial.gain)
             val finished = !ac.isPaused && (pb.stream?.isFinished ?: !pb.source.isPlaying())
             if (finished) {
@@ -267,6 +271,11 @@ class AudioSystem(
 
         val clip = clipPicker.pick(id, ac.soundFilePath, ac.clips)
         if (clip.isBlank() || clip in failedClips) return
+        if (!File(clip).isFile) {
+            // Checked on every start so a file added later plays; warned once so a looping source doesn't spam.
+            if (missingClips.add(clip)) logger.log("AudioSystem: Sound file not found '$clip' - not played", LogLevel.WARN)
+            return
+        }
 
         releasePlayback(id)
         val result = audioEngine.voices.request(id, ac.priority, spatial.gain)
@@ -280,9 +289,22 @@ class AudioSystem(
             ac.isPaused = false
             if (playback.stream != null) playback.stream.start() else playback.source.play()
         } catch (e: Exception) {
-            audioEngine.voices.release(id)
+            releasePlayback(id)
             failedClips.add(clip)
             logger.log("AudioSystem: Cannot play '$clip' - ${e.message}", LogLevel.ERROR)
+        }
+    }
+
+    /** Refills a streamed source; a decode error mid-stream stops it (logged once per clip). False when stopped. */
+    private fun updateStream(id: Int, pb: Playback): Boolean {
+        val stream = pb.stream ?: return true
+        return try {
+            stream.update()
+            true
+        } catch (e: Exception) {
+            releasePlayback(id)
+            if (failedClips.add(pb.clip)) logger.log("AudioSystem: Stopped '${pb.clip}' - ${e.message}", LogLevel.ERROR)
+            false
         }
     }
 
@@ -291,13 +313,13 @@ class AudioSystem(
         val source = audioEngine.createSource(!stream && ac.loops, !ac.is3D)
         try {
             if (stream) {
-                val player = StreamingPlayer(StbVorbisDecoder(clip), source.asStreamSink(), ac.loops)
-                return Playback(source, player)
+                val player = StreamingPlayer(PcmDecoders.open(clip), source.asStreamSink(), ac.loops)
+                return Playback(clip, source, player)
             }
             val buffer = assetsManager.getSound(clip)
             if (buffer.bufferId == -1) throw IllegalStateException("sound buffer not loaded")
             source.setBuffer(buffer.bufferId)
-            return Playback(source, null)
+            return Playback(clip, source, null)
         } catch (e: Exception) {
             source.close()
             throw e
