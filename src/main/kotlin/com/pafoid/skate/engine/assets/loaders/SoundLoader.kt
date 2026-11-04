@@ -80,65 +80,58 @@ class SoundLoader(private val logger: LoggerService) {
         }
     }
 
-    private fun loadWav(path: String): SoundBuffer {
-        logger.log("SoundBuffer: Loading WAV '$path'", LogLevel.INFO)
+    /** 8/16-bit PCM ready for `alBufferData`. */
+    class DecodedWav(val pcm: ByteArray, val channels: Int, val bitsPerSample: Int, val sampleRate: Int) {
+        val alFormat: Int
+            get() = when {
+                channels == 1 && bitsPerSample == 8 -> AL_FORMAT_MONO8
+                channels == 1 && bitsPerSample == 16 -> AL_FORMAT_MONO16
+                channels == 2 && bitsPerSample == 8 -> AL_FORMAT_STEREO8
+                else -> AL_FORMAT_STEREO16
+            }
+        val durationInSeconds: Float get() = pcm.size.toFloat() / (channels * bitsPerSample / 8) / sampleRate
+    }
 
-        val file = File(path)
+    /** Decodes a WAV file to 8/16-bit PCM without touching OpenAL (24/32-bit input is converted to 16-bit). */
+    fun decodeWav(file: File): DecodedWav {
         var format: AudioFormat
         var bytes: ByteArray
-
-        // Add .use block to prevent resource leaks
         AudioSystem.getAudioInputStream(file).use { audioInputStream ->
             format = audioInputStream.format
             bytes = audioInputStream.readAllBytes()
         }
-        val soundBuffer = SoundBuffer(path)
-        soundBuffer.durationInSeconds =
-            bytes.size.toFloat() / (format.channels * format.sampleSizeInBits / 8) / format.sampleRate
-
-        // Convert 24-bit or 32-bit to 16-bit for OpenAL compatibility
         if (format.sampleSizeInBits > 16) {
             logger.log("SoundBuffer: Converting ${format.sampleSizeInBits}-bit to 16-bit", LogLevel.INFO)
             bytes = convertTo16Bit(bytes, format)
             format = AudioFormat(
-                AudioFormat.Encoding.PCM_SIGNED,
-                format.sampleRate,
-                16,
-                format.channels,
-                format.channels * 2,
-                format.sampleRate,
-                format.isBigEndian
+                AudioFormat.Encoding.PCM_SIGNED, format.sampleRate, 16, format.channels,
+                format.channels * 2, format.sampleRate, format.isBigEndian
             )
         }
-
-        val alFormat = when {
-            format.channels == 1 && format.sampleSizeInBits == 8 -> AL_FORMAT_MONO8
-            format.channels == 1 && format.sampleSizeInBits == 16 -> AL_FORMAT_MONO16
-            format.channels == 2 && format.sampleSizeInBits == 8 -> AL_FORMAT_STEREO8
-            format.channels == 2 && format.sampleSizeInBits == 16 -> AL_FORMAT_STEREO16
-            else -> {
-                logger.log(
-                    "SoundBuffer: Unsupported WAV format after conversion: ${format.channels} channels, ${format.sampleSizeInBits} bits",
-                    LogLevel.ERROR
-                )
-                throw IOException("SoundBuffer: Unsupported WAV format after conversion: ${format.channels} channels, ${format.sampleSizeInBits} bits")
-            }
+        if (format.channels !in 1..2 || format.sampleSizeInBits !in setOf(8, 16)) {
+            throw IOException(
+                "SoundBuffer: Unsupported WAV format after conversion: ${format.channels} channels, ${format.sampleSizeInBits} bits"
+            )
         }
+        return DecodedWav(bytes, format.channels, format.sampleSizeInBits, format.sampleRate.toInt())
+    }
 
+    private fun loadWav(path: String): SoundBuffer {
+        logger.log("SoundBuffer: Loading WAV '$path'", LogLevel.INFO)
+        val wav = decodeWav(File(path))
         logger.log(
-            "SoundBuffer: Loaded WAV '$path' - ${format.channels} channels, ${format.sampleRate}Hz, ${format.sampleSizeInBits} bits",
+            "SoundBuffer: Loaded WAV '$path' - ${wav.channels} channels, ${wav.sampleRate}Hz, ${wav.bitsPerSample} bits",
             LogLevel.INFO
         )
+        val soundBuffer = SoundBuffer(path)
+        soundBuffer.durationInSeconds = wav.durationInSeconds
 
-        // Convert ByteArray to ByteBuffer for OpenAL
-        val buffer = MemoryUtil.memAlloc(bytes.size)
-        buffer.put(bytes)
+        val buffer = MemoryUtil.memAlloc(wav.pcm.size)
+        buffer.put(wav.pcm)
         buffer.flip()
-
         soundBuffer.bufferId = alGenBuffers()
-        alBufferData(soundBuffer.bufferId, alFormat, buffer, format.sampleRate.toInt())
+        alBufferData(soundBuffer.bufferId, wav.alFormat, buffer, wav.sampleRate)
         MemoryUtil.memFree(buffer)
-
         return soundBuffer
     }
 

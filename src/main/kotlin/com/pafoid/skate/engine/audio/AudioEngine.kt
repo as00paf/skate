@@ -2,9 +2,8 @@ package com.pafoid.skate.engine.audio
 
 import com.pafoid.skate.engine.core.LoggerService
 import com.pafoid.skate.engine.core.LoggerService.LogLevel
+import com.pafoid.skate.engine.assets.data.SoundSource
 import org.lwjgl.openal.AL
-import org.lwjgl.openal.AL10
-import org.lwjgl.openal.AL11
 import org.lwjgl.openal.ALC
 import org.lwjgl.openal.ALC10
 import java.nio.IntBuffer
@@ -36,12 +35,17 @@ object OpenAlcApi : AlcApi {
     }
 }
 
-/** Owns the OpenAL device and context. Close it (or use `use {}`) to free them. */
+/**
+ * Owns the OpenAL device and context. Close it (or use `use {}`) to free them. Every AL call goes through [backend],
+ * so tests can run the engine (and `AudioSystem`) on fakes.
+ */
 class AudioEngine(
     private val logger: LoggerService,
-    private val api: AlcApi = OpenAlcApi,
-    val effects: EffectsManager = EffectsManager(OpenAlEfxApi)
+    val backend: AudioBackend = AudioBackend()
 ) : AutoCloseable {
+
+    private val api: AlcApi get() = backend.alc
+    val effects: EffectsManager = EffectsManager(backend.efx)
 
     private var device: Long = 0L
     private var context: Long = 0L
@@ -123,27 +127,35 @@ class AudioEngine(
         }
     }
 
+    /** Re-binds this engine's context if another one (or none) is current on this thread. */
+    fun ensureContextCurrent() {
+        if (context != 0L && api.currentContext() != context) api.makeCurrent(context)
+    }
+
+    /** A new source on this engine's backend. */
+    fun createSource(looping: Boolean, relative: Boolean): SoundSource = SoundSource(looping, relative, backend.sources)
+
     fun setListenerPosition(x: Float, y: Float, z: Float) {
         if (!isInitialized) return
-        AL10.alListener3f(AL10.AL_POSITION, x, y, z)
+        backend.listener.setPosition(x, y, z)
     }
 
     fun setListenerOrientation(forward: FloatArray, up: FloatArray) {
         if (!isInitialized) return
-        AL10.alListenerfv(AL10.AL_ORIENTATION, forward + up)
+        backend.listener.setOrientation(forward, up)
     }
 
     fun setListenerVelocity(x: Float, y: Float, z: Float) {
         if (!isInitialized) return
-        AL10.alListener3f(AL10.AL_VELOCITY, x, y, z)
+        backend.listener.setVelocity(x, y, z)
     }
 
     /** Distance attenuation is computed per source in [SpatialAudio], so OpenAL's own model is disabled. */
     fun configureSpatial(dopplerFactor: Float = 1f, speedOfSound: Float = SpatialAudio.DEFAULT_SPEED_OF_SOUND) {
         if (!isInitialized) return
-        AL10.alDistanceModel(AL10.AL_NONE)
-        AL10.alDopplerFactor(dopplerFactor)
-        AL11.alSpeedOfSound(speedOfSound)
+        backend.listener.disableDistanceModel()
+        backend.listener.setDopplerFactor(dopplerFactor)
+        backend.listener.setSpeedOfSound(speedOfSound)
     }
 
     /** Master gain is applied per source through the mixer; the AL listener gain stays at 1. */

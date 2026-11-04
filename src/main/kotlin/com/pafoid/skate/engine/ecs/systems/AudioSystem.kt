@@ -24,9 +24,12 @@ import com.pafoid.skate.engine.ecs.GameObject
 import org.joml.Matrix4f
 import org.joml.Vector3f
 import java.io.File
-import org.lwjgl.openal.ALC
-import org.lwjgl.openal.ALC10
 
+/**
+ * Plays [AudioComponent]s. Sources with `playOnAwake` start when the scene starts running (Play) and every voice is
+ * released when it stops, which also re-arms `playOnAwake` for the next Play. Explicit `play()` works in both modes
+ * (the inspector previews sounds while editing). All OpenAL access goes through [audioEngine]'s backend.
+ */
 class AudioSystem(
     val audioEngine: AudioEngine,
     private val logger: LoggerService,
@@ -56,6 +59,7 @@ class AudioSystem(
     private val playbacks = mutableMapOf<Int, Playback>()
     private val clipPicker = ClipPicker()
     private val failedClips = mutableSetOf<String>()
+    private var wasRunning = false
 
     override fun update(dt: Float) {
         if (!isInitialized) {
@@ -73,22 +77,31 @@ class AudioSystem(
             audioEngine.configureSpatial()
             spatialConfigured = true
         }
+        val running = scene.isRunning
+        if (wasRunning && !running) stopAll()
+        wasRunning = running
+
         updateListener()
         updateReverbZone()
-        updateAudioSources()
+        updateAudioSources(running)
+    }
+
+    /** End of Play: silence every source and re-arm playOnAwake. */
+    private fun stopAll() {
+        playbacks.keys.toList().forEach { releasePlayback(it) }
+        scene.children.forEach { go ->
+            go.getComponent<AudioComponent>()?.apply {
+                awoken = false
+                isPlaying = false
+                isPaused = false
+                playRequested = false
+            }
+        }
     }
 
     private fun updateListener() {
         if (!audioEngine.isInitialized) return
-
-        val currentContext = ALC10.alcGetCurrentContext()
-        if (currentContext != audioEngine.getContext()) {
-            audioEngine.makeContextCurrent()
-        }
-
-        if (!ALC.getCapabilities().OpenALC10) {
-            ALC.createCapabilities(audioEngine.getDevice())
-        }
+        audioEngine.ensureContextCurrent()
 
         val listenerObject = scene.children.firstOrNull { it.getComponent<AudioListener>()?.enabled == true }
         val pos: Vector3f
@@ -179,7 +192,7 @@ class AudioSystem(
         )
     }
 
-    private fun updateAudioSources() {
+    private fun updateAudioSources(running: Boolean) {
         val currentEntities = mutableSetOf<Int>()
 
         scene.children.forEach { gameObject ->
@@ -188,7 +201,7 @@ class AudioSystem(
             currentEntities.add(id)
             val spatial = computeSpatial(gameObject, ac)
 
-            if (ac.playOnAwake && !ac.awoken) {
+            if (running && ac.playOnAwake && !ac.awoken) {
                 ac.awoken = true
                 ac.play()
             }
@@ -275,7 +288,7 @@ class AudioSystem(
 
     private fun createPlayback(clip: String, ac: AudioComponent): Playback {
         val stream = StreamPolicy.shouldStream(clip, ac.bus, ac.streamMode, File(clip).length())
-        val source = SoundSource(!stream && ac.loops, !ac.is3D)
+        val source = audioEngine.createSource(!stream && ac.loops, !ac.is3D)
         try {
             if (stream) {
                 val player = StreamingPlayer(StbVorbisDecoder(clip), source.asStreamSink(), ac.loops)

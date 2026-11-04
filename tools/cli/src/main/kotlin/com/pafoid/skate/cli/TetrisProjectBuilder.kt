@@ -143,7 +143,7 @@ class TetrisProjectBuilder(private val serializer: Serializer = Serializer()) {
         SFX.forEach { (name, _) ->
             scene.children.add(
                 GameObject(name).addComponent(Transform())
-                    .addComponent(AudioComponent(assetsPrefix + "$name.wav", is3D = false, volume = 0.6f))
+                    .addComponent(AudioComponent(assetsPrefix + "$name.wav", is3D = false, volume = 0.6f, playOnAwake = false))
             )
         }
         scene.children.add(hud())

@@ -107,3 +107,7 @@ Drop the unused name-based events or replace them with entity-based ones (`Audio
 - Serialisation: all new `AudioComponent`/`AudioSettings` fields are defaulted so existing scenes and settings files load unchanged.
 - Windows-only natives: OpenAL Soft (bundled with LWJGL) supports EFX and `ALC_ENUMERATE_ALL_EXT`; guard with capability checks.
 - Editor impact (inspector for the new component fields, audio settings panel for UI bus, mute) belongs to `skate-editor`: `NEEDS EDT` will be raised in AUD-02/04.
+
+## Later decisions
+
+- **AUD-09, `playOnAwake`:** defaults to `true`, as Unity's AudioSource does, so a looping emitter or ambience placed in the editor plays in game without a script. It fires only while the scene is running (Play). When Play stops, every voice is released and `playOnAwake` re-arms. Sounds triggered by scripts (one-shot SFX) set it to `false`. An explicit `play()` works in edit mode too, for inspector previews. All OpenAL access goes through `AudioBackend` (ALC, listener, sources, EFX), injected into `AudioEngine`. Tests use `FakeAudioBackend`.
