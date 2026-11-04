@@ -1,7 +1,6 @@
 package com.pafoid.skate.editor.ui.handlers
 
 import com.pafoid.skate.editor.data.PrefabData
-import com.pafoid.skate.editor.data.PrefabType
 import com.pafoid.skate.editor.events.ViewportAction
 import com.pafoid.skate.editor.gizmos.EditorCamera
 import com.pafoid.skate.editor.ui.windows.viewport.ViewportRenderer
@@ -25,37 +24,15 @@ class ViewportDragDropHandler(
         ImGui.setCursorPos(viewportRenderer.imageScreenPosX, viewportRenderer.imageScreenPosY + 40f)
         if (ImGui.beginDragDropTarget()) {
             // Accept prefab payloads
-            val payloadLedge = ImGui.acceptDragDropPayload<PrefabData>("PREFAB_LEDGE")
-            val payloadRail = ImGui.acceptDragDropPayload<PrefabData>("PREFAB_RAIL")
-            val payloadKicker = ImGui.acceptDragDropPayload<PrefabData>("PREFAB_KICKER")
-            val payloadManualPad = ImGui.acceptDragDropPayload<PrefabData>("PREFAB_MANUAL_PAD")
-            val payloadBank = ImGui.acceptDragDropPayload<PrefabData>("PREFAB_BANK")
-            val payloadQuarterPipe = ImGui.acceptDragDropPayload<PrefabData>("PREFAB_QUARTER_PIPE")
-            val payloadSkateboard = ImGui.acceptDragDropPayload<PrefabData>("PREFAB_SKATEBOARD")
+            val prefabPayload = ImGui.acceptDragDropPayload<PrefabData>(PrefabData.PAYLOAD)
 
             val payloadTexture = ImGui.acceptDragDropPayload<String>("TEXTURE")
             val payloadSound = ImGui.acceptDragDropPayload<String>("SOUND")
             val payloadAnimation = ImGui.acceptDragDropPayload<Animation>("ANIMATION")
 
-            val prefabPayload = payloadRail ?: payloadLedge ?: payloadKicker ?: payloadManualPad ?: payloadBank ?: payloadQuarterPipe ?: payloadSkateboard
-
             if (prefabPayload != null) {
-                val hitPoint = computeDropPosition()
-
-                if (hitPoint != null) {
-                    val prefabType = when {
-                        payloadRail != null -> PrefabType.RAIL
-                        payloadLedge != null -> PrefabType.LEDGE
-                        payloadKicker != null -> PrefabType.KICKER
-                        payloadManualPad != null -> PrefabType.MANUAL_PAD
-                        payloadBank != null -> PrefabType.BANK
-                        payloadQuarterPipe != null -> PrefabType.QUARTER_PIPE
-                        payloadSkateboard != null -> PrefabType.SKATEBOARD
-                        else -> null
-                    }
-                    prefabType?.let {
-                        eventSystem.publish(ViewportAction.SpawnPrefab(it, hitPoint))
-                    }
+                computeDropPosition()?.let { hitPoint ->
+                    eventSystem.publish(ViewportAction.SpawnPrefab(prefabPayload.type, hitPoint, prefabPayload.material))
                 }
             }
 

@@ -1,6 +1,6 @@
 package com.pafoid.skate.editor.search.providers
 
-import com.pafoid.skate.editor.data.PrefabType
+import com.pafoid.skate.game.prefabs.PrefabType
 import com.pafoid.skate.editor.events.ViewportAction.CreateEmpty
 import com.pafoid.skate.editor.events.ViewportAction.CreateLight
 import com.pafoid.skate.editor.events.ViewportAction.Delete

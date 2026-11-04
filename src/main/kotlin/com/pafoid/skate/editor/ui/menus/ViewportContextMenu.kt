@@ -1,6 +1,7 @@
 package com.pafoid.skate.editor.ui.menus
 
-import com.pafoid.skate.editor.data.PrefabType
+import com.pafoid.skate.game.prefabs.PrefabCatalog
+import com.pafoid.skate.game.prefabs.PrefabCategory
 import com.pafoid.skate.editor.data.PrimitiveType
 import com.pafoid.skate.editor.events.ViewportAction.CreateCamera
 import com.pafoid.skate.editor.events.ViewportAction.CreateEmpty
@@ -92,25 +93,17 @@ class ViewportContextMenu(
 
         ImGui.separator()
 
-        // Create Skateboard Obstacle submenu
+        // One submenu per prefab picker section (PrefabCatalog), player prefabs excluded.
         if (ImGui.beginMenu("${Icons.GEAR} ${stringManager.getString("context.viewport.create_obstacle")}")) {
-            if (ImGui.menuItem(stringManager.getString("context.viewport.create_obstacle.rail"))) {
-                eventSystem.publish(SpawnPrefab(PrefabType.RAIL))
-            }
-            if (ImGui.menuItem(stringManager.getString("context.viewport.create_obstacle.ledge"))) {
-                eventSystem.publish(SpawnPrefab(PrefabType.LEDGE))
-            }
-            if (ImGui.menuItem(stringManager.getString("context.viewport.create_obstacle.kicker"))) {
-                eventSystem.publish(SpawnPrefab(PrefabType.KICKER))
-            }
-            if (ImGui.menuItem(stringManager.getString("context.viewport.create_obstacle.manual_pad"))) {
-                eventSystem.publish(SpawnPrefab(PrefabType.MANUAL_PAD))
-            }
-            if (ImGui.menuItem(stringManager.getString("context.viewport.create_obstacle.bank"))) {
-                eventSystem.publish(SpawnPrefab(PrefabType.BANK))
-            }
-            if (ImGui.menuItem(stringManager.getString("context.viewport.create_obstacle.quarter_pipe"))) {
-                eventSystem.publish(SpawnPrefab(PrefabType.QUARTER_PIPE))
+            PrefabCategory.entries.filter { it != PrefabCategory.PLAYER }.forEach { category ->
+                if (ImGui.beginMenu(stringManager.getString("lbl.prefabs.${category.name.lowercase()}"))) {
+                    PrefabCatalog.inCategory(category).forEach { entry ->
+                        if (ImGui.menuItem(stringManager.getString(entry.type.nameKey))) {
+                            eventSystem.publish(SpawnPrefab(entry.type))
+                        }
+                    }
+                    ImGui.endMenu()
+                }
             }
             ImGui.endMenu()
         }
