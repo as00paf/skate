@@ -2,6 +2,7 @@ package com.pafoid.skate.editor.gizmos
 
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
+import com.pafoid.skate.engine.ecs.components.RigidBody3D
 import com.pafoid.skate.engine.ecs.prefab.PrefabInstance
 import com.pafoid.skate.engine.getComponent
 
@@ -11,8 +12,11 @@ import com.pafoid.skate.engine.getComponent
  * Convention (same as the Scene Hierarchy tree):
  * - The pixel id names the object that owns the mesh, at any depth ([findByUid]).
  * - The first click selects the outermost prefab-instance root above the hit, so a prefab such as
- *   the skateboard (physics root plus scaled visual child) is grabbed as a whole. With no prefab
- *   root in the chain, the hit object itself is selected.
+ *   a spawned skateboard is grabbed as a whole.
+ * - With no prefab root, a hit object without a [RigidBody3D] whose ancestor has one selects the
+ *   nearest such ancestor (the physics root), so moving it keeps the visual child on its body.
+ *   The default skater and skateboard are plain objects split this way.
+ * - Otherwise the hit object itself is selected.
  * - Clicking again while an object in the hit's ancestor chain is selected drills one level down
  *   toward the hit, until the hit itself is selected.
  */
@@ -33,7 +37,15 @@ object PickResolver {
         val chain = ancestorChain(hit) // outermost first, hit last
         val index = current?.let { chain.indexOf(it) } ?: -1
         if (index >= 0) return chain[minOf(index + 1, chain.lastIndex)]
-        return chain.firstOrNull { it.getComponent<PrefabInstance>() != null } ?: hit
+        return chain.firstOrNull { it.getComponent<PrefabInstance>() != null }
+            ?: physicsRoot(hit, chain)
+            ?: hit
+    }
+
+    /** Nearest ancestor with a [RigidBody3D] when [hit] has none itself; [chain] is outermost first. */
+    private fun physicsRoot(hit: GameObject, chain: List<GameObject>): GameObject? {
+        if (hit.getComponent<RigidBody3D>() != null) return null
+        return chain.dropLast(1).lastOrNull { it.getComponent<RigidBody3D>() != null }
     }
 
     /** Resolves a picked [uid] in [scene] to the object to select, or null when nothing was hit. */

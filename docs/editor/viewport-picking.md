@@ -14,8 +14,12 @@
 ## Which object gets selected
 
 - The first click selects the **outermost prefab-instance root** (`PrefabInstance`) above the object that was
-  hit, so a prefab such as the skateboard (physics root plus scaled visual child) is selected and moved as a whole.
-- If no prefab root sits above the hit, the object that owns the clicked mesh is selected, even when it is a child.
+  hit, so a prefab such as the skateboard is selected and moved as a whole.
+- If no prefab root sits above the hit, and the hit object has no `RigidBody3D` but an ancestor does, the
+  first click selects the **nearest such ancestor** (the physics root). The default skater and skateboard are
+  plain objects with this split: a physics root plus a scaled visual child. Selecting the root keeps the model
+  on its body when you move it.
+- Otherwise the object that owns the clicked mesh is selected, even when it is a child.
 - Clicking again while an ancestor of the hit is selected drills **one level down** toward the hit, until the
   hit itself is selected. This follows the Scene Hierarchy tree.
 - Hover uses the same rule, so the hovered object is always the one a click would select.
