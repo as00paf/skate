@@ -154,7 +154,7 @@ uniform bool u_HasMetallicRoughnessTexture;
 uniform bool u_HasAOTexture;
 uniform bool u_HasEmissiveTexture;
 
-uniform float uSelected; // 0.0 = None, 1.0 = Selected
+uniform float uSelected; // SelectionHighlight: 0.0 = none, 1.0 = selected, 2.0 = hovered
 
 out vec4 color;
 
@@ -516,7 +516,10 @@ void main()
 
     // Selection highlight: green tint on colour only. Lowering alpha here made selected opaque objects see-through,
     // because the editor viewport composites the scene texture with its alpha.
-    if (uSelected > 0.5) {
+    // Hover is a lighter tint of the same colour so it reads as "would select" without looking selected.
+    if (uSelected > 1.5) {
+        finalColor.rgb = mix(finalColor.rgb, vec3(0.0, 1.0, 0.0), 0.15);
+    } else if (uSelected > 0.5) {
         finalColor.rgb = mix(finalColor.rgb, vec3(0.0, 1.0, 0.0), 0.4);
     }
 

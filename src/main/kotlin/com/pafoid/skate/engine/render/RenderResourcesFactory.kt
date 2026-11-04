@@ -25,6 +25,7 @@ import com.pafoid.skate.engine.render.renderer.passes.PickingPass
 import com.pafoid.skate.engine.render.renderer.passes.PostProcessPass
 import com.pafoid.skate.engine.render.renderer.passes.RenderPass
 import com.pafoid.skate.engine.render.renderer.passes.ShadowPass
+import com.pafoid.skate.engine.render.renderer.passes.UiPass
 import com.pafoid.skate.engine.render.shadow.ShadowFrame
 import com.pafoid.skate.engine.render.shadow.ShadowSettings
 import com.pafoid.skate.engine.render.utils.GLStateTracker
@@ -72,11 +73,7 @@ class RenderResourcesFactory(
 
         logger.log("Building render graph...")
         val renderGraph = RenderGraphBuilder()
-            .addPass(renderPasses.shadow)
-            .addPass(renderPasses.picking)
-            .addPass(renderPasses.geometry)
-            .addPass(renderPasses.postProcess)
-            .addPass(renderPasses.debug)
+            .apply { renderPasses.inExecutionOrder().forEach { addPass(it) } }
             .build()
 
         logger.log("Render resources initialization complete.")
@@ -172,10 +169,18 @@ class RenderResourcesFactory(
             cameraManager = cameraManager,
             shadowFrame = shadowFrame,
         )
-        val debugPass = DebugPass(renderers.debug, cameraManager, bindTarget = {
+        // Debug visuals and the runtime UI draw into the presented target after post-processing
+        val bindPresentedTarget = {
             if (useFbo) frameBuffer.bind() else glBindFramebuffer(GL_FRAMEBUFFER, 0)
             glViewport(0, 0, frameBuffer.width, frameBuffer.height)
-        })
+        }
+        val debugPass = DebugPass(renderers.debug, cameraManager, bindTarget = bindPresentedTarget)
+        val uiPass = UiPass(
+            renderer2D = renderer2D,
+            batchShader = shaders.batch,
+            bindTarget = bindPresentedTarget,
+            targetSize = { frameBuffer.width to frameBuffer.height },
+        )
 
         val postProcessPass = PostProcessPass(
             frameBuffer = frameBuffer,
@@ -208,7 +213,8 @@ class RenderResourcesFactory(
             geometry = geometryPass,
             debug = debugPass,
             shadow = shadowPass,
-            postProcess = postProcessPass
+            postProcess = postProcessPass,
+            ui = uiPass,
         )
     }
 }
