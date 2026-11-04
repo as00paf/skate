@@ -19,6 +19,7 @@ import org.lwjgl.glfw.GLFW.GLFW_MOUSE_BUTTON_MIDDLE
 import org.lwjgl.glfw.GLFW.GLFW_MOUSE_BUTTON_RIGHT
 import org.lwjgl.glfw.GLFW.glfwGetCurrentContext
 import org.lwjgl.glfw.GLFW.glfwGetInputMode
+import org.lwjgl.glfw.GLFW.glfwSetInputMode
 
 class InputProvider(
     val logger: LoggerService
@@ -102,6 +103,20 @@ class InputProvider(
     fun buttonPressed(jid: Int, button: Int): Boolean = gamepadListener.buttonPressed(jid, button)
     fun buttonWasPressed(jid: Int, button: Int): Boolean = gamepadListener.buttonWasPressed(jid, button)
     fun buttonBeginPress(jid: Int, button: Int): Boolean = gamepadListener.buttonBeginPress(jid, button)
+    fun getCursorMode(): CursorMode {
+        val window = glfwGetCurrentContext()
+        if (window == 0L) return CursorMode.NORMAL
+        return CursorMode.fromGlfw(glfwGetInputMode(window, GLFW_CURSOR))
+    }
+
+    /** Sets the cursor mode; the first mouse move afterwards is not reported as a delta, so the camera doesn't jump. */
+    fun setCursorMode(mode: CursorMode) {
+        val window = glfwGetCurrentContext()
+        if (window == 0L || getCursorMode() == mode) return
+        glfwSetInputMode(window, GLFW_CURSOR, mode.glfwValue)
+        mouseListener.discardNextDelta()
+    }
+
     fun isCursorDisabled(): Boolean {
         val window = glfwGetCurrentContext()
         if (window == 0L) return false
