@@ -1,6 +1,7 @@
 package com.pafoid.skate.editor.ui.handlers
 
 import com.pafoid.skate.editor.commands.editor.TogglePhysicsDebugCommand
+import com.pafoid.skate.editor.systems.ScenePlaySnapshot
 import com.pafoid.skate.editor.commands.objects.AddAudioComponentCommand
 import com.pafoid.skate.editor.commands.objects.AddComponentCommand
 import com.pafoid.skate.editor.commands.objects.ApplyAnimationCommand
@@ -189,6 +190,10 @@ class ViewportActionHandler(
         eventSystem.subscribe<PasteClipboard> { event ->
             handlePasteClipboard(event.parent)
         }
+        eventSystem.subscribe<com.pafoid.skate.editor.events.ViewportAction.StopSimulation> {
+            playSnapshot = null
+            playScene = null
+        }
         eventSystem.subscribe<EngineAction.SetRuntimePlaying> { event ->
             handleSetRuntimePlaying(event.playing)
         }
@@ -304,7 +309,16 @@ class ViewportActionHandler(
         undoRedoManager.executeCommand(CreateGameObjectCommand(cloned, scene, gameObjectManager))
     }
 
+    private var playSnapshot: ScenePlaySnapshot? = null
+    private var playScene: Scene? = null
+
     private fun handleSetRuntimePlaying(playing: Boolean) {
+        if (playing && playSnapshot == null) {
+            sceneManager.currentScene?.let {
+                playSnapshot = ScenePlaySnapshot.capture(it, engine.serializer)
+                playScene = it
+            }
+        }
         if (!playing) {
             sceneManager.currentScene?.getComponent<DayNightCycleComponent>()?.timeScale = 1.0f
             eventSystem.publish(CameraAction.SetCamera(editorCamera.camera, editorCamera.transform))
@@ -328,8 +342,14 @@ class ViewportActionHandler(
 
     private fun handleResetSkateScene() {
         val scene = sceneManager.currentScene ?: return
-        scene.reset()
-        gameObjectManager.reset()
+        val snapshot = playSnapshot
+        if (snapshot == null || playScene !== scene) {
+            logger.logEditor("Scene reset skipped: nothing has been played since the last stop")
+            return
+        }
+        playScene = snapshot.restore(sceneManager, engine.serializer, scene)
+        // Commands recorded so far reference the replaced objects.
+        undoRedoManager.clear()
     }
 
     private fun handleResetTransform(gameObject: GameObject) {

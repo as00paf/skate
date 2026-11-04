@@ -263,14 +263,24 @@ struct SpotLight {
     float quadratic;
 };
 
-#define MAX_POINT_LIGHTS 8
-#define MAX_SPOT_LIGHTS 8
+// Lights live in a shared uniform buffer (see LightPacking). Each draw lists the indices of the lights that reach it.
+#define MAX_LIGHTS 64
+#define MAX_LIGHTS_PER_OBJECT 16
 
-uniform PointLight uPointLights[MAX_POINT_LIGHTS];
-uniform int uNumPointLights;
+struct Light {
+    vec4 positionRange;  // xyz position, w range
+    vec4 colorType;      // rgb colour * intensity, w: 0 point, 1 spot
+    vec4 directionCos;   // xyz direction, w cos(inner cone)
+    vec4 attenuation;    // x constant, y linear, z quadratic, w cos(outer cone)
+};
 
-uniform SpotLight uSpotLights[MAX_SPOT_LIGHTS];
-uniform int uNumSpotLights;
+layout(std140) uniform LightBlock {
+    Light uLights[MAX_LIGHTS];
+};
+
+uniform int uLightCount;
+uniform int uObjLightCount;
+uniform int uObjLights[MAX_LIGHTS_PER_OBJECT];
 
 // Calculates Cook-Torrance PBR contribution for a single Point Light
 vec3 CalcPointLight(PointLight light, vec3 N, vec3 V, vec3 F0, vec3 albedo, float roughness, float metallic)
@@ -419,13 +429,31 @@ void main()
     }
 
     // --- Point Lights Pass ---
-    for (int i = 0; i < uNumPointLights && i < MAX_POINT_LIGHTS; ++i) {
-        Lo += CalcPointLight(uPointLights[i], N, V, F0, albedo.rgb, roughness, metallic);
-    }
-
-    // --- Spot Lights Pass ---
-    for (int i = 0; i < uNumSpotLights && i < MAX_SPOT_LIGHTS; ++i) {
-        Lo += CalcSpotLight(uSpotLights[i], N, V, F0, albedo.rgb, roughness, metallic);
+    // (and spot lights): only the lights selected for this object on the CPU
+    for (int n = 0; n < uObjLightCount && n < MAX_LIGHTS_PER_OBJECT; ++n) {
+        int idx = uObjLights[n];
+        if (idx < 0 || idx >= uLightCount) continue;
+        Light l = uLights[idx];
+        if (l.colorType.w < 0.5) {
+            PointLight p;
+            p.position = l.positionRange.xyz;
+            p.color = l.colorType.rgb;
+            p.constant = l.attenuation.x;
+            p.linear = l.attenuation.y;
+            p.quadratic = l.attenuation.z;
+            Lo += CalcPointLight(p, N, V, F0, albedo.rgb, roughness, metallic);
+        } else {
+            SpotLight sl;
+            sl.position = l.positionRange.xyz;
+            sl.direction = l.directionCos.xyz;
+            sl.color = l.colorType.rgb;
+            sl.cutOff = l.directionCos.w;
+            sl.outerCutOff = l.attenuation.w;
+            sl.constant = l.attenuation.x;
+            sl.linear = l.attenuation.y;
+            sl.quadratic = l.attenuation.z;
+            Lo += CalcSpotLight(sl, N, V, F0, albedo.rgb, roughness, metallic);
+        }
     }
 
     // 5. Ambient & Final Composition
