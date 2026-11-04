@@ -27,6 +27,7 @@ import com.pafoid.skate.engine.render.renderer.passes.PostProcessPass
 import com.pafoid.skate.engine.render.renderer.passes.RenderPass
 import com.pafoid.skate.engine.render.renderer.passes.ShadowPass
 import com.pafoid.skate.engine.render.renderer.passes.UiPass
+import com.pafoid.skate.engine.render.shader.ShaderFeature
 import com.pafoid.skate.engine.render.shadow.ShadowFrame
 import com.pafoid.skate.engine.render.shadow.ShadowSettings
 import com.pafoid.skate.engine.render.utils.GLStateTracker
@@ -114,7 +115,10 @@ class RenderResourcesFactory(
 
         val skyboxRenderer = SkyboxRenderer(shaders.skybox, vaoLoader)
         val skyDomeRenderer = SkyDomeRenderer(shaders.skyDome, vaoLoader)
-        val shadowRenderer = ShadowRenderer(shaders.shadow)
+        val shadowRenderer = ShadowRenderer(
+            shaders.shadow,
+            assetsManager.getShaderVariant(Assets.Shaders.SHADOW, setOf(ShaderFeature.ALPHA_TEST)),
+        )
         val debugRenderer = DebugRenderer(shaders.debug, cameraManager)
         val modelRenderer = ModelRenderer(debugRenderer)
         val splashRenderer = SplashRenderer(vaoLoader)
@@ -212,6 +216,7 @@ class RenderResourcesFactory(
         } else {
             object : RenderPass {
                 override var executionTimeNs: Long = 0
+                override var gpuTimeNs: Long = -1
                 override var isEnabled: Boolean = true
             }
         }

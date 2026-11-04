@@ -33,8 +33,10 @@ import org.lwjgl.opengl.GL30.glViewport
  * encodes the entity ID. This allows CPU-side identification of which
  * object the mouse is over.
  *
- * The pass runs every frame, including while an object is selected, so clicking another object
- * re-targets the selection directly.
+ * The pass renders on demand (REN-22): only in frames after a pick was requested ([requestPick], called by
+ * [com.pafoid.skate.engine.render.renderer.Renderer.readPixel]). While the pointer hovers the viewport the editor
+ * reads a pixel every frame, so the texture stays one frame old as before; with the pointer elsewhere the pass
+ * costs nothing. A read of a stale texture first renders it with [renderNow].
  *
  * ## Technical Details
  *
@@ -69,7 +71,26 @@ class PickingPass(
         pickingTexture.resize(width, height)
     }
 
-    override fun prepare() {
+    private val schedule = PickingSchedule()
+
+    /** True when the picking texture was rendered in the last frame (or just now), i.e. it can be read as is. */
+    val isFresh: Boolean get() = schedule.fresh
+
+    /** Asks for the picking texture to be rendered in the next frame. */
+    fun requestPick() = schedule.request()
+
+    override fun execute(scene: Scene) {
+        if (schedule.onFrame()) render(scene)
+    }
+
+    /** Renders the picking texture immediately (outside the render graph), for a read of a stale texture. */
+    fun renderNow(scene: Scene) {
+        if (!isEnabled) return
+        render(scene)
+        schedule.onRenderedNow()
+    }
+
+    private fun render(scene: Scene) {
         pickingTexture.enableWriting()
         glViewport(0, 0, pickingTexture.width, pickingTexture.height)
 
@@ -79,12 +100,6 @@ class PickingPass(
 
         glClearColor(0f, 0f, 0f, 0f)
         glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT)
-    }
-
-    override fun execute(scene: Scene) {
-        // CRITICAL: Rebind picking FBO - may have been unbound by previous passes (e.g., shadow pass)
-        pickingTexture.enableWriting()
-        glViewport(0, 0, pickingTexture.width, pickingTexture.height)
 
         // Render 2D and 3D objects for picking
         renderer2D.bindCamera(cameraManager.camera)
@@ -151,5 +166,32 @@ class PickingPass(
                 forEachPickable(go, action)
             }
         }
+    }
+}
+
+/**
+ * When the picking pass renders (pure bookkeeping, tested without GL): a request made during frame N renders the
+ * picking texture in frame N's render graph, so reads in frame N+1 see a fresh texture.
+ */
+class PickingSchedule {
+    private var requested = false
+
+    var fresh = false
+        private set
+
+    fun request() {
+        requested = true
+    }
+
+    /** Called once per render-graph frame; returns true when the pass must render this frame. */
+    fun onFrame(): Boolean {
+        val render = requested
+        requested = false
+        fresh = render
+        return render
+    }
+
+    fun onRenderedNow() {
+        fresh = true
     }
 }
