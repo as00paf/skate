@@ -11,6 +11,7 @@ import com.pafoid.skate.engine.render.renderer.SplashRenderer
 import com.pafoid.skate.engine.render.renderer.ThumbnailRenderer
 import com.pafoid.skate.engine.render.renderer.passes.DebugPass
 import com.pafoid.skate.engine.render.renderer.passes.GeometryPass
+import com.pafoid.skate.engine.render.renderer.passes.ParticlePass
 import com.pafoid.skate.engine.render.renderer.passes.PickingPass
 import com.pafoid.skate.engine.render.renderer.passes.PostProcessPass
 import com.pafoid.skate.engine.render.renderer.passes.UiPass
@@ -69,6 +70,7 @@ data class Renderers(
  * @param geometry Renders the full scene with PBR shading
  * @param debug Renders debug visualization on top
  * @param shadow Renders depth-only shadow map pass
+ * @param particles Draws particle emitters into the scene colour after geometry, before post-processing
  * @param postProcess Applies the post-processing effect stack (bloom, tonemapping, gamma, FXAA, SSAO)
  * @param ui Draws the runtime UI last, over post-processing and debug visuals
  */
@@ -79,9 +81,13 @@ data class RenderPasses(
     val shadow: RenderPass,
     val postProcess: PostProcessPass,
     val ui: UiPass,
+    val particles: ParticlePass,
 ) {
-    /** Execution order of the frame. The runtime UI is last so post effects and debug lines never touch it. */
-    fun inExecutionOrder(): List<RenderPass> = listOf(shadow, picking, geometry, postProcess, debug, ui)
+    /**
+     * Execution order of the frame. Particles go before post-processing so they get bloom/tonemapping; the runtime
+     * UI is last so post effects and debug lines never touch it.
+     */
+    fun inExecutionOrder(): List<RenderPass> = listOf(shadow, picking, geometry, particles, postProcess, debug, ui)
 }
 
 /**

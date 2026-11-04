@@ -4,6 +4,7 @@ import com.pafoid.skate.engine.ecs.components.AmbientLightComponent
 import com.pafoid.skate.engine.ecs.components.Animator
 import com.pafoid.skate.engine.ecs.components.AudioComponent
 import com.pafoid.skate.engine.ecs.components.AudioListener
+import com.pafoid.skate.engine.ecs.components.ParticleEmitter
 import com.pafoid.skate.engine.ecs.components.ReverbZone
 import com.pafoid.skate.engine.net.NetState
 import com.pafoid.skate.engine.net.NetworkIdentity
@@ -85,6 +86,7 @@ class Serializer {
             subclass(Animator::class)
             subclass(SpriteRenderer::class)
             subclass(RagdollComponent::class)
+            subclass(ParticleEmitter::class)
             subclass(VehicleComponent::class)
 
             // Light components

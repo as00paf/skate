@@ -43,6 +43,17 @@ object Assets {
         const val MANUAL_PAD = "assets/obj/manual_pad.obj"
         const val BANK = "assets/obj/bank.obj"
         const val QUARTER_PIPE = "assets/obj/quarter_pipe.obj"
+        const val HUBBA = "assets/obj/hubba.obj"
+        const val GRIND_BOX = "assets/obj/grind_box.obj"
+        const val FUNBOX = "assets/obj/funbox.obj"
+        const val HANDRAIL = "assets/obj/handrail.obj"
+        const val KINKED_RAIL = "assets/obj/kinked_rail.obj"
+        const val STAIRS_3 = "assets/obj/stairs_3.obj"
+        const val STAIRS_5 = "assets/obj/stairs_5.obj"
+        const val HALF_PIPE = "assets/obj/half_pipe.obj"
+        const val BOWL = "assets/obj/bowl.obj"
+        const val BENCH = "assets/obj/bench.obj"
+        const val SPAWN_MARKER = "assets/obj/spawn_marker.obj"
         const val SKATEBOARD_GLB = "assets/obj/skateboard_free_model.glb"
         const val JAMES = "assets/characters/james.glb"
     }
@@ -91,7 +102,7 @@ object Assets {
         const val SKATEBOARD_GLB = "EngineDefaults\\Models\\skateboard_free_model.glb"
 
         const val CUBE = "EngineDefaults\\Models\\cube.obj"
-        const val CYLINDER = "EngineDefaults\\Models\\cube.obj"
+        const val CYLINDER = "EngineDefaults\\Models\\cylinder.obj"
         const val SPHERE = "EngineDefaults\\Models\\sphere.obj"
         const val RAIL = "EngineDefaults\\Models\\rail.obj"
         const val LEDGE = "EngineDefaults\\Models\\ledge.obj"
@@ -99,6 +110,17 @@ object Assets {
         const val MANUAL_PAD = "EngineDefaults\\Models\\manual_pad.obj"
         const val BANK = "EngineDefaults\\Models\\bank.obj"
         const val QUARTER_PIPE = "EngineDefaults\\Models\\quarter_pipe.obj"
+        const val HUBBA = "EngineDefaults\\Models\\hubba.obj"
+        const val GRIND_BOX = "EngineDefaults\\Models\\grind_box.obj"
+        const val FUNBOX = "EngineDefaults\\Models\\funbox.obj"
+        const val HANDRAIL = "EngineDefaults\\Models\\handrail.obj"
+        const val KINKED_RAIL = "EngineDefaults\\Models\\kinked_rail.obj"
+        const val STAIRS_3 = "EngineDefaults\\Models\\stairs_3.obj"
+        const val STAIRS_5 = "EngineDefaults\\Models\\stairs_5.obj"
+        const val HALF_PIPE = "EngineDefaults\\Models\\half_pipe.obj"
+        const val BOWL = "EngineDefaults\\Models\\bowl.obj"
+        const val BENCH = "EngineDefaults\\Models\\bench.obj"
+        const val SPAWN_MARKER = "EngineDefaults\\Models\\spawn_marker.obj"
 
         const val IDLE_0 = "EngineDefaults\\Characters\\animations\\idle_0.fbx"
         const val IDLE_1 = "EngineDefaults\\Characters\\animations\\idle_1.fbx"
@@ -173,6 +195,17 @@ object Assets {
             MANUAL_PAD to Models.MANUAL_PAD,
             BANK to Models.BANK,
             QUARTER_PIPE to Models.QUARTER_PIPE,
+            HUBBA to Models.HUBBA,
+            GRIND_BOX to Models.GRIND_BOX,
+            FUNBOX to Models.FUNBOX,
+            HANDRAIL to Models.HANDRAIL,
+            KINKED_RAIL to Models.KINKED_RAIL,
+            STAIRS_3 to Models.STAIRS_3,
+            STAIRS_5 to Models.STAIRS_5,
+            HALF_PIPE to Models.HALF_PIPE,
+            BOWL to Models.BOWL,
+            BENCH to Models.BENCH,
+            SPAWN_MARKER to Models.SPAWN_MARKER,
             // Textures
             ASPHALT to Textures.ASPHALT,
             CONCRETE_SIMPLE to Textures.CONCRETE_SIMPLE,

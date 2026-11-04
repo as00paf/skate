@@ -6,7 +6,6 @@ import com.pafoid.skate.editor.ui.windows.assetBrowser.AnimationsTab
 import com.pafoid.skate.editor.ui.windows.assetBrowser.PrefabsTab
 import com.pafoid.skate.editor.ui.windows.assetBrowser.SoundsTab
 import com.pafoid.skate.editor.ui.windows.assetBrowser.TexturesTab
-import com.pafoid.skate.engine.assets.PrefabsGenerator
 import com.pafoid.skate.engine.core.Engine
 import imgui.ImGui
 import imgui.type.ImString
@@ -16,11 +15,10 @@ class AssetBrowserWindow(
     private val undoRedoManager: UndoRedoManager,
 ) : EditorWindow("window.asset_browser", true) {
     private val stringManager = engine.stringManager
-    private val prefabsGenerator: PrefabsGenerator = engine.prefabsGenerator
 
     private val animationsTab: AnimationsTab = AnimationsTab(engine, stringManager)
     private val texturesTab: TexturesTab = TexturesTab(stringManager, engine, undoRedoManager)
-    private val prefabsTab: PrefabsTab = PrefabsTab(engine, stringManager, prefabsGenerator)
+    private val prefabsTab: PrefabsTab = PrefabsTab(engine, stringManager)
     private val soundsTab: SoundsTab = SoundsTab(engine, stringManager)
 
     private var searchText = ImString(256)

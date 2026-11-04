@@ -20,6 +20,7 @@ enum class ComponentType {
     JOINT,
     NATIVE_SCRIPT,
     NON_PICKABLE,
+    PARTICLE_EMITTER,
     PLAYER_CONTROLLER,
     POINT_LIGHT,
     RENDER,
@@ -61,6 +62,7 @@ enum class ComponentType {
             JOINT -> JointComponent()
             NATIVE_SCRIPT -> NativeScriptComponent()
             NON_PICKABLE -> NonPickable()
+            PARTICLE_EMITTER -> ParticleEmitter()
             PLAYER_CONTROLLER -> PlayerController()
             POINT_LIGHT -> PointLightComponent()
             RENDER -> RenderComponent()

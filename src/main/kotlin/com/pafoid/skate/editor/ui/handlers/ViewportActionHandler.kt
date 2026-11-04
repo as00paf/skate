@@ -21,7 +21,8 @@ import com.pafoid.skate.editor.commands.scene.CreatePrimitiveCommand
 import com.pafoid.skate.editor.commands.scene.DeleteGameObjectCommand
 import com.pafoid.skate.editor.commands.scene.DuplicateGameObjectCommand
 import com.pafoid.skate.editor.commands.scene.SpawnPrefabCommand
-import com.pafoid.skate.editor.data.PrefabType
+import com.pafoid.skate.game.prefabs.MaterialType
+import com.pafoid.skate.game.prefabs.PrefabType
 import com.pafoid.skate.editor.data.PrimitiveType
 import com.pafoid.skate.editor.events.ViewportAction
 import com.pafoid.skate.editor.events.ViewportAction.AddComponent
@@ -124,7 +125,7 @@ class ViewportActionHandler(
         }
 
         eventSystem.subscribe<SpawnPrefab> { event ->
-            sceneManager.currentScene?.let { handleSpawnPrefab(event.prefabType, event.position, it) }
+            sceneManager.currentScene?.let { handleSpawnPrefab(event.prefabType, event.position, event.material, it) }
         }
 
         eventSystem.subscribe<DropTexture> { event ->
@@ -248,8 +249,8 @@ class ViewportActionHandler(
         scene.isDirty = true
     }
 
-    private fun handleSpawnPrefab(prefabType: PrefabType, position: Vector3f?, scene: Scene) {
-        val command = SpawnPrefabCommand(prefabType, position, engine.prefabsGenerator, gameObjectManager, scene)
+    private fun handleSpawnPrefab(prefabType: PrefabType, position: Vector3f?, material: MaterialType?, scene: Scene) {
+        val command = SpawnPrefabCommand(prefabType, position, material, engine.prefabsGenerator, gameObjectManager, scene)
         undoRedoManager.executeCommand(command)
         logger.logEditor("Spawned prefab: ${prefabType.name}")
     }

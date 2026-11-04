@@ -91,6 +91,7 @@ abstract class Component {
                 is JointComponent -> JOINT
                 is PointLightComponent -> POINT_LIGHT
                 is NonPickable -> NON_PICKABLE
+                is ParticleEmitter -> ComponentType.PARTICLE_EMITTER
                 is PlayerController -> PLAYER_CONTROLLER
                 is RenderComponent -> RENDER
                 is RigidBody3D -> RIGID_BODY_3D

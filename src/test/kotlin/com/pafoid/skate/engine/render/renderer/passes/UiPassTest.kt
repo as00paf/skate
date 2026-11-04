@@ -60,10 +60,14 @@ class UiPassTest {
             shadow = mockk(relaxed = true),
             postProcess = mockk(relaxed = true),
             ui = mockk(relaxed = true),
+            particles = mockk(relaxed = true),
         )
 
         val order = passes.inExecutionOrder()
 
-        assertEquals(listOf(passes.shadow, passes.picking, passes.geometry, passes.postProcess, passes.debug, passes.ui), order)
+        assertEquals(
+            listOf(passes.shadow, passes.picking, passes.geometry, passes.particles, passes.postProcess, passes.debug, passes.ui),
+            order,
+        )
     }
 }

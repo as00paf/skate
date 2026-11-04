@@ -8,6 +8,7 @@ import com.pafoid.skate.engine.ecs.components.Component
 import com.pafoid.skate.engine.ecs.components.Component.Companion.getCachedFields
 import com.pafoid.skate.engine.ecs.components.DirectionalLightComponent
 import com.pafoid.skate.engine.ecs.components.JointComponent
+import com.pafoid.skate.engine.ecs.components.ParticleEmitter
 import com.pafoid.skate.engine.ecs.components.PointLightComponent
 import com.pafoid.skate.engine.ecs.components.RenderComponent
 import com.pafoid.skate.engine.ecs.components.ReverbZone
@@ -36,84 +37,90 @@ fun Component.imgui(engine: Engine) {
         is ScriptComponent -> this.imgui(engine)
         is JointComponent -> this.imgui(engine)
         is ReverbZone -> this.imgui(engine)
+        is ParticleEmitter -> this.imgui(engine)
 
-        else -> if (this.isUiComponent()) this.uiImgui(engine) else try {
-            ImGui.pushID(this.javaClass.simpleName + this.name)
+        else -> if (this.isUiComponent()) this.uiImgui(engine) else reflectedImgui(engine)
+    }
+}
 
-            val fields = getCachedFields(this.javaClass)
-            fields.forEach { field ->
-                val modifiers = field.modifiers
-                if (Modifier.isTransient(modifiers) || Modifier.isStatic(modifiers)) return@forEach
+/** Inspector built from the component's declared fields (numbers, booleans, vectors, enums); [skip] hides fields by name. */
+fun Component.reflectedImgui(engine: Engine, skip: Set<String> = emptySet()) {
+    try {
+        ImGui.pushID(this.javaClass.simpleName + this.name)
 
-                if (Modifier.isPrivate(modifiers)) field.isAccessible = true
+        val fields = getCachedFields(this.javaClass)
+        fields.forEach { field ->
+            val modifiers = field.modifiers
+            if (Modifier.isTransient(modifiers) || Modifier.isStatic(modifiers)) return@forEach
 
-                val type = field.type
-                val value = field.get(this)
-                val name = field.name
-                val localizedName = engine.stringManager.getString("component.${this.javaClass.simpleName}.$name")
-                val isFinal = Modifier.isFinal(modifiers)
+            if (Modifier.isPrivate(modifiers)) field.isAccessible = true
 
-                when (type) {
-                    Int::class.java -> {
-                        if (!isFinal) {
-                            val typedValue = value as Int
-                            field.set(this, MImGui.dragInt(localizedName, typedValue))
-                        }
+            val type = field.type
+            val value = field.get(this)
+            val name = field.name
+            val localizedName = engine.stringManager.getString("component.${this.javaClass.simpleName}.$name")
+            val isFinal = Modifier.isFinal(modifiers)
+
+            when (type) {
+                Int::class.java -> {
+                    if (!isFinal) {
+                        val typedValue = value as Int
+                        field.set(this, MImGui.dragInt(localizedName, typedValue))
                     }
+                }
 
-                    Float::class.java -> {
-                        if (!isFinal) {
-                            val typedValue = value as Float
-                            field.set(this, MImGui.dragFloat(localizedName, typedValue))
-                        }
+                Float::class.java -> {
+                    if (!isFinal) {
+                        val typedValue = value as Float
+                        field.set(this, MImGui.dragFloat(localizedName, typedValue))
                     }
+                }
 
-                    Boolean::class.java -> {
-                        if (!isFinal) {
-                            val typedValue = value as Boolean
-                            if (ImGui.checkbox(localizedName, typedValue)) {
-                                field.set(this, !typedValue)
-                            }
-                        }
-                    }
-
-                    Vector2f::class.java -> {
-                        val typedValue = value as Vector2f
-                        MImGui.drawVec2Control(localizedName, typedValue)
-                    }
-
-                    Vector3f::class.java -> {
-                        val typedValue = value as Vector3f
-                        MImGui.drawVec3Control(localizedName, typedValue)
-                    }
-
-                    Vector4f::class.java -> {
-                        val typedValue = value as Vector4f
-                        val imVec = floatArrayOf(typedValue.x, typedValue.y, typedValue.z, typedValue.w)
-                        if (ImGui.dragFloat4(localizedName, imVec)) {
-                            typedValue.set(imVec[0], imVec[1], imVec[2], imVec[3])
-                        }
-                    }
-
-                    else -> {
-                        if (type.isEnum && !isFinal) {
-                            val enumValues = getEnumValues(type as Class<out Enum<*>>)
-                            val enumType = (value as Enum<*>).name
-                            val index = ImInt(indexOf(enumType, enumValues))
-                            if (ImGui.combo(localizedName, index, enumValues, enumValues.size)) {
-                                field.set(this, type.enumConstants[index.get()])
-                            }
+                Boolean::class.java -> {
+                    if (!isFinal) {
+                        val typedValue = value as Boolean
+                        if (ImGui.checkbox(localizedName, typedValue)) {
+                            field.set(this, !typedValue)
                         }
                     }
                 }
 
-                if (Modifier.isPrivate(modifiers)) field.isAccessible = false
+                Vector2f::class.java -> {
+                    val typedValue = value as Vector2f
+                    MImGui.drawVec2Control(localizedName, typedValue)
+                }
+
+                Vector3f::class.java -> {
+                    val typedValue = value as Vector3f
+                    MImGui.drawVec3Control(localizedName, typedValue)
+                }
+
+                Vector4f::class.java -> {
+                    val typedValue = value as Vector4f
+                    val imVec = floatArrayOf(typedValue.x, typedValue.y, typedValue.z, typedValue.w)
+                    if (ImGui.dragFloat4(localizedName, imVec)) {
+                        typedValue.set(imVec[0], imVec[1], imVec[2], imVec[3])
+                    }
+                }
+
+                else -> {
+                    if (type.isEnum && !isFinal) {
+                        val enumValues = getEnumValues(type as Class<out Enum<*>>)
+                        val enumType = (value as Enum<*>).name
+                        val index = ImInt(indexOf(enumType, enumValues))
+                        if (ImGui.combo(localizedName, index, enumValues, enumValues.size)) {
+                            field.set(this, type.enumConstants[index.get()])
+                        }
+                    }
+                }
             }
-        } catch (e: Exception) {
-            e.printStackTrace()
-        } finally {
-            ImGui.popID()
+
+            if (Modifier.isPrivate(modifiers)) field.isAccessible = false
         }
+    } catch (e: Exception) {
+        e.printStackTrace()
+    } finally {
+        ImGui.popID()
     }
 }
 

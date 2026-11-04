@@ -1,14 +1,14 @@
 package com.pafoid.skate.editor.search.providers
 
 import com.pafoid.skate.editor.data.FileType
-import com.pafoid.skate.editor.data.PrefabData
-import com.pafoid.skate.editor.data.PrefabType
 import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.editor.search.BaseSearchProvider
 import com.pafoid.skate.editor.search.data.SearchCategory
 import com.pafoid.skate.editor.search.data.SearchResult
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.core.LoggerService
+import com.pafoid.skate.game.prefabs.PrefabCatalog
+import com.pafoid.skate.game.prefabs.PrefabEntry
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -122,18 +122,8 @@ class AssetSearchProvider(private val logger: LoggerService) : BaseSearchProvide
     private suspend fun searchPrefabs(query: String): List<SearchResult> = withContext(Dispatchers.Default) {
         val results = mutableListOf<SearchResult>()
 
-        val prefabs = listOf(
-            PrefabData.createTemplate("Skateboard", PrefabType.SKATEBOARD, Assets.Models.SKATEBOARD_GLB),
-            PrefabData.createTemplate("Rail", PrefabType.RAIL, Assets.Models.RAIL),
-            PrefabData.createTemplate("Ledge", PrefabType.LEDGE, Assets.Models.LEDGE),
-            PrefabData.createTemplate("Kicker", PrefabType.KICKER, Assets.Models.KICKER),
-            PrefabData.createTemplate("Manual Pad", PrefabType.MANUAL_PAD, Assets.Models.MANUAL_PAD),
-            PrefabData.createTemplate("Bank", PrefabType.BANK, Assets.Models.BANK),
-            PrefabData.createTemplate("Quarter Pipe", PrefabType.QUARTER_PIPE, Assets.Models.QUARTER_PIPE),
-        )
-
-        prefabs.forEach { prefab ->
-            val score = calculateRelevance(prefab.name, query)
+        PrefabCatalog.entries.forEach { prefab ->
+            val score = calculateRelevance(prefabName(prefab), query)
             if (score > 0.0f) {
                 results.add(createPrefabResult(prefab, score))
             }
@@ -210,17 +200,21 @@ class AssetSearchProvider(private val logger: LoggerService) : BaseSearchProvide
         )
     }
 
-    private fun createPrefabResult(prefab: PrefabData, score: Float): SearchResult {
+    /** English name from the type (this provider has no string table): QUARTER_PIPE -> "Quarter Pipe". */
+    private fun prefabName(prefab: PrefabEntry) =
+        prefab.type.name.split('_').joinToString(" ") { part -> part.lowercase().replaceFirstChar { it.uppercase() } }
+
+    private fun createPrefabResult(prefab: PrefabEntry, score: Float): SearchResult {
         return SearchResult(
-            id = "asset_prefab_${prefab.name}",
-            displayName = prefab.name,
+            id = "asset_prefab_${prefab.type.name}",
+            displayName = prefabName(prefab),
             category = SearchCategory.ASSET_PREFAB,
             subcategory = "Prefab",
-            description = prefab.modelPath ?: "",
+            description = prefab.modelPath,
             icon = Icons.GEAR,
             relevanceScore = score,
             metadata = mapOf(
-                "path" to (prefab.modelPath ?: ""),
+                "path" to prefab.modelPath,
                 "type" to "prefab",
                 "prefabType" to prefab.type.name
             )
