@@ -38,6 +38,9 @@ class AnimationStateMachine(
 
     val isTransitioning get() = nextState != null
 
+    /** The motion [state] plays (for tools and tests). */
+    fun motionOf(state: String): Motion = motions.getValue(states.getValue(state).motion)
+
     /**
      * Fade time in seconds into a state, by target state name, replacing the asset's transition durations. Gameplay
      * fills it from its character config so blend times are tuned there (GPL-06); states not listed keep the asset's.

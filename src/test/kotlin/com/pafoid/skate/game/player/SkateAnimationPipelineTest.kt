@@ -37,7 +37,7 @@ class SkateAnimationPipelineTest {
 
     companion object {
         fun animator(): Animator = Animator(
-            animations = listOf("idle_0", "walking", "running", "jump", "falling idle")
+            animations = listOf("idle_0", "walking", "running", "jump", "falling idle", "skate riding")
                 .map { Animation(it, emptyList(), 1f, "$it.fbx") }.toMutableList(),
         ).apply {
             controllerPath = Skater.CONTROLLER_PATH

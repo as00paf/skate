@@ -65,6 +65,8 @@ data class AnimationControllerAsset(
      * replaces the procedural one, so each entry is a named slot for a clip that can be dropped in later.
      */
     val poses: Map<String, ProceduralClipDef> = emptyMap(),
+    /** Placement fixes for clips, keyed by clip name (see [ClipFitDef]). */
+    val clipFits: Map<String, ClipFitDef> = emptyMap(),
 ) {
     init {
         require(states.any { it.name == defaultState }) { "Unknown default state '$defaultState'" }
@@ -81,6 +83,7 @@ data class AnimationControllerAsset(
     fun issues(availableClips: Set<String>): List<String> {
         val problems = mutableListOf<String>()
         val clips = availableClips + poses.keys
+        (clipFits.keys - availableClips).forEach { problems += "Clip fit '$it' names an unknown clip" }
         for ((key, def) in motions) {
             (def.clipNames() - clips).forEach { problems += "Motion '$key' uses unknown clip '$it'" }
         }
