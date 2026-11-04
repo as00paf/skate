@@ -39,7 +39,7 @@ fun Component.imgui(engine: Engine) {
         is ReverbZone -> this.imgui(engine)
         is ParticleEmitter -> this.imgui(engine)
 
-        else -> reflectedImgui(engine)
+        else -> if (this.isUiComponent()) this.uiImgui(engine) else reflectedImgui(engine)
     }
 }
 

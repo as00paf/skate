@@ -168,6 +168,44 @@ class ScriptCompletionTest {
         }
     }
 
+    @Test
+    fun Completion_SignatureHelpTracksActiveParameter() {
+        val text = "onCreate { ctx -> ctx.events.on(\"jump\", |) }"
+        val help = assertNotNull(kotlin.signatureHelp(request(text)))
+
+        assertEquals("fun on(name: String, handler: (Any?) -> Unit): Unit", help.label)
+        assertEquals(listOf("name: String", "handler: (Any?) -> Unit"), help.parameters)
+        assertEquals(1, help.activeParameter)
+        assertEquals(0, assertNotNull(kotlin.signatureHelp(request("onCreate { ctx -> ctx.scene.find(|"))).activeParameter)
+        assertEquals(null, kotlin.signatureHelp(request("onCreate { ctx -> ctx.scene.find(\"a|\") }")))
+        assertEquals(null, kotlin.signatureHelp(request("onCreate { ctx -> ctx.scene.find(\"a\")| }")))
+        assertEquals(listOf("name"), lua.signatureHelp(request("function onCreate(ctx) ctx.input.action(|)"))!!.parameters)
+    }
+
+    @Test
+    fun Completion_AppliesToTextAndExposesCapabilitiesAndReference() {
+        val marked = "onUpdate { ctx, dt -> ctx.scene.fi| }"
+        val offset = marked.indexOf('|')
+        val text = marked.removeRange(offset, offset + 1)
+        val find = kotlin.complete(CompletionRequest("x", text, offset)).first { it.label == "find" }
+
+        val result = find.applyTo(text)
+        assertEquals("onUpdate { ctx, dt -> ctx.scene.find() }", result.text)
+        assertEquals(result.text.indexOf("find(") + 5, result.caret)
+
+        assertEquals("--", lua.capabilities.lineComment)
+        assertTrue('`' in ts.capabilities.autoClosePairs)
+        assertTrue('.' in kotlin.capabilities.triggerCharacters)
+        val reference = ts.apiReference().associateBy { it.name }
+        assertEquals("info(message: string): void", reference.getValue("ScriptLog").members.first { it.name == "info" }.signature)
+        assertTrue(reference.getValue("ScriptTime").members.all { it.documentation != null })
+    }
+
+    private fun request(marked: String): CompletionRequest {
+        val offset = marked.indexOf('|')
+        return CompletionRequest("x", marked.removeRange(offset, offset + 1), offset)
+    }
+
     private fun customHost(ext: String, provider: CompletionProvider) = object : com.pafoid.skate.engine.scripting.host.ScriptHost {
         override val language = ScriptLanguage.KOTLIN
         override val fileExtensions = setOf(ext)

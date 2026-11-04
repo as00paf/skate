@@ -15,18 +15,19 @@ Used by `skate-lead` after domain agents report `DONE`. Never push to a remote o
 
 ## Steps
 
-1. **Integration worktree.** `tools/herdr/integrate.sh <round-name> <domain...>` creates (or reuses) branch `integration/<round-name>` in `../skate-worktrees/integration` from the base branch, merges each `agents/<domain>` branch with `--no-ff`, one at a time, and runs `cmd.exe /c gradlew.bat test`. It stops on the first conflict.
-2. **Conflicts.** Do not resolve domain code yourself. Ask the owning agent to `git rebase integration/<round-name>` in its worktree, then re-run the script.
+1. **Integration worktree.** `tools/herdr/integrate.sh <round-name> <domain...>` creates (or reuses) branch `integration/<round-name>` in `../skate-worktrees/integration` from the base branch (a clean worktree left on a previous round's branch is switched to the new one), merges each `agents/<domain>` branch with `--no-ff`, one at a time, runs `cmd.exe /c gradlew.bat test` and prints the test totals from the JUnit XML. It stops on the first conflict. Re-running it with the remaining domains is safe. The full suite takes longer than a foreground tool call allows, so in Claude Code start it with `run_in_background` and wait for the completion notification.
+   - Before integrating, check which branches really carry new work: PRs are squash-merged, so `git rev-list master..agents/<d>` overstates it. `git merge-tree --write-tree master agents/<d>` returning master's tree (`git rev-parse master^{tree}`) means nothing new.
+2. **Conflicts.** Do not resolve domain code yourself. Ask the owning agent to `git merge integration/<round-name>` in its worktree (merge, not rebase: agent branches contain merge commits and squash-merged history, so a rebase replays old commits), then re-run the script for the remaining domains. Conflicts limited to `GameEngine.md` are the lead's to resolve: take the integration/master version.
 3. **Backlog.** Copy the updated `GameEngine.md` (checkbox state) into the integration worktree and commit it: `chore(backlog): round <name> status`. Only the lead edits checkbox state.
 4. **Verify.** The full test run must show no failures beyond those already listed in `docs/bugs.md`. Record the test counts for the PR body.
 5. **PR.** `git push -u origin integration/<round-name>` then
    `gh pr create --base master --head integration/<round-name> --title "Round <name>: <summary>" --body-file <file>`.
-   The body lists tasks completed (IDs), test results, known pre-existing failures, and a human test checklist (what to run, what to look for). The checklist must be clear but concise: state once that every test starts from a NEW project (and the launch command), then at most 5-8 short numbered steps per task with the key expected result, focusing on the highest-risk checks. Do not over-detail. Ask agents for brief steps in `docs/testing/<TASK-ID>.md` (max ~8 steps) and put only the short version in the PR body and the Discord DM and the Discord DM.
-6. **Merge.** Once the human has tested (or delegated the merge), merge the PR with `gh pr merge --merge`. Afterwards ask each agent to `git rebase master` (the new base) before its next task, and remove the integration worktree with `git worktree remove`.
+   The body lists tasks completed (IDs), test results, known pre-existing failures, and a human test checklist (what to run, what to look for). The checklist must be clear but concise: state once that every test starts from a NEW project (and the launch command), then at most 5-8 short numbered steps per task with the key expected result, focusing on the highest-risk checks. Do not over-detail. Ask agents for brief steps in `docs/testing/<TASK-ID>.md` (max ~8 steps) and put only the short version in the PR body and the Discord DM.
+6. **Merge.** Once the human has tested (or delegated the merge), merge the PR with `gh pr merge --merge`. Afterwards bring every `agents/<domain>` branch up to date with `git merge master` (the lead can do it when the only conflict is `GameEngine.md`; otherwise ask the owning agent). Keep the integration worktree; the next round's `integrate.sh` switches it to the new branch.
 
 ## Discord DMs (two-way)
 
-Use `tools/herdr/discord-dm.sh` (`send`, `read`, `wait`) to talk to the human by DM. It needs `DISCORD_TOKEN` and `DISCORD_USER_ID` in the environment; never write either into the repo, messages or logs. The `discord` MCP server can only post to channels, so DMs always go through this script.
+Use `tools/herdr/discord-dm.sh` (`send`, `read`, `wait`) to talk to the human by DM. It needs `DISCORD_TOKEN` and `DISCORD_USER_ID`, taken from the environment or, when unset, from `~/.config/skate/discord.env` (override with `SKATE_DISCORD_ENV`); never write either into the repo, messages or logs. The `discord` MCP server can only post to channels, so DMs always go through this script.
 
 - **Notify** by DM when a round is ready for testing (PR link, task IDs, test counts), when agents are blocked on a dialog you won't approve, and when a round is merged.
 - **Listen** for replies with `discord-dm.sh wait <seconds> [after-id]` while idle or waiting on agents. Pass the id of the last message you handled so you never act on the same message twice.
@@ -37,6 +38,7 @@ Use `tools/herdr/discord-dm.sh` (`send`, `read`, `wait`) to talk to the human by
 ## Commit rules
 
 - Commit messages: `<TASK-ID>: <imperative summary>`; backlog/doc-only commits use `chore(...)`/`docs(...)`.
-- Include the trailer `Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>`.
+- End commits with the co-author trailer of the CLI that made them. Claude Code: use the attribution line its harness provides (for example `Co-Authored-By: Claude <noreply@anthropic.com>`), and end PR bodies with its `Generated with Claude Code` line. Copilot CLI: `Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>`. OpenCode: no trailer.
+- Run filtered tests through the root project: `cmd.exe /c gradlew.bat :test --tests "<pattern>"`. Without the `:` the filter also applies to `tools:cli`, which has no matching tests and fails.
 - Never commit secrets, `imgui.ini` from a developer machine, or `build/` output.
 - Files use LF line endings (see `.gitattributes`).

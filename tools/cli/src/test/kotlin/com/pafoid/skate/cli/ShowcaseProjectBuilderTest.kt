@@ -28,6 +28,22 @@ class ShowcaseProjectBuilderTest {
     }
 
     @Test
+    fun Showcase_UiSceneHasWidgetsAndStrings() {
+        val dir = Files.createTempDirectory("skate-showcase-ui").toFile()
+        try {
+            val project = ShowcaseProjectBuilder().build(dir)
+            val service = SkateCliService(out = {})
+            val scene = service.loadScenes(service.loadProject(project.path)).first { it.name == "UI" }
+            val types = scene.children.first { it.name == "Canvas" }.children.flatMap { it.components }.map { it::class.simpleName }
+            listOf("UITextComponent", "UIImageComponent", "UIButtonComponent", "UIProgressBarComponent", "UISliderComponent")
+                .forEach { assertTrue(it in types, "missing $it") }
+            assertTrue(java.io.File(dir, "FeatureShowcase/Assets/strings.properties").readText().contains("showcase.title"))
+        } finally {
+            dir.deleteRecursively()
+        }
+    }
+
+    @Test
     fun CliArguments_SampleDefaultsToCurrentDirectory() {
         assertEquals(CliCommand.Sample("."), CliArguments.parse(listOf("sample")))
         assertEquals(CliCommand.Sample("x"), CliArguments.parse(listOf("sample", "--dir", "x")))

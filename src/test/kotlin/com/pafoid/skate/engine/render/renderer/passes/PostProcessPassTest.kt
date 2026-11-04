@@ -45,8 +45,6 @@ class PostProcessPassTest {
         assertEquals(
             listOf(
                 PostEffect.BLOOM,
-                PostEffect.TONEMAPPING,
-                PostEffect.GAMMA_CORRECTION,
                 PostEffect.FXAA,
             ),
             pass.resolvedEffects()
@@ -74,8 +72,6 @@ class PostProcessPassTest {
         assertEquals(
             listOf(
                 PostEffect.BLOOM,
-                PostEffect.TONEMAPPING,
-                PostEffect.GAMMA_CORRECTION,
                 PostEffect.FXAA,
             ),
             pass.resolvedEffects()
@@ -99,7 +95,7 @@ class PostProcessPassTest {
         pass.toggleEnable()
 
         assertTrue(pass.isEnabled)
-        assertEquals(4, pass.resolvedEffects().size)
+        assertEquals(2, pass.resolvedEffects().size) // bloom + FXAA (tonemap and gamma are off by default)
     }
 
     @Test

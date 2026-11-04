@@ -83,6 +83,8 @@ class ViewportContextMenu(
             ImGui.endMenu()
         }
 
+        UiCreateMenu.render(stringManager, eventSystem, null)
+
         // Create Camera
         if (ImGui.menuItem("${Icons.CAMERA} ${stringManager.getString("context.viewport.create_camera")}")) {
             scene?.let { eventSystem.publish(CreateCamera(it)) }

@@ -7,6 +7,7 @@ import com.pafoid.skate.engine.render.FrameBuffer
 import com.pafoid.skate.engine.render.RenderResources
 import com.pafoid.skate.engine.render.cache.GpuResources
 import com.pafoid.skate.engine.render.graph.RenderGraph
+import com.pafoid.skate.engine.render.utils.GLStateTracker
 
 class Renderer(
     var renderResources: RenderResources,
@@ -23,6 +24,8 @@ class Renderer(
         // Reset per-frame draw call counter
         EngineStats.resetDrawCalls()
         EngineStats.resetStateChanges()
+        // ImGui and raw GL calls outside the tracker change state between frames; resync the cache once per frame.
+        GLStateTracker.invalidateCache()
 
         // Execute the render graph - this handles all preparation, execution, and cleanup of passes
         renderResources.renderGraph.execute(scene)

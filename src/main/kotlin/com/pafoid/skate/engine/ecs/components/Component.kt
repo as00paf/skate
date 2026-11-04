@@ -97,11 +97,20 @@ abstract class Component {
                 is RigidBody3D -> RIGID_BODY_3D
                 is ReverbZone -> ComponentType.REVERB_ZONE
                 is RagdollComponent -> RAGDOLL
+                is VehicleComponent -> ComponentType.VEHICLE
                 is ScenePhysicsComponent -> SCENE_PHYSICS
                 is ScriptComponent -> ComponentType.SCRIPT
                 is SkeletonComponent -> SKELETON
                 is SpriteRenderer -> SPRITE_RENDERER
                 is Transform -> TRANSFORM
+                is com.pafoid.skate.engine.ui.UIButtonComponent -> ComponentType.UI_BUTTON
+                is com.pafoid.skate.engine.ui.UICanvasComponent -> ComponentType.UI_CANVAS
+                is com.pafoid.skate.engine.ui.UIElementComponent -> ComponentType.UI_ELEMENT
+                is com.pafoid.skate.engine.ui.UIImageComponent -> ComponentType.UI_IMAGE
+                is com.pafoid.skate.engine.ui.UIListComponent -> ComponentType.UI_LIST
+                is com.pafoid.skate.engine.ui.UIProgressBarComponent -> ComponentType.UI_PROGRESS_BAR
+                is com.pafoid.skate.engine.ui.UISliderComponent -> ComponentType.UI_SLIDER
+                is com.pafoid.skate.engine.ui.UITextComponent -> ComponentType.UI_TEXT
                 else -> null
             }
         }

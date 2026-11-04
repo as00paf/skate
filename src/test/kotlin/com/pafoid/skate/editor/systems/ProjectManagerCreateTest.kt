@@ -8,6 +8,8 @@ import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.spyk
+import io.mockk.verify
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
@@ -45,5 +47,28 @@ class ProjectManagerCreateTest {
         assertTrue(result.isSuccess, result.exceptionOrNull()?.toString())
         assertEquals("MainScene", sceneManager.currentScene?.name)
         assertEquals(listOf("Player"), sceneManager.currentScene?.children?.map { it.name })
+    }
+
+    @Test
+    fun ProjectManager_CreateProject_OpensMainSceneExactlyOnce() {
+        val serializer = Serializer()
+        val sceneManager = spyk(SceneManager(mockk(relaxed = true), EventSystem(), serializer, mockk(relaxed = true), mockk(relaxed = true)))
+        val engine = mockk<Engine>(relaxed = true)
+        every { engine.eventSystem } returns EventSystem()
+        every { engine.sceneManager } returns sceneManager
+        every { engine.serializer } returns serializer
+        every { engine.prefabsGenerator.createDefaultScenes(any()) } answers {
+            val main = Scene("MainScene")
+            val folder = firstArg<File>().also { it.mkdirs() }
+            File(folder, "MainScene.scene").writeText(
+                serializer.encodeFile(com.pafoid.skate.engine.assets.serialization.FileKind.SCENE, main)
+            )
+            listOf(main)
+        }
+
+        assertTrue(ProjectManager(engine).createProject("P", dir).isSuccess)
+
+        verify(exactly = 1) { sceneManager.openScenes(any()) }
+        assertEquals(listOf("MainScene"), sceneManager.openScenes.map { it.name })
     }
 }

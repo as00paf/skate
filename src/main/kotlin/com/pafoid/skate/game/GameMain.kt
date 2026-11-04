@@ -45,6 +45,11 @@ fun main(args: Array<String>) {
         engine.runtimePlaying = true
         installGameUi(window)
         window.show { dt ->
+            // The framebuffer is blitted over the whole window, so UI pointer mapping uses the window's size.
+            val w = IntArray(1)
+            val h = IntArray(1)
+            GLFW.glfwGetWindowSize(window.glfwWindow, w, h)
+            engine.inputProvider.mouseListener.setGameViewportSize(org.joml.Vector2f(w[0].toFloat(), h[0].toFloat()))
             engine.update(dt)
             testDraw(window)
         }

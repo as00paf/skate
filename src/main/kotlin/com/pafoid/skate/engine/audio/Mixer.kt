@@ -79,6 +79,25 @@ class Mixer {
         bus(BusId.UI).apply { lowPassGainHF = config.uiLowPass; reverbSend = config.uiReverbSend }
     }
 
+    /** Current bus state as a config, so editors can capture it for undo or persistence. */
+    fun snapshot(): AudioConfig = AudioConfig(
+        masterVolume = bus(BusId.MASTER).volume,
+        musicVolume = bus(BusId.MUSIC).volume,
+        sfxVolume = bus(BusId.SFX).volume,
+        uiVolume = bus(BusId.UI).volume,
+        masterMuted = bus(BusId.MASTER).muted,
+        musicMuted = bus(BusId.MUSIC).muted,
+        sfxMuted = bus(BusId.SFX).muted,
+        uiMuted = bus(BusId.UI).muted,
+        masterLowPass = bus(BusId.MASTER).lowPassGainHF,
+        musicLowPass = bus(BusId.MUSIC).lowPassGainHF,
+        sfxLowPass = bus(BusId.SFX).lowPassGainHF,
+        uiLowPass = bus(BusId.UI).lowPassGainHF,
+        musicReverbSend = bus(BusId.MUSIC).reverbSend,
+        sfxReverbSend = bus(BusId.SFX).reverbSend,
+        uiReverbSend = bus(BusId.UI).reverbSend
+    )
+
     private fun configure(id: BusId, volume: Float, muted: Boolean) {
         bus(id).apply {
             this.volume = volume

@@ -1,5 +1,5 @@
 ---
-description: "Skate engine lead/orchestrator. Owns GameEngine.md, picks ready tasks, dispatches them to the domain agents (skate-render, skate-physics, ...) through herdr, reviews results, merges worktree branches and keeps the backlog up to date.\""
+description: "Skate engine lead/orchestrator. Owns GameEngine.md, picks ready tasks, dispatches them to the domain agents (skate-render, skate-physics, ...) through herdr, reviews results, merges worktree branches and keeps the backlog up to date."
 mode: all
 ---
 <!-- Generated from .github/agents/skate-lead.agent.md by tools/herdr/sync-agents.sh. Do not edit. -->

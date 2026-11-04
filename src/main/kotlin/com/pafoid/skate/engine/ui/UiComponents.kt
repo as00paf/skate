@@ -19,11 +19,11 @@ class UICanvasComponent(
     /** A modal canvas takes all navigation input and traps focus. */
     var modal: Boolean = false,
 ) : Component() {
-    @Transient var scale: Float = 1f
-    @Transient var width: Float = 0f
-    @Transient var height: Float = 0f
+    @Transient @kotlin.jvm.Transient var scale: Float = 1f
+    @Transient @kotlin.jvm.Transient var width: Float = 0f
+    @Transient @kotlin.jvm.Transient var height: Float = 0f
     /** Invoked when the cancel action fires while this canvas is the top input target. */
-    @Transient var onCancel: (() -> Unit)? = null
+    @Transient @kotlin.jvm.Transient var onCancel: (() -> Unit)? = null
 }
 
 /** Rect transform and interaction flags shared by every UI element. See [UiNodeSpec] for the anchor semantics. */
@@ -41,10 +41,10 @@ class UIElementComponent(
     var zOrder: Int = 0,
 ) : Component() {
     /** Resolved rect in canvas units; written by the layout system. */
-    @Transient var rect: UiRectF = UiRectF(0f, 0f, 0f, 0f)
+    @Transient @kotlin.jvm.Transient var rect: UiRectF = UiRectF(0f, 0f, 0f, 0f)
 
     /** Set by the input system. */
-    @Transient var focused: Boolean = false
+    @Transient @kotlin.jvm.Transient var focused: Boolean = false
 
     fun anchors(minX: Float, minY: Float, maxX: Float, maxY: Float) = apply {
         anchorMinX = minX; anchorMinY = minY; anchorMaxX = maxX; anchorMaxY = maxY
@@ -86,7 +86,7 @@ class UIImageComponent(
     @Contextual var tint: Vector4f = Vector4f(1f, 1f, 1f, 1f),
     var sliceLeft: Int = 0, var sliceTop: Int = 0, var sliceRight: Int = 0, var sliceBottom: Int = 0,
 ) : Component() {
-    @Transient var texture: Texture? = null
+    @Transient @kotlin.jvm.Transient var texture: Texture? = null
 }
 
 /** Clickable element: draws its background per state and a centered label from [labelKey]. */
@@ -94,16 +94,17 @@ class UIImageComponent(
 class UIButtonComponent(
     var labelKey: String = "",
     @Contextual var normalColor: Vector4f = Vector4f(0.2f, 0.2f, 0.25f, 0.9f),
-    @Contextual var hoverColor: Vector4f = Vector4f(0.3f, 0.3f, 0.4f, 0.9f),
-    @Contextual var pressedColor: Vector4f = Vector4f(0.1f, 0.1f, 0.15f, 0.9f),
+    // Hover and pressed must read as different at a glance, also over dark scenes.
+    @Contextual var hoverColor: Vector4f = Vector4f(0.3f, 0.45f, 0.8f, 0.95f),
+    @Contextual var pressedColor: Vector4f = Vector4f(0.12f, 0.2f, 0.45f, 1f),
     @Contextual var disabledColor: Vector4f = Vector4f(0.15f, 0.15f, 0.15f, 0.5f),
     @Contextual var focusColor: Vector4f = Vector4f(1f, 0.8f, 0.2f, 1f),
     @Contextual var labelColor: Vector4f = Vector4f(1f, 1f, 1f, 1f),
     var fontSize: Float = 32f,
 ) : Component() {
-    @Transient var hovered = false
-    @Transient var pressed = false
-    @Transient var onClick: (() -> Unit)? = null
+    @Transient @kotlin.jvm.Transient var hovered = false
+    @Transient @kotlin.jvm.Transient var pressed = false
+    @Transient @kotlin.jvm.Transient var onClick: (() -> Unit)? = null
 }
 
 @Serializable
@@ -115,8 +116,8 @@ class UISliderComponent(
     @Contextual var trackColor: Vector4f = Vector4f(0.15f, 0.15f, 0.15f, 0.9f),
     @Contextual var fillColor: Vector4f = Vector4f(0.9f, 0.6f, 0.1f, 1f),
 ) : Component() {
-    @Transient var dragging = false
-    @Transient var onValueChanged: ((Float) -> Unit)? = null
+    @Transient @kotlin.jvm.Transient var dragging = false
+    @Transient @kotlin.jvm.Transient var onValueChanged: ((Float) -> Unit)? = null
 
     fun setValueFromUser(v: Float) {
         val snapped = UiWidgetMath.snap(v, min, max, step)
@@ -151,8 +152,8 @@ class UIListComponent(
     @Contextual var selectionColor: Vector4f = Vector4f(0.9f, 0.6f, 0.1f, 0.6f),
     @Contextual var textColor: Vector4f = Vector4f(1f, 1f, 1f, 1f),
 ) : Component() {
-    @Transient var onSelected: ((Int) -> Unit)? = null
-    @Transient var onActivated: ((Int) -> Unit)? = null
+    @Transient @kotlin.jvm.Transient var onSelected: ((Int) -> Unit)? = null
+    @Transient @kotlin.jvm.Transient var onActivated: ((Int) -> Unit)? = null
 
     fun select(index: Int) {
         if (items.isEmpty()) return

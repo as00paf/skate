@@ -17,6 +17,7 @@ class LanguageProfile(
     val declarationWords: Set<String>,
     val adaptIndex: (ApiIndex) -> ApiIndex = { it },
     val renderSignature: (ApiMember) -> String = { it.signature },
+    val capabilities: CompletionCapabilities = CompletionCapabilities(),
 ) {
     /** [body] contains `$0` where the caret goes. */
     class Snippet(val label: String, val body: String, val doc: String)
@@ -94,6 +95,7 @@ class LanguageProfile(
                 Snippet("for", "for (i in 0 until \$0) {\n}", "counted loop"),
             ),
             lineComment = "//", blockComment = "/*" to "*/",
+            capabilities = CompletionCapabilities(lineComment = "//"),
             handlerParam = Regex("on(?:Create|Update|FixedUpdate|Destroy)\\s*\\{\\s*(\\w+)"),
             declaration = Regex("\\b(?:val|var|fun)\\s+(\\w+)"),
             alias = Regex("\\b(?:val|var)\\s+(\\w+)\\s*(?::\\s*[\\w?<>]+\\s*)?=\\s*([\\w.?()]+)\\s*$"),
@@ -108,6 +110,7 @@ class LanguageProfile(
             snippets = lifecycleSnippets { n, dt -> "export function $n(ctx: any${if (dt.isEmpty()) "" else ", $dt: number"}) {\n  \$0\n}" } +
                 listOf(Snippet("if", "if (\$0) {\n}", "if statement"), Snippet("for", "for (let i = 0; i < \$0; i++) {\n}", "counted loop")),
             lineComment = "//", blockComment = "/*" to "*/", quotes = "\"'`",
+            capabilities = CompletionCapabilities(autoClosePairs = CompletionCapabilities().autoClosePairs + ('`' to '`')),
             handlerParam = Regex("function\\s+on(?:Create|Update|FixedUpdate|Destroy)\\s*\\(\\s*(\\w+)"),
             declaration = Regex("\\b(?:const|let|var|function|class|interface)\\s+(\\w+)"),
             alias = Regex("\\b(?:const|let|var)\\s+(\\w+)\\s*(?::\\s*[\\w<>\\[\\]|]+\\s*)?=\\s*([\\w.?()]+)\\s*;?\\s*$"),
@@ -123,6 +126,7 @@ class LanguageProfile(
             snippets = lifecycleSnippets { n, dt -> "function $n(ctx${if (dt.isEmpty()) "" else ", $dt"})\n  \$0\nend" } +
                 listOf(Snippet("if", "if \$0 then\nend", "if statement"), Snippet("for", "for i = 1, \$0 do\nend", "counted loop")),
             lineComment = "--", blockComment = "--[[" to "]]",
+            capabilities = CompletionCapabilities(lineComment = "--"),
             handlerParam = Regex("function\\s+on(?:Create|Update|FixedUpdate|Destroy)\\s*\\(\\s*(\\w+)"),
             declaration = Regex("\\b(?:local\\s+function|local|function)\\s+(\\w+)"),
             alias = Regex("\\blocal\\s+(\\w+)\\s*=\\s*([\\w.()]+)\\s*$"),
