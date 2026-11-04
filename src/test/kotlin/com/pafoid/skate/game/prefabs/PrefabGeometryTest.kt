@@ -23,7 +23,7 @@ class PrefabGeometryTest {
         assertEquals(0f, box.offset.length(), 0f)
         // The model origin (wheels on the ground) sits at the box bottom.
         assertEquals(-box.halfExtents.y, visual.getComponent<Transform>()!!.translation.y, 1e-4f)
-        assertEquals(Skateboard.MODEL_SCALE, visual.getComponent<Transform>()!!.scale.x, 0f)
+        assertEquals(1f, visual.getComponent<Transform>()!!.scale.x, 0f)
     }
 
     @Test

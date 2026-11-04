@@ -1,5 +1,6 @@
 package com.pafoid.skate.engine.assets.procedural
 
+import org.joml.Matrix4f
 import org.joml.Vector2f
 import org.joml.Vector3f
 import java.util.Locale
@@ -21,7 +22,11 @@ class MeshBuilder {
     private val positions = ArrayList<Vector3f>()
     private val normals = ArrayList<Vector3f>()
     private val uvs = ArrayList<Vector2f>()
+    private val colors = ArrayList<Vector3f>()
     private val indices = ArrayList<Int>()
+
+    /** Vertex colour (linear RGB) given to every vertex added from now on; it multiplies the material's base colour. */
+    var color: Vector3f = Vector3f(1f)
 
     val vertexCount: Int get() = positions.size
     val triangleCount: Int get() = indices.size / 3
@@ -45,7 +50,49 @@ class MeshBuilder {
         positions += Vector3f(p)
         normals += Vector3f(n)
         uvs += Vector2f(uv)
+        colors += Vector3f(color)
         return positions.size - 1
+    }
+
+    /** Vertex colours as built, for tests. */
+    fun vertexColors(): List<Vector3f> = colors.map { Vector3f(it) }
+
+    /** Copies [other]'s triangles (with their colours) into this mesh, moved by [transform]. */
+    fun append(other: MeshBuilder, transform: Matrix4f = Matrix4f()): MeshBuilder {
+        val base = positions.size
+        val normalMatrix = Matrix4f(transform).invert().transpose()
+        for (i in 0 until other.vertexCount) {
+            positions += transform.transformPosition(Vector3f(other.positions[i]))
+            normals += normalMatrix.transformDirection(Vector3f(other.normals[i])).normalize()
+            uvs += Vector2f(other.uvs[i])
+            colors += Vector3f(other.colors[i])
+        }
+        other.indices.forEach { indices += base + it }
+        return this
+    }
+
+    /**
+     * Adds a smooth surface through a grid of [points] (rows of equal length; a row may collapse to one repeated
+     * point, like the tip of a board). Each quad faces [outward] of its centre; vertex normals come from the
+     * neighbouring points so the surface shades as one curved sheet.
+     */
+    fun grid(points: List<List<Vector3f>>, outward: (Vector3f) -> Vector3f): MeshBuilder {
+        require(points.size >= 2 && points.all { it.size == points[0].size && it.size >= 2 })
+        val rows = points.size; val cols = points[0].size
+        val normal = { r: Int, c: Int ->
+            val along = Vector3f(points[minOf(r + 1, rows - 1)][c]).sub(points[maxOf(r - 1, 0)][c])
+            val across = Vector3f(points[r][minOf(c + 1, cols - 1)]).sub(points[r][maxOf(c - 1, 0)])
+            val n = along.cross(across)
+            val out = outward(points[r][c])
+            if (n.lengthSquared() < EPSILON) Vector3f(out).normalize()
+            else n.normalize().let { if (it.dot(out) < 0f) it.negate() else it }
+        }
+        for (r in 0 until rows - 1) for (c in 0 until cols - 1) {
+            val a = points[r][c]; val b = points[r][c + 1]; val cc = points[r + 1][c + 1]; val d = points[r + 1][c]
+            val centre = Vector3f(a).add(b).add(cc).add(d).div(4f)
+            quad(a, b, cc, d, outward(centre), listOf(normal(r, c), normal(r, c + 1), normal(r + 1, c + 1), normal(r + 1, c)))
+        }
+        return this
     }
 
     /**
@@ -64,15 +111,18 @@ class MeshBuilder {
         val n = Vector3f(n1).add(n2)
         if (n.lengthSquared() < EPSILON) return
         n.normalize()
-        val corners = mutableListOf(a, b, c, d)
-        val cornerNormals = (vertexNormals ?: List(4) { n }).toMutableList()
-        val cornerUvs = (quadUvs ?: corners.map { planarUv(it, n) }).toMutableList()
-        if (n.dot(outward) < 0f) {
-            corners.reverse(); cornerNormals.reverse(); cornerUvs.reverse()
-        }
-        val base = corners.indices.map { vertex(corners[it], cornerNormals[it], cornerUvs[it]) }
-        if (n1.lengthSquared() >= EPSILON) indices.addAll(listOf(base[0], base[1], base[2]))
-        if (n2.lengthSquared() >= EPSILON) indices.addAll(listOf(base[0], base[2], base[3]))
+        val corners = listOf(a, b, c, d)
+        val cornerNormals = vertexNormals ?: List(4) { n }
+        val cornerUvs = quadUvs ?: corners.map { planarUv(it, n) }
+        // Flipping keeps a as the first corner (a-d-c-b), so both windings split along the same a-c diagonal and
+        // the degenerate checks below still match their triangles.
+        val flipped = n.dot(outward) < 0f
+        val order = if (flipped) listOf(0, 3, 2, 1) else listOf(0, 1, 2, 3)
+        val base = order.map { vertex(corners[it], cornerNormals[it], cornerUvs[it]) }
+        val abc = if (flipped) listOf(base[0], base[2], base[3]) else listOf(base[0], base[1], base[2])
+        val acd = if (flipped) listOf(base[0], base[1], base[2]) else listOf(base[0], base[2], base[3])
+        if (n1.lengthSquared() >= EPSILON) indices.addAll(abc)
+        if (n2.lengthSquared() >= EPSILON) indices.addAll(acd)
     }
 
     /** Adds triangle a-b-c with a flat normal, wound to face [outward]. */
@@ -209,12 +259,20 @@ class MeshBuilder {
         return this
     }
 
-    /** Wavefront OBJ text: one `v`/`vt`/`vn` per vertex and `f i/i/i` triangles. */
+    /**
+     * Wavefront OBJ text: one `v`/`vt`/`vn` per vertex and `f i/i/i` triangles. When any vertex is not white the
+     * `v` lines carry its colour (`v x y z r g b`, read by Assimp as vertex colours).
+     */
     fun toObj(name: String): String {
         val sb = StringBuilder()
         sb.append("# ").append(name).append(" (generated by MeshBuilder, do not edit)\n")
         sb.append("o ").append(name.replace(' ', '_')).append('\n')
-        positions.forEach { sb.append("v ").append(f(it.x)).append(' ').append(f(it.y)).append(' ').append(f(it.z)).append('\n') }
+        val coloured = colors.any { it.x != 1f || it.y != 1f || it.z != 1f }
+        positions.forEachIndexed { i, it ->
+            sb.append("v ").append(f(it.x)).append(' ').append(f(it.y)).append(' ').append(f(it.z))
+            if (coloured) colors[i].let { c -> sb.append(' ').append(f(c.x)).append(' ').append(f(c.y)).append(' ').append(f(c.z)) }
+            sb.append('\n')
+        }
         uvs.forEach { sb.append("vt ").append(f(it.x)).append(' ').append(f(it.y)).append('\n') }
         normals.forEach { sb.append("vn ").append(f(it.x)).append(' ').append(f(it.y)).append(' ').append(f(it.z)).append('\n') }
         indices.chunked(3).forEach { tri ->

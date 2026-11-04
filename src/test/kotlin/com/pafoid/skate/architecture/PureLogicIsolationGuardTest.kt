@@ -64,6 +64,38 @@ class PureLogicIsolationGuardTest {
         assertTrue(violations.isEmpty(), "Pure-logic files must not import GL/AL/editor: $violations")
     }
 
+    private fun ktFilesIn(relativeDir: String): List<String> =
+        Files.list(sourceRoot.resolve(relativeDir)).use { it.filter { f -> f.fileName.toString().endsWith(".kt") }.toList() }
+            .map { sourceRoot.relativize(it).invariantSeparatorsPathString }
+
+    @Test
+    fun PureLogic_ShadowParticleAndCameraMathsStayPlatformFree() {
+        // Whole directories: a new GL-bound file in shadow/ or particles/ belongs in renderer/passes instead.
+        val shadowFiles = ktFilesIn("engine/render/shadow")
+        val particleFiles = ktFilesIn("engine/render/particles")
+        val files = shadowFiles + particleFiles + listOf(
+            "engine/render/lighting/LightData.kt",
+            "engine/render/lighting/LightCulling.kt",
+            "engine/utils/CameraMotion.kt",
+            "engine/input/ViewportPointer.kt",
+        )
+        // Body text too, not just imports: a fully qualified org.lwjgl.* call would bypass an import-only check.
+        val forbidden = listOf("org.lwjgl.", "com.pafoid.skate.editor.", "imgui.")
+        val violations = files.flatMap { f ->
+            importsOf(f)
+            sourceRoot.resolve(f).readText().lineSequence().map { it.trim() }
+                .filter { line -> !line.startsWith("//") && !line.startsWith("*") && forbidden.any { line.contains(it) } }
+                .map { "$f -> $it" }
+                .toList()
+        }
+        assertTrue(shadowFiles.size >= 4, "engine/render/shadow unexpectedly small: $shadowFiles")
+        assertTrue(
+            particleFiles.containsAll(listOf("engine/render/particles/ParticleSimulator.kt", "engine/render/particles/ParticlePool.kt")),
+            "Particle simulation moved, update the guard: $particleFiles",
+        )
+        assertTrue(violations.isEmpty(), "Shadow/particle/camera maths must stay unit-testable without GL/editor: $violations")
+    }
+
     @Test
     fun EngineLayering_EngineDoesNotImportEditorExceptExportTools() {
         val exceptions = setOf("engine/utils/AssetsPacker.kt", "engine/utils/ProjectExporter.kt")

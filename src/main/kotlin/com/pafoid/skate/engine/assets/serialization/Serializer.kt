@@ -16,7 +16,9 @@ import com.pafoid.skate.engine.ecs.components.FreeFlyCameraComponent
 import com.pafoid.skate.engine.ecs.components.CapsuleCollider3D
 import com.pafoid.skate.engine.ecs.components.JointComponent
 import com.pafoid.skate.engine.ecs.components.Component
+import com.pafoid.skate.engine.ecs.components.CompoundHullCollider3D
 import com.pafoid.skate.engine.ecs.components.CustomCollider3D
+import com.pafoid.skate.engine.ecs.components.MeshCollider3D
 import com.pafoid.skate.engine.ecs.components.CylinderCollider3D
 import com.pafoid.skate.engine.ecs.components.DayNightCycleComponent
 import com.pafoid.skate.engine.ecs.components.DirectionalLightComponent
@@ -81,6 +83,8 @@ class Serializer {
             subclass(BoxCollider3D::class)
             subclass(CylinderCollider3D::class)
             subclass(CustomCollider3D::class)
+            subclass(CompoundHullCollider3D::class)
+            subclass(MeshCollider3D::class)
             subclass(CapsuleCollider3D::class)
             subclass(JointComponent::class)
 

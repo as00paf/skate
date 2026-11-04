@@ -15,6 +15,7 @@ import com.pafoid.skate.engine.render.data.Renderable2D
 import com.pafoid.skate.engine.render.renderer.ModelRenderer
 import com.pafoid.skate.engine.render.renderer.PickingRenderer
 import com.pafoid.skate.engine.render.renderer.Renderer2D
+import com.pafoid.skate.engine.render.renderer.RenderTraversal
 import com.pafoid.skate.engine.render.utils.GLStateTracker
 import com.pafoid.skate.engine.utils.EntityIdEncoder
 import com.pafoid.skate.engine.utils.ShaderConst.Uniforms
@@ -118,8 +119,9 @@ class PickingPass(
         pickingShader3D.uploadMat4f(Uniforms.VIEW_MATRIX, camera.view)
 
         forEachPickable(scene) { go ->
-            val renderComponent = go.getComponent<RenderComponent>()
-            val transform = go.getComponent<Transform>()
+            // Same components the geometry pass draws: a disabled render component is not a click target
+            val renderComponent = go.getComponent<RenderComponent>()?.takeIf { it.enabled }
+            val transform = go.getComponent<Transform>()?.takeIf { it.enabled }
             if (renderComponent != null && transform != null) {
                 val skeletonComponent = go.getComponent<SkeletonComponent>()
 
@@ -144,8 +146,8 @@ class PickingPass(
         renderer2D.bindCamera(cameraManager.camera)
 
         forEachPickable(scene) { go ->
-            go.getComponent<SpriteRenderer>()?.let { sprite ->
-                go.getComponent<Transform>()?.let {
+            go.getComponent<SpriteRenderer>()?.takeIf { it.enabled }?.let { sprite ->
+                go.getComponent<Transform>()?.takeIf { it.enabled }?.let {
                     renderer2D.add(Renderable2D(sprite, it.worldMatrix))
                 }
             }
@@ -156,12 +158,13 @@ class PickingPass(
 
     companion object {
         /**
-         * Visits every visible, unlocked, pickable descendant of [node] at any depth, so models on child
-         * objects get their own picking id. Hidden or locked objects prune their whole subtree.
+         * Visits every rendered ([RenderTraversal]), unlocked descendant of [node] at any depth, so models on child
+         * objects get their own picking id. Hidden, disabled or locked objects prune their whole subtree;
+         * [NonPickable] skips only the object itself.
          */
         fun forEachPickable(node: GameObject, action: (GameObject) -> Unit) {
-            node.children.forEach { go ->
-                if (!go.isVisible || go.isLocked) return@forEach
+            for (go in node.children) {
+                if (!RenderTraversal.isRendered(go) || go.isLocked) continue
                 if (go.getComponent<NonPickable>() == null) action(go)
                 forEachPickable(go, action)
             }

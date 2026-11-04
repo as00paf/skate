@@ -43,7 +43,7 @@ object PrefabCatalog {
     private val metal = listOf(MaterialType.METAL)
 
     val entries: List<PrefabEntry> = listOf(
-        PrefabEntry(PrefabType.SKATEBOARD, PrefabCategory.PLAYER, Assets.Models.SKATEBOARD_GLB, Assets.Bundled.SKATEBOARD_GLB, emptyList()),
+        PrefabEntry(PrefabType.SKATEBOARD, PrefabCategory.PLAYER, Assets.Models.SKATEBOARD, Assets.Bundled.SKATEBOARD, emptyList(), SkateboardShape::mesh),
         PrefabEntry(PrefabType.SKATER, PrefabCategory.PLAYER, Assets.Models.JAMES, Assets.Bundled.JAMES, emptyList()),
 
         PrefabEntry(PrefabType.LEDGE, PrefabCategory.STREET, Assets.Models.LEDGE, Assets.Bundled.LEDGE, parkSurfaces),

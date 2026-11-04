@@ -54,7 +54,7 @@ object Assets {
         const val BOWL = "assets/obj/bowl.obj"
         const val BENCH = "assets/obj/bench.obj"
         const val SPAWN_MARKER = "assets/obj/spawn_marker.obj"
-        const val SKATEBOARD_GLB = "assets/obj/skateboard_free_model.glb"
+        const val SKATEBOARD = "assets/obj/skateboard.obj"
         const val JAMES = "assets/characters/james.glb"
     }
     object Fonts {
@@ -99,7 +99,7 @@ object Assets {
     object Bundled {
         const val JAMES = "EngineDefaults\\Characters\\james.glb"
 
-        const val SKATEBOARD_GLB = "EngineDefaults\\Models\\skateboard_free_model.glb"
+        const val SKATEBOARD = "EngineDefaults\\Models\\skateboard.obj"
 
         const val CUBE = "EngineDefaults\\Models\\cube.obj"
         const val CYLINDER = "EngineDefaults\\Models\\cylinder.obj"
@@ -185,7 +185,7 @@ object Assets {
             RIGHT_STRAFE to Animations.RIGHT_STRAFE,
             RIGHT_STRAFE_WALKING to Animations.RIGHT_STRAFE_WALKING,
             // Models
-            SKATEBOARD_GLB to Models.SKATEBOARD_GLB,
+            SKATEBOARD to Models.SKATEBOARD,
             CUBE to Models.CUBE,
             SPHERE to Models.SPHERE,
             CYLINDER to Models.CYLINDER,

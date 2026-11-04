@@ -40,4 +40,13 @@ class PickingPassTraversalTest {
 
         assertEquals(listOf("Child"), visited(scene))
     }
+
+    @Test
+    fun disabledParentPrunesSubtreeLikeTheGeometryPass() {
+        val scene = Scene()
+        GameObject("Disabled").also { it.isEnabled = false; scene.addChild(it) }.addChild(GameObject("UnderDisabled"))
+        scene.addChild(GameObject("Shown"))
+
+        assertEquals(listOf("Shown"), visited(scene))
+    }
 }

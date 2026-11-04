@@ -4,7 +4,6 @@ import com.pafoid.skate.engine.addComponent
 import com.pafoid.skate.engine.assets.data.models.`3dModel`
 import com.pafoid.skate.engine.assets.data.models.Material
 import com.pafoid.skate.engine.assets.procedural.PropShapes
-import com.pafoid.skate.engine.attachComponent
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
@@ -15,7 +14,7 @@ import com.pafoid.skate.engine.ecs.components.AmbientLightComponent
 import com.pafoid.skate.engine.ecs.components.Animator
 import com.pafoid.skate.engine.ecs.components.BoxCollider3D
 import com.pafoid.skate.engine.ecs.components.CameraComponent
-import com.pafoid.skate.engine.ecs.components.CustomCollider3D
+import com.pafoid.skate.engine.ecs.components.CompoundHullCollider3D
 import com.pafoid.skate.engine.ecs.components.CylinderCollider3D
 import com.pafoid.skate.engine.ecs.components.DayNightCycleComponent
 import com.pafoid.skate.engine.ecs.components.DirectionalLightComponent
@@ -61,7 +60,7 @@ class PrefabsGenerator(
     var projectAssetsDir: String = ""
 
     fun spawnSkateboard(): GameObject {
-        val path = projectAssetsDir + Assets.Bundled.SKATEBOARD_GLB
+        val path = projectAssetsDir + Assets.Bundled.SKATEBOARD
         return Skateboard(assetsManager.loadModel(path))
     }
 
@@ -152,24 +151,17 @@ class PrefabsGenerator(
         return model to texture?.let { Material(it) }
     }
 
-    /** Static, shadowed obstacle whose collision is the given convex [hulls] (one hull collider each). */
+    /** Static, shadowed obstacle whose collision is the given convex [hulls], all in one compound-hull collider. */
     private fun spawnStatic(
         name: String, type: PrefabType, position: Vector3f, material: MaterialType?, hulls: List<List<Vector3f>>,
         friction: Float,
     ): GameObject {
         val (model, mat) = surfaceModel(type, material)
-        val go = GameObject(name)
+        return GameObject(name)
             .addComponent(Transform(position))
             .addComponent(RenderComponent(model, mat, castShadow = true, receiveShadow = true))
             .addComponent(RigidBody3D(0f, bodyType = BodyType.Static).apply { this.friction = friction })
-        // addComponent keeps one component per class; a concave obstacle needs one hull collider per convex piece.
-        hulls.forEach { points ->
-            val collider = CustomCollider3D(points)
-            collider.generateId()
-            go.attachComponent(collider)
-            collider.init(go)
-        }
-        return go
+            .addComponent(CompoundHullCollider3D(hulls))
     }
 
     fun spawnRail(position: Vector3f = Vector3f(), material: MaterialType?): GameObject {
