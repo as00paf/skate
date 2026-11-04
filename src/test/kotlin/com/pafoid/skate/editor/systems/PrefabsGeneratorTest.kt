@@ -9,6 +9,9 @@ import com.pafoid.skate.engine.assets.data.models.animations.Animation
 import com.pafoid.skate.engine.assets.data.models.animations.Bone
 import com.pafoid.skate.engine.assets.data.models.animations.Skeleton
 import com.pafoid.skate.engine.core.Engine
+import com.pafoid.skate.engine.core.LoggerService
+import com.pafoid.skate.engine.ecs.components.Animator
+import com.pafoid.skate.game.prefabs.Skater
 import com.pafoid.skate.engine.getComponent
 import com.pafoid.skate.engine.ecs.ComponentQuery
 import com.pafoid.skate.engine.ecs.EcsChanges
@@ -43,6 +46,7 @@ class PrefabsGeneratorTest {
     private val engine = mockk<Engine>().also {
         every { it.assetsManager } returns assetsManager
         every { it.sceneManager } returns sceneManager
+        every { it.logger } returns LoggerService()
     }
 
     init {
@@ -64,6 +68,13 @@ class PrefabsGeneratorTest {
         assertEquals(listOf("Camera", "Skateboard", "Skater", "Floor", "Concrete_Ledge", "HUD"), spawned.map { it.name })
         assertNotNull(spawned[0].getComponent<CameraComponent>())
         assertTrue(spawned.all { it.parent == null })
+    }
+
+    @Test
+    fun `default skater uses the skater animation controller`() {
+        val skater = PrefabsGenerator(engine).spawnDefaultsSync().single { it.name == "Skater" }
+
+        assertEquals(Skater.CONTROLLER_PATH, skater.getComponent<Animator>()!!.controllerPath)
     }
 
     @Test

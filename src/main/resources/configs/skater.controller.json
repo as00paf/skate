@@ -1,0 +1,682 @@
+{
+  "name": "skater",
+  "defaultState": "idle",
+  "states": [
+    {
+      "name": "idle",
+      "motion": "idle_0",
+      "loop": true
+    },
+    {
+      "name": "walking",
+      "motion": "walking",
+      "loop": true
+    },
+    {
+      "name": "running",
+      "motion": "running",
+      "loop": true
+    },
+    {
+      "name": "jump",
+      "motion": "jump",
+      "loop": false
+    },
+    {
+      "name": "falling idle",
+      "motion": "falling idle",
+      "loop": true
+    },
+    {
+      "name": "ride_idle",
+      "motion": "ride_idle",
+      "loop": true
+    },
+    {
+      "name": "push",
+      "motion": "push",
+      "loop": true
+    },
+    {
+      "name": "ride",
+      "motion": "ride",
+      "loop": true
+    },
+    {
+      "name": "ollie",
+      "motion": "ollie",
+      "loop": false
+    },
+    {
+      "name": "land",
+      "motion": "land",
+      "loop": false
+    },
+    {
+      "name": "grind",
+      "motion": "grind",
+      "loop": true
+    },
+    {
+      "name": "manual",
+      "motion": "manual",
+      "loop": true
+    },
+    {
+      "name": "bail",
+      "motion": "falling idle",
+      "loop": true
+    }
+  ],
+  "transitions": [
+    {
+      "from": "ollie",
+      "to": "land",
+      "conditions": [
+        {
+          "parameter": "ride",
+          "op": "TRUE"
+        }
+      ],
+      "duration": 0.05
+    },
+    {
+      "from": "ollie",
+      "to": "land",
+      "conditions": [
+        {
+          "parameter": "ride_idle",
+          "op": "TRUE"
+        }
+      ],
+      "duration": 0.05
+    },
+    {
+      "from": "ollie",
+      "to": "land",
+      "conditions": [
+        {
+          "parameter": "push",
+          "op": "TRUE"
+        }
+      ],
+      "duration": 0.05
+    },
+    {
+      "from": "land",
+      "to": "ride",
+      "conditions": [
+        {
+          "parameter": "ride",
+          "op": "TRUE"
+        }
+      ],
+      "duration": 0.15,
+      "hasExitTime": true,
+      "exitTime": 1.0
+    },
+    {
+      "from": "land",
+      "to": "ride_idle",
+      "conditions": [
+        {
+          "parameter": "ride_idle",
+          "op": "TRUE"
+        }
+      ],
+      "duration": 0.15,
+      "hasExitTime": true,
+      "exitTime": 1.0
+    },
+    {
+      "from": "land",
+      "to": "push",
+      "conditions": [
+        {
+          "parameter": "push",
+          "op": "TRUE"
+        }
+      ],
+      "duration": 0.15,
+      "hasExitTime": true,
+      "exitTime": 1.0
+    },
+    {
+      "from": null,
+      "to": "idle",
+      "conditions": [
+        {
+          "parameter": "idle",
+          "op": "TRUE"
+        }
+      ],
+      "duration": 0.2
+    },
+    {
+      "from": null,
+      "to": "walking",
+      "conditions": [
+        {
+          "parameter": "walking",
+          "op": "TRUE"
+        }
+      ],
+      "duration": 0.2
+    },
+    {
+      "from": null,
+      "to": "running",
+      "conditions": [
+        {
+          "parameter": "running",
+          "op": "TRUE"
+        }
+      ],
+      "duration": 0.2
+    },
+    {
+      "from": null,
+      "to": "jump",
+      "conditions": [
+        {
+          "parameter": "jump",
+          "op": "TRUE"
+        }
+      ],
+      "duration": 0.1
+    },
+    {
+      "from": null,
+      "to": "falling idle",
+      "conditions": [
+        {
+          "parameter": "falling idle",
+          "op": "TRUE"
+        }
+      ],
+      "duration": 0.2
+    },
+    {
+      "from": null,
+      "to": "ride_idle",
+      "conditions": [
+        {
+          "parameter": "ride_idle",
+          "op": "TRUE"
+        }
+      ],
+      "duration": 0.2,
+      "exceptFrom": [
+        "land"
+      ]
+    },
+    {
+      "from": null,
+      "to": "push",
+      "conditions": [
+        {
+          "parameter": "push",
+          "op": "TRUE"
+        }
+      ],
+      "duration": 0.2,
+      "exceptFrom": [
+        "land"
+      ]
+    },
+    {
+      "from": null,
+      "to": "ride",
+      "conditions": [
+        {
+          "parameter": "ride",
+          "op": "TRUE"
+        }
+      ],
+      "duration": 0.2,
+      "exceptFrom": [
+        "land"
+      ]
+    },
+    {
+      "from": null,
+      "to": "ollie",
+      "conditions": [
+        {
+          "parameter": "ollie",
+          "op": "TRUE"
+        }
+      ],
+      "duration": 0.05
+    },
+    {
+      "from": null,
+      "to": "grind",
+      "conditions": [
+        {
+          "parameter": "grind",
+          "op": "TRUE"
+        }
+      ],
+      "duration": 0.2
+    },
+    {
+      "from": null,
+      "to": "manual",
+      "conditions": [
+        {
+          "parameter": "manual",
+          "op": "TRUE"
+        }
+      ],
+      "duration": 0.2
+    },
+    {
+      "from": null,
+      "to": "bail",
+      "conditions": [
+        {
+          "parameter": "bail",
+          "op": "TRUE"
+        }
+      ],
+      "duration": 0.15
+    }
+  ],
+  "poses": {
+    "ride_idle": {
+      "keys": [
+        {
+          "time": 0,
+          "pose": {
+            "hipDrop": 0.08,
+            "armDownDeg": 65,
+            "frontFoot": {
+              "along": 0.3,
+              "side": 0,
+              "up": 0
+            },
+            "backFoot": {
+              "along": -0.3,
+              "side": 0,
+              "up": 0
+            }
+          }
+        },
+        {
+          "time": 1.2,
+          "pose": {
+            "hipDrop": 0.11,
+            "armDownDeg": 62,
+            "frontFoot": {
+              "along": 0.3,
+              "side": 0,
+              "up": 0
+            },
+            "backFoot": {
+              "along": -0.3,
+              "side": 0,
+              "up": 0
+            }
+          }
+        },
+        {
+          "time": 2.4,
+          "pose": {
+            "hipDrop": 0.08,
+            "armDownDeg": 65,
+            "frontFoot": {
+              "along": 0.3,
+              "side": 0,
+              "up": 0
+            },
+            "backFoot": {
+              "along": -0.3,
+              "side": 0,
+              "up": 0
+            }
+          }
+        }
+      ]
+    },
+    "ride": {
+      "keys": [
+        {
+          "time": 0,
+          "pose": {
+            "hipDrop": 0.14,
+            "leanDeg": 14,
+            "armDownDeg": 50,
+            "armFrontDeg": 10,
+            "frontFoot": {
+              "along": 0.3,
+              "side": 0,
+              "up": 0
+            },
+            "backFoot": {
+              "along": -0.3,
+              "side": 0,
+              "up": 0
+            }
+          }
+        },
+        {
+          "time": 1.0,
+          "pose": {
+            "hipDrop": 0.16,
+            "leanDeg": 14,
+            "armDownDeg": 48,
+            "armFrontDeg": 10,
+            "frontFoot": {
+              "along": 0.3,
+              "side": 0,
+              "up": 0
+            },
+            "backFoot": {
+              "along": -0.3,
+              "side": 0,
+              "up": 0
+            }
+          }
+        },
+        {
+          "time": 2.0,
+          "pose": {
+            "hipDrop": 0.14,
+            "leanDeg": 14,
+            "armDownDeg": 50,
+            "armFrontDeg": 10,
+            "frontFoot": {
+              "along": 0.3,
+              "side": 0,
+              "up": 0
+            },
+            "backFoot": {
+              "along": -0.3,
+              "side": 0,
+              "up": 0
+            }
+          }
+        }
+      ]
+    },
+    "push": {
+      "keys": [
+        {
+          "time": 0,
+          "pose": {
+            "hipDrop": 0.12,
+            "backFoot": {
+              "along": -0.25,
+              "side": 0,
+              "up": 0
+            },
+            "facingDeg": 40,
+            "leanDeg": 15,
+            "shoulderOpenDeg": 10,
+            "headTurnDeg": 30,
+            "armDownDeg": 60,
+            "frontFootTurnDeg": 70,
+            "frontFoot": {
+              "along": 0.3,
+              "side": 0,
+              "up": 0
+            }
+          }
+        },
+        {
+          "time": 0.25,
+          "pose": {
+            "hipDrop": 0.22,
+            "backFoot": {
+              "along": 0.05,
+              "side": 0.3,
+              "up": -0.12
+            },
+            "facingDeg": 40,
+            "leanDeg": 15,
+            "shoulderOpenDeg": 10,
+            "headTurnDeg": 30,
+            "armDownDeg": 60,
+            "frontFootTurnDeg": 70,
+            "frontFoot": {
+              "along": 0.3,
+              "side": 0,
+              "up": 0
+            }
+          }
+        },
+        {
+          "time": 0.6,
+          "pose": {
+            "hipDrop": 0.2,
+            "backFoot": {
+              "along": -0.45,
+              "side": 0.3,
+              "up": -0.12
+            },
+            "facingDeg": 40,
+            "leanDeg": 15,
+            "shoulderOpenDeg": 10,
+            "headTurnDeg": 30,
+            "armDownDeg": 60,
+            "frontFootTurnDeg": 70,
+            "frontFoot": {
+              "along": 0.3,
+              "side": 0,
+              "up": 0
+            }
+          }
+        },
+        {
+          "time": 0.85,
+          "pose": {
+            "hipDrop": 0.14,
+            "backFoot": {
+              "along": -0.3,
+              "side": 0.1,
+              "up": 0.08
+            },
+            "facingDeg": 40,
+            "leanDeg": 15,
+            "shoulderOpenDeg": 10,
+            "headTurnDeg": 30,
+            "armDownDeg": 60,
+            "frontFootTurnDeg": 70,
+            "frontFoot": {
+              "along": 0.3,
+              "side": 0,
+              "up": 0
+            }
+          }
+        },
+        {
+          "time": 1.0,
+          "pose": {
+            "hipDrop": 0.12,
+            "backFoot": {
+              "along": -0.25,
+              "side": 0,
+              "up": 0
+            },
+            "facingDeg": 40,
+            "leanDeg": 15,
+            "shoulderOpenDeg": 10,
+            "headTurnDeg": 30,
+            "armDownDeg": 60,
+            "frontFootTurnDeg": 70,
+            "frontFoot": {
+              "along": 0.3,
+              "side": 0,
+              "up": 0
+            }
+          }
+        }
+      ]
+    },
+    "ollie": {
+      "keys": [
+        {
+          "time": 0,
+          "pose": {
+            "hipDrop": 0.3,
+            "leanDeg": 25,
+            "armDownDeg": 40,
+            "armFrontDeg": 30,
+            "frontFoot": {
+              "along": 0.3,
+              "side": 0,
+              "up": 0
+            },
+            "backFoot": {
+              "along": -0.3,
+              "side": 0,
+              "up": 0
+            }
+          }
+        },
+        {
+          "time": 0.12,
+          "pose": {
+            "hipDrop": 0.02,
+            "leanDeg": 5,
+            "armDownDeg": 20,
+            "frontFoot": {
+              "along": 0.15,
+              "side": 0,
+              "up": 0.12
+            },
+            "backFoot": {
+              "along": -0.32,
+              "side": 0,
+              "up": -0.06
+            }
+          }
+        },
+        {
+          "time": 0.35,
+          "pose": {
+            "hipDrop": 0.26,
+            "leanDeg": 15,
+            "armDownDeg": 35,
+            "frontFoot": {
+              "along": 0.3,
+              "side": 0,
+              "up": 0.05
+            },
+            "backFoot": {
+              "along": -0.3,
+              "side": 0,
+              "up": 0.05
+            }
+          }
+        },
+        {
+          "time": 0.8,
+          "pose": {
+            "hipDrop": 0.18,
+            "leanDeg": 12,
+            "armDownDeg": 45,
+            "frontFoot": {
+              "along": 0.3,
+              "side": 0,
+              "up": 0
+            },
+            "backFoot": {
+              "along": -0.3,
+              "side": 0,
+              "up": 0
+            }
+          }
+        }
+      ]
+    },
+    "land": {
+      "keys": [
+        {
+          "time": 0,
+          "pose": {
+            "hipDrop": 0.3,
+            "leanDeg": 22,
+            "armDownDeg": 35,
+            "frontFoot": {
+              "along": 0.3,
+              "side": 0,
+              "up": 0
+            },
+            "backFoot": {
+              "along": -0.3,
+              "side": 0,
+              "up": 0
+            }
+          }
+        },
+        {
+          "time": 0.4,
+          "pose": {
+            "hipDrop": 0.14,
+            "leanDeg": 14,
+            "armDownDeg": 50,
+            "armFrontDeg": 10,
+            "frontFoot": {
+              "along": 0.3,
+              "side": 0,
+              "up": 0
+            },
+            "backFoot": {
+              "along": -0.3,
+              "side": 0,
+              "up": 0
+            }
+          }
+        }
+      ]
+    },
+    "grind": {
+      "keys": [
+        {
+          "time": 0,
+          "pose": {
+            "hipDrop": 0.18,
+            "leanDeg": 12,
+            "armDownDeg": 30,
+            "armFrontDeg": 20,
+            "frontFoot": {
+              "along": 0.3,
+              "side": 0,
+              "up": 0
+            },
+            "backFoot": {
+              "along": -0.3,
+              "side": 0,
+              "up": 0
+            }
+          }
+        }
+      ]
+    },
+    "manual": {
+      "keys": [
+        {
+          "time": 0,
+          "pose": {
+            "hipDrop": 0.1,
+            "hipShift": -0.12,
+            "leanDeg": 4,
+            "armDownDeg": 25,
+            "frontFoot": {
+              "along": 0.3,
+              "side": 0,
+              "up": 0.1
+            },
+            "backFoot": {
+              "along": -0.3,
+              "side": 0,
+              "up": 0
+            }
+          }
+        }
+      ]
+    }
+  }
+}

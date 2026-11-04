@@ -67,10 +67,13 @@ class Skater(
         addComponent(BoneOverride())
 
         animations.forEach { animator.addAnimation(it) }
+        animator.controllerPath = CONTROLLER_PATH
     }
 
     companion object {
         const val CONFIG_PATH = "configs/skater.character.json"
+        /** Animation controller; the behavior's animation names in [CONFIG_PATH] are its state requests. */
+        const val CONTROLLER_PATH = "configs/skater.controller.json"
 
         val DEFAULT_ANIMATIONS = listOf(
             Assets.Bundled.IDLE_0,

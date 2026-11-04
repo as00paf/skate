@@ -33,6 +33,7 @@ import java.io.File
 class PrefabsGenerator(
     engine: Engine,
 ) {
+    private val logger = engine.logger
     private val assetsManager = engine.assetsManager
     private val sceneManager = engine.sceneManager
 
@@ -50,6 +51,7 @@ class PrefabsGenerator(
             assetsManager.loadAnimationSync(projectAssetsDir + path)
         }
         val skater = Skater("Skater", model, skate, animations = animations)
+        skater.animator.resolveController(logger)
         return skater
     }
 
