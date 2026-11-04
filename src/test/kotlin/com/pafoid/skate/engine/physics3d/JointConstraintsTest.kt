@@ -76,13 +76,17 @@ class JointConstraintsTest {
         assertEquals(0f, pos.z, 0.05f)
     }
 
-    @Test
-    fun joints_Slider_RestrictsMotionToAxisAndLimits() {
+    /** Body A (the moving block, as [com.pafoid.skate.engine.ecs.components.JointComponent] orders it) on a +Y rail. */
+    private fun sliderBlock(lower: Float, upper: Float, axis: Vector3f = Vector3f(0f, 1f, 0f)): IRigidBodyHandle {
         val anchor = physics.createStaticAnchor(Vector3f(0f, 5f, 0f))
         val body = physics.createRigidBody(box, 1f).also { it.setLocation(Vector3f(0f, 5f, 0f)) }
-        physics.addConstraint(
-            SliderConstraint3D(anchor, body, Vector3f(), Vector3f(), Vector3f(0f, 1f, 0f), Vector3f(0f, 1f, 0f), -1f, 0f)
-        )
+        physics.addConstraint(SliderConstraint3D(body, anchor, Vector3f(), Vector3f(), axis, Vector3f(axis), lower, upper))
+        return body
+    }
+
+    @Test
+    fun joints_Slider_RestrictsMotionToAxisAndLimits() {
+        val body = sliderBlock(-1f, 0f)
 
         simulate(2f)
 
@@ -90,5 +94,20 @@ class JointConstraintsTest {
         assertEquals(4f, pos.y, 0.15f)
         assertEquals(0f, pos.x, 0.05f)
         assertEquals(0f, pos.z, 0.05f)
+    }
+
+    @Test
+    fun joints_SliderLimits_AreBodyADisplacementAlongItsAxis() {
+        // BUG-019: [-2, 0] on +Y used to pin the falling block at its start
+        assertEquals(3f, sliderBlock(-2f, 0f).also { simulate(2f) }.position().y, 0.15f)
+        physics.destroy(); physics = BulletPhysics3D(mockk(relaxed = true))
+
+        // Upper limit: with gravity pulling up, it stops 1 m above the start
+        physics.setGravity(Vector3f(0f, 9.81f, 0f))
+        assertEquals(6f, sliderBlock(-2f, 1f).also { simulate(2f) }.position().y, 0.15f)
+        physics.destroy(); physics = BulletPhysics3D(mockk(relaxed = true))
+
+        // A -Y axis flips the meaning: [0, 2] along -Y also lets it drop 2 m
+        assertEquals(3f, sliderBlock(0f, 2f, Vector3f(0f, -1f, 0f)).also { simulate(2f) }.position().y, 0.15f)
     }
 }
