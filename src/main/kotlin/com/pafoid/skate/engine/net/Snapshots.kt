@@ -6,10 +6,16 @@ data class NetConfig(
     val snapshotRate: Int = 20,
     val interpolationDelayMs: Int = 100,
     val maxPlayers: Int = 16,
-    val protocolVersion: Int = 1,
+    val protocolVersion: Int = 2,
+    /** Server keeps this much per-tick history for lag compensation (0 disables it). */
+    val lagCompensationMs: Int = 250,
+    /** Each INPUT message repeats this many of the newest unacknowledged inputs (loss tolerance). */
+    val inputRedundancy: Int = 3,
 ) {
     init {
         require(snapshotRate in 1..tickRate && tickRate % snapshotRate == 0) { "tickRate must be a multiple of snapshotRate" }
+        require(inputRedundancy in 1..32) { "inputRedundancy must be 1..32" }
+        require(lagCompensationMs >= 0) { "lagCompensationMs must be >= 0" }
     }
 
     val snapshotIntervalTicks: Int get() = tickRate / snapshotRate

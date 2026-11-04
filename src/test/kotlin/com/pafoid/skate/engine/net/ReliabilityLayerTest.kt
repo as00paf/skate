@@ -57,6 +57,17 @@ class ReliabilityLayerTest {
     }
 
     @Test
+    fun Reliability_SequencedChannelDeliversEveryMessageOfOnePacket() {
+        val a = Peer(); val b = Peer()
+        a.layer.send(Channel.UNRELIABLE_SEQUENCED, msg("ack"))
+        a.layer.send(Channel.UNRELIABLE_SEQUENCED, msg("input"))
+        val packets = a.layer.flush(0)
+        assertEquals(1, packets.size)
+        b.receive(packets[0], 1)
+        assertEquals(listOf("ack", "input"), b.received.map { it.second })
+    }
+
+    @Test
     fun Reliability_HandlesSequenceWrap() {
         val a = Peer(); val b = Peer()
         repeat(70000) { i ->

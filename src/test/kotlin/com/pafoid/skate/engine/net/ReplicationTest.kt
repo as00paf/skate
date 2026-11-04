@@ -123,15 +123,19 @@ class ReplicationTest {
     }
 
     @Test
-    fun Replication_ForwardsClientInputToServer() {
+    fun Replication_ForwardsClientInputToServerOncePerTickInOrder() {
         server.start(40000)
-        val received = ArrayList<Triple<Int, Int, String>>()
-        server.onInput = { cid, tick, payload -> received += Triple(cid, tick, String(payload)) }
         val c = newClient()
         run(10, c)
-        c.client.sendInput(5, "push".toByteArray())
-        run(5, c)
-        assertEquals(listOf(Triple(c.client.clientId, 5, "push")), received)
+        assertEquals(1, c.client.sendInput("a".toByteArray()))
+        assertEquals(2, c.client.sendInput("b".toByteArray()))
+        c.client.poll(net.nowMs)
+        net.nowMs += 16; server.poll(net.nowMs)
+        val received = ArrayList<Pair<Int, String>>()
+        repeat(3) { server.processInputs { cid, payload -> received += cid to String(payload) } }
+        // the second message repeats "a": it is applied once
+        assertEquals(listOf(c.client.clientId to "a", c.client.clientId to "b"), received)
+        assertEquals(2, server.lastProcessedInput(c.client.clientId))
     }
 
     @Test

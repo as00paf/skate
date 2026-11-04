@@ -111,7 +111,8 @@ class ReliabilityLayer(
                     }
                     Channel.UNRELIABLE_SEQUENCED -> {
                         val data = r.readBytes(r.readVarInt())
-                        if (lastSequencedSeq < 0 || newer(seq, lastSequencedSeq)) {
+                        // same seq = another message of this packet (duplicate packets never get here)
+                        if (lastSequencedSeq < 0 || seq == lastSequencedSeq || newer(seq, lastSequencedSeq)) {
                             lastSequencedSeq = seq
                             deliver(ch, data)
                         }
