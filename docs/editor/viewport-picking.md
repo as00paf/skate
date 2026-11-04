@@ -23,3 +23,9 @@
 - Clicking again while an ancestor of the hit is selected drills **one level down** toward the hit, until the
   hit itself is selected. This follows the Scene Hierarchy tree.
 - Hover uses the same rule, so the hovered object is always the one a click would select.
+
+## Hover and selection highlight
+
+`GeometryPass` tints each draw by `SelectionHighlight.stateOf`. An object is highlighted when it **or any
+ancestor** is selected (green) or hovered. Selection wins over hover. So a mesh-less physics or prefab root
+lights up every rendered object under it, and a drilled-down child lights up only its own subtree.
