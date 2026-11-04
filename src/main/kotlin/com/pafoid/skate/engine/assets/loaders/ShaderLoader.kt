@@ -4,13 +4,20 @@ import com.pafoid.skate.engine.assets.data.Shader
 import com.pafoid.skate.engine.core.LoggerService
 import com.pafoid.skate.engine.utils.ShaderConst
 import org.lwjgl.opengl.GL20
+import com.pafoid.skate.engine.render.shader.ShaderPreprocessor
+import java.io.File
 import java.io.IOException
 import java.nio.file.Files
 import java.nio.file.Paths
 
 class ShaderCompileException(message: String) : RuntimeException(message)
 
-class ShaderLoader(private var verbose: Boolean = false, private val logger: LoggerService? = null) {
+class ShaderLoader(
+    private var verbose: Boolean = false,
+    private val logger: LoggerService? = null,
+    /** Directory holding the editable shader resources (e.g. `src/main/resources`); null disables live sources. */
+    private val devSourceRoot: File? = null,
+) {
 
     private fun log(message: String, level: LoggerService.LogLevel = LoggerService.LogLevel.INFO) {
         logger?.log(message, level)
@@ -22,12 +29,18 @@ class ShaderLoader(private var verbose: Boolean = false, private val logger: Log
         return loadShader(src, filePath)
     }
 
-    fun loadShader(filePath: String): Shader {
-        val src = this.javaClass.getResourceAsStream(filePath)?.readAllBytes()?.toString(Charsets.UTF_8).orEmpty()
-        return loadShader(src, filePath)
+    fun loadShader(filePath: String, defines: Set<String> = emptySet()): Shader {
+        val src = readSource(filePath) ?: ""
+        return loadShader(src, filePath, defines)
     }
 
-    private fun loadShader(src: String, filePath: String): Shader {
+    /** Reads a classpath shader resource, preferring the live file under [devSourceRoot] so edits show up without a rebuild. */
+    fun readSource(resourcePath: String): String? {
+        devSourceRoot?.resolve(resourcePath.trimStart('/'))?.takeIf { it.isFile }?.let { return it.readText() }
+        return this.javaClass.getResourceAsStream(resourcePath)?.readAllBytes()?.toString(Charsets.UTF_8)
+    }
+
+    private fun loadShader(src: String, filePath: String, defines: Set<String> = emptySet()): Shader {
         val splitSrc = src.split(ShaderConst.SPLITTER_REGEX.toRegex())
 
         var index = src.indexOf(ShaderConst.TYPE_DELIMITER) + ShaderConst.TYPE_DELIMITER_COUNT
@@ -58,6 +71,11 @@ class ShaderLoader(private var verbose: Boolean = false, private val logger: Log
         } else {
             throw IOException("Unexpected token '$secondPattern' in $filePath")
         }
+
+        val dir = filePath.substringBeforeLast('/', "")
+        val resolve = { name: String -> readSource(if (dir.isEmpty()) name else "$dir/$name") }
+        vertexSrc = ShaderPreprocessor.process(vertexSrc, defines, filePath, resolve)
+        fragmentSrc = ShaderPreprocessor.process(fragmentSrc, defines, filePath, resolve)
 
         if(verbose) {
             log("Vertex Source : '$vertexSrc'")

@@ -50,4 +50,10 @@ class SdfFontTest {
         assertEquals(-8f, list.vertexData[0], 0.001f) // pen minus scaled spread
         assertEquals(20f - 8f, list.vertexData[4 * stride], 0.001f)
     }
+
+    @Test
+    fun SdfShader_SdfMarkerNeverCollidesWithEncodedEntityIds() {
+        assertTrue(UiDrawList.SDF_MODE < -0.5f)
+        assertTrue(com.pafoid.skate.engine.utils.EntityIdEncoder.encode(0) >= 1f)
+    }
 }
