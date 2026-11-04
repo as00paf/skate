@@ -89,6 +89,8 @@ object Assets {
         const val RIGHT_TURN_90 = "assets/characters/animations/right turn 90.fbx"
         const val RIGHT_STRAFE = "assets/characters/animations/right strafe.fbx"
         const val RIGHT_STRAFE_WALKING = "assets/characters/animations/right strafe walking.fbx"
+
+        const val SKATE_RIDING = "assets/characters/animations/skate riding.fbx"
     }
     object Strings {
         const val EDITOR_STRINGS_EN = "assets/strings/editor_strings.properties"
@@ -139,6 +141,7 @@ object Assets {
         const val RIGHT_TURN_90 = "EngineDefaults\\Characters\\animations\\right turn 90.fbx"
         const val RIGHT_STRAFE = "EngineDefaults\\Characters\\animations\\right strafe.fbx"
         const val RIGHT_STRAFE_WALKING = "EngineDefaults\\Characters\\animations\\right strafe walking.fbx"
+        const val SKATE_RIDING = "EngineDefaults\\Characters\\animations\\skate riding.fbx"
 
         const val ASPHALT = "EngineDefaults\\Textures\\asphalt.png"
         const val CONCRETE_SIMPLE = "EngineDefaults\\Textures\\concrete_simple.png"
@@ -184,6 +187,7 @@ object Assets {
             RIGHT_TURN_90 to Animations.RIGHT_TURN_90,
             RIGHT_STRAFE to Animations.RIGHT_STRAFE,
             RIGHT_STRAFE_WALKING to Animations.RIGHT_STRAFE_WALKING,
+            SKATE_RIDING to Animations.SKATE_RIDING,
             // Models
             SKATEBOARD to Models.SKATEBOARD,
             CUBE to Models.CUBE,

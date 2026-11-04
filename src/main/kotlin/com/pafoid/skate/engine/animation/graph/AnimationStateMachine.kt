@@ -38,6 +38,9 @@ class AnimationStateMachine(
 
     val isTransitioning get() = nextState != null
 
+    /** The motion [state] plays (for tools and tests). */
+    fun motionOf(state: String): Motion = motions.getValue(states.getValue(state).motion)
+
     /** Events fired during the last [update], in firing order. */
     val firedEvents = mutableListOf<FiredEvent>()
 

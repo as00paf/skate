@@ -90,6 +90,7 @@ class Skater(
             Assets.Bundled.RIGHT_TURN_90,
             Assets.Bundled.RIGHT_STRAFE,
             Assets.Bundled.RIGHT_STRAFE_WALKING,
+            Assets.Bundled.SKATE_RIDING,
         )
     }
 }

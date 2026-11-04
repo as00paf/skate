@@ -6,6 +6,7 @@ import com.pafoid.skate.engine.animation.ik.IkRig
 import com.pafoid.skate.engine.animation.procedural.HumanoidPoseBuilder
 import com.pafoid.skate.engine.animation.graph.AnimationStateMachine
 import com.pafoid.skate.engine.animation.graph.ClipMotion
+import com.pafoid.skate.engine.animation.graph.FittedMotion
 import com.pafoid.skate.engine.animation.graph.Motion
 import com.pafoid.skate.engine.assets.AssetsManager
 import com.pafoid.skate.engine.assets.BoneNameMapper
@@ -59,7 +60,10 @@ data class Animator(
         skeleton: Skeleton,
         extraMotions: Map<String, Motion> = emptyMap(),
     ): AnimationStateMachine {
-        val clips = animations.associate { it.name to ClipMotion.of(it, skeleton) as Motion } + extraMotions
+        val clips = animations.associate { clip ->
+            val motion: Motion = ClipMotion.of(clip, skeleton)
+            clip.name to (asset.clipFits[clip.name]?.let { FittedMotion.of(motion, it, skeleton) } ?: motion)
+        } + extraMotions
         val missingPoses = asset.poses.filterKeys { it !in clips }
         val poses = if (missingPoses.isEmpty()) emptyMap() else HumanoidPoseBuilder(skeleton).let { builder ->
             missingPoses.mapValues { (name, def) -> def.build(name, builder) as Motion }

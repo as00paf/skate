@@ -29,7 +29,7 @@
     },
     {
       "name": "ride_idle",
-      "motion": "ride_idle",
+      "motion": "skate riding",
       "loop": true
     },
     {
@@ -39,7 +39,7 @@
     },
     {
       "name": "ride",
-      "motion": "ride",
+      "motion": "skate riding",
       "loop": true
     },
     {
@@ -284,122 +284,6 @@
     }
   ],
   "poses": {
-    "ride_idle": {
-      "keys": [
-        {
-          "time": 0,
-          "pose": {
-            "hipDrop": 0.08,
-            "armDownDeg": 65,
-            "frontFoot": {
-              "along": 0.3,
-              "side": 0,
-              "up": 0
-            },
-            "backFoot": {
-              "along": -0.3,
-              "side": 0,
-              "up": 0
-            }
-          }
-        },
-        {
-          "time": 1.2,
-          "pose": {
-            "hipDrop": 0.11,
-            "armDownDeg": 62,
-            "frontFoot": {
-              "along": 0.3,
-              "side": 0,
-              "up": 0
-            },
-            "backFoot": {
-              "along": -0.3,
-              "side": 0,
-              "up": 0
-            }
-          }
-        },
-        {
-          "time": 2.4,
-          "pose": {
-            "hipDrop": 0.08,
-            "armDownDeg": 65,
-            "frontFoot": {
-              "along": 0.3,
-              "side": 0,
-              "up": 0
-            },
-            "backFoot": {
-              "along": -0.3,
-              "side": 0,
-              "up": 0
-            }
-          }
-        }
-      ]
-    },
-    "ride": {
-      "keys": [
-        {
-          "time": 0,
-          "pose": {
-            "hipDrop": 0.14,
-            "leanDeg": 14,
-            "armDownDeg": 50,
-            "armFrontDeg": 10,
-            "frontFoot": {
-              "along": 0.3,
-              "side": 0,
-              "up": 0
-            },
-            "backFoot": {
-              "along": -0.3,
-              "side": 0,
-              "up": 0
-            }
-          }
-        },
-        {
-          "time": 1.0,
-          "pose": {
-            "hipDrop": 0.16,
-            "leanDeg": 14,
-            "armDownDeg": 48,
-            "armFrontDeg": 10,
-            "frontFoot": {
-              "along": 0.3,
-              "side": 0,
-              "up": 0
-            },
-            "backFoot": {
-              "along": -0.3,
-              "side": 0,
-              "up": 0
-            }
-          }
-        },
-        {
-          "time": 2.0,
-          "pose": {
-            "hipDrop": 0.14,
-            "leanDeg": 14,
-            "armDownDeg": 50,
-            "armFrontDeg": 10,
-            "frontFoot": {
-              "along": 0.3,
-              "side": 0,
-              "up": 0
-            },
-            "backFoot": {
-              "along": -0.3,
-              "side": 0,
-              "up": 0
-            }
-          }
-        }
-      ]
-    },
     "push": {
       "keys": [
         {
@@ -677,6 +561,11 @@
           }
         }
       ]
+    }
+  },
+  "clipFits": {
+    "skate riding": {
+      "groundFeet": true
     }
   }
 }
