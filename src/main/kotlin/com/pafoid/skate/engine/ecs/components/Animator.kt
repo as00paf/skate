@@ -1,5 +1,6 @@
 package com.pafoid.skate.engine.ecs.components
 
+import com.pafoid.skate.engine.animation.graph.AnimParameters
 import com.pafoid.skate.engine.animation.graph.AnimationControllerAsset
 import com.pafoid.skate.engine.animation.ik.IkRig
 import com.pafoid.skate.engine.animation.graph.AnimationStateMachine
@@ -32,6 +33,13 @@ data class Animator(
     @Transient
     var stateMachine: AnimationStateMachine? = null
 
+    /** Path to an [AnimationControllerAsset] JSON file. Saved with the scene; the state machine is rebuilt from it on load. */
+    var controllerPath: String? = null
+
+    /** Parameters of the active state machine (gameplay writes floats/bools/triggers here), or null without a controller. */
+    val parameters: AnimParameters?
+        get() = stateMachine?.parameters
+
     /** Foot/hand/look-at IK applied after the pose is evaluated. */
     @Transient
     val ik: IkRig = IkRig()
@@ -46,6 +54,50 @@ data class Animator(
         val trees = asset.motions.mapValues { (_, def) -> def.build { clips[it] } }
         val motions = clips + trees
         return AnimationStateMachine(asset, motions, skeleton.boneCount).also { stateMachine = it }
+    }
+
+    /**
+     * Loads [controllerPath] and builds the state machine from the clips in [animations]. Problems are logged and
+     * leave no state machine (so the legacy single-clip playback still works). Returns true when a controller is active.
+     */
+    fun resolveController(
+        logger: LoggerService,
+        skeleton: Skeleton? = gameObject?.getComponent<SkeletonComponent>()?.pose?.skeleton,
+    ): Boolean {
+        val path = controllerPath ?: return false
+        stateMachine = null
+        skeleton ?: return false.also { logger.log("Controller '$path': no skeleton on this object", LogLevel.ERROR) }
+        val file = File(path)
+        if (!file.isFile) {
+            logger.log("Controller file not found: $path", LogLevel.ERROR)
+            return false
+        }
+        return try {
+            val asset = AnimationControllerAsset.fromJson(file.readText())
+            val problems = asset.issues(animations.map { it.name }.toSet())
+            if (problems.isNotEmpty()) {
+                problems.forEach { logger.log("Controller '$path': $it", LogLevel.ERROR) }
+                false
+            } else {
+                useController(asset, skeleton)
+                true
+            }
+        } catch (e: Exception) {
+            logger.log("Failed to load controller '$path': ${e.message}", LogLevel.ERROR)
+            false
+        }
+    }
+
+    /** Points this animator at a controller file and builds it now. */
+    fun loadController(path: String, logger: LoggerService): Boolean {
+        controllerPath = path
+        return resolveController(logger)
+    }
+
+    /** Drops the controller; single-clip playback takes over again. */
+    fun clearController() {
+        controllerPath = null
+        stateMachine = null
     }
 
     val normalizedTime: Float
