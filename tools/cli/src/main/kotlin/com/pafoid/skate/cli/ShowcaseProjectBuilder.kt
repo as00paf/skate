@@ -2,40 +2,27 @@ package com.pafoid.skate.cli
 
 import com.pafoid.skate.editor.project.EngineAssetCopier
 import com.pafoid.skate.editor.project.Project
-import com.pafoid.skate.engine.assets.Assets
-import com.pafoid.skate.engine.assets.data.Texture
-import com.pafoid.skate.engine.assets.data.models.`3dModel`
-import com.pafoid.skate.engine.assets.data.models.AlphaMode
-import com.pafoid.skate.engine.assets.data.models.Material
-import com.pafoid.skate.engine.physics3d.BodyType
+import com.pafoid.skate.engine.assets.PrefabsGenerator
 import com.pafoid.skate.engine.assets.serialization.Serializer
-import com.pafoid.skate.engine.addComponent
-import com.pafoid.skate.engine.ecs.GameObject
+import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.ecs.Scene
-import com.pafoid.skate.engine.ecs.components.*
+import com.pafoid.skate.game.samples.FeatureShowcase
 import org.joml.Vector2i
-import org.joml.Vector3f
-import org.joml.Vector4f
 import java.io.File
-import com.pafoid.skate.engine.ui.*
-import java.nio.ByteBuffer
-import java.nio.ByteOrder
-import kotlin.math.PI
-import kotlin.math.sin
 
 /**
- * Builds the "Feature showcase" sample project (TLG-05) from public engine components only.
- * One scene per engine feature; see docs/samples.md for what to look for in each.
+ * Writes the "Feature showcase" sample project (TLG-05/TLG-08): a project whose only scene is the shared
+ * [FeatureShowcase] scene that every new editor project also gets. See docs/samples.md.
  */
-class ShowcaseProjectBuilder(private val serializer: Serializer = Serializer()) {
+class ShowcaseProjectBuilder(
+    private val engine: Engine = Engine(),
+    private val serializer: Serializer = engine.serializer,
+) {
 
     companion object {
         const val PROJECT_NAME = "FeatureShowcase"
-        val SCENE_NAMES = listOf("Lights", "Shadows", "Materials", "Physics", "Audio", "Animation", "UI")
-        const val TONE_FILE = "tone.wav"
+        const val SCENE_NAME = FeatureShowcase.SCENE_NAME
     }
-
-    private lateinit var assetsPrefix: String
 
     fun build(parent: File): File {
         val projectDir = File(parent, PROJECT_NAME).also { it.mkdirs() }
@@ -43,150 +30,24 @@ class ShowcaseProjectBuilder(private val serializer: Serializer = Serializer()) 
         val scenesDir = File(projectDir, "Scenes").also { it.mkdirs() }
         File(projectDir, "Builds").mkdirs()
         EngineAssetCopier().copyBundledAssets(projectDir)
-        writeTone(File(assetsDir, TONE_FILE))
-        File(assetsDir, "strings.properties").writeText(
-            "project.name=$PROJECT_NAME\nshowcase.title=In-game UI showcase\nshowcase.text=Text: %s\n" +
-                "showcase.button=Button\nshowcase.hint=Hover or click the button; drag the slider\n"
-        )
-        assetsPrefix = assetsDir.absolutePath + File.separator
+        File(assetsDir, "strings.properties").writeText("project.name=$PROJECT_NAME\n")
+        FeatureShowcase.writeAssets(assetsDir)
 
-        val scenePaths = SCENE_NAMES.map { name ->
-            val scene = when (name) {
-                "Lights" -> lights()
-                "Shadows" -> shadows()
-                "Materials" -> materials()
-                "Physics" -> physics()
-                "Audio" -> audio()
-                "UI" -> ui()
-                else -> animation()
-            }
-            File(scenesDir, "$name.scene").also { it.writeText(serializer.encode(scene)) }.path
-        }
+        // Path references only: the CLI is headless, and the editor reloads every model and texture on open.
+        val prefabs = PrefabsGenerator(engine, loadAssets = false).also { it.projectAssetsDir = assetsDir.absolutePath + File.separator }
+        val scene = FeatureShowcase(prefabs).populate(Scene(SCENE_NAME))
+        val scenePath = File(scenesDir, "$SCENE_NAME.scene").also { it.writeText(serializer.encode(scene)) }.path
+
         val projectFile = File(projectDir, "$PROJECT_NAME.skateproject")
         val project = Project(
             name = PROJECT_NAME,
             projectPath = projectFile.path,
-            description = "One scene per engine feature; manual regression suite",
-            defaultScene = scenePaths.first(),
-            scenesPath = scenePaths,
+            description = "One labelled area per engine feature; manual regression suite",
+            defaultScene = scenePath,
+            scenesPath = listOf(scenePath),
             resolution = Vector2i(1920, 1080),
         )
         projectFile.writeText(serializer.encode(project))
         return projectFile
-    }
-
-    private fun baseScene(name: String, ambient: Float = 0.25f, withSun: Boolean = false): Scene {
-        val scene = Scene(name)
-        scene.addComponent(GridLines()).addComponent(AmbientLightComponent(intensity = ambient))
-        if (withSun) scene.addComponent(DirectionalLightComponent())
-        scene.children.add(
-            GameObject("Camera")
-                .addComponent(CameraComponent(isDefault = true))
-                .addComponent(Transform(Vector3f(0f, 6f, 16f), rotation = Vector3f(-20f, 0f, 0f)))
-        )
-        return scene
-    }
-
-    private fun mesh(
-        name: String, model: String, pos: Vector3f, scale: Vector3f = Vector3f(1f),
-        material: Material = Material(), castShadow: Boolean = true,
-    ) = GameObject(name)
-        .addComponent(Transform(pos, scale))
-        .addComponent(RenderComponent(`3dModel`(assetsPrefix + model), material, castShadow = castShadow))
-
-    private fun floor() = mesh("Floor", Assets.Bundled.CUBE, Vector3f(0f, -0.5f, 0f), Vector3f(20f, 0.5f, 20f),
-        Material(baseColor = Vector4f(0.5f, 0.5f, 0.5f, 1f)))
-
-    private fun lights() = baseScene("Lights", ambient = 0.05f).also { s ->
-        s.children.add(floor())
-        s.children.add(mesh("Sphere", Assets.Bundled.SPHERE, Vector3f(0f, 1.5f, 0f), Vector3f(1.5f)))
-        s.children.add(GameObject("Sun").addComponent(DirectionalLightComponent(intensity = 0.3f, castShadows = false)))
-        s.children.add(GameObject("PointRed").addComponent(Transform(Vector3f(-5f, 3f, 0f)))
-            .addComponent(PointLightComponent(color = Vector3f(1f, 0.1f, 0.1f), intensity = 3f)))
-        s.children.add(GameObject("PointBlue").addComponent(Transform(Vector3f(5f, 3f, 0f)))
-            .addComponent(PointLightComponent(color = Vector3f(0.1f, 0.2f, 1f), intensity = 3f)))
-        s.children.add(GameObject("Spot").addComponent(Transform(Vector3f(0f, 8f, 4f)))
-            .addComponent(SpotLightComponent(direction = Vector3f(0f, -1f, -0.4f), intensity = 4f)))
-    }
-
-    private fun shadows() = baseScene("Shadows", withSun = true).also { s ->
-        s.children.add(floor())
-        s.children.add(mesh("Caster", Assets.Bundled.CUBE, Vector3f(0f, 2f, 0f), Vector3f(1f, 2f, 1f)))
-        s.children.add(mesh("TallCaster", Assets.Bundled.CUBE, Vector3f(-6f, 4f, -4f), Vector3f(0.5f, 4f, 0.5f)))
-        s.children.add(mesh("Sphere", Assets.Bundled.SPHERE, Vector3f(5f, 1.2f, 2f), Vector3f(1.2f)))
-        s.children.add(mesh("NoCaster", Assets.Bundled.CUBE, Vector3f(8f, 1f, -3f), castShadow = false))
-    }
-
-    private fun materials() = baseScene("Materials", withSun = true).also { s ->
-        s.children.add(floor())
-        (0..4).forEach { i ->
-            val t = i / 4f
-            s.children.add(mesh("Metal_$i", Assets.Bundled.SPHERE, Vector3f(-8f + i * 4f, 1.2f, 3f), Vector3f(1.2f),
-                Material(baseColor = Vector4f(0.9f, 0.7f, 0.2f, 1f), metallicFactor = t, roughnessFactor = 1f - t)))
-        }
-        s.children.add(mesh("Emissive", Assets.Bundled.CUBE, Vector3f(-4f, 1f, -3f),
-            material = Material(emissiveFactor = Vector3f(2f, 0.5f, 0f))))
-        s.children.add(mesh("Textured", Assets.Bundled.CUBE, Vector3f(0f, 1f, -3f),
-            material = Material(baseColorTexture = Texture(filePath = assetsPrefix + Assets.Bundled.ASPHALT))))
-        s.children.add(mesh("Transparent", Assets.Bundled.CUBE, Vector3f(4f, 1f, -3f),
-            material = Material(baseColor = Vector4f(0.2f, 0.6f, 1f, 0.4f), alphaMode = AlphaMode.BLEND)))
-    }
-
-    private fun physics() = baseScene("Physics", withSun = true).also { s ->
-        s.addComponent(ScenePhysicsComponent(debugEnabled = true))
-        s.children.add(floor().addComponent(RigidBody3D(0f, BodyType.Static))
-            .addComponent(BoxCollider3D(Vector3f(20f, 0.5f, 20f))))
-        (0 until 5).forEach { i ->
-            s.children.add(mesh("Box_$i", Assets.Bundled.CUBE, Vector3f(0f, 1f + i * 2.2f, 0f))
-                .addComponent(RigidBody3D(1f)).addComponent(BoxCollider3D(Vector3f(1f))))
-        }
-        s.children.add(mesh("Ball", Assets.Bundled.SPHERE, Vector3f(4f, 10f, 0f))
-            .addComponent(RigidBody3D(2f)).addComponent(CapsuleCollider3D(0.5f, 0.1f)))
-    }
-
-    private fun audio() = baseScene("Audio", withSun = true).also { s ->
-        s.children.add(floor())
-        s.children.add(mesh("Emitter", Assets.Bundled.SPHERE, Vector3f(-8f, 1f, 0f))
-            .addComponent(AudioComponent(assetsPrefix + TONE_FILE, is3D = true, loops = true, volume = 1f)))
-        s.children.add(GameObject("Ambient2D")
-            .addComponent(AudioComponent(assetsPrefix + TONE_FILE, is3D = false, loops = true, volume = 0.2f)))
-    }
-
-    private fun animation() = baseScene("Animation", withSun = true).also { s ->
-        s.children.add(floor())
-        s.children.add(GameObject("Character")
-            .addComponent(Transform(Vector3f(0f, 0f, 0f)))
-            .addComponent(RenderComponent(`3dModel`(assetsPrefix + Assets.Bundled.JAMES)))
-            .addComponent(Animator(isPlaying = true)))
-    }
-
-    private fun uiNode(name: String, x: Float, y: Float, w: Float, h: Float) =
-        GameObject(name).addComponent(UIElementComponent().placed(0.5f, 0f, x, y, w, h))
-
-    private fun ui() = baseScene("UI", ambient = 0.4f).also { s ->
-        val canvas = GameObject("Canvas").addComponent(UICanvasComponent())
-        canvas.addChild(uiNode("Title", 0f, 40f, 1000f, 70f)
-            .addComponent(UITextComponent("showcase.title", fontSize = 56f, alignX = 0.5f)))
-        canvas.addChild(uiNode("Args", 0f, 130f, 1000f, 50f)
-            .addComponent(UITextComponent("showcase.text", listOf("formatted"), Vector4f(1f, 0.8f, 0.2f, 1f), 36f, alignX = 0.5f)))
-        canvas.addChild(uiNode("Panel", 0f, 220f, 600f, 360f).addComponent(UIImageComponent(tint = Vector4f(0.1f, 0.2f, 0.4f, 0.8f))))
-        canvas.addChild(uiNode("Button", 0f, 260f, 300f, 80f).addComponent(UIButtonComponent("showcase.button")))
-        canvas.addChild(uiNode("Progress", 0f, 380f, 400f, 30f).addComponent(UIProgressBarComponent(value = 0.6f)))
-        canvas.addChild(uiNode("Slider", 0f, 440f, 400f, 30f).addComponent(UISliderComponent(0f, 1f, 0.3f)))
-        canvas.addChild(uiNode("Hint", 0f, 600f, 1000f, 40f)
-            .addComponent(UITextComponent("showcase.hint", fontSize = 28f, alignX = 0.5f)))
-        s.children.add(canvas)
-    }
-
-    private fun writeTone(file: File) {
-        val rate = 22050
-        val samples = rate
-        val data = ByteBuffer.allocate(samples * 2).order(ByteOrder.LITTLE_ENDIAN)
-        repeat(samples) { data.putShort((sin(2 * PI * 440 * it / rate) * 8000).toInt().toShort()) }
-        val header = ByteBuffer.allocate(44).order(ByteOrder.LITTLE_ENDIAN)
-        header.put("RIFF".toByteArray()).putInt(36 + data.capacity()).put("WAVEfmt ".toByteArray())
-            .putInt(16).putShort(1).putShort(1).putInt(rate).putInt(rate * 2).putShort(2).putShort(16)
-            .put("data".toByteArray()).putInt(data.capacity())
-        file.writeBytes(header.array() + data.array())
     }
 }

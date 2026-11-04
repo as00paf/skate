@@ -64,7 +64,7 @@ class SkateMcpServer(
             mapOf("dir" to "Parent folder", "name" to "Sample name (default feature-showcase)"), listOf("dir")) { a ->
             val dir = File(a.str("dir"))
             val project = when (val name = a.optStr("name") ?: "feature-showcase") {
-                "feature-showcase" -> ShowcaseProjectBuilder(serializer).build(dir)
+                "feature-showcase" -> ShowcaseProjectBuilder(serializer = serializer).build(dir)
                 "marble-run" -> MarbleRunProjectBuilder(serializer).build(dir)
                 "tetris" -> TetrisProjectBuilder(serializer).build(dir)
                 else -> throw ToolException("Unknown sample '$name'")

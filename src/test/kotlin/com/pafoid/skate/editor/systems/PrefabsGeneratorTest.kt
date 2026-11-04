@@ -211,16 +211,22 @@ class PrefabsGeneratorTest {
     }
 
     @Test
-    fun `createDefaultScenes saves only the lit MainScene without sprites and does not open it`() {
-        val scenes = PrefabsGenerator(engine).createDefaultScenes(File("."))
+    fun `createDefaultScenes saves the lit MainScene and the feature showcase without opening them`() {
+        val dir = kotlin.io.path.createTempDirectory("prefabs-default").toFile()
+        val scenes = try {
+            PrefabsGenerator(engine).apply { projectAssetsDir = dir.path + File.separator }.createDefaultScenes(dir)
+        } finally {
+            dir.deleteRecursively()
+        }
 
-        assertEquals(listOf("MainScene"), scenes.map { it.name })
-        val scene = scenes.single()
+        assertEquals(listOf("MainScene", "FeatureShowcase"), scenes.map { it.name })
+        val scene = scenes.first()
         assertNotNull(scene.getComponent<ScenePhysicsComponent>())
         assertNotNull(scene.getComponent<EnvironmentComponent>())
         assertNotNull(scene.getComponent<DirectionalLightComponent>())
         assertTrue(scene.children.flatMap { it.descendants() }.none { it.getComponent<SpriteRenderer>() != null })
         verify { sceneManager.saveScene(scene, any()) }
+        verify { sceneManager.saveScene(scenes[1], any()) }
         // ProjectManager reopens the saved files; opening here too loaded every scene twice (PHY-12).
         verify(exactly = 0) { sceneManager.openScenes(any()) }
     }
@@ -231,7 +237,12 @@ class PrefabsGeneratorTest {
         val canvases = ComponentQuery(root = { currentScene }, required = listOf(UICanvasComponent::class))
         val before = EcsChanges.version
 
-        val scenes = PrefabsGenerator(engine).createDefaultScenes(File("."))
+        val dir = kotlin.io.path.createTempDirectory("prefabs-query").toFile()
+        val scenes = try {
+            PrefabsGenerator(engine).apply { projectAssetsDir = dir.path + File.separator }.createDefaultScenes(dir)
+        } finally {
+            dir.deleteRecursively()
+        }
         currentScene = scenes[0]
 
         assertTrue(EcsChanges.version > before)
@@ -239,5 +250,22 @@ class PrefabsGeneratorTest {
         val names = mutableListOf<String>()
         canvases.forEach { names += it.name }
         assertEquals(listOf("HUD"), names)
+    }
+
+    @Test
+    fun `path-only mode spawns prefabs and the animated character without loading assets`() {
+        val generator = PrefabsGenerator(engine, loadAssets = false).apply { projectAssetsDir = "P\\" }
+
+        val bank = generator.spawn(PrefabType.BANK, material = MaterialType.CONCRETE)
+        val character = generator.spawnAnimatedCharacter("Walker", Vector3f(), Assets.Bundled.WALKING)
+
+        verify(exactly = 0) { assetsManager.loadModel(any()) }
+        verify(exactly = 0) { assetsManager.getTexture(any()) }
+        verify(exactly = 0) { assetsManager.loadAnimationSync(any()) }
+        val render = bank.getComponent<com.pafoid.skate.engine.ecs.components.RenderComponent>()!!
+        assertEquals("P\\" + PrefabCatalog.entry(PrefabType.BANK).bundledModelPath, render.model!!.path)
+        assertEquals("P\\" + MaterialType.CONCRETE.texturePath, render.material!!.baseColorTexture!!.filePath)
+        val animator = character.getComponent<com.pafoid.skate.engine.ecs.components.Animator>()!!
+        assertEquals(listOf("P\\" + Assets.Bundled.WALKING), animator.animations.map { it.path })
     }
 }

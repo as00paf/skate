@@ -2,7 +2,7 @@
 
 ## Default project (`New Project` in the editor)
 
-`ProjectManager.createProject` copies the engine-bundled assets into `Assets/EngineDefaults` and calls `PrefabsGenerator.createDefaultScenes`, which writes a single scene, `MainScene` (also the project's default scene). Keep it current with engine features; old projects are not migrated (GameEngine.md rule 8).
+`ProjectManager.createProject` copies the engine-bundled assets into `Assets/EngineDefaults` and calls `PrefabsGenerator.createDefaultScenes`, which writes two scenes: `MainScene` (the project's default scene, below) and `FeatureShowcase` (next section), plus `Assets/tone.wav` for the showcase's audio demo. Both scenes open with the project; `MainScene` is active. Keep them current with engine features; old projects are not migrated (GameEngine.md rule 8).
 
 | Part | Contents |
 |------|----------|
@@ -13,35 +13,45 @@
 | `Concrete_Ledge` | Static concrete ledge at (3, 0.25, -3) with a box collider, to grind. |
 | `HUD` | In-game UI canvas: `ScoreText` top-left (`hud.score`, "Score 0") and `RestartButton` top-right (`pause.restart`). Both keys exist in the bundled game and editor string tables. |
 
-No 2D sprites, test cubes or extra scenes. Particles and shadow tuning are not part of the default project yet.
+No 2D sprites or test cubes. Feature demos live in `FeatureShowcase`, not in `MainScene`.
 
 ## Feature showcase (`FeatureShowcase`)
 
-A manual regression suite: one scene per engine feature, built only from public engine components.
-
-Generate it with the CLI (headless), then open `FeatureShowcase.skateproject` in the editor:
+A manual regression suite: one labelled area per engine feature in a single scene, built only from public engine components. Every new editor project contains it (switch to the `FeatureShowcase` scene tab), and the CLI writes it as a stand-alone sample:
 
 ```
 skate sample --dir <folder>        # creates <folder>/FeatureShowcase (same as `skate sample feature-showcase`)
 skate validate <folder>/FeatureShowcase
-skate run <folder>/FeatureShowcase --scene Physics --frames 120
+skate run <folder>/FeatureShowcase --frames 120
 ```
 
-The generator is `ShowcaseProjectBuilder` in `tools/cli`; edit it to change a scene, then regenerate.
+One builder serves both: `FeatureShowcase` in `src/main/kotlin/com/pafoid/skate/game/samples/`. The editor calls it from `PrefabsGenerator.createDefaultScenes` with assets loaded; the CLI's `ShowcaseProjectBuilder` calls it with a path-only `PrefabsGenerator(engine, loadAssets = false)` (headless). **When a feature lands, add an area there and a row below** (GameEngine.md rule 8).
 
-| Scene | What to look for |
-|-------|------------------|
-| `Lights` | Dim ambient plus a weak sun. Red and blue point lights tint the sphere and floor from opposite sides; a spot light makes a clean circular pool with a soft edge. No light should flicker or clip as the camera moves. |
-| `Shadows` | Sun-lit cube, tall box and sphere cast shadows on the floor; the small cube (cast shadow disabled) casts none. Shadows should be stable (no shimmering or acne) while the camera moves. |
-| `Materials` | Five gold spheres sweeping from rough/dielectric to smooth/metallic; an emissive orange cube that glows; an asphalt-textured cube; a translucent blue cube (alpha blend) through which the floor stays visible. |
-| `Physics` | Debug draw is on. A stack of five boxes settles on the static floor without jitter or tunnelling, and the capsule ball drops and rolls. Press Play in the editor. |
-| `Audio` | A looping 440 Hz tone (`Assets/tone.wav`, generated). `Emitter` is 3D: volume and panning change with camera position. `Ambient2D` is a quiet non-positional layer. Stopping play silences both. |
-| `UI` | In-game (non-ImGui) UI canvas: a title, a formatted text line (string-table keys from `Assets/strings.properties`), a tinted panel, a button with hover/press states, a 60% progress bar and a draggable slider. Text must read correctly (no `!!key!!`) and the layout stays centred when the window is resized. |
-| `Animation` | The bundled character with an `Animator` that is playing. Check that the model renders in bind pose without distortion; assign clips from `EngineDefaults/Characters/animations` to verify playback and blending. |
+Layout: a 60 x 40 m grey floor seen from a high default camera. Each area has a coloured ground pad named `[Area] Area`, and every object in it is named `[Area] ...`, so the Hierarchy groups them by name and selecting the pad highlights the area. Objects are top-level because physics and animation only drive top-level objects. A UI overlay legend (top-left) lists where each area is. Press **Play** for anything that moves.
 
-## Not covered yet
+| Area (position) | What to look for |
+|------|------------------|
+| `Lights` (back row, far left) | Red and blue point lights tint the sphere and pad from opposite sides; a green spot light makes a circular pool with a soft edge. No flicker or clipping as the camera moves. |
+| `Shadows` (back row, centre left) | Sun (scene `DirectionalLight`) cascaded shadows from `Caster` and `TallPillar`, stable while the camera moves (no shimmer, acne or peter-panning). `NoCaster` (cast shadow off) casts none. The spot light above `SpotTarget` and the warm point light near `Caster` each cast their own shadow (REN-07). |
+| `Materials` (back row, centre right) | Five gold spheres from rough/dielectric to smooth/metallic; an emissive orange cube that glows (bloom); an asphalt-textured cube; a translucent blue cube (alpha blend). |
+| `Particles` (back row, far right) | Play: `Fire` (additive, orange to red), `Smoke` (alpha, grows and fades), `Sparks` (a 60-particle burst every 1.5 s, falling under gravity), `Fountain` (blue jet that arcs back down). |
+| `Physics` (middle row, far left) | Play: five stacked boxes settle without jitter or tunnelling, the ball drops and rolls, the `Crate` and `Barrel` prefabs stay upright and can be knocked over. Turn on debug draw in the scene's `ScenePhysicsComponent` to see colliders. |
+| `Joints` (middle row, centre left) | Play: `HingePendulum` swings in its plane within about +/-69 degrees; `ConeTwistLamp` swings and circles under its pivot; `SliderBlock` drops 2 m along a vertical rail and stops. All are anchored to the world. |
+| `Vehicle` (middle row, centre right) | Play: the blue `Car` (`VehicleComponent`, four raycast wheels, PHY-09) drops onto its suspension, bounces once or twice and rests level. It is not driven: scripts cannot set throttle/steering yet. |
+| `Audio` (middle row, far right) | Play: a 440 Hz tone (`Assets/tone.wav`). `Emitter3D` is positional (louder and panned as the camera approaches); `Ambient2D` is a quiet non-positional layer. Stopping play silences both. |
+| `Prefabs` (front row, left) | The prefab library (GPL-04): ledge, hubba, manual pad, grind box, funbox, rail, handrail, kinked rail, 3- and 5-stair sets, kicker, bank, quarter pipe, crate, barrel and bench, in concrete and two woods. Each is static with its hull colliders (debug draw shows them). |
+| `Animation` (front row, right) | The bundled character looping the walking clip in place. |
+| `UI` (screen overlay) | In-game (non-ImGui) canvas: title and hint, the area legend (a list), and bottom-right a tinted panel, formatted text ("Formatted text: 42"), a button with solid hover/press backgrounds (GUI-07), a 60% progress bar and a draggable slider. No `!!key!!` text; the layout keeps its corners when the window is resized. |
 
-The engine has no particle system or post-processing stack, so the *post-fx* and *particles* scenes cannot be built yet. Add a scene for each to `ShowcaseProjectBuilder` and a row above when REN particles/post-fx land.
+Overlay strings are `showcase.*` keys in the bundled `game_strings` and `editor_strings` tables (EN and FR); projects' own `Assets/strings.properties` are not loaded by the engine yet.
+
+### Not covered yet
+
+- **Ragdoll**: `RagdollComponent` needs bone bodies from `RagdollBuilder`, which nothing calls from a scene yet.
+- **Driving the vehicle**: no script or input binding sets `VehicleComponent` throttle/steering.
+- **Area labels in 3D**: there is no world-space text, so areas are labelled by name and by the overlay legend.
+- **CLI sample animation**: the headless CLI cannot load the character's skeleton, so in `skate sample` output the character stays in bind pose; the editor's default project animates.
+- **Post-processing toggles** and **fog** have no dedicated area yet.
 
 ## Marble Run (`MarbleRun`)
 

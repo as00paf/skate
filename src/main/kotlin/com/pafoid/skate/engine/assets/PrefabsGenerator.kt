@@ -8,7 +8,11 @@ import com.pafoid.skate.engine.attachComponent
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
+import com.pafoid.skate.engine.assets.data.Texture
+import com.pafoid.skate.engine.assets.data.models.animations.Animation
+import com.pafoid.skate.engine.assets.data.models.animations.SkeletonPose
 import com.pafoid.skate.engine.ecs.components.AmbientLightComponent
+import com.pafoid.skate.engine.ecs.components.Animator
 import com.pafoid.skate.engine.ecs.components.BoxCollider3D
 import com.pafoid.skate.engine.ecs.components.CameraComponent
 import com.pafoid.skate.engine.ecs.components.CustomCollider3D
@@ -21,6 +25,7 @@ import com.pafoid.skate.engine.ecs.components.PointLightComponent
 import com.pafoid.skate.engine.ecs.components.RenderComponent
 import com.pafoid.skate.engine.ecs.components.RigidBody3D
 import com.pafoid.skate.engine.ecs.components.ScenePhysicsComponent
+import com.pafoid.skate.engine.ecs.components.SkeletonComponent
 import com.pafoid.skate.engine.ecs.components.SpotLightComponent
 import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.getComponent
@@ -30,6 +35,7 @@ import com.pafoid.skate.engine.ui.UICanvasComponent
 import com.pafoid.skate.engine.ui.UIElementComponent
 import com.pafoid.skate.engine.ui.UITextComponent
 import com.pafoid.skate.game.prefabs.Floor
+import com.pafoid.skate.game.samples.FeatureShowcase
 import com.pafoid.skate.game.prefabs.MaterialType
 import com.pafoid.skate.game.prefabs.PrefabCatalog
 import com.pafoid.skate.game.prefabs.PrefabType
@@ -38,8 +44,15 @@ import com.pafoid.skate.game.prefabs.Skater
 import org.joml.Vector3f
 import java.io.File
 
+/**
+ * Spawns prefabs and writes the default project scenes.
+ *
+ * @param loadAssets false keeps models and textures as path references only (no GL/assimp; for headless tools such
+ *   as the CLI). Scenes saved that way are complete: the editor reloads every model and texture by path on open.
+ */
 class PrefabsGenerator(
     engine: Engine,
+    private val loadAssets: Boolean = true,
 ) {
     private val logger = engine.logger
     private val assetsManager = engine.assetsManager
@@ -71,6 +84,23 @@ class PrefabsGenerator(
         val baseModel = assetsManager.loadModel(modelPath)
         val model = `3dModel`(path = modelPath, mesh = baseModel.mesh)
         return Floor("Floor", model, material)
+    }
+
+    /**
+     * A plain animated character (bundled James model, no controller or physics) looping [clipPath] (a bundled
+     * animation path such as [Assets.Bundled.WALKING]).
+     */
+    fun spawnAnimatedCharacter(name: String, position: Vector3f, clipPath: String): GameObject {
+        val modelPath = projectAssetsDir + Assets.Bundled.JAMES
+        val model = if (loadAssets) assetsManager.loadModel(modelPath) else `3dModel`(modelPath)
+        val clip = if (loadAssets) assetsManager.loadAnimationSync(projectAssetsDir + clipPath)
+            else Animation(File(clipPath).nameWithoutExtension, emptyList(), 0f, projectAssetsDir + clipPath)
+        val go = GameObject(name)
+            .addComponent(Transform(position))
+            .addComponent(RenderComponent(model))
+            .addComponent(Animator(animations = mutableListOf(clip), isPlaying = true).also { it.currentAnimation = clip })
+        model.skeleton?.let { go.addComponent(SkeletonComponent(SkeletonPose(it))) }
+        return go
     }
 
     /**
@@ -110,6 +140,9 @@ class PrefabsGenerator(
     /** Textured model of a catalog prefab, loaded from the project's bundled copy. */
     private fun surfaceModel(type: PrefabType, material: MaterialType?): Pair<`3dModel`, Material?> {
         val modelPath = projectAssetsDir + PrefabCatalog.entry(type).bundledModelPath
+        if (!loadAssets) {
+            return `3dModel`(modelPath) to material?.let { Material(Texture(filePath = projectAssetsDir + it.texturePath)) }
+        }
         val baseModel = assetsManager.loadModel(modelPath)
         val texture = material?.let { assetsManager.getTexture(projectAssetsDir + it.texturePath) }
         val model = `3dModel`(
@@ -208,8 +241,9 @@ class PrefabsGenerator(
         type.name.split('_').joinToString("") { part -> part.lowercase().replaceFirstChar { it.uppercase() } }
 
     /**
-     * The scenes of a new project: a single `MainScene` with sky, sun, day/night cycle, the skater and board on an
-     * asphalt floor, a concrete ledge to grind and a HUD canvas. See docs/samples.md ("Default project").
+     * The scenes of a new project: `MainScene` (sky, sun, day/night cycle, the skater and board on an asphalt floor,
+     * a concrete ledge to grind and a HUD canvas) and the [FeatureShowcase] scene (one labelled area per engine
+     * feature). Writes the showcase's assets into [projectAssetsDir]. See docs/samples.md.
      */
     fun createDefaultScenes(sceneDir: File): List<Scene> {
         val scene = sceneManager.createNewScene(DEFAULT_SCENE, sceneDir.path)
@@ -224,8 +258,12 @@ class PrefabsGenerator(
         spawnDefaultsSync().forEach { scene.addChild(it) }
         sceneManager.saveScene(scene, sceneDir.path)
 
+        FeatureShowcase.writeAssets(File(projectAssetsDir))
+        val showcase = FeatureShowcase(this).populate(sceneManager.createNewScene(FeatureShowcase.SCENE_NAME, sceneDir.path))
+        sceneManager.saveScene(showcase, sceneDir.path)
+
         // Not opened here: ProjectManager.loadDefaultScenes reopens the saved files (opening twice duplicated bodies).
-        return listOf(scene)
+        return listOf(scene, showcase)
     }
 
     fun spawnDefaultsSync(): List<GameObject> {
