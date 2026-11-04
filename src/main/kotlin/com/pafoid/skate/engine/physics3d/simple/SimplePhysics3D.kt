@@ -70,6 +70,19 @@ class SimplePhysics3D : IPhysics3D {
         bodies.add(body)
     }
 
+    override fun teleport(go: GameObject) {
+        val rb = go.getComponent<RigidBody3D>() ?: return
+        val body = rb.rawBody as? SimpleBody ?: return add(go)
+        go.getComponent<Transform>()?.let { t ->
+            body.setLocation(t.translation)
+            body.setRotation(
+                Quaternionf().rotationXYZ(t.rotation.x.toRadiansF(), t.rotation.y.toRadiansF(), t.rotation.z.toRadiansF())
+            )
+        }
+        body.linearVelocity = Vector3f()
+        body.angularVelocity = Vector3f()
+    }
+
     override fun remove(go: GameObject) {
         val rb = go.getComponent<RigidBody3D>() ?: return
         val body = rb.rawBody as? SimpleBody ?: return
