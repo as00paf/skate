@@ -38,19 +38,28 @@ open class Gizmo(
     private var snapshots: List<Pair<GameObject, Transform>> = emptyList()
 
     protected fun beginSnapshot(targets: List<GameObject>) {
-        snapshots = targets.mapNotNull { go -> go.getComponent<Transform>()?.let { go to Transform().apply { copyFrom(it) } } }
+        snapshots = targets.mapNotNull { go -> go.getComponent<Transform>()?.let { go to TransformCommand.snapshot(it) } }
     }
 
     protected val snapshotTargets: List<Pair<GameObject, Transform>> get() = snapshots
 
+    /** Records the drag as one undoable command covering every target that changed. */
     protected fun commitSnapshot() {
-        snapshots.forEach { (go, old) ->
-            val current = go.getComponent<Transform>() ?: return@forEach
-            if (old != current) {
-                undoRedoManager.pushCommand(TransformCommand(go, old, current))
-                sceneManager.currentScene?.isDirty = true
-            }
+        buildCommand(snapshots)?.let {
+            undoRedoManager.pushCommand(it)
+            sceneManager.currentScene?.isDirty = true
         }
         snapshots = emptyList()
+    }
+
+    companion object {
+        /** Command for the targets whose transform differs from its drag-start [snapshots], or null if none did. */
+        fun buildCommand(snapshots: List<Pair<GameObject, Transform>>): TransformCommand? {
+            val entries = snapshots.mapNotNull { (go, old) ->
+                val current = go.getComponent<Transform>() ?: return@mapNotNull null
+                if (old == current) null else TransformCommand.Entry(go, old, current)
+            }
+            return if (entries.isEmpty()) null else TransformCommand(entries)
+        }
     }
 }
