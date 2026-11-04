@@ -27,6 +27,12 @@ class AssetsResolver(
         initialized = true
     }
 
+    /** Original bytes of every packed entry whose path matches [filter], keyed by path; empty before [initialize]. */
+    fun readAll(filter: (String) -> Boolean): Map<String, ByteArray> {
+        if (!initialized) return emptyMap()
+        return assetsAtlas.values.flatten().filter { filter(it.path) }.associate { it.path to read(it) }
+    }
+
     inline fun <reified T> resolve(path: String): T? {
         if (!initialized) {
             logger.logEngine("AssetsResolver must be initialized first", LogLevel.ERROR)
