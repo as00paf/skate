@@ -174,6 +174,10 @@ class ViewportActionHandler(
             undoRedoManager.executeCommand(ReparentGameObjectCommand(event.child, event.newParent))
             sceneManager.currentScene?.isDirty = true
         }
+        eventSystem.subscribe<ViewportAction.CreateUi> { event ->
+            val scene = sceneManager.currentScene ?: return@subscribe
+            undoRedoManager.executeCommand(com.pafoid.skate.editor.commands.scene.CreateUiCommand(event.kind, scene, event.parent ?: scene.selectedGameObject))
+        }
         eventSystem.subscribe<CreateEmptyChild> { event ->
             handleCreateEmptyChild(event.parent)
         }

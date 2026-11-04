@@ -103,11 +103,11 @@ class UiRenderSystem(
     }
 
     private fun drawButton(list: UiDrawList, b: UIButtonComponent, n: UiNodeRef, x: Float, y: Float, w: Float, h: Float, scale: Float) {
-        val bg = when {
-            !n.interactable -> b.disabledColor
-            b.pressed -> b.pressedColor
-            b.hovered || n.element.focused -> b.hoverColor
-            else -> b.normalColor
+        val bg = when (UiButtonVisual.of(n.interactable, b.hovered, b.pressed, n.element.focused)) {
+            UiButtonVisual.DISABLED -> b.disabledColor
+            UiButtonVisual.PRESSED -> b.pressedColor
+            UiButtonVisual.HOVER -> b.hoverColor
+            UiButtonVisual.NORMAL -> b.normalColor
         }
         quad(list, x, y, w, h, bg, n.opacity)
         if (b.labelKey.isNotEmpty()) label(list, strings.getString(b.labelKey), x, y, w, h, b.fontSize * scale, 0.5f, 0.5f, b.labelColor, n.opacity)
@@ -150,5 +150,19 @@ class UiRenderSystem(
 
     private companion object {
         val FOCUS_DEFAULT = Vector4f(1f, 0.8f, 0.2f, 1f)
+    }
+}
+
+/** Which colour a button shows. Pressed only while the pointer is still over it; keyboard/gamepad focus counts as hover. */
+enum class UiButtonVisual {
+    NORMAL, HOVER, PRESSED, DISABLED;
+
+    companion object {
+        fun of(interactable: Boolean, hovered: Boolean, pressed: Boolean, focused: Boolean): UiButtonVisual = when {
+            !interactable -> DISABLED
+            pressed && hovered -> PRESSED
+            hovered || focused -> HOVER
+            else -> NORMAL
+        }
     }
 }

@@ -17,6 +17,16 @@ handle.cancel()                                        // also happens automatic
   position inside it (snippets and `method()` put the caret between the parentheses when there are parameters).
 - `explicit = false` (auto-popup while typing) returns nothing for an empty prefix outside member access.
 
+## Data for the editor popup (EDT-26)
+
+- `provider.signatureHelp(request)`: parameter hints (`SignatureHelp`: signature, parameters, active parameter) while the
+  caret is inside `member(` ... `)`; null otherwise.
+- `provider.capabilities`: `triggerCharacters` (auto-popup), `autoClosePairs` (bracket/quote auto-close) and `lineComment`.
+- `provider.apiReference()`: all API types with signatures and docs for a reference panel; see `docs/scripting-api.md`.
+- `completion.applyTo(text)`: returns the new text and caret, for insertion and unit tests.
+- `Completion.kind` is `PROPERTY`, `METHOD`, `VARIABLE`, `KEYWORD` or `SNIPPET` (map to icons).
+- Get the provider for a file with `hostRegistry.completionProviderFor(path)`.
+
 ## Extension point for hosts
 
 1. Implement `CompletionProvider.complete(request)`: pure function of the request, tolerant of invalid text,

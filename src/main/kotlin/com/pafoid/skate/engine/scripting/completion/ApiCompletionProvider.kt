@@ -46,6 +46,57 @@ class ApiCompletionProvider(
             .map { (_, c) -> c.toCompletion(prefixStart, offset) }
     }
 
+    override val capabilities: CompletionCapabilities get() = profile.capabilities
+
+    override fun apiReference(): List<ApiTypeDoc> = index.types.sortedBy { it.name }.map { t ->
+        ApiTypeDoc(t.name, t.members.map { ApiMemberDoc(it.name, it.kind, profile.renderSignature(it), it.doc) })
+    }
+
+    override fun signatureHelp(request: CompletionRequest): SignatureHelp? {
+        val offset = request.offset.coerceIn(0, request.text.length)
+        val before = request.text.substring(0, offset)
+        if (inCommentOrString(before)) return null
+        var depth = 0
+        var commas = 0
+        var open = -1
+        var k = offset - 1
+        while (k >= 0) {
+            when (before[k]) {
+                ')' -> depth++
+                '(' -> if (depth == 0) { open = k; break } else depth--
+                ',' -> if (depth == 0) commas++
+            }
+            k--
+        }
+        if (open < 0) return null
+        var e = open
+        while (e > 0 && before[e - 1].isWhitespace()) e--
+        var st = e
+        while (st > 0 && isIdent(before[st - 1])) st--
+        if (st == e || st == 0 || before[st - 1] != '.') return null
+        val segments = parseChain(before, st - 1) ?: return null
+        val member = index.type(Scope(before.substring(0, st)).resolve(segments))?.member(before.substring(st, e)) ?: return null
+        if (member.kind != CompletionKind.METHOD) return null
+        val sig = profile.renderSignature(member)
+        return SignatureHelp(sig, parameterList(sig), commas, member.doc)
+    }
+
+    private fun parameterList(sig: String): List<String> {
+        val start = sig.indexOf('(')
+        if (start < 0) return emptyList()
+        var depth = 0
+        val params = mutableListOf<String>()
+        val cur = StringBuilder()
+        for (i in start until sig.length) {
+            val c = sig[i]
+            if (c == '(') { depth++; if (depth == 1) continue }
+            if (c == ')') { depth--; if (depth == 0) break }
+            if (c == ',' && depth == 1) { params += cur.toString().trim(); cur.clear() } else cur.append(c)
+        }
+        cur.toString().trim().takeIf { it.isNotEmpty() }?.let { params += it }
+        return params
+    }
+
     private class Candidate(
         val label: String,
         val kind: CompletionKind,

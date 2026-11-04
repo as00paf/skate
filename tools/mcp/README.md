@@ -13,7 +13,7 @@ Client config example:
 
 | Tool | Purpose |
 |------|---------|
-| `create_project`, `create_sample` | Create a project / the FeatureShowcase sample |
+| `create_project`, `create_sample` | Create a project / a sample (`name`: feature-showcase, marble-run, tetris) |
 | `validate_project` | Validate project file and scenes |
 | `export_project` | Validate, pack and export `game.bin` |
 | `run_scene` | Run a scene headless, return engine stats |

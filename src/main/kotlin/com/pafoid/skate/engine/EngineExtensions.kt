@@ -27,6 +27,7 @@ import com.pafoid.skate.engine.ecs.components.PointLightComponent
 import com.pafoid.skate.engine.ecs.components.JointComponent
 import com.pafoid.skate.engine.ecs.components.ScriptComponent
 import com.pafoid.skate.engine.ecs.components.RagdollComponent
+import com.pafoid.skate.engine.ecs.components.VehicleComponent
 import com.pafoid.skate.engine.ecs.components.RenderComponent
 import com.pafoid.skate.engine.ecs.components.RigidBody3D
 import com.pafoid.skate.engine.ecs.components.SceneComponent
@@ -35,6 +36,7 @@ import com.pafoid.skate.engine.ecs.components.SkeletonComponent
 import com.pafoid.skate.engine.ecs.components.SpotLightComponent
 import com.pafoid.skate.engine.ecs.components.SpriteRenderer
 import com.pafoid.skate.engine.ecs.components.Transform
+import com.pafoid.skate.engine.ui.*
 import kotlin.reflect.KClass
 
 fun GameObject.getComponent(type: ComponentType) =
@@ -60,6 +62,7 @@ fun GameObject.getComponent(type: ComponentType) =
         ComponentType.NON_PICKABLE -> getComponent<NonPickable>()
         ComponentType.PLAYER_CONTROLLER -> getComponent<PlayerController>()
         ComponentType.RAGDOLL -> getComponent<RagdollComponent>()
+        ComponentType.VEHICLE -> getComponent<VehicleComponent>()
         ComponentType.RENDER -> getComponent<RenderComponent>()
         ComponentType.RIGID_BODY_3D -> getComponent<RigidBody3D>()
         ComponentType.REVERB_ZONE -> getComponent<ReverbZone>()
@@ -68,6 +71,14 @@ fun GameObject.getComponent(type: ComponentType) =
         ComponentType.SPOT_LIGHT -> getComponent<SpotLightComponent>()
         ComponentType.SPRITE_RENDERER -> getComponent<SpriteRenderer>()
         ComponentType.TRANSFORM -> getComponent<Transform>()
+        ComponentType.UI_BUTTON -> getComponent<UIButtonComponent>()
+        ComponentType.UI_CANVAS -> getComponent<UICanvasComponent>()
+        ComponentType.UI_ELEMENT -> getComponent<UIElementComponent>()
+        ComponentType.UI_IMAGE -> getComponent<UIImageComponent>()
+        ComponentType.UI_LIST -> getComponent<UIListComponent>()
+        ComponentType.UI_PROGRESS_BAR -> getComponent<UIProgressBarComponent>()
+        ComponentType.UI_SLIDER -> getComponent<UISliderComponent>()
+        ComponentType.UI_TEXT -> getComponent<UITextComponent>()
     }
 
 fun GameObject.getAllChildren(): List<GameObject> {

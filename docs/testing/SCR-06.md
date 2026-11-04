@@ -41,3 +41,14 @@ Arguments have no spaces: `--args=<file>@<line>:<col>`.
 8. Error tolerance: `probe.kts` with `val = = ((` on line 1 and `ctx.entity.` on line 2, caret at line 2 col 12.
    Expected: `name`, `id`, `transform`, ... listed; no crash.
 9. Delete the `probe.*` files.
+
+## C. EDT-26 support additions (signature help, capabilities, API reference)
+
+Start from a NEW project/checkout state: `git log --oneline -3` shows `SCR-06:` commits; no editor UI is involved.
+
+1. `.\gradlew.bat :test --tests "com.pafoid.skate.engine.scripting.completion.*"` - expected: 13 tests PASSED.
+2. Create `probe.kts`: `onCreate { ctx -> ctx.events.on("jump", ) }`, caret just before the final `)` (line 1, col 41).
+   There is no CLI for signature help, so confirm via test `Completion_SignatureHelpTracksActiveParameter` (active parameter 1).
+3. Confirm test `Completion_AppliesToTextAndExposesCapabilitiesAndReference` PASSED (apply result `ctx.scene.find()`, caret inside).
+4. Open `docs/scripting-api.md`: every `ctx` member is listed and the Kotlin/TypeScript/Lua snippets are present.
+5. `.\gradlew.bat :test` - expected `BUILD SUCCESSFUL`. Delete `probe.kts`.

@@ -17,6 +17,7 @@ import org.joml.Vector2i
 import org.joml.Vector3f
 import org.joml.Vector4f
 import java.io.File
+import com.pafoid.skate.engine.ui.*
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import kotlin.math.PI
@@ -30,7 +31,7 @@ class ShowcaseProjectBuilder(private val serializer: Serializer = Serializer()) 
 
     companion object {
         const val PROJECT_NAME = "FeatureShowcase"
-        val SCENE_NAMES = listOf("Lights", "Shadows", "Materials", "Physics", "Audio", "Animation")
+        val SCENE_NAMES = listOf("Lights", "Shadows", "Materials", "Physics", "Audio", "Animation", "UI")
         const val TONE_FILE = "tone.wav"
     }
 
@@ -43,6 +44,10 @@ class ShowcaseProjectBuilder(private val serializer: Serializer = Serializer()) 
         File(projectDir, "Builds").mkdirs()
         EngineAssetCopier().copyBundledAssets(projectDir)
         writeTone(File(assetsDir, TONE_FILE))
+        File(assetsDir, "strings.properties").writeText(
+            "project.name=$PROJECT_NAME\nshowcase.title=In-game UI showcase\nshowcase.text=Text: %s\n" +
+                "showcase.button=Button\nshowcase.hint=Hover or click the button; drag the slider\n"
+        )
         assetsPrefix = assetsDir.absolutePath + File.separator
 
         val scenePaths = SCENE_NAMES.map { name ->
@@ -52,6 +57,7 @@ class ShowcaseProjectBuilder(private val serializer: Serializer = Serializer()) 
                 "Materials" -> materials()
                 "Physics" -> physics()
                 "Audio" -> audio()
+                "UI" -> ui()
                 else -> animation()
             }
             File(scenesDir, "$name.scene").also { it.writeText(serializer.encode(scene)) }.path
@@ -152,6 +158,24 @@ class ShowcaseProjectBuilder(private val serializer: Serializer = Serializer()) 
             .addComponent(Transform(Vector3f(0f, 0f, 0f)))
             .addComponent(RenderComponent(`3dModel`(assetsPrefix + Assets.Bundled.JAMES)))
             .addComponent(Animator(isPlaying = true)))
+    }
+
+    private fun uiNode(name: String, x: Float, y: Float, w: Float, h: Float) =
+        GameObject(name).addComponent(UIElementComponent().placed(0.5f, 0f, x, y, w, h))
+
+    private fun ui() = baseScene("UI", ambient = 0.4f).also { s ->
+        val canvas = GameObject("Canvas").addComponent(UICanvasComponent())
+        canvas.addChild(uiNode("Title", 0f, 40f, 1000f, 70f)
+            .addComponent(UITextComponent("showcase.title", fontSize = 56f, alignX = 0.5f)))
+        canvas.addChild(uiNode("Args", 0f, 130f, 1000f, 50f)
+            .addComponent(UITextComponent("showcase.text", listOf("formatted"), Vector4f(1f, 0.8f, 0.2f, 1f), 36f, alignX = 0.5f)))
+        canvas.addChild(uiNode("Panel", 0f, 220f, 600f, 360f).addComponent(UIImageComponent(tint = Vector4f(0.1f, 0.2f, 0.4f, 0.8f))))
+        canvas.addChild(uiNode("Button", 0f, 260f, 300f, 80f).addComponent(UIButtonComponent("showcase.button")))
+        canvas.addChild(uiNode("Progress", 0f, 380f, 400f, 30f).addComponent(UIProgressBarComponent(value = 0.6f)))
+        canvas.addChild(uiNode("Slider", 0f, 440f, 400f, 30f).addComponent(UISliderComponent(0f, 1f, 0.3f)))
+        canvas.addChild(uiNode("Hint", 0f, 600f, 1000f, 40f)
+            .addComponent(UITextComponent("showcase.hint", fontSize = 28f, alignX = 0.5f)))
+        s.children.add(canvas)
     }
 
     private fun writeTone(file: File) {

@@ -35,6 +35,7 @@ Each domain has a dedicated agent (see [Agents & herdr](#agents--herdr)).
 5. Every task ships with unit tests (JUnit 5 + mockk). **No integration tests for now.** Name tests `Area_Behavior`.
 6. Keep the build green: `cmd.exe /c gradlew.bat test` from WSL/herdr, or `.\gradlew.bat test` on Windows.
 7. Only `skate-lead` edits checkbox state in this file. Domain agents report status back to the lead.
+8. No backward compatibility while the engine is a work in progress: don't add migrations or upgrade-on-load code for old saved scenes/projects; the human recreates content. Instead, keep the **default projects** current: when a feature lands, update the default skate project (`PrefabsGenerator` default scenes) and the CLI samples to use it, and remove test-only content from them.
 
 ---
 
@@ -91,7 +92,7 @@ The renderer works but needs cleaner APIs, caching, dynamic shaders, better mate
   - Do: Replace `LightingUniformsLoader` with a light buffer (UBO/SSBO) supporting N point/spot/directional lights. Add light culling per object (forward+) or a clustered approach.
   - Done when: The scene supports at least 64 dynamic lights without shader changes, and light culling math is unit-tested.
   - Deps: REN-04
-- [ ] **REN-07** `P2` Shadows overhaul
+- [~] @skate-render **REN-07** `P2` Shadows overhaul
   - Do: Cascaded shadow maps for directional lights, spot/point shadow maps and PCF filtering, with quality driven by `ShadowQuality`.
   - Done when: There is no shadow acne or peter-panning on the sample scene, every `ShadowQuality` level works, and cascade split math is unit-tested.
   - Deps: REN-06
@@ -103,7 +104,7 @@ The renderer works but needs cleaner APIs, caching, dynamic shaders, better mate
   - Do: Move fog from `SkyDomeRenderer`/`LightingUniformsLoader` into a shared shader include. Support linear/exp/exp² and height fog, configured from `EnvironmentComponent`/`EnvironmentPreset`.
   - Done when: Fog looks the same on models, terrain and sky, and fog parameter math is unit-tested.
   - Deps: REN-05
-- [ ] **REN-10** `P2` Particle system
+- [~] @skate-gameplay **REN-10** `P2` Particle system
   - Do: Add a `ParticleEmitter` component (CPU first, GPU instancing for draw) with an emission shape, lifetime, velocity/size/color over life and a texture atlas.
   - Done when: Emitters can be added in the editor and play in game, and the simulation step is unit-tested.
   - Deps: REN-03, ECS-03
@@ -130,6 +131,26 @@ The renderer works but needs cleaner APIs, caching, dynamic shaders, better mate
   - Do: Review the SDF branch added by GUI-04 for correctness, batching and edge/outline quality.
   - Done when: Findings fixed or documented; test or screenshot check recorded.
   - Deps: GUI-04
+- [x] **REN-17** `P1` PostProcessPass feedback loop and DebugPass target review
+  - Do: From PHY-10: `PostProcessPass` samples `frameBuffer.getTextureId()` while that FBO is bound as the render target (undefined read/write feedback); ping-pong between two targets or use a separate output target. Review the PHY-10 `bindTarget` hook added to `DebugPass`/`RenderResourcesFactory` and fold it into the pass/target design.
+  - Done when: No pass reads a texture attached to its bound target; post effects and debug lines show in the viewport; test for target selection.
+  - Deps: REN-08, PHY-10
+- [x] **REN-18** `P0` Debug overlays draw over the scene; skater looks transparent
+  - Do: Human-reported on PR #12 after PHY-10 made debug lines visible again: the skater looks transparent and grid lines and camera/light indicators draw wrongly (order/depth). Find the root cause in the DebugPass/PostProcessPass target and state handling and fix it.
+  - Done when: Opaque models are opaque, grid and collider lines depth-test against the scene, icons draw as intended; regression test where feasible.
+  - Deps: PHY-10
+- [ ] **REN-19** `P3` Leftovers from REN-18
+  - Do: Far grid lines near the floor edge still z-fight in the default frame; with post-processing fully off, transparent materials can show the viewport background through them.
+  - Done when: No grid flicker at default camera distance and transparent materials composite correctly with post off; test where feasible.
+  - Deps: REN-18
+- [ ] **REN-20** `P1` Shadows and picking cover the whole hierarchy
+  - Do: From EDT-31: `ShadowPass` only renders top-level objects, so child models (e.g. the skateboard's visual child) cast no shadows; also review EDT-31's `PickingPass` change (whole-hierarchy traversal, no skip while selected). Do it on top of REN-07.
+  - Done when: Child models cast shadows; picking pass reviewed; traversal test.
+  - Deps: REN-07, EDT-31
+- [ ] **REN-21** `P1` 2D/UI render follow-ups from GUI-07 and EDT-31
+  - Do: Fix `picking.glsl` reading `aTexId`/`aEntityId` at locations 8/9 while `RenderBatch2D` feeds 3/4 (2D sprite picking reads 0), the same mismatch GUI-07 fixed in `shader_2d_batch.glsl`. Draw runtime UI after post-processing and the debug pass so bloom/FXAA and grid lines don't affect it. Review EDT-31's `SelectionHighlight`/`GeometryPass` change (highlight inherited from ancestors).
+  - Done when: 2D sprites are pickable, UI is unaffected by post effects and debug lines, attribute layout guarded by a test.
+  - Deps: GUI-07, EDT-31, REN-18
 
 ### Asset management — `AST` (`skate-assets`)
 
@@ -207,6 +228,13 @@ The ECS is in good working shape but needs a complete review. It is probably mis
 - [x] **ECS-09** `P1` Units and coordinate-system conventions
   - Do: Write the convention (Y-up, right-handed, metres, degrees at component level, radians internally) in `docs/design/conventions.md` and add unit suffixes/KDoc to component fields.
   - Done when: Doc exists and public component fields state their units.
+- [x] **ECS-10** `P1` Tag and Layer on GameObject
+  - Do: From ECS-04: add `tag` and `layer` to `GameObject`, `Scene.findByTag/findByLayer`, and a layer-mask parameter on `System.query`/`ComponentQuery`. Follow-ups: EDT inspector field, REN camera culling mask, PHY layer-to-collision-group mapping.
+  - Done when: Tag/layer lookups and layer-mask queries are unit-tested.
+  - Deps: ECS-04
+- [ ] **ECS-11** `P1` Find child objects by id
+  - Do: From EDT-31: `GameObjectManager.getGameObject(id)` only searches top-level objects, so hierarchy drag-and-drop and search providers can't find children. Search the whole hierarchy (indexed by id).
+  - Done when: Lookups find objects at any depth; unit-tested.
 
 ### Physics — `PHY` (`skate-physics`)
 
@@ -238,6 +266,22 @@ Physics needs overall improvements, a swappable physics engine, and a joint comp
 - [x] **PHY-07** `P2` Remove per-frame allocations in physics/ragdoll sync
   - Do: Hoist temporaries to fields in ragdoll/physics sync and audit degree/radian call sites (QA-04).
   - Done when: No allocations in the hot path (reviewed), degree/radian audit documented.
+- [x] **PHY-09** `P2` Raycast vehicle
+  - Do: `VehicleComponent` (+ `WheelConfig`) on a `RigidBody3D` chassis, solved by a backend-agnostic `RaycastVehicleSolver` (raycast suspension, engine/brake, lateral grip) from `PhysicsSystem.fixedUpdate`; see `docs/design/PHY-09.md`.
+  - Done when: Suspension, drive and grip are unit-tested and the component is serializable.
+  - Deps: PHY-02, PHY-06
+- [x] **PHY-10** `P0` Fix physics debug view not drawing collider boxes
+  - Do: Human-reported on PR #12: the physics debug toggle no longer draws rigid body colliders in the editor. Find the root cause (round 10 or earlier render changes) and fix it.
+  - Done when: Collider boxes draw again with debug on in editor and play; regression test.
+  - Deps: PHY-09
+- [ ] **PHY-11** `P1` Sync physics bodies when a transform is edited in the editor
+  - Do: Human-reported: editing a GameObject's position/rotation/scale in the inspector (or with gizmos/undo) does not update its `RigidBody3D`/collider in the physics world, so the body stays at its old pose. When a transform changes outside the simulation (edit mode, inspector/command edits, undo/redo, scene load), teleport the body to the new pose (reset velocities, rebuild the collider for scale changes) and keep the interpolation state consistent. Coordinate the editor-side change notification with `skate-editor`.
+  - Done when: Moving, rotating or scaling an object in the editor moves its collider (visible with physics debug on), and Play starts from the edited pose; tests for teleport on transform change, scale rebuild and undo.
+  - Deps: PHY-10
+- [x] **PHY-12** `P0` Duplicate bodies and stuck skater on first run
+  - Do: Human-reported on PR #12: the first run of a new default skate project shows duplicate collider boxes and the skater is stuck in the floor; it works after reopening. Register bodies exactly once in every path (new project, open, play/stop, scene switch).
+  - Done when: First run works like a reopened project; body counts per path are unit-tested.
+  - Deps: PHY-10
 
 ### Animation — `ANI` (`skate-animation`)
 
@@ -262,6 +306,14 @@ The animation system needs improvements.
   - Do: Upload bone palettes through a UBO/SSBO and skip the update for off-screen skinned meshes.
   - Done when: Profiler shows a reduced animation cost with many characters.
   - Deps: ANI-01, REN-02
+- [x] **ANI-08** `P1` Persist Animator controller reference
+  - Do: Save the ANI-02 controller asset reference on `Animator` and resolve it when a scene loads.
+  - Done when: An animator's controller survives save/load, covered by a test.
+  - Deps: ANI-02
+- [ ] **ANI-09** `P1` Skateboarding animation clips and controller
+  - Do: From GPL-15: no skateboarding clips are bundled, so riding falls back to idle/walking. Source or author riding idle, push and ollie clips for the skater (the human may need to provide assets) and a controller asset wiring them into the ANI-02 state machine for `SkateBehavior`.
+  - Done when: The skater uses a riding pose/push/ollie in the default project; the controller loads in a test.
+  - Deps: GPL-15
 
 ### Audio — `AUD` (`skate-audio`)
 
@@ -290,6 +342,10 @@ Audio needs a more complete implementation.
   - Do: Make `AudioEngine` and `SoundSource` `AutoCloseable` (QA-04).
   - Done when: Handles are closed deterministically; tests.
   - Deps: AUD-02
+- [x] **AUD-08** `P2` Mixer snapshot for editor undo and persistence
+  - Do: Data side of EDT-25: `Mixer.snapshot()` and `AudioEngine.currentConfig` so the editor can undo and persist bus settings.
+  - Done when: Snapshot/restore round-trip is unit-tested.
+  - Deps: AUD-02
 
 ### Input — `INP` (`skate-input`)
 
@@ -313,6 +369,10 @@ Input works well but needs review and controller dead-zone support.
   - Done when: Scripts and runtime code read input without editor imports, covered by tests.
   - Deps: INP-01
 - [x] **INP-06** `P2` Lift gamepad button cap to 32 (ButtonStates)
+- [x] **INP-08** `P2` Cursor capture mode API
+  - Do: `CursorMode` (normal/hidden/captured) with `set/getCursorMode` on the input provider; no cursor jump on mode change.
+  - Done when: Mode changes are unit-tested without a window.
+  - Deps: INP-05
 
 ### Gameplay — `GPL` (`skate-gameplay`)
 
@@ -367,10 +427,14 @@ The player controller was hardcoded at first and needs a big overhaul. Some skat
   - Do: Human-reported after GPL-11: mounting leaves the board standing between the player's legs; the player must RIDE on top of it. Define a deck anchor/stance (feet on the deck, board under the player, facing along the board, centre of mass and collider matched), with the character parented/posed on the board while mounted (engine-generic `Mountable` seat/stance data, not skateboard-only). Also fix scale: the skateboard model is huge relative to the player; normalise model scale in the prefab/importer so board length fits the character, and make sure the collider and its physics-debug wireframe match the mesh (the human now sees extra wireframes and the board's own wireframe is missing; check for duplicated or mis-scaled collider/child bodies introduced by GPL-03/12).
   - Done when: Mounted player visibly stands on the deck, board scale is proportionate, physics debug shows one collider matching the board; tests for stance placement and scale.
   - Deps: GPL-11, GPL-12
-- [~] @skate-gameplay **GPL-14** `P1` Fix skateboard orientation
+- [x] **GPL-14** `P1` Fix skateboard orientation
   - Do: Human-reported after PR #9: the skateboard is still wrongly oriented (model axes vs forward direction, deck up, nose/tail). Fix it in the prefab/importer/visual child so mesh, collider, stance and movement direction agree (GPL-13).
   - Done when: Board faces the travel direction with deck up in the sample, physics debug matches; test for orientation.
   - Deps: GPL-13
+- [x] **GPL-15** `P0` Riding: alignment, pose and floating
+  - Do: Human-reported on PR #12: when riding, the skater is misaligned with the board, has no riding pose/animation, and skater and board float. Snap the skater to the deck pose, play a riding animation via the ANI-02 state machine, and fix the floating root cause.
+  - Done when: Riding in the default project looks grounded and aligned with a riding pose; mount pose math and physics state switch unit-tested; `docs/testing/GPL-15.md`.
+  - Deps: GPL-14
 
 ### In-game UI — `GUI` (`skate-gameui`)
 
@@ -383,7 +447,7 @@ In-game UI components need to be added (separate from the ImGui editor).
   - Do: Implement GUI-01 in `engine/ui/` as ECS components and a UI system.
   - Done when: The sample game shows a HUD (score, trick name, timer) and a pause menu. Layout has unit tests.
   - Deps: GUI-01, REN-11
-- [~] @skate-gameui **GUI-03** `P2` UI authoring in the editor
+- [x] **GUI-03** `P2` UI authoring in the editor
   - Do: Edit UI canvases in the editor viewport; coordinate the editor side with `skate-editor`.
   - Done when: UI can be built and saved without code.
   - Deps: GUI-02
@@ -391,6 +455,18 @@ In-game UI components need to be added (separate from the ImGui editor).
   - Do: SDF font rendering, plus localized strings and plurals via `StringManager`.
   - Done when: Text stays crisp at all sizes, and switching locale updates the UI.
   - Deps: GUI-02
+- [x] **GUI-05** `P0` UI components added by hand do not show
+  - Do: Human-reported on PR #12: adding `UICanvasComponent`/`UIButtonComponent` to an empty GameObject via Add Component shows nothing in the editor or in game. Make that path work (auto-add required components or show a clear hint) and keep the create-UI menu path working.
+  - Done when: A hand-built canvas + button renders in editor and game, is editable with the rect gizmo and survives save/reload; tests; `docs/testing/GUI-03.md` updated.
+  - Deps: GUI-03
+- [x] **GUI-06** `P0` Button hover state not visible
+  - Do: Human-reported on PR #12: hovering a button does not change its colour. Check hit-testing and coordinate mapping (editor viewport and game), input in edit/play modes, and the colour states.
+  - Done when: Hover/press colours show in Play and in the game; behaviour documented in `docs/testing/GUI-03.md`; tests.
+  - Deps: GUI-05
+- [x] **GUI-07** `P0` Button backgrounds don't render properly
+  - Do: Human-reported on PR #12 after GUI-06/REN-18: hover/press work but button backgrounds render incorrectly. Find the root cause (UI colours or the REN-18 render state/alpha changes) and fix it.
+  - Done when: Button backgrounds render solid in all states in editor and game; regression test.
+  - Deps: GUI-06, REN-18
 
 ### Scripting — `SCR` (`skate-scripting`)
 
@@ -433,7 +509,7 @@ Multiplayer and Steam support need to be added.
   - Deps: NET-01
 - [ ] **NET-03** `P3` Client-side prediction and lag compensation
   - Deps: NET-02
-- [~] @skate-online **NET-04** `P2` Steam integration
+- [x] **NET-04** `P2` Steam integration
   - Do: Integrate Steamworks via steamworks4j behind a `PlatformServices` interface (achievements, stats, leaderboards, rich presence, lobbies), with a no-op fallback when Steam is absent.
   - Done when: The game runs with and without Steam. The fallback and the interface have unit tests.
 - [ ] **NET-05** `P3` Steam networking transport
@@ -495,7 +571,7 @@ All editor mutations must go through `Command` classes and the service layer (se
   - Do: Route `RenameFileCommand`, `DeleteFileCommand` and project-window moves through the asset-ID-aware API so `.meta` files stay in sync (unblocks AST-02).
   - Done when: Renaming, deleting or moving a file in the editor keeps its `.meta` and GUID; tests under `editor/commands`.
   - Deps: AST-02
-- [ ] **EDT-15** `P1` Joint component inspector
+- [x] **EDT-15** `P1` Joint component inspector
   - Do: Add editor UI to create, edit and remove the PHY-03 joint component (type, connected body, anchors, limits, motor), through commands in `editor/commands`.
   - Done when: Joints can be created and edited in the editor with undo/redo; command tests under `editor/commands`.
   - Deps: PHY-03
@@ -522,11 +598,11 @@ All editor mutations must go through `Command` classes and the service layer (se
   - Do: Rework `KeyBindingsWindow` on top of the INP-03 action maps: list actions by category with search/filter; per-action keyboard, mouse and gamepad bindings with a click-to-rebind capture (cancel/clear); conflict detection with swap/unbind choices; reset per action/category/all; named profiles with import/export; gamepad-specific settings that currently live here move to the Input Testing window (EDT-19) so each setting has exactly one home; all changes via commands with undo/redo; translated and with tooltips.
   - Done when: Any action can be rebound for keyboard and gamepad, conflicts are detected, bindings persist; command tests under `editor/commands`.
   - Deps: INP-03, EDT-19
-- [ ] **EDT-21** `P1` View/Windows menu update
+- [x] **EDT-21** `P1` View/Windows menu update
   - Do: Update `ViewMenuBuilder` so View > Windows lists every window: group entries by category (Scene, Assets, Debug, Input, Scripting, Audio, Settings) with separators or submenus, show each window's shortcut and open state, add the new Key Bindings and Script Editor entries (EDT-20/22); Input Testing is a dialog (EDT-24) and is NOT listed here with translated names (`menu.view.windows.*`), add 'Open all'/'Close all' and make `WindowRegistry` carry category metadata. Layout persistence (EDT-01) must keep working.
   - Done when: All windows appear in the menu under the right category; opening/closing persists across sessions; menu test or registry test covers category grouping.
   - Deps: EDT-20, EDT-22, EDT-24
-- [~] @skate-editor **EDT-22** `P1` Script editor window
+- [x] **EDT-22** `P1` Script editor window
   - Do: Add a Script Editor window for `.kts` scripts (SCR-02/03): open a script from the project window or an attached `ScriptComponent`, edit text with line numbers and basic syntax highlighting, save (Ctrl+S) which triggers hot reload, show compile/runtime errors inline and in a list that jumps to the line, create-new-script from a template, and register the window in `WindowRegistry` (appearing in View/Windows via EDT-21). Edits go through commands where they mutate the project.
   - Done when: A script can be created, edited, saved and hot-reloaded from the editor and errors are shown with line numbers; tests for the non-UI logic.
   - Deps: SCR-03
@@ -538,11 +614,11 @@ All editor mutations must go through `Command` classes and the service layer (se
   - Do: Convert `InputTestingWindow` (EDT-19) from a dockable window into a modal-less dialog: closable with the title-bar X, a Close button and Esc; opened from a new Input > 'Input Testing...' menu item (and a shortcut), not shown in View > Windows and excluded from docked layout persistence (EDT-01) except for remembering its size/position. Reuse or extend the existing dialog pattern (`ProjectSwitcherDialog`, `ProjectWizardWindow`) into a small reusable `EditorDialog` base so other tool dialogs can use it. Keep every EDT-19 feature (devices, editable dead zones/curves, event log). Update `ViewMenuBuilder`/`WindowRegistry` so the entry is removed there and translations are added; migrate any saved layout that references the old window.
   - Done when: Dialog opens from the menu, closes via X/Esc/Close button, is not in View > Windows, settings still persist, no stale layout entry; tests for the registry/menu change and the dialog state.
   - Deps: EDT-19
-- [ ] **EDT-25** `P2` ReverbZone inspector and audio bus effect controls
+- [x] **EDT-25** `P2` ReverbZone inspector and audio bus effect controls
   - Do: Inspector for `ReverbZone` and bus low-pass/reverb-send controls in the audio mixer UI, via commands.
   - Done when: Settings editable with undo and persisted.
   - Deps: AUD-05
-- [ ] **EDT-26** `P1` Script editor code completion UI
+- [x] **EDT-26** `P1` Script editor code completion UI
   - Do: In the EDT-22 Script Editor, add a completion popup (Ctrl+Space and automatic after `.`/identifier characters) fed by SCR-06 off the UI thread: list with kind icons, signature and doc tooltip, Up/Down/Enter/Tab/Esc handling, filter as you type, snippet insertion, plus parameter hints and bracket auto-close. Add editor settings to toggle auto-popup and its delay.
   - Done when: Typing in a script shows context-appropriate completions and accepts them; UI-independent logic (filtering, insertion, cursor handling) unit-tested; translations added.
   - Deps: EDT-22, SCR-06
@@ -552,6 +628,18 @@ All editor mutations must go through `Command` classes and the service layer (se
 - [x] **EDT-28** `P1` Hierarchy empty after creating a new project
   - Do: Human-reported: after creating a new project in the editor, the Scene Hierarchy window does not show the current scene's game objects. Find why the hierarchy is not bound to the new project's active scene (stale scene reference, event not fired, lazy load) and fix it.
   - Done when: New project shows its scene's objects in the hierarchy immediately; regression test.
+- [ ] **EDT-29** `P2` Wire shadow quality setting to the engine
+  - Do: From REN-07: wherever `GraphicsSettings` is applied, set `ShadowSettings.quality = ShadowQualityLevel.fromName(graphicsSettings.shadowQuality.name)`; add a LOW/MEDIUM/HIGH selector for `ShadowPass` in `RenderGraphWindow`.
+  - Done when: Changing shadow quality in settings or the render graph window switches shadows at runtime; test for the mapping.
+  - Deps: REN-07
+- [ ] **EDT-30** `P1` Unify editor mouse coordinates
+  - Do: From GUI-06: `MouseListener` mixes GLFW window coordinates with ImGui desktop coordinates, so code comparing `getMouseX()` with `gameViewportPos` (e.g. `InputProvider` lines 91-92) is off when the window is not at the desktop origin or with multi-viewports. Give the editor one viewport-relative pointer source and retire the GUI-06 `Engine.uiPointer` workaround onto it.
+  - Done when: Picking, gizmos and UI hover hit the cursor exactly with the editor window anywhere on screen; mapping unit-tested.
+  - Deps: GUI-06
+- [x] **EDT-31** `P0` Clicking the skateboard selects the floor
+  - Do: Human-reported on PR #12: picking misses the skateboard (model on a child object) and selects the floor behind it. Make picking reliable for child models and document whether the child or the prefab root is selected.
+  - Done when: Clicking any visible model selects it (per the documented convention); id-to-object resolution unit-tested.
+  - Deps: GPL-13
 
 ## Testing & tooling
 
@@ -577,6 +665,10 @@ All editor mutations must go through `Command` classes and the service layer (se
   - Do: Expose these in the script API (needed by the Tetris sample) and update the sample to use them with GUI widgets.
   - Done when: Tetris runs with sound, UI score and game-over scene switch from scripts.
   - Deps: TLG-03, GUI-02
+- [x] **TLG-07** `P1` Keep the default skate project current
+  - Do: Update the default skate project scenes (`PrefabsGenerator`) to show current features (e.g. UI canvas/button, environment) and remove test-only content (2D `SpriteRenderer` objects, camera sprite). Document it in `docs/samples.md`. Repeat whenever features land (rule 8).
+  - Done when: A new project opens a clean, working skate scene without sprites; a test checks the generated scene content.
+  - Deps: GUI-05
 
 ### Quality — `QA` (`skate-qa`)
 
@@ -611,6 +703,14 @@ A lot of features are broken. Many unit tests are missing (**no integration test
 
 ---
 - [x] **QA-09** `P2` StreamPolicy tests and pure-logic isolation guard for input/audio/ecs
+- [x] **QA-11** `P2` Pure-logic isolation guard for net/shader/IK/text-input
+  - Do: Extend the platform-free architecture guard to the networking, shader preprocessing, IK and text-input logic; keep master's suite green.
+  - Done when: The guard test covers those packages and the full suite passes.
+  - Deps: QA-09
+- [ ] **QA-12** `P2` Isolation guard for shadow and particle logic
+  - Do: From REN-07/REN-10: add `engine/render/shadow/` pure maths and `engine/render/particles/ParticleSimulator.kt`, `ParticlePool.kt` to `PureLogicIsolationGuardTest`.
+  - Done when: The guard covers those files and the suite is green.
+  - Deps: REN-07, REN-10
 
 ## Agents & herdr
 

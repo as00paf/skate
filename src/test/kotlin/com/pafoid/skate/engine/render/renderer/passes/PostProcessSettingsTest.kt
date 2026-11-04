@@ -18,10 +18,11 @@ class PostProcessSettingsTest {
         assertEquals(0.05f, settings.bloomIntensity)
         assertEquals(1.0f, settings.bloomThreshold)
 
-        assertTrue(settings.tonemappingEnabled)
+        // REN-18: the scene shader already tonemaps and gamma-corrects, so these are off by default.
+        assertFalse(settings.tonemappingEnabled)
         assertEquals(1.0f, settings.acesExposure)
 
-        assertTrue(settings.gammaCorrectionEnabled)
+        assertFalse(settings.gammaCorrectionEnabled)
         assertEquals(2.2f, settings.gammaValue)
 
         assertTrue(settings.fxaaEnabled)
@@ -38,8 +39,6 @@ class PostProcessSettingsTest {
         assertEquals(
             listOf(
                 PostEffect.BLOOM,
-                PostEffect.TONEMAPPING,
-                PostEffect.GAMMA_CORRECTION,
                 PostEffect.FXAA,
             ),
             settings.enabledEffects()
