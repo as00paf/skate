@@ -12,6 +12,7 @@ object DefaultDockLayout {
         "window.hierarchy" to Zone.LEFT,
         "window.project" to Zone.LEFT,
         "window.game_viewport" to Zone.CENTER,
+        "window.script_editor" to Zone.CENTER,
         "window.properties" to Zone.RIGHT,
         "window.environment" to Zone.RIGHT,
         "window.audio_inspector" to Zone.RIGHT,
