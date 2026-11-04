@@ -1,6 +1,7 @@
 package com.pafoid.skate.engine.render.renderer.passes
 
 import com.pafoid.skate.engine.assets.data.Shader
+import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.components.NonPickable
 import com.pafoid.skate.engine.ecs.components.RenderComponent
@@ -8,7 +9,6 @@ import com.pafoid.skate.engine.ecs.components.SkeletonComponent
 import com.pafoid.skate.engine.ecs.components.SpriteRenderer
 import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.ecs.systems.CameraManager
-import com.pafoid.skate.engine.getAllChildren
 import com.pafoid.skate.engine.getComponent
 import com.pafoid.skate.engine.render.PickingTexture
 import com.pafoid.skate.engine.render.data.Renderable2D
@@ -33,18 +33,8 @@ import org.lwjgl.opengl.GL30.glViewport
  * encodes the entity ID. This allows CPU-side identification of which
  * object the mouse is over.
  *
- * ## Picking Optimization
- *
- * **Important**: This pass is skipped when an object is already selected
- * (`activeGameObject != null`). This is an intentional performance optimization:
- *
- * - When no object is selected: Picking runs every frame to detect hover state
- * - When an object is selected: Picking is disabled because:
- *   - Hover detection is not needed (user is interacting with selected object)
- *   - Saves GPU draw calls and CPU iteration over game objects
- *   - Prevents accidental selection changes during manipulation
- *
- * To re-enable picking, deselect the object (e.g., press Escape or click empty space).
+ * The pass runs every frame, including while an object is selected, so clicking another object
+ * re-targets the selection directly.
  *
  * ## Technical Details
  *
@@ -92,14 +82,6 @@ class PickingPass(
     }
 
     override fun execute(scene: Scene) {
-        val activeGameObject = scene.selectedGameObject
-
-        // PERFORMANCE: Skip entire picking pass when object is selected.
-        // Hover detection is unnecessary while manipulating a selected object,
-        // and this saves GPU draw calls + CPU iteration.
-        // User must deselect (ESC or click empty space) to re-enable picking.
-        if (activeGameObject != null) return
-
         // CRITICAL: Rebind picking FBO - may have been unbound by previous passes (e.g., shadow pass)
         pickingTexture.enableWriting()
         glViewport(0, 0, pickingTexture.width, pickingTexture.height)
@@ -120,11 +102,10 @@ class PickingPass(
         pickingShader3D.uploadMat4f(Uniforms.PROJECTION_MATRIX, camera.projection)
         pickingShader3D.uploadMat4f(Uniforms.VIEW_MATRIX, camera.view)
 
-        scene.children.forEach { go ->
-            if (!go.isVisible || go.isLocked) return@forEach
+        forEachPickable(scene) { go ->
             val renderComponent = go.getComponent<RenderComponent>()
             val transform = go.getComponent<Transform>()
-            if (renderComponent != null && transform != null && go.getComponent<NonPickable>() == null) {
+            if (renderComponent != null && transform != null) {
                 val skeletonComponent = go.getComponent<SkeletonComponent>()
 
                 pickingShader3D.uploadFloat(Uniforms.ENTITY_ID, EntityIdEncoder.encode(go.uId))
@@ -147,8 +128,7 @@ class PickingPass(
         renderer2D.bindShader(shader)
         renderer2D.bindCamera(cameraManager.camera)
 
-        scene.getAllChildren().forEach { go ->
-            if (!go.isVisible || go.isLocked) return@forEach
+        forEachPickable(scene) { go ->
             go.getComponent<SpriteRenderer>()?.let { sprite ->
                 go.getComponent<Transform>()?.let {
                     renderer2D.add(Renderable2D(sprite, it.worldMatrix))
@@ -157,5 +137,19 @@ class PickingPass(
         }
         renderer2D.render()
         renderer2D.clear()
+    }
+
+    companion object {
+        /**
+         * Visits every visible, unlocked, pickable descendant of [node] at any depth, so models on child
+         * objects get their own picking id. Hidden or locked objects prune their whole subtree.
+         */
+        fun forEachPickable(node: GameObject, action: (GameObject) -> Unit) {
+            node.children.forEach { go ->
+                if (!go.isVisible || go.isLocked) return@forEach
+                if (go.getComponent<NonPickable>() == null) action(go)
+                forEachPickable(go, action)
+            }
+        }
     }
 }
