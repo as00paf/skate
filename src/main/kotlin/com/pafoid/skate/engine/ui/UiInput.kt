@@ -31,26 +31,8 @@ fun interface UiInputSource {
     fun frame(dt: Float): UiInputFrame
 }
 
-/** Raw pointer sample: position in the space of the viewport rect given to [UiPointerMapping], and left button. */
+/** Pointer sample in UI render-target pixels (top-left origin), and the left button. */
 data class UiPointer(val x: Float, val y: Float, val down: Boolean)
-
-/** Pure conversion from pointer coordinates to pixels of the UI render target (origin top-left, y down). */
-object UiPointerMapping {
-    /**
-     * Maps ([x], [y]) inside the on-screen view of the render target (top-left [viewX], [viewY], size [viewW] x
-     * [viewH], in the pointer's units) to target pixels ([targetW] x [targetH]). The ratio absorbs DPI scaling and
-     * a stretched blit; a degenerate view leaves the point offset only.
-     */
-    fun toTarget(
-        x: Float, y: Float,
-        viewX: Float, viewY: Float, viewW: Float, viewH: Float,
-        targetW: Int, targetH: Int,
-    ): Pair<Float, Float> {
-        val sx = if (viewW > 0f) targetW / viewW else 1f
-        val sy = if (viewH > 0f) targetH / viewH else 1f
-        return (x - viewX) * sx to (y - viewY) * sy
-    }
-}
 
 /** Fires a held direction once, then again every [repeatInterval] after [initialDelay]. */
 class UiNavRepeater(private val initialDelay: Float = 0.4f, private val repeatInterval: Float = 0.12f) {

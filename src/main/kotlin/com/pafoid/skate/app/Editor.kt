@@ -14,8 +14,7 @@ import com.pafoid.skate.editor.ui.handlers.EditorInputHandler
 import com.pafoid.skate.engine.assets.Assets.Strings.EDITOR_STRINGS_EN
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.core.Window
-import com.pafoid.skate.engine.ui.UiPointer
-import org.lwjgl.glfw.GLFW
+import com.pafoid.skate.engine.input.PointerSource
 
 class Editor(
     private val engine: Engine,
@@ -28,12 +27,11 @@ class Editor(
 
     init {
         engine.uiAuthoring = true
-        // ImGui's mouse shares the desktop space of the viewport image rect (multi-viewports); the GLFW cursor does not.
-        engine.uiPointer = {
-            UiPointer(
-                imgui.ImGui.getMousePosX(), imgui.ImGui.getMousePosY(),
-                engine.inputProvider.isMouseButtonDown(GLFW.GLFW_MOUSE_BUTTON_LEFT, ignoreImGui = true),
-            )
+        // One pointer for picking, gizmos and runtime UI: ImGui's mouse is in the same desktop space as the
+        // viewport image rect (also with multi-viewports); the GLFW cursor is relative to the main window.
+        engine.inputProvider.mouseListener.pointerSource = PointerSource { out ->
+            out[0] = imgui.ImGui.getMousePosX()
+            out[1] = imgui.ImGui.getMousePosY()
         }
     }
 

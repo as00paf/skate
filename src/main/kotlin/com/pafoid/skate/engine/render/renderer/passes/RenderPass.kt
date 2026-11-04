@@ -18,7 +18,11 @@ interface RenderPass {
     val outputs: Set<String> get() = emptySet()
 
     val canDisable: Boolean get() = true
+    /** CPU time of the last [executeWithTiming], in nanoseconds. */
     var executionTimeNs: Long
+
+    /** GPU time of a recent frame in nanoseconds (timer queries, a few frames late); -1 when unknown or disabled. */
+    var gpuTimeNs: Long
     var isEnabled: Boolean
 
     fun prepare() {}

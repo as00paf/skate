@@ -35,7 +35,7 @@ Each domain has a dedicated agent (see [Agents & herdr](#agents--herdr)).
 5. Every task ships with unit tests (JUnit 5 + mockk). **No integration tests for now.** Name tests `Area_Behavior`.
 6. Keep the build green: `cmd.exe /c gradlew.bat test` from WSL/herdr, or `.\gradlew.bat test` on Windows.
 7. Only `skate-lead` edits checkbox state in this file. Domain agents report status back to the lead.
-8. No backward compatibility while the engine is a work in progress: don't add migrations or upgrade-on-load code for old saved scenes/projects; the human recreates content. Instead, keep the **default projects** current: when a feature lands, update the default skate project (`PrefabsGenerator` default scenes) and the CLI samples to use it, and remove test-only content from them.
+8. No backward compatibility while the engine is a work in progress: don't add migrations or upgrade-on-load code for old saved scenes/projects; the human recreates content. Instead, keep the **default projects** current: when a feature lands, update the default skate project (`PrefabsGenerator` default scenes) and the CLI samples to use it, and remove test-only content from them. The default editor project includes the **Feature Showcase** scene(s), which the human uses for manual testing: every new user-visible component or feature adds a small, labeled demo there in the same task.
 
 ---
 
@@ -92,7 +92,7 @@ The renderer works but needs cleaner APIs, caching, dynamic shaders, better mate
   - Do: Replace `LightingUniformsLoader` with a light buffer (UBO/SSBO) supporting N point/spot/directional lights. Add light culling per object (forward+) or a clustered approach.
   - Done when: The scene supports at least 64 dynamic lights without shader changes, and light culling math is unit-tested.
   - Deps: REN-04
-- [~] @skate-render **REN-07** `P2` Shadows overhaul
+- [x] **REN-07** `P2` Shadows overhaul
   - Do: Cascaded shadow maps for directional lights, spot/point shadow maps and PCF filtering, with quality driven by `ShadowQuality`.
   - Done when: There is no shadow acne or peter-panning on the sample scene, every `ShadowQuality` level works, and cascade split math is unit-tested.
   - Deps: REN-06
@@ -104,7 +104,7 @@ The renderer works but needs cleaner APIs, caching, dynamic shaders, better mate
   - Do: Move fog from `SkyDomeRenderer`/`LightingUniformsLoader` into a shared shader include. Support linear/exp/exp² and height fog, configured from `EnvironmentComponent`/`EnvironmentPreset`.
   - Done when: Fog looks the same on models, terrain and sky, and fog parameter math is unit-tested.
   - Deps: REN-05
-- [~] @skate-gameplay **REN-10** `P2` Particle system
+- [x] **REN-10** `P2` Particle system
   - Do: Add a `ParticleEmitter` component (CPU first, GPU instancing for draw) with an emission shape, lifetime, velocity/size/color over life and a texture atlas.
   - Done when: Emitters can be added in the editor and play in game, and the simulation step is unit-tested.
   - Deps: REN-03, ECS-03
@@ -147,10 +147,14 @@ The renderer works but needs cleaner APIs, caching, dynamic shaders, better mate
   - Do: From EDT-31: `ShadowPass` only renders top-level objects, so child models (e.g. the skateboard's visual child) cast no shadows; also review EDT-31's `PickingPass` change (whole-hierarchy traversal, no skip while selected). Do it on top of REN-07.
   - Done when: Child models cast shadows; picking pass reviewed; traversal test.
   - Deps: REN-07, EDT-31
-- [ ] **REN-21** `P1` 2D/UI render follow-ups from GUI-07 and EDT-31
+- [x] **REN-21** `P1` 2D/UI render follow-ups from GUI-07 and EDT-31
   - Do: Fix `picking.glsl` reading `aTexId`/`aEntityId` at locations 8/9 while `RenderBatch2D` feeds 3/4 (2D sprite picking reads 0), the same mismatch GUI-07 fixed in `shader_2d_batch.glsl`. Draw runtime UI after post-processing and the debug pass so bloom/FXAA and grid lines don't affect it. Review EDT-31's `SelectionHighlight`/`GeometryPass` change (highlight inherited from ancestors).
   - Done when: 2D sprites are pickable, UI is unaffected by post effects and debug lines, attribute layout guarded by a test.
   - Deps: GUI-07, EDT-31, REN-18
+- [x] **REN-22** `P0` Frame rate dropped to ~40 FPS in round 11
+  - Do: Human-reported on PR #13: FPS fell drastically (to ~40) in the editor. Profile per pass and per system (CPU and GPU) on the default project, bisect across the round-11 merges (REN-07 shadows, REN-21 UiPass, PHY-11 transform sync, ANI-09 procedural poses, EDT-30, ECS-11, REN-10), find the cause(s) and fix them; report causes outside render as NEEDS.
+  - Done when: The default project runs at the pre-round-11 frame rate (or better) at MEDIUM shadows; per-pass timings visible in the Render Graph window; a regression guard where feasible.
+  - Deps: REN-07
 
 ### Asset management — `AST` (`skate-assets`)
 
@@ -232,7 +236,7 @@ The ECS is in good working shape but needs a complete review. It is probably mis
   - Do: From ECS-04: add `tag` and `layer` to `GameObject`, `Scene.findByTag/findByLayer`, and a layer-mask parameter on `System.query`/`ComponentQuery`. Follow-ups: EDT inspector field, REN camera culling mask, PHY layer-to-collision-group mapping.
   - Done when: Tag/layer lookups and layer-mask queries are unit-tested.
   - Deps: ECS-04
-- [ ] **ECS-11** `P1` Find child objects by id
+- [x] **ECS-11** `P1` Find child objects by id
   - Do: From EDT-31: `GameObjectManager.getGameObject(id)` only searches top-level objects, so hierarchy drag-and-drop and search providers can't find children. Search the whole hierarchy (indexed by id).
   - Done when: Lookups find objects at any depth; unit-tested.
 
@@ -274,7 +278,7 @@ Physics needs overall improvements, a swappable physics engine, and a joint comp
   - Do: Human-reported on PR #12: the physics debug toggle no longer draws rigid body colliders in the editor. Find the root cause (round 10 or earlier render changes) and fix it.
   - Done when: Collider boxes draw again with debug on in editor and play; regression test.
   - Deps: PHY-09
-- [ ] **PHY-11** `P1` Sync physics bodies when a transform is edited in the editor
+- [x] **PHY-11** `P1` Sync physics bodies when a transform is edited in the editor
   - Do: Human-reported: editing a GameObject's position/rotation/scale in the inspector (or with gizmos/undo) does not update its `RigidBody3D`/collider in the physics world, so the body stays at its old pose. When a transform changes outside the simulation (edit mode, inspector/command edits, undo/redo, scene load), teleport the body to the new pose (reset velocities, rebuild the collider for scale changes) and keep the interpolation state consistent. Coordinate the editor-side change notification with `skate-editor`.
   - Done when: Moving, rotating or scaling an object in the editor moves its collider (visible with physics debug on), and Play starts from the edited pose; tests for teleport on transform change, scale rebuild and undo.
   - Deps: PHY-10
@@ -282,6 +286,10 @@ Physics needs overall improvements, a swappable physics engine, and a joint comp
   - Do: Human-reported on PR #12: the first run of a new default skate project shows duplicate collider boxes and the skater is stuck in the floor; it works after reopening. Register bodies exactly once in every path (new project, open, play/stop, scene switch).
   - Done when: First run works like a reopened project; body counts per path are unit-tested.
   - Deps: PHY-10
+- [ ] **PHY-13** `P2` Compound-hull and static mesh colliders
+  - Do: From GPL-04: concave obstacles carry one `CustomCollider3D` per hull (the bowl has ~80, the half pipe 21). Add a single compound-hull collider component and a static triangle-mesh collider for static geometry, serialized, in both backends; switch the GPL-04 prefabs to them.
+  - Done when: Bowl and half pipe each carry one collider component with the same collision; serialization and shape building unit-tested.
+  - Deps: GPL-04
 
 ### Animation — `ANI` (`skate-animation`)
 
@@ -310,7 +318,7 @@ The animation system needs improvements.
   - Do: Save the ANI-02 controller asset reference on `Animator` and resolve it when a scene loads.
   - Done when: An animator's controller survives save/load, covered by a test.
   - Deps: ANI-02
-- [ ] **ANI-09** `P1` Skateboarding animation clips and controller
+- [x] **ANI-09** `P1` Skateboarding animation clips and controller
   - Do: From GPL-15: no skateboarding clips are bundled, so riding falls back to idle/walking. Source or author riding idle, push and ollie clips for the skater (the human may need to provide assets) and a controller asset wiring them into the ANI-02 state machine for `SkateBehavior`.
   - Done when: The skater uses a riding pose/push/ollie in the default project; the controller loads in a test.
   - Deps: GPL-15
@@ -373,6 +381,10 @@ Input works well but needs review and controller dead-zone support.
   - Do: `CursorMode` (normal/hidden/captured) with `set/getCursorMode` on the input provider; no cursor jump on mode change.
   - Done when: Mode changes are unit-tested without a window.
   - Deps: INP-05
+- [ ] **INP-09** `P2` Review the EDT-30 pointer contract
+  - Do: From EDT-30: review the `MouseListener`/`InputProvider` pointer source (`PointerSource`, view rect, target size) and the new contract that `RawInput.mouseX/Y` report render-target pixels; align input docs and remaining callers.
+  - Done when: Contract documented in the input design note, remaining callers consistent, mapping tests cover game and editor sources.
+  - Deps: EDT-30
 
 ### Gameplay — `GPL` (`skate-gameplay`)
 
@@ -389,7 +401,7 @@ The player controller was hardcoded at first and needs a big overhaul. Some skat
 - [x] **GPL-03** `P1` Fix wrong skate prefab models
   - Do: Audit `Skater`, `Skateboard`, `Floor` and `PrefabsGenerator` against their source assets, and fix scale, pivots, orientation and materials.
   - Done when: All prefabs spawn correctly oriented and scaled. A checklist is in the PR.
-- [ ] **GPL-04** `P2` Prefab library expansion
+- [x] **GPL-04** `P2` Prefab library expansion
   - Do: Add skatepark prefabs (ramps, quarter/half pipes, rails, ledges, stairs, boxes, bowls) and generic prefabs (lights, props, triggers, spawn points). See `docs/obstacles.md`.
   - Done when: The prefabs appear in the editor's prefab picker with thumbnails.
   - Deps: GPL-03
@@ -423,7 +435,7 @@ The player controller was hardcoded at first and needs a big overhaul. Some skat
   - Do: Human-reported: the skateboard model and its rigid body/collider are misaligned (offset, rotation, scale, centre of mass), causing many gameplay issues. Fix the prefab, collider shape and offsets, and the controller's use of them; add a debug check (collider vs mesh bounds) test. Coordinate with GPL-03 (same prefab files) — do GPL-03 and GPL-12 together.
   - Done when: Board mesh, collider and rigid body coincide in the sample; ride, mount (GPL-11) and collisions behave; bounds-alignment unit test.
   - Deps: GPL-03
-- [~] @skate-gameplay **GPL-13** `P1` Ride the board (stance on deck) and fix board scale
+- [x] **GPL-13** `P1` Ride the board (stance on deck) and fix board scale
   - Do: Human-reported after GPL-11: mounting leaves the board standing between the player's legs; the player must RIDE on top of it. Define a deck anchor/stance (feet on the deck, board under the player, facing along the board, centre of mass and collider matched), with the character parented/posed on the board while mounted (engine-generic `Mountable` seat/stance data, not skateboard-only). Also fix scale: the skateboard model is huge relative to the player; normalise model scale in the prefab/importer so board length fits the character, and make sure the collider and its physics-debug wireframe match the mesh (the human now sees extra wireframes and the board's own wireframe is missing; check for duplicated or mis-scaled collider/child bodies introduced by GPL-03/12).
   - Done when: Mounted player visibly stands on the deck, board scale is proportionate, physics debug shows one collider matching the board; tests for stance placement and scale.
   - Deps: GPL-11, GPL-12
@@ -435,6 +447,10 @@ The player controller was hardcoded at first and needs a big overhaul. Some skat
   - Do: Human-reported on PR #12: when riding, the skater is misaligned with the board, has no riding pose/animation, and skater and board float. Snap the skater to the deck pose, play a riding animation via the ANI-02 state machine, and fix the floating root cause.
   - Done when: Riding in the default project looks grounded and aligned with a riding pose; mount pose math and physics state switch unit-tested; `docs/testing/GPL-15.md`.
   - Deps: GPL-14
+- [ ] **GPL-16** `P1` Game-ready skateboard mesh
+  - Do: From REN-22: the skateboard prefab's model has 2.57M indices (~858K triangles, 55 parts); its shadow costs ~1.5 ms and picking ~1 ms per frame. Replace it with a decimated/game-ready mesh under ~20K triangles, keeping the GPL-14 orientation and collider fit.
+  - Done when: The board renders the same at a glance with under 20K triangles; the frame time while orbiting is below the pre-round-11 baseline.
+  - Deps: REN-22
 
 ### In-game UI — `GUI` (`skate-gameui`)
 
@@ -512,7 +528,7 @@ Multiplayer and Steam support need to be added.
 - [x] **NET-04** `P2` Steam integration
   - Do: Integrate Steamworks via steamworks4j behind a `PlatformServices` interface (achievements, stats, leaderboards, rich presence, lobbies), with a no-op fallback when Steam is absent.
   - Done when: The game runs with and without Steam. The fallback and the interface have unit tests.
-- [ ] **NET-05** `P3` Steam networking transport
+- [x] **NET-05** `P3` Steam networking transport
   - Do: Implement the NET-02 transport over Steam networking sockets and lobbies.
   - Deps: NET-02, NET-04
 - [x] **NET-06** `P2` Update NET-01 design for Netty
@@ -632,7 +648,7 @@ All editor mutations must go through `Command` classes and the service layer (se
   - Do: From REN-07: wherever `GraphicsSettings` is applied, set `ShadowSettings.quality = ShadowQualityLevel.fromName(graphicsSettings.shadowQuality.name)`; add a LOW/MEDIUM/HIGH selector for `ShadowPass` in `RenderGraphWindow`.
   - Done when: Changing shadow quality in settings or the render graph window switches shadows at runtime; test for the mapping.
   - Deps: REN-07
-- [ ] **EDT-30** `P1` Unify editor mouse coordinates
+- [x] **EDT-30** `P1` Unify editor mouse coordinates
   - Do: From GUI-06: `MouseListener` mixes GLFW window coordinates with ImGui desktop coordinates, so code comparing `getMouseX()` with `gameViewportPos` (e.g. `InputProvider` lines 91-92) is off when the window is not at the desktop origin or with multi-viewports. Give the editor one viewport-relative pointer source and retire the GUI-06 `Engine.uiPointer` workaround onto it.
   - Done when: Picking, gizmos and UI hover hit the cursor exactly with the editor window anywhere on screen; mapping unit-tested.
   - Deps: GUI-06
@@ -640,6 +656,16 @@ All editor mutations must go through `Command` classes and the service layer (se
   - Do: Human-reported on PR #12: picking misses the skateboard (model on a child object) and selects the floor behind it. Make picking reliable for child models and document whether the child or the prefab root is selected.
   - Done when: Clicking any visible model selects it (per the documented convention); id-to-object resolution unit-tested.
   - Deps: GPL-13
+- [ ] **EDT-32** `P1` Redo after a gizmo drag does nothing
+  - Do: From PHY-11: `TransformCommand` stores a shallow `newTransform.copy()` and `Gizmo.commitSnapshot` passes the live `Transform`, so old/new share vectors with the object and redo has nothing to reapply. Snapshot both deeply (`Transform().apply { copyFrom(x) }`).
+  - Done when: Undo/redo of gizmo moves, inspector edits and multi-selection transforms round-trip; tests.
+- [ ] **EDT-33** `P1` One rule for top-level objects in the hierarchy
+  - Do: From ECS-11 (also bit TLG-09: lookups climbing parent links fail on scenes loaded from disk): `SceneHierarchyWindow` mixes `obj.parent == null` and `obj.parent == scene` to detect top-level objects, while `addGameObject` does not set `parent`. Decide with skate-ecs (prefer `parent == scene`, set by `addGameObject`) and make every caller consistent.
+  - Done when: Top-level detection uses one helper everywhere; drag/drop and reparenting tests pass.
+  - Deps: ECS-11
+- [x] **EDT-34** `P1` Frame-rate independent editor camera
+  - Do: Human-reported on PR #13: editor camera movement (fly, orbit, pan, zoom, focus lerp) is tied to the frame rate. Scale every camera motion by real frame delta time, with clamping for hitches.
+  - Done when: Camera speed is the same at 30, 60 and 144 FPS; unit-tested with simulated frame times.
 
 ## Testing & tooling
 
@@ -669,6 +695,14 @@ All editor mutations must go through `Command` classes and the service layer (se
   - Do: Update the default skate project scenes (`PrefabsGenerator`) to show current features (e.g. UI canvas/button, environment) and remove test-only content (2D `SpriteRenderer` objects, camera sprite). Document it in `docs/samples.md`. Repeat whenever features land (rule 8).
   - Done when: A new project opens a clean, working skate scene without sprites; a test checks the generated scene content.
   - Deps: GUI-05
+- [x] **TLG-08** `P1` Feature showcase in the default editor project
+  - Do: Human request on PR #13: new projects created in the editor include the Feature Showcase scene(s) (TLG-05, today only generated by the CLI) next to the skate `MainScene`, built from the same builder so both stay in sync, including round-11 features (shadows, particles, prefab library, UI). Rule 8: future features add their demo there.
+  - Done when: A new editor project contains a working showcase scene covering current features, documented in `docs/samples.md`; a test checks the generated project contains it.
+  - Deps: TLG-05, TLG-07
+- [x] **TLG-09** `P0` Showcase camera and click-to-focus demo list
+  - Do: Human-reported on PR #13: in Play the FeatureShowcase camera points up and can't move, so nothing is visible. Fix the camera's start pose (looking at the pads) and make the overlay's demo-area list clickable: clicking an item smoothly moves the camera to frame that area (with a 'Overview' entry to go back).
+  - Done when: Play shows the scene; each list item focuses its area in the game view and in a standalone run (verified through the real path: generated project saved, reloaded from disk, Play, click through UI input); free-fly camera (WASD + mouse look, like the editor) works in Play and standalone; tests for the focus targets, camera pose math and the reloaded click path.
+  - Deps: TLG-08
 
 ### Quality — `QA` (`skate-qa`)
 

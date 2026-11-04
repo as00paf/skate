@@ -11,8 +11,10 @@ import com.pafoid.skate.engine.render.renderer.SplashRenderer
 import com.pafoid.skate.engine.render.renderer.ThumbnailRenderer
 import com.pafoid.skate.engine.render.renderer.passes.DebugPass
 import com.pafoid.skate.engine.render.renderer.passes.GeometryPass
+import com.pafoid.skate.engine.render.renderer.passes.ParticlePass
 import com.pafoid.skate.engine.render.renderer.passes.PickingPass
 import com.pafoid.skate.engine.render.renderer.passes.PostProcessPass
+import com.pafoid.skate.engine.render.renderer.passes.UiPass
 import com.pafoid.skate.engine.render.renderer.passes.RenderPass
 
 /**
@@ -68,15 +70,25 @@ data class Renderers(
  * @param geometry Renders the full scene with PBR shading
  * @param debug Renders debug visualization on top
  * @param shadow Renders depth-only shadow map pass
+ * @param particles Draws particle emitters into the scene colour after geometry, before post-processing
  * @param postProcess Applies the post-processing effect stack (bloom, tonemapping, gamma, FXAA, SSAO)
+ * @param ui Draws the runtime UI last, over post-processing and debug visuals
  */
 data class RenderPasses(
     val picking: PickingPass,
     val geometry: GeometryPass,
     val debug: DebugPass,
     val shadow: RenderPass,
-    val postProcess: PostProcessPass
-)
+    val postProcess: PostProcessPass,
+    val ui: UiPass,
+    val particles: ParticlePass,
+) {
+    /**
+     * Execution order of the frame. Particles go before post-processing so they get bloom/tonemapping; the runtime
+     * UI is last so post effects and debug lines never touch it.
+     */
+    fun inExecutionOrder(): List<RenderPass> = listOf(shadow, picking, geometry, particles, postProcess, debug, ui)
+}
 
 /**
  * Master container for all rendering resources.
@@ -95,7 +107,8 @@ data class RenderPasses(
  * @param pickingTexture The picking render target
  * @param renderers All renderer instances
  * @param renderPasses All render passes
- * @param shadowMap Optional shadow map for shadow mapping
+ * @param shadowMap Optional cascaded (directional light) shadow map array
+ * @param localShadowMap Optional spot/point light shadow map array
  * @param renderGraph The render graph for pass execution
  */
 data class RenderResources(
@@ -105,5 +118,6 @@ data class RenderResources(
     val renderers: Renderers,
     val renderPasses: RenderPasses,
     val renderGraph: RenderGraph,
-    val shadowMap: ShadowMap? = null
+    val shadowMap: ShadowMap? = null,
+    val localShadowMap: ShadowMap? = null,
 )

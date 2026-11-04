@@ -1,13 +1,16 @@
 package com.pafoid.skate.engine.render.lighting
 
 import com.pafoid.skate.engine.assets.data.models.`3dModel`
+import com.pafoid.skate.engine.render.cache.IdentityWeakCache
 import org.joml.Matrix4f
 import org.joml.Vector3f
-import java.util.WeakHashMap
 import kotlin.math.max
 import kotlin.math.sqrt
 
-/** Local-space bounding sphere of a model (centre of the AABB, radius to the farthest vertex), cached per model. */
+/**
+ * Local-space bounding sphere of a model (centre of the AABB, radius to the farthest vertex), cached per model
+ * instance. The cache is identity-keyed: `3dModel` is a data class, so hashing it walked every vertex array.
+ */
 class ModelBounds(val center: Vector3f, val radius: Float) {
     /** World-space sphere for light culling; the radius follows the largest axis scale of [world]. */
     fun toWorld(world: Matrix4f, outCenter: Vector3f): Float {
@@ -19,7 +22,7 @@ class ModelBounds(val center: Vector3f, val radius: Float) {
     }
 
     companion object {
-        private val cache = WeakHashMap<`3dModel`, ModelBounds>()
+        private val cache = IdentityWeakCache<`3dModel`, ModelBounds>()
         private val EMPTY = ModelBounds(Vector3f(), 0f)
 
         fun of(model: `3dModel`): ModelBounds = cache.getOrPut(model) { compute(model.mesh.map { it.vertices }) }
@@ -29,7 +32,9 @@ class ModelBounds(val center: Vector3f, val radius: Float) {
             var any = false
             for (v in vertexArrays) for (i in 0 until v.size / 3) {
                 any = true
-                min.min(Vector3f(v[i * 3], v[i * 3 + 1], v[i * 3 + 2])); maxV.max(Vector3f(v[i * 3], v[i * 3 + 1], v[i * 3 + 2]))
+                val x = v[i * 3]; val y = v[i * 3 + 1]; val z = v[i * 3 + 2]
+                min.set(minOf(min.x, x), minOf(min.y, y), minOf(min.z, z))
+                maxV.set(max(maxV.x, x), max(maxV.y, y), max(maxV.z, z))
             }
             if (!any) return EMPTY
             val c = Vector3f(min).add(maxV).mul(0.5f)

@@ -2,6 +2,8 @@ package com.pafoid.skate.engine.platform
 
 import com.codedisaster.steamworks.SteamAPI
 import com.codedisaster.steamworks.SteamAPICall
+import com.codedisaster.steamworks.SteamAuth
+import com.codedisaster.steamworks.SteamAuthTicket
 import com.codedisaster.steamworks.SteamFriends
 import com.codedisaster.steamworks.SteamFriendsCallback
 import com.codedisaster.steamworks.SteamID
@@ -12,8 +14,11 @@ import com.codedisaster.steamworks.SteamMatchmaking
 import com.codedisaster.steamworks.SteamMatchmakingCallback
 import com.codedisaster.steamworks.SteamNativeHandle
 import com.codedisaster.steamworks.SteamResult
+import com.codedisaster.steamworks.SteamUser
+import com.codedisaster.steamworks.SteamUserCallback
 import com.codedisaster.steamworks.SteamUserStats
 import com.codedisaster.steamworks.SteamUserStatsCallback
+import com.pafoid.skate.engine.net.PeerNetwork
 
 /**
  * Steamworks (steamworks4j) backed services. Requires the Steam client running, `steam_appid.txt` (or a launch
@@ -113,6 +118,23 @@ class SteamPlatformServices private constructor() : PlatformServices {
     private val userStats: SteamUserStats = SteamUserStats(statsCallback)
     private val friends: SteamFriends = SteamFriends(friendsCallback)
     private val matchmaking: SteamMatchmaking = SteamMatchmaking(matchCallback)
+
+    private val user = SteamUser(object : SteamUserCallback {
+        override fun onAuthSessionTicket(authTicket: SteamAuthTicket, result: SteamResult) {}
+        override fun onValidateAuthTicket(steamID: SteamID, authSessionResponse: SteamAuth.AuthSessionResponse, ownerSteamID: SteamID) {}
+        override fun onMicroTxnAuthorization(appID: Int, orderID: Long, authorized: Boolean) {}
+        override fun onEncryptedAppTicket(result: SteamResult) {}
+    })
+
+    private val steamPeers = SteamPeerNetwork(SteamNativeHandle.getNativeHandle(user.steamID), ::isCurrentLobbyMember)
+    override val peerNetwork: PeerNetwork = steamPeers
+
+    private fun isCurrentLobbyMember(peer: Long): Boolean {
+        val lobby = currentLobby ?: return false
+        return (0 until matchmaking.getNumLobbyMembers(lobby)).any {
+            SteamNativeHandle.getNativeHandle(matchmaking.getLobbyMemberByIndex(lobby, it)) == peer
+        }
+    }
 
     init { userStats.requestCurrentStats() }
 
@@ -221,6 +243,7 @@ class SteamPlatformServices private constructor() : PlatformServices {
 
     override fun shutdown() {
         leave()
+        steamPeers.dispose(); user.dispose()
         userStats.dispose(); friends.dispose(); matchmaking.dispose()
         SteamAPI.shutdown()
     }

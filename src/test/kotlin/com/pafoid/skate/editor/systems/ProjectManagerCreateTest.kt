@@ -71,4 +71,38 @@ class ProjectManagerCreateTest {
         verify(exactly = 1) { sceneManager.openScenes(any()) }
         assertEquals(listOf("MainScene"), sceneManager.openScenes.map { it.name })
     }
+
+    @Test
+    fun ProjectManager_CreateProject_ContainsAndOpensTheFeatureShowcase() {
+        val serializer = Serializer()
+        val sceneManager = SceneManager(mockk(relaxed = true), EventSystem(), serializer, mockk(relaxed = true), mockk(relaxed = true))
+        val assets = mockk<com.pafoid.skate.engine.assets.AssetsManager>(relaxed = true)
+        val skeleton = com.pafoid.skate.engine.assets.data.models.animations.Skeleton(
+            com.pafoid.skate.engine.assets.data.models.animations.Bone(0, "root"), 1
+        )
+        every { assets.loadModel(any()) } answers { com.pafoid.skate.engine.assets.data.models.`3dModel`(firstArg(), skeleton = skeleton) }
+        every { assets.loadAnimationSync(any()) } answers {
+            com.pafoid.skate.engine.assets.data.models.animations.Animation("clip", emptyList(), 1f, firstArg())
+        }
+        every { assets.getTexture(any()) } answers { com.pafoid.skate.engine.assets.data.Texture(filePath = firstArg()) }
+        val engine = mockk<Engine>(relaxed = true)
+        every { engine.eventSystem } returns EventSystem()
+        every { engine.sceneManager } returns sceneManager
+        every { engine.serializer } returns serializer
+        every { engine.assetsManager } returns assets
+        val prefabs = com.pafoid.skate.engine.assets.PrefabsGenerator(engine)
+        every { engine.prefabsGenerator } returns prefabs
+
+        val result = ProjectManager(engine).createProject("P", dir)
+
+        assertTrue(result.isSuccess, result.exceptionOrNull()?.toString())
+        val project = result.getOrThrow()
+        assertTrue(project.scenesPath.any { it.endsWith("FeatureShowcase.scene") }, project.scenesPath.toString())
+        assertTrue(File(dir, "P/Scenes/FeatureShowcase.scene").exists())
+        assertTrue(File(dir, "P/Assets/tone.wav").exists())
+        assertEquals(listOf("MainScene", "FeatureShowcase"), sceneManager.openScenes.map { it.name })
+        assertEquals("MainScene", sceneManager.currentScene?.name)
+        val showcase = sceneManager.openScenes.single { it.name == "FeatureShowcase" }
+        assertTrue(showcase.children.any { it.name == "[Vehicle] Car" })
+    }
 }

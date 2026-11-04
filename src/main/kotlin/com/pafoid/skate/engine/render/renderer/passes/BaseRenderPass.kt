@@ -39,6 +39,8 @@ abstract class BaseRenderPass : RenderPass {
      */
     override var executionTimeNs: Long = 0
 
+    override var gpuTimeNs: Long = -1
+
     /**
      * Whether this pass is enabled for execution.
      */

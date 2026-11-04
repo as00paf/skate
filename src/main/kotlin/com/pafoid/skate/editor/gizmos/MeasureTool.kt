@@ -38,15 +38,10 @@ class MeasureTool(
             return
         }
 
-        val viewportSize = inputProvider.getGameViewportSize()
-
-        val relX = inputProvider.getMouseScreenX()
-        val relY = inputProvider.getMouseScreenX()
-
         measurementText = null
         measurementPos = null
 
-        if (relX >= 0 && relX <= viewportSize.x && relY >= 0 && relY <= viewportSize.y) {
+        if (inputProvider.isInsideViewport()) {
             val ray = inputProvider.screenToRay(camera)
 
             if (abs(ray.direction.y) > 0.0001f) {
@@ -77,7 +72,7 @@ class MeasureTool(
                         }
 
                         measurementText = "Distance: $displayText"
-                        measurementPos = Vector2f(inputProvider.getMouseX() + 20, inputProvider.getMouseY() + 20)
+                        measurementPos = Vector2f(ImGui.getMousePosX() + 20, ImGui.getMousePosY() + 20)
                     }
                 }
             }

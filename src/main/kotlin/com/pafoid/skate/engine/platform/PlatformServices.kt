@@ -1,5 +1,7 @@
 package com.pafoid.skate.engine.platform
 
+import com.pafoid.skate.engine.net.PeerNetwork
+
 /**
  * Platform (store) services. Game code only talks to this interface; the Steam implementation is optional and
  * [NoOpPlatformServices] is used when Steam is absent. Calls must be made from the main thread; callbacks are
@@ -19,6 +21,9 @@ interface PlatformServices {
     val leaderboards: Leaderboards
     val richPresence: RichPresence
     val lobbies: Lobbies
+
+    /** Peer-to-peer datagrams between platform users (NET-05), or null when the platform has none. */
+    val peerNetwork: PeerNetwork?
 
     /** Pumps platform callbacks; call once per frame. */
     fun update()

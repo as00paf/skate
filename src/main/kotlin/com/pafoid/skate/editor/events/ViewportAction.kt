@@ -1,6 +1,5 @@
 package com.pafoid.skate.editor.events
 
-import com.pafoid.skate.editor.data.PrefabType
 import com.pafoid.skate.editor.data.PrimitiveType
 import com.pafoid.skate.engine.assets.data.models.animations.Animation
 import com.pafoid.skate.engine.ecs.GameObject
@@ -9,6 +8,8 @@ import com.pafoid.skate.engine.ecs.components.Component
 import com.pafoid.skate.engine.ecs.components.ComponentType
 import com.pafoid.skate.engine.events.Event
 import com.pafoid.skate.engine.render.data.LightType
+import com.pafoid.skate.game.prefabs.MaterialType
+import com.pafoid.skate.game.prefabs.PrefabType
 import org.joml.Vector3f
 
 sealed class ViewportAction(eventName: String) : Event(eventName) {
@@ -44,7 +45,11 @@ sealed class ViewportAction(eventName: String) : Event(eventName) {
     object ResetCamera : ViewportAction("viewport.reset_camera")
 
     // Prefabs
-    data class SpawnPrefab(val prefabType: PrefabType, val position: Vector3f? = null) : ViewportAction("viewport.spawn_prefab")
+    data class SpawnPrefab(
+        val prefabType: PrefabType,
+        val position: Vector3f? = null,
+        val material: MaterialType? = null,
+    ) : ViewportAction("viewport.spawn_prefab")
 
     // Drag and Drop
     data class DropTexture(val texturePath: String, val targetObject: GameObject? = null, val dropPosition: Vector3f? = null) : ViewportAction("viewport.drop_texture")

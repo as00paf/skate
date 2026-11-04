@@ -1,8 +1,10 @@
 package com.pafoid.skate.engine.platform
 
+import com.pafoid.skate.engine.net.PeerNetwork
+
 /**
  * Fallback used when no platform is present. Achievements, stats and the leaderboard live in memory for the
- * session so game logic behaves the same with and without Steam; lobbies are unavailable and always fail.
+ * session so game logic behaves the same with and without Steam; lobbies and peer networking are unavailable.
  * Callbacks are deferred to [update] to match the real backends.
  */
 class NoOpPlatformServices(override val localUserName: String = System.getProperty("user.name") ?: "Player") : PlatformServices {
@@ -58,6 +60,9 @@ class NoOpPlatformServices(override val localUserName: String = System.getProper
         override fun getData(key: String): String? = null
         override fun list(onResult: (List<LobbyInfo>) -> Unit) { deferred += { onResult(emptyList()) } }
     }
+
+    /** No platform peers: multiplayer falls back to direct UDP (see `LobbySession`). */
+    override val peerNetwork: PeerNetwork? = null
 
     override fun update() {
         while (deferred.isNotEmpty()) deferred.removeFirst()()

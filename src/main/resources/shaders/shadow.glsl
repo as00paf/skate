@@ -38,19 +38,21 @@ void main()
 
 in vec2 fTexCoords;
 
-uniform sampler2D uBaseColorTexture;
-uniform int uAlphaMode;// 0: OPAQUE, 1: MASK, 2: BLEND
-uniform float uAlphaCutoff;
+uniform sampler2D u_BaseColorTexture;
+uniform int u_AlphaMode;// 0: OPAQUE, 1: MASK, 2: BLEND
+uniform float u_AlphaCutoff;
 uniform bool uHasBaseColorTexture;
 
 void main()
 {
-    // Alpha masking: discard fragments below cutoff threshold
-    if (uAlphaMode == 1 && uHasBaseColorTexture) { // MASK mode
-        vec4 baseColor = texture(uBaseColorTexture, fTexCoords);
-        if (baseColor.a < uAlphaCutoff) {
+#ifdef ALPHA_TEST
+    // MASK parts only (ShadowRenderer draws them with this variant): discard texels below the cutoff
+    if (u_AlphaMode == 1 && uHasBaseColorTexture) {
+        vec4 baseColor = texture(u_BaseColorTexture, fTexCoords);
+        if (baseColor.a < u_AlphaCutoff) {
             discard;
         }
     }
-    // OPAQUE and BLEND modes: render all fragments (depth-only)
+#endif
+    // Default variant: no discard, so the GPU keeps its fast depth-only path (REN-22)
 }

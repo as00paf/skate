@@ -74,3 +74,47 @@ Use these tags in the `SceneSerializer` to define physics behavior:
 | `SLIPPERY`  | Reduced friction (e.g., metal rails, waxed ledges).   |
 | `WALLRIDE`  | Triggers specific sticky-physics for vertical riding. |
 | `STICKY`    | High-friction surfaces (e.g., rubber, soft dirt).     |
+---
+
+## 📦 Prefab library (GPL-04)
+
+The editor's **Prefabs** tab (Asset Browser) lists every entry of `game/prefabs/PrefabCatalog.kt` as a thumbnail tile.
+Tiles are grouped as **Player**, **Street**, **Transition** and **Generic**. The same catalog drives the viewport's
+right-click **Create Prefab** menu, prefab search and drag-and-drop. Click a tile to spawn at the origin, or drag it
+onto the viewport to spawn at the drop point. The **Material** combo sets the surface. Rails stay metal, and generic
+prefabs keep their own look.
+
+| Section    | Prefabs                                                                                    |
+|:-----------|:-------------------------------------------------------------------------------------------|
+| Street     | Ledge, Hubba, Manual Pad, Grind Box, Funbox, Flat Rail, Handrail, Kinked Rail, 3-Stair, 5-Stair |
+| Transition | Kicker, Bank, Quarter Pipe, Half Pipe, Bowl                                                |
+| Generic    | Point Light, Spot Light, Crate, Barrel, Bench, Trigger Volume, Spawn Point                 |
+
+Conventions:
+- Sizes are in metres. Each footprint is centred on the object's origin, with the bottom at y = 0.
+- Riding faces and down-slopes point toward **+Z**, the direction a rider rolls in with the GPL-14 orientation.
+- Handrail and Hubba follow the 5-stair's step noses. Spawn them at the same Z as a 5-stair with x ≈ ±1.05.
+- Obstacles are static bodies. Curved and stepped shapes use one convex-hull collider (`CustomCollider3D`) per
+  convex piece, built from the same profile as the mesh.
+- Rails, the hubba and the grind box are tagged `GRINDABLE`. Spawn points are tagged `SpawnPoint`; their transform
+  gives the spawn position and the +Z heading.
+- A trigger volume is an invisible 2 m static box with `isTrigger` set.
+
+Generated meshes:
+- `SkateparkShapes` (skate obstacles) and the engine's `PropShapes` (bench, spawn marker) build meshes with
+  `engine/assets/procedural/MeshBuilder`. The meshes are committed as OBJ files in `assets/obj/` and copied into
+  every new project under `EngineDefaults/Models`.
+- `SkateparkShapesTest` fails when a committed OBJ no longer matches its generator. After changing a shape,
+  regenerate the files with:
+
+```bash
+cmd.exe /c "set SKATE_REGEN_OBSTACLES=1&& gradlew.bat :test --tests *SkateparkShapesTest*"
+```
+
+To add a prefab:
+1. Add a `PrefabType`.
+2. Add its catalog entry.
+3. Add a shape, if it is generated.
+4. Add `Assets.Models`/`Assets.Bundled` paths.
+5. Add the `prefab.<type>` string to both editor string files.
+6. Regenerate the OBJ files.

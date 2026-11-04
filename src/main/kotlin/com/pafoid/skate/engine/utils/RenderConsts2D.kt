@@ -1,6 +1,17 @@
 package com.pafoid.skate.engine.utils
 
 object RenderConsts2D {
+    /**
+     * Vertex attribute locations of the batched quad layout, shared by RenderBatch2D, RenderBatch3D and
+     * UiBatchRenderer. Every batch shader (`shader_2d_batch`, `picking`, `shader_3d_texture`) declares the same
+     * `layout(location = N)`; `BatchShaderLayoutTest` guards that.
+     */
+    const val POS_LOCATION = 0
+    const val COLOR_LOCATION = 1
+    const val TEX_COORDS_LOCATION = 2
+    const val TEX_ID_LOCATION = 3
+    const val ENTITY_ID_LOCATION = 4
+
     const val POS_SIZE = 2
     const val COLOR_SIZE = 4
     const val TEX_COORDS_SIZE = 2

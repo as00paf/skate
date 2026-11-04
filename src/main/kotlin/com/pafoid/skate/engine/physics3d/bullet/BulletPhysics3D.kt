@@ -216,6 +216,8 @@ class BulletPhysics3D(
                 compound
             }
 
+            // Scale before creating the body so its inertia matches the scaled shape
+            go.getComponent<Transform>()?.let { applyScale(shape, it.scale) }
             val body = PhysicsRigidBody(shape, desiredMass)
             rb.rawBody = BulletRigidBodyHandle(body)
 
@@ -266,9 +268,24 @@ class BulletPhysics3D(
         )
         body.setPhysicsRotation(Quaternion(q.x, q.y, q.z, q.w))
 
-        val collider = go.getComponent<BoxCollider3D>() ?: return
-        body.collisionShape.margin = collider.margin
-        body.collisionShape.setScale(JmeVector3f(scale.x, scale.y, scale.z))
+        go.getComponent<BoxCollider3D>()?.let { body.collisionShape.margin = it.margin }
+        applyScale(body.collisionShape, scale)
+    }
+
+    /** Applies the transform scale to any shape Bullet can scale (e.g. capsules only take uniform scale). */
+    private fun applyScale(shape: CollisionShape, scale: JomlVector3f) {
+        val s = JmeVector3f(scale.x, scale.y, scale.z)
+        if (shape.canScale(s)) shape.setScale(s)
+    }
+
+    override fun teleport(go: GameObject) {
+        val rb = go.getComponent<RigidBody3D>() ?: return
+        val body = (rb.rawBody as? BulletRigidBodyHandle)?.body ?: return add(go)
+        syncBodyProperties(body, rb, go)
+        body.setLinearVelocity(JmeVector3f.ZERO)
+        body.setAngularVelocity(JmeVector3f.ZERO)
+        body.clearForces()
+        body.activate(true)
     }
 
     /**

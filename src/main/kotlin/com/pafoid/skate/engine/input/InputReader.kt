@@ -6,6 +6,7 @@ interface RawInput {
     fun wasKeyPressed(key: Int): Boolean
     fun isMouseButtonDown(button: Int): Boolean
     fun wasMouseButtonPressed(button: Int): Boolean
+    /** Pointer in game render-target pixels (top-left origin), the same pixel picking and runtime UI use. */
     fun mouseX(): Float
     fun mouseY(): Float
     fun mouseDeltaX(): Float

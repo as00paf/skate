@@ -154,6 +154,10 @@ class RenderGraphWindow(
                     "${stringManager.getString("lbl.render_graph.execution_time")}: %.2fms".format(timeMs),
                     r, g, b
                 )
+                // GPU time from timer queries (REN-22); hidden when the context has none or the pass is off
+                if (pass.gpuTimeNs >= 0) {
+                    ImGui.text("${stringManager.getString("lbl.render_graph.gpu_time")}: %.2fms".format(pass.gpuTimeNs / 1_000_000f))
+                }
             }
 
             // Enable/disable toggle
