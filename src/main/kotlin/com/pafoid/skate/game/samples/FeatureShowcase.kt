@@ -13,6 +13,8 @@ import com.pafoid.skate.engine.ecs.components.AmbientLightComponent
 import com.pafoid.skate.engine.ecs.components.AudioComponent
 import com.pafoid.skate.engine.ecs.components.BoxCollider3D
 import com.pafoid.skate.engine.ecs.components.CameraComponent
+import com.pafoid.skate.engine.ecs.components.CameraFocusComponent
+import com.pafoid.skate.engine.ecs.components.CameraFocusTarget
 import com.pafoid.skate.engine.ecs.components.CapsuleCollider3D
 import com.pafoid.skate.engine.ecs.components.DirectionalLightComponent
 import com.pafoid.skate.engine.ecs.components.EmissionShape
@@ -33,11 +35,9 @@ import com.pafoid.skate.engine.ui.UIButtonComponent
 import com.pafoid.skate.engine.ui.UICanvasComponent
 import com.pafoid.skate.engine.ui.UIElementComponent
 import com.pafoid.skate.engine.ui.UIImageComponent
-import com.pafoid.skate.engine.ui.UIListComponent
 import com.pafoid.skate.engine.ui.UIProgressBarComponent
 import com.pafoid.skate.engine.ui.UISliderComponent
 import com.pafoid.skate.engine.ui.UITextComponent
-import com.pafoid.skate.engine.ui.UiListItem
 import com.pafoid.skate.game.prefabs.MaterialType
 import com.pafoid.skate.game.prefabs.PrefabType
 import org.joml.Vector3f
@@ -94,8 +94,33 @@ class FeatureShowcase(private val prefabs: PrefabsGenerator) {
         )
 
         /** String keys the overlay uses; they live in the bundled game and editor string tables. */
-        val STRING_KEYS = listOf("showcase.title", "showcase.hint", "showcase.areas", "showcase.text", "showcase.button") +
-            AREAS.map { "showcase.area.${it.key}" } + "showcase.area.ui"
+        val STRING_KEYS = listOf("showcase.title", "showcase.hint", "showcase.areas", "showcase.text", "showcase.button", "showcase.overview") +
+            AREAS.map { "showcase.area.${it.key}" }
+
+        const val OVERVIEW = "overview"
+        private val OVERVIEW_EYE = Vector3f(0f, 32f, 55f)
+        private val OVERVIEW_LOOK_AT = Vector3f(0f, 0f, -2f)
+
+        /** Focus views look down at this angle (degrees) from the +Z side, the same side as the overview. */
+        const val FOCUS_PITCH = 35f
+
+        /** Start view: the whole floor from high on the +Z side. */
+        fun overviewTarget() = CameraFocusTarget.lookingAt(OVERVIEW, OVERVIEW_EYE, OVERVIEW_LOOK_AT, focusButtonName(OVERVIEW))
+
+        /**
+         * A view that frames [area]'s pad: looking at its centre (1 m up) from the +Z side at [FOCUS_PITCH], far enough
+         * back that the pad (plus a margin) fits the default 45 degree vertical field of view at 16:9.
+         */
+        fun focusTarget(area: Area): CameraFocusTarget {
+            val lookAt = Vector3f(area.center).add(0f, 1f, 0f)
+            val distance = maxOf(area.size.x * 1.7f, area.size.z * 2.6f) + 3f
+            val pitch = Math.toRadians(FOCUS_PITCH.toDouble())
+            val eye = Vector3f(0f, kotlin.math.sin(pitch).toFloat(), kotlin.math.cos(pitch).toFloat()).mul(distance).add(lookAt)
+            return CameraFocusTarget.lookingAt(area.key, eye, lookAt, focusButtonName(area.key))
+        }
+
+        /** Name of the overlay button that focuses the view called [key] (an area key or [OVERVIEW]). */
+        fun focusButtonName(key: String) = "Focus_$key"
 
         /** Writes the files the scene references (a 1 s 440 Hz tone) into [assetsDir]. */
         fun writeAssets(assetsDir: File) {
@@ -112,6 +137,7 @@ class FeatureShowcase(private val prefabs: PrefabsGenerator) {
     }
 
     private val assets get() = prefabs.projectAssetsDir
+    private val legendRow = 46f
     private lateinit var scene: Scene
 
     /** Adds the scene components and every demo area to [target] (normally an empty scene named [SCENE_NAME]). */
@@ -122,9 +148,11 @@ class FeatureShowcase(private val prefabs: PrefabsGenerator) {
             .addComponent(EnvironmentComponent(skyTexture = Texture(filePath = assets + Assets.Bundled.SKY)))
             .addComponent(AmbientLightComponent(intensity = 0.25f))
             .addComponent(DirectionalLightComponent())
+        val overview = overviewTarget()
         add(GameObject("Camera")
             .addComponent(CameraComponent(isDefault = true))
-            .addComponent(Transform(Vector3f(0f, 22f, 42f), rotation = Vector3f(-28f, 0f, 0f))))
+            .addComponent(Transform(Vector3f(overview.position), rotation = Vector3f(overview.rotation)))
+            .addComponent(CameraFocusComponent(mutableListOf(overview).apply { AREAS.forEach { add(focusTarget(it)) } })))
         add(staticBox("Floor", Vector3f(0f, -0.5f, 0f), Vector3f(30f, 0.5f, 20f), Vector4f(0.5f, 0.5f, 0.5f, 1f)))
         AREAS.forEach { area ->
             add(mesh("[${area.label}] Area", Assets.Bundled.CUBE, Vector3f(area.center).add(0f, 0.01f, 0f),
@@ -301,13 +329,16 @@ class FeatureShowcase(private val prefabs: PrefabsGenerator) {
         canvas.addChild(uiNode("Hint", 0.5f, 0f, 0f, 84f, 1500f, 36f)
             .addComponent(UITextComponent("showcase.hint", fontSize = 28f, alignX = 0.5f)))
 
-        val legendItems = AREAS.map { UiListItem("showcase.area.${it.key}") } + UiListItem("showcase.area.ui")
-        canvas.addChild(uiNode("LegendPanel", 0f, 0f, 20f, 140f, 560f, 70f + legendItems.size * 40f)
+        // Legend: one button per area (flies the camera there in Play) plus Overview (back to the start view).
+        val legend = listOf(OVERVIEW to "showcase.overview") + AREAS.map { it.key to "showcase.area.${it.key}" }
+        canvas.addChild(uiNode("LegendPanel", 0f, 0f, 20f, 140f, 560f, 70f + legend.size * legendRow)
             .addComponent(UIImageComponent(tint = Vector4f(0.05f, 0.08f, 0.15f, 0.75f))))
         canvas.addChild(uiNode("LegendTitle", 0f, 0f, 40f, 150f, 520f, 44f)
             .addComponent(UITextComponent("showcase.areas", fontSize = 36f)))
-        canvas.addChild(uiNode("Legend", 0f, 0f, 30f, 200f, 540f, legendItems.size * 40f)
-            .addComponent(UIListComponent(items = legendItems, itemHeight = 40f, selectedIndex = -1)))
+        legend.forEachIndexed { i, (key, labelKey) ->
+            canvas.addChild(uiNode(focusButtonName(key), 0f, 0f, 30f, 200f + i * legendRow, 540f, legendRow - 6f)
+                .addComponent(UIButtonComponent(labelKey, fontSize = 24f)))
+        }
 
         canvas.addChild(uiNode("WidgetPanel", 1f, 1f, -20f, -20f, 480f, 330f)
             .addComponent(UIImageComponent(tint = Vector4f(0.1f, 0.2f, 0.4f, 0.8f))))

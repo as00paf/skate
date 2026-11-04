@@ -69,9 +69,11 @@ class MarbleRunProjectBuilder(private val serializer: Serializer = Serializer())
             .addComponent(AmbientLightComponent(intensity = 0.3f))
             .addComponent(DirectionalLightComponent())
             .addComponent(ScenePhysicsComponent())
+        // Built with lookAt: the camera's +pitch looks down (see Transform.lookAt).
+        val view = CameraFocusTarget.lookingAt("start", Vector3f(0f, 8f, 28f), Vector3f(0f, 6f, 0f))
         scene.children.add(
             GameObject("Camera").addComponent(CameraComponent(isDefault = true))
-                .addComponent(Transform(Vector3f(0f, 8f, 28f), rotation = Vector3f(-5f, 0f, 0f)))
+                .addComponent(Transform(view.position, rotation = view.rotation))
         )
 
         val grey = Vector4f(0.55f, 0.55f, 0.6f, 1f)
