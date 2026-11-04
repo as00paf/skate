@@ -27,8 +27,18 @@ class MouseListener {
         lastY = yPos
         xPos = xpos
         yPos = ypos
+        if (skipNextDelta) {
+            skipNextDelta = false
+            return
+        }
         dx += xpos.toFloat() - lastX.toFloat()
         dy += ypos.toFloat() - lastY.toFloat()
+    }
+
+    private var skipNextDelta = false
+
+    fun discardNextDelta() {
+        skipNextDelta = true
     }
 
     fun mouseButtonCallback(window: Long, button: Int, action: Int, mods: Int) {

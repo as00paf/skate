@@ -1,6 +1,7 @@
 package com.pafoid.skate.engine.ecs.systems
 
 import com.pafoid.skate.engine.ecs.ComponentQuery
+import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.systems.SystemManager.ExecutionPriority
 import kotlin.reflect.KClass
@@ -54,8 +55,9 @@ abstract class System(
         vararg required: KClass<*>,
         topLevelOnly: Boolean = false,
         includeDisabled: Boolean = false,
+        layerMask: Int = GameObject.ALL_LAYERS_MASK,
     ): ComponentQuery =
-        ComponentQuery({ scene }, required.toList(), topLevelOnly, includeDisabled).also { queries.add(it) }
+        ComponentQuery({ scene }, required.toList(), topLevelOnly, includeDisabled, layerMask).also { queries.add(it) }
 
     open fun invalidateCache() {
         queries.forEach { it.invalidate() }

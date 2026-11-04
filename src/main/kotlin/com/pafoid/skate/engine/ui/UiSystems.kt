@@ -60,6 +60,9 @@ class UiInputSystem(private val source: UiInputSource) : System(priority = Execu
 
     private val canvases = query(UICanvasComponent::class)
 
+    /** True while UI is being authored (editor, not playing): modal canvases must not trap input then. */
+    var authoring: () -> Boolean = { false }
+
     var focusedId: Int? = null
         private set
 
@@ -74,7 +77,7 @@ class UiInputSystem(private val source: UiInputSource) : System(priority = Execu
     override fun update(dt: Float) {
         val all = canvases.entities
         // A visible modal canvas (e.g. a pause menu) keeps working while the scene itself is paused.
-        val modalOpen = all.any { it.getComponent<UICanvasComponent>()?.let { c -> c.visible && c.modal } == true }
+        val modalOpen = !authoring() && all.any { it.getComponent<UICanvasComponent>()?.let { c -> c.visible && c.modal } == true }
         if (!scene.isRunning && !modalOpen) {
             consumedInput = false
             return

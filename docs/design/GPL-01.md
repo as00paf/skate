@@ -140,3 +140,7 @@ Human feedback on GPL-11: the board stood between the rider's legs and the debug
 
 - **GPL-07:** `CameraInterpolator.update(dt)` is public and `CameraManager` advances it every frame; `CameraManager.lerpToPreset(preset, duration)` starts a blend. BUG-014 removed; the `CameraTest` lerp case is enabled.
 - **GPL-10 (foot planting, on foot):** `PhysicsSystem.probeGround` raycasts beside each foot (`FootIkConfig.legs[].lateral`) and stores a `FootTarget` per leg on `PlayerController.footTargets` (`FootPlacement.compute`: surface hit lifted by `ankleHeight`, invalid when no ground or beyond `maxReach`). `PlayerMotionSystem` feeds them to `FootIkBinder`, which registers the Mixamo leg `TwoBoneIkConstraint`s on `Animator.ik` and ramps the weight (0.15 s); weight is 0 while mounted or airborne. Limitations: targets are position-only (no foot tilt), the foot IK config is a code default (`PlayerController.footIk`) until an inspector/config asset exists, board sockets for riding stay in the ANI-04 design for later.
+
+## 14. GPL-14 — orientation contract
+
+Board: deck +Y, long axis Z, nose +Z (glb bounds verified). Character: yaw 0 faces +Z (Mixamo left leg at +X). The Skater prefab spawned at yaw 90 (facing +X, across the board's axis) and the board overlapped it at y = 1; the skater now spawns at yaw 0 and the board rests on the ground 1 m ahead, so facing, mount alignment (board takes the rider's yaw) and travel direction agree. The rider still faces along travel (no sideways stance; that needs a render-only yaw offset, a follow-up).

@@ -36,6 +36,7 @@ import com.pafoid.skate.engine.ecs.components.SkeletonComponent
 import com.pafoid.skate.engine.ecs.components.SpotLightComponent
 import com.pafoid.skate.engine.ecs.components.SpriteRenderer
 import com.pafoid.skate.engine.ecs.components.Transform
+import com.pafoid.skate.engine.ui.*
 import kotlin.reflect.KClass
 
 fun GameObject.getComponent(type: ComponentType) =
@@ -70,6 +71,14 @@ fun GameObject.getComponent(type: ComponentType) =
         ComponentType.SPOT_LIGHT -> getComponent<SpotLightComponent>()
         ComponentType.SPRITE_RENDERER -> getComponent<SpriteRenderer>()
         ComponentType.TRANSFORM -> getComponent<Transform>()
+        ComponentType.UI_BUTTON -> getComponent<UIButtonComponent>()
+        ComponentType.UI_CANVAS -> getComponent<UICanvasComponent>()
+        ComponentType.UI_ELEMENT -> getComponent<UIElementComponent>()
+        ComponentType.UI_IMAGE -> getComponent<UIImageComponent>()
+        ComponentType.UI_LIST -> getComponent<UIListComponent>()
+        ComponentType.UI_PROGRESS_BAR -> getComponent<UIProgressBarComponent>()
+        ComponentType.UI_SLIDER -> getComponent<UISliderComponent>()
+        ComponentType.UI_TEXT -> getComponent<UITextComponent>()
     }
 
 fun GameObject.getAllChildren(): List<GameObject> {

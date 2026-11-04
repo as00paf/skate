@@ -89,3 +89,19 @@ class BusEffectsConfigTest {
         assertEquals(0.3f, config.uiLowPass, eps)
     }
 }
+
+class MixerSnapshotTest {
+    @org.junit.jupiter.api.Test
+    fun Mixer_SnapshotRoundTripsThroughApplyConfig() {
+        val config = AudioConfig(
+            masterVolume = 0.9f, musicMuted = true, sfxLowPass = 0.3f,
+            musicReverbSend = 0.25f, uiReverbSend = 0.5f, sfxReverbSend = 0f
+        )
+        val mixer = Mixer()
+        mixer.applyConfig(config)
+        assertEquals(config, mixer.snapshot())
+        val other = Mixer()
+        other.applyConfig(mixer.snapshot())
+        assertEquals(config, other.snapshot())
+    }
+}
