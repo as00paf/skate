@@ -91,9 +91,10 @@ object Assets {
         const val RIGHT_STRAFE_WALKING = "assets/characters/animations/right strafe walking.fbx"
     }
     object Strings {
-        const val EDITOR_STRINGS_EN = "assets/strings/editor_strings.properties"
-        const val GAME_STRINGS_EN = "assets/strings/game_strings.properties"
-        const val EDITOR_STRINGS_FR = "assets/strings/editor_strings_fr.properties"
+        /** Editor string tables, one file per area (`<area>.properties` + `<area>_fr.properties`). */
+        const val EDITOR_STRINGS = "assets/strings/editor"
+        /** Runtime/game string tables (HUD, showcase); the editor merges them too so the viewport shows game UI text. */
+        const val GAME_STRINGS = "assets/strings/game"
     }
 
     object Bundled {
