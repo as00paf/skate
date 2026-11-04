@@ -147,6 +147,10 @@ The renderer works but needs cleaner APIs, caching, dynamic shaders, better mate
   - Do: From EDT-31: `ShadowPass` only renders top-level objects, so child models (e.g. the skateboard's visual child) cast no shadows; also review EDT-31's `PickingPass` change (whole-hierarchy traversal, no skip while selected). Do it on top of REN-07.
   - Done when: Child models cast shadows; picking pass reviewed; traversal test.
   - Deps: REN-07, EDT-31
+- [ ] **REN-21** `P1` 2D/UI render follow-ups from GUI-07 and EDT-31
+  - Do: Fix `picking.glsl` reading `aTexId`/`aEntityId` at locations 8/9 while `RenderBatch2D` feeds 3/4 (2D sprite picking reads 0), the same mismatch GUI-07 fixed in `shader_2d_batch.glsl`. Draw runtime UI after post-processing and the debug pass so bloom/FXAA and grid lines don't affect it. Review EDT-31's `SelectionHighlight`/`GeometryPass` change (highlight inherited from ancestors).
+  - Done when: 2D sprites are pickable, UI is unaffected by post effects and debug lines, attribute layout guarded by a test.
+  - Deps: GUI-07, EDT-31, REN-18
 
 ### Asset management — `AST` (`skate-assets`)
 
@@ -459,6 +463,10 @@ In-game UI components need to be added (separate from the ImGui editor).
   - Do: Human-reported on PR #12: hovering a button does not change its colour. Check hit-testing and coordinate mapping (editor viewport and game), input in edit/play modes, and the colour states.
   - Done when: Hover/press colours show in Play and in the game; behaviour documented in `docs/testing/GUI-03.md`; tests.
   - Deps: GUI-05
+- [x] **GUI-07** `P0` Button backgrounds don't render properly
+  - Do: Human-reported on PR #12 after GUI-06/REN-18: hover/press work but button backgrounds render incorrectly. Find the root cause (UI colours or the REN-18 render state/alpha changes) and fix it.
+  - Done when: Button backgrounds render solid in all states in editor and game; regression test.
+  - Deps: GUI-06, REN-18
 
 ### Scripting — `SCR` (`skate-scripting`)
 
