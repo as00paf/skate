@@ -23,7 +23,12 @@ open class GameObject(
         fun layerBit(layer: Int): Int = 1 shl layer
     }
 
+    /** Unique id; changing it bumps [EcsChanges] so id lookups (`GameObjectManager.getGameObject`) stay consistent. */
     var uId = ID_COUNTER++
+        set(value) {
+            field = value
+            EcsChanges.touch()
+        }
     var isDead: Boolean = false
     var isEnabled = true
     var isVisible = true
