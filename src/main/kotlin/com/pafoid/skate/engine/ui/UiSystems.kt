@@ -25,6 +25,7 @@ class UiLayoutSystem(
     fun layoutCanvas(canvasGo: GameObject, size: UiScreenSize) {
         val canvas = canvasGo.getComponent<UICanvasComponent>() ?: return
         if (size.width <= 0 || size.height <= 0) return
+        UiRequirements.repairTree(canvasGo)
         val dpi = dpiScale()
         val signature = 31 * UiTree.layoutSignature(canvasGo, size.width, size.height) + dpi.toRawBits()
         if (signatures[canvasGo.uId] == signature) return
@@ -36,12 +37,14 @@ class UiLayoutSystem(
         )
         canvas.width = size.width / canvas.scale
         canvas.height = size.height / canvas.scale
-        val rects = UiLayout.resolve(UiTree.spec(canvasGo), canvas.width, canvas.height)
+        val rects = UiLayout.resolve(UiTree.spec(canvasGo), canvas.width, canvas.height, UiTree.hasRootElement(canvasGo))
+        canvasGo.getComponent<UIElementComponent>()?.let { e -> rects[canvasGo.uId]?.let { e.rect = it } }
         assign(canvasGo, rects)
     }
 
     private fun assign(parent: GameObject, rects: Map<Int, UiRectF>) {
         for (child in parent.children) {
+            if (child.getComponent<UICanvasComponent>() != null) continue
             val e = child.getComponent<UIElementComponent>() ?: continue
             rects[child.uId]?.let { e.rect = it }
             assign(child, rects)
