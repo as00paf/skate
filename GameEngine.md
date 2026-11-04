@@ -659,8 +659,8 @@ All editor mutations must go through `Command` classes and the service layer (se
 - [ ] **EDT-32** `P1` Redo after a gizmo drag does nothing
   - Do: From PHY-11: `TransformCommand` stores a shallow `newTransform.copy()` and `Gizmo.commitSnapshot` passes the live `Transform`, so old/new share vectors with the object and redo has nothing to reapply. Snapshot both deeply (`Transform().apply { copyFrom(x) }`).
   - Done when: Undo/redo of gizmo moves, inspector edits and multi-selection transforms round-trip; tests.
-- [ ] **EDT-33** `P2` One rule for top-level objects in the hierarchy
-  - Do: From ECS-11: `SceneHierarchyWindow` mixes `obj.parent == null` and `obj.parent == scene` to detect top-level objects, while `addGameObject` does not set `parent`. Decide with skate-ecs (prefer `parent == scene`, set by `addGameObject`) and make every caller consistent.
+- [ ] **EDT-33** `P1` One rule for top-level objects in the hierarchy
+  - Do: From ECS-11 (also bit TLG-09: lookups climbing parent links fail on scenes loaded from disk): `SceneHierarchyWindow` mixes `obj.parent == null` and `obj.parent == scene` to detect top-level objects, while `addGameObject` does not set `parent`. Decide with skate-ecs (prefer `parent == scene`, set by `addGameObject`) and make every caller consistent.
   - Done when: Top-level detection uses one helper everywhere; drag/drop and reparenting tests pass.
   - Deps: ECS-11
 - [x] **EDT-34** `P1` Frame-rate independent editor camera
@@ -701,7 +701,7 @@ All editor mutations must go through `Command` classes and the service layer (se
   - Deps: TLG-05, TLG-07
 - [x] **TLG-09** `P0` Showcase camera and click-to-focus demo list
   - Do: Human-reported on PR #13: in Play the FeatureShowcase camera points up and can't move, so nothing is visible. Fix the camera's start pose (looking at the pads) and make the overlay's demo-area list clickable: clicking an item smoothly moves the camera to frame that area (with a 'Overview' entry to go back).
-  - Done when: Play shows the scene; each list item focuses its area in the game view and in a standalone run; tests for the focus targets and camera pose math.
+  - Done when: Play shows the scene; each list item focuses its area in the game view and in a standalone run (verified through the real path: generated project saved, reloaded from disk, Play, click through UI input); free-fly camera (WASD + mouse look, like the editor) works in Play and standalone; tests for the focus targets, camera pose math and the reloaded click path.
   - Deps: TLG-08
 
 ### Quality — `QA` (`skate-qa`)
