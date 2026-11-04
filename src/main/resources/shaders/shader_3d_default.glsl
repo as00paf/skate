@@ -469,10 +469,10 @@ void main()
 
     vec4 finalColor = vec4(colorOut, alpha);
 
-    // Selection Highlight (Transparent Green Silhouette)
+    // Selection highlight: green tint on colour only. Lowering alpha here made selected opaque objects see-through,
+    // because the editor viewport composites the scene texture with its alpha.
     if (uSelected > 0.5) {
-        // Mix with green (R=0, G=1, B=0, A=0.5)
-        finalColor = mix(finalColor, vec4(0.0, 1.0, 0.0, 0.5), 0.6);
+        finalColor.rgb = mix(finalColor.rgb, vec3(0.0, 1.0, 0.0), 0.4);
     }
 
     // 7. Atmospheric Fog
