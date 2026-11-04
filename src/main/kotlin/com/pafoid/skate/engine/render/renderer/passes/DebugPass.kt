@@ -18,10 +18,13 @@ import kotlin.math.tan
  * executed last so debug geometry appears over everything.
  * 
  * @param debugRenderer The debug renderer for drawing lines and shapes
+ * @param bindTarget Binds the presented render target (the viewport FBO or the default framebuffer).
+ * Called before drawing because earlier passes (e.g. post-processing) may leave another target bound.
  */
 class DebugPass(
     private val debugRenderer: DebugRenderer,
-    private val cameraManager: CameraManager
+    private val cameraManager: CameraManager,
+    private val bindTarget: () -> Unit = {},
 ) : BaseRenderPass() {
 
     override val name: String = "DebugPass"
@@ -46,6 +49,7 @@ class DebugPass(
     }
 
     override fun execute(scene: Scene) {
+        bindTarget()
         scene.getComponent<GridLines>()?.let { renderGridLines(scene, it) }
 
         debugRenderer.draw()

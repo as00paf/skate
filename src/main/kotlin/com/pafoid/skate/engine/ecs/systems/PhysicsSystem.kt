@@ -118,6 +118,7 @@ class PhysicsSystem(
 
     /** Per-frame work: writes interpolated poses into transforms and draws debug shapes. */
     fun onFrame(dt: Float, alpha: Float) {
+        physics3d.debugEnabled = isDebugEnabled()
         physics3d.debugDraw(dt)
         if (!scene.isRunning) return
 
@@ -268,11 +269,17 @@ class PhysicsSystem(
         }
     }
 
+    /**
+     * Flips the collider debug view. The scene's [ScenePhysicsComponent] is the source of truth when present,
+     * so the toolbar state, scene saves and a re-[init] (play / snapshot restore) all agree with what is drawn.
+     */
     fun toggleDebug() {
-        physics3d.debugEnabled = !physics3d.debugEnabled
+        val enabled = !isDebugEnabled()
+        physics3d.debugEnabled = enabled
+        scene.getComponent<ScenePhysicsComponent>()?.debugEnabled = enabled
     }
 
-    fun isDebugEnabled(): Boolean = physics3d.debugEnabled
+    fun isDebugEnabled(): Boolean = scene.getComponent<ScenePhysicsComponent>()?.debugEnabled ?: physics3d.debugEnabled
 }
 
 /** Per-frame companion of [PhysicsSystem], which itself only runs in the fixed-update phase. */
