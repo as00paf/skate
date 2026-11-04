@@ -176,9 +176,8 @@ class PrefabsGenerator(
         spawnDefaultsSync().forEach { scene.addChild(it) }
         sceneManager.saveScene(scene, sceneDir.path)
 
-        val result = listOf(scene)
-        sceneManager.openScenes(result)
-        return result
+        // Not opened here: ProjectManager.loadDefaultScenes reopens the saved files (opening twice duplicated bodies).
+        return listOf(scene)
     }
 
     fun spawnDefaultsSync(): List<GameObject> {

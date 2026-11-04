@@ -109,7 +109,7 @@ class PrefabsGeneratorTest {
     }
 
     @Test
-    fun `createDefaultScenes creates only the lit MainScene without sprites`() {
+    fun `createDefaultScenes saves only the lit MainScene without sprites and does not open it`() {
         val scenes = PrefabsGenerator(engine).createDefaultScenes(File("."))
 
         assertEquals(listOf("MainScene"), scenes.map { it.name })
@@ -119,7 +119,8 @@ class PrefabsGeneratorTest {
         assertNotNull(scene.getComponent<DirectionalLightComponent>())
         assertTrue(scene.children.flatMap { it.descendants() }.none { it.getComponent<SpriteRenderer>() != null })
         verify { sceneManager.saveScene(scene, any()) }
-        verify { sceneManager.openScenes(scenes) }
+        // ProjectManager reopens the saved files; opening here too loaded every scene twice (PHY-12).
+        verify(exactly = 0) { sceneManager.openScenes(any()) }
     }
 
     @Test
