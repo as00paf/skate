@@ -8,6 +8,7 @@ import com.pafoid.skate.engine.render.RenderResources
 import com.pafoid.skate.engine.render.cache.GpuResources
 import com.pafoid.skate.engine.render.graph.RenderGraph
 import com.pafoid.skate.engine.render.utils.GLStateTracker
+import com.pafoid.skate.engine.render.state.GLBindings
 
 class Renderer(
     var renderResources: RenderResources,
@@ -20,7 +21,10 @@ class Renderer(
     val renderGraph: RenderGraph
         get() = renderResources.renderGraph
 
+    private var lastScene: Scene? = null
+
     fun render(scene: Scene) {
+        lastScene = scene
         // Reset per-frame draw call counter
         EngineStats.resetDrawCalls()
         EngineStats.resetStateChanges()
@@ -41,6 +45,15 @@ class Renderer(
         // Clamp coordinates
         val safeX = x.coerceIn(0, w - 1)
         val safeY = y.coerceIn(0, h - 1)
+
+        // The picking pass renders on demand: draw it now if it was not rendered last frame, and keep it fresh
+        val picking = renderResources.renderPasses.picking
+        if (!picking.isFresh) lastScene?.let { scene ->
+            GLBindings.cache.reset()
+            picking.renderNow(scene)
+            GLBindings.cache.reset()
+        }
+        picking.requestPick()
 
         // Invert Y coordinate (screen space to texture space)
         return renderResources.pickingTexture.readPixel(safeX, h - 1 - safeY)

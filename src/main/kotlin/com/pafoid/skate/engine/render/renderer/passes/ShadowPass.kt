@@ -13,6 +13,7 @@ import com.pafoid.skate.engine.render.renderer.ShadowRenderer
 import com.pafoid.skate.engine.render.shadow.CascadeFitter
 import com.pafoid.skate.engine.render.shadow.CascadeSplits
 import com.pafoid.skate.engine.render.shadow.LocalShadows
+import com.pafoid.skate.engine.render.shadow.ShadowLayerCache
 import com.pafoid.skate.engine.render.shadow.ShadowFrame
 import com.pafoid.skate.engine.render.shadow.ShadowQualityLevel
 import com.pafoid.skate.engine.render.shadow.ShadowSettings
@@ -46,6 +47,15 @@ class ShadowPass(
     override val canDisable: Boolean = true
 
     private val fitter = CascadeFitter()
+    private val cascadeCache = ShadowLayerCache(CascadeSplits.MAX_CASCADES)
+    private val localCache = ShadowLayerCache(LocalShadows.MAX_LAYERS)
+    private var drawing = false
+
+    /** Layers actually rendered / skipped as unchanged in the last frame (shown in the Render Graph window). */
+    var layersRendered = 0
+        private set
+    var layersSkipped = 0
+        private set
     private val sceneLights = ArrayList<LightData>()
     private val cameraPosition = Vector3f()
 
@@ -61,19 +71,23 @@ class ShadowPass(
         if (light == null && frame.localSlots.isEmpty()) return
 
         shadowRenderer.collect(scene.getAllChildren())
-        shadowRenderer.begin()
+        layersRendered = 0
+        layersSkipped = 0
         try {
             if (light != null) renderCascades(light, q)
             if (frame.localSlots.isNotEmpty()) renderLocal(q)
         } finally {
-            shadowRenderer.end()
-            cascadeMap.unbind()
+            if (drawing) {
+                shadowRenderer.end()
+                cascadeMap.unbind()
+                drawing = false
+            }
         }
         frame.publish()
     }
 
     private fun renderCascades(light: DirectionalLightComponent, q: ShadowQualityLevel) {
-        cascadeMap.ensure(q.cascadeResolution, q.cascadeCount)
+        if (cascadeMap.ensure(q.cascadeResolution, q.cascadeCount)) cascadeCache.invalidateAll()
         val res = cascadeMap.resolution
         val camera = cameraManager.camera
         val near = max(camera.nearPlane, MIN_NEAR)
@@ -105,6 +119,7 @@ class ShadowPass(
         }
 
         for (i in 0 until count) {
+            if (!needsRender(cascadeCache, i, shadowRenderer.cascadeSignature(frame.cascades[i]))) continue
             cascadeMap.bindLayer(i)
             shadowRenderer.drawCascade(frame.cascades[i])
         }
@@ -116,17 +131,19 @@ class ShadowPass(
     }
 
     private fun renderLocal(q: ShadowQualityLevel) {
-        localMap.ensure(q.localResolution, q.localLayers)
+        if (localMap.ensure(q.localResolution, q.localLayers)) localCache.invalidateAll()
         for (slot in frame.localSlots) {
             val l = sceneLights[slot.lightIndex]
             if (slot.type == LightType.SPOT) {
                 val m = LocalShadows.spotMatrix(l.position, l.direction, LocalShadows.spotFov(l.cosOuter), slot.near, slot.far, frame.localMatrices[slot.baseLayer])
+                if (!needsRender(localCache, slot.baseLayer, shadowRenderer.localSignature(l.position, l.range, m))) continue
                 localMap.bindLayer(slot.baseLayer)
                 shadowRenderer.drawLocal(l.position, l.range, m)
             } else {
                 for (face in 0 until LocalShadows.POINT_FACES) {
                     val layer = slot.baseLayer + face
                     val m = LocalShadows.pointFaceMatrix(l.position, face, slot.near, slot.far, frame.localMatrices[layer])
+                    if (!needsRender(localCache, layer, shadowRenderer.localSignature(l.position, l.range, m))) continue
                     localMap.bindLayer(layer)
                     shadowRenderer.drawLocal(l.position, l.range, m)
                 }
@@ -134,6 +151,20 @@ class ShadowPass(
         }
         frame.localTextureId = localMap.getDepthTextureId()
         frame.localResolution = localMap.resolution
+    }
+
+    /** Records the layer as rendered or skipped and starts the shadow draw state on the first rendered layer. */
+    private fun needsRender(cache: ShadowLayerCache, layer: Int, signature: Long): Boolean {
+        if (!cache.needsRender(layer, signature)) {
+            layersSkipped++
+            return false
+        }
+        layersRendered++
+        if (!drawing) {
+            shadowRenderer.begin()
+            drawing = true
+        }
+        return true
     }
 
     companion object {
