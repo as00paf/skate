@@ -8,7 +8,6 @@ import com.pafoid.skate.engine.ecs.systems.SystemManager.ExecutionPriority
 import com.pafoid.skate.engine.gameplay.CharacterInput
 import com.pafoid.skate.engine.gameplay.CharacterMotion
 import com.pafoid.skate.engine.gameplay.MotionMath
-import com.pafoid.skate.engine.gameplay.CameraPreset
 import com.pafoid.skate.engine.gameplay.MountMath
 import com.pafoid.skate.engine.gameplay.MountRequest
 import com.pafoid.skate.engine.gameplay.Mountable
@@ -25,10 +24,6 @@ import org.joml.Vector3f
 class PlayerMotionSystem(
     private val cameraManager: CameraManager,
 ) : System(priority = ExecutionPriority.DEFAULT) {
-
-    /** Called when the active mode of a [Mountable] character changes, so the camera can reframe. */
-    var onCameraPreset: ((CameraPreset) -> Unit)? = null
-    private var lastPreset: CameraPreset? = null
 
     private val footBinders = java.util.WeakHashMap<PlayerController, FootIkBinder>()
 
@@ -47,16 +42,8 @@ class PlayerMotionSystem(
             apply(motion, body, controller, dt)
             val mountable = controller.behavior as? Mountable
             if (mountable != null && mount != null) {
-                if (motion.mount == MountRequest.MOUNT) {
-                    lastPreset = null
-                    snapRiderOnto(mountable, mount, body)
-                }
+                if (motion.mount == MountRequest.MOUNT) snapRiderOnto(mountable, mount, body)
                 syncMount(mountable, mount, body)
-                val preset = mountable.cameraPreset
-                if (preset != null && preset != lastPreset) {
-                    lastPreset = preset
-                    onCameraPreset?.invoke(preset)
-                }
             }
 
             go.getComponent<Animator>()?.let { animator ->

@@ -77,8 +77,15 @@ class PrefabsGeneratorTest {
     fun `spawnDefaultsSync returns the skate scene objects without touching the scene`() {
         val spawned = PrefabsGenerator(engine).spawnDefaultsSync()
 
-        assertEquals(listOf("Camera", "Skateboard", "Skater", "Floor", "Concrete_Ledge", "HUD"), spawned.map { it.name })
+        assertEquals(
+            listOf("Camera", "Skateboard", "Skater", "Floor", "Concrete_Ledge", "QuarterPipe", "Funbox", "HUD"),
+            spawned.map { it.name },
+        )
         assertNotNull(spawned[0].getComponent<CameraComponent>())
+        // GPL-05: the default camera follows the skater with spring-arm collision.
+        val follow = spawned[0].getComponent<com.pafoid.skate.engine.ecs.components.FollowCameraComponent>()!!
+        assertEquals("Skater", follow.targetName)
+        assertTrue(follow.collision)
         assertTrue(spawned.all { it.parent == null })
     }
 

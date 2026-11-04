@@ -87,6 +87,7 @@ abstract class Component {
                 is DayNightCycleComponent -> DAY_NIGHT_CYCLE
                 is DirectionalLightComponent -> DIRECTIONAL_LIGHT
                 is EnvironmentComponent -> ENVIRONMENT
+                is FollowCameraComponent -> ComponentType.FOLLOW_CAMERA
                 is GridLines -> ComponentType.GRID_LINES
                 is InputStateComponent -> INPUT_STATE
                 is JointComponent -> JOINT

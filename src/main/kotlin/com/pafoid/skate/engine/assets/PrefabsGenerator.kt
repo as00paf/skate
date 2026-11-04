@@ -14,6 +14,7 @@ import com.pafoid.skate.engine.ecs.components.AmbientLightComponent
 import com.pafoid.skate.engine.ecs.components.Animator
 import com.pafoid.skate.engine.ecs.components.BoxCollider3D
 import com.pafoid.skate.engine.ecs.components.CameraComponent
+import com.pafoid.skate.engine.ecs.components.FollowCameraComponent
 import com.pafoid.skate.engine.ecs.components.CompoundHullCollider3D
 import com.pafoid.skate.engine.ecs.components.CylinderCollider3D
 import com.pafoid.skate.engine.ecs.components.DayNightCycleComponent
@@ -258,15 +259,22 @@ class PrefabsGenerator(
         return listOf(scene, showcase)
     }
 
+    /**
+     * The default skate scene: a follow camera (GPL-05) on the skater, the board, the floor and a few obstacles. The
+     * quarter pipe behind the spawn and the funbox give the camera's spring arm something to collide with.
+     */
     fun spawnDefaultsSync(): List<GameObject> {
         val camera = GameObject("Camera")
             .addComponent(CameraComponent(isDefault = true))
-            .addComponent(Transform(Vector3f(0f, 3f, 10f)))
+            .addComponent(Transform(Vector3f(0f, 2.2f, -3.9f)))
+            .addComponent(FollowCameraComponent(targetName = "Skater"))
         val skater = spawnSkater()
         val skate = spawnSkateboard()
         val floor = spawnFloor()
         val ledge = spawnLedge(Vector3f(3f, 0f, -3f), MaterialType.CONCRETE)
-        return listOf(camera, skate, skater, floor, ledge, spawnHud())
+        val quarterPipe = spawn(PrefabType.QUARTER_PIPE, Vector3f(0f, 0f, -6f), MaterialType.WOOD_TAN)
+        val funbox = spawn(PrefabType.FUNBOX, Vector3f(-4f, 0f, 4f), MaterialType.CONCRETE)
+        return listOf(camera, skate, skater, floor, ledge, quarterPipe, funbox, spawnHud())
     }
 
     /** In-game (non-ImGui) HUD: a score line top-left and a restart button top-right. */

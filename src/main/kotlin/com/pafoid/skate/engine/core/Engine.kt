@@ -15,6 +15,10 @@ import com.pafoid.skate.engine.ecs.systems.ParticleSystem
 import com.pafoid.skate.engine.ecs.systems.DirectionalLightSystem
 import com.pafoid.skate.engine.ecs.systems.EnvironmentSystem
 import com.pafoid.skate.engine.ecs.systems.CameraControlSystem
+import com.pafoid.skate.engine.ecs.components.RigidBody3D
+import com.pafoid.skate.engine.ecs.systems.CameraProbe
+import com.pafoid.skate.engine.getComponent
+import com.pafoid.skate.engine.ecs.systems.FollowCameraSystem
 import com.pafoid.skate.engine.ecs.systems.GameObjectManager
 import com.pafoid.skate.engine.ecs.systems.ReaderFlyInputSource
 import com.pafoid.skate.engine.ecs.systems.InputSystem
@@ -123,6 +127,10 @@ class Engine {
             DirectionalLightSystem(cameraManager),
             PlayerMotionSystem(cameraManager),
             MountFollowSystem(),
+            FollowCameraSystem(
+                CameraProbe { from, to, radius, exclude -> physicsSystem.sphereCast(from, to, radius, exclude.getComponent<RigidBody3D>()) },
+                eventSystem,
+            ),
             AnimationSystem(FrustumVisibility { cameraManager.camera.projection to cameraManager.camera.view }).also {
                 it.eventSystem = eventSystem
                 it.ikDebugSink = IkDebugSink { from, to, color -> debugRenderer.addLine3D(from, to, color) }
