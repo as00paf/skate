@@ -110,6 +110,6 @@ inline fun withDepthTest(enabled: Boolean, block: () -> Unit) {
         GLStateTracker.setDepthTestEnabled(enabled)
         block()
     } finally {
-        GLStateTracker.setDepthMask(previousState)
+        GLStateTracker.setDepthTestEnabled(previousState)
     }
 }

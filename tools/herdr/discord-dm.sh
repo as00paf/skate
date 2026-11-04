@@ -5,8 +5,15 @@
 #   discord-dm.sh wait <seconds> [after]   poll until a message from the owner newer than snowflake [after]
 #                                          arrives; prints it and exits 0, exits 1 on timeout
 # Env (never stored in the repo): DISCORD_TOKEN (bot token), DISCORD_USER_ID (owner's user id).
+# When unset they are read from ${SKATE_DISCORD_ENV:-~/.config/skate/discord.env} (chmod 600, outside the repo).
 # Only messages whose author id equals DISCORD_USER_ID are ever treated as instructions.
 set -euo pipefail
+
+env_file="${SKATE_DISCORD_ENV:-$HOME/.config/skate/discord.env}"
+if [[ -z "${DISCORD_TOKEN:-}" || -z "${DISCORD_USER_ID:-}" ]] && [[ -r "$env_file" ]]; then
+  # shellcheck disable=SC1090
+  set -a; . "$env_file"; set +a
+fi
 
 : "${DISCORD_TOKEN:?DISCORD_TOKEN is not set}"
 : "${DISCORD_USER_ID:?DISCORD_USER_ID is not set}"

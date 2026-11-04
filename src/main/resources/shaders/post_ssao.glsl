@@ -21,7 +21,7 @@ uniform float uSsaORadius;
 uniform float uSsaOIntensity;
 
 void main() {
-    vec2 uv = vec2(fTexCoords.x, 1.0 - fTexCoords.y);
+    vec2 uv = fTexCoords;
     float currentDepth = texture(uDepthTexture, uv).r;
     float occlusionSum = 0.0;
     int samples = 8;

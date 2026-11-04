@@ -26,6 +26,7 @@ import com.pafoid.skate.engine.ecs.components.NonPickable
 import com.pafoid.skate.engine.ecs.components.PlayerController
 import com.pafoid.skate.engine.ecs.components.PointLightComponent
 import com.pafoid.skate.engine.ecs.components.RagdollComponent
+import com.pafoid.skate.engine.ecs.components.VehicleComponent
 import com.pafoid.skate.engine.ecs.components.RenderComponent
 import com.pafoid.skate.engine.ecs.components.RigidBody3D
 import com.pafoid.skate.engine.ecs.components.ScenePhysicsComponent
@@ -84,6 +85,7 @@ class Serializer {
             subclass(Animator::class)
             subclass(SpriteRenderer::class)
             subclass(RagdollComponent::class)
+            subclass(VehicleComponent::class)
 
             // Light components
             subclass(AmbientLightComponent::class)//Scene component

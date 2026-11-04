@@ -19,6 +19,9 @@ class GizmoSystem(
 ) {
     var usingGizmo = NONE
 
+    /** UI authoring gizmo; while it claims the mouse the 3D gizmos stay idle. */
+    var uiGizmo: com.pafoid.skate.editor.gizmos.UiRectGizmo? = null
+
     var localSpace = false
     /** Translation snap step in world units; 0 disables snapping. */
     var translateSnap = 0f
@@ -77,6 +80,8 @@ class GizmoSystem(
         selectionGizmo.fallbackPick = {
             sceneVisuals.pick(scene0, engine.inputProvider.screenToRay(editorCamera.camera), ::iconSizeAt)
         }
+
+        if (uiGizmo?.claimsMouse == true) return
 
         // Activate the selected gizmo
         when (usingGizmo) {

@@ -52,9 +52,21 @@ class BulletRigidBodyHandle(val body: PhysicsRigidBody) : IRigidBodyHandle {
     override fun setDamping(linear: Float, angular: Float) = body.setDamping(linear, angular)
     override fun setAngularFactor(factor: Vector3f) = body.setAngularFactor(factor.toJme())
     override fun applyCentralForce(force: Vector3f) = body.applyCentralForce(force.toJme())
-    override fun applyImpulse(impulse: Vector3f, relPos: Vector3f) = body.applyImpulse(impulse.toJme(), relPos.toJme())
-    override fun applyTorqueImpulse(torque: Vector3f) = body.applyTorqueImpulse(torque.toJme())
-    override fun applyForce(force: Vector3f, relPos: Vector3f) = body.applyForce(force.toJme(), relPos.toJme())
+    // Applying a force or impulse wakes a sleeping body, otherwise a resting vehicle would ignore input
+    override fun applyImpulse(impulse: Vector3f, relPos: Vector3f) {
+        body.activate()
+        body.applyImpulse(impulse.toJme(), relPos.toJme())
+    }
+
+    override fun applyTorqueImpulse(torque: Vector3f) {
+        body.activate()
+        body.applyTorqueImpulse(torque.toJme())
+    }
+
+    override fun applyForce(force: Vector3f, relPos: Vector3f) {
+        body.activate()
+        body.applyForce(force.toJme(), relPos.toJme())
+    }
 
     override fun getLocation(out: Vector3f): Vector3f {
         val l = body.getPhysicsLocation(tempVec)

@@ -49,6 +49,26 @@ class Scene(@SerialName("sceneName") override var name: String = "MainScene") : 
         objects.forEach { addToSelection(it) }
     }
 
+    /** All descendants carrying [tag], pre-order. */
+    fun findByTag(tag: String): List<GameObject> = collectWhere { it.tag == tag }
+
+    fun findFirstByTag(tag: String): GameObject? = findByTag(tag).firstOrNull()
+
+    /** All descendants whose layer is set in [layerMask] (bit i = layer i), pre-order. */
+    fun findByLayer(layerMask: Int): List<GameObject> = collectWhere { (layerMask and GameObject.layerBit(it.layer)) != 0 }
+
+    private fun collectWhere(predicate: (GameObject) -> Boolean): List<GameObject> {
+        val out = ArrayList<GameObject>()
+        fun walk(node: GameObject) {
+            for (child in node.children) {
+                if (predicate(child)) out.add(child)
+                walk(child)
+            }
+        }
+        walk(this)
+        return out
+    }
+
     fun clearSelection() {
         selection.clear()
     }

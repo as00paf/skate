@@ -18,11 +18,9 @@ import com.pafoid.skate.engine.utils.ShaderConst.Uniforms
 import com.pafoid.skate.engine.utils.TextureSlots
 import org.joml.Matrix4f
 import org.joml.Vector3f
-import org.lwjgl.opengl.GL11.GL_DEPTH_TEST
 import org.lwjgl.opengl.GL11.GL_POLYGON_OFFSET_FILL
 import org.lwjgl.opengl.GL11.GL_TRIANGLES
 import org.lwjgl.opengl.GL11.GL_UNSIGNED_INT
-import org.lwjgl.opengl.GL11.glDepthMask
 import org.lwjgl.opengl.GL11.glDisable
 import org.lwjgl.opengl.GL11.glDrawElements
 import org.lwjgl.opengl.GL11.glEnable
@@ -74,8 +72,8 @@ class ShadowRenderer(
 
     fun begin() {
         shadowShader.start()
-        glEnable(GL_DEPTH_TEST)
-        glDepthMask(true)
+        GLStateTracker.setDepthTestEnabled(true)
+        GLStateTracker.setDepthMask(true)
         previousCull = GLStateTracker.isCullFaceEnabled()
         GLStateTracker.setCullFaceEnabled(false)
         glEnable(GL_POLYGON_OFFSET_FILL)

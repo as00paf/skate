@@ -1,5 +1,8 @@
 package com.pafoid.skate.engine.render
 
+import org.lwjgl.opengl.GL30.GL_FRAMEBUFFER
+import org.lwjgl.opengl.GL30.glBindFramebuffer
+import org.lwjgl.opengl.GL11.glViewport
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.AssetsManager
 import com.pafoid.skate.engine.core.Engine
@@ -169,7 +172,10 @@ class RenderResourcesFactory(
             cameraManager = cameraManager,
             shadowFrame = shadowFrame,
         )
-        val debugPass = DebugPass(renderers.debug, cameraManager)
+        val debugPass = DebugPass(renderers.debug, cameraManager, bindTarget = {
+            if (useFbo) frameBuffer.bind() else glBindFramebuffer(GL_FRAMEBUFFER, 0)
+            glViewport(0, 0, frameBuffer.width, frameBuffer.height)
+        })
 
         val postProcessPass = PostProcessPass(
             frameBuffer = frameBuffer,
