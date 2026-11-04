@@ -1,13 +1,16 @@
 package com.pafoid.skate.engine.input
 
-/** [RawInput] backed by the GLFW listeners in [InputProvider]. */
+/**
+ * [RawInput] backed by the GLFW listeners in [InputProvider], following the pointer contract in
+ * docs/design/INP-09.md: positions in render-target pixels, mouse buttons owned by the game view, deltas in cursor units.
+ */
 class ProviderRawInput(private val provider: InputProvider) : RawInput {
     private fun jid(pad: Int) = provider.joystickForPad(pad)
 
     override fun isKeyDown(key: Int) = provider.isKeyPressed(key)
     override fun wasKeyPressed(key: Int) = provider.keyBeginPress(key)
-    override fun wasMouseButtonPressed(button: Int) = provider.mouseButtonBeginPress(button)
-    override fun isMouseButtonDown(button: Int) = provider.isMouseButtonDown(button)
+    override fun wasMouseButtonPressed(button: Int) = provider.mouseListener.viewButtonBeginPress(button)
+    override fun isMouseButtonDown(button: Int) = provider.mouseListener.isViewButtonDown(button)
     override fun mouseX() = provider.mouseListener.viewTarget().first
     override fun mouseY() = provider.mouseListener.viewTarget().second
     override fun mouseDeltaX() = provider.getMouseDx()

@@ -14,6 +14,7 @@ class MouseListener {
     private var yPos: Double = 0.0
     private var lastX: Double = 0.0
     private var lastY: Double = 0.0
+    /** GLFW cursor motion this frame in window (screen) units, unmapped; also valid with a captured cursor. */
     var dx: Float = 0f
     var dy: Float = 0f
     private var isDragging = false
@@ -21,8 +22,11 @@ class MouseListener {
     private var mouseButtonPressed = BooleanArray(9)
     private var mouseButtonPressedLastFrame = BooleanArray(9)
 
+    /** Per button: whether the current press started inside [viewRect] ([PRESS_UNKNOWN] until first resolved). */
+    private val viewPress = ByteArray(9)
+
     /**
-     * The single pointer source for everything compared with [viewRect]. Defaults to the GLFW cursor (window
+     * The single pointer source for everything compared with [viewRect] (contract: docs/design/INP-09.md). Defaults to the GLFW cursor (window
      * coordinates), which matches the game where the view fills the window. The editor swaps in ImGui's mouse,
      * whose desktop coordinates match the viewport image rect even with multi-viewports.
      */
@@ -63,13 +67,15 @@ class MouseListener {
     fun mouseButtonCallback(window: Long, button: Int, action: Int, mods: Int) {
         if (action == GLFW_PRESS) {
             mouseButtonsDown++
-            if (button < mouseButtonPressed.size) {
+            if (button in mouseButtonPressed.indices) {
                 mouseButtonPressed[button] = true
+                viewPress[button] = PRESS_UNKNOWN
             }
         } else if (action == GLFW_RELEASE) {
             mouseButtonsDown = (mouseButtonsDown - 1).coerceAtLeast(0)
-            if (button < mouseButtonPressed.size) {
+            if (button in mouseButtonPressed.indices) {
                 mouseButtonPressed[button] = false
+                viewPress[button] = PRESS_UNKNOWN
                 isDragging = false
             }
         }
@@ -87,11 +93,13 @@ class MouseListener {
         lastY = yPos
         dx = 0f
         dy = 0f
+        // Resolve presses nobody queried this frame while the pointer is still where the press happened.
+        for (b in mouseButtonPressed.indices) if (mouseButtonPressed[b]) pressStartedInView(b)
         System.arraycopy(mouseButtonPressed, 0, mouseButtonPressedLastFrame, 0, mouseButtonPressed.size)
     }
     
     fun mouseButtonBeginPress(button: Int): Boolean {
-        if (button >= mouseButtonPressed.size) return false
+        if (button !in mouseButtonPressed.indices) return false
         return mouseButtonPressed[button] && !mouseButtonPressedLastFrame[button]
     }
 
@@ -107,6 +115,7 @@ class MouseListener {
         dx = 0f
         dy = 0f
         mouseButtonPressed.fill(false)
+        viewPress.fill(PRESS_UNKNOWN)
     }
 
     fun setViewRect(rect: ViewRect) {
@@ -119,10 +128,6 @@ class MouseListener {
             targetHeight = height
         }
     }
-
-    /** Raw GLFW cursor, window coordinates. */
-    fun getX(): Float = xPos.toFloat()
-    fun getY(): Float = yPos.toFloat()
 
     /** Pointer in [pointerSource] units (the space of [viewRect]). */
     fun pointerX(): Float = readPointer()[0]
@@ -143,6 +148,23 @@ class MouseListener {
 
     fun viewNdc(): Pair<Float, Float> = readPointer().let { ViewportPointerMapping.toNdc(it[0], it[1], viewRect) }
 
+    /**
+     * Game-view button: down while [button] is held and its press started inside [viewRect]. It stays down when the
+     * pointer leaves the view mid-drag, and a press started elsewhere (an editor panel) never reaches the game.
+     * Independent of ImGui capture, which is always set over the editor's viewport window.
+     */
+    fun isViewButtonDown(button: Int): Boolean =
+        button in mouseButtonPressed.indices && mouseButtonPressed[button] && pressStartedInView(button)
+
+    /** First frame of a game-view press (see [isViewButtonDown]). */
+    fun viewButtonBeginPress(button: Int): Boolean = mouseButtonBeginPress(button) && pressStartedInView(button)
+
+    /** Resolved lazily (first query or [endFrame] of the press frame), so GLFW callbacks never read the pointer source. */
+    private fun pressStartedInView(button: Int): Boolean {
+        if (viewPress[button] == PRESS_UNKNOWN) viewPress[button] = if (isInsideView()) PRESS_IN_VIEW else PRESS_OUTSIDE
+        return viewPress[button] == PRESS_IN_VIEW
+    }
+
     /** This frame's motion in render-target pixels. */
     fun deltaTarget(): Pair<Float, Float> = ViewportPointerMapping.deltaToTarget(dx, dy, viewRect, targetWidth, targetHeight)
 
@@ -153,7 +175,13 @@ class MouseListener {
 
     fun isDragging() = isDragging
     fun isMouseButtonDown(button: Int, ignoreImGui: Boolean = false): Boolean {
-        val down = if (button < mouseButtonPressed.size) mouseButtonPressed[button] else false
+        val down = button in mouseButtonPressed.indices && mouseButtonPressed[button]
         return if (ignoreImGui) down else down && !ImGui.getIO().wantCaptureMouse
+    }
+
+    private companion object {
+        const val PRESS_UNKNOWN: Byte = 0
+        const val PRESS_IN_VIEW: Byte = 1
+        const val PRESS_OUTSIDE: Byte = 2
     }
 }

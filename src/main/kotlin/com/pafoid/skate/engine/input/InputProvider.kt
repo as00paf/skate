@@ -41,7 +41,7 @@ class InputProvider(
     fun endFrame() {
         inputBuffer.push(
             Time.getTime(),
-            getMousePos(),
+            getMouseTargetPos(),
             getAxes(joystickForPad(0))
         )
         keyListener.endFrame()
@@ -57,10 +57,8 @@ class InputProvider(
     fun isControlKeyDown(): Boolean =
         isKeyPressed(GLFW.GLFW_KEY_LEFT_CONTROL) || isKeyPressed(GLFW.GLFW_KEY_RIGHT_CONTROL)
 
-    // Mouse
-    fun getMouseX() = mouseListener.getX()
-    fun getMouseY() = mouseListener.getY()
-    fun getMousePos() = Vector2f(getMouseX(), getMouseY())
+    // Mouse (pointer contract: docs/design/INP-09.md)
+    /** Cursor motion this frame in window (screen) units; for look/drag sensitivity, not for positions. */
     fun getMouseDx() = mouseListener.dx
     fun getMouseDy() = mouseListener.dy
 
