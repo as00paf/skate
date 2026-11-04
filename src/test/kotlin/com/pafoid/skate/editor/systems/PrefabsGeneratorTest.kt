@@ -122,8 +122,8 @@ class PrefabsGeneratorTest {
         assertEquals("hud.score", text.key)
         assertEquals("pause.restart", button.labelKey)
         // Keys must resolve both in the editor viewport and in the exported game.
-        listOf("assets/strings/game_strings.properties", "assets/strings/editor_strings.properties").forEach { path ->
-            val props = java.util.Properties().apply { File(path).reader(Charsets.UTF_8).use { load(it) } }
+        listOf(com.pafoid.skate.engine.assets.Assets.Strings.GAME_STRINGS).forEach { path ->
+            val props = com.pafoid.skate.engine.core.StringTables.merged(File(path))
             assertTrue(props.containsKey(text.key), "${text.key} missing from $path")
             assertTrue(props.containsKey(button.labelKey), "${button.labelKey} missing from $path")
         }
