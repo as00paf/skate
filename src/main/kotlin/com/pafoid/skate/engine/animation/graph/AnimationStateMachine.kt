@@ -38,6 +38,12 @@ class AnimationStateMachine(
 
     val isTransitioning get() = nextState != null
 
+    /**
+     * Fade time in seconds into a state, by target state name, replacing the asset's transition durations. Gameplay
+     * fills it from its character config so blend times are tuned there (GPL-06); states not listed keep the asset's.
+     */
+    val blendOverrides: MutableMap<String, Float> = HashMap()
+
     /** Events fired during the last [update], in firing order. */
     val firedEvents = mutableListOf<FiredEvent>()
 
@@ -110,7 +116,7 @@ class AnimationStateMachine(
         nextState = tr.to
         nextTime = 0f
         fadeElapsed = 0f
-        fadeDuration = tr.duration
+        fadeDuration = blendOverrides[tr.to] ?: tr.duration
         if (fadeDuration <= 0f) completeTransition()
     }
 

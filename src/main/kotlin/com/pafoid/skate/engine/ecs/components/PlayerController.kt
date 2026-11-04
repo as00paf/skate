@@ -23,6 +23,10 @@ class PlayerController(
     @Transient
     var ground = GroundInfo()
 
+    /** Tag of the object under the feet (e.g. `GRINDABLE`), from the last probe; null when none or untagged. */
+    @Transient
+    var groundTag: String? = null
+
     /** Height of a climbable step ahead, if any (from the last probe). */
     @Transient
     var stepAhead: Float? = null

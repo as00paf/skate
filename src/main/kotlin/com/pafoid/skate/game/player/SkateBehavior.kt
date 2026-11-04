@@ -1,5 +1,7 @@
 package com.pafoid.skate.game.player
 
+import com.pafoid.skate.engine.animation.graph.AnimParameters
+import com.pafoid.skate.engine.assets.PrefabsGenerator
 import com.pafoid.skate.engine.gameplay.CameraPreset
 import com.pafoid.skate.engine.gameplay.CharacterBehavior
 import com.pafoid.skate.engine.gameplay.CharacterBehaviors
@@ -18,8 +20,14 @@ import kotlin.math.abs
 class SkateContext(var config: SkateControllerConfig) {
     var input = CharacterInput()
     var speed = 0f
+    /** Vertical speed in m/s, + up. */
+    var verticalSpeed = 0f
     var grounded = true
     var airborneTime = 0f
+    /** Fastest downward speed (m/s) since leaving the ground; the impact when touching down. */
+    var fallSpeed = 0f
+    /** Fall speed of the last landing, kept for the animation after the air state ends. */
+    var landingImpact = 0f
     var pushHeld = false
     var manualHeld = false
     var jumpPressed = false
@@ -39,9 +47,6 @@ class SkateBehavior(
     private val config: SkateControllerConfig,
     private val onFoot: LocomotionBehavior = LocomotionBehavior(config.onFoot),
 ) : CharacterBehavior, Mountable {
-
-    /** Stub until rail detection exists (PHY): supplies whether a grindable surface is in reach. */
-    var grindSensor: () -> Boolean = { false }
 
     private val context = SkateContext(config)
     val machine = buildMachine()
@@ -66,6 +71,22 @@ class SkateBehavior(
     override val mountOffset = Vector3f(config.mount.stanceOffsetX, config.mount.offsetY, config.mount.stanceOffsetZ)
     override val rideHeight: Float get() = config.mount.rideHeight
 
+    override val animationBlendTimes: Map<String, Float> get() = config.blendTimes
+
+    /**
+     * Controller parameters (floats) for blend trees and transitions: `speed` (m/s), `verticalSpeed` (m/s, + up),
+     * `airTime` (s), `landImpact` (fall speed of the last landing, m/s), `manualBalance` (-1..1 toward a bail) and
+     * `turn` (steering stick, -1..1).
+     */
+    override fun writeAnimationParameters(parameters: AnimParameters) = with(context) {
+        parameters.setFloat("speed", speed)
+        parameters.setFloat("verticalSpeed", verticalSpeed)
+        parameters.setFloat("airTime", airborneTime)
+        parameters.setFloat("landImpact", landingImpact)
+        parameters.setFloat("manualBalance", (manualAngle / config.manual.bailAngleDeg).coerceIn(-1f, 1f))
+        parameters.setFloat("turn", input.move.x.takeIf { it.isFinite() } ?: 0f)
+    }
+
     override fun update(input: CharacterInput, dt: Float): CharacterMotion {
         val request = MountMath.toggle(mounted, input.mountPressed, input.mountDistance, config.mount.range)
         when (request) {
@@ -81,7 +102,9 @@ class SkateBehavior(
 
         fill(input, dt)
         context.ollie = false
+        val wasAir = machine.current == SkateState.AIR
         machine.update(context, dt)
+        if (wasAir && machine.current != SkateState.AIR) context.landingImpact = context.fallSpeed
         if (machine.current == SkateState.MANUAL) updateManualBalance(input, dt)
         return solve(input, dt)
     }
@@ -89,13 +112,20 @@ class SkateBehavior(
     private fun fill(input: CharacterInput, dt: Float) = with(context) {
         this.input = input
         speed = input.horizontalSpeed
+        verticalSpeed = input.verticalSpeed
         grounded = input.grounded
         airborneTime = if (input.grounded) 0f else airborneTime + dt
+        // Kept through the touchdown frame (the AIR state still decides the landing), cleared once back on the ground.
+        fallSpeed = when {
+            !input.grounded -> maxOf(fallSpeed, -input.verticalSpeed)
+            machine.current == SkateState.AIR -> maxOf(fallSpeed, -input.verticalSpeed)
+            else -> 0f
+        }
         val stick = input.move.length().let { if (it.isNaN()) 0f else it }
         pushHeld = input.sprint || (stick > config.input.moveDeadZone && input.move.y > config.input.pushStickThreshold)
         manualHeld = input.crouch
         jumpPressed = input.jumpPressed
-        nearGrindable = grindSensor()
+        nearGrindable = input.groundTag == PrefabsGenerator.GRINDABLE_TAG
         landingErrorDeg = if (input.velocityYaw.isNaN()) 0f
         else Math.toDegrees(abs(MotionMath.wrapAngle(input.velocityYaw - input.yaw)).toDouble()).toFloat()
     }
@@ -158,8 +188,10 @@ class SkateBehavior(
                 transition(from, SkateState.AIR, 20) { it.grounded && it.jumpPressed }
                 transition(from, SkateState.AIR, 10) { !it.grounded && it.airborneTime > it.config.air.coyoteTime }
             }
-            listOf(SkateState.RIDE, SkateState.AIR).forEach { from ->
-                transition(from, SkateState.GRIND, 15) { it.nearGrindable && it.speed >= it.config.grind.minEntrySpeed }
+            transition(SkateState.RIDE, SkateState.GRIND, 15) { it.nearGrindable && it.speed >= it.config.grind.minEntrySpeed }
+            // Only on the way down: an ollie out of a grind must not lock straight back onto the rail.
+            transition(SkateState.AIR, SkateState.GRIND, 15) {
+                it.nearGrindable && it.speed >= it.config.grind.minEntrySpeed && it.verticalSpeed <= 0f
             }
             transition(SkateState.GRIND, SkateState.BAIL, 20) { it.speed < it.config.grind.minHoldSpeed }
             transition(SkateState.GRIND, SkateState.AIR, 10) {
@@ -168,7 +200,9 @@ class SkateBehavior(
 
             // Landing
             val landed = { c: SkateContext -> c.grounded && timeInState >= c.config.air.minAirTime }
-            transition(SkateState.AIR, SkateState.BAIL, 20) { landed(it) && it.landingErrorDeg > it.config.air.landingToleranceDeg }
+            transition(SkateState.AIR, SkateState.BAIL, 20) {
+                landed(it) && (it.landingErrorDeg > it.config.air.landingToleranceDeg || it.fallSpeed >= it.config.air.bailImpactSpeed)
+            }
             transition(SkateState.AIR, SkateState.RIDE, 10) { landed(it) && it.speed >= it.config.ride.idleSpeed }
             transition(SkateState.AIR, SkateState.IDLE, 5) { landed(it) }
 
