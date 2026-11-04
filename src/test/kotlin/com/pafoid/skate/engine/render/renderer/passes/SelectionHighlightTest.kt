@@ -73,4 +73,13 @@ class SelectionHighlightTest {
         assertEquals(NONE, state(wheel))
         assertEquals(NONE, state(floor))
     }
+
+    @Test
+    fun runningSceneIsNeverHighlighted() {
+        scene.selectedGameObject = board
+        scene.hoveredGameObject = floor
+        scene.isRunning = true
+        assertEquals(NONE, state(wheel))
+        assertEquals(NONE, state(floor))
+    }
 }

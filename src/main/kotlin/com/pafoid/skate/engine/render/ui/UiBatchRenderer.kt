@@ -1,7 +1,12 @@
 package com.pafoid.skate.engine.render.ui
 
 import com.pafoid.skate.engine.assets.data.Shader
+import com.pafoid.skate.engine.utils.RenderConsts2D.COLOR_LOCATION
 import com.pafoid.skate.engine.utils.RenderConsts2D.COLOR_OFFSET
+import com.pafoid.skate.engine.utils.RenderConsts2D.ENTITY_ID_LOCATION
+import com.pafoid.skate.engine.utils.RenderConsts2D.POS_LOCATION
+import com.pafoid.skate.engine.utils.RenderConsts2D.TEX_COORDS_LOCATION
+import com.pafoid.skate.engine.utils.RenderConsts2D.TEX_ID_LOCATION
 import com.pafoid.skate.engine.utils.RenderConsts2D.COLOR_SIZE
 import com.pafoid.skate.engine.utils.RenderConsts2D.ENTITY_ID_OFFSET
 import com.pafoid.skate.engine.utils.RenderConsts2D.ENTITY_ID_SIZE
@@ -87,11 +92,11 @@ class UiBatchRenderer {
             ebo = glGenBuffers()
             glBindVertexArray(vao)
             glBindBuffer(GL_ARRAY_BUFFER, vbo)
-            attrib(0, POS_SIZE, POS_OFFSET)
-            attrib(1, COLOR_SIZE, COLOR_OFFSET)
-            attrib(2, TEX_COORDS_SIZE, TEX_COORDS_OFFSET)
-            attrib(3, TEX_ID_SIZE, TEX_ID_OFFSET)
-            attrib(4, ENTITY_ID_SIZE, ENTITY_ID_OFFSET)
+            attrib(POS_LOCATION, POS_SIZE, POS_OFFSET)
+            attrib(COLOR_LOCATION, COLOR_SIZE, COLOR_OFFSET)
+            attrib(TEX_COORDS_LOCATION, TEX_COORDS_SIZE, TEX_COORDS_OFFSET)
+            attrib(TEX_ID_LOCATION, TEX_ID_SIZE, TEX_ID_OFFSET)
+            attrib(ENTITY_ID_LOCATION, ENTITY_ID_SIZE, ENTITY_ID_OFFSET)
         }
         if (quads > indexCapacityQuads) {
             indexCapacityQuads = maxOf(quads, indexCapacityQuads * 2, 256)

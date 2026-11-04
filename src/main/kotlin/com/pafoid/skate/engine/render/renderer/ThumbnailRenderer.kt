@@ -115,6 +115,7 @@ class ThumbnailRenderer(
         shader.uploadVec3f(ShaderConst.Uniforms.LIGHT_POSITION, Vector3f(5f, 5f, 5f))
         shader.uploadVec3f(ShaderConst.Uniforms.LIGHT_COLOR, Vector3f(2.0f, 2.0f, 2.0f))
         shader.uploadVec3f(ShaderConst.Uniforms.AMBIENT_LIGHT, Vector3f(0.8f, 0.8f, 0.8f))
+        LightingUniformsLoader.disableShadows(shader)
 
         GLBindings.cache.reset()
         // Delegate actual model rendering to ModelRenderer
