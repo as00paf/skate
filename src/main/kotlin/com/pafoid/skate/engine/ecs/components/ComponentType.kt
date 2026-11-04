@@ -1,5 +1,7 @@
 package com.pafoid.skate.engine.ecs.components
 
+import com.pafoid.skate.engine.ui.*
+
 enum class ComponentType {
     ANIMATOR,
     AUDIO,
@@ -29,7 +31,15 @@ enum class ComponentType {
     SKELETON,
     SPOT_LIGHT,
     SPRITE_RENDERER,
-    TRANSFORM;
+    TRANSFORM,
+    UI_BUTTON,
+    UI_CANVAS,
+    UI_ELEMENT,
+    UI_IMAGE,
+    UI_LIST,
+    UI_PROGRESS_BAR,
+    UI_SLIDER,
+    UI_TEXT;
 
     fun instantiate(): Component? {
         return when (this) {
@@ -62,6 +72,14 @@ enum class ComponentType {
             SPOT_LIGHT -> SpotLightComponent()
             SPRITE_RENDERER -> SpriteRenderer()
             TRANSFORM -> Transform()
+            UI_BUTTON -> UIButtonComponent()
+            UI_CANVAS -> UICanvasComponent()
+            UI_ELEMENT -> UIElementComponent()
+            UI_IMAGE -> UIImageComponent()
+            UI_LIST -> UIListComponent()
+            UI_PROGRESS_BAR -> UIProgressBarComponent()
+            UI_SLIDER -> UISliderComponent()
+            UI_TEXT -> UITextComponent()
         }
     }
 }

@@ -68,6 +68,10 @@ class Engine {
     val engineState = AtomicReference(EngineState.BOOTING)
     @Volatile
     var runtimePlaying = false
+
+    /** Set by the editor: UI is being edited, so modal canvases only react while the scene runs. */
+    @Volatile
+    var uiAuthoring = false
     val screens: MutableList<Screen> = CopyOnWriteArrayList()
     lateinit var renderer: Renderer
 
@@ -146,7 +150,7 @@ class Engine {
                     (x - mouse.gameViewportPos.x) * framebuffer.width / size.x to
                         (y - mouse.gameViewportPos.y) * framebuffer.height / size.y
                 }
-            ),
+            ).also { it.authoring = { uiAuthoring && !runtimePlaying } },
             UiRenderSystem(
                 drawList = { geometry.renderer2D.ui },
                 strings = stringManager,

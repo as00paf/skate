@@ -24,6 +24,10 @@ class Editor(
     val clipboardService = ClipboardService(engine.serializer)
     val editorInputState = EditorInputState()
 
+    init {
+        engine.uiAuthoring = true
+    }
+
     val undoRedoManager = UndoRedoManager(engine.eventSystem, engine.logger)
 
     val editorInputHandler =

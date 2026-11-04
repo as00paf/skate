@@ -37,7 +37,7 @@ fun Component.imgui(engine: Engine) {
         is JointComponent -> this.imgui(engine)
         is ReverbZone -> this.imgui(engine)
 
-        else -> try {
+        else -> if (this.isUiComponent()) this.uiImgui(engine) else try {
             ImGui.pushID(this.javaClass.simpleName + this.name)
 
             val fields = getCachedFields(this.javaClass)
