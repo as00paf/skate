@@ -14,7 +14,9 @@ import com.pafoid.skate.engine.ecs.systems.DayNightCycleSystem
 import com.pafoid.skate.engine.ecs.systems.ParticleSystem
 import com.pafoid.skate.engine.ecs.systems.DirectionalLightSystem
 import com.pafoid.skate.engine.ecs.systems.EnvironmentSystem
+import com.pafoid.skate.engine.ecs.systems.CameraControlSystem
 import com.pafoid.skate.engine.ecs.systems.GameObjectManager
+import com.pafoid.skate.engine.ecs.systems.ReaderFlyInputSource
 import com.pafoid.skate.engine.ecs.systems.InputSystem
 import com.pafoid.skate.engine.ecs.systems.PhysicsFrameSystem
 import com.pafoid.skate.engine.ecs.systems.PhysicsSystem
@@ -127,6 +129,10 @@ class Engine {
             },
             RagdollSystem(),
             ParticleSystem(),
+            // Raw right button over the game view: ImGui owns the editor viewport, as for the UI pointer below.
+            CameraControlSystem(ReaderFlyInputSource(inputSystem.reader) {
+                inputProvider.mouseListener.let { it.isMouseButtonDown(1, ignoreImGui = true) && it.isInsideView() }
+            }),
             ScriptingSystem(
                 logger, eventSystem,
                 ScriptServices(input = ReaderScriptInput(inputSystem.reader)),

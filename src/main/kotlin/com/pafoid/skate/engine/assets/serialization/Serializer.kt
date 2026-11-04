@@ -12,6 +12,7 @@ import com.pafoid.skate.engine.ecs.components.BoneOverride
 import com.pafoid.skate.engine.ecs.components.BoxCollider3D
 import com.pafoid.skate.engine.ecs.components.CameraComponent
 import com.pafoid.skate.engine.ecs.components.CameraFocusComponent
+import com.pafoid.skate.engine.ecs.components.FreeFlyCameraComponent
 import com.pafoid.skate.engine.ecs.components.CapsuleCollider3D
 import com.pafoid.skate.engine.ecs.components.JointComponent
 import com.pafoid.skate.engine.ecs.components.Component
@@ -73,6 +74,7 @@ class Serializer {
             subclass(NetState::class)
             subclass(CameraComponent::class)
             subclass(CameraFocusComponent::class)
+            subclass(FreeFlyCameraComponent::class)
 
             // Physics components
             subclass(RigidBody3D::class)

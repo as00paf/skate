@@ -18,6 +18,7 @@ import com.pafoid.skate.engine.ecs.components.CameraFocusTarget
 import com.pafoid.skate.engine.ecs.components.CapsuleCollider3D
 import com.pafoid.skate.engine.ecs.components.DirectionalLightComponent
 import com.pafoid.skate.engine.ecs.components.EmissionShape
+import com.pafoid.skate.engine.ecs.components.FreeFlyCameraComponent
 import com.pafoid.skate.engine.ecs.components.EnvironmentComponent
 import com.pafoid.skate.engine.ecs.components.GridLines
 import com.pafoid.skate.engine.ecs.components.JointComponent
@@ -152,7 +153,8 @@ class FeatureShowcase(private val prefabs: PrefabsGenerator) {
         add(GameObject("Camera")
             .addComponent(CameraComponent(isDefault = true))
             .addComponent(Transform(Vector3f(overview.position), rotation = Vector3f(overview.rotation)))
-            .addComponent(CameraFocusComponent(mutableListOf(overview).apply { AREAS.forEach { add(focusTarget(it)) } })))
+            .addComponent(CameraFocusComponent(mutableListOf(overview).apply { AREAS.forEach { add(focusTarget(it)) } }))
+            .addComponent(FreeFlyCameraComponent()))
         add(staticBox("Floor", Vector3f(0f, -0.5f, 0f), Vector3f(30f, 0.5f, 20f), Vector4f(0.5f, 0.5f, 0.5f, 1f)))
         AREAS.forEach { area ->
             add(mesh("[${area.label}] Area", Assets.Bundled.CUBE, Vector3f(area.center).add(0f, 0.01f, 0f),
