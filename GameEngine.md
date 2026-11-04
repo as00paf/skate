@@ -130,10 +130,18 @@ The renderer works but needs cleaner APIs, caching, dynamic shaders, better mate
   - Do: Review the SDF branch added by GUI-04 for correctness, batching and edge/outline quality.
   - Done when: Findings fixed or documented; test or screenshot check recorded.
   - Deps: GUI-04
-- [ ] **REN-17** `P1` PostProcessPass feedback loop and DebugPass target review
+- [x] **REN-17** `P1` PostProcessPass feedback loop and DebugPass target review
   - Do: From PHY-10: `PostProcessPass` samples `frameBuffer.getTextureId()` while that FBO is bound as the render target (undefined read/write feedback); ping-pong between two targets or use a separate output target. Review the PHY-10 `bindTarget` hook added to `DebugPass`/`RenderResourcesFactory` and fold it into the pass/target design.
   - Done when: No pass reads a texture attached to its bound target; post effects and debug lines show in the viewport; test for target selection.
   - Deps: REN-08, PHY-10
+- [x] **REN-18** `P0` Debug overlays draw over the scene; skater looks transparent
+  - Do: Human-reported on PR #12 after PHY-10 made debug lines visible again: the skater looks transparent and grid lines and camera/light indicators draw wrongly (order/depth). Find the root cause in the DebugPass/PostProcessPass target and state handling and fix it.
+  - Done when: Opaque models are opaque, grid and collider lines depth-test against the scene, icons draw as intended; regression test where feasible.
+  - Deps: PHY-10
+- [ ] **REN-19** `P3` Leftovers from REN-18
+  - Do: Far grid lines near the floor edge still z-fight in the default frame; with post-processing fully off, transparent materials can show the viewport background through them.
+  - Done when: No grid flicker at default camera distance and transparent materials composite correctly with post off; test where feasible.
+  - Deps: REN-18
 
 ### Asset management — `AST` (`skate-assets`)
 
@@ -427,6 +435,10 @@ In-game UI components need to be added (separate from the ImGui editor).
   - Do: Human-reported on PR #12: adding `UICanvasComponent`/`UIButtonComponent` to an empty GameObject via Add Component shows nothing in the editor or in game. Make that path work (auto-add required components or show a clear hint) and keep the create-UI menu path working.
   - Done when: A hand-built canvas + button renders in editor and game, is editable with the rect gizmo and survives save/reload; tests; `docs/testing/GUI-03.md` updated.
   - Deps: GUI-03
+- [x] **GUI-06** `P0` Button hover state not visible
+  - Do: Human-reported on PR #12: hovering a button does not change its colour. Check hit-testing and coordinate mapping (editor viewport and game), input in edit/play modes, and the colour states.
+  - Done when: Hover/press colours show in Play and in the game; behaviour documented in `docs/testing/GUI-03.md`; tests.
+  - Deps: GUI-05
 
 ### Scripting — `SCR` (`skate-scripting`)
 
@@ -592,6 +604,10 @@ All editor mutations must go through `Command` classes and the service layer (se
   - Do: From REN-07: wherever `GraphicsSettings` is applied, set `ShadowSettings.quality = ShadowQualityLevel.fromName(graphicsSettings.shadowQuality.name)`; add a LOW/MEDIUM/HIGH selector for `ShadowPass` in `RenderGraphWindow`.
   - Done when: Changing shadow quality in settings or the render graph window switches shadows at runtime; test for the mapping.
   - Deps: REN-07
+- [ ] **EDT-30** `P1` Unify editor mouse coordinates
+  - Do: From GUI-06: `MouseListener` mixes GLFW window coordinates with ImGui desktop coordinates, so code comparing `getMouseX()` with `gameViewportPos` (e.g. `InputProvider` lines 91-92) is off when the window is not at the desktop origin or with multi-viewports. Give the editor one viewport-relative pointer source and retire the GUI-06 `Engine.uiPointer` workaround onto it.
+  - Done when: Picking, gizmos and UI hover hit the cursor exactly with the editor window anywhere on screen; mapping unit-tested.
+  - Deps: GUI-06
 
 ## Testing & tooling
 
