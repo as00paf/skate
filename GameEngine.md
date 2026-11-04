@@ -35,6 +35,7 @@ Each domain has a dedicated agent (see [Agents & herdr](#agents--herdr)).
 5. Every task ships with unit tests (JUnit 5 + mockk). **No integration tests for now.** Name tests `Area_Behavior`.
 6. Keep the build green: `cmd.exe /c gradlew.bat test` from WSL/herdr, or `.\gradlew.bat test` on Windows.
 7. Only `skate-lead` edits checkbox state in this file. Domain agents report status back to the lead.
+8. No backward compatibility while the engine is a work in progress: don't add migrations or upgrade-on-load code for old saved scenes/projects; the human recreates content. Instead, keep the **default projects** current: when a feature lands, update the default skate project (`PrefabsGenerator` default scenes) and the CLI samples to use it, and remove test-only content from them.
 
 ---
 
@@ -142,6 +143,10 @@ The renderer works but needs cleaner APIs, caching, dynamic shaders, better mate
   - Do: Far grid lines near the floor edge still z-fight in the default frame; with post-processing fully off, transparent materials can show the viewport background through them.
   - Done when: No grid flicker at default camera distance and transparent materials composite correctly with post off; test where feasible.
   - Deps: REN-18
+- [ ] **REN-20** `P1` Shadows and picking cover the whole hierarchy
+  - Do: From EDT-31: `ShadowPass` only renders top-level objects, so child models (e.g. the skateboard's visual child) cast no shadows; also review EDT-31's `PickingPass` change (whole-hierarchy traversal, no skip while selected). Do it on top of REN-07.
+  - Done when: Child models cast shadows; picking pass reviewed; traversal test.
+  - Deps: REN-07, EDT-31
 
 ### Asset management — `AST` (`skate-assets`)
 
@@ -223,6 +228,9 @@ The ECS is in good working shape but needs a complete review. It is probably mis
   - Do: From ECS-04: add `tag` and `layer` to `GameObject`, `Scene.findByTag/findByLayer`, and a layer-mask parameter on `System.query`/`ComponentQuery`. Follow-ups: EDT inspector field, REN camera culling mask, PHY layer-to-collision-group mapping.
   - Done when: Tag/layer lookups and layer-mask queries are unit-tested.
   - Deps: ECS-04
+- [ ] **ECS-11** `P1` Find child objects by id
+  - Do: From EDT-31: `GameObjectManager.getGameObject(id)` only searches top-level objects, so hierarchy drag-and-drop and search providers can't find children. Search the whole hierarchy (indexed by id).
+  - Done when: Lookups find objects at any depth; unit-tested.
 
 ### Physics — `PHY` (`skate-physics`)
 
@@ -266,6 +274,10 @@ Physics needs overall improvements, a swappable physics engine, and a joint comp
   - Do: Human-reported: editing a GameObject's position/rotation/scale in the inspector (or with gizmos/undo) does not update its `RigidBody3D`/collider in the physics world, so the body stays at its old pose. When a transform changes outside the simulation (edit mode, inspector/command edits, undo/redo, scene load), teleport the body to the new pose (reset velocities, rebuild the collider for scale changes) and keep the interpolation state consistent. Coordinate the editor-side change notification with `skate-editor`.
   - Done when: Moving, rotating or scaling an object in the editor moves its collider (visible with physics debug on), and Play starts from the edited pose; tests for teleport on transform change, scale rebuild and undo.
   - Deps: PHY-10
+- [x] **PHY-12** `P0` Duplicate bodies and stuck skater on first run
+  - Do: Human-reported on PR #12: the first run of a new default skate project shows duplicate collider boxes and the skater is stuck in the floor; it works after reopening. Register bodies exactly once in every path (new project, open, play/stop, scene switch).
+  - Done when: First run works like a reopened project; body counts per path are unit-tested.
+  - Deps: PHY-10
 
 ### Animation — `ANI` (`skate-animation`)
 
@@ -294,6 +306,10 @@ The animation system needs improvements.
   - Do: Save the ANI-02 controller asset reference on `Animator` and resolve it when a scene loads.
   - Done when: An animator's controller survives save/load, covered by a test.
   - Deps: ANI-02
+- [ ] **ANI-09** `P1` Skateboarding animation clips and controller
+  - Do: From GPL-15: no skateboarding clips are bundled, so riding falls back to idle/walking. Source or author riding idle, push and ollie clips for the skater (the human may need to provide assets) and a controller asset wiring them into the ANI-02 state machine for `SkateBehavior`.
+  - Done when: The skater uses a riding pose/push/ollie in the default project; the controller loads in a test.
+  - Deps: GPL-15
 
 ### Audio — `AUD` (`skate-audio`)
 
@@ -411,6 +427,10 @@ The player controller was hardcoded at first and needs a big overhaul. Some skat
   - Do: Human-reported after PR #9: the skateboard is still wrongly oriented (model axes vs forward direction, deck up, nose/tail). Fix it in the prefab/importer/visual child so mesh, collider, stance and movement direction agree (GPL-13).
   - Done when: Board faces the travel direction with deck up in the sample, physics debug matches; test for orientation.
   - Deps: GPL-13
+- [x] **GPL-15** `P0` Riding: alignment, pose and floating
+  - Do: Human-reported on PR #12: when riding, the skater is misaligned with the board, has no riding pose/animation, and skater and board float. Snap the skater to the deck pose, play a riding animation via the ANI-02 state machine, and fix the floating root cause.
+  - Done when: Riding in the default project looks grounded and aligned with a riding pose; mount pose math and physics state switch unit-tested; `docs/testing/GPL-15.md`.
+  - Deps: GPL-14
 
 ### In-game UI — `GUI` (`skate-gameui`)
 
@@ -608,6 +628,10 @@ All editor mutations must go through `Command` classes and the service layer (se
   - Do: From GUI-06: `MouseListener` mixes GLFW window coordinates with ImGui desktop coordinates, so code comparing `getMouseX()` with `gameViewportPos` (e.g. `InputProvider` lines 91-92) is off when the window is not at the desktop origin or with multi-viewports. Give the editor one viewport-relative pointer source and retire the GUI-06 `Engine.uiPointer` workaround onto it.
   - Done when: Picking, gizmos and UI hover hit the cursor exactly with the editor window anywhere on screen; mapping unit-tested.
   - Deps: GUI-06
+- [x] **EDT-31** `P0` Clicking the skateboard selects the floor
+  - Do: Human-reported on PR #12: picking misses the skateboard (model on a child object) and selects the floor behind it. Make picking reliable for child models and document whether the child or the prefab root is selected.
+  - Done when: Clicking any visible model selects it (per the documented convention); id-to-object resolution unit-tested.
+  - Deps: GPL-13
 
 ## Testing & tooling
 
@@ -633,6 +657,10 @@ All editor mutations must go through `Command` classes and the service layer (se
   - Do: Expose these in the script API (needed by the Tetris sample) and update the sample to use them with GUI widgets.
   - Done when: Tetris runs with sound, UI score and game-over scene switch from scripts.
   - Deps: TLG-03, GUI-02
+- [x] **TLG-07** `P1` Keep the default skate project current
+  - Do: Update the default skate project scenes (`PrefabsGenerator`) to show current features (e.g. UI canvas/button, environment) and remove test-only content (2D `SpriteRenderer` objects, camera sprite). Document it in `docs/samples.md`. Repeat whenever features land (rule 8).
+  - Done when: A new project opens a clean, working skate scene without sprites; a test checks the generated scene content.
+  - Deps: GUI-05
 
 ### Quality — `QA` (`skate-qa`)
 
