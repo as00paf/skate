@@ -46,9 +46,28 @@ open class GameObject(
 
     val components = mutableListOf<Component>()
 
+    /**
+     * The object this one hangs under. Top-level objects have their [Scene] as parent (set by [addChild],
+     * `GameObjectManager.addGameObject` and scene loading via [linkChildren]); only a detached object or a
+     * Scene itself has none. Not serialized: links are rebuilt from [children] on load.
+     */
     @Transient
     var parent: GameObject? = null
     val children = mutableListOf<GameObject>()
+
+    /** The one rule for "top-level": directly under its [Scene]. */
+    val isTopLevel: Boolean get() = parent is Scene
+
+    /** Parents from the nearest one up to the top-level object; the [Scene] is not included. */
+    fun ancestors(): Sequence<GameObject> = generateSequence(parent) { it.parent }.takeWhile { it !is Scene }
+
+    /** Restores [parent] on every descendant from [children] (after decoding, links are missing). */
+    fun linkChildren() {
+        children.forEach { child ->
+            child.parent = this
+            child.linkChildren()
+        }
+    }
 
     /** Reports (see [MainThread]) a scene mutation attempted off the main thread while attached to a [Scene]. */
     fun assertSceneMutationOnMainThread(what: String) {
@@ -63,11 +82,12 @@ open class GameObject(
         }
     }
 
-    fun addChild(child: GameObject) {
+    /** Moves [child] under this object, at [index] among [children] (appended when out of range). */
+    fun addChild(child: GameObject, index: Int = -1) {
         assertSceneMutationOnMainThread("addChild")
         child.parent?.removeChild(child)
         child.parent = this
-        children.add(child)
+        if (index in 0..children.size) children.add(index, child) else children.add(child)
         EcsChanges.touch()
     }
 
@@ -101,6 +121,7 @@ open class GameObject(
     fun copy(serializer: Serializer): GameObject {
         val objAsJSON = serializer.encode(this)
         val result = serializer.decode<GameObject>(objAsJSON)
+        result.linkChildren()
         result.generateUid()
         result.components.forEach {
             it.generateId()

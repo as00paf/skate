@@ -88,7 +88,11 @@ class FeatureShowcase(private val prefabs: PrefabsGenerator) {
             Area("audio", "Audio", Vector3f(22f, 0f, MIDDLE), Vector3f(6f, 0f, 5f), Vector4f(0.3f, 0.45f, 0.45f, 1f)),
             Area("prefabs", "Prefabs", Vector3f(-13f, 0f, FRONT), Vector3f(15f, 0f, 5f), Vector4f(0.45f, 0.45f, 0.45f, 1f)),
             Area("animation", "Animation", Vector3f(12f, 0f, FRONT), Vector3f(5f, 0f, 4f), Vector4f(0.4f, 0.3f, 0.4f, 1f)),
+            Area("fog", "Fog", Vector3f(24f, 0f, FRONT), Vector3f(4f, 0f, 4f), Vector4f(0.5f, 0.55f, 0.6f, 1f)),
         )
+
+        /** Overlay button that cycles the scene fog (off, linear, exp, exp², height) in Play; see [FogCycle]. */
+        const val FOG_TOGGLE_BUTTON = "FogToggle"
 
         /** Prefab library pieces shown in the Prefabs area (all street/transition pieces except the large bowl and half pipe). */
         val PREFAB_PIECES = listOf(
@@ -98,7 +102,7 @@ class FeatureShowcase(private val prefabs: PrefabsGenerator) {
         )
 
         /** String keys the overlay uses; they live in the bundled game and editor string tables. */
-        val STRING_KEYS = listOf("showcase.title", "showcase.hint", "showcase.areas", "showcase.text", "showcase.button", "showcase.overview") +
+        val STRING_KEYS = listOf("showcase.title", "showcase.hint", "showcase.areas", "showcase.text", "showcase.button", "showcase.overview", "showcase.fog_toggle") +
             AREAS.map { "showcase.area.${it.key}" }
 
         const val OVERVIEW = "overview"
@@ -149,7 +153,7 @@ class FeatureShowcase(private val prefabs: PrefabsGenerator) {
         scene = target
         scene.addComponent(ScenePhysicsComponent())
             .addComponent(GridLines())
-            .addComponent(EnvironmentComponent(skyTexture = Texture(filePath = assets + Assets.Bundled.SKY)))
+            .addComponent(EnvironmentComponent(skyTexture = Texture(filePath = assets + Assets.Bundled.SKY), fogColor = Vector3f(0.75f, 0.78f, 0.82f), renderFog = false, fogCycleButton = FOG_TOGGLE_BUTTON))
             .addComponent(AmbientLightComponent(intensity = 0.25f))
             .addComponent(DirectionalLightComponent())
         val overview = overviewTarget()
@@ -165,7 +169,7 @@ class FeatureShowcase(private val prefabs: PrefabsGenerator) {
         }
         lights(); shadows(); materials(); particles()
         physics(); joints(); vehicle(); audio()
-        prefabLibrary(); animation(); ui()
+        prefabLibrary(); animation(); fog(); ui()
         return scene
     }
 
@@ -345,6 +349,16 @@ class FeatureShowcase(private val prefabs: PrefabsGenerator) {
         add(prefabs.spawnAnimatedCharacter("[Animation] Character", at("animation", 0f, 0f, 0f), Assets.Bundled.WALKING))
     }
 
+    private fun fog() {
+        // REN-09: posts receding along the right edge of the floor (about 4 m to 34 m from the Fog focus view), so each
+        // fog curve (Cycle fog button in Play, or the scene's EnvironmentComponent) is easy to compare.
+        (0 until 8).forEach { i ->
+            add(mesh("[Fog] Post_$i", Assets.Bundled.CUBE, Vector3f(29f, 1.5f, 17f - i * 5f), Vector3f(0.3f, 1.5f, 0.3f),
+                Material(baseColor = Vector4f(0.85f, 0.35f, 0.2f, 1f))))
+        }
+        add(mesh("[Fog] Tower", Assets.Bundled.CUBE, at("fog", 0f, 4f, 0f), Vector3f(0.5f, 4f, 0.5f)))
+    }
+
     private fun GameObject.labelled(area: String) = apply { name = "[$area] $name" }
 
     private fun uiNode(name: String, anchorX: Float, anchorY: Float, x: Float, y: Float, w: Float, h: Float) =
@@ -367,6 +381,9 @@ class FeatureShowcase(private val prefabs: PrefabsGenerator) {
             canvas.addChild(uiNode(focusButtonName(key), 0f, 0f, 30f, 200f + i * legendRow, 540f, legendRow - 6f)
                 .addComponent(UIButtonComponent(labelKey, fontSize = 24f)))
         }
+
+        canvas.addChild(uiNode(FOG_TOGGLE_BUTTON, 1f, 0f, -20f, 20f, 320f, 64f)
+            .addComponent(UIButtonComponent("showcase.fog_toggle", fontSize = 26f)))
 
         canvas.addChild(uiNode("WidgetPanel", 1f, 1f, -20f, -20f, 480f, 330f)
             .addComponent(UIImageComponent(tint = Vector4f(0.1f, 0.2f, 0.4f, 0.8f))))

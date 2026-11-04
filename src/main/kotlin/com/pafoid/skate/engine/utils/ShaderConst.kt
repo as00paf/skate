@@ -47,7 +47,12 @@ object ShaderConst {
 
         const val FOG_COLOR = "uFogColor"
         const val FOG_DENSITY = "uFogDensity"
-        const val FOG_GRADIENT = "uFogGradient"
+        const val FOG_MODE = "uFogMode"
+        const val FOG_START = "uFogStart"
+        const val FOG_END = "uFogEnd"
+        const val FOG_HEIGHT = "uFogHeight"
+        const val FOG_HEIGHT_FALLOFF = "uFogHeightFalloff"
+        const val FOG_SKY_DISTANCE = "uFogSkyDistance"
 
         const val BASE_COLOR = "uBaseColor"
         const val BASE_COLOR_TEXTURE = "u_BaseColorTexture"

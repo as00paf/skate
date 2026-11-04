@@ -41,8 +41,8 @@ class ReaderFlyInputSource(private val reader: InputReader, private val lookHeld
 
 /**
  * Runtime camera control while the scene runs (editor Play or the game):
- * - binds runtime UI buttons to [CameraFocusComponent] targets by button name, found in the scene (scene objects
- *   loaded from disk have no parent link to the scene, so the component cannot find them itself);
+ * - binds runtime UI buttons to [CameraFocusComponent] targets by button name, found anywhere in the scene
+ *   (buttons need not share a canvas or ancestor with the camera);
  * - advances focus moves;
  * - applies [FreeFlyCameraComponent] input; any fly or look input cancels a focus move, so flying resumes from
  *   wherever the camera is.

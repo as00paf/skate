@@ -4,6 +4,7 @@ import com.pafoid.skate.engine.assets.data.Shader
 import com.pafoid.skate.engine.ecs.components.AmbientLightComponent
 import com.pafoid.skate.engine.ecs.components.DirectionalLightComponent
 import com.pafoid.skate.engine.ecs.components.EnvironmentComponent
+import com.pafoid.skate.engine.render.fog.FogUniforms
 import com.pafoid.skate.engine.utils.ShaderConst.Uniforms
 import com.pafoid.skate.engine.render.shadow.CascadeSplits
 import com.pafoid.skate.engine.render.shadow.LocalShadows
@@ -58,12 +59,8 @@ class LightingUniformsLoader {
 
         loadShadowUniforms(shader, shadows)
 
-        // Fog - use EnvironmentComponent if available and enabled, otherwise use defaults
-        // When renderFog is false, upload zero density to disable fog effect
-        val fogEnabled = environmentComponent?.renderFog == true
-        shader.uploadVec3f(Uniforms.FOG_COLOR, environmentComponent?.fogColor ?: Vector3f(0.8f, 0.8f, 0.8f))
-        shader.uploadFloat(Uniforms.FOG_DENSITY, if (fogEnabled) environmentComponent?.fogDensity ?: 0.0f else 0.0f)
-        shader.uploadFloat(Uniforms.FOG_GRADIENT, environmentComponent?.fogGradient ?: 1.5f)
+        // Fog (fog.glsl), shared with the sky dome and particles
+        FogUniforms.upload(shader, environmentComponent)
     }
 
     /**

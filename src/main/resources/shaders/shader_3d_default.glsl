@@ -5,7 +5,7 @@
 // - Skeletal Skinning (up to 4 bone influences)
 // - PBR (Metallic-Roughness) lighting model
 // - Normal Mapping (TBN Space)
-// - Distance-based Fog
+// - Fog (shared fog.glsl: linear/exp/exp2 + height fog)
 // - HDR Tonemapping & Gamma Correction
 // ----------------------------------------------------------------------------
 
@@ -26,7 +26,6 @@ out vec3 fWorldPos;    // World Space Position (Used for lighting)
 out vec3 fNormal;      // World Space Normal
 out vec4 fColor;
 out mat3 fTBN;         // Tangent-Bitangent-Normal matrix for Normal Mapping
-out float fVisibility;
 out float fViewDepth;  // Distance along the camera's forward axis, used to pick the shadow cascade
 
 uniform mat4 transformationMatrix; // Model-to-World Matrix
@@ -34,8 +33,6 @@ uniform mat4 projectionMatrix;     // View-to-Clip Matrix
 uniform mat4 viewMatrix;           // World-to-View (Camera) Matrix
 
 uniform float uTextureScale;
-uniform float uFogDensity;
-uniform float uFogGradient;
 
 const int MAX_BONES = 100;
 layout(std140) uniform SkinBlock {
@@ -81,12 +78,6 @@ void main()
     vec3 B = cross(N, T);
     fTBN = mat3(T, B, N);
     fNormal = N;
-
-    // --- Fog Calculation ---
-    // Distance-based visibility using the distance from the camera in view space.
-    float distance = length(posRelativeToCamera.xyz);
-    fVisibility = exp(-pow((distance * uFogDensity), uFogGradient));
-    fVisibility = clamp(fVisibility, 0.0, 1.0);
 }
 
 #type fragment
@@ -98,7 +89,6 @@ in vec3 fWorldPos;
 in vec3 fNormal;
 in vec4 fColor;
 in mat3 fTBN;
-in float fVisibility;
 in float fViewDepth;
 
 // --- PBR Textures (glTF 2.0 Standard) ---
@@ -122,7 +112,7 @@ uniform vec3 uCameraPos;
 uniform vec3 uSunDirection;
 uniform vec3 uSunColor;
 uniform vec3 uAmbientLight;
-uniform vec3 uFogColor;
+#include "fog.glsl"
 
 // --- Shadow Mapping Uniforms (see ShadowPass / LightingUniformsLoader) ---
 #define MAX_CASCADES 4
@@ -523,8 +513,8 @@ void main()
         finalColor.rgb = mix(finalColor.rgb, vec3(0.0, 1.0, 0.0), 0.4);
     }
 
-    // 7. Atmospheric Fog
-    color = mix(vec4(uFogColor, 1.0), finalColor, fVisibility);
+    // 7. Atmospheric fog (fog.glsl), per fragment so large floor triangles fog correctly
+    color = vec4(applyFog(finalColor.rgb, uCameraPos, fWorldPos), finalColor.a);
 }
 
     
