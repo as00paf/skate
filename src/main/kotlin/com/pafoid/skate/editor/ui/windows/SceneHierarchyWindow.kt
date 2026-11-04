@@ -328,6 +328,7 @@ class SceneHierarchyWindow(
                 }
                 ImGui.endMenu()
             }
+            com.pafoid.skate.editor.ui.menus.UiCreateMenu.render(stringManager, eventSystem, obj)
 
             ImGui.separator()
 

@@ -1,5 +1,6 @@
 package com.pafoid.skate.engine.gameplay
 
+import com.pafoid.skate.engine.gameplay.ground.GroundInfo
 import org.joml.Vector3f
 
 /** What a behavior asks the motion system to do with its mount (board, vehicle, horse...). */
@@ -16,7 +17,10 @@ interface Mountable {
     /** Name of the scene object that is mounted. */
     val mountTargetName: String
 
-    /** Offset from the character origin (feet) where the mount is placed when mounting. */
+    /**
+     * Mount centre relative to the rider's feet, in the rider's heading frame (local axes at yaw 0; +Z is forward, the board's nose).
+     * Mounting snaps the rider onto the mount with this offset; while ridden the mount follows it.
+     */
     val mountOffset: Vector3f
 
     /** Height in meters the character stands above the ground while mounted (the mount's thickness). */
@@ -25,6 +29,9 @@ interface Mountable {
     /** Camera framing for the current mode (mounted or not), or null to leave the camera alone. */
     val cameraPreset: CameraPreset? get() = null
 }
+
+/** Physics state of a mount body: carried (kinematic, collides with nothing) while ridden, a free body otherwise. */
+data class MountBodyState(val kinematic: Boolean, val collisionMask: Int)
 
 /** Third-person framing: distance behind the character and height of the look-at point. */
 data class CameraPreset(val distance: Float, val height: Float)
@@ -55,6 +62,25 @@ object MountMath {
 
     /** Character collision mask that ignores [MOUNT_LAYER]. */
     fun characterMask(current: Int): Int = current and MOUNT_LAYER.inv()
+
+    fun mountBodyState(mounted: Boolean) = MountBodyState(kinematic = mounted, collisionMask = mountMask(mounted))
+
+    /** Mount centre under a rider whose feet are at [feet] with heading [yaw] (0 = +Z). */
+    fun mountPosition(feet: Vector3f, yaw: Float, offset: Vector3f, dest: Vector3f = Vector3f()): Vector3f =
+        dest.set(offset).rotateY(yaw).add(feet)
+
+    /** Rider feet that put the mount at [mountPosition] when the rider takes the mount's heading [mountYaw]. */
+    fun riderFeet(mountPosition: Vector3f, mountYaw: Float, offset: Vector3f, dest: Vector3f = Vector3f()): Vector3f =
+        dest.set(offset).rotateY(mountYaw).negate().add(mountPosition)
+
+    /**
+     * Grounded test for a character. Mounted, the feet are held [rideHeight] above the surface (on the deck), so
+     * the grounded band is raised by that much; on foot it is the probe's own result.
+     */
+    fun grounded(ground: GroundInfo, mounted: Boolean, rideHeight: Float, groundedDistance: Float): Boolean {
+        if (!mounted) return ground.standing
+        return ground.found && ground.walkable && ground.distance <= rideHeight + groundedDistance
+    }
 
     /** True when a mount at [distance] meters can be mounted; NaN (no target in the scene) never can. */
     fun inRange(distance: Float, range: Float): Boolean = !distance.isNaN() && distance <= range

@@ -12,7 +12,7 @@ import com.pafoid.skate.engine.render.VAOLoader
 import com.pafoid.skate.engine.utils.ShaderConst.Uniforms
 import org.joml.Matrix4f
 import org.joml.Vector3f
-import org.lwjgl.opengl.GL11.GL_CULL_FACE
+import com.pafoid.skate.engine.render.utils.GLStateTracker
 import org.lwjgl.opengl.GL11.GL_LEQUAL
 import org.lwjgl.opengl.GL11.GL_LESS
 import org.lwjgl.opengl.GL11.GL_REPEAT
@@ -22,11 +22,7 @@ import org.lwjgl.opengl.GL11.GL_TEXTURE_WRAP_T
 import org.lwjgl.opengl.GL11.GL_TRIANGLES
 import org.lwjgl.opengl.GL11.GL_UNSIGNED_INT
 import org.lwjgl.opengl.GL11.glBindTexture
-import org.lwjgl.opengl.GL11.glDepthFunc
-import org.lwjgl.opengl.GL11.glDepthMask
-import org.lwjgl.opengl.GL11.glDisable
 import org.lwjgl.opengl.GL11.glDrawElements
-import org.lwjgl.opengl.GL11.glEnable
 import org.lwjgl.opengl.GL11.glTexParameteri
 import org.lwjgl.opengl.GL13.GL_CLAMP_TO_EDGE
 import org.lwjgl.opengl.GL13.GL_TEXTURE0
@@ -106,9 +102,11 @@ class SkyDomeRenderer(private val shader: Shader, loader: VAOLoader) {
             return
         }
 
-        glDisable(GL_CULL_FACE)
-        glDepthFunc(GL_LEQUAL)
-        glDepthMask(false)
+        // Through the tracker so its cache stays true for later passes (raw calls left culling on for them).
+        val previousCull = GLStateTracker.isCullFaceEnabled()
+        GLStateTracker.setCullFaceEnabled(false)
+        GLStateTracker.setDepthFunc(GL_LEQUAL)
+        GLStateTracker.setDepthMask(false)
 
         shader.start()
 
@@ -160,9 +158,9 @@ class SkyDomeRenderer(private val shader: Shader, loader: VAOLoader) {
 
         shader.stop()
         
-        glDepthMask(true)
-        glDepthFunc(GL_LESS)
-        glEnable(GL_CULL_FACE)
+        GLStateTracker.setDepthMask(true)
+        GLStateTracker.setDepthFunc(GL_LESS)
+        GLStateTracker.setCullFaceEnabled(previousCull)
     }
 
     fun destroy() {

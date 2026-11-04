@@ -59,6 +59,45 @@ data class CompletionRequest(
 interface CompletionProvider {
     /** Never throws for malformed text; returns an empty list when nothing applies. */
     fun complete(request: CompletionRequest): List<Completion>
+
+    /** Parameter hints for the call the caret is inside, or null. Same threading rules as [complete]. */
+    fun signatureHelp(request: CompletionRequest): SignatureHelp? = null
+
+    /** Language facts the editor needs for popup triggering and bracket handling. */
+    val capabilities: CompletionCapabilities get() = CompletionCapabilities()
+
+    /** Documented script API (types, members, signatures, docs) for a reference/tooltip panel. */
+    fun apiReference(): List<ApiTypeDoc> = emptyList()
+}
+
+data class CompletionCapabilities(
+    /** Typing one of these opens the popup automatically. Identifier characters always do as well. */
+    val triggerCharacters: Set<Char> = setOf('.'),
+    /** Typing the key inserts key+value and leaves the caret between; typing the value over itself skips it. */
+    val autoClosePairs: Map<Char, Char> = mapOf('(' to ')', '[' to ']', '{' to '}', '"' to '"', '\'' to '\''),
+    val lineComment: String = "//",
+)
+
+/** Parameter hint: [label] is the whole signature, [parameters] its parameters, [activeParameter] the caret's one (0-based). */
+data class SignatureHelp(
+    val label: String,
+    val parameters: List<String>,
+    val activeParameter: Int,
+    val documentation: String? = null,
+)
+
+data class ApiMemberDoc(val name: String, val kind: CompletionKind, val signature: String, val documentation: String?)
+
+data class ApiTypeDoc(val name: String, val members: List<ApiMemberDoc>)
+
+/** Result of applying a [Completion]: the new text and the caret offset in it. */
+data class EditResult(val text: String, val caret: Int)
+
+/** Applies this completion to [text]; the editor can use it directly or mirror it with its own buffer. */
+fun Completion.applyTo(text: String): EditResult {
+    val start = replaceStart.coerceIn(0, text.length)
+    val end = replaceEnd.coerceIn(start, text.length)
+    return EditResult(text.substring(0, start) + insertText + text.substring(end), start + cursorOffset.coerceIn(0, insertText.length))
 }
 
 /** A running request; [cancel] aborts it (the future then completes with CancellationException). */

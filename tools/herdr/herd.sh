@@ -100,6 +100,11 @@ start_agent() { # name pane
   local name="$1" pane="$2" i
   ((start)) || { echo "  $name -> $pane (layout only)"; return; }
   local args=(agent start "$name" --kind "$kind" --pane "$pane" --timeout 120000 --)
+  if [[ "$kind" == claude ]]; then
+    # Panes inherit the herdr server's environment; if it was started from a shell pointed at a
+    # local model server (e.g. LM Studio), Claude Code would send its requests there instead.
+    herdr pane run "$pane" "unset ANTHROPIC_BASE_URL ANTHROPIC_AUTH_TOKEN ANTHROPIC_API_KEY ANTHROPIC_MODEL" >/dev/null
+  fi
   if [[ "$kind" == copilot || "$kind" == claude ]]; then
     args+=(--agent "$name")
   else

@@ -19,9 +19,9 @@ uniform sampler2D uTexture;
 uniform float uGamma;
 
 void main() {
-    vec2 uv = vec2(fTexCoords.x, 1.0 - fTexCoords.y);
+    vec2 uv = fTexCoords;
     vec4 texColor = texture(uTexture, uv);
     vec3 rgb = texColor.rgb;
     rgb = pow(max(rgb, vec3(0.0)), vec3(1.0 / uGamma));
-    color = vec4(rgb, texColor.a);
+    color = vec4(rgb, 1.0);
 }

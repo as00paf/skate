@@ -151,12 +151,8 @@ class GeometryPass(
 
         for (i in 0 until drawQueue.size) {
             val (go, renderComponent, transform) = drawQueue.itemAt(i)
-            // Hover & Selected states
-            var selectionState = 0.0f
-            if (scene.isSelected(go)) selectionState = 1.0f
-            else if (go.uId == scene.hoveredGameObject?.uId) selectionState = 2.0f
-
-            defaultShader.uploadFloat(Uniforms.SELECTED, selectionState)
+            // Hover & Selected states, inherited from ancestors so a mesh-less root highlights its children
+            defaultShader.uploadFloat(Uniforms.SELECTED, SelectionHighlight.stateOf(go, scene))
 
             val model = renderComponent.model
             val lightCount = if (model == null || sceneLights.isEmpty()) 0 else {
@@ -238,7 +234,8 @@ class GeometryPass(
     }
 
     private fun clearColor(sky: Vector3f) {
-        GL30.glEnable(GL30.GL_DEPTH_TEST)
+        GLStateTracker.setDepthTestEnabled(true)
+        GLStateTracker.setDepthMask(true) // glClear only clears depth while depth writes are on
         GL30.glClearColor(sky.x, sky.y, sky.z, 1.0f)
         GL30.glClear(GL30.GL_COLOR_BUFFER_BIT or GL30.GL_DEPTH_BUFFER_BIT)
     }

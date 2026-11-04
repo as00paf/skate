@@ -6,7 +6,6 @@ import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
-import com.pafoid.skate.engine.ecs.systems.GameObjectManager
 import com.pafoid.skate.engine.render.renderer.Renderer
 import imgui.ImGui
 import imgui.flag.ImGuiPopupFlags
@@ -16,13 +15,11 @@ class SelectionGizmo(
     engine: Engine,
 ) : Gizmo(engine, undoRedoManager) {
     private val eventSystem: EventSystem = engine.eventSystem
-    private val gameObjectManager: GameObjectManager = engine.gameObjectManager
     private val renderer: Renderer = engine.renderer
 
-    fun getHoveredObject(x: Float, y: Float): GameObject? {
-        val id = renderer.readPixel(x, y)
-        return gameObjectManager.getGameObject(id)
-    }
+    /** The object a click at normalized ([x], [y]) would select; see [PickResolver] for the child/prefab convention. */
+    fun getHoveredObject(scene: Scene, x: Float, y: Float): GameObject? =
+        PickResolver.resolve(scene, renderer.readPixel(x, y), scene.selectedGameObject)
 
     /** Fallback for objects without geometry (cameras, lights), consulted when the pixel pick finds nothing. */
     var fallbackPick: (() -> GameObject?)? = null
@@ -40,7 +37,7 @@ class SelectionGizmo(
         if (inputProvider.isInsideViewport()) {
             val mousePos = inputProvider.getNormalizedMousePos()
 
-            val hovered = getHoveredObject(mousePos.x, mousePos.y) ?: fallbackPick?.invoke()
+            val hovered = getHoveredObject(scene, mousePos.x, mousePos.y) ?: fallbackPick?.invoke()
             scene.hoveredGameObject = hovered
             hoveredGameObjectUid = hovered?.uId ?: -1
 

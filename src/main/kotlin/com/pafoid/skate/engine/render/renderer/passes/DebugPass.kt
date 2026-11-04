@@ -5,7 +5,13 @@ import com.pafoid.skate.engine.ecs.components.GridLines
 import com.pafoid.skate.engine.ecs.systems.CameraManager
 import com.pafoid.skate.engine.getComponent
 import com.pafoid.skate.engine.render.renderer.DebugRenderer
+import com.pafoid.skate.engine.render.utils.withBlendState
+import com.pafoid.skate.engine.render.utils.withCullFace
+import com.pafoid.skate.engine.render.utils.withDepthFunc
+import com.pafoid.skate.engine.render.utils.withDepthMask
+import com.pafoid.skate.engine.render.utils.withDepthTest
 import org.joml.Vector3f
+import org.lwjgl.opengl.GL11.GL_LEQUAL
 import kotlin.math.abs
 import kotlin.math.floor
 import kotlin.math.tan
@@ -13,15 +19,22 @@ import kotlin.math.tan
 /**
  * Debug visualization render pass.
  * 
- * Renders debug lines, triangles, and other visualization aids
- * on top of the final rendered image. This pass is typically
- * executed last so debug geometry appears over everything.
+ * Renders debug lines, triangles, and other visualization aids (grid, physics colliders, editor camera and light
+ * visuals) after post-processing. They depth-test against the scene, so models hide what is behind them.
  * 
  * @param debugRenderer The debug renderer for drawing lines and shapes
+ * @param bindTarget Binds the presented render target (the viewport FBO or the default framebuffer) and its
+ * viewport. Called before drawing because earlier passes (shadow, picking) bind their own targets. Debug geometry is
+ * drawn after post-processing, so it is not tonemapped, and it depth-tests against the scene depth that the geometry
+ * pass left in that target.
+ * @param drawState Runs the draw inside the GL state debug geometry needs ([withDebugDrawState]); injectable so the
+ * pass can be tested without a GL context.
  */
 class DebugPass(
     private val debugRenderer: DebugRenderer,
-    private val cameraManager: CameraManager
+    private val cameraManager: CameraManager,
+    private val bindTarget: () -> Unit = {},
+    private val drawState: (draw: () -> Unit) -> Unit = ::withDebugDrawState,
 ) : BaseRenderPass() {
 
     override val name: String = "DebugPass"
@@ -46,9 +59,10 @@ class DebugPass(
     }
 
     override fun execute(scene: Scene) {
+        bindTarget()
         scene.getComponent<GridLines>()?.let { renderGridLines(scene, it) }
 
-        debugRenderer.draw()
+        drawState { debugRenderer.draw() }
     }
 
     private fun renderGridLines(scene: Scene, gridLines: GridLines) {
@@ -373,5 +387,24 @@ class DebugPass(
      */
     private fun Vector3f.withAlpha(alpha: Float): Vector3f { // TODO: move
         return Vector3f(x * alpha, y * alpha, z * alpha)
+    }
+}
+
+/**
+ * GL state for debug geometry, set explicitly instead of inherited from the previous pass: depth test on (LEQUAL, so
+ * lines on a surface win ties) with depth writes, no blending, and no face culling so thick-line quads show from both
+ * sides.
+ */
+fun withDebugDrawState(draw: () -> Unit) {
+    withDepthTest(true) {
+        withDepthFunc(GL_LEQUAL) {
+            withDepthMask(true) {
+                withBlendState(false) {
+                    withCullFace(false) {
+                        draw()
+                    }
+                }
+            }
+        }
     }
 }

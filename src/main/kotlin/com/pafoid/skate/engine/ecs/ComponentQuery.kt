@@ -19,13 +19,14 @@ object EcsChanges {
  * Cached query over every descendant of [root] (pre-order, parents before children) that has all
  * [required] component types (subtypes/interfaces match). The result is rebuilt lazily when the
  * root or the ECS structure version changed; dead objects (and disabled ones, unless
- * [includeDisabled]) are filtered when reading.
+ * [includeDisabled]) and objects outside [layerMask] are filtered when reading.
  */
 class ComponentQuery(
     private val root: () -> GameObject,
     private val required: List<KClass<*>>,
     private val topLevelOnly: Boolean = false,
     private val includeDisabled: Boolean = false,
+    private val layerMask: Int = GameObject.ALL_LAYERS_MASK,
 ) {
     private var snapshot: List<GameObject> = emptyList()
     private var builtVersion = -1L
@@ -60,7 +61,8 @@ class ComponentQuery(
         }
     }
 
-    @PublishedApi internal fun isLive(go: GameObject) = !go.isDead && (includeDisabled || go.isEnabled)
+    @PublishedApi internal fun isLive(go: GameObject) = !go.isDead && (includeDisabled || go.isEnabled) &&
+        (layerMask and GameObject.layerBit(go.layer)) != 0
 
     /** Live matching entities. Iterates a stable snapshot: structural changes show up on the next access. */
     val entities: List<GameObject> get() = refresh().filter { isLive(it) }

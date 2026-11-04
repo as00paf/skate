@@ -17,6 +17,7 @@ import com.pafoid.skate.engine.ecs.systems.GameObjectManager
 import com.pafoid.skate.engine.ecs.systems.InputSystem
 import com.pafoid.skate.engine.ecs.systems.PhysicsFrameSystem
 import com.pafoid.skate.engine.ecs.systems.PhysicsSystem
+import com.pafoid.skate.engine.ecs.systems.MountFollowSystem
 import com.pafoid.skate.engine.ecs.systems.PlayerMotionSystem
 import com.pafoid.skate.engine.ecs.systems.RagdollSystem
 import com.pafoid.skate.engine.ecs.systems.ScriptingSystem
@@ -30,6 +31,8 @@ import com.pafoid.skate.engine.ui.ReaderUiInputSource
 import com.pafoid.skate.engine.ui.UiActions
 import com.pafoid.skate.engine.render.ui.SdfFont
 import com.pafoid.skate.engine.ui.UiInputSystem
+import com.pafoid.skate.engine.ui.UiPointer
+import com.pafoid.skate.engine.ui.UiPointerMapping
 import com.pafoid.skate.engine.ui.UiLayoutSystem
 import com.pafoid.skate.engine.ui.UiRenderSystem
 import com.pafoid.skate.engine.ui.UiScreenSize
@@ -68,6 +71,20 @@ class Engine {
     val engineState = AtomicReference(EngineState.BOOTING)
     @Volatile
     var runtimePlaying = false
+
+    /** Set by the editor: UI is being edited, so modal canvases only react while the scene runs. */
+    @Volatile
+    var uiAuthoring = false
+
+    /**
+     * Pointer for the runtime UI, in the same space as the mouse listener's game viewport rect. Defaults to the GLFW
+     * cursor (window coordinates) and the raw left button. The editor overrides it with ImGui's mouse, because with
+     * multi-viewports the viewport rect is in desktop coordinates and ImGui owns the mouse over the viewport.
+     */
+    var uiPointer: () -> UiPointer = {
+        val mouse = inputProvider.mouseListener
+        UiPointer(mouse.getX(), mouse.getY(), mouse.isMouseButtonDown(0, ignoreImGui = true))
+    }
     val screens: MutableList<Screen> = CopyOnWriteArrayList()
     lateinit var renderer: Renderer
 
@@ -114,6 +131,7 @@ class Engine {
             DayNightCycleSystem(),
             DirectionalLightSystem(cameraManager),
             PlayerMotionSystem(cameraManager),
+            MountFollowSystem(),
             AnimationSystem(FrustumVisibility { cameraManager.camera.projection to cameraManager.camera.view }).also {
                 it.eventSystem = eventSystem
                 it.ikDebugSink = IkDebugSink { from, to, color -> debugRenderer.addLine3D(from, to, color) }
@@ -140,13 +158,17 @@ class Engine {
         return listOf(
             UiLayoutSystem(screen = { UiScreenSize(framebuffer.width, framebuffer.height) }),
             UiInputSystem(
-                ReaderUiInputSource(inputSystem.reader) { x, y ->
+                ReaderUiInputSource(inputSystem.reader) {
                     val mouse = inputProvider.mouseListener
-                    val size = mouse.gameViewportSize
-                    (x - mouse.gameViewportPos.x) * framebuffer.width / size.x to
-                        (y - mouse.gameViewportPos.y) * framebuffer.height / size.y
+                    val raw = uiPointer()
+                    val (x, y) = UiPointerMapping.toTarget(
+                        raw.x, raw.y,
+                        mouse.gameViewportPos.x, mouse.gameViewportPos.y, mouse.gameViewportSize.x, mouse.gameViewportSize.y,
+                        framebuffer.width, framebuffer.height,
+                    )
+                    UiPointer(x, y, raw.down)
                 }
-            ),
+            ).also { it.authoring = { uiAuthoring && !runtimePlaying } },
             UiRenderSystem(
                 drawList = { geometry.renderer2D.ui },
                 strings = stringManager,

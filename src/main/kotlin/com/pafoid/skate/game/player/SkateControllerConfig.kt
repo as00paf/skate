@@ -21,12 +21,13 @@ data class SkateControllerConfig(
     val bail: BailTuning = BailTuning(),
     /** Animation clip per [SkateState] name. */
     val animations: Map<String, String> = mapOf(
-        "IDLE" to "idle",
+        // No skateboarding clips ship yet; these are the closest bundled ones (a distinct idle so mounting reads).
+        "IDLE" to "idle_1",
         "PUSH" to "walking",
-        "RIDE" to "idle",
+        "RIDE" to "idle_1",
         "AIR" to "falling idle",
-        "GRIND" to "idle",
-        "MANUAL" to "idle",
+        "GRIND" to "idle_1",
+        "MANUAL" to "idle_1",
         "BAIL" to "falling idle",
     ),
 )
@@ -41,6 +42,9 @@ data class MountTuning(
     val offsetY: Float = -0.05f,
     /** Height of the feet above the ground while riding (board thickness, wheels to deck top). */
     val rideHeight: Float = 0.1f,
+    /** Stance: board centre relative to the feet across (x) and along (z, + = toward the nose) the board, meters. */
+    val stanceOffsetX: Float = 0f,
+    val stanceOffsetZ: Float = 0f,
     /** Camera framing while walking. */
     val walkCamera: CameraTuning = CameraTuning(4f, 1.4f),
     /** Camera framing while skating (further back, lower). */
