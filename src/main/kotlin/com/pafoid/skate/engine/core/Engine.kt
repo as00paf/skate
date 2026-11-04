@@ -17,6 +17,7 @@ import com.pafoid.skate.engine.ecs.systems.GameObjectManager
 import com.pafoid.skate.engine.ecs.systems.InputSystem
 import com.pafoid.skate.engine.ecs.systems.PhysicsFrameSystem
 import com.pafoid.skate.engine.ecs.systems.PhysicsSystem
+import com.pafoid.skate.engine.ecs.systems.MountFollowSystem
 import com.pafoid.skate.engine.ecs.systems.PlayerMotionSystem
 import com.pafoid.skate.engine.ecs.systems.RagdollSystem
 import com.pafoid.skate.engine.ecs.systems.ScriptingSystem
@@ -130,6 +131,7 @@ class Engine {
             DayNightCycleSystem(),
             DirectionalLightSystem(cameraManager),
             PlayerMotionSystem(cameraManager),
+            MountFollowSystem(),
             AnimationSystem(FrustumVisibility { cameraManager.camera.projection to cameraManager.camera.view }).also {
                 it.eventSystem = eventSystem
                 it.ikDebugSink = IkDebugSink { from, to, color -> debugRenderer.addLine3D(from, to, color) }

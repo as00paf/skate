@@ -47,7 +47,10 @@ class PlayerMotionSystem(
             apply(motion, body, controller, dt)
             val mountable = controller.behavior as? Mountable
             if (mountable != null && mount != null) {
-                if (motion.mount == MountRequest.MOUNT) lastPreset = null
+                if (motion.mount == MountRequest.MOUNT) {
+                    lastPreset = null
+                    snapRiderOnto(mountable, mount, body)
+                }
                 syncMount(mountable, mount, body)
                 val preset = mountable.cameraPreset
                 if (preset != null && preset != lastPreset) {
@@ -62,7 +65,8 @@ class PlayerMotionSystem(
                 footIk.update(animator.ik, controller.footTargets, controller.ground.standing && !riding, dt)
             }
 
-            if (motion.state != controller.state) {
+            // Mounting swaps clip sets even when the state name stays the same (on-foot IDLE -> riding IDLE)
+            if (motion.state != controller.state || motion.mount != MountRequest.NONE) {
                 controller.state = motion.state
                 motion.animation?.let { clip -> go.getComponent<Animator>()?.play(clip) }
             }
@@ -87,7 +91,9 @@ class PlayerMotionSystem(
             mountPressed = input.mountPressed,
             mountDistance = mount?.getWorldPosition()?.distance(position) ?: Float.NaN,
             crouch = input.crouchPressed,
-            grounded = controller.isGrounded,
+            grounded = (controller.behavior as? Mountable).let { m ->
+                MountMath.grounded(controller.ground, m?.mounted == true, m?.rideHeight ?: 0f, controller.behavior.ground.groundedDistance)
+            },
             horizontalSpeed = speed,
             velocityYaw = if (speed > MIN_HEADING_SPEED) kotlin.math.atan2(velocity.x, velocity.z) else Float.NaN,
             yaw = MotionMath.yawOfRotation(body.getRotation()),
@@ -97,23 +103,35 @@ class PlayerMotionSystem(
     }
 
     private fun findMount(name: String, self: GameObject): RigidBody3D? =
-        scene.children.firstOrNull { it !== self && it.name == name }?.getComponent<RigidBody3D>()
+        findMountObject(scene, name, self)?.getComponent<RigidBody3D>()
+
+    /** On mount, the rider steps onto the deck: takes the board's heading and stands so the board sits at the mount offset. */
+    private fun snapRiderOnto(mountable: Mountable, mount: RigidBody3D, character: RigidBody3D) {
+        val yaw = MotionMath.yawOfRotation(mount.getRotation())
+        character.rawBody?.setLocation(MountMath.riderFeet(mount.getWorldPosition(), yaw, mountable.mountOffset))
+        character.setRotation(Quaternionf().rotateY(yaw))
+        character.linearVelocity = Vector3f()
+        character.angularVelocity = Vector3f()
+    }
 
     /**
-     * Keeps the mount consistent with the character: ridden, it is carried at the feet with the character's
-     * heading and collides with nothing; otherwise it is a normal body that stays where it was left.
+     * Keeps the mount consistent with the character: ridden, it is a kinematic body carried at the feet with the
+     * character's heading that collides with nothing; otherwise it is a normal dynamic body left where it was.
+     * The rendered board is placed again from the final rider pose by [MountFollowSystem].
      */
     private fun syncMount(mountable: Mountable, mount: RigidBody3D, character: RigidBody3D) {
         mount.collisionLayer = MountMath.MOUNT_LAYER
         val characterMask = MountMath.characterMask(character.collisionMask)
         if (character.collisionMask != characterMask) character.collisionMask = characterMask
 
-        val mask = MountMath.mountMask(mountable.mounted)
-        if (mount.collisionMask != mask) mount.collisionMask = mask
+        val state = MountMath.mountBodyState(mountable.mounted)
+        if (mount.collisionMask != state.collisionMask) mount.collisionMask = state.collisionMask
+        mount.rawBody?.let { if (it.isKinematic != state.kinematic) it.isKinematic = state.kinematic }
         if (!mountable.mounted) return
 
-        mount.rawBody?.setLocation(character.getWorldPosition().add(mountable.mountOffset))
-        mount.setRotation(Quaternionf().rotateY(MotionMath.yawOfRotation(character.getRotation())))
+        val yaw = MotionMath.yawOfRotation(character.getRotation())
+        mount.rawBody?.setLocation(MountMath.mountPosition(character.getWorldPosition(), yaw, mountable.mountOffset))
+        mount.setRotation(Quaternionf().rotateY(yaw))
         mount.linearVelocity = Vector3f()
         mount.angularVelocity = Vector3f()
     }
@@ -169,3 +187,7 @@ class PlayerMotionSystem(
         motion.impulse?.let { body.applyImpulse(it) }
     }
 }
+
+/** The top-level object named [name] other than [self]: the mount a [Mountable] character refers to. */
+internal fun findMountObject(scene: GameObject, name: String, self: GameObject): GameObject? =
+    scene.children.firstOrNull { it !== self && it.name == name }

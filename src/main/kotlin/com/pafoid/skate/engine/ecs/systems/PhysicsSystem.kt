@@ -276,7 +276,8 @@ class PhysicsSystem(
     /** Probes the ground below a player-controlled body and any climbable step ahead of it. */
     private fun probeGround(controller: PlayerController, body: RigidBody3D) {
         val config = controller.behavior.ground
-        val detector = GroundDetector(config) { from, to -> physics3d.raycastClosest(from, to, body) }
+        // Probe only what the character collides with: a ridden board (mount layer) must not count as ground
+        val detector = GroundDetector(config) { from, to -> physics3d.raycast(from, to, body.collisionMask, body)?.fraction }
         val origin = body.getWorldPosition()
         val feet = Vector3f(origin.x, origin.y - config.footOffset, origin.z)
 
@@ -290,7 +291,7 @@ class PhysicsSystem(
         controller.footIk.legs.forEachIndexed { i, leg ->
             val target = controller.footTargets.getOrNull(i) ?: return@forEachIndexed
             FootPlacement.compute(feet, yaw, leg, controller.footIk, target) { from, to ->
-                physics3d.raycast(from, to, excludeBody = body)
+                physics3d.raycast(from, to, body.collisionMask, body)
             }
         }
     }
