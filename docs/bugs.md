@@ -24,6 +24,12 @@ scan of `TODO`/`FIXME` markers in `src/main`. Runtime repro steps are marked
 - Impact: no test (including architecture guards) can run; CI (QA-06) and coverage (QA-02) are blocked.
 - Plan: QA fixes in tests only; any case where the test is right and production regressed gets reported separately.
 
+### BUG-019 — Showcase slider joint never moves: slider limits run the other way in Bullet (P1, owner: PHY)
+- Found by QA-13 (`FeatureShowcaseSmokeTest.Showcase_Joints_SliderBlockDropsToItsLowerLimit`).
+- Repro: new project, open `FeatureShowcase`, press Play. `[Joints] SliderBlock` (y=3.5, axis +Y, `limitMin=-2`, `limitMax=0`) should drop 2 m and stop. It stays at y≈3.49.
+- Cause: `SliderConstraint3D` documents the limits as travel of body A along `axisA`. `BulletPhysics3D` passes them straight to `SliderJoint.setLower/UpperLinLimit`, and Bullet measures the position as B relative to A. When the block falls, that value is positive, so the upper limit 0 pins it. With the limits flipped to `[0, 2]`, the block drops 2 m and stops (checked by hand, then reverted).
+- Fix (PHY): negate and swap the limits in the Bullet mapping (or the frames) so `[min, max]` means body displacement along the axis, plus a backend unit test. Don't change the showcase values.
+
 ## Suspected (from source markers, to verify at runtime)
 
 | ID | Pri | Owner | File | Symptom / repro (to verify) |
