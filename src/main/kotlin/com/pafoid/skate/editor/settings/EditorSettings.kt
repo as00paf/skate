@@ -18,7 +18,9 @@ data class EditorSettings(
     var lastOpenedProject: String? = null,
     var loadLastProjectOnStartup: Boolean = true,
     var lastClosedProjectPath: String? = null,
-    var editorInputMappings: EditorInputMappings = EditorInputMappings()
+    var editorInputMappings: EditorInputMappings = EditorInputMappings(),
+    var completionAutoPopup: Boolean = true,
+    var completionDelayMs: Int = 200,
 ) {
 
     fun addRecentProject(projectPath: String): EditorSettings {
