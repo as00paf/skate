@@ -12,6 +12,7 @@
 | `Floor` | 20 x 20 m static asphalt slab, top surface at y = 0, box collider. |
 | `Concrete_Ledge` | Static concrete ledge at (3, 0.25, -3) with a box collider, to grind. |
 | `QuarterPipe`, `Funbox` | GPL-04 prefabs: a wooden quarter pipe 6 m behind the spawn (riding face toward the skater) and a concrete funbox at (-4, 0, 4). They also give the follow camera's spring arm something to collide with. |
+| `Music` | Looping background music (AUD-10): a non-positional `AudioComponent` on the `MUSIC` bus at volume 0.5, playing `Assets/EngineDefaults/Sounds/Music/aquarela do brasil.mp3` from Play until Stop. The MP3 is streamed. The track (by the project author) is bundled at `assets/sounds/music/aquarela do brasil.mp3` and copied into every new project. If a project's copy is missing, Play logs one `Sound file not found` warning and the scene runs silently. |
 | `HUD` | In-game UI canvas: `ScoreText` top-left (`hud.score`, "Score 0") and `RestartButton` top-right (`pause.restart`). Both keys exist in the bundled game and editor string tables. |
 
 No 2D sprites or test cubes. Feature demos live in `FeatureShowcase`, not in `MainScene`.
@@ -51,7 +52,7 @@ Both components are driven by the engine's `CameraControlSystem`, in editor Play
 | `Fog` (front row, far right) | Eight orange `Post_*` pillars recede along the right edge of the floor. In Play, the overlay's **Cycle fog** button (top right) steps the scene fog through off, linear, exp, exp² and exp² with height fog. Models, the floor, the sky and particles fog alike. The sky fogs like geometry at the far plane, and height fog keeps the sky clear overhead. In the editor, set the same options on the scene's `EnvironmentComponent` (`renderFog`, `fogMode`, `fogDensity`, `fogStart`/`fogEnd`, `fogHeight`, `fogHeightFalloff`) (REN-09). |
 | `UI` (screen overlay) | In-game (non-ImGui) canvas: title and hint, the area legend (Overview plus one focus button per area), and bottom-right a tinted panel, formatted text ("Formatted text: 42"), a button with solid hover/press backgrounds (GUI-07), a 60% progress bar and a draggable slider. No `!!key!!` text; the layout keeps its corners when the window is resized. |
 
-Overlay strings are `showcase.*` keys in the bundled `game_strings` and `editor_strings` tables (EN and FR); projects' own `Assets/strings.properties` are not loaded by the engine yet.
+Overlay strings are `showcase.*` keys in the bundled `assets/strings/game/showcase` table (EN and FR), which the editor merges too; projects' own `Assets/strings.properties` are not loaded by the engine yet.
 
 ### Not covered yet
 

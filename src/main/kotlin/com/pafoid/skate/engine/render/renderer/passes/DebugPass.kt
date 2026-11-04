@@ -5,6 +5,7 @@ import com.pafoid.skate.engine.ecs.components.GridLines
 import com.pafoid.skate.engine.ecs.systems.CameraManager
 import com.pafoid.skate.engine.getComponent
 import com.pafoid.skate.engine.render.renderer.DebugRenderer
+import com.pafoid.skate.engine.render.renderer.GroundDepthPull
 import com.pafoid.skate.engine.render.utils.withBlendState
 import com.pafoid.skate.engine.render.utils.withCullFace
 import com.pafoid.skate.engine.render.utils.withDepthFunc
@@ -27,6 +28,7 @@ import kotlin.math.tan
  * viewport. Called before drawing because earlier passes (shadow, picking) bind their own targets. Debug geometry is
  * drawn after post-processing, so it is not tonemapped, and it depth-tests against the scene depth that the geometry
  * pass left in that target.
+ * @param targetHeight Height in pixels of the presented target, for the grid's depth pull.
  * @param drawState Runs the draw inside the GL state debug geometry needs ([withDebugDrawState]); injectable so the
  * pass can be tested without a GL context.
  */
@@ -35,6 +37,7 @@ class DebugPass(
     private val cameraManager: CameraManager,
     private val bindTarget: () -> Unit = {},
     private val drawState: (draw: () -> Unit) -> Unit = ::withDebugDrawState,
+    private val targetHeight: () -> Int = { 1080 },
 ) : BaseRenderPass() {
 
     override val name: String = "DebugPass"
@@ -62,6 +65,9 @@ class DebugPass(
         bindTarget()
         scene.getComponent<GridLines>()?.let { renderGridLines(scene, it) }
 
+        // Pixel size drives the grid's grazing-angle depth pull (GroundDepthPull, REN-19)
+        val camera = cameraManager.camera
+        debugRenderer.pixelAngle = GroundDepthPull.pixelAngle(Math.toRadians(camera.fov.toDouble()).toFloat() * camera.zoom, targetHeight())
         drawState { debugRenderer.draw() }
     }
 
@@ -181,7 +187,7 @@ class DebugPass(
 
                 lineStart.set(xMin, centerY, worldZ)
                 lineEnd.set(xMax, centerY, worldZ)
-                debugRenderer.addLine3D(lineStart, lineEnd, color)
+                debugRenderer.addGroundLine3D(lineStart, lineEnd, color)
             }
 
             // Draw X-aligned lines (constant X, varying Z)
@@ -204,7 +210,7 @@ class DebugPass(
 
                 lineStart.set(worldX, centerY, zMin)
                 lineEnd.set(worldX, centerY, zMax)
-                debugRenderer.addLine3D(lineStart, lineEnd, color)
+                debugRenderer.addGroundLine3D(lineStart, lineEnd, color)
             }
         }
     }
@@ -242,12 +248,12 @@ class DebugPass(
         // X-axis crosshair (at grid level)
         lineStart.set(-markerSize, 0.0f, 0f)
         lineEnd.set(markerSize, 0.0f, 0f)
-        debugRenderer.addLine3D(lineStart, lineEnd, centerMarkerColor)
+        debugRenderer.addGroundLine3D(lineStart, lineEnd, centerMarkerColor)
 
         // Z-axis crosshair (at grid level)
         lineStart.set(0f, 0.0f, -markerSize)
         lineEnd.set(0f, 0.0f, markerSize)
-        debugRenderer.addLine3D(lineStart, lineEnd, centerMarkerColor)
+        debugRenderer.addGroundLine3D(lineStart, lineEnd, centerMarkerColor)
     }
 
     /**
@@ -273,7 +279,8 @@ class DebugPass(
             from = Vector3f(-axisLength, gridY, 0f),
             to = Vector3f(axisLength, gridY, 0f),
             color = xAxisColor,
-            thickness = thickness
+            thickness = thickness,
+            ground = true,
         )
 
         // Z-axis (blue) - lies flat on grid plane, rendered thick using quad ribbon
@@ -281,7 +288,8 @@ class DebugPass(
             from = Vector3f(0f, gridY, -axisLength),
             to = Vector3f(0f, gridY, axisLength),
             color = zAxisColor,
-            thickness = thickness
+            thickness = thickness,
+            ground = true,
         )
 
         // Y-axis (green) - goes straight UP from grid (not below), rendered thick using quad ribbon

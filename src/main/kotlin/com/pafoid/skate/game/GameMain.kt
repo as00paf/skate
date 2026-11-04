@@ -61,7 +61,7 @@ fun main(args: Array<String>) {
 
 private fun installGameUi(window: Window) {
     val scene = engine.sceneManager.currentScene ?: return
-    engine.stringManager.addStrings(Assets.Strings.GAME_STRINGS_EN)
+    engine.stringManager.addStrings(Assets.Strings.GAME_STRINGS)
     val hud = GameUi.createHud()
     val pauseMenu = GameUi.createPauseMenu()
     GameUiSystem.attach(scene, hud, pauseMenu)

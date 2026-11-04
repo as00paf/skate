@@ -369,6 +369,13 @@ class PhysicsSystem(
 
         controller.wasGrounded = controller.ground.standing
         controller.ground = detector.probe(feet)
+        // What is underfoot: a sphere as wide as the ground samples, so a thin rail between the rays still counts.
+        controller.groundTag = physics3d.shapeCast(
+            ColliderShape.Capsule(maxOf(config.sampleRadius, GROUND_TAG_MIN_RADIUS), SPHERE_CAPSULE_HEIGHT, 1),
+            Vector3f(feet).add(0f, config.probeStartHeight + GROUND_TAG_MIN_RADIUS, 0f),
+            Vector3f(feet).sub(0f, config.snapDistance, 0f),
+            body.collisionMask, body,
+        )?.takeIf { it.normal.y > GROUND_TAG_MIN_NORMAL_Y }?.gameObject?.tag?.takeIf { it.isNotEmpty() }
 
         val velocity = body.linearVelocity
         controller.stepAhead = if (config.stepUp) detector.findStep(feet, velocity.x, velocity.z) else null
@@ -404,6 +411,9 @@ class PhysicsSystem(
     private companion object {
         /** A capsule this short is a sphere for every practical purpose (not every backend has a sphere shape). */
         const val SPHERE_CAPSULE_HEIGHT = 1e-3f
+        const val GROUND_TAG_MIN_RADIUS = 0.05f
+        /** Only a surface hit from above counts as underfoot, not the side of a ledge brushed in passing. */
+        const val GROUND_TAG_MIN_NORMAL_Y = 0.5f
     }
 }
 

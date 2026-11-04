@@ -2,6 +2,8 @@ package com.pafoid.skate.engine.audio
 
 import com.pafoid.skate.engine.assets.data.SourceApi
 import org.lwjgl.openal.AL10.AL_BUFFER
+import org.lwjgl.openal.AL10.AL_BUFFERS_PROCESSED
+import org.lwjgl.openal.AL10.AL_BUFFERS_QUEUED
 import org.lwjgl.openal.AL10.AL_GAIN
 import org.lwjgl.openal.AL10.AL_INITIAL
 import org.lwjgl.openal.AL10.AL_LOOPING
@@ -31,6 +33,21 @@ class FakeAudioBackend {
         var buffer = 0
         val position = Vector3f()
         val isPlaying get() = state == AL_PLAYING
+        /** Streamed buffers waiting to play, and those already played (until unqueued). */
+        val queued = ArrayDeque<Int>()
+        val processed = ArrayDeque<Int>()
+    }
+
+    /** One buffer upload: what a streaming source sent to OpenAL. */
+    class Upload(val bufferId: Int, val stereo: Boolean, val samples: Int, val sampleRate: Int)
+
+    val uploads = mutableListOf<Upload>()
+
+    /** Simulates playback time passing: every queued buffer of [sourceId] has been played. */
+    fun playQueued(sourceId: Int) {
+        val s = sources[sourceId] ?: return
+        s.processed.addAll(s.queued)
+        s.queued.clear()
     }
 
     /** Live (not yet deleted) sources by id. */
@@ -85,16 +102,22 @@ class FakeAudioBackend {
         override fun source3f(id: Int, param: Int, x: Float, y: Float, z: Float) {
             if (param == AL_POSITION) sources[id]?.position?.set(x, y, z)
         }
-        override fun getSourceInt(id: Int, param: Int) =
-            if (param == AL_SOURCE_STATE) sources[id]?.state ?: AL_STOPPED else 0
+        override fun getSourceInt(id: Int, param: Int) = when (param) {
+            AL_SOURCE_STATE -> sources[id]?.state ?: AL_STOPPED
+            AL_BUFFERS_QUEUED -> sources[id]?.let { it.queued.size + it.processed.size } ?: 0
+            AL_BUFFERS_PROCESSED -> sources[id]?.processed?.size ?: 0
+            else -> 0
+        }
         override fun play(id: Int) { sources[id]?.state = AL_PLAYING }
         override fun pause(id: Int) { sources[id]?.state = AL_PAUSED }
         override fun stop(id: Int) { sources[id]?.state = AL_STOPPED }
         override fun genBuffer() = nextBuffer++
         override fun deleteBuffer(id: Int) {}
-        override fun bufferData(id: Int, stereo: Boolean, pcm: ShortArray, sampleRate: Int) {}
-        override fun queueBuffer(source: Int, buffer: Int) {}
-        override fun unqueueBuffer(source: Int) = 0
+        override fun bufferData(id: Int, stereo: Boolean, pcm: ShortArray, sampleRate: Int) {
+            uploads += Upload(id, stereo, pcm.size, sampleRate)
+        }
+        override fun queueBuffer(source: Int, buffer: Int) { sources[source]?.queued?.addLast(buffer) }
+        override fun unqueueBuffer(source: Int) = sources[source]?.processed?.removeFirstOrNull() ?: 0
     }
 
     val efx = object : EffectsApi {

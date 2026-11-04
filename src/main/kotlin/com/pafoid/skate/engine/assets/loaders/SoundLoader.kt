@@ -1,6 +1,7 @@
 package com.pafoid.skate.engine.assets.loaders
 
 import com.pafoid.skate.engine.assets.data.SoundBuffer
+import com.pafoid.skate.engine.audio.Mp3Decoder
 import com.pafoid.skate.engine.core.LoggerService
 import com.pafoid.skate.engine.core.LoggerService.LogLevel
 import org.lwjgl.openal.AL10.AL_FORMAT_MONO16
@@ -34,6 +35,7 @@ class SoundLoader(private val logger: LoggerService) {
             return when (file.extension.lowercase()) {
                 "ogg" -> loadOgg(file.path)
                 "wav" -> loadWav(file.path)
+                "mp3" -> loadMp3(file.path)
                 else -> {
                     logger.log(
                         "SoundBuffer: Unsupported format '${file.extension}' for '$filePath'",
@@ -114,6 +116,19 @@ class SoundLoader(private val logger: LoggerService) {
             )
         }
         return DecodedWav(bytes, format.channels, format.sampleSizeInBits, format.sampleRate.toInt())
+    }
+
+    /** Short MP3s are decoded whole; long ones are streamed by AudioSystem instead (see StreamPolicy). */
+    private fun loadMp3(path: String): SoundBuffer {
+        logger.log("SoundBuffer: Loading MP3 '$path'", LogLevel.INFO)
+        Mp3Decoder(path).use { decoder ->
+            val pcm = decoder.readAll()
+            val soundBuffer = SoundBuffer(path)
+            soundBuffer.durationInSeconds = pcm.size.toFloat() / decoder.channels / decoder.sampleRate
+            soundBuffer.bufferId = alGenBuffers()
+            alBufferData(soundBuffer.bufferId, if (decoder.channels == 1) AL_FORMAT_MONO16 else AL_FORMAT_STEREO16, pcm, decoder.sampleRate)
+            return soundBuffer
+        }
     }
 
     private fun loadWav(path: String): SoundBuffer {

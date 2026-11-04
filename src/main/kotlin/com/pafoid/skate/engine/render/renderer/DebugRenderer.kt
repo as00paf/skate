@@ -28,6 +28,9 @@ import kotlin.math.sin
 
 private const val MAX_LINES = 3000
 private const val MAX_TRIANGLES = 1000
+private const val CAMERA_POS_UNIFORM = "uCameraPos"
+private const val PIXEL_ANGLE_UNIFORM = "uPixelAngle"
+private const val GROUND_UNIFORM = "uGround"
 
 class DebugRenderer(
     private val shader: Shader,
@@ -35,6 +38,8 @@ class DebugRenderer(
 ) {
 
     private val lines = mutableListOf<Line3D>()
+    private val groundLines = mutableListOf<Line3D>()
+    private val groundTriangles = mutableListOf<Triangle3D>()
     private val triangles = mutableListOf<Triangle3D>()
     
     private val lineVertexData = FloatArray(MAX_LINES * 6 * 2)
@@ -89,6 +94,8 @@ class DebugRenderer(
     fun beginFrame() {
         if (!started) start()
         lines.removeIf { it.beginFrame() < 0 }
+        groundLines.removeIf { it.beginFrame() < 0 }
+        groundTriangles.removeIf { it.beginFrame() < 0 }
         triangles.removeIf { it.beginFrame() < 0 }
     }
 
@@ -103,50 +110,85 @@ class DebugRenderer(
         shader.uploadMat4f(PROJECTION, camera.projection)
         shader.uploadMat4f(VIEW, camera.view)
 
-        if (triangles.isNotEmpty()) {
-            var index = 0
-            for (tri in triangles) {
-                val pts = arrayOf(tri.v1, tri.v2, tri.v3)
-                for (p in pts) {
-                    triangleVertexData[index++] = p.x
-                    triangleVertexData[index++] = p.y
-                    triangleVertexData[index++] = p.z
-                    triangleVertexData[index++] = tri.color.x
-                    triangleVertexData[index++] = tri.color.y
-                    triangleVertexData[index++] = tri.color.z
-                }
-            }
-            glBindBuffer(GL_ARRAY_BUFFER, triangleVboId)
-            glBufferSubData(GL_ARRAY_BUFFER, 0, triangleVertexData)
-            glBindVertexArray(triangleVaoId)
-            glDrawArrays(GL_TRIANGLES, 0, triangles.size * 3)
-        }
-
-        if (lines.isNotEmpty()) {
-            var index = 0
-            for (line in lines) {
-                val pts = arrayOf(line.from, line.to)
-                for (p in pts) {
-                    lineVertexData[index++] = p.x
-                    lineVertexData[index++] = p.y
-                    lineVertexData[index++] = p.z
-                    lineVertexData[index++] = line.color.x
-                    lineVertexData[index++] = line.color.y
-                    lineVertexData[index++] = line.color.z
-                }
-            }
-            glBindBuffer(GL_ARRAY_BUFFER, vboId)
-            glBufferSubData(GL_ARRAY_BUFFER, 0, lineVertexData)
-            glBindVertexArray(vaoId)
-            glDrawArrays(GL_LINES, 0, lines.size * 2)
-        }
+        shader.uploadVec3f(CAMERA_POS_UNIFORM, cameraManager.transform.worldMatrix.getTranslation(cameraPosition))
+        shader.uploadFloat(PIXEL_ANGLE_UNIFORM, pixelAngle)
+        drawTriangles()
+        drawLines()
 
         glBindVertexArray(0)
         shader.stop()
     }
 
+    /** Radians per pixel at the view centre ([GroundDepthPull.pixelAngle]); set by the debug pass every frame. */
+    var pixelAngle: Float = GroundDepthPull.pixelAngle(Math.toRadians(45.0).toFloat(), 1080)
+
+    private val cameraPosition = Vector3f()
+
+    /** Ground triangles then the others, uploaded once and drawn as two ranges (ground pull on, then off). */
+    private fun drawTriangles() {
+        if (groundTriangles.isEmpty() && triangles.isEmpty()) return
+        var index = 0
+        for (batch in arrayOf(groundTriangles, triangles)) for (tri in batch) {
+            for (p in arrayOf(tri.v1, tri.v2, tri.v3)) {
+                triangleVertexData[index++] = p.x
+                triangleVertexData[index++] = p.y
+                triangleVertexData[index++] = p.z
+                triangleVertexData[index++] = tri.color.x
+                triangleVertexData[index++] = tri.color.y
+                triangleVertexData[index++] = tri.color.z
+            }
+        }
+        glBindBuffer(GL_ARRAY_BUFFER, triangleVboId)
+        glBufferSubData(GL_ARRAY_BUFFER, 0, triangleVertexData)
+        glBindVertexArray(triangleVaoId)
+        if (groundTriangles.isNotEmpty()) {
+            shader.uploadInt(GROUND_UNIFORM, 1)
+            glDrawArrays(GL_TRIANGLES, 0, groundTriangles.size * 3)
+        }
+        if (triangles.isNotEmpty()) {
+            shader.uploadInt(GROUND_UNIFORM, 0)
+            glDrawArrays(GL_TRIANGLES, groundTriangles.size * 3, triangles.size * 3)
+        }
+    }
+
+    /** Ground lines then the others, uploaded once into one buffer and drawn as two ranges (ground pull on, then off). */
+    private fun drawLines() {
+        if (groundLines.isEmpty() && lines.isEmpty()) return
+        var index = 0
+        for (batch in arrayOf(groundLines, lines)) for (line in batch) {
+            for (p in arrayOf(line.from, line.to)) {
+                lineVertexData[index++] = p.x
+                lineVertexData[index++] = p.y
+                lineVertexData[index++] = p.z
+                lineVertexData[index++] = line.color.x
+                lineVertexData[index++] = line.color.y
+                lineVertexData[index++] = line.color.z
+            }
+        }
+        glBindBuffer(GL_ARRAY_BUFFER, vboId)
+        glBufferSubData(GL_ARRAY_BUFFER, 0, lineVertexData)
+        glBindVertexArray(vaoId)
+        if (groundLines.isNotEmpty()) {
+            shader.uploadInt(GROUND_UNIFORM, 1)
+            glDrawArrays(GL_LINES, 0, groundLines.size * 2)
+        }
+        if (lines.isNotEmpty()) {
+            shader.uploadInt(GROUND_UNIFORM, 0)
+            glDrawArrays(GL_LINES, groundLines.size * 2, lines.size * 2)
+        }
+    }
+
+    /**
+     * A line lying on a horizontal floor, e.g. the editor grid (REN-19): it gets the grazing-angle depth pull
+     * ([GroundDepthPull]) so it does not z-fight with the floor far away.
+     */
+    fun addGroundLine3D(from: Vector3f, to: Vector3f, color: Vector3f, lifetime: Int = 1) {
+        if (lines.size + groundLines.size >= MAX_LINES) return
+        groundLines.add(Line3D(Vector3f(from), Vector3f(to), Vector3f(color), lifetime))
+    }
+
     fun addLine3D(from: Vector3f, to: Vector3f, color: Vector3f = Vector3f(0f, 1f, 0f), lifetime: Int = 1) {
-        if (lines.size >= MAX_LINES) return
+        if (lines.size + groundLines.size >= MAX_LINES) return
         lines.add(Line3D(Vector3f(from), Vector3f(to), Vector3f(color), lifetime))
     }
 
@@ -155,9 +197,11 @@ class DebugRenderer(
         to: Vector3f,
         color: Vector3f = Vector3f(0f, 1f, 0f),
         thickness: Float = 0.08f,
-        lifetime: Int = 1
+        lifetime: Int = 1,
+        /** True for a ribbon lying on a horizontal floor (the grid's X/Z axes): it gets the ground depth pull. */
+        ground: Boolean = false,
     ) {
-        if (triangles.size >= MAX_TRIANGLES - 2) return
+        if (triangles.size + groundTriangles.size >= MAX_TRIANGLES - 2) return
         
         val direction = Vector3f(to).sub(from)
         val lineLength = direction.length()
@@ -168,9 +212,10 @@ class DebugRenderer(
         val cameraToLine =
             Vector3f(from).sub(cameraManager.transform.worldMatrix.getTranslation(Vector3f())).normalize()
         
-        var perpendicular = Vector3f(lineDir).cross(cameraToLine).normalize()
+        // Ground ribbons lie flat in the floor plane (a camera-facing one would dip half its width below the floor)
+        var perpendicular = if (ground) Vector3f(lineDir).cross(0f, 1f, 0f).normalize() else Vector3f(lineDir).cross(cameraToLine).normalize()
         
-        if (perpendicular.length() < 0.01f) {
+        if (perpendicular.length() < 0.01f || !perpendicular.isFinite) {
             val up = if (abs(lineDir.y) > 0.9f) Vector3f(0f, 0f, 1f) else Vector3f(0f, 1f, 0f)
             perpendicular = Vector3f(lineDir).cross(up).normalize()
         }
@@ -182,12 +227,13 @@ class DebugRenderer(
         val v3 = Vector3f(to).add(perpendicular)
         val v4 = Vector3f(to).sub(perpendicular)
         
-        triangles.add(Triangle3D(v1, v2, v3, Vector3f(color), lifetime))
-        triangles.add(Triangle3D(v2, v4, v3, Vector3f(color), lifetime))
+        val target = if (ground) groundTriangles else triangles
+        target.add(Triangle3D(v1, v2, v3, Vector3f(color), lifetime))
+        target.add(Triangle3D(v2, v4, v3, Vector3f(color), lifetime))
     }
 
     fun addTriangle3D(v1: Vector3f, v2: Vector3f, v3: Vector3f, color: Vector3f, lifetime: Int = 1) {
-        if (triangles.size >= MAX_TRIANGLES) return
+        if (triangles.size + groundTriangles.size >= MAX_TRIANGLES) return
         triangles.add(Triangle3D(Vector3f(v1), Vector3f(v2), Vector3f(v3), Vector3f(color), lifetime))
     }
 

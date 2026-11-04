@@ -17,6 +17,30 @@
 | MANUAL | `manual` | procedural slot `manual` |
 | BAIL | `bail` | clip `falling idle` |
 
+### Gameplay side (GPL-06)
+
+`PlayerMotionSystem` hands each frame's motion to `CharacterAnimationDriver`. The driver sends the request when the
+state changes, or on every mount and dismount. Every frame it also does two things:
+
+- **Blend times:** `blendTimes` in `skater.character.json` is a map from controller state (including `land`) to fade
+  seconds. It replaces the controller's transition durations through `AnimationStateMachine.blendOverrides`. States
+  not listed keep the JSON durations.
+- **Parameters:** `SkateBehavior.writeAnimationParameters` writes float parameters for blend trees and conditions:
+  `speed`, `verticalSpeed`, `airTime`, `landImpact` (fall speed of the last landing, m/s), `manualBalance` (-1..1
+  toward a bail) and `turn` (steering, -1..1).
+
+What decides each state:
+
+| State | Gameplay trigger |
+|---|---|
+| PUSH | push held (Shift / right trigger, or stick forward past `input.pushStickThreshold`) below `push.maxSpeed` |
+| RIDE | rolling at or above `ride.idleSpeed` without pushing |
+| AIR (`ollie`) | jump on the ground (`air.ollieImpulse`), or rolling off an edge for longer than `air.coyoteTime` |
+| `land` | the controller's own state, after touching down from AIR |
+| GRIND | `GRINDABLE`-tagged surface underfoot at `grind.minEntrySpeed` or faster, from RIDE or from AIR while falling. The ground probe reports the tag in `PlayerController.groundTag` with a short sphere sweep, so thin rails count. |
+| MANUAL | crouch held (Left Ctrl / LB) while riding at `manual.minSpeed` or faster |
+| BAIL | landing at `air.bailImpactSpeed` or faster, landing more than `air.landingToleranceDeg` sideways, losing the manual balance, or grinding too slowly |
+
 `land` is controller-only. It is entered from `ollie` when a ground request arrives, and it exits to that request after it has played. The any-state transitions into ground states list it in `exceptFrom` so they can't cut it short.
 
 ## Procedural slots and dropping in real clips
