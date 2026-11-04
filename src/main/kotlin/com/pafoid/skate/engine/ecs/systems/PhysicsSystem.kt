@@ -70,10 +70,9 @@ class PhysicsSystem(
     override fun init(scene: Scene) {
         super.init(scene)
         releaseObjectsOutsideScene()
-        bodies.forEach {
-            trackedState(it)
-            physics3d.add(it)
-        }
+        // Adds new bodies; bodies kept from a previous load restart from the loaded pose
+        bodies.forEach { teleport(it) }
+        simulating = false
 
         scene.getComponent<ScenePhysicsComponent>()?.let { component ->
             physics3d.debugEnabled = component.debugEnabled
@@ -98,6 +97,26 @@ class PhysicsSystem(
         var stamp = 0L
         private var initialized = false
 
+        /** The Transform values the body was last synced to (or that the simulation last wrote). */
+        private val syncedPos = Vector3f()
+        private val syncedRot = Vector3f()
+        private val syncedScale = Vector3f()
+
+        fun markSynced(t: Transform) {
+            syncedPos.set(t.translation)
+            syncedRot.set(t.rotation)
+            syncedScale.set(t.scale)
+        }
+
+        fun poseMatches(t: Transform) = t.translation == syncedPos && t.rotation == syncedRot
+        fun scaleMatches(t: Transform) = t.scale == syncedScale
+
+        /** Restarts interpolation at the body's current pose so a teleport does not blend from the old one. */
+        fun restartAt(handle: IRigidBodyHandle) {
+            initialized = false
+            push(handle)
+        }
+
         fun push(handle: IRigidBodyHandle) {
             if (initialized) {
                 prevPos.set(currPos)
@@ -120,8 +139,15 @@ class PhysicsSystem(
     private fun trackedState(go: GameObject): BodyState =
         states.getOrPut(go) { BodyState(go).also { stateList.add(it) } }
 
-    /** Per-frame work: writes interpolated poses into transforms and draws debug shapes. */
+    /**
+     * Per-frame work. In edit mode, bodies follow Transform edits (see [syncEditedTransforms]); while running,
+     * interpolated poses are written into transforms. Then debug shapes are drawn.
+     */
     fun onFrame(dt: Float, alpha: Float) {
+        if (!scene.isRunning) {
+            simulating = false
+            syncEditedTransforms()
+        }
         physics3d.debugEnabled = isDebugEnabled()
         physics3d.debugDraw(dt)
         if (!scene.isRunning) return
@@ -135,11 +161,68 @@ class PhysicsSystem(
             transform.translation.set(tempPos)
             blendedRot.getEulerAnglesXYZ(tempEuler)
             transform.rotation.set(tempEuler.x.toDegreesF(), tempEuler.y.toDegreesF(), tempEuler.z.toDegreesF())
+            state.markSynced(transform)
         }
     }
 
+    /** False until the first fixed step after the scene starts running. */
+    private var simulating = false
+
+    /**
+     * Brings the world in line with Transforms changed outside the simulation (inspector, gizmos, undo/redo, scripts
+     * in edit mode). Bodies whose pose changed are teleported with velocities cleared, bodies whose scale changed are
+     * rebuilt, and new or removed objects gain or lose their body. Only runs while the scene is not simulating:
+     * during play other systems (e.g. [MountFollowSystem]) write transforms on purpose; use [teleport] there.
+     */
+    fun syncEditedTransforms() {
+        val stamp = ++stepStamp
+        var liveCount = 0
+        bodies.forEach { go ->
+            liveCount++
+            val state = trackedState(go)
+            state.stamp = stamp
+            val transform = go.getComponent<Transform>()?.also { state.transform = it } ?: return@forEach
+            val body = go.getComponent<RigidBody3D>() ?: return@forEach
+            when {
+                body.rawBody == null -> physics3d.add(go)
+                !state.scaleMatches(transform) -> {
+                    physics3d.remove(go)
+                    physics3d.add(go)
+                }
+                !state.poseMatches(transform) -> physics3d.teleport(go)
+                else -> return@forEach
+            }
+            state.markSynced(transform)
+            body.rawBody?.let { state.restartAt(it) }
+        }
+        if (stateList.size != liveCount) removeStaleBodies(stamp)
+    }
+
+    /**
+     * Moves [go]'s body to its current Transform (rebuilding it if the scale changed) and clears its velocities.
+     * For poses set on purpose at runtime (respawn, editor edits during play).
+     */
+    fun teleport(go: GameObject) {
+        val transform = go.getComponent<Transform>() ?: return physics3d.add(go)
+        val body = go.getComponent<RigidBody3D>() ?: return
+        val state = trackedState(go)
+        if (body.rawBody != null && !state.scaleMatches(transform)) physics3d.remove(go)
+        physics3d.teleport(go)
+        state.transform = transform
+        state.markSynced(transform)
+        body.rawBody?.let { state.restartAt(it) }
+    }
+
     override fun fixedUpdate(fixedDt: Float) {
-        if (!scene.isRunning) return
+        if (!scene.isRunning) {
+            simulating = false
+            return
+        }
+        if (!simulating) {
+            // Catch edits made since the last edit-mode frame so play starts from the edited pose
+            syncEditedTransforms()
+            simulating = true
+        }
         vehicles.forEach { go ->
             val vehicle = go.getComponent<VehicleComponent>() ?: return@forEach
             val body = go.getComponent<RigidBody3D>() ?: return@forEach
@@ -163,7 +246,7 @@ class PhysicsSystem(
             val body = go.getComponent<RigidBody3D>() ?: return@forEach
             val handle = body.rawBody
             if (handle == null) {
-                physics3d.add(go) // Add to physics if raw body is null
+                teleport(go) // object or body added while running
             } else {
                 state.push(handle)
             }
