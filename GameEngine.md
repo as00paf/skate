@@ -139,7 +139,7 @@ The renderer works but needs cleaner APIs, caching, dynamic shaders, better mate
   - Do: Human-reported on PR #12 after PHY-10 made debug lines visible again: the skater looks transparent and grid lines and camera/light indicators draw wrongly (order/depth). Find the root cause in the DebugPass/PostProcessPass target and state handling and fix it.
   - Done when: Opaque models are opaque, grid and collider lines depth-test against the scene, icons draw as intended; regression test where feasible.
   - Deps: PHY-10
-- [ ] **REN-19** `P3` Leftovers from REN-18
+- [~] @skate-render **REN-19** `P3` Leftovers from REN-18
   - Do: Far grid lines near the floor edge still z-fight in the default frame; with post-processing fully off, transparent materials can show the viewport background through them.
   - Done when: No grid flicker at default camera distance and transparent materials composite correctly with post off; test where feasible.
   - Deps: REN-18
@@ -330,6 +330,10 @@ The animation system needs improvements.
   - Do: From GPL-15: no skateboarding clips are bundled, so riding falls back to idle/walking. Source or author riding idle, push and ollie clips for the skater (the human may need to provide assets) and a controller asset wiring them into the ANI-02 state machine for `SkateBehavior`.
   - Done when: The skater uses a riding pose/push/ollie in the default project; the controller loads in a test.
   - Deps: GPL-15
+- [~] @skate-animation **ANI-10** `P1` Use the real skateboard riding clip
+  - Do: The human provided `assets/characters/animations/skate riding.fbx` (first real skateboarding clip). Import it for the skater (retarget if needed), put it in the ANI-09 controller's riding slot(s) instead of the procedural pose, and keep the procedural fallback for slots still missing clips.
+  - Done when: Riding in the default project uses the clip (aligned on the deck, facing the nose, looping cleanly); the clip loads and maps to its slot in a test.
+  - Deps: ANI-09
 
 ### Audio — `AUD` (`skate-audio`)
 
@@ -366,6 +370,10 @@ Audio needs a more complete implementation.
   - Do: Human-reported after PR #14: no sound when approaching the FeatureShowcase Audio sphere in Play. Lead's lead (unverified): `AudioComponent.playOnAwake` defaults to false, the showcase never sets it, and nothing calls `play()`; also check the tone path (`projectAssetsDir` + `tone.wav`, Windows separator), WAV loading, OpenAL init/device, bus/master volumes and the 3D rolloff/maxDistance. Fix the root cause in audio and set the showcase demo up correctly.
   - Done when: In a new project, Play on FeatureShowcase plays the ambient tone and the 3D emitter gets louder/pans as the camera approaches; Stop silences them; a test through the real path (generate, save, load from disk, Play) asserts both sources are playing with the expected gains.
   - Deps: TLG-09
+- [~] @skate-audio **AUD-10** `P1` MP3 playback and music in the default skate scene
+  - Do: Human request: use `assets/sounds/music/aquarela do brasil.mp3` (local asset, kept out of git) as looping background music in the default skate `MainScene`. The loader only decodes OGG (stb_vorbis) and WAV, and only OGG streams. Add MP3 decoding (a small, permissively licensed pure-Java decoder) with streaming for long tracks, route music through the music bus, and make a missing file a logged warning, not an error.
+  - Done when: A new project's MainScene plays the track looping in Play (streamed, not fully loaded); a missing file is tolerated; MP3 decode/stream tested with a generated test file.
+  - Deps: AUD-09
 
 ### Input — `INP` (`skate-input`)
 
@@ -421,7 +429,7 @@ The player controller was hardcoded at first and needs a big overhaul. Some skat
   - Do: Make `GameCamera` data-driven (follow, orbit, collision avoidance, spring arm, shake).
   - Done when: Camera parameters can be tuned in the editor, and spring-arm collision has unit tests.
   - Deps: GPL-01
-- [ ] **GPL-06** `P2` Skate push/ride/trick animation controller
+- [~] @skate-gameplay **GPL-06** `P2` Skate push/ride/trick animation controller
   - Do: Author the push/ride/trick controller on top of the ANI-02 state machine and blend trees.
   - Done when: The player transitions between push, ride and trick states with blending in the sample game.
   - Deps: ANI-02, GPL-01
@@ -689,7 +697,7 @@ All editor mutations must go through `Command` classes and the service layer (se
 - [ ] **EDT-36** `P2` Edit String fields in the generic inspector
   - Do: From GPL-05: the generic Properties inspector doesn't show/edit `String` fields, so e.g. a follow camera's target can't be changed. Add text fields (and an object picker where the string names a GameObject) via commands.
   - Done when: String fields are editable with undo; test.
-- [ ] **EDT-37** `P2` Split editor string tables to stop merge conflicts
+- [~] @skate-editor **EDT-37** `P2` Split editor string tables to stop merge conflicts
   - Do: Every round, parallel agents conflict in `assets/strings/editor_strings(.properties/_fr)`. Split them into per-area files (e.g. `editor_strings_<area>[_fr].properties`) loaded and merged by `StringManager`, with a duplicate-key check test; same for game strings if needed.
   - Done when: Strings load from several files, duplicates fail a test, and existing keys are moved.
 
