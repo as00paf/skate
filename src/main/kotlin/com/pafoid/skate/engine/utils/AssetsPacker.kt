@@ -4,10 +4,12 @@ import com.pafoid.skate.editor.data.FileType
 import com.pafoid.skate.editor.project.Project
 import com.pafoid.skate.editor.systems.FileTypeResolver
 import com.pafoid.skate.engine.assets.AssetMeta
+import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.AssetRegistry
 import com.pafoid.skate.engine.assets.pack.PackBuilder
 import com.pafoid.skate.engine.assets.pack.PackInput
 import com.pafoid.skate.engine.assets.pack.PackManifest
+import com.pafoid.skate.engine.assets.pack.PackedStrings
 import com.pafoid.skate.engine.assets.pack.ReferenceCollector
 import com.pafoid.skate.engine.assets.serialization.Serializer
 import com.pafoid.skate.engine.core.LoggerService
@@ -30,7 +32,14 @@ data class AssetInfo(
 )
 private val serializer: Serializer = Serializer()
 
-class AssetsPacker(private val logger: LoggerService) {
+/**
+ * Packs a project into `builds/game.bin` + `manifest.json`. Besides the project's files, the engine's game string
+ * tables ([gameStringsDir]) are always shipped under [PackedStrings.PACK_DIR] so the exported game shows its UI text.
+ */
+class AssetsPacker(
+    private val logger: LoggerService,
+    private val gameStringsDir: File = File(Assets.Strings.GAME_STRINGS),
+) {
     var atlas = Atlas()
     var lastManifest: PackManifest? = null
         private set
@@ -65,14 +74,19 @@ class AssetsPacker(private val logger: LoggerService) {
         atlas = Atlas()
         val projectDir = File(project.projectPath).parentFile
         val files = selectFiles(project, onlyReferenced).sortedBy { FileTypeResolver.resolve(it) }
-        val inputs = files.map {
+        val projectInputs = files.map {
             PackInput(it.absolutePath, it.relativeTo(projectDir).invariantSeparatorsPath, FileTypeResolver.resolve(it).name, it.readBytes())
         }
+        val inputs = projectInputs + gameStringInputs(projectInputs)
         val result = PackBuilder.build(project.name, inputs, compress)
-        files.zip(result.manifest.entries).forEach { (file, entry) ->
-            val type = FileTypeResolver.resolve(file)
-            val info = AssetInfo(type, file.absolutePath, entry.position, entry.storedSize, entry.rawSize, entry.compressed, entry.sha256)
-            atlas[file.extension] = atlas[file.extension].orEmpty() + info
+        inputs.zip(result.manifest.entries).forEachIndexed { index, (input, entry) ->
+            val type = FileType.valueOf(input.type)
+            // Project files are looked up by their absolute path; game string tables by their pack path.
+            val isProjectFile = index < projectInputs.size && !PackedStrings.isTable(input.relativePath)
+            val path = if (isProjectFile) input.path else input.relativePath
+            val extension = File(input.relativePath).extension
+            val info = AssetInfo(type, path, entry.position, entry.storedSize, entry.rawSize, entry.compressed, entry.sha256)
+            atlas[extension] = atlas[extension].orEmpty() + info
         }
 
         val outputDir = File(projectDir, BUILDS_DIR).also { it.mkdirs() }
@@ -86,11 +100,21 @@ class AssetsPacker(private val logger: LoggerService) {
 
         val stored = result.manifest.entries.sumOf { it.storedSize }
         val raw = result.manifest.entries.sumOf { it.rawSize }
-        val report = "Packed ${files.size} assets: $raw bytes -> $stored bytes (atlas ${encodedAtlas.size} bytes)\n" +
+        val report = "Packed ${inputs.size} assets: $raw bytes -> $stored bytes (atlas ${encodedAtlas.size} bytes)\n" +
             result.manifest.entries.joinToString("\n") { "  ${it.path} ${it.rawSize}->${it.storedSize} ${it.sha256.take(12)}" }
         File(outputDir, "atlas_report.txt").writeText(report)
         logger.logEngine(report, LoggerService.LogLevel.INFO)
         return true
+    }
+
+    /** The engine's game string tables; a project file at the same pack path wins. */
+    private fun gameStringInputs(projectInputs: List<PackInput>): List<PackInput> {
+        val strings = PackedStrings.inputs(gameStringsDir)
+        if (strings.isEmpty()) {
+            logger.logEngine("No game string tables in ${gameStringsDir.absolutePath}; the exported game will show raw keys", LoggerService.LogLevel.WARN)
+        }
+        val taken = projectInputs.map { it.relativePath }.toSet()
+        return strings.filter { it.relativePath !in taken }
     }
 
     companion object {

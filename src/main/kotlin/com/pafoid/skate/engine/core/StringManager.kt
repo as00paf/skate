@@ -1,17 +1,15 @@
 package com.pafoid.skate.engine.core
 
 import com.pafoid.skate.engine.core.LoggerService.LogLevel
-import java.io.File
 import java.util.*
 
 class StringManager(
     private val logger: LoggerService,
     private var currentLocale: String = "en"
 ) {
-    private var currentPath = ""
-    private var basePath = ""
+    private var base: StringSource? = null
     private val properties = Properties()
-    private val extraPaths = mutableListOf<String>()
+    private val extraSources = mutableListOf<StringSource>()
     private val localeListeners = mutableListOf<(String) -> Unit>()
 
     val locale: String get() = currentLocale
@@ -26,45 +24,52 @@ class StringManager(
      * (see [StringTables]). Translations for the current locale are applied by [setLocale].
      */
     fun loadStrings(path: String): Boolean {
-        basePath = path
-        return loadSource(path, null)
+        val source = StringSource.files(path)
+        base = source
+        return loadSource(source, null)
     }
 
     /** Merges another strings source (e.g. the game's tables) into the loaded ones; reloaded per locale by [setLocale]. */
-    fun addStrings(path: String): Boolean {
-        if (path !in extraPaths) extraPaths.add(path)
-        return loadSource(path, null)
+    fun addStrings(path: String): Boolean = addStrings(StringSource.files(path))
+
+    /** Merges [source] (e.g. game tables read from a pack) into the loaded ones; reloaded per locale by [setLocale]. */
+    fun addStrings(source: StringSource): Boolean {
+        extraSources.removeAll { it.label == source.label }
+        extraSources.add(source)
+        val loaded = loadSource(source, null)
+        loadSource(source, currentLocale) // the active translation, if the source has one
+        return loaded
     }
 
-    /** Loads every table of [path]; with a [locale], only their existing translations. */
-    private fun loadSource(path: String, locale: String?): Boolean {
-        val tables = StringTables.baseTables(File(path))
+    /** Loads every base table of [source]; with a [locale], only their existing translations. */
+    private fun loadSource(source: StringSource, locale: String?): Boolean {
+        val tables = source.baseTables()
         if (tables.isEmpty()) {
-            logger.log("No string tables found at $path", LogLevel.ERROR, source = "editor")
+            if (locale == null) logger.log("No string tables found at ${source.label}", LogLevel.ERROR, source = "editor")
             return false
         }
+        val names = if (locale == null) tables else tables.map { StringTables.localizedName(it, locale) }
+        val loaded = names.mapNotNull { name -> readTable(source, name)?.let { name to it } }
         if (locale == null) {
-            StringTables.duplicateKeys(tables).forEach { (key, files) ->
-                logger.log("String key $key is defined in several tables: $files", LogLevel.WARN, source = "editor")
-            }
-            return tables.map { loadFile(it.path) }.all { it }
+            loaded.flatMap { (name, table) -> table.stringPropertyNames().map { it to name } }
+                .groupBy({ it.first }, { it.second })
+                .filterValues { it.size > 1 }
+                .forEach { (key, files) ->
+                    logger.log("String key $key is defined in several tables: $files", LogLevel.WARN, source = "editor")
+                }
         }
-        return tables.map { loadFile(StringTables.localized(it, locale).path, optional = true) }.any { it }
+        loaded.forEach { (_, table) -> properties.putAll(table) }
+        return if (locale == null) loaded.size == tables.size else loaded.isNotEmpty()
     }
 
-    private fun loadFile(path: String, optional: Boolean = false): Boolean {
-        currentPath = path
-        if (optional && !File(path).exists()) return false
-        try {
-            File(path).reader(Charsets.UTF_8).use { properties.load(it) }
-        } catch (e: Exception) {
-            logger.log(
-                "Failed to load strings for baseName $path and locale $currentLocale",
-                LogLevel.ERROR, source = "editor", throwable = e
-            )
-            return false
-        }
-        return true
+    private fun readTable(source: StringSource, name: String): Properties? = try {
+        source.read(name)
+    } catch (e: Exception) {
+        logger.log(
+            "Failed to load strings table $name from ${source.label} (locale $currentLocale)",
+            LogLevel.ERROR, source = "editor", throwable = e
+        )
+        null
     }
 
     fun setLocale(locale: String): Boolean {
@@ -72,10 +77,10 @@ class StringManager(
             currentLocale = locale
             properties.clear() // Clear existing properties before reloading
             // Default strings first so keys missing from a translation fall back instead of showing !!key!!
-            if (basePath.isNotEmpty()) loadSource(basePath, null)
-            extraPaths.forEach { loadSource(it, null) }
-            val loaded = basePath.isNotEmpty() && loadSource(basePath, locale)
-            extraPaths.forEach { loadSource(it, locale) }
+            base?.let { loadSource(it, null) }
+            extraSources.forEach { loadSource(it, null) }
+            val loaded = base?.let { loadSource(it, locale) } ?: false
+            extraSources.forEach { loadSource(it, locale) }
             localeListeners.toList().forEach { it(locale) }
             return loaded
         }

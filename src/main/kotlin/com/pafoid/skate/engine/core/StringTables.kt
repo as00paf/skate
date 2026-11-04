@@ -14,15 +14,23 @@ object StringTables {
     /** Default-language tables of [source], sorted by name (a single file is its own table). */
     fun baseTables(source: File): List<File> =
         if (source.isDirectory) {
-            source.listFiles { f -> f.isFile && f.extension == "properties" && !LOCALIZED.matches(f.nameWithoutExtension) }
+            source.listFiles { f -> f.isFile && f.extension == "properties" && !isLocalized(f.nameWithoutExtension) }
                 ?.sortedBy { it.name }.orEmpty()
         } else {
             listOf(source)
         }
 
+    /** True for a translation's base name (`hud_fr`), false for a default-language table (`hud`). */
+    fun isLocalized(nameWithoutExtension: String): Boolean = LOCALIZED.matches(nameWithoutExtension)
+
+    /** File name of the [locale] translation of the table named [tableName] (`hud.properties` -> `hud_fr.properties`). */
+    fun localizedName(tableName: String, locale: String): String {
+        val dot = tableName.lastIndexOf('.')
+        return if (dot < 0) "${tableName}_$locale" else "${tableName.substring(0, dot)}_$locale${tableName.substring(dot)}"
+    }
+
     /** The [locale] translation of [table] (may not exist). */
-    fun localized(table: File, locale: String): File =
-        File(table.absoluteFile.parentFile, "${table.nameWithoutExtension}_$locale.${table.extension}")
+    fun localized(table: File, locale: String): File = File(table.absoluteFile.parentFile, localizedName(table.name, locale))
 
     /** Reads [file] as UTF-8 (the encoding the tables are stored in). */
     fun read(file: File): Properties = Properties().apply { file.reader(Charsets.UTF_8).use { load(it) } }
