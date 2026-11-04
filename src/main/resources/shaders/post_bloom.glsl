@@ -20,7 +20,7 @@ uniform float uBloomIntensity;
 uniform float uBloomThreshold;
 
 void main() {
-    vec2 uv = vec2(fTexCoords.x, 1.0 - fTexCoords.y);
+    vec2 uv = fTexCoords;
     vec3 hdr = texture(uTexture, uv).rgb;
     vec3 glow = hdr - vec3(uBloomThreshold);
     glow = max(glow, vec3(0.0));

@@ -238,7 +238,8 @@ class GeometryPass(
     }
 
     private fun clearColor(sky: Vector3f) {
-        GL30.glEnable(GL30.GL_DEPTH_TEST)
+        GLStateTracker.setDepthTestEnabled(true)
+        GLStateTracker.setDepthMask(true) // glClear only clears depth while depth writes are on
         GL30.glClearColor(sky.x, sky.y, sky.z, 1.0f)
         GL30.glClear(GL30.GL_COLOR_BUFFER_BIT or GL30.GL_DEPTH_BUFFER_BIT)
     }

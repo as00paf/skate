@@ -27,10 +27,12 @@ class PostProcessSettings {
     var bloomIntensity: Float = 0.05f
     var bloomThreshold: Float = 1.0f
 
-    var tonemappingEnabled: Boolean = true
+    // Off by default: the scene shader already tonemaps (Reinhard) and gamma-corrects into the LDR scene target, so
+    // these would apply a second time and wash the image out. Enable them once the scene renders to an HDR target.
+    var tonemappingEnabled: Boolean = false
     var acesExposure: Float = 1.0f
 
-    var gammaCorrectionEnabled: Boolean = true
+    var gammaCorrectionEnabled: Boolean = false
     var gammaValue: Float = 2.2f
 
     var fxaaEnabled: Boolean = true
@@ -95,10 +97,10 @@ class PostProcessSettings {
         bloomIntensity = 0.05f
         bloomThreshold = 1.0f
 
-        tonemappingEnabled = true
+        tonemappingEnabled = false
         acesExposure = 1.0f
 
-        gammaCorrectionEnabled = true
+        gammaCorrectionEnabled = false
         gammaValue = 2.2f
 
         fxaaEnabled = true

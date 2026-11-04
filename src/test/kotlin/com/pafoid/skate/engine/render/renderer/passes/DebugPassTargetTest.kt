@@ -11,6 +11,8 @@ import org.junit.jupiter.api.Test
 /**
  * Regression test for PHY-10: post-processing leaves framebuffer 0 bound, so DebugPass must bind the
  * presented target itself before drawing, or debug lines never reach the editor viewport.
+ * REN-18: the draw must also run inside the debug draw state (depth-tested, no culling, no blending) instead of
+ * inheriting the previous pass's state.
  */
 class DebugPassTargetTest {
 
@@ -19,10 +21,15 @@ class DebugPassTargetTest {
         val events = mutableListOf<String>()
         val debugRenderer = mockk<DebugRenderer>(relaxed = true)
         every { debugRenderer.draw() } answers { events += "draw" }
-        val pass = DebugPass(debugRenderer, mockk<CameraManager>(relaxed = true)) { events += "bindTarget" }
+        val pass = DebugPass(
+            debugRenderer,
+            mockk<CameraManager>(relaxed = true),
+            bindTarget = { events += "bindTarget" },
+            drawState = { draw -> events += "state"; draw(); events += "restore" },
+        )
 
         pass.execute(Scene())
 
-        assertEquals(listOf("bindTarget", "draw"), events)
+        assertEquals(listOf("bindTarget", "state", "draw", "restore"), events)
     }
 }
