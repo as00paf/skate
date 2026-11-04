@@ -206,4 +206,13 @@ class FeatureShowcaseTest {
             dir.deleteRecursively()
         }
     }
+
+    @Test
+    fun `shadows area has child models under a mesh-less parent (REN-20)`() {
+        val group = scene.children.single { it.name == "[Shadows] Group" }
+        assertTrue(group.components.none { it is RenderComponent })
+        val child = group.children.single()
+        val grandchild = child.children.single()
+        assertTrue(listOf(child, grandchild).all { go -> go.components.any { it is RenderComponent && it.castShadow } })
+    }
 }

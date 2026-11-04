@@ -3,7 +3,6 @@ package com.pafoid.skate.engine.render.renderer.passes
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.components.DirectionalLightComponent
 import com.pafoid.skate.engine.ecs.systems.CameraManager
-import com.pafoid.skate.engine.getAllChildren
 import com.pafoid.skate.engine.getComponent
 import com.pafoid.skate.engine.render.ShadowMap
 import com.pafoid.skate.engine.render.lighting.LightData
@@ -70,7 +69,7 @@ class ShadowPass(
         LocalShadows.allocate(sceneLights, cameraPosition, q.localLayers, frame.localSlots)
         if (light == null && frame.localSlots.isEmpty()) return
 
-        shadowRenderer.collect(scene.getAllChildren())
+        shadowRenderer.collect(scene)
         layersRendered = 0
         layersSkipped = 0
         try {

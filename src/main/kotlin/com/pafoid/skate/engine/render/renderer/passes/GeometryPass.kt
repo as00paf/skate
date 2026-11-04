@@ -12,7 +12,6 @@ import com.pafoid.skate.engine.ecs.components.SpriteRenderer
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.ecs.systems.CameraManager
-import com.pafoid.skate.engine.getAllChildren
 import com.pafoid.skate.engine.render.state.DrawQueue
 import com.pafoid.skate.engine.render.state.SortKey
 import com.pafoid.skate.engine.assets.data.models.AlphaMode
@@ -27,6 +26,7 @@ import com.pafoid.skate.engine.render.lighting.SceneLights
 import com.pafoid.skate.engine.render.renderer.LightingUniformsLoader
 import com.pafoid.skate.engine.render.renderer.ModelRenderer
 import com.pafoid.skate.engine.render.renderer.Renderer2D
+import com.pafoid.skate.engine.render.renderer.RenderTraversal
 import com.pafoid.skate.engine.render.renderer.SkyDomeRenderer
 import com.pafoid.skate.engine.render.shadow.ShadowFrame
 import com.pafoid.skate.engine.render.utils.withBlendState
@@ -122,8 +122,7 @@ class GeometryPass(
 
         // Collect 3D draws and 2D sprites, then draw 3D sorted: opaque by material → mesh, transparent last in scene order
         drawQueue.clear()
-        scene.getAllChildren().forEach { go ->
-            if (!go.isVisible) return@forEach
+        RenderTraversal.forEachRendered(scene) { go ->
             val renderComponent = go.getComponent<RenderComponent>()?.takeIf { it.enabled }
             val transform = go.getComponent<Transform>()?.takeIf { it.enabled }
             if (transform != null) {

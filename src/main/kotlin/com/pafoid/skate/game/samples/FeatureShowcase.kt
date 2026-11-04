@@ -206,6 +206,13 @@ class FeatureShowcase(private val prefabs: PrefabsGenerator) {
             .addComponent(SpotLightComponent(direction = Vector3f(0f, -1f, 0f), intensity = 6f, cutOff = 25f, outerCutOff = 32f)))
         add(node("[Shadows] Point", at("shadows", -1.5f, 1.5f, 2f))
             .addComponent(PointLightComponent(color = Vector3f(1f, 0.8f, 0.5f), intensity = 3f)))
+        // REN-20: a mesh-less parent whose child and grandchild models cast (like the skateboard's visual child).
+        // Moving the parent moves both shadows.
+        val group = node("[Shadows] Group", at("shadows", -4.5f, 0f, 3f))
+        val child = mesh("[Shadows] GroupChild", Assets.Bundled.CUBE, Vector3f(0f, 0.4f, 0f), Vector3f(0.4f))
+        child.addChild(mesh("[Shadows] GroupGrandchild", Assets.Bundled.SPHERE, Vector3f(0f, 2.5f, 0f), Vector3f(1f)))
+        group.addChild(child)
+        add(group)
     }
 
     private fun materials() {
