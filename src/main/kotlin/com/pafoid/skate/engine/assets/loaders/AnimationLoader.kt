@@ -43,7 +43,7 @@ class AnimationLoader {
     }
 
     private fun loadAnimations(scene: AIScene, path: String): List<Animation> {
-        val name = path.substringBefore(".fbx").replaceBeforeLast("/", "").replace("/", "").capitalize()
+        val name = clipName(path)
         val animations = mutableListOf<Animation>()
         val sceneAnimations = scene.mAnimations() ?: throw Error("No animation found in animation file")
 
@@ -175,4 +175,11 @@ class AnimationLoader {
         return Animation(name, channels, durationInSeconds, filePath)
     }
 
+    companion object {
+        /**
+         * Clip name from a file path: the file name without its extension, with either separator
+         * (`...\\animations\\falling idle.fbx` -> `falling idle`). Controllers refer to clips by this name.
+         */
+        fun clipName(path: String): String = path.substringAfterLast('/').substringAfterLast('\\').substringBeforeLast('.')
+    }
 }

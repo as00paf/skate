@@ -29,7 +29,7 @@ class ControllerEditor(asset: AnimationControllerAsset) {
         copy(
             states = remaining,
             defaultState = if (defaultState == name) remaining.first().name else defaultState,
-            transitions = transitions.filter { it.from != name && it.to != name },
+            transitions = transitions.filter { it.from != name && it.to != name }.map { it.copy(exceptFrom = it.exceptFrom - name) },
         )
     }
 
@@ -39,7 +39,13 @@ class ControllerEditor(asset: AnimationControllerAsset) {
         copy(
             states = states.map { if (it.name == old) it.copy(name = new) else it },
             defaultState = if (defaultState == old) new else defaultState,
-            transitions = transitions.map { it.copy(from = if (it.from == old) new else it.from, to = if (it.to == old) new else it.to) },
+            transitions = transitions.map {
+                it.copy(
+                    from = if (it.from == old) new else it.from,
+                    to = if (it.to == old) new else it.to,
+                    exceptFrom = it.exceptFrom.map { e -> if (e == old) new else e },
+                )
+            },
         )
     }
 
