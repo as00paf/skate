@@ -1,6 +1,10 @@
 package com.pafoid.skate.engine.utils.testing
 
-import org.lwjgl.opengl.GL11.*
+import com.pafoid.skate.engine.render.rhi.IntRect
+import com.pafoid.skate.engine.render.rhi.PixelFormat
+import com.pafoid.skate.engine.render.rhi.RhiContext
+import com.pafoid.skate.engine.render.rhi.RhiDevice
+import com.pafoid.skate.engine.render.rhi.RhiRenderTarget
 import org.lwjgl.stb.STBImageWrite.stbi_write_png
 import org.lwjgl.system.MemoryUtil
 import java.io.File
@@ -9,16 +13,16 @@ import java.nio.ByteBuffer
 object FrameCapture {
 
     /**
-     * Captures the currently bound framebuffer and saves it to a PNG file.
-     * @param width The width of the viewport.
-     * @param height The height of the viewport.
+     * Captures color attachment 0 of [target] (null: the window's back buffer) and saves it to a PNG file.
+     * @param width The width of the captured area.
+     * @param height The height of the captured area.
      * @param filePath The path to save the PNG file.
      */
-    fun capture(width: Int, height: Int, filePath: String) {
+    fun capture(width: Int, height: Int, filePath: String, target: RhiRenderTarget? = null, device: RhiDevice = RhiContext.require()) {
         val components = 4 // RGBA
         val buffer: ByteBuffer = MemoryUtil.memAlloc(width * height * components)
         
-        glReadPixels(0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, buffer)
+        device.readPixels(target, 0, IntRect(0, 0, width, height), PixelFormat.RGBA8, buffer)
         
         // Flip the image vertically because OpenGL's origin is at the bottom-left
         val flippedBuffer: ByteBuffer = MemoryUtil.memAlloc(width * height * components)

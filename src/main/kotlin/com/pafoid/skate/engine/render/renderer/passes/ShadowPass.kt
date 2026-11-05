@@ -9,6 +9,8 @@ import com.pafoid.skate.engine.render.lighting.LightData
 import com.pafoid.skate.engine.render.lighting.LightType
 import com.pafoid.skate.engine.render.lighting.SceneLights
 import com.pafoid.skate.engine.render.renderer.ShadowRenderer
+import com.pafoid.skate.engine.render.rhi.ClearValues
+import com.pafoid.skate.engine.render.rhi.RhiContext
 import com.pafoid.skate.engine.render.shadow.CascadeFitter
 import com.pafoid.skate.engine.render.shadow.CascadeSplits
 import com.pafoid.skate.engine.render.shadow.LocalShadows
@@ -78,7 +80,6 @@ class ShadowPass(
         } finally {
             if (drawing) {
                 shadowRenderer.end()
-                cascadeMap.unbind()
                 drawing = false
             }
         }
@@ -119,8 +120,7 @@ class ShadowPass(
 
         for (i in 0 until count) {
             if (!needsRender(cascadeCache, i, shadowRenderer.cascadeSignature(frame.cascades[i]))) continue
-            cascadeMap.bindLayer(i)
-            shadowRenderer.drawCascade(frame.cascades[i])
+            renderLayer(cascadeMap, i) { shadowRenderer.drawCascade(frame.cascades[i]) }
         }
         frame.cascadeCount = count
         frame.cascadeTextureId = cascadeMap.getDepthTextureId()
@@ -136,20 +136,29 @@ class ShadowPass(
             if (slot.type == LightType.SPOT) {
                 val m = LocalShadows.spotMatrix(l.position, l.direction, LocalShadows.spotFov(l.cosOuter), slot.near, slot.far, frame.localMatrices[slot.baseLayer])
                 if (!needsRender(localCache, slot.baseLayer, shadowRenderer.localSignature(l.position, l.range, m))) continue
-                localMap.bindLayer(slot.baseLayer)
-                shadowRenderer.drawLocal(l.position, l.range, m)
+                renderLayer(localMap, slot.baseLayer) { shadowRenderer.drawLocal(l.position, l.range, m) }
             } else {
                 for (face in 0 until LocalShadows.POINT_FACES) {
                     val layer = slot.baseLayer + face
                     val m = LocalShadows.pointFaceMatrix(l.position, face, slot.near, slot.far, frame.localMatrices[layer])
                     if (!needsRender(localCache, layer, shadowRenderer.localSignature(l.position, l.range, m))) continue
-                    localMap.bindLayer(layer)
-                    shadowRenderer.drawLocal(l.position, l.range, m)
+                    renderLayer(localMap, layer) { shadowRenderer.drawLocal(l.position, l.range, m) }
                 }
             }
         }
         frame.localTextureId = localMap.getDepthTextureId()
         frame.localResolution = localMap.resolution
+    }
+
+    /** Clears [layer] of [map] to far depth and renders it with [draw]. */
+    private inline fun renderLayer(map: ShadowMap, layer: Int, draw: () -> Unit) {
+        val cmd = RhiContext.require().commandList()
+        cmd.beginPass(map.target, layer, ClearValues.DEPTH)
+        try {
+            draw()
+        } finally {
+            cmd.endPass()
+        }
     }
 
     /** Records the layer as rendered or skipped and starts the shadow draw state on the first rendered layer. */

@@ -19,10 +19,8 @@ import org.lwjgl.glfw.GLFW
 import com.pafoid.skate.engine.assets.pack.PackBuilder
 import com.pafoid.skate.engine.assets.pack.PackedStrings
 import com.pafoid.skate.engine.utils.Atlas
-import org.lwjgl.opengl.GL11
-import org.lwjgl.opengl.GL30
-import org.lwjgl.opengl.GL30.GL_DRAW_FRAMEBUFFER
-import org.lwjgl.opengl.GL30.GL_READ_FRAMEBUFFER
+import com.pafoid.skate.engine.render.rhi.Filter
+import com.pafoid.skate.engine.render.rhi.IntRect
 import java.nio.ByteBuffer
 
 private val engine = Engine()
@@ -90,16 +88,15 @@ private fun loadGameStrings() {
     engine.gameStrings.addStrings(PackedStrings.source(packed))
 }
 
+/** Presents the scene framebuffer, stretched over the whole window. */
 fun testDraw(window: Window) {// TODO : is working but needs to move
-    GL30.glBindFramebuffer(GL_READ_FRAMEBUFFER, engine.renderer.frameBuffer.fboId)
-    GL30.glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0)
-    GL30.glBlitFramebuffer(
-        0, 0, engine.renderer.frameBuffer.width, engine.renderer.frameBuffer.height,
-        0, 0, window.width, window.height,
-        GL11.GL_COLOR_BUFFER_BIT,
-        GL11.GL_LINEAR
-    )
+    if (presentRect.width != window.width || presentRect.height != window.height) {
+        presentRect = IntRect(0, 0, window.width, window.height)
+    }
+    engine.device.commandList().blit(engine.renderer.frameBuffer.target, null, dstRect = presentRect, filter = Filter.LINEAR)
 }
+
+private var presentRect = IntRect(0, 0, 0, 0)
 
 fun readFileHeader(binFile: ByteArray): Pair<Atlas?, Int> {
     val headerSizeData = ByteBuffer.wrap(binFile.copyOfRange(0, Int.SIZE_BYTES))

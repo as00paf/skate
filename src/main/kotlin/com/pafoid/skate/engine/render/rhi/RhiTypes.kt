@@ -132,20 +132,35 @@ data class TextureDesc(
     }
 }
 
-/** Color attachments plus an optional depth attachment; a layered depth array serves shadow cascades. */
+/**
+ * Color attachments plus an optional depth attachment. A [layered] target's attachments are 2D arrays of [layers]
+ * layers and [RhiCommandList.beginPass] picks the layer to render (shadow cascades, spot lights, cube faces).
+ * [colorSampler] and [depthSampler] are how the attachments are sampled when read as textures.
+ */
 data class RenderTargetDesc(
     val width: Int,
     val height: Int,
     val colors: List<PixelFormat> = listOf(PixelFormat.RGBA8),
     val depth: PixelFormat? = PixelFormat.DEPTH32F,
     val layers: Int = 1,
+    val layered: Boolean = layers > 1,
+    val colorSampler: SamplerDesc = SamplerDesc(),
+    val depthSampler: SamplerDesc = SamplerDesc(Filter.NEAREST, Filter.NEAREST),
 ) {
     init {
         require(width > 0 && height > 0) { "Render target size must be positive, got ${width}x$height" }
         require(colors.none { it.isDepth }) { "Color attachments can't use a depth format" }
         require(depth == null || depth.isDepth) { "Depth attachment needs a depth format" }
         require(colors.isNotEmpty() || depth != null) { "A render target needs at least one attachment" }
+        require(layers >= 1 && (layers == 1 || layered)) { "Only a layered target has several layers, got $layers" }
     }
+
+    /** Type of the attachment textures. */
+    val textureType: TextureType get() = if (layered) TextureType.TEXTURE_2D_ARRAY else TextureType.TEXTURE_2D
+
+    fun colorTexture(index: Int) = TextureDesc(textureType, colors[index], width, height, layers, sampler = colorSampler)
+
+    fun depthTexture(): TextureDesc? = depth?.let { TextureDesc(textureType, it, width, height, layers, sampler = depthSampler) }
 }
 
 /** Preprocessed (REN-05 includes and variant defines applied) stage sources. */

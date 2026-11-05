@@ -69,11 +69,6 @@ class RhiGlIsolationGuardTest {
             "editor/imgui/ImGuiLayer.kt",
             "engine/assets/data/Shader.kt",
             "engine/assets/loaders/ShaderLoader.kt",
-            "engine/render/ColorTarget.kt",
-            "engine/render/FrameBuffer.kt",
-            "engine/render/PickingTexture.kt",
-            "engine/render/RenderResourcesFactory.kt",
-            "engine/render/ShadowMap.kt",
             "engine/render/cache/GpuResources.kt",
             "engine/render/data/RenderBatch2D.kt",
             "engine/render/data/RenderBatch3D.kt",
@@ -93,9 +88,6 @@ class RhiGlIsolationGuardTest {
             "engine/render/renderer/passes/PostProcessPass.kt",
             "engine/render/ui/UiBatchRenderer.kt",
             "engine/render/utils/GLState.kt",
-            "engine/utils/ScreenshotUtils.kt",
-            "engine/utils/testing/FrameCapture.kt",
-            "game/GameMain.kt",
         )
     }
 }

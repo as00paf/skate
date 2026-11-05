@@ -7,9 +7,9 @@ import java.nio.FloatBuffer
  * Render hardware interface (REN-12, docs/design/REN-12.md). Backend-neutral: nothing in this package may use a
  * graphics API (RhiGlIsolationGuardTest). The OpenGL backend lives in `rhi/opengl/`.
  *
- * Migration status: step 3 (buffers, vertex inputs, textures). [RhiDevice] and [RhiCommandList] only declare what
- * the backend implements; render targets and readback (step 4), shaders (5), pipelines and draws (6) and timers (7)
- * are added by the step that migrates their callers. Everything runs on the main thread (§7.6).
+ * Migration status: step 4 (buffers, vertex inputs, textures, render targets, passes, readback and blit).
+ * [RhiDevice] and [RhiCommandList] only declare what the backend implements; shaders (5), pipelines and draws (6) and
+ * timers (7) are added by the step that migrates their callers. Everything runs on the main thread (§7.6).
  */
 
 /** What the device supports; read once at creation. */
@@ -55,6 +55,16 @@ interface RhiDevice : AutoCloseable {
      * [RhiTexture.upload] (cube faces are layers 0-5 in +X, -X, +Y, -Y, +Z, -Z order).
      */
     fun createTexture(desc: TextureDesc): RhiTexture
+
+    /** Color and depth attachments in one target; see [RenderTargetDesc]. */
+    fun createRenderTarget(desc: RenderTargetDesc): RhiRenderTarget
+
+    /**
+     * Synchronously copies [rect] of color attachment [attachment] of [target] (null: the window's back buffer) into
+     * [out] as tightly packed [format] pixels, bottom row first (GL order). Picking, thumbnails and screenshots only:
+     * it waits for the GPU.
+     */
+    fun readPixels(target: RhiRenderTarget?, attachment: Int, rect: IntRect, format: PixelFormat, out: ByteBuffer)
 
     /** The frame's command list (GL: one shared immediate list). */
     fun commandList(): RhiCommandList
@@ -119,10 +129,14 @@ interface RhiTexture : RhiResource {
     val nativeHandle: Long
 }
 
+/** See [RhiDevice.createRenderTarget]; render into it between [RhiCommandList.beginPass] and `endPass`. */
 interface RhiRenderTarget : RhiResource {
+    /** Current description; [resize] changes its size. */
     val desc: RenderTargetDesc
     val width: Int
     val height: Int
+
+    /** New attachments of the given size with undefined contents; textures fetched before are closed. */
     fun resize(width: Int, height: Int)
     fun colorTexture(index: Int = 0): RhiTexture
     fun depthTexture(): RhiTexture?
@@ -164,11 +178,27 @@ interface RhiTimer : RhiResource {
 }
 
 /**
- * Commands of a frame; immediate on GL, recorded on Vulkan. Grows with the migration: passes (`beginPass`/`endPass`
- * with [ClearValues]) and `blit` arrive at step 4, `setParams` at 5, `setPipeline`, `setVertexInput`, `setTexture`,
- * `setScissor` and the draws at 6, timers at 7 (docs/design/REN-12.md §3).
+ * Commands of a frame; immediate on GL, recorded on Vulkan. Grows with the migration: `setParams` arrives at step 5,
+ * `setPipeline`, `setVertexInput`, `setTexture`, `setScissor` and the draws at 6, timers at 7 (docs/design/REN-12.md
+ * §3).
  */
 interface RhiCommandList {
+    /**
+     * Starts rendering into [target] (null: the window's back buffer, which needs an explicit [viewport]); [layer]
+     * selects the layer of a layered target. [clear] clears the attachments it names whatever the depth-write and
+     * scissor state (Vulkan load ops); [viewport] defaults to the whole target. Pair with [endPass].
+     */
+    fun beginPass(target: RhiRenderTarget?, layer: Int = 0, clear: ClearValues? = null, viewport: IntRect? = null)
+
+    /** Ends the pass started by [beginPass] (GL: back to the default framebuffer). */
+    fun endPass()
+
+    /**
+     * Copies color attachment 0 of [src] into [dst] (null: the back buffer, which needs [dstRect]), outside a pass.
+     * Null rects are the whole target; [filter] (NEAREST or LINEAR) applies when the sizes differ.
+     */
+    fun blit(src: RhiRenderTarget, dst: RhiRenderTarget?, srcRect: IntRect? = null, dstRect: IntRect? = null, filter: Filter = Filter.NEAREST)
+
     /** Binds [buffer] (whole buffer when [size] is -1) to uniform block binding [binding]. */
     fun setUniformBuffer(binding: Int, buffer: RhiBuffer, offset: Long = 0, size: Long = -1)
 }

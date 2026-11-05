@@ -42,3 +42,19 @@ Image textures, cube maps, the UI font atlas and model thumbnails are now create
    (mipmaps).
 4. Replace a texture file used by the scene (same name) while the editor runs → the viewport updates (hot reload
    swaps the texture in place).
+
+## Step 4: render targets, passes, readback and blit
+
+The scene framebuffer, post-processing scratch targets, shadow maps and the picking target are now RHI render
+targets. Every pass starts with `beginPass` (target, clear, viewport) and ends with `endPass`. Picking, thumbnails and
+screenshots read pixels through the device, and the exported game presents with an RHI blit.
+
+1. `.\gradlew.bat run`, then create a NEW project → MainScene looks as before: sky color, sharp sun shadows, bloom and
+   gamma (post-processing), grid and HUD on top.
+2. Click the skater, then the ground → each gets selected (picking readback). Resize the viewport panel and click
+   again → selection still matches the cursor.
+3. Open `FeatureShowcase` and fly to `Lights` → the spot and point lights cast shadows (layered shadow map). Fly to
+   `Particles` → the particles blend over the scene.
+4. Click the viewport's screenshot button → a PNG appears under `screenshots/` and matches the viewport, right side up.
+5. Open the Asset Browser's Prefabs tab → model thumbnails show on a grey background.
+6. Export the project and run the exported game → it fills the window, stretched to the window size.
