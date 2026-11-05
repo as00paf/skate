@@ -1,5 +1,6 @@
 package com.pafoid.skate.engine.render.material
 
+import com.pafoid.skate.engine.assets.AssetPaths
 import com.pafoid.skate.engine.assets.data.Texture
 import com.pafoid.skate.engine.assets.data.models.AlphaMode
 import com.pafoid.skate.engine.assets.data.models.Material
@@ -67,8 +68,11 @@ data class MaterialAsset(
 
         fun load(file: File): MaterialAsset = fromJson(file.readText())
 
-        /** Captures [material]; textures are stored by [Texture.filePath] (textures without a path are omitted). */
-        fun from(material: Material, name: String = "Material"): MaterialAsset {
+        /**
+         * Captures [material]; textures are stored by [Texture.filePath] (textures without a path are omitted), relative
+         * to [projectRoot] when they lie inside it (AST-09).
+         */
+        fun from(material: Material, name: String = "Material", projectRoot: File? = null): MaterialAsset {
             val s = MaterialSchema.PBR
             val out = HashMap<String, List<Float>>()
             for (p in s.params) {
@@ -78,7 +82,7 @@ data class MaterialAsset(
                 if (buf.toList() != p.default) out[p.name] = buf.toList()
             }
             val tex = HashMap<String, String>()
-            for (t in s.textures) material.textureFor(t.name)?.filePath?.let { tex[t.name] = it }
+            for (t in s.textures) material.textureFor(t.name)?.filePath?.let { tex[t.name] = AssetPaths.relativize(it, projectRoot) }
             return MaterialAsset(name, s.id, out, tex, material.doubleSided, material.alphaMode, material.alphaCutoff)
         }
     }

@@ -151,7 +151,7 @@ class ExportWizardWindow(
             Phase.FAILED -> {
                 val result = wizard.result ?: return
                 MImGui.errorText(strings.getString("lbl.export.failure.${result.failure?.name?.lowercase()}"))
-                if (result.detail.isNotBlank()) MImGui.textDisabled(result.detail)
+                result.detail?.let { MImGui.textDisabled(strings.getString(it.key, *result.detailArgs.toTypedArray())) }
             }
             Phase.EDITING -> Unit
         }

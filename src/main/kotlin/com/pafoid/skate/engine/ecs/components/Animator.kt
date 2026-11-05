@@ -108,15 +108,18 @@ data class Animator(
     /**
      * Loads [controllerPath] and builds the state machine from the clips in [animations]. Problems are logged and
      * leave no state machine (so the legacy single-clip playback still works). Returns true when a controller is active.
+     * [read] loads project-relative or packed controllers (`AssetsManager.readText`, AST-09); the file system and
+     * bundled resources are tried after it.
      */
     fun resolveController(
         logger: LoggerService,
         skeleton: Skeleton? = gameObject?.getComponent<SkeletonComponent>()?.pose?.skeleton,
+        read: (String) -> String? = { null },
     ): Boolean {
         val path = controllerPath ?: return false
         stateMachine = null
         skeleton ?: return false.also { logger.log("Controller '$path': no skeleton on this object", LogLevel.ERROR) }
-        val text = readController(path)
+        val text = read(path) ?: readController(path)
         if (text == null) {
             logger.log("Controller file not found: $path", LogLevel.ERROR)
             return false

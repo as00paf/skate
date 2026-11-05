@@ -84,9 +84,13 @@ class AssetsPacker(
         return projectDir.walkTopDown()
             .onEnter { !it.name.startsWith(".") && it.canonicalFile != skipped }
             .filter { it.isFile && !it.name.startsWith(".") && !AssetMeta.isSidecar(it) }
-            .filter { FileTypeResolver.resolve(it) in packable }
+            .filter { FileTypeResolver.resolve(it) in packable || isModelCompanion(it) }
             .toList()
     }
+
+    /** `.mtl` / glTF `.bin` files load with their model; they have no [FileType] of their own. */
+    private fun isModelCompanion(file: File): Boolean =
+        file.extension.lowercase() in MODEL_COMPANIONS && file.name != BIN_FILE
 
     /**
      * Writes [BIN_FILE], [MANIFEST_FILE] and `atlas_report.txt` to [outputDir]. [onProgress] gets the current step,
@@ -111,13 +115,11 @@ class AssetsPacker(
         }
         val inputs = projectInputs + gameStringInputs(projectInputs)
         val result = PackBuilder.build(project.name, inputs, compress)
-        inputs.zip(result.manifest.entries).forEachIndexed { index, (input, entry) ->
+        inputs.zip(result.manifest.entries).forEach { (input, entry) ->
             val type = FileType.valueOf(input.type)
-            // Project files are looked up by their absolute path; game string tables by their pack path.
-            val isProjectFile = index < projectInputs.size && !PackedStrings.isTable(input.relativePath)
-            val path = if (isProjectFile) input.path else input.relativePath
+            // Entries are addressed by their project-relative path, like the references in saved scenes (AST-09).
             val extension = File(input.relativePath).extension
-            val info = AssetInfo(type, path, entry.position, entry.storedSize, entry.rawSize, entry.compressed, entry.sha256)
+            val info = AssetInfo(type, input.relativePath, entry.position, entry.storedSize, entry.rawSize, entry.compressed, entry.sha256)
             atlas[extension] = atlas[extension].orEmpty() + info
         }
 
@@ -154,6 +156,7 @@ class AssetsPacker(
         const val BIN_FILE = "game.bin"
         const val MANIFEST_FILE = "manifest.json"
         const val BUILDS_DIR = "builds"
+        private val MODEL_COMPANIONS = setOf("mtl", "bin")
 
         /** `<project folder>/builds`. */
         fun defaultOutputDir(project: Project): File = File(File(project.projectPath).parentFile, BUILDS_DIR)

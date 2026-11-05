@@ -56,10 +56,36 @@ enum class ExportFailure {
     SAVE_FAILED,
 }
 
+/**
+ * Why an export failed, as a string key of the editor's `assets` area (`assets/strings/editor/assets.properties`)
+ * so the export wizard can show it in the editor language. [ExportResult.detailArgs] fill its `%s` placeholders.
+ */
+enum class ExportDetail(val key: String) {
+    /** Args: output folder. */
+    OUTPUT_IS_PROJECT("lbl.export.detail.output_is_project"),
+
+    /** Args: output folder. */
+    OUTPUT_IS_FILE("lbl.export.detail.output_is_file"),
+
+    /** No args. */
+    GAME_JAR_NOT_BUILT("lbl.export.detail.game_jar_not_built"),
+
+    /** Args: mismatching entries, `; `-separated. */
+    PACK_MISMATCH("lbl.export.detail.pack_mismatch"),
+
+    /** Args: the system's error message. */
+    IO_FAILURE("lbl.export.detail.io_failure"),
+
+    /** No args: the editor has no open project. */
+    NO_PROJECT("lbl.export.no_project"),
+}
+
+/** [detail] and [detailArgs] explain a [failure] (see [ExportDetail]); args are raw paths or system messages. */
 data class ExportResult(
     val outputDir: File,
     val failure: ExportFailure? = null,
-    val detail: String = "",
+    val detail: ExportDetail? = null,
+    val detailArgs: List<String> = emptyList(),
     val assetCount: Int = 0,
     val packedBytes: Long = 0,
 ) {
@@ -82,13 +108,13 @@ class ProjectExporter(
     /** Runs the export on the calling thread, reporting each step to [onProgress]. */
     fun export(project: Project, options: ExportOptions = ExportOptions(), onProgress: (ExportProgress) -> Unit = {}): ExportResult {
         val outputDir = outputDir(project, options)
-        val fail = { failure: ExportFailure, detail: String ->
-            logger.logEngine("Export failed ($failure): $detail", LogLevel.ERROR)
-            ExportResult(outputDir, failure, detail)
+        val fail = { failure: ExportFailure, detail: ExportDetail, args: List<String> ->
+            logger.logEngine("Export failed ($failure, $detail): ${args.joinToString()}", LogLevel.ERROR)
+            ExportResult(outputDir, failure, detail, args)
         }
-        validateOutput(project, outputDir)?.let { return fail(ExportFailure.INVALID_OUTPUT, it) }
+        validateOutput(project, outputDir)?.let { return fail(ExportFailure.INVALID_OUTPUT, it, listOf(outputDir.path)) }
         val jar = if (options.target == ExportTarget.WINDOWS) {
-            gameJarProvider()?.takeIf { it.isFile } ?: return fail(ExportFailure.GAME_JAR_MISSING, "Run `gradlew gameJar` first.")
+            gameJarProvider()?.takeIf { it.isFile } ?: return fail(ExportFailure.GAME_JAR_MISSING, ExportDetail.GAME_JAR_NOT_BUILT, emptyList())
         } else null
 
         return try {
@@ -97,7 +123,7 @@ class ProjectExporter(
             }
             onProgress(ExportProgress(ExportStep.VERIFYING))
             val problems = verifyPack(outputDir)
-            if (problems.isNotEmpty()) return fail(ExportFailure.VERIFY_FAILED, problems.joinToString("; "))
+            if (problems.isNotEmpty()) return fail(ExportFailure.VERIFY_FAILED, ExportDetail.PACK_MISMATCH, listOf(problems.joinToString("; ")))
 
             if (jar != null) {
                 onProgress(ExportProgress(ExportStep.COPYING_JAR))
@@ -109,7 +135,7 @@ class ProjectExporter(
             onProgress(ExportProgress(ExportStep.DONE, 1f))
             ExportResult(outputDir, assetCount = manifest?.entries?.size ?: 0, packedBytes = manifest?.binSize?.toLong() ?: 0)
         } catch (e: Exception) {
-            fail(ExportFailure.IO_ERROR, e.message ?: e.javaClass.simpleName)
+            fail(ExportFailure.IO_ERROR, ExportDetail.IO_FAILURE, listOf(e.message ?: e.javaClass.simpleName))
         }
     }
 
@@ -136,11 +162,11 @@ class ProjectExporter(
             options.outputDir?.takeIf { it.isNotBlank() }?.let(::File) ?: AssetsPacker.defaultOutputDir(project)
 
         /** Why [outputDir] cannot receive a build of [project], or null when it can. */
-        fun validateOutput(project: Project, outputDir: File): String? {
+        fun validateOutput(project: Project, outputDir: File): ExportDetail? {
             val projectDir = File(project.projectPath).parentFile.canonicalFile
             return when {
-                outputDir.canonicalFile == projectDir -> "The output folder cannot be the project folder."
-                outputDir.isFile -> "The output folder is a file: ${outputDir.path}"
+                outputDir.canonicalFile == projectDir -> ExportDetail.OUTPUT_IS_PROJECT
+                outputDir.isFile -> ExportDetail.OUTPUT_IS_FILE
                 else -> null
             }
         }
