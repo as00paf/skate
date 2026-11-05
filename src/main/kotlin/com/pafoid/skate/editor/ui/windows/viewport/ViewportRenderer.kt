@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.ui.windows.viewport
 
+import com.pafoid.skate.engine.core.LoggerService.LogLevel
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.utils.ScreenshotUtils
 import imgui.ImGui
@@ -43,11 +44,14 @@ class ViewportRenderer(
     }
 
     fun captureScreenshot() {
-        runCatching {
-            val frameBuffer = engine.renderer.frameBuffer
-            if (frameBuffer.width <= 0 || frameBuffer.height <= 0) return
-            ScreenshotUtils.takeScreenshot(frameBuffer.width, frameBuffer.height, frameBuffer.fboId)
+        val frameBuffer = engine.renderer.frameBuffer
+        if (frameBuffer.width <= 0 || frameBuffer.height <= 0) {
+            engine.logger.logEditor("Screenshot skipped: the viewport has no size yet", LogLevel.WARN)
+            return
         }
+        runCatching { ScreenshotUtils.takeScreenshot(frameBuffer.width, frameBuffer.height, frameBuffer.fboId) }
+            .onSuccess { engine.logger.logEditor("Screenshot captured (${frameBuffer.width}x${frameBuffer.height})") }
+            .onFailure { engine.logger.logEditor("Screenshot failed: ${it.message}", LogLevel.ERROR) }
     }
 
     companion object {

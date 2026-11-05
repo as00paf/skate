@@ -21,7 +21,7 @@ import org.joml.Vector3f
  */
 @Serializable
 class FollowCameraComponent(
-    var targetName: String = "Skater",
+    @GameObjectRef var targetName: String = "Skater",
     var distance: Float = 4f,
     var pivotHeight: Float = 1.4f,
     var pitch: Float = 12f,

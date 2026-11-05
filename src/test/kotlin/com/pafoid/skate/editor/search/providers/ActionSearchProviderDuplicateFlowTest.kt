@@ -1,5 +1,7 @@
 package com.pafoid.skate.editor.search.providers
 
+import com.pafoid.skate.engine.assets.Assets
+import com.pafoid.skate.engine.core.StringManager
 import com.pafoid.skate.editor.events.ViewportAction
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.core.LoggerService
@@ -34,6 +36,7 @@ class ActionSearchProviderDuplicateFlowTest {
         every { engine.sceneManager } returns sceneManager
         every { engine.logger } returns logger
         every { engine.eventSystem } returns eventSystem
+        every { engine.stringManager } returns StringManager(logger, "en").apply { loadStrings(Assets.Strings.EDITOR_STRINGS) }
         val provider = ActionSearchProvider(engine)
         val duplicateResult = provider.search("duplicate")
             .firstOrNull { it.metadata["actionId"] == "duplicate" }

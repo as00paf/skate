@@ -55,5 +55,6 @@ project_settings.json
 /.idea/kotlinc.xml
 /*.log
 /editor.config
+/shell_history.txt
 imgui.ini
 imgui.windows

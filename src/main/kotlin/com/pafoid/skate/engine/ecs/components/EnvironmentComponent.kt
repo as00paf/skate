@@ -34,7 +34,7 @@ data class EnvironmentComponent(
     var renderSky: Boolean = true,
     var renderFog: Boolean = true,
     /** Name of a runtime UI button that cycles the fog demo steps ([FogCycle]) when clicked in Play; empty = none. */
-    var fogCycleButton: String = "",
+    @GameObjectRef var fogCycleButton: String = "",
 ) : SceneComponent() {
 
     override fun reset() {

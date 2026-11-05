@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.ui.windows
 
+import com.pafoid.skate.editor.commands.CommandNames
 import com.pafoid.skate.editor.imgui.label
 import com.pafoid.skate.editor.commands.Command
 import com.pafoid.skate.editor.events.UndoRedoAction
@@ -123,7 +124,7 @@ class CommandHistoryWindow(
         for (i in undoStack.indices.reversed()) {
             val command = undoStack[i]
             val targetName = command.getTargetName() ?: stringManager.getString("lbl.unknown")
-            val label = "${Icons.CHECK} ${i + 1}. ${command.getDisplayName()} ($targetName)"
+            val label = "${Icons.CHECK} ${i + 1}. ${CommandNames.displayName(command, stringManager)} ($targetName)"
 
             // Executed commands are rendered in white (default) — can be undone
             if (ImGui.selectable(label, false)) {
@@ -155,7 +156,7 @@ class CommandHistoryWindow(
         for (i in redoStack.indices) {
             val command = redoStack[i]
             val targetName = command.getTargetName() ?: stringManager.getString("lbl.unknown")
-            val label = "${Icons.REDO} ${i + 1}. ${command.getDisplayName()} ($targetName)"
+            val label = "${Icons.REDO} ${i + 1}. ${CommandNames.displayName(command, stringManager)} ($targetName)"
 
             // Undone commands are rendered in gray — visually distinct from executed commands
             ImGui.pushStyleColor(ImGuiCol.Text, 0.5f, 0.5f, 0.5f, 1f)
