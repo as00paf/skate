@@ -1,6 +1,10 @@
 package com.pafoid.skate.editor.ui.windows
 
+import com.pafoid.skate.editor.events.ViewportAction
+import com.pafoid.skate.editor.data.EditorShortcuts
+import com.pafoid.skate.editor.data.EditorFocus
 import com.pafoid.skate.editor.imgui.tipped
+import com.pafoid.skate.editor.imgui.EmptyState
 import com.pafoid.skate.editor.imgui.label
 import com.pafoid.skate.editor.imgui.contextPopupId
 import com.pafoid.skate.editor.events.ViewportAction.CreateEmpty
@@ -43,6 +47,7 @@ private const val SPECIAL_UID_SCENE_RENAME = -999
 class SceneHierarchyWindow(
     val engine: Engine,
     private val clipboardService: ClipboardService,
+    private val hasProject: () -> Boolean = { true },
 ) : EditorWindow("window.hierarchy", true) {
     private val sceneManager = engine.sceneManager
     private val eventSystem = engine.eventSystem
@@ -59,9 +64,23 @@ class SceneHierarchyWindow(
     private val expandedNodes = mutableSetOf<Int>()
     private var flatObjectList: List<GameObject> = emptyList()
 
+    init {
+        // F2 (EDT-10): rename the selected object inline, wherever the shortcut was pressed.
+        eventSystem.subscribe<ViewportAction.StartRename> { event ->
+            isOpen.set(true)
+            startRename(event.gameObject)
+        }
+    }
+
     override fun imgui() {
-        val scene = sceneManager.currentScene ?: return
+        val scene = sceneManager.currentScene
         ImGui.begin(stringManager.label("window.hierarchy"))
+        if (scene == null) {
+            if (hasProject()) EmptyState.render(stringManager, Icons.FOLDER_OPEN, "empty.no_scene", "empty.no_scene.hint")
+            else EmptyState.noProject(stringManager, eventSystem)
+            ImGui.end()
+            return
+        }
 
         // Scene name header with rename button
         val sceneName = scene.name
@@ -129,15 +148,6 @@ class SceneHierarchyWindow(
 
         ImGui.separator()
 
-        // TODO: fix
-        // Check for pending rename from global shortcut (F2 in EditorInputHandler)
-        /*val pendingRenameUid = editorInputHandler.consumePendingRename()
-        if (pendingRenameUid != null && editingObjUid == null) {
-            val go = scene.gameObjectManager.getGameObject(pendingRenameUid)
-            if (go != null) {
-                startRename(go)
-            }
-        }*/
 
         // Navigation-only shortcuts (window-focused)
         handleWindowNavigation()
@@ -146,7 +156,12 @@ class SceneHierarchyWindow(
 
         rebuildFlatList(scene)
 
-        if (ImGui.beginTable("HierarchyTable", 3, ImGuiTableFlags.BordersInnerH or ImGuiTableFlags.Resizable or ImGuiTableFlags.ScrollY)) {
+        if (scene.children.none { it.isTopLevel }) {
+            EmptyState.render(stringManager, Icons.CUBE, "empty.hierarchy", "empty.hierarchy.hint",
+                listOf(EmptyState.Action("empty.hierarchy.create", Icons.PLUS) { eventSystem.publish(CreateEmpty(scene)) }))
+        } else if (filter.isNotEmpty() && flatObjectList.none { it.name.contains(filter, ignoreCase = true) }) {
+            EmptyState.render(stringManager, Icons.SEARCH, "empty.search", "empty.search.hint")
+        } else if (ImGui.beginTable("HierarchyTable", 3, ImGuiTableFlags.BordersInnerH or ImGuiTableFlags.Resizable or ImGuiTableFlags.ScrollY)) {
             ImGui.tableSetupColumn(stringManager.getString("tbl.hierarchy.name"), ImGuiTableColumnFlags.WidthStretch)
             ImGui.tableSetupColumn(stringManager.getString("tbl.hierarchy.visibility"), ImGuiTableColumnFlags.WidthFixed, 24f)
             ImGui.tableSetupColumn(stringManager.getString("tbl.hierarchy.lock"), ImGuiTableColumnFlags.WidthFixed, 24f)
@@ -169,29 +184,37 @@ class SceneHierarchyWindow(
     private fun handleWindowNavigation() {
         if (!ImGui.isWindowFocused()) return
 
+        // Keys from the Key Bindings window; while focused, the hierarchy owns them (Home does not also reset the
+        // camera, EDT-10).
+        val up = EditorShortcuts.NAVIGATE_UP.combo()
+        val down = EditorShortcuts.NAVIGATE_DOWN.combo()
+        val first = EditorShortcuts.SELECT_FIRST.combo()
+        val last = EditorShortcuts.SELECT_LAST.combo()
+        EditorFocus.claim(up, down, first, last)
+
         val ctrlDown = ImGui.isKeyDown(GLFW_KEY_LEFT_CONTROL) || ImGui.isKeyDown(GLFW_KEY_RIGHT_CONTROL)
 
         // Navigate Up (only if not in Ctrl combination)
-        if (ImGui.isKeyPressed(GLFW_KEY_UP) && !ctrlDown) {
+        if (ImGui.isKeyPressed(up.key) && !ctrlDown) {
             navigationIndex = (navigationIndex - 1).coerceAtLeast(0)
             selectObjectAtIndex(navigationIndex)
         }
 
         // Navigate Down (only if not in Ctrl combination)
-        if (ImGui.isKeyPressed(GLFW_KEY_DOWN) && !ctrlDown) {
+        if (ImGui.isKeyPressed(down.key) && !ctrlDown) {
             val maxIndex = flatObjectList.size - 1
             navigationIndex = (navigationIndex + 1).coerceAtMost(maxIndex)
             selectObjectAtIndex(navigationIndex)
         }
 
         // Select First (Home)
-        if (ImGui.isKeyPressed(GLFW_KEY_HOME)) {
+        if (ImGui.isKeyPressed(first.key) && !ctrlDown) {
             navigationIndex = 0
             selectObjectAtIndex(0)
         }
 
         // Select Last (End)
-        if (ImGui.isKeyPressed(GLFW_KEY_END)) {
+        if (ImGui.isKeyPressed(last.key) && !ctrlDown) {
             val maxIndex = flatObjectList.size - 1
             navigationIndex = maxIndex.coerceAtLeast(0)
             selectObjectAtIndex(navigationIndex)
@@ -342,14 +365,14 @@ class SceneHierarchyWindow(
 
             ImGui.separator()
 
-            if (stringManager.tipped(ImGui.menuItem("${Icons.COPY} ${stringManager.getString("context.hierarchy.duplicate")}"), "context.hierarchy.duplicate")) {
+            if (stringManager.tipped(ImGui.menuItem("${Icons.CLONE} ${stringManager.getString("context.hierarchy.duplicate")}", EditorShortcuts.DUPLICATE.display()), "context.hierarchy.duplicate", EditorShortcuts.DUPLICATE)) {
                 eventSystem.publish(Duplicate(obj))
             }
 
-            if (stringManager.tipped(ImGui.menuItem("${Icons.COPY} ${stringManager.getString("context.hierarchy.copy")}"), "context.hierarchy.copy")) {
+            if (stringManager.tipped(ImGui.menuItem("${Icons.COPY} ${stringManager.getString("context.hierarchy.copy")}", EditorShortcuts.COPY.display()), "context.hierarchy.copy", EditorShortcuts.COPY)) {
                 clipboardService.copy(obj)
             }
-            if (stringManager.tipped(ImGui.menuItem("${Icons.CUT} ${stringManager.getString("context.hierarchy.cut")}"), "context.hierarchy.cut")) {
+            if (stringManager.tipped(ImGui.menuItem("${Icons.CUT} ${stringManager.getString("context.hierarchy.cut")}", EditorShortcuts.CUT.display()), "context.hierarchy.cut", EditorShortcuts.CUT)) {
                 clipboardService.copy(obj)
                 sceneManager.currentScene?.let { scn ->
                     eventSystem.publish(Delete(obj, scn))
@@ -361,29 +384,29 @@ class SceneHierarchyWindow(
 
             ImGui.separator()
 
-            if (stringManager.tipped(ImGui.menuItem("${Icons.TRASH} ${stringManager.getString("context.hierarchy.delete")}"), "context.hierarchy.delete")) {
+            if (stringManager.tipped(ImGui.menuItem("${Icons.TRASH} ${stringManager.getString("context.hierarchy.delete")}", EditorShortcuts.DELETE.display()), "context.hierarchy.delete", EditorShortcuts.DELETE)) {
                 sceneManager.currentScene?.let { scn ->
                     eventSystem.publish(Delete(obj, scn))
                 }
             }
 
-            if (stringManager.tipped(ImGui.menuItem("${Icons.EDIT} ${stringManager.getString("context.hierarchy.rename")}"), "context.hierarchy.rename")) {
+            if (stringManager.tipped(ImGui.menuItem("${Icons.EDIT} ${stringManager.getString("context.hierarchy.rename")}", EditorShortcuts.RENAME.display()), "context.hierarchy.rename", EditorShortcuts.RENAME)) {
                 startRename(obj)
             }
 
             ImGui.separator()
 
-            if (stringManager.tipped(ImGui.menuItem("${Icons.EYE} ${stringManager.getString("context.hierarchy.focus_in_viewport")}"), "context.hierarchy.focus_in_viewport")) {
+            if (stringManager.tipped(ImGui.menuItem("${Icons.EYE} ${stringManager.getString("context.hierarchy.focus_in_viewport")}", EditorShortcuts.FOCUS.display()), "context.hierarchy.focus_in_viewport", EditorShortcuts.FOCUS)) {
                 eventSystem.publish(GameObjectSelected(obj))
                 eventSystem.publish(FocusSelected)
             }
 
             ImGui.separator()
 
-            if (stringManager.tipped(ImGui.menuItem(stringManager.getString("context.hierarchy.expand_all")), "context.hierarchy.expand_all")) {
+            if (stringManager.tipped(ImGui.menuItem("${Icons.EXPAND} ${stringManager.getString("context.hierarchy.expand_all")}"), "context.hierarchy.expand_all")) {
                 expandAll(sceneManager.currentScene ?: return)
             }
-            if (stringManager.tipped(ImGui.menuItem(stringManager.getString("context.hierarchy.collapse_all")), "context.hierarchy.collapse_all")) {
+            if (stringManager.tipped(ImGui.menuItem("${Icons.ARROW_UP} ${stringManager.getString("context.hierarchy.collapse_all")}"), "context.hierarchy.collapse_all")) {
                 collapseAll(sceneManager.currentScene ?: return)
             }
 
@@ -393,7 +416,7 @@ class SceneHierarchyWindow(
                 "${Icons.UNLOCK} ${stringManager.getString("context.hierarchy.lock_unlock")}"
             else
                 "${Icons.LOCK} ${stringManager.getString("context.hierarchy.lock_unlock")}"
-            if (ImGui.menuItem(lockLabel)) {
+            if (stringManager.tipped(ImGui.menuItem(lockLabel, EditorShortcuts.TOGGLE_LOCK.display()), "context.hierarchy.lock_unlock", EditorShortcuts.TOGGLE_LOCK)) {
                 val newLock = !obj.isLocked
                 eventSystem.publish(ToggleLock(obj, newLock))
             }
@@ -402,7 +425,7 @@ class SceneHierarchyWindow(
                 "${Icons.EYE_SLASH} ${stringManager.getString("context.hierarchy.visible_hidden")}"
             else
                 "${Icons.EYE} ${stringManager.getString("context.hierarchy.visible_hidden")}"
-            if (ImGui.menuItem(visLabel)) {
+            if (stringManager.tipped(ImGui.menuItem(visLabel, EditorShortcuts.TOGGLE_VISIBILITY.display()), "context.hierarchy.visible_hidden", EditorShortcuts.TOGGLE_VISIBILITY)) {
                 val newVis = !obj.isVisible
                 eventSystem.publish(ToggleVisibility(obj, newVis))
             }

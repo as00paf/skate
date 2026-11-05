@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.commands.project
 
+import com.pafoid.skate.editor.commands.ReportsFailure
 import com.pafoid.skate.editor.commands.ExecuteOnlyCommand
 import com.pafoid.skate.editor.commands.ExecutionTrackedCommand
 import com.pafoid.skate.editor.systems.ProjectManager
@@ -8,7 +9,9 @@ import java.io.File
 class OpenProjectFileCommand(
     private val projectManager: ProjectManager,
     private val projectFile: File
-) : ExecuteOnlyCommand, ExecutionTrackedCommand {
+) : ExecuteOnlyCommand, ReportsFailure {
+    override val errorTitleKey = "error.open_project.title"
+
     private var executeSucceeded = false
 
     override fun execute() {
@@ -23,4 +26,5 @@ class OpenProjectFileCommand(
     override fun getTargetName(): String = projectFile.name
 
     override fun wasSuccessful(): Boolean = executeSucceeded
+    override fun getFailureReason(): String? = projectManager.lastError
 }

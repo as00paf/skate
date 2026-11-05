@@ -1,5 +1,6 @@
 package com.pafoid.skate.app
 
+import com.pafoid.skate.editor.events.EditorError
 import com.pafoid.skate.editor.events.WindowAction
 import com.pafoid.skate.editor.systems.ProjectManager
 import com.pafoid.skate.engine.core.Engine
@@ -25,7 +26,10 @@ class EditorScreen(private val window: Window, private val engine: Engine) : Scr
 
     fun loadLastProject(): Boolean {
         val projectFile = editor.settingsManager.lastProjectFile() ?: return false
-        return projectManager.openProjectFile(projectFile)
+        if (projectManager.openProjectFile(projectFile)) return true
+        // EDT-10: say why instead of silently showing the wizard.
+        engine.eventSystem.publish(EditorError("error.open_project.title", projectManager.lastError))
+        return false
     }
 
     override fun update(dt: Float) {

@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.imgui
 
+import com.pafoid.skate.editor.data.EditorShortcut
 import com.pafoid.skate.engine.core.StringManager
 import imgui.ImGui
 
@@ -27,20 +28,27 @@ object Tooltips {
         if (ImGui.isItemHovered() && strings.hasString(tooltipKey)) ImGui.setTooltip(strings.getString(tooltipKey))
     }
 
-    /** Shows [tooltipKey]'s text while the last item is hovered. */
-    fun show(strings: StringManager, tooltipKey: String) {
-        if (ImGui.isItemHovered()) ImGui.setTooltip(strings.getString(tooltipKey))
+    /** Shows [tooltipKey]'s text while the last item is hovered, with [shortcut]'s live combo when given (EDT-10). */
+    fun show(strings: StringManager, tooltipKey: String, shortcut: EditorShortcut? = null) {
+        if (ImGui.isItemHovered()) ImGui.setTooltip(withShortcut(strings, strings.getString(tooltipKey), shortcut))
     }
+
+    /**
+     * [text] plus a "Shortcut: Ctrl+D" line. Shortcut text is never written into tooltip strings: it comes from
+     * [EditorShortcuts][com.pafoid.skate.editor.data.EditorShortcuts], so it stays right after a rebinding.
+     */
+    fun withShortcut(strings: StringManager, text: String, shortcut: EditorShortcut?): String =
+        if (shortcut == null) text else "$text\n${strings.getString("tooltip.shortcut", shortcut.display())}"
 }
 
 /** Returns [clicked] after attaching the tooltip derived from [labelKey] to the item just drawn. */
-fun StringManager.tipped(clicked: Boolean, labelKey: String): Boolean {
-    Tooltips.show(this, Tooltips.keyFor(labelKey))
+fun StringManager.tipped(clicked: Boolean, labelKey: String, shortcut: EditorShortcut? = null): Boolean {
+    Tooltips.show(this, Tooltips.keyFor(labelKey), shortcut)
     return clicked
 }
 
 /** Like [tipped] with an explicit [tooltipKey] (icon-only buttons, labels built from several keys). */
-fun StringManager.tippedWith(clicked: Boolean, tooltipKey: String): Boolean {
-    Tooltips.show(this, tooltipKey)
+fun StringManager.tippedWith(clicked: Boolean, tooltipKey: String, shortcut: EditorShortcut? = null): Boolean {
+    Tooltips.show(this, tooltipKey, shortcut)
     return clicked
 }

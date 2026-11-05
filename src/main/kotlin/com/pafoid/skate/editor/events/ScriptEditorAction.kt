@@ -10,6 +10,9 @@ sealed class ScriptEditorAction(eventName: String) : Event(eventName) {
     /** Writes [text] to [file] as an undoable command; the runtime hot-reloads the changed file. */
     data class Save(val file: File, val text: String) : ScriptEditorAction("script_editor.save")
 
+    /** [file] was written with [text] (EDT-10: the editor marks it saved only then). */
+    data class Saved(val file: File, val text: String) : ScriptEditorAction("script_editor.saved")
+
     /** Creates a script from the template in [directory] and opens it. */
     data class Create(val directory: File, val input: String) : ScriptEditorAction("script_editor.create")
 }

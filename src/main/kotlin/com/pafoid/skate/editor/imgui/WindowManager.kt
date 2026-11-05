@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.imgui
 
+import com.pafoid.skate.editor.data.EditorFocus
 import com.pafoid.skate.editor.events.WindowAction
 import com.pafoid.skate.editor.imgui.components.InspectorDrafts
 import com.pafoid.skate.engine.core.EventSystem
@@ -37,6 +38,9 @@ class WindowManager(
 
     private val closeTracker = WindowCloseTracker()
 
+    /** Failed user actions (EDT-10); drawn last so it sits above every window. */
+    private val errorDialog = ErrorDialog(eventSystem, stringManager)
+
     fun update() {
         windowRegistry.windows.forEach { window ->
             if (!window.isOpen.get()) return@forEach
@@ -46,5 +50,7 @@ class WindowManager(
         InspectorDrafts.endFrame(eventSystem, ImGui.getFrameCount(), ImGui.isAnyItemActive())
         windowRegistry.menuBar.render()
         windowRegistry.statusBar.render()
+        errorDialog.render()
+        EditorFocus.endFrame()
     }
 }

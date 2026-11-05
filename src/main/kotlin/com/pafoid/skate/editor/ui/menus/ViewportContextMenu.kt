@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.ui.menus
 
+import com.pafoid.skate.editor.data.EditorShortcuts
 import com.pafoid.skate.editor.imgui.tippedWith
 import com.pafoid.skate.editor.imgui.tipped
 import com.pafoid.skate.editor.imgui.label
@@ -52,7 +53,7 @@ class ViewportContextMenu(
 
     private fun renderCreateMenu(scene: Scene?) {
         // Create Empty
-        if (stringManager.tipped(ImGui.menuItem("${Icons.PLUS} ${stringManager.getString("context.viewport.create_empty")}"), "context.viewport.create_empty")) {
+        if (stringManager.tipped(ImGui.menuItem("${Icons.PLUS} ${stringManager.getString("context.viewport.create_empty")}", EditorShortcuts.CREATE_EMPTY.display()), "context.viewport.create_empty", EditorShortcuts.CREATE_EMPTY)) {
             scene?.let { eventSystem.publish(CreateEmpty(it)) }
         }
 
@@ -117,22 +118,22 @@ class ViewportContextMenu(
     private fun renderObjectManipulationMenu(scene: Scene?) {
         val selectedObject = scene?.selectedGameObject
         if (selectedObject != null) {
-            if (stringManager.tipped(ImGui.menuItem("${Icons.COPY} ${stringManager.getString("context.viewport.duplicate")}"), "context.viewport.duplicate")) {
+            if (stringManager.tipped(ImGui.menuItem("${Icons.CLONE} ${stringManager.getString("context.viewport.duplicate")}", EditorShortcuts.DUPLICATE.display()), "context.viewport.duplicate", EditorShortcuts.DUPLICATE)) {
                 eventSystem.publish(Duplicate(selectedObject))
             }
-            if (stringManager.tipped(ImGui.menuItem("${Icons.TRASH} ${stringManager.getString("context.viewport.delete")}"), "context.viewport.delete")) {
+            if (stringManager.tipped(ImGui.menuItem("${Icons.TRASH} ${stringManager.getString("context.viewport.delete")}", EditorShortcuts.DELETE.display()), "context.viewport.delete", EditorShortcuts.DELETE)) {
                 scene?.let { eventSystem.publish(Delete(selectedObject, it)) }
             }
             ImGui.separator()
         }
 
         // Focus Selected
-        if (stringManager.tipped(ImGui.menuItem("${Icons.EYE} ${stringManager.getString("context.viewport.focus_selected")}"), "context.viewport.focus_selected")) {
+        if (stringManager.tipped(ImGui.menuItem("${Icons.EYE} ${stringManager.getString("context.viewport.focus_selected")}", EditorShortcuts.FOCUS.display()), "context.viewport.focus_selected", EditorShortcuts.FOCUS)) {
             eventSystem.publish(FocusSelected)
         }
 
         // Reset Camera
-        if (stringManager.tipped(ImGui.menuItem("${Icons.ROTATE} ${stringManager.getString("context.viewport.reset_camera")}"), "context.viewport.reset_camera")) {
+        if (stringManager.tipped(ImGui.menuItem("${Icons.ARROW_ROTATE} ${stringManager.getString("context.viewport.reset_camera")}", EditorShortcuts.CAMERA_RESET.display()), "context.viewport.reset_camera", EditorShortcuts.CAMERA_RESET)) {
             eventSystem.publish(ResetCamera)
         }
     }

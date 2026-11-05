@@ -30,14 +30,14 @@ class WindowRegistry(
     projectManager: ProjectManager,
 ) {
     val windows: List<EditorWindow> = listOf(
-        SceneHierarchyWindow(engine, editor.clipboardService),
-        PropertiesWindow(engine),
-        GameViewWindow(engine, editor),
+        SceneHierarchyWindow(engine, editor.clipboardService, projectManager::hasProject),
+        PropertiesWindow(engine, projectManager::hasProject),
+        GameViewWindow(engine, editor, projectManager::hasProject),
         AssetBrowserWindow(engine, editor.undoRedoManager),
         ProfilerWindow(engine.stringManager),
         ConsoleWindow(engine),
         InputTestingWindow(engine, projectManager),
-        EditorSettingsWindow(editor.settingsManager, engine.stringManager),
+        EditorSettingsWindow(editor.settingsManager, engine.stringManager) { engine.eventSystem.publish(com.pafoid.skate.editor.events.WindowAction.Show("window.keybindings")) },
         ProjectSettingsWindow(engine, editor.settingsManager, projectManager),
         KeyBindingsWindow(engine, editor.settingsManager, engine.stringManager, projectManager),
         CommandHistoryWindow(engine, editor.undoRedoManager),
@@ -49,7 +49,7 @@ class WindowRegistry(
         ProjectWindow(engine, projectManager),
         ScriptEditorWindow(engine, projectManager, editor.settingsManager),
         ShellWindow(engine, projectManager),
-        ExportWizardWindow(engine, projectManager),
+        ExportWizardWindow(engine, projectManager, editor.settingsManager),
     )
 
     /** Windows listed in View > Windows and stored in the layout; dialogs are excluded. */
