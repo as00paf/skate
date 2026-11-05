@@ -80,7 +80,8 @@ data class PolygonOffset(val factor: Float, val units: Float)
 
 enum class BufferUsage { VERTEX, INDEX, UNIFORM, INSTANCE }
 
-enum class BufferUpdate { STATIC, DYNAMIC }
+/** Update frequency hint: STATIC (once), DYNAMIC (every few frames), STREAM (every frame, rewritten whole). */
+enum class BufferUpdate { STATIC, DYNAMIC, STREAM }
 
 data class BufferDesc(val usage: BufferUsage, val size: Long, val update: BufferUpdate = BufferUpdate.STATIC) {
     init {

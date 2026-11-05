@@ -87,7 +87,6 @@ class PlatformApiGuardTest {
         val exceptions = setOf(
             "engine/assets/data/CubeMap.kt",
             "engine/assets/loaders/TextureLoader.kt",
-            "engine/render/renderer/DebugRenderer.kt",
             "engine/render/renderer/PickingRenderer.kt",
         )
         val create = Regex("""glGen(Buffers|Textures|Framebuffers|VertexArrays|Renderbuffers)|glCreate(Program|Shader)|alGen(Buffers|Sources)""")

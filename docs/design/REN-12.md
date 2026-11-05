@@ -1,6 +1,6 @@
 # REN-12 — RHI abstraction (Vulkan-ready): design note
 
-Status: **proposed, awaiting approval** (rule 3: no production code until approved). Owner: skate-render.
+Status: **approved** (§7 proposals as written); migration in progress, see §5. Owner: skate-render.
 Paths are relative to `src/main/kotlin/com/pafoid/skate/` unless noted. Counts are from `master` at `c843d9fb` (PR #16).
 
 ## 1. Goal and non-goals
@@ -157,8 +157,18 @@ classes: allocation-free on the hot path and testable without GL.
 
 ## 5. Incremental migration plan
 
-Status: steps 0 and 1 are done. `RhiDevice` only declares what its backend implements so far; each later step adds
-the `create*` methods it migrates to.
+Status: steps 0 to 2 are done. `RhiDevice` and `RhiCommandList` only declare what the backend implements so far;
+each later step adds the methods it migrates to. Amendments made while implementing:
+
+- **`RhiVertexInput`** (step 2): vertex and index buffers bound to a vertex layout, created by
+  `RhiDevice.createVertexInput`. On GL it is a VAO; on Vulkan it is the binding list recorded at draw time. It replaces
+  `setVertexBuffer`/`setIndexBuffer` in the command list (step 6 adds `setVertexInput`). Until step 6 moves the draws,
+  `nativeHandle` gives draw code the VAO name.
+- **`RhiContext.device`** (step 2): the device of the current context, set when the device is created. Asset loaders
+  are built before the window (and so before the device), so they reach it lazily; `Engine.device` is the same object.
+- **Buffer updates** (step 2): `RhiBuffer.update` takes float arrays, float buffers or byte buffers; `resize` and
+  `replace` give new storage (GL: orphaning). Index buffers upload through `GL_COPY_WRITE_BUFFER`, so an upload never
+  rebinds the index buffer of the VAO that happens to be bound.
 
 Each step is one PR-sized commit. Each must keep the full test suite green, produce pixel-identical offscreen frames
 (REN-18/19/20 harness: default `MainScene` and `FeatureShowcase`, created, saved and reloaded, edit mode and Play),
