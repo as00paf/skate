@@ -1,5 +1,8 @@
 package com.pafoid.skate.editor.ui.windows.viewport
 
+import java.io.File
+import com.pafoid.skate.editor.systems.ScreenshotFolder
+import com.pafoid.skate.editor.imgui.EditorToast
 import com.pafoid.skate.engine.core.LoggerService.LogLevel
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.utils.ScreenshotUtils
@@ -8,6 +11,8 @@ import imgui.ImVec2
 
 class ViewportRenderer(
     private val engine: Engine,
+    /** Folder for screenshots, resolved at capture time (EDT-42: the open project's, else the user-data one). */
+    private val screenshotDir: () -> File = { ScreenshotFolder.resolve(null) },
 ) {
     var imageScreenPosX = 0f
     var imageScreenPosY = 0f
@@ -49,9 +54,22 @@ class ViewportRenderer(
             engine.logger.logEditor("Screenshot skipped: the viewport has no size yet", LogLevel.WARN)
             return
         }
-        runCatching { ScreenshotUtils.takeScreenshot(frameBuffer.target, engine.device) }
+        val dir = screenshotDir()
+        runCatching { ScreenshotUtils.takeScreenshot(frameBuffer.target, engine.device, dir, ::onScreenshotSaved) }
             .onSuccess { engine.logger.logEditor("Screenshot captured (${frameBuffer.width}x${frameBuffer.height})") }
             .onFailure { engine.logger.logEditor("Screenshot failed: ${it.message}", LogLevel.ERROR) }
+    }
+
+    /** Runs on the writer thread: the logger and the toast are both thread-safe. */
+    internal fun onScreenshotSaved(result: Result<File>) {
+        val strings = engine.stringManager
+        result.onSuccess { file ->
+            engine.logger.logEditor("Screenshot saved to ${file.absolutePath}", LogLevel.ACTION)
+            EditorToast.show(strings.getString("toast.screenshot_saved", file.absolutePath))
+        }.onFailure {
+            engine.logger.logEditor("Screenshot failed: ${it.message}", LogLevel.ERROR)
+            EditorToast.show(strings.getString("toast.screenshot_failed", it.message ?: ""))
+        }
     }
 
     companion object {

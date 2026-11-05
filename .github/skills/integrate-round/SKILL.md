@@ -23,7 +23,10 @@ Used by `skate-lead` after domain agents report `DONE`. Never push to a remote o
 5. **PR.** `git push -u origin integration/<round-name>` then
    `gh pr create --base master --head integration/<round-name> --title "Round <name>: <summary>" --body-file <file>`.
    The body lists tasks completed (IDs), test results, known pre-existing failures, and a human test checklist (what to run, what to look for). The checklist must be clear but concise: state once that every test starts from a NEW project (and the launch command), then at most 5-8 short numbered steps per task with the key expected result, focusing on the highest-risk checks. Do not over-detail. Ask agents for brief steps in `docs/testing/<TASK-ID>.md` (max ~8 steps) and put only the short version in the PR body and the Discord DM.
-6. **Merge.** Once the human has tested (or delegated the merge), merge the PR with `gh pr merge --merge`. Afterwards bring every `agents/<domain>` branch up to date with `git merge master` (the lead can do it when the only conflict is `GameEngine.md`; otherwise ask the owning agent). Keep the integration worktree; the next round's `integrate.sh` switches it to the new branch.
+6. **Merge.** Once the human has tested (or delegated the merge):
+   - Check CI first: `gh pr checks <n>`. Wait for pending runs (`gh run watch <id>`); a failing CI is reported to the human, never ignored silently.
+   - Merge with `gh pr merge <n> --merge`, then **verify** with `gh api repos/<owner>/<repo>/pulls/<n> -q .merged` that it returned `true`. `gh pr merge` can exit quietly without merging, e.g. while checks are pending.
+   - Only after a confirmed merge: `git pull --ff-only origin master`, then sync the agent branches. Syncing on an unmerged master hands agents a stale base. Afterwards bring every `agents/<domain>` branch up to date with `git merge master` (the lead can do it when the only conflict is `GameEngine.md`; otherwise ask the owning agent). Keep the integration worktree; the next round's `integrate.sh` switches it to the new branch.
 
 ## Discord DMs (two-way)
 

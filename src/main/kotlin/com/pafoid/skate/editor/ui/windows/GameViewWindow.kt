@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.ui.windows
 
+import com.pafoid.skate.editor.systems.ScreenshotFolder
 import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.editor.imgui.EmptyState
 import com.pafoid.skate.editor.imgui.label
@@ -25,13 +26,14 @@ class GameViewWindow(
     private val engine: Engine,
     private val editor: Editor,
     private val hasProject: () -> Boolean = { true },
+    private val projectDir: () -> java.io.File? = { null },
 ) : EditorWindow("window.game_viewport", true) {
     private val stringManager = engine.stringManager
     private val sceneManager = engine.sceneManager
 
     private val viewportOverlays = ViewportOverlays(TrickUIWindow(engine.eventSystem), editor.settingsManager)
 
-    private val viewportRenderer = ViewportRenderer(engine)
+    private val viewportRenderer = ViewportRenderer(engine) { ScreenshotFolder.resolve(projectDir()) }
     private val uiRectGizmo = UiRectGizmo(engine, editor.undoRedoManager, viewportRenderer).also { editor.gizmoSystem.uiGizmo = it }
     private val viewportContextMenu = ViewportContextMenu(stringManager, engine.eventSystem)
     private val viewportDragDropHandler =
