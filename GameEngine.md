@@ -643,7 +643,7 @@ All editor mutations must go through `Command` classes and the service layer (se
   - Do: Add an editor-side export wizard on top of AST-06 (target, included scenes, compression, output folder) with progress reporting.
   - Done when: A sample project can be exported from the UI.
   - Deps: AST-06
-- [ ] **EDT-10** `P3` General editor UX pass
+- [~] @skate-editor **EDT-10** `P3` General editor UX pass
   - Do: Keyboard shortcuts audit, consistent icons, empty states, error dialogs and undo coverage for every mutation.
   - Done when: The checklist is in `docs/design/EDT-10.md` and its items are resolved.
 
@@ -840,6 +840,10 @@ A lot of features are broken. Many unit tests are missing (**no integration test
   - Do: The audio demo shipped silent because no test exercised the showcase the way the human does. Add an automated smoke test that generates a new project, loads `FeatureShowcase` from disk, starts Play and steps frames, then asserts each demo's observable effect: audio sources playing, particles alive, physics bodies settled (no falling through), joints moving, vehicle resting, animation advancing, UI legend buttons bound and focusing the camera. Use fakes where GL/OpenAL aren't available, but keep the scene/systems real.
   - Done when: The smoke test runs in `gradlew test`, fails if any demo is inert (verify by temporarily breaking one), and is documented for future demos (rule 8).
   - Deps: TLG-09
+- [~] @skate-qa **QA-14** `P2` Project lifecycle end-to-end test
+  - Do: Regressions reached the human twice in workflows no test exercised as they do (EDT-41 recent projects after AST-09, AUD-09 silent showcase). Add an automated end-to-end test of the editor project lifecycle through the real managers and disk: create a new project, save, close, reopen via the recent-projects list and via the startup last-project path, move the folder and open it, switch scenes, Play/Stop, export (wizard model) and load the exported pack headless. Assert no errors logged and that scenes, assets and settings resolve.
+  - Done when: The test runs in `gradlew test`, would have caught EDT-41 (verify by reverting it locally), and is documented as the place to extend for future workflow changes.
+  - Deps: EDT-41
 
 ## Agents & herdr
 
