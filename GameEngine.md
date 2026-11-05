@@ -524,7 +524,7 @@ In-game UI components need to be added (separate from the ImGui editor).
   - Do: Human-reported on PR #12 after GUI-06/REN-18: hover/press work but button backgrounds render incorrectly. Find the root cause (UI colours or the REN-18 render state/alpha changes) and fix it.
   - Done when: Button backgrounds render solid in all states in editor and game; regression test.
   - Deps: GUI-06, REN-18
-- [ ] **GUI-08** `P3` Review AST-07 string loading changes
+- [~] @skate-gameui **GUI-08** `P3` Review AST-07 string loading changes
   - Do: From AST-07: review `engine/core/StringManager.kt`, `StringTables.kt`, the new `StringSource.kt` and `GameMain.loadGameStrings()` (pack-based game strings), and align with EDT-37's per-area tables.
   - Done when: Review fixes committed; runtime UI strings load from files and packs alike; tests.
   - Deps: AST-07
@@ -723,7 +723,7 @@ All editor mutations must go through `Command` classes and the service layer (se
 - [x] **EDT-34** `P1` Frame-rate independent editor camera
   - Do: Human-reported on PR #13: editor camera movement (fly, orbit, pan, zoom, focus lerp) is tied to the frame rate. Scale every camera motion by real frame delta time, with clamping for hitches.
   - Done when: Camera speed is the same at 30, 60 and 144 FPS; unit-tested with simulated frame times.
-- [ ] **EDT-35** `P3` Drop the ignoreImGui workarounds for fly-cam look and UI pointer
+- [~] @skate-input **EDT-35** `P3` Drop the ignoreImGui workarounds for fly-cam look and UI pointer
   - Do: From INP-09: in `Engine.kt`, replace the two `ignoreImGui = true` workarounds with `reader.isMouseButtonDown(1)` for fly-cam look and the default `ReaderUiInputSource` pointer, so look keeps working when the cursor leaves the view mid-drag.
   - Done when: Fly-cam look and UI pointer behave as now plus mid-drag exit keeps working; tests.
   - Deps: INP-09
@@ -737,11 +737,11 @@ All editor mutations must go through `Command` classes and the service layer (se
   - Do: Human-reported on PR #17: changing the editor language breaks ImGui, likely because window/widget IDs come from translated labels. Use `translated###stable_id` (or `PushID`) for every window, menu, tab, tree node, popup, table and widget whose label is translated; keep docking layout/`imgui.ini`, open state and selection across a language switch at runtime.
   - Done when: Switching language at runtime keeps docking layout, window open/collapsed state, tree expansion and popups working; a guard test fails on ImGui calls built from translated labels without a stable ID.
   - Deps: EDT-37
-- [ ] **EDT-39** `P3` Review GUI-10 additions to `app/Editor.kt`
+- [~] @skate-editor **EDT-39** `P3` Review GUI-10 additions to `app/Editor.kt`
   - Do: From GUI-10: review the game string tables loading into `engine.gameStrings` and `ProjectEvent.Opened` applying the project's `game.settings.json`.
   - Done when: Review fixes committed or noted; tests green.
   - Deps: GUI-10
-- [ ] **EDT-40** `P1` Review round-16 editor work by other agents
+- [~] @skate-editor **EDT-40** `P1` Review round-16 editor work by other agents
   - Do: Review the editor-side code written outside skate-editor in round 16: EDT-07 themes (gameui), EDT-08 shell panel (tooling), EDT-09 export wizard incl. `ExportWizardWindow`, `EditorMenuBar`/`WindowRegistry` additions, `ProjectEvents`, `ProjectActionHandler` (assets), EDT-14 audio inspector/mixer (audio), EDT-16 animator inspector (animation), EDT-17 material inspector (render), EDT-36 string fields/object picker (ecs). Check commands/undo, stable IDs, strings, window registration, consistency.
   - Done when: Review fixes committed with notes per task; tests green.
   - Deps: EDT-07, EDT-08, EDT-09, EDT-14, EDT-16, EDT-17, EDT-36
