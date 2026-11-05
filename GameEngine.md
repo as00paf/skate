@@ -627,7 +627,7 @@ All editor mutations must go through `Command` classes and the service layer (se
   - Do: Billboard icons plus wire gizmos (camera frustum, light range/cone, direction arrow), all selectable.
   - Done when: Every camera and light is visible and clickable in the scene view.
   - Deps: EDT-03
-- [ ] **EDT-05** `P2` Tooltips everywhere
+- [~] @skate-editor **EDT-05** `P2` Tooltips everywhere
   - Do: Add tooltips (via `StringManager` keys) to every toolbar button, property and menu item.
   - Done when: No interactive widget lacks a tooltip. A test checks that all tooltip keys exist in the string files.
 - [x] **EDT-06** `P2` Complete translations
