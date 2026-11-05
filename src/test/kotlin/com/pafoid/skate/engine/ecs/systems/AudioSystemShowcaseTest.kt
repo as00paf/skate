@@ -206,6 +206,26 @@ class AudioSystemShowcaseTest {
         assertTrue(al.sources.isEmpty())
     }
 
+    /** ECS-13: switching scenes while paused releases the held voice instead of resuming it in the new scene. */
+    @Test
+    fun Showcase_Audio_SceneSwitchWhilePausedReleasesHeldVoices() {
+        copyBundledMusic()
+        val scene = loadShowcaseFromDisk()
+        val system = system(scene)
+        scene.isRunning = true
+        frame(system, scene)
+        assertEquals(1, al.playing.size)
+        scene.isPaused = true
+        frame(system, scene)
+
+        val other = Scene("Other").apply { isRunning = true }
+        system.init(other)
+        frame(system, other)
+
+        assertTrue(al.playing.isEmpty(), "no voice may resume in the new scene")
+        assertTrue(al.sources.isEmpty(), "the old scene's voices must be released")
+    }
+
     /** AUD-11: clicking an area button glides the camera fast; the song must keep its pitch. */
     @Test
     fun Showcase_Audio_FastCameraGlideKeepsTheSongAtPitchOne() {
