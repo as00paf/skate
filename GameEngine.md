@@ -652,7 +652,7 @@ All editor mutations must go through `Command` classes and the service layer (se
   - Do: Add a material inspector and a "save material as asset" action backed by the REN-04 `.skmat` assets, via commands.
   - Done when: A material can be edited and saved as `.skmat` from the editor.
   - Deps: REN-04
-- [ ] **EDT-18** `P2` Editor logging and user-data paths
+- [~] @skate-editor **EDT-18** `P2` Editor logging and user-data paths
   - Do: From QA-04: replace `println` in `SearchHistory`, `SearchEngine`, `TranslateGizmo`, `Component.kt`; log in `captureScreenshot`; move the wizard default path and `search_history.json` to the user-data directory.
   - Done when: No `println` in editor; user data stored outside the working directory.
 - [x] **EDT-19** `P1` Input Testing window rework
