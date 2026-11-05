@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.ui.windows
 
+import com.pafoid.skate.editor.systems.EditorPaths
 import com.pafoid.skate.editor.data.FileType
 import com.pafoid.skate.editor.events.ProjectEvent.CreateProjectRequested
 import com.pafoid.skate.editor.events.ProjectEvent.OpenProjectRequested
@@ -89,7 +90,8 @@ class ProjectWizardWindow(
         ImGui.text(stringManager.getString("wizard.project.location"))
         ImGui.spacing()
         ImGui.pushItemWidth(350f)
-        projectPathInput.set("C:\\workspace\\skate_workspace")
+        // Default once, then the field is the user's (typing and Browse used to be overwritten every frame).
+        if (projectPathInput.get().isBlank()) projectPathInput.set(defaultLocation())
         ImGui.inputText("##ProjectPath", projectPathInput, ImGuiInputTextFlags.None)
         ImGui.popItemWidth()
 
@@ -236,6 +238,10 @@ class ProjectWizardWindow(
         }
         ImGui.endDisabled()
     }
+
+    /** Default parent folder for new projects in the user's documents ([EditorPaths]); created so it validates. */
+    private fun defaultLocation(): String =
+        EditorPaths.defaultProjectsDir().also { it.mkdirs() }.absolutePath
 
     private fun openExistingProjectDialog() {
         try {

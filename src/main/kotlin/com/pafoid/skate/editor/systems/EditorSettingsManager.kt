@@ -18,7 +18,7 @@ class EditorSettingsManager(
     private val eventSystem: EventSystem,
     private val logger: LoggerService,
     private val stringManager: StringManager,
-    private val editorSettingsFile: File = File("editor.config"),
+    private val editorSettingsFile: File = EditorPaths.file(EditorPaths.SETTINGS_FILE),
 ) {
     var editorSettings: EditorSettings = EditorSettings()
 

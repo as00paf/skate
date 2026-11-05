@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.search
 
+import com.pafoid.skate.engine.core.LoggerService.LogLevel
 import com.pafoid.skate.editor.search.data.SearchCategory
 import com.pafoid.skate.editor.search.data.SearchResult
 import com.pafoid.skate.editor.search.providers.ActionSearchProvider
@@ -16,6 +17,7 @@ class SearchEngine(
     private val stringManager: StringManager,
 ) {
     private val providers = mutableListOf<SearchProvider>()
+    private val logger = engine.logger
 
     init {
         registerProvider(GameObjectSearchProvider(engine.sceneManager, engine.gameObjectManager, stringManager))
@@ -42,8 +44,8 @@ class SearchEngine(
                 try {
                     provider.search(query)
                 } catch (e: Exception) {
-                    // Log error but continue with other providers
-                    e.printStackTrace()
+                    // Log and continue with the other providers
+                    logger.logEditor("Search provider ${provider.javaClass.simpleName} failed: ${e.message}", LogLevel.ERROR)
                     emptyList<SearchResult>()
                 }
             }
