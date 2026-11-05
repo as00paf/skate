@@ -178,6 +178,9 @@ class DebugRenderer(
         }
     }
 
+    /** Vertices of the ground ribbons queued this frame (tests: they must lie on the floor plane). */
+    internal fun groundTriangleVertices(): List<Vector3f> = groundTriangles.flatMap { listOf(it.v1, it.v2, it.v3) }
+
     /**
      * A line lying on a horizontal floor, e.g. the editor grid (REN-19): it gets the grazing-angle depth pull
      * ([GroundDepthPull]) so it does not z-fight with the floor far away.
