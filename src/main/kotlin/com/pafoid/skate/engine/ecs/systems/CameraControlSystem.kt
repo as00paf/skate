@@ -22,8 +22,14 @@ fun interface FlyInputSource {
     fun read(): FlyInput
 }
 
-/** WASD / E-Q / Shift from [reader]; mouse look while [lookHeld] (the engine passes the raw right button over the view). */
-class ReaderFlyInputSource(private val reader: InputReader, private val lookHeld: () -> Boolean) : FlyInputSource {
+/**
+ * WASD / E-Q / Shift from [reader]; mouse look while [lookHeld], by default the reader's right button: held for a press
+ * that started in the game view, also after the cursor leaves it mid-drag (docs/design/INP-09.md).
+ */
+class ReaderFlyInputSource(
+    private val reader: InputReader,
+    private val lookHeld: () -> Boolean = { reader.isMouseButtonDown(1) },
+) : FlyInputSource {
     private fun axis(plus: Int, minus: Int) = (if (reader.isKeyDown(plus)) 1f else 0f) - (if (reader.isKeyDown(minus)) 1f else 0f)
 
     override fun read(): FlyInput {
