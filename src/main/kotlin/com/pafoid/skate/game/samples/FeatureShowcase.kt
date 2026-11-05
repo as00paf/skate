@@ -4,9 +4,9 @@ import com.pafoid.skate.engine.addComponent
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.PrefabsGenerator
 import com.pafoid.skate.engine.assets.data.Texture
-import com.pafoid.skate.engine.assets.data.models.`3dModel`
 import com.pafoid.skate.engine.assets.data.models.AlphaMode
 import com.pafoid.skate.engine.assets.data.models.Material
+import com.pafoid.skate.engine.assets.data.models.`3dModel`
 import com.pafoid.skate.engine.audio.BusId
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
@@ -18,14 +18,14 @@ import com.pafoid.skate.engine.ecs.components.CameraFocusComponent
 import com.pafoid.skate.engine.ecs.components.CameraFocusTarget
 import com.pafoid.skate.engine.ecs.components.CapsuleCollider3D
 import com.pafoid.skate.engine.ecs.components.Collider3D
-import com.pafoid.skate.engine.ecs.components.MeshCollider3D
 import com.pafoid.skate.engine.ecs.components.DirectionalLightComponent
 import com.pafoid.skate.engine.ecs.components.EmissionShape
-import com.pafoid.skate.engine.ecs.components.FreeFlyCameraComponent
 import com.pafoid.skate.engine.ecs.components.EnvironmentComponent
+import com.pafoid.skate.engine.ecs.components.FreeFlyCameraComponent
 import com.pafoid.skate.engine.ecs.components.GridLines
 import com.pafoid.skate.engine.ecs.components.JointComponent
 import com.pafoid.skate.engine.ecs.components.JointType
+import com.pafoid.skate.engine.ecs.components.MeshCollider3D
 import com.pafoid.skate.engine.ecs.components.ParticleEmitter
 import com.pafoid.skate.engine.ecs.components.PointLightComponent
 import com.pafoid.skate.engine.ecs.components.RenderComponent
@@ -34,7 +34,9 @@ import com.pafoid.skate.engine.ecs.components.ScenePhysicsComponent
 import com.pafoid.skate.engine.ecs.components.SpotLightComponent
 import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.ecs.components.VehicleComponent
+import com.pafoid.skate.engine.getComponent
 import com.pafoid.skate.engine.physics3d.BodyType
+import com.pafoid.skate.engine.render.material.MaterialAsset
 import com.pafoid.skate.engine.ui.UIButtonComponent
 import com.pafoid.skate.engine.ui.UICanvasComponent
 import com.pafoid.skate.engine.ui.UIElementComponent
@@ -47,6 +49,7 @@ import com.pafoid.skate.game.prefabs.PrefabCatalog
 import com.pafoid.skate.game.prefabs.PrefabType
 import org.joml.Vector3f
 import org.joml.Vector4f
+import java.io.File
 
 /**
  * The Feature Showcase scene (TLG-05/TLG-08): one labelled demo area per engine feature on a shared floor, plus an
@@ -67,6 +70,14 @@ class FeatureShowcase(private val prefabs: PrefabsGenerator) {
 
     companion object {
         const val SCENE_NAME = "FeatureShowcase"
+
+        /** The `.skmat` written next to the showcase (`Assets/Materials/`) and linked by `[Materials] Asset`. */
+        const val ASSET_MATERIAL_DIR = "Materials"
+        const val ASSET_MATERIAL_NAME = "ShowcaseJade"
+        val ASSET_MATERIAL: MaterialAsset get() = MaterialAsset.from(
+            Material(baseColor = Vector4f(0.1f, 0.75f, 0.55f, 1f), metallicFactor = 0.1f, roughnessFactor = 0.2f),
+            ASSET_MATERIAL_NAME,
+        )
 
         private const val BACK = -12f
         private const val MIDDLE = 2f
@@ -216,6 +227,12 @@ class FeatureShowcase(private val prefabs: PrefabsGenerator) {
             Material(baseColorTexture = Texture(filePath = assets + Assets.Bundled.ASPHALT))))
         add(mesh("[Materials] Transparent", Assets.Bundled.CUBE, at("materials", 3f, 0.7f, -2f), Vector3f(0.7f),
             Material(baseColor = Vector4f(0.2f, 0.6f, 1f, 0.4f), alphaMode = AlphaMode.BLEND)))
+        // EDT-17: material saved as a .skmat asset and linked; loading the scene reads it back from the file
+        val asset = ASSET_MATERIAL
+        val file = File(File(assets, ASSET_MATERIAL_DIR), "$ASSET_MATERIAL_NAME.${MaterialAsset.EXTENSION}")
+        if (File(assets).isDirectory) runCatching { file.parentFile.mkdirs(); asset.save(file) }
+        add(mesh("[Materials] Asset", Assets.Bundled.SPHERE, at("materials", 5f, 0.8f, -2f), Vector3f(0.7f),
+            asset.toMaterial { Texture(filePath = it) }).also { it.getComponent<RenderComponent>()!!.materialPath = file.path })
     }
 
     private fun particles() {
