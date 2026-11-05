@@ -155,7 +155,7 @@ class EditorMenuBar(
         )
         ImGui.setCursorPosY(textY)
 
-        val currentProjectName = projectManager.currentProject?.name ?: "No project"
+        val currentProjectName = projectManager.currentProject?.name ?: stringManager.getString("lbl.menu_bar.no_project")
         if (ImGui.button(currentProjectName)) {
             eventSystem.publish(WindowAction.Show("window.project_switcher"))
         }

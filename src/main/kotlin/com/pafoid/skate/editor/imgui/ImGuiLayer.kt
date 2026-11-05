@@ -89,6 +89,7 @@ class ImGuiLayer(
         imGuiGl3.init(glslVersion)
 
         ImGuiStyleManager.setupStyle()
+        MImGui.strings = stringManager
 
         layoutStore.removeDockIds(windowRegistry.windows.filterIsInstance<EditorDialog>().map { it.name })
         windowManager.init()

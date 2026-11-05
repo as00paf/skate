@@ -78,7 +78,7 @@ class ProjectWizardWindow(
             if (!wizard.isProjectNameValid()) {
                 MImGui.errorText("${Icons.WINDOW_CLOSE} ${stringManager.getString("wizard.project.invalid_chars")}")
             } else {
-                MImGui.successText("${Icons.CHECK} Valid")
+                MImGui.successText("${Icons.CHECK} ${stringManager.getString("wizard.project.valid_name")}")
             }
         }
 
@@ -215,7 +215,7 @@ class ProjectWizardWindow(
         ImGui.sameLine(0f, buttonSpacing)
 
         // Open existing project button
-        if (ImGui.button("${Icons.FOLDER_OPEN} Open Project", openButtonWidth, buttonHeight)) {
+        if (ImGui.button("${Icons.FOLDER_OPEN} ${stringManager.getString("wizard.project.open_existing")}", openButtonWidth, buttonHeight)) {
             openExistingProjectDialog()
         }
 
@@ -243,7 +243,7 @@ class ProjectWizardWindow(
 
             val fileChooser = JFileChooser()
             fileChooser.fileSelectionMode = JFileChooser.FILES_ONLY
-            fileChooser.dialogTitle = "Open Existing Project"
+            fileChooser.dialogTitle = stringManager.getString("wizard.project.open_existing_title")
             fileChooser.addChoosableFileFilter(object : FileFilter() {
                 override fun accept(file: File): Boolean {
                     return file.isDirectory || file.extension in FileType.PROJECT_FILE.extensions

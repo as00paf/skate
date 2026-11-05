@@ -145,11 +145,11 @@ class InputTestingWindow(
         ImGui.separator()
         ImGui.text(s("lbl.input_testing.layout"))
         tip("tip.input_testing.layout")
-        axes?.forEachIndexed { i, v -> ImGui.text("  ${GamepadLayout.axisName(i)} (axis $i): %.3f".format(v)) }
+        axes?.forEachIndexed { i, v -> ImGui.text(strings.getString("lbl.input_testing.axis_row", GamepadLayout.axisName(i, strings), i, v)) }
         buttons?.forEachIndexed { i, down ->
             ImGui.colorButton("##btn$i", if (down) 0.3f else 0.5f, if (down) 1f else 0.5f, if (down) 0.3f else 0.5f, 1f, 16f, 16f)
             ImGui.sameLine()
-            ImGui.text("${GamepadLayout.buttonName(i)} (button $i)")
+            ImGui.text(strings.getString("lbl.input_testing.button_row", GamepadLayout.buttonName(i, strings), i))
         }
         ImGui.unindent()
     }

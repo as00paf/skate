@@ -16,6 +16,11 @@ import java.io.File
 import kotlin.math.max
 
 object MImGui {
+    /** Editor strings for the few helpers that show their own text; set by [ImGuiLayer] at startup. */
+    var strings: com.pafoid.skate.engine.core.StringManager? = null
+
+    private fun tr(key: String, fallback: String): String = strings?.getString(key) ?: fallback
+
 
     const val DEFAULT_COLUMN_WIDTH = 220f
     private const val SENSIBILITY = 0.01f
@@ -235,7 +240,7 @@ object MImGui {
         if (scale) {
             ImGui.sameLine()
             val imBool = imgui.type.ImBoolean(uniformScaling)
-            if (ImGui.checkbox("Uniform", imBool)) {
+            if (ImGui.checkbox(tr("lbl.transform.uniform", "Uniform") + "###uniform_scaling", imBool)) {
                 uniformScaling = imBool.get()
             }
         }
@@ -398,7 +403,7 @@ object MImGui {
     fun textureDropdown(label: String, value: Texture?, assetsManager: AssetsManager, defaultValue: String): Texture? {
         val values = assetsManager.getTextures()
         val labels = values.map { texture ->
-            texture.filePath?.let { File(it).nameWithoutExtension } ?: "Embedded Texture"
+            texture.filePath?.let { File(it).nameWithoutExtension } ?: tr("lbl.texture.embedded", "Embedded Texture")
         }.toMutableList()
         if (value == null) labels.add(0, defaultValue)
         val index = ImInt(max(0, values.indexOf(value)))
