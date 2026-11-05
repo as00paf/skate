@@ -6,6 +6,7 @@ import com.pafoid.skate.engine.ecs.components.AudioComponent
 import com.pafoid.skate.engine.ecs.components.AudioListener
 import com.pafoid.skate.engine.ecs.components.ParticleEmitter
 import com.pafoid.skate.engine.ecs.components.ReverbZone
+import com.pafoid.skate.engine.net.LoopbackPredictionComponent
 import com.pafoid.skate.engine.net.NetState
 import com.pafoid.skate.engine.net.NetworkIdentity
 import com.pafoid.skate.engine.ecs.components.BoneOverride
@@ -98,6 +99,7 @@ class Serializer {
             subclass(RagdollComponent::class)
             subclass(ParticleEmitter::class)
             subclass(VehicleComponent::class)
+            subclass(LoopbackPredictionComponent::class)
 
             // Light components
             subclass(AmbientLightComponent::class)//Scene component

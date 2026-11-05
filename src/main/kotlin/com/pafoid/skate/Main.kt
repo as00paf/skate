@@ -4,8 +4,10 @@ import com.pafoid.skate.app.EditorScreen
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.core.Window
+import com.pafoid.skate.game.player.SkateGameplay
 
 fun main(args:Array<String>){
+    SkateGameplay.register()
     val engine = Engine()
     val icon = Engine::class.java.getResourceAsStream(Assets.Bundled.APP_ICON)?.readAllBytes()
     val window = Window(title = "Skate Editor", icon = icon)

@@ -44,6 +44,9 @@ import com.pafoid.skate.engine.ui.UIImageComponent
 import com.pafoid.skate.engine.ui.UIProgressBarComponent
 import com.pafoid.skate.engine.ui.UISliderComponent
 import com.pafoid.skate.engine.ui.UITextComponent
+import com.pafoid.skate.engine.net.LoopbackPredictionComponent
+import com.pafoid.skate.game.net.SkaterPredictionModel
+import com.pafoid.skate.game.player.SkateGameplay
 import com.pafoid.skate.game.prefabs.MaterialType
 import com.pafoid.skate.game.prefabs.PrefabCatalog
 import com.pafoid.skate.game.prefabs.PrefabType
@@ -93,9 +96,18 @@ class FeatureShowcase(private val prefabs: PrefabsGenerator) {
             Area("vehicle", "Vehicle", Vector3f(8f, 0f, MIDDLE), Vector3f(6f, 0f, 5f), Vector4f(0.4f, 0.4f, 0.3f, 1f)),
             Area("audio", "Audio", Vector3f(22f, 0f, MIDDLE), Vector3f(6f, 0f, 5f), Vector4f(0.3f, 0.45f, 0.45f, 1f)),
             Area("prefabs", "Prefabs", Vector3f(-13f, 0f, FRONT), Vector3f(15f, 0f, 5f), Vector4f(0.45f, 0.45f, 0.45f, 1f)),
-            Area("animation", "Animation", Vector3f(12f, 0f, FRONT), Vector3f(5f, 0f, 4f), Vector4f(0.4f, 0.3f, 0.4f, 1f)),
+            Area("netcode", "Netcode", Vector3f(6f, 0f, FRONT), Vector3f(3.5f, 0f, 4f), Vector4f(0.25f, 0.3f, 0.4f, 1f)),
+            Area("animation", "Animation", Vector3f(13.5f, 0f, FRONT), Vector3f(3.5f, 0f, 4f), Vector4f(0.4f, 0.3f, 0.4f, 1f)),
             Area("fog", "Fog", Vector3f(24f, 0f, FRONT), Vector3f(4f, 0f, 4f), Vector4f(0.5f, 0.55f, 0.6f, 1f)),
         )
+
+        const val NETCODE_SERVER = "[Netcode] Server"
+        const val NETCODE_PREDICTED = "[Netcode] Predicted"
+        const val NETCODE_INTERPOLATED = "[Netcode] Interpolated"
+        /** One-way latency of the Netcode demo; edit it on `[Netcode] Session` (round trip is twice this). */
+        const val NETCODE_LATENCY_MS = 120
+        /** The views are boxes standing on the pad; the session's origin sits at their centre height. */
+        private const val VIEW_HALF_HEIGHT = 0.7f
 
         /** Overlay button that cycles the scene fog (off, linear, exp, exp², height) in Play; see [FogCycle]. */
         const val FOG_TOGGLE_BUTTON = "FogToggle"
@@ -143,6 +155,7 @@ class FeatureShowcase(private val prefabs: PrefabsGenerator) {
 
     /** Adds the scene components and every demo area to [target] (normally an empty scene named [SCENE_NAME]). */
     fun populate(target: Scene): Scene {
+        SkateGameplay.register()
         scene = target
         scene.addComponent(ScenePhysicsComponent())
             .addComponent(GridLines())
@@ -162,7 +175,7 @@ class FeatureShowcase(private val prefabs: PrefabsGenerator) {
         }
         lights(); shadows(); materials(); particles()
         physics(); joints(); vehicle(); audio()
-        prefabLibrary(); animation(); fog(); ui()
+        prefabLibrary(); netcode(); animation(); fog(); ui()
         return scene
     }
 
@@ -346,6 +359,23 @@ class FeatureShowcase(private val prefabs: PrefabsGenerator) {
                 else listOf(MaterialType.CONCRETE, MaterialType.WOOD_BROWN, MaterialType.WOOD_LIGHT)[i % 3]
             add(prefabs.spawn(type, at("prefabs", -12.25f + col * 3.5f, 0f, -2f + row * 4f), material).labelled("Prefabs"))
         }
+    }
+
+    private fun netcode() {
+        // GPL-17 / NET-03: a server and two clients in-process with simulated latency, running the kinematic skater
+        // step. Green ghost = server, blue = the owner's prediction (just ahead of the ghost: its newest inputs are still in
+        // flight), orange = what other players see (interpolated, behind).
+        val half = Vector3f(0.2f, VIEW_HALF_HEIGHT, 0.4f)
+        add(mesh(NETCODE_SERVER, Assets.Bundled.CUBE, at("netcode", 0f, VIEW_HALF_HEIGHT, 0f), Vector3f(half).mul(1.25f),
+            Material(baseColor = Vector4f(0.2f, 0.9f, 0.3f, 0.35f), alphaMode = AlphaMode.BLEND), castShadow = false))
+        add(mesh(NETCODE_PREDICTED, Assets.Bundled.CUBE, at("netcode", 0f, VIEW_HALF_HEIGHT, 0f), half,
+            Material(baseColor = Vector4f(0.2f, 0.45f, 1f, 1f))))
+        add(mesh(NETCODE_INTERPOLATED, Assets.Bundled.CUBE, at("netcode", 0f, VIEW_HALF_HEIGHT, 0f), half,
+            Material(baseColor = Vector4f(1f, 0.55f, 0.15f, 1f))))
+        add(node("[Netcode] Session", at("netcode", 0f, VIEW_HALF_HEIGHT, 0f)).addComponent(LoopbackPredictionComponent(
+            modelId = SkaterPredictionModel.ID, latencyMs = NETCODE_LATENCY_MS,
+            serverView = NETCODE_SERVER, predictedView = NETCODE_PREDICTED, interpolatedView = NETCODE_INTERPOLATED,
+        )))
     }
 
     private fun animation() {

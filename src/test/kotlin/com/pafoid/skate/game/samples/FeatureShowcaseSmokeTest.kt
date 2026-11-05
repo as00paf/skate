@@ -40,6 +40,8 @@ import com.pafoid.skate.engine.ecs.systems.PhysicsSystem
 import com.pafoid.skate.engine.ecs.systems.SystemManager
 import com.pafoid.skate.engine.ecs.systems.TransformSystem
 import com.pafoid.skate.engine.getComponent
+import com.pafoid.skate.engine.net.LoopbackPredictionComponent
+import com.pafoid.skate.engine.net.LoopbackPredictionSystem
 import com.pafoid.skate.engine.physics3d.BodyType
 import com.pafoid.skate.engine.physics3d.bullet.BulletPhysics3D
 import com.pafoid.skate.engine.physics3d.native.NativeLibraryLoader
@@ -122,6 +124,8 @@ class FeatureShowcaseSmokeTest {
     private val rotations = mutableMapOf<String, MutableList<Vector3f>>()
     private val animationTimes = mutableListOf<Float>()
     private val particleCounts = mutableMapOf<String, Int>()
+    private val netcodeErrors = mutableListOf<Float>()
+    private val netcodeLags = mutableListOf<Float>()
 
     private fun obj(name: String): GameObject = scene.children.singleOrNull { it.name == name }
         ?: error("'$name' missing from the showcase: ${scene.children.map { it.name }}")
@@ -141,7 +145,7 @@ class FeatureShowcaseSmokeTest {
             GameObjectManager(), TransformSystem(), cameraManager,
             AudioSystem(audioEngine, logger, assets, cameraManager),
             physics, PhysicsFrameSystem(physics),
-            AnimationSystem(), ParticleSystem(),
+            AnimationSystem(), ParticleSystem(), LoopbackPredictionSystem(),
             CameraControlSystem { FlyInput() },
             UiLayoutSystem(screen = { UiScreenSize(1920, 1080) }),
             pauseMenu,
@@ -193,6 +197,11 @@ class FeatureShowcaseSmokeTest {
             }
         }
         scene.children.firstNotNullOfOrNull { it.getComponent<Animator>() }?.let { animationTimes.add(it.currentTime) }
+        if (frame >= NETCODE_WARMUP_FRAMES) {
+            val server = obj(FeatureShowcase.NETCODE_SERVER).getComponent<Transform>()!!.pos()
+            netcodeErrors += obj(FeatureShowcase.NETCODE_PREDICTED).getComponent<Transform>()!!.pos().distance(server)
+            netcodeLags += obj(FeatureShowcase.NETCODE_INTERPOLATED).getComponent<Transform>()!!.pos().distance(server)
+        }
         if (frame == PARTICLE_SAMPLE_FRAME) {
             area("Particles").forEach { go -> particleCounts[go.name] = go.getComponent<ParticleEmitter>()!!.runtime.pool.count }
         }
@@ -285,6 +294,25 @@ class FeatureShowcaseSmokeTest {
         assertEquals(PLAY_FRAMES * DT, animationTimes.last(), 0.05f)
     }
 
+    /**
+     * GPL-17: the Netcode session runs the skater step over a simulated 120 ms link. The owner's prediction stays near
+     * the server ghost (just ahead: its newest inputs are in flight) while the other client's copy trails behind it.
+     */
+    @Test
+    @Order(5)
+    fun Showcase_Netcode_PredictionStaysOnTheServerWhileTheRemoteCopyLags() {
+        val demo = obj("[Netcode] Session").getComponent<LoopbackPredictionComponent>()!!
+        assertNotNull(demo.session, "no session in Play (model '${demo.modelId}' not registered?)")
+        val session = demo.session!!
+        assertEquals(FeatureShowcase.NETCODE_LATENCY_MS, session.latencyMs)
+        val server = obj(FeatureShowcase.NETCODE_SERVER).getComponent<Transform>()!!.pos()
+        assertTrue(server.distance(start.getValue(FeatureShowcase.NETCODE_SERVER)) > 0.5f, "server skater did not move: $server")
+        assertEquals(0, session.predicting.predictor!!.correctionCount)
+        // Ahead of the server by the inputs in flight at most (~0.25 s at 3 m/s), never corrected.
+        assertTrue(netcodeErrors.max() < 1f, "prediction off the server by ${netcodeErrors.max()} m")
+        assertTrue(netcodeLags.average() > 0.3f, "interpolated copy does not lag: ${netcodeLags.average()} m")
+    }
+
     /** AUD-09: `playOnAwake` starts the emitter in Play. AUD-10: it plays the bundled MP3 copied into the project. */
     @Test
     @Order(6)
@@ -367,6 +395,7 @@ class FeatureShowcaseSmokeTest {
         const val DT = 1f / 60f
         const val PLAY_FRAMES = 300 // 5 s
         const val PARTICLE_SAMPLE_FRAME = 30 // 0.5 s
+        const val NETCODE_WARMUP_FRAMES = 120 // connect, spawn and first snapshots
         const val FOCUS_FRAMES = 240
         const val FLOOR_TOP = 0f
         const val SETTLED_SPEED = 0.05f
