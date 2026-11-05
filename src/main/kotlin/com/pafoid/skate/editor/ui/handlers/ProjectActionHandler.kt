@@ -33,6 +33,8 @@ import com.pafoid.skate.editor.systems.UndoRedoManager
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.core.LoggerService.LogLevel
 import com.pafoid.skate.engine.core.StringManager
+import com.pafoid.skate.engine.utils.ExportFailure
+import com.pafoid.skate.engine.utils.ExportResult
 import com.pafoid.skate.engine.utils.ProjectExporter
 import java.io.File
 import javax.swing.JFileChooser
@@ -149,12 +151,18 @@ class ProjectActionHandler(
         }
 
         eventSystem.subscribe<ProjectEvent.ExportRequested> { event ->
-            projectManager.currentProject?.let {
-                jobSystem.runIO {
-                    if (projectManager.saveProject()) {
-                        ProjectExporter(logger).export(it)
-                    }
+            val project = projectManager.currentProject ?: return@subscribe
+            // Save on the main thread so the scene is not serialized while it changes; pack and copy in the background.
+            if (!projectManager.saveProject()) {
+                val outputDir = ProjectExporter.outputDir(project, event.options)
+                eventSystem.publish(ProjectEvent.ExportFinished(ExportResult(outputDir, ExportFailure.SAVE_FAILED)))
+                return@subscribe
+            }
+            jobSystem.runIO {
+                val result = ProjectExporter(logger).export(project, event.options) { progress ->
+                    executeOnMainThread { eventSystem.publish(ProjectEvent.ExportProgressed(progress)) }
                 }
+                executeOnMainThread { eventSystem.publish(ProjectEvent.ExportFinished(result)) }
             }
         }
     }
