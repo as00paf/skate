@@ -37,18 +37,18 @@ Never compare a value from one space with a rect from the other. The raw GLFW wi
 |---|---|---|
 | `SelectionGizmo` (picking) | `getNormalizedMousePos` + `isInsideViewport` | consistent |
 | `InputProvider.screenToRay` (gizmo rays) | `viewNdc` | consistent |
-| `Engine.uiSystems` (runtime UI pointer) | `viewTarget` + raw button 0 (`ignoreImGui = true`) | consistent; could be the default `ReaderUiInputSource` pointer now (see below) |
-| `CameraControlSystem` / `ReaderFlyInputSource` (TLG-09 free-fly) | `reader.mouseDeltaX/Y` for look; `Engine` passes `raw RMB && isInsideView` | deltas are cursor units, so sensitivity is the same in the game and the editor. Look stops when the cursor leaves the view mid-drag; `reader.isMouseButtonDown(1)` would keep it until release (see below) |
+| `Engine.uiSystems` (runtime UI pointer) | `reader.mouseX/Y` + `reader.isMouseButtonDown(0)` | now the default `ReaderUiInputSource` pointer (EDT-35) |
+| `CameraControlSystem` / `ReaderFlyInputSource` (TLG-09 free-fly) | `reader.mouseDeltaX/Y` for look, `reader.isMouseButtonDown(1)` to hold look (EDT-35) | deltas are cursor units, so sensitivity is the same in the game and the editor. Look holds until release, even outside the view |
 | `InputSystem.pollMouseInput` | `getMouseDx/Dy`, only while captured | consistent (deltas) |
 | `ScaleGizmo`, `EditorInputHandler` | `getMouseDx/Dy` | consistent (deltas) |
 | `InputTestingWindow` | `getMouseViewPos` (view-local pointer units) | consistent; the label shows view-local, not target pixels |
 | `UiRectGizmo`, `MeasureTool`, `ViewportContextMenu` | `ImGui.getMousePos` against the viewport image rect | the same space as the editor source; local ImGui overlays |
 | Scripts (`ReaderScriptInput`, Lua host) | `RawInput` buttons | **fixed:** buttons now work over the editor game view |
 
-## Follow-ups outside input
+## EDT-35 follow-up (done)
 
-The two `ignoreImGui = true` workarounds in `Engine` (fly look and UI pointer) can now use the reader:
-- `reader.isMouseButtonDown(1)` for fly look
-- the default `ReaderUiInputSource` pointer
+`Engine` no longer works around ImGui capture.
+- Fly-cam look uses the default `ReaderFlyInputSource` look button, `reader.isMouseButtonDown(1)`.
+- The runtime UI uses the default `ReaderUiInputSource` pointer, `reader.mouseX/Y` plus `isMouseButtonDown(0)`.
 
-Then look also survives leaving the view mid-drag. This is optional; current behavior is correct.
+Both follow the button rule above. A right-drag look or a UI slider drag continues when the cursor leaves the view mid-drag. A press that started on an editor panel reaches neither. `PointerConsumersTest` covers both.

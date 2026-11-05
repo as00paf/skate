@@ -42,7 +42,6 @@ import com.pafoid.skate.engine.ui.PauseMenuSystem
 import com.pafoid.skate.engine.ui.UiActions
 import com.pafoid.skate.engine.render.ui.SdfFont
 import com.pafoid.skate.engine.ui.UiInputSystem
-import com.pafoid.skate.engine.ui.UiPointer
 import com.pafoid.skate.engine.ui.UiLayoutSystem
 import com.pafoid.skate.engine.ui.UiRenderSystem
 import com.pafoid.skate.engine.ui.UiScreenSize
@@ -166,10 +165,8 @@ class Engine {
             RagdollSystem(),
             ParticleSystem(),
             LoopbackPredictionSystem(),
-            // Raw right button over the game view: ImGui owns the editor viewport, as for the UI pointer below.
-            CameraControlSystem(ReaderFlyInputSource(inputSystem.reader) {
-                inputProvider.mouseListener.let { it.isMouseButtonDown(1, ignoreImGui = true) && it.isInsideView() }
-            }),
+            // Look while a right-button press that started in the game view is held (INP-09 button rule).
+            CameraControlSystem(ReaderFlyInputSource(inputSystem.reader)),
             ScriptingSystem(
                 logger, eventSystem,
                 ScriptServices(input = ReaderScriptInput(inputSystem.reader)),
@@ -200,12 +197,8 @@ class Engine {
             pauseMenu,
             UiLayoutSystem(screen = { UiScreenSize(framebuffer.width, framebuffer.height) }),
             UiInputSystem(
-                ReaderUiInputSource(inputSystem.reader) {
-                    // Same pointer source and view rect as picking; the raw button, since ImGui owns the editor viewport.
-                    val mouse = inputProvider.mouseListener
-                    val (x, y) = mouse.viewTarget()
-                    UiPointer(x, y, mouse.isMouseButtonDown(0, ignoreImGui = true))
-                }
+                // The reader's pointer: render-target pixels and game-view buttons, as for picking (INP-09).
+                ReaderUiInputSource(inputSystem.reader)
             ).also {
                 it.authoring = { uiAuthoring && !runtimePlaying }
                 it.onUnhandledCancel = pauseMenu::open
