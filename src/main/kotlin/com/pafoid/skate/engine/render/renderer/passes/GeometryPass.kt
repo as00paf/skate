@@ -30,7 +30,7 @@ import com.pafoid.skate.engine.render.renderer.RenderTraversal
 import com.pafoid.skate.engine.render.renderer.SkyDomeRenderer
 import com.pafoid.skate.engine.render.shadow.ShadowFrame
 import com.pafoid.skate.engine.render.utils.withBlendState
-import com.pafoid.skate.engine.render.utils.GLStateTracker
+import com.pafoid.skate.engine.render.rhi.opengl.GLStateTracker
 import com.pafoid.skate.engine.render.utils.withCullFace
 import com.pafoid.skate.engine.render.utils.withDepthMask
 import com.pafoid.skate.engine.render.utils.withDepthTest

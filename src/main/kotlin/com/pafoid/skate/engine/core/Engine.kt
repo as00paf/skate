@@ -52,6 +52,7 @@ import com.pafoid.skate.engine.physics3d.native.NativeLibraryLoader
 import com.pafoid.skate.engine.render.RenderResourcesFactory
 import com.pafoid.skate.engine.render.renderer.Renderer
 import com.pafoid.skate.engine.render.renderer.SkinningUbo
+import com.pafoid.skate.engine.render.rhi.RhiDevice
 import org.lwjgl.glfw.GLFW
 import com.pafoid.skate.engine.core.LoggerService.LogLevel
 import java.util.concurrent.CopyOnWriteArrayList
@@ -107,7 +108,12 @@ class Engine {
     val screens: MutableList<Screen> = CopyOnWriteArrayList()
     lateinit var renderer: Renderer
 
-    fun start(glfwWindow: Long) {
+    /** The graphics device of the window's context (REN-12 RHI); set by [start]. */
+    lateinit var device: RhiDevice
+        private set
+
+    fun start(glfwWindow: Long, device: RhiDevice) {
+        this.device = device
         MainThread.bind()
         MainThread.violationHandler = { logger.log(it, LogLevel.ERROR) }
         initCallbacks(glfwWindow)

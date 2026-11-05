@@ -1,17 +1,8 @@
 package com.pafoid.skate.engine.render.graph
 
-import org.lwjgl.opengl.GL
-import org.lwjgl.opengl.GL15.GL_QUERY_RESULT
-import org.lwjgl.opengl.GL15.GL_QUERY_RESULT_AVAILABLE
-import org.lwjgl.opengl.GL15.glBeginQuery
-import org.lwjgl.opengl.GL15.glDeleteQueries
-import org.lwjgl.opengl.GL15.glEndQuery
-import org.lwjgl.opengl.GL15.glGenQueries
-import org.lwjgl.opengl.GL15.glGetQueryObjecti
-import org.lwjgl.opengl.GL33.GL_TIME_ELAPSED
-import org.lwjgl.opengl.GL33.glGetQueryObjectui64
+import com.pafoid.skate.engine.render.rhi.opengl.GlTimerQueries
 
-/** The GL timer-query calls [GpuTimerRing] needs; injectable so the ring is testable without a context. */
+/** The timer-query calls [GpuTimerRing] needs; injectable so the ring is testable without a context. */
 interface GpuQueryApi {
     fun create(): Int
     fun begin(query: Int)
@@ -22,18 +13,7 @@ interface GpuQueryApi {
 
     companion object {
         /** GL 3.3 `GL_TIME_ELAPSED` queries, or null when the context has no timer queries. */
-        fun openGl(): GpuQueryApi? {
-            val caps = runCatching { GL.getCapabilities() }.getOrNull() ?: return null
-            if (!caps.OpenGL33 && !caps.GL_ARB_timer_query) return null
-            return object : GpuQueryApi {
-                override fun create() = glGenQueries()
-                override fun begin(query: Int) = glBeginQuery(GL_TIME_ELAPSED, query)
-                override fun end() = glEndQuery(GL_TIME_ELAPSED)
-                override fun isAvailable(query: Int) = glGetQueryObjecti(query, GL_QUERY_RESULT_AVAILABLE) != 0
-                override fun resultNs(query: Int) = glGetQueryObjectui64(query, GL_QUERY_RESULT)
-                override fun delete(query: Int) = glDeleteQueries(query)
-            }
-        }
+        fun openGl(): GpuQueryApi? = GlTimerQueries.create()
     }
 }
 

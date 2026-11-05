@@ -1,4 +1,4 @@
-package com.pafoid.skate.engine.render.utils
+package com.pafoid.skate.engine.render.rhi.opengl
 
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue

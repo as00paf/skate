@@ -12,7 +12,7 @@ import com.pafoid.skate.engine.render.lighting.ModelBounds
 import com.pafoid.skate.engine.render.shadow.CascadeFit
 import com.pafoid.skate.engine.render.shadow.ShadowCulling
 import com.pafoid.skate.engine.render.shadow.ShadowSignature
-import com.pafoid.skate.engine.render.utils.GLStateTracker
+import com.pafoid.skate.engine.render.rhi.opengl.GLStateTracker
 import com.pafoid.skate.engine.render.utils.bindTexture
 import com.pafoid.skate.engine.render.utils.bindVAO
 import com.pafoid.skate.engine.utils.ShaderConst.Uniforms

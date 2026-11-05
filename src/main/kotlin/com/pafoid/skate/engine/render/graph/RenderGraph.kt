@@ -2,7 +2,7 @@ package com.pafoid.skate.engine.render.graph
 
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.render.renderer.passes.RenderPass
-import com.pafoid.skate.engine.render.state.GLBindings
+import com.pafoid.skate.engine.render.rhi.opengl.GLBindings
 
 /**
  * Ordered list of render passes executed once per frame. Each pass gets its CPU time

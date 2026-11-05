@@ -13,7 +13,7 @@ import com.pafoid.skate.engine.render.VAOLoader
 import com.pafoid.skate.engine.utils.ShaderConst.Uniforms
 import org.joml.Matrix4f
 import org.joml.Vector3f
-import com.pafoid.skate.engine.render.utils.GLStateTracker
+import com.pafoid.skate.engine.render.rhi.opengl.GLStateTracker
 import org.lwjgl.opengl.GL11.GL_LEQUAL
 import org.lwjgl.opengl.GL11.GL_LESS
 import org.lwjgl.opengl.GL11.GL_REPEAT
