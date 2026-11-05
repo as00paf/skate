@@ -6,13 +6,7 @@ import com.pafoid.skate.engine.ecs.systems.CameraManager
 import com.pafoid.skate.engine.getComponent
 import com.pafoid.skate.engine.render.renderer.DebugRenderer
 import com.pafoid.skate.engine.render.renderer.GroundDepthPull
-import com.pafoid.skate.engine.render.utils.withBlendState
-import com.pafoid.skate.engine.render.utils.withCullFace
-import com.pafoid.skate.engine.render.utils.withDepthFunc
-import com.pafoid.skate.engine.render.utils.withDepthMask
-import com.pafoid.skate.engine.render.utils.withDepthTest
 import org.joml.Vector3f
-import org.lwjgl.opengl.GL11.GL_LEQUAL
 import kotlin.math.abs
 import kotlin.math.floor
 import kotlin.math.tan
@@ -30,14 +24,11 @@ import kotlin.math.tan
  * pass left in that target.
  * @param endTarget Ends the pass [bindTarget] began.
  * @param targetHeight Height in pixels of the presented target, for the grid's depth pull.
- * @param drawState Runs the draw inside the GL state debug geometry needs ([withDebugDrawState]); injectable so the
- * pass can be tested without a GL context.
  */
 class DebugPass(
     private val debugRenderer: DebugRenderer,
     private val cameraManager: CameraManager,
     private val bindTarget: () -> Unit = {},
-    private val drawState: (draw: () -> Unit) -> Unit = ::withDebugDrawState,
     private val targetHeight: () -> Int = { 1080 },
     private val endTarget: () -> Unit = {},
 ) : BaseRenderPass() {
@@ -70,7 +61,7 @@ class DebugPass(
         // Pixel size drives the grid's grazing-angle depth pull (GroundDepthPull, REN-19)
         val camera = cameraManager.camera
         debugRenderer.pixelAngle = GroundDepthPull.pixelAngle(Math.toRadians(camera.fov.toDouble()).toFloat() * camera.zoom, targetHeight())
-        drawState { debugRenderer.draw() }
+        debugRenderer.draw()
         endTarget()
     }
 
@@ -398,24 +389,5 @@ class DebugPass(
      */
     private fun Vector3f.withAlpha(alpha: Float): Vector3f { // TODO: move
         return Vector3f(x * alpha, y * alpha, z * alpha)
-    }
-}
-
-/**
- * GL state for debug geometry, set explicitly instead of inherited from the previous pass: depth test on (LEQUAL, so
- * lines on a surface win ties) with depth writes, no blending, and no face culling so thick-line quads show from both
- * sides.
- */
-fun withDebugDrawState(draw: () -> Unit) {
-    withDepthTest(true) {
-        withDepthFunc(GL_LEQUAL) {
-            withDepthMask(true) {
-                withBlendState(false) {
-                    withCullFace(false) {
-                        draw()
-                    }
-                }
-            }
-        }
     }
 }

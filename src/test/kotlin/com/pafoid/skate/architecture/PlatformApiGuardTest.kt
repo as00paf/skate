@@ -79,9 +79,7 @@ class PlatformApiGuardTest {
 
     @Test
     fun ResourceLifetime_FilesThatAllocateGlOrAlObjectsAlsoDeleteThem() {
-        val exceptions = setOf(
-            "engine/render/renderer/PickingRenderer.kt",
-        )
+        val exceptions = emptySet<String>()
         val create = Regex("""glGen(Buffers|Textures|Framebuffers|VertexArrays|Renderbuffers)|glCreate(Program|Shader)|alGen(Buffers|Sources)""")
         val delete = Regex("""glDelete|alDelete""")
         val violators = mainFiles()

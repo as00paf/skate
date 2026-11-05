@@ -4,7 +4,10 @@ import com.pafoid.skate.engine.render.rhi.BufferDesc
 import com.pafoid.skate.engine.render.rhi.BufferUpdate
 import com.pafoid.skate.engine.render.rhi.BufferUsage
 import com.pafoid.skate.engine.render.rhi.RhiBuffer
+import com.pafoid.skate.engine.render.rhi.RhiCommandList
 import com.pafoid.skate.engine.render.rhi.RhiContext
+import com.pafoid.skate.engine.render.state.PipelineCache
+import com.pafoid.skate.engine.render.state.PipelineStates
 import com.pafoid.skate.engine.render.rhi.RhiVertexInput
 import com.pafoid.skate.engine.render.data.VertexLayouts
 import com.pafoid.skate.engine.assets.data.Shader
@@ -13,11 +16,6 @@ import com.pafoid.skate.engine.utils.ShaderConst.Uniforms.PROJECTION
 import com.pafoid.skate.engine.utils.ShaderConst.Uniforms.VIEW
 import org.joml.Quaternionf
 import org.joml.Vector3f
-import org.lwjgl.opengl.GL11.GL_LINES
-import org.lwjgl.opengl.GL11.GL_TRIANGLES
-import org.lwjgl.opengl.GL11.glDrawArrays
-import org.lwjgl.opengl.GL11.glLineWidth
-import org.lwjgl.opengl.GL30.glBindVertexArray
 import kotlin.math.abs
 import kotlin.math.cos
 import kotlin.math.sin
@@ -45,8 +43,8 @@ class DebugRenderer(
     private var vbo: RhiBuffer? = null
     private var triangleVao: RhiVertexInput? = null
     private var triangleVbo: RhiBuffer? = null
-    private val vaoId get() = vao?.nativeHandle?.toInt() ?: -1
-    private val triangleVaoId get() = triangleVao?.nativeHandle?.toInt() ?: -1
+    private val linePipelines = PipelineCache(PipelineStates.DEBUG_LINES)
+    private val trianglePipelines = PipelineCache(PipelineStates.DEBUG_TRIANGLES)
     
     private var started = false
 
@@ -54,13 +52,15 @@ class DebugRenderer(
     fun destroy() {
         listOf(vao, vbo, triangleVao, triangleVbo).forEach { it?.close() }
         vao = null; vbo = null; triangleVao = null; triangleVbo = null
+        linePipelines.close()
+        trianglePipelines.close()
         started = false
     }
 
     fun start() {
         started = true
 
-        if (vaoId != -1) return
+        if (vao != null) return
 
         val device = RhiContext.require()
         val layout = device.createVertexLayout(VertexLayouts.DEBUG)
@@ -70,8 +70,6 @@ class DebugRenderer(
         val triangleBuffer = device.createBuffer(BufferDesc(BufferUsage.VERTEX, triangleVertexData.size.toLong() * Float.SIZE_BYTES, BufferUpdate.DYNAMIC))
         triangleVbo = triangleBuffer
         triangleVao = device.createVertexInput(layout, listOf(triangleBuffer))
-
-        glLineWidth(4.0f)
     }
 
     fun beginFrame() {
@@ -95,10 +93,9 @@ class DebugRenderer(
 
         shader.uploadVec3f(CAMERA_POS_UNIFORM, cameraManager.transform.worldMatrix.getTranslation(cameraPosition))
         shader.uploadFloat(PIXEL_ANGLE_UNIFORM, pixelAngle)
-        drawTriangles()
-        drawLines()
-
-        glBindVertexArray(0)
+        val cmd = RhiContext.require().commandList()
+        drawTriangles(cmd)
+        drawLines(cmd)
         shader.stop()
     }
 
@@ -108,7 +105,7 @@ class DebugRenderer(
     private val cameraPosition = Vector3f()
 
     /** Ground triangles then the others, uploaded once and drawn as two ranges (ground pull on, then off). */
-    private fun drawTriangles() {
+    private fun drawTriangles(cmd: RhiCommandList) {
         if (groundTriangles.isEmpty() && triangles.isEmpty()) return
         var index = 0
         for (batch in arrayOf(groundTriangles, triangles)) for (tri in batch) {
@@ -122,19 +119,21 @@ class DebugRenderer(
             }
         }
         triangleVbo?.update(0, triangleVertexData)
-        glBindVertexArray(triangleVaoId)
+        val input = triangleVao ?: return
+        cmd.setPipeline(trianglePipelines.get(shader, input.layout) ?: return)
+        cmd.setVertexInput(input)
         if (groundTriangles.isNotEmpty()) {
             shader.uploadInt(GROUND_UNIFORM, 1)
-            glDrawArrays(GL_TRIANGLES, 0, groundTriangles.size * 3)
+            cmd.draw(groundTriangles.size * 3, 0)
         }
         if (triangles.isNotEmpty()) {
             shader.uploadInt(GROUND_UNIFORM, 0)
-            glDrawArrays(GL_TRIANGLES, groundTriangles.size * 3, triangles.size * 3)
+            cmd.draw(triangles.size * 3, groundTriangles.size * 3)
         }
     }
 
     /** Ground lines then the others, uploaded once into one buffer and drawn as two ranges (ground pull on, then off). */
-    private fun drawLines() {
+    private fun drawLines(cmd: RhiCommandList) {
         if (groundLines.isEmpty() && lines.isEmpty()) return
         var index = 0
         for (batch in arrayOf(groundLines, lines)) for (line in batch) {
@@ -148,14 +147,16 @@ class DebugRenderer(
             }
         }
         vbo?.update(0, lineVertexData)
-        glBindVertexArray(vaoId)
+        val input = vao ?: return
+        cmd.setPipeline(linePipelines.get(shader, input.layout) ?: return)
+        cmd.setVertexInput(input)
         if (groundLines.isNotEmpty()) {
             shader.uploadInt(GROUND_UNIFORM, 1)
-            glDrawArrays(GL_LINES, 0, groundLines.size * 2)
+            cmd.draw(groundLines.size * 2, 0)
         }
         if (lines.isNotEmpty()) {
             shader.uploadInt(GROUND_UNIFORM, 0)
-            glDrawArrays(GL_LINES, groundLines.size * 2, lines.size * 2)
+            cmd.draw(lines.size * 2, groundLines.size * 2)
         }
     }
 

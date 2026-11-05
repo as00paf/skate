@@ -29,7 +29,6 @@ import com.pafoid.skate.engine.render.shader.ShaderFeature
 import com.pafoid.skate.engine.render.shadow.ShadowFrame
 import com.pafoid.skate.engine.render.shadow.ShadowSettings
 import com.pafoid.skate.engine.render.rhi.RhiContext
-import com.pafoid.skate.engine.render.rhi.opengl.GLStateTracker
 
 class RenderResourcesFactory(
     engine: Engine,
@@ -42,8 +41,6 @@ class RenderResourcesFactory(
 
     fun create(width: Int, height: Int, useFbo: Boolean = true): RenderResources {
         this.useFbo = useFbo
-        logger.log("Initializing OpenGL state tracker...")
-        GLStateTracker.initialize()
 
         logger.log("Creating framebuffer and picking texture...")
         val frameBuffer = FrameBuffer(width, height)
@@ -196,7 +193,7 @@ class RenderResourcesFactory(
             frameBuffer = frameBuffer,
             useFbo = useFbo,
             cameraManager = cameraManager,
-            textureId = { path -> assetsManager.getTexture(path).texId },
+            texture = { path -> assetsManager.getTexture(path).rhi },
         )
 
         val postProcessPass = PostProcessPass(

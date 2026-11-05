@@ -92,9 +92,9 @@ internal class GlTexture(
         if (previous?.wrap != s.wrap) {
             val wrap = GlFormats.wrap(s.wrap)
             glTexParameteri(target, GL_TEXTURE_WRAP_S, wrap)
-            glTexParameteri(target, GL_TEXTURE_WRAP_T, wrap)
             if (desc.type != TextureType.TEXTURE_2D) glTexParameteri(target, GL_TEXTURE_WRAP_R, wrap)
         }
+        if (previous?.wrapV != s.wrapV) glTexParameteri(target, GL_TEXTURE_WRAP_T, GlFormats.wrap(s.wrapV))
         if (previous?.minFilter != s.minFilter) glTexParameteri(target, GL_TEXTURE_MIN_FILTER, GlFormats.filter(s.minFilter))
         if (previous?.magFilter != s.magFilter) glTexParameteri(target, GL_TEXTURE_MAG_FILTER, GlFormats.filter(s.magFilter))
         if (anisotropyAvailable && (previous?.anisotropy ?: 1f) != s.anisotropy) {

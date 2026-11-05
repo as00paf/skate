@@ -31,21 +31,8 @@ import com.pafoid.skate.engine.render.renderer.Renderer2D
 import com.pafoid.skate.engine.render.renderer.RenderTraversal
 import com.pafoid.skate.engine.render.renderer.SkyDomeRenderer
 import com.pafoid.skate.engine.render.shadow.ShadowFrame
-import com.pafoid.skate.engine.render.utils.withBlendState
-import com.pafoid.skate.engine.render.rhi.opengl.GLStateTracker
-import com.pafoid.skate.engine.render.rhi.opengl.GlPrograms
-import com.pafoid.skate.engine.render.utils.withCullFace
-import com.pafoid.skate.engine.render.utils.withDepthMask
-import com.pafoid.skate.engine.render.utils.withDepthTest
 import com.pafoid.skate.engine.utils.ShaderConst.Uniforms
 import org.joml.Vector3f
-import org.lwjgl.opengl.GL30.GL_ARRAY_BUFFER
-import org.lwjgl.opengl.GL30.GL_TEXTURE0
-import org.lwjgl.opengl.GL30.GL_TEXTURE_2D
-import org.lwjgl.opengl.GL30.glActiveTexture
-import org.lwjgl.opengl.GL30.glBindBuffer
-import org.lwjgl.opengl.GL30.glBindTexture
-import org.lwjgl.opengl.GL30.glBindVertexArray
 
 /**
  * Main geometry rendering pass.
@@ -90,8 +77,6 @@ class GeometryPass(
         val renderSky = environmentComponent?.renderSky == true
         val skyColor = environmentComponent?.skyColor.takeIf { renderSky } ?: DEFAULT_SKY_COLOR
         clear.color!!.let { it[0] = skyColor.x; it[1] = skyColor.y; it[2] = skyColor.z }
-        GLStateTracker.setDepthTestEnabled(true)
-        GLStateTracker.setDepthMask(true)
         val cmd = RhiContext.require().commandList()
         cmd.beginPass(if (useFbo) frameBuffer.target else null, clear = clear, viewport = presentedViewport.of(frameBuffer, useFbo))
 
@@ -188,28 +173,11 @@ class GeometryPass(
     }
 
     private fun render2D(camera: CameraComponent, renderables: List<Renderable2D>, shader: Shader) {
-        withDepthTest(true) {
-            withBlendState(false) {
-                withDepthMask(true) {
-                    withCullFace(false) {
-                        renderer2D.bindShader(shader)
-                        renderer2D.bindCamera(camera)
-                        renderer2D.addAll(renderables)
-                        renderer2D.render()
-                        renderer2D.clear()
-                    }
-                }
-            }
-        }
-    }
-
-    override fun cleanup() {
-        // Final state cleanup
-        GlPrograms.use(0)
-        glBindVertexArray(0)
-        glBindBuffer(GL_ARRAY_BUFFER, 0)
-        glActiveTexture(GL_TEXTURE0)
-        glBindTexture(GL_TEXTURE_2D, 0)
+        renderer2D.bindShader(shader)
+        renderer2D.bindCamera(camera)
+        renderer2D.addAll(renderables)
+        renderer2D.render()
+        renderer2D.clear()
     }
 
     companion object {

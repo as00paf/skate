@@ -11,6 +11,13 @@ import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.lwjgl.BufferUtils
+import com.pafoid.skate.engine.render.rhi.Filter
+import com.pafoid.skate.testing.GpuTest
+import com.pafoid.skate.engine.render.rhi.PixelFormat
+import com.pafoid.skate.engine.render.rhi.RhiTexture
+import com.pafoid.skate.engine.render.rhi.SamplerDesc
+import com.pafoid.skate.engine.render.rhi.TextureDesc
+import com.pafoid.skate.engine.render.rhi.TextureType
 import com.pafoid.skate.engine.render.rhi.opengl.OpenGlDevice
 import org.lwjgl.glfw.GLFW
 import org.lwjgl.opengl.GL11.GL_BLEND
@@ -50,7 +57,7 @@ import org.lwjgl.system.MemoryUtil.NULL
  * Offscreen render of UI quads with the real `shader_2d_batch.glsl` and [UiBatchRenderer] (GUI-07).
  * A stray texture is left on unit 0 on purpose, as other passes do: untextured backgrounds must ignore it.
  */
-@com.pafoid.skate.testing.GpuTest
+@GpuTest
 class UiBatchRendererGlTest {
 
     companion object {
@@ -105,6 +112,8 @@ class UiBatchRendererGlTest {
         // Whatever an earlier pass left on unit 0: a red texture.
         glActiveTexture(GL_TEXTURE0)
         glBindTexture(GL_TEXTURE_2D, texture(1, 1, byteArrayOf(-1, 0, 0, -1)))
+        // The raw GL above bypassed the device's caches, as ImGui does between frames
+        device!!.beginFrame()
     }
 
     @AfterEach
@@ -116,6 +125,8 @@ class UiBatchRendererGlTest {
         glDeleteFramebuffers(fbo)
         textures.forEach { glDeleteTextures(it) }
         textures.clear()
+        rhiTextures.forEach { it.close() }
+        rhiTextures.clear()
     }
 
     private fun texture(w: Int, h: Int, rgba: ByteArray?): Int {
@@ -129,7 +140,17 @@ class UiBatchRendererGlTest {
         return id
     }
 
-    private fun gpuTexture(rgba: ByteArray) = Texture(1, 1, 1, 4).also { it.texId = texture(1, 1, rgba) }
+    private val rhiTextures = ArrayList<RhiTexture>()
+
+    private fun gpuTexture(rgba: ByteArray) = Texture(1, 1, 1, 4).also { t ->
+        val rhi = device!!.createTexture(TextureDesc(
+            TextureType.TEXTURE_2D, PixelFormat.RGBA8, 1, 1, sampler = SamplerDesc(Filter.NEAREST, Filter.NEAREST),
+        ))
+        rhi.upload(0, 0, BufferUtils.createByteBuffer(rgba.size).put(rgba).flip())
+        rhiTextures += rhi
+        t.rhi = rhi
+        t.texId = rhi.nativeHandle.toInt()
+    }
 
     /** RGB of the pixel at top-left-origin (x, y), 0..255. */
     private fun pixel(x: Int, y: Int): List<Int> {

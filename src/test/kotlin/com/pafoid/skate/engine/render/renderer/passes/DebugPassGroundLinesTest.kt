@@ -26,7 +26,7 @@ class DebugPassGroundLinesTest {
         every { cameras.transform } returns Transform(Vector3f(0f, 5f, 20f)).also { it.worldMatrix.translation(0f, 5f, 20f) }
         val scene = Scene().also { it.addComponent(GridLines()) }
 
-        DebugPass(renderer, cameras, drawState = { it() }, targetHeight = { 720 }).execute(scene)
+        DebugPass(renderer, cameras, targetHeight = { 720 }).execute(scene)
 
         verify(atLeast = 10) { renderer.addGroundLine3D(any(), any(), any(), any()) }
         verify(exactly = 0) { renderer.addLine3D(any(), any(), any(), any()) }

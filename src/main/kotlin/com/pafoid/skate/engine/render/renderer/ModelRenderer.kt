@@ -9,30 +9,35 @@ import com.pafoid.skate.engine.assets.data.models.animations.Skeleton
 import com.pafoid.skate.engine.ecs.components.RenderComponent
 import com.pafoid.skate.engine.ecs.components.SkeletonComponent
 import com.pafoid.skate.engine.ecs.components.Transform
-import com.pafoid.skate.engine.render.EngineStats
 import com.pafoid.skate.engine.render.data.RenderMode
 import com.pafoid.skate.engine.render.material.MaterialBinder
 import com.pafoid.skate.engine.render.material.ShaderUniformSink
-import com.pafoid.skate.engine.render.rhi.opengl.GLBindings
-import com.pafoid.skate.engine.render.utils.setAlphaBlendKeepingTargetOpaque
-import com.pafoid.skate.engine.render.utils.withBlendState
-import com.pafoid.skate.engine.render.utils.withCullFace
-import com.pafoid.skate.engine.render.utils.withDepthMask
+import com.pafoid.skate.engine.render.rhi.RhiContext
+import com.pafoid.skate.engine.render.rhi.RhiDevice
+import com.pafoid.skate.engine.render.rhi.RhiVertexInput
+import com.pafoid.skate.engine.render.state.PipelineCache
+import com.pafoid.skate.engine.render.state.PipelineStates
 import com.pafoid.skate.engine.utils.ShaderConst.Uniforms
-import com.pafoid.skate.engine.utils.ShaderConst.Uniforms.HAS_BASE_COLOR_TEXTURE
 import com.pafoid.skate.engine.utils.TextureSlots
 import org.joml.Matrix4f
 import org.joml.Quaternionf
 import org.joml.Vector3f
-import org.lwjgl.opengl.GL11
-import org.lwjgl.opengl.GL20
 
 class ModelRenderer(
-    private val debugRenderer: DebugRenderer
+    private val debugRenderer: DebugRenderer,
+    private val device: () -> RhiDevice = RhiContext::require,
 ) {
 
-    private val materialBinder = MaterialBinder { slot, id -> GLBindings.cache.bindTexture(slot, id) }
+    private val materialBinder = MaterialBinder { slot, texture -> device().commandList().setTexture(slot, texture.rhi) }
     private val sinks = java.util.IdentityHashMap<Shader, ShaderUniformSink>()
+
+    /** Indexed by `2 * blended + doubleSided`, see [PipelineStates.mesh]. */
+    private val pipelines = arrayOf(
+        PipelineCache(PipelineStates.MESH_OPAQUE, device),
+        PipelineCache(PipelineStates.MESH_OPAQUE_DOUBLE_SIDED, device),
+        PipelineCache(PipelineStates.MESH_BLENDED, device),
+        PipelineCache(PipelineStates.MESH_BLENDED_DOUBLE_SIDED, device),
+    )
 
     private fun sinkFor(shader: Shader) = sinks.getOrPut(shader) { ShaderUniformSink(shader) }
 
@@ -83,49 +88,33 @@ class ModelRenderer(
     }
 
     /**
-     * Renders a mesh part with full PBR material support.
+     * Renders a mesh part with full PBR material support: transparent parts blend over an opaque target without
+     * writing depth, double-sided parts are not culled.
      */
     private fun renderMeshPart(
         part: MeshPart,
         shader: Shader,
         overrideMaterial: Material? = null,
     ) {
+        val input = part.input ?: return
         val material = overrideMaterial ?: part.material
-        bindMesh(part)
-
         materialBinder.bind(material, sinkFor(shader))
-        val alphaInt = material.alphaMode.ordinal
-
-        // Configure render state
-        withBlendState(alphaInt == 2) {
-            // Blend factors are set explicitly: the inherited ones depend on whatever drew last (REN-19)
-            if (alphaInt == 2) setAlphaBlendKeepingTargetOpaque()
-            withDepthMask(alphaInt != 2) {
-                withCullFace(!material.doubleSided) {
-                    GL11.glDrawElements(GL11.GL_TRIANGLES, part.vertexCount, GL11.GL_UNSIGNED_INT, 0)
-                    EngineStats.drawCalls.incrementAndGet()
-                }
-            }
-        }
+        draw(part, input, shader, blended = material.alphaMode == AlphaMode.BLEND, doubleSided = material.doubleSided)
     }
 
     /**
-     * Renders a mesh part with minimal state (no textures, no PBR).
-     * Used for simple rendering scenarios like shadow passes or debug rendering.
+     * Renders a mesh part with minimal state (no PBR, never blended): the picking pass. Alpha-masked parts keep their
+     * base color texture so cut-outs are not clickable.
      */
     private fun renderMeshPartSimple(
         part: MeshPart,
         shader: Shader
     ) {
+        val input = part.input ?: return
         val material = part.material
 
-        bindMesh(part)
-
         material.baseColorTexture?.let {
-            bindTexture(
-                TextureSlots.BASE_COLOR,
-                it.texId
-            )
+            device().commandList().setTexture(TextureSlots.BASE_COLOR, it.rhi)
             shader.uploadInt(Uniforms.BASE_COLOR_TEXTURE, TextureSlots.BASE_COLOR)
         }
         shader.uploadBoolean("u_HasBaseColorTexture", material.baseColorTexture != null)
@@ -139,23 +128,19 @@ class ModelRenderer(
         shader.uploadInt(Uniforms.ALPHA_MODE, alphaInt)
         shader.uploadFloat(Uniforms.ALPHA_CUTOFF, material.alphaCutoff)
 
-        withCullFace(!part.material.doubleSided) {
-            GL11.glDrawElements(GL11.GL_TRIANGLES, part.vertexCount, GL11.GL_UNSIGNED_INT, 0)
-            EngineStats.drawCalls.incrementAndGet()
-        }
-
+        draw(part, input, shader, blended = false, doubleSided = material.doubleSided)
     }
 
-    // The VAO stays bound (and its attributes enabled) until the pass ends; attributes live in VAO state.
-    private fun bindMesh(part: MeshPart) {
-        if (GLBindings.cache.bindVao(part.vaoId)) {
-            part.enabledAttributes.forEach { GL20.glEnableVertexAttribArray(it) }
-        }
+    private fun draw(part: MeshPart, input: RhiVertexInput, shader: Shader, blended: Boolean, doubleSided: Boolean) {
+        val index = (if (blended) 2 else 0) + (if (doubleSided) 1 else 0)
+        val pipeline = pipelines[index].get(shader, input.layout) ?: return
+        val cmd = device().commandList()
+        cmd.setPipeline(pipeline)
+        cmd.setVertexInput(input)
+        cmd.drawIndexed(part.vertexCount)
     }
 
-    private fun bindTexture(slot: Int, textureId: Int) {
-        GLBindings.cache.bindTexture(slot, textureId)
-    }
+    fun destroy() = pipelines.forEach { it.close() }
 
     private fun visualizeBoneRecursive(bone: Bone, skeleton: Skeleton, modelMatrix: Matrix4f) {
         // Get the bone's world position from the skeleton's world transforms

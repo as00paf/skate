@@ -29,12 +29,13 @@ import org.joml.Matrix4f
  * - **Location 6**: Joint indices for skeletal animation (4 ints, optional)
  * - **Location 7**: Bone weights for skeletal animation (4 floats, optional)
  *
- * Each attribute gets its own tightly packed buffer ([VertexLayouts.mesh]). Buffers and the vertex input (the VAO
- * whose name is [MeshPart.vaoId]) come from the RHI device ([RhiContext], REN-12 step 2).
+ * Each attribute gets its own tightly packed buffer ([VertexLayouts.mesh]). Buffers and the vertex input
+ * ([MeshPart.input]) come from the RHI device ([RhiContext], REN-12). [MeshPart.vaoId] is the loader's id of the mesh
+ * (positive, never reused): draw sorting and [deleteVAO] use it.
  *
  * ## Memory Management
  *
- * Every mesh is tracked by its VAO name. Call [cleanUp] to delete everything, or [deleteVAO] to free one mesh and
+ * Every mesh is tracked by its id. Call [cleanUp] to delete everything, or [deleteVAO] to free one mesh and
  * its buffers. Failure to call these methods leaks GPU memory.
  */
 class VAOLoader(private val device: () -> RhiDevice = RhiContext::require) {
@@ -42,6 +43,7 @@ class VAOLoader(private val device: () -> RhiDevice = RhiContext::require) {
     private class GpuMeshBuffers(val input: RhiVertexInput, val buffers: List<RhiBuffer>)
 
     private val meshes = LinkedHashMap<Int, GpuMeshBuffers>()
+    private var nextId = 1
     private val layouts = HashMap<List<Pair<Int, AttributeType>>, RhiVertexLayout>()
 
     /**
@@ -93,7 +95,7 @@ class VAOLoader(private val device: () -> RhiDevice = RhiContext::require) {
         }
         if (weights.isNotEmpty()) add(VertexLayouts.MeshAttribute.WEIGHTS, weights)
 
-        val vaoId = track(d, attributes, buffers, indexBuffer)
+        val (vaoId, input) = track(d, attributes, buffers, indexBuffer)
         val vertexCount = if (indices.isNotEmpty()) indices.size else positions.size / 3
         return MeshPart(
             vaoId = vaoId, vertexCount = vertexCount, vertices = rawVertices, texCoords = textureCoords,
@@ -107,6 +109,7 @@ class VAOLoader(private val device: () -> RhiDevice = RhiContext::require) {
             material = material,
             inverseBindMatrices = inverseBindMatrices,
             enabledAttributes = attributes.mapTo(mutableListOf()) { it.first },
+            input = input,
         )
     }
 
@@ -126,21 +129,22 @@ class VAOLoader(private val device: () -> RhiDevice = RhiContext::require) {
             else -> throw IllegalArgumentException("coordinateSize must be 1 to 4, got $coordinateSize")
         }
         val buffer = d.createBuffer(BufferUsage.VERTEX, BufferUpdate.STATIC, positions)
-        val vaoId = track(d, listOf(0 to type), listOf(buffer), null)
+        val (vaoId, input) = track(d, listOf(0 to type), listOf(buffer), null)
         return MeshPart(
             vaoId = vaoId,
             vertexCount = positions.size / coordinateSize,
             vertices = rawVertices,
-            enabledAttributes = mutableListOf(0)
+            enabledAttributes = mutableListOf(0),
+            input = input,
         )
     }
 
-    private fun track(d: RhiDevice, attributes: List<Pair<Int, AttributeType>>, buffers: List<RhiBuffer>, indices: RhiBuffer?): Int {
+    private fun track(d: RhiDevice, attributes: List<Pair<Int, AttributeType>>, buffers: List<RhiBuffer>, indices: RhiBuffer?): Pair<Int, RhiVertexInput> {
         val layout = layouts.getOrPut(attributes) { d.createVertexLayout(VertexLayouts.mesh(attributes)) }
         val input = d.createVertexInput(layout, buffers, indices)
-        val vaoId = input.nativeHandle.toInt()
-        meshes[vaoId] = GpuMeshBuffers(input, listOfNotNull(indices) + buffers)
-        return vaoId
+        val id = nextId++
+        meshes[id] = GpuMeshBuffers(input, listOfNotNull(indices) + buffers)
+        return id to input
     }
 
     /**
@@ -152,7 +156,7 @@ class VAOLoader(private val device: () -> RhiDevice = RhiContext::require) {
     }
 
     /**
-     * Deletes the mesh whose VAO name is [vaoId] ([MeshPart.vaoId]) and its buffers; unknown names are ignored.
+     * Deletes the mesh whose id is [vaoId] ([MeshPart.vaoId]) and its buffers; unknown names are ignored.
      */
     fun deleteVAO(vaoId: Int) {
         meshes.remove(vaoId)?.let(::release)

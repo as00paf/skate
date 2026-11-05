@@ -2,6 +2,7 @@ package com.pafoid.skate.engine.core
 
 import org.lwjgl.BufferUtils
 import org.lwjgl.glfw.Callbacks.glfwFreeCallbacks
+import com.pafoid.skate.engine.render.rhi.RhiDevice
 import com.pafoid.skate.engine.render.rhi.opengl.OpenGlDevice
 import org.lwjgl.glfw.GLFW
 import org.lwjgl.glfw.GLFW.GLFW_CONTEXT_VERSION_MAJOR
@@ -59,7 +60,7 @@ class Window(
     private val openGLDebug = GLFW_FALSE
 
     /** The RHI device of this window's context, created once the context is current. */
-    val device: OpenGlDevice
+    val device: RhiDevice
 
     init {
         // Error callback

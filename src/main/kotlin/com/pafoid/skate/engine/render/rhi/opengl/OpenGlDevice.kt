@@ -1,6 +1,5 @@
 package com.pafoid.skate.engine.render.rhi.opengl
 
-import com.pafoid.skate.engine.render.graph.GpuQueryApi
 import com.pafoid.skate.engine.render.rhi.BufferDesc
 import com.pafoid.skate.engine.render.rhi.BufferUpdate
 import com.pafoid.skate.engine.render.rhi.BufferUsage
@@ -9,6 +8,9 @@ import com.pafoid.skate.engine.render.rhi.PixelFormat
 import com.pafoid.skate.engine.render.rhi.RenderTargetDesc
 import com.pafoid.skate.engine.render.rhi.RhiRenderTarget
 import com.pafoid.skate.engine.render.rhi.RhiShader
+import com.pafoid.skate.engine.render.rhi.RhiTimer
+import com.pafoid.skate.engine.render.rhi.PipelineDesc
+import com.pafoid.skate.engine.render.rhi.RhiPipeline
 import com.pafoid.skate.engine.render.rhi.ShaderDesc
 import com.pafoid.skate.engine.render.rhi.RhiBuffer
 import com.pafoid.skate.engine.render.rhi.RhiCaps
@@ -49,37 +51,29 @@ import java.io.PrintStream
 import java.nio.ByteBuffer
 
 /**
- * The OpenGL 3.3 core backend of the RHI (REN-12). Owns the context's state cache ([GLStateTracker]), binding cache
- * ([GLBindings]) and timer queries ([GlTimerQueries]); renderers still reach those through the existing objects
- * until steps 2-7 move them behind [RhiDevice].
+ * The OpenGL 3.3 core backend of the RHI (REN-12). Owns the context's state cache ([GlStateCache]), binding cache
+ * ([GLBindings]), current program ([GlPrograms]) and timer queries ([GlTimerQueries]).
  *
  * Create it with [create] once the window's context is current (it replaces `GL.createCapabilities()`); it then
  * becomes [RhiContext.device].
  */
 class OpenGlDevice private constructor(
-    val capabilities: GLCapabilities,
+    private val capabilities: GLCapabilities,
     override val caps: RhiCaps,
 ) : RhiDevice {
-
-    /** Fixed-function state cache of this context. */
-    val stateTracker: GLStateTracker get() = GLStateTracker
-
-    /** VAO/texture binding cache of this context. */
-    val bindings: BindingCache get() = GLBindings.cache
-
-    /** GPU timer queries, or null when the context has none. */
-    fun timerQueries(): GpuQueryApi? = GlTimerQueries.create()
 
     var isClosed = false
         private set
 
+    /** Forgets the cached state, bindings and program: ImGui and the window system change them between frames. */
     override fun beginFrame() {
-        GLStateTracker.invalidateCache()
+        GlState.cache.invalidate()
         GLBindings.cache.invalidate()
+        GlPrograms.invalidate()
     }
 
     override fun endFrame() {
-        // Nothing is deferred yet: closing a resource deletes it at once (deferred deletion arrives with step 4).
+        // GL deletes a closed resource at once; a Vulkan backend would free here what frames in flight released.
     }
 
     override fun createBuffer(desc: BufferDesc): RhiBuffer = GlBuffer.create(desc.usage, desc.update, desc.size)
@@ -98,6 +92,10 @@ class OpenGlDevice private constructor(
     override fun createTexture(desc: TextureDesc): RhiTexture = GlTexture(desc, caps.maxAnisotropy > 1f)
 
     override fun createShader(desc: ShaderDesc): RhiShader = GlShader(desc)
+
+    override fun createTimer(): RhiTimer = if (caps.timerQueries) GlTimer(GpuTimerRing(GlTimerQueries)) else NoTimer
+
+    override fun createPipeline(desc: PipelineDesc): RhiPipeline = GlPipeline(desc)
 
     override fun createRenderTarget(desc: RenderTargetDesc): RhiRenderTarget = GlRenderTarget(desc, caps.maxAnisotropy > 1f)
 
