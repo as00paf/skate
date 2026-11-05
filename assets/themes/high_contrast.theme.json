@@ -1,0 +1,44 @@
+{
+  "id": "high_contrast",
+  "nameKey": "settings.theme.high_contrast",
+  "font": {
+    "scale": 1.15
+  },
+  "sizes": {
+    "rounding": 0,
+    "windowPadding": [8, 8],
+    "framePadding": [6, 4],
+    "itemSpacing": [8, 4],
+    "itemInnerSpacing": [4, 4],
+    "indentSpacing": 21,
+    "scrollbarSize": 18,
+    "grabMinSize": 14,
+    "windowBorderSize": 2,
+    "frameBorderSize": 1
+  },
+  "colors": {
+    "text": "#FFFFFFFF",
+    "textDisabled": "#BFBFBFFF",
+    "background": "#000000FF",
+    "border": "#FFFFFFFF",
+    "borderShadow": "#00000000",
+    "accent": "#FFD900FF",
+    "accentHover": "#FFF266FF",
+    "widgetBg": "#141414FF",
+    "widgetHover": "#333333FF",
+    "widgetActive": "#525252FF",
+    "header": "#1F1F1FFF",
+    "headerHover": "#404040FF",
+    "tabActive": "#404040FF",
+    "tabHover": "#595959FF",
+    "tabInactive": "#0D0D0DFF",
+    "scrollbarGrab": "#B2B2B2FF",
+    "scrollbarGrabHover": "#D9D9D9FF",
+    "scrollbarGrabActive": "#FFFFFFFF",
+    "selection": "#FFD90073",
+    "navHighlight": "#FFD900FF",
+    "navWindowingHighlight": "#FFFFFFE6",
+    "navWindowingDimBg": "#00000099",
+    "modalDimBg": "#000000BF"
+  }
+}

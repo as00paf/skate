@@ -96,6 +96,11 @@ object Assets {
 
         const val SKATE_RIDING = "assets/characters/animations/skate riding.fbx"
     }
+    object Themes {
+        /** Editor themes (EDT-07): one `<id>.theme.json` per theme. */
+        const val DIR = "assets/themes"
+    }
+
     object Strings {
         /** Editor string tables, one file per area (`<area>.properties` + `<area>_fr.properties`). */
         const val EDITOR_STRINGS = "assets/strings/editor"
