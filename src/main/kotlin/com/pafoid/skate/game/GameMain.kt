@@ -21,13 +21,15 @@ import com.pafoid.skate.engine.assets.pack.PackedStrings
 import com.pafoid.skate.engine.utils.Atlas
 import com.pafoid.skate.engine.render.rhi.Filter
 import com.pafoid.skate.engine.render.rhi.IntRect
+import java.io.File
 import java.nio.ByteBuffer
 
 private val engine = Engine()
 
 fun main(args: Array<String>) {
     SkateGameplay.register()
-    val binFile = GameBin.read(engine.logger) ?: return
+    val pack = GameBin.read(engine.logger) ?: return
+    val binFile = pack.bytes
     val (header, headerSize) = readFileHeader(binFile)
     if (header == null || headerSize <= 0) return
 
@@ -44,7 +46,7 @@ fun main(args: Array<String>) {
         // The project's mixer (bus volumes and mutes set in the editor) applies to the exported game too (EDT-14).
         engine.audioEngine.applyConfig(project.gameplaySettings.audio.toConfig())
         engine.runtimePlaying = true
-        installGameUi(window)
+        installGameUi(window, pack.file.parentFile)
         window.show { dt ->
             // The framebuffer is blitted over the whole window, so UI pointer mapping uses the window's size.
             val w = IntArray(1)
@@ -63,11 +65,11 @@ fun main(args: Array<String>) {
  * HUD plus the engine's pause menu (GUI-09), which behaves as in editor Play; only Restart and Quit are the game's:
  * Restart reloads the scene as it was at launch, Quit closes the window.
  */
-private fun installGameUi(window: Window) {
+private fun installGameUi(window: Window, packDir: File) {
     val scene = engine.sceneManager.currentScene ?: return
     loadGameStrings()
-    // The player's language choice is kept next to game.bin (GUI-10).
-    engine.gameLocale.attach(GameSettingsStore(GameSettings.fileIn(GameBin.file().absoluteFile.parentFile), engine.logger))
+    // The player's language choice is kept next to the game.bin that was loaded (GUI-10), wherever the game was started from.
+    engine.gameLocale.attach(GameSettingsStore(GameSettings.fileIn(packDir), engine.logger))
     val launchState = ScenePlaySnapshot.capture(scene, engine.serializer)
     val hud = GameUiSystem(GameHudState())
     engine.systemManager.addSystem(hud)
