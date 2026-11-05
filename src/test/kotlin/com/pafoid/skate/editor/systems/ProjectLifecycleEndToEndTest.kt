@@ -409,9 +409,7 @@ class ProjectLifecycleEndToEndTest {
          * Known bugs this test steps over so that it keeps guarding the rest of the lifecycle. Remove an entry when its
          * bug is fixed. Matched against `/`-normalized error messages and missed paths.
          */
-        val KNOWN_ISSUES = mapOf(
-            "EngineDefaults/Textures/metal.png" to "BUG-020 (AST): MaterialType.METAL points at a bundled texture that does not exist",
-        )
+        val KNOWN_ISSUES = mapOf<String, String>()
 
         fun isKnownIssue(text: String) = text.replace('\\', '/').let { t -> KNOWN_ISSUES.keys.any { it in t } }
 
