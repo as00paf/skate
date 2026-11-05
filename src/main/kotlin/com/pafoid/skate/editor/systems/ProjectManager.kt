@@ -41,6 +41,8 @@ class ProjectManager(
         return assetRegistry
     }
 
+    private val assetPaths get() = engine.serializer.assetPaths
+
     fun createProject(name: String, folder: File): Result<Project> {
         logger.logEditor("Creating project: $name in ${folder.absolutePath}")
         return try {
@@ -55,6 +57,7 @@ class ProjectManager(
             }
 
             if (hasProject()) closeProject()
+            assetPaths.projectRoot = projectDir.absoluteFile // default scenes are saved project-relative (AST-09)
 
             val assetsDir = File(projectDir, "Assets").also { it.mkdirs() }
             val scenesDir = File(projectDir, "Scenes").also { it.mkdirs() }
@@ -110,7 +113,11 @@ class ProjectManager(
             return false
         }
         logger.logEditor("Opening project: ${projectFile.absolutePath}")
+        if (hasProject()) closeProject()
+        // References in the project file and its scenes are relative to the folder the project is in now (AST-09).
+        assetPaths.projectRoot = projectFile.absoluteFile.parentFile
         val project = engine.serializer.decodeFile<Project>(FileKind.PROJECT, projectFile.readText())
+        project.projectPath = projectFile.absolutePath
 
         return openProject(project)
     }
@@ -124,6 +131,8 @@ class ProjectManager(
         if (hasProject()) closeProject()
 
         currentProject = project
+        // Editor: references resolve in the project folder. Exported game: they stay relative and come from the pack.
+        assetPaths.projectRoot = if (binData == null) project.getProjectDirectory().absoluteFile else null
         engine.systemManager.getSystem<InputSystem>()?.mappings = project.gameplaySettings.inputMappings
 
         if (binData == null || assetAtlas == null || headerSize <= 0) {
@@ -187,6 +196,7 @@ class ProjectManager(
         engine.systemManager.resetSystemCaches()
 
         currentProject = null
+        assetPaths.projectRoot = null
 
         eventSystem.publish(ProjectEvent.Closed(project))
     }

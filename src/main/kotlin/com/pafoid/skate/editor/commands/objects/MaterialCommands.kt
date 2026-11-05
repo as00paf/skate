@@ -134,10 +134,12 @@ class AssignMaterialCommand(
 class SaveMaterialAssetCommand(
     private val material: Material,
     private val file: File,
+    /** Texture paths inside this folder are saved relative to it (AST-09). */
+    private val projectRoot: File? = null,
 ) : ExecuteOnlyCommand {
     override fun execute() {
         file.parentFile?.mkdirs()
-        MaterialAsset.from(material, file.nameWithoutExtension).save(file)
+        MaterialAsset.from(material, file.nameWithoutExtension, projectRoot).save(file)
     }
 
     override fun undo() {}

@@ -36,7 +36,9 @@ class AudioSystem(
     val audioEngine: AudioEngine,
     private val logger: LoggerService,
     private val assetsManager: AssetsManager,
-    private val cameraManager: CameraManager
+    private val cameraManager: CameraManager,
+    /** Maps a saved sound reference to a file to play: project-relative or packed sounds (AST-09). */
+    private val localPath: (String) -> String = { it },
 ) : System(priority = ExecutionPriority.LATE) {
     override val runsAfter = listOf(CameraManager::class)
 
@@ -329,7 +331,8 @@ class AudioSystem(
             return
         }
 
-        val clip = clipPicker.pick(id, ac.soundFilePath, ac.clips)
+        // Project-relative or packed sounds become a local file (AST-09).
+        val clip = localPath(clipPicker.pick(id, ac.soundFilePath, ac.clips))
         if (clip.isBlank() || clip in failedClips) return
         if (!File(clip).isFile) {
             // Checked on every start so a file added later plays; warned once so a looping source doesn't spam.

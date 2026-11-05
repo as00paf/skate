@@ -78,7 +78,7 @@ class SceneManager(
         obj.getComponent<RenderComponent>()?.resolveModelFromPath(assetsManager)
         obj.getComponent<Animator>()?.let {
             it.resolveAnimationsFromPaths(assetsManager, logger)
-            it.resolveController(logger)
+            it.resolveController(logger, read = { path -> assetsManager.readText(path)?.ifEmpty { null } })
         }
         obj.getComponent<SpriteRenderer>()?.resolveTextureFromPaths(assetsManager, logger)
 

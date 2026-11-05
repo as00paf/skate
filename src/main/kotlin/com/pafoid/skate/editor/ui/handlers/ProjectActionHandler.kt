@@ -33,6 +33,7 @@ import com.pafoid.skate.editor.systems.UndoRedoManager
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.core.LoggerService.LogLevel
 import com.pafoid.skate.engine.core.StringManager
+import com.pafoid.skate.engine.utils.ExportDetail
 import com.pafoid.skate.engine.utils.ExportFailure
 import com.pafoid.skate.engine.utils.ExportResult
 import com.pafoid.skate.engine.utils.ProjectExporter
@@ -157,7 +158,7 @@ class ProjectActionHandler(
             val project = projectManager.currentProject
             if (project == null) {
                 // The wizard already shows "saving": always answer so it can leave the busy state.
-                eventSystem.publish(ProjectEvent.ExportFinished(ExportResult(File(""), ExportFailure.IO_ERROR, "no project")))
+                eventSystem.publish(ProjectEvent.ExportFinished(ExportResult(File(""), ExportFailure.IO_ERROR, ExportDetail.NO_PROJECT)))
                 return@subscribe
             }
             if (exportRunning) return@subscribe // one export at a time into the same folder
@@ -176,7 +177,7 @@ class ProjectActionHandler(
                     }
                 } catch (t: Throwable) {
                     logger.logEditor("Export failed: ${t.message}", LogLevel.ERROR)
-                    ExportResult(outputDir, ExportFailure.IO_ERROR, t.message ?: t.javaClass.simpleName)
+                    ExportResult(outputDir, ExportFailure.IO_ERROR, ExportDetail.IO_FAILURE, listOf(t.message ?: t.javaClass.simpleName))
                 }
                 executeOnMainThread {
                     exportRunning = false

@@ -104,7 +104,7 @@ class MaterialActionHandler(
     private fun write(component: RenderComponent, file: File): Boolean {
         val material = component.material ?: return false
         return try {
-            undoRedoManager.executeCommand(SaveMaterialAssetCommand(material, file))
+            undoRedoManager.executeCommand(SaveMaterialAssetCommand(material, file, projectDir()))
             logger.logEditor("Material saved to ${file.path}")
             true
         } catch (e: Exception) {

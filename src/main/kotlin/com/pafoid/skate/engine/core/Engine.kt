@@ -146,7 +146,7 @@ class Engine {
             TransformSystem(),
             cameraManager,
             inputSystem,
-            AudioSystem(audioEngine, logger, assetsManager, cameraManager),
+            AudioSystem(audioEngine, logger, assetsManager, cameraManager, assetsManager.paths::localPath),
             EnvironmentSystem(),
             physicsSystem,
             PhysicsFrameSystem(physicsSystem),
