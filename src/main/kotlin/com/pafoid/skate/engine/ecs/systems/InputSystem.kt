@@ -27,6 +27,9 @@ class InputSystem(
     private val eventSystem: EventSystem,
 ) : System(priority = ExecutionPriority.EARLY) {
 
+    /** Keeps reading actions while paused so the pause menu can be driven; gameplay input is not fed then. */
+    override val runsWhilePaused get() = true
+
     /** Action definitions and live bindings. Rebind here, then call `mappings.storeBindings(actionMap)` to persist. */
     val actionMap: ActionMap = DefaultActions.register(ActionMap())
 
@@ -72,7 +75,7 @@ class InputSystem(
         actionReader.update()
         rumble.update(dt)
         val mountEdge = reader.wasActionPressed(DefaultActions.TOGGLE_MOUNT)
-        if (!scene.isRunning) return
+        if (!scene.isRunning || scene.isPaused) return
 
         scene.children.forEach { go ->
             val inputState = go.getComponent<InputStateComponent>() ?: return@forEach

@@ -19,6 +19,7 @@ class CameraManager(
 
     override val phase = SystemPhase.LATE_UPDATE
     override val runsAfter = listOf(TransformSystem::class)
+    override val runsWhilePaused get() = true
 
     var camera = CameraComponent()
     var transform = Transform()

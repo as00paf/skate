@@ -35,6 +35,8 @@ import com.pafoid.skate.engine.scripting.runtime.ReaderScriptInput
 import com.pafoid.skate.engine.scripting.runtime.ScriptServices
 import com.pafoid.skate.engine.render.ui.UiFont
 import com.pafoid.skate.engine.ui.ReaderUiInputSource
+import com.pafoid.skate.engine.ui.PauseMenuActions
+import com.pafoid.skate.engine.ui.PauseMenuSystem
 import com.pafoid.skate.engine.ui.UiActions
 import com.pafoid.skate.engine.render.ui.SdfFont
 import com.pafoid.skate.engine.ui.UiInputSystem
@@ -77,6 +79,22 @@ class Engine {
     @Volatile
     var runtimePlaying = false
 
+    /**
+     * Runtime pause (pause menu, GUI-09): the scene stays in Play while simulation, animation and audio are frozen.
+     * Only meaningful while [runtimePlaying]; stopping Play clears it.
+     */
+    val paused: Boolean get() = systemManager.paused
+
+    fun setPaused(value: Boolean) {
+        systemManager.paused = value && runtimePlaying
+    }
+
+    /** Restart/Quit of the pause menu, set by the host (the exported game or the editor). */
+    val pauseActions = PauseMenuActions()
+
+    /** Work queued during the frame's system update, run once the frame is done (see [PauseMenuSystem]). */
+    private val afterFrame = ArrayDeque<() -> Unit>()
+
     /** Set by the editor: UI is being edited, so modal canvases only react while the scene runs. */
     @Volatile
     var uiAuthoring = false
@@ -98,7 +116,10 @@ class Engine {
 
         engineState.set(EngineState.RUNNING)
         initializeSystems()
-        eventSystem.subscribe<EngineAction.SetRuntimePlaying> { event -> runtimePlaying = event.playing }
+        eventSystem.subscribe<EngineAction.SetRuntimePlaying> { event ->
+            runtimePlaying = event.playing
+            if (!event.playing) systemManager.paused = false
+        }
         logger.log("Engine initialization complete.")
     }
 
@@ -159,7 +180,16 @@ class Engine {
         val geometry = renderer.renderResources.renderPasses.geometry
         (inputSystem.reader as? ActionInputReader)?.let { UiActions.bindDefaults(it.actions) }
         var font: UiFont? = null
+        val pauseMenu = PauseMenuSystem(
+            setFrozen = ::setPaused,
+            actions = pauseActions,
+            toggleLanguage = { stringManager.setLocale(if (stringManager.locale == "fr") "en" else "fr") },
+            volume = { systemManager.getSystem<AudioSystem>()?.masterVolume ?: 1f },
+            setVolume = { v -> systemManager.getSystem<AudioSystem>()?.masterVolume = v },
+            defer = { afterFrame.addLast(it) },
+        )
         return listOf(
+            pauseMenu,
             UiLayoutSystem(screen = { UiScreenSize(framebuffer.width, framebuffer.height) }),
             UiInputSystem(
                 ReaderUiInputSource(inputSystem.reader) {
@@ -168,7 +198,10 @@ class Engine {
                     val (x, y) = mouse.viewTarget()
                     UiPointer(x, y, mouse.isMouseButtonDown(0, ignoreImGui = true))
                 }
-            ).also { it.authoring = { uiAuthoring && !runtimePlaying } },
+            ).also {
+                it.authoring = { uiAuthoring && !runtimePlaying }
+                it.onUnhandledCancel = pauseMenu::open
+            },
             UiRenderSystem(
                 drawList = { geometry.renderer2D.ui },
                 strings = stringManager,
@@ -194,7 +227,7 @@ class Engine {
         sceneManager.currentScene?.let { scene ->
             systemManager.update(dt)
             scene.isRunning = runtimePlaying
-            if (runtimePlaying) {
+            if (runtimePlaying && !systemManager.paused) {
                 scene.update(dt)
             }
 
@@ -203,6 +236,7 @@ class Engine {
         }
         screens.forEach { it.update(dt) }
         inputProvider.endFrame()
+        while (afterFrame.isNotEmpty()) afterFrame.removeFirst().invoke()
     }
 
     fun resizeFrameBuffer(width: Int, height: Int) {
