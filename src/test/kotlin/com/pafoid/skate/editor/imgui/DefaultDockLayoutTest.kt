@@ -34,6 +34,19 @@ class DefaultDockLayoutTest {
     }
 
     @Test
+    fun DockLayout_CategorizedToolWindows_AllHaveAZone() {
+        // EDT-40: a tool window listed in View > Windows docks somewhere on first run and after Reset Layout
+        // (the Shell panel used to float). Settings/key-binding windows are floating by design.
+        val floating = setOf("window.editor_settings", "window.project_settings", "window.keybindings")
+        val categorized = Regex(""""(window\.[a-z_]+)" to [A-Z]+""")
+            .findAll(File("src/main/kotlin/com/pafoid/skate/editor/imgui/WindowCategory.kt").readText())
+            .map { it.groupValues[1] }.toList()
+        assertTrue(categorized.size > 10)
+        (categorized - floating).forEach { assertTrue(DefaultDockLayout.zoneOf(it) != null, "$it has no dock zone") }
+        assertEquals(Zone.BOTTOM, DefaultDockLayout.zoneOf("window.shell"))
+    }
+
+    @Test
     fun DockLayout_Ratios_LeaveRoomForCentre() {
         assertTrue(DefaultDockLayout.LEFT_RATIO + DefaultDockLayout.RIGHT_RATIO < 0.6f)
         assertTrue(DefaultDockLayout.BOTTOM_RATIO < 0.5f)

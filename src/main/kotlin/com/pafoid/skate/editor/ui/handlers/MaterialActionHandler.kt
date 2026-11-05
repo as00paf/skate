@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.ui.handlers
 
+import com.pafoid.skate.engine.core.StringManager
 import com.pafoid.skate.editor.commands.objects.AssignMaterialCommand
 import com.pafoid.skate.editor.commands.objects.EditMaterialCommand
 import com.pafoid.skate.editor.commands.objects.MaterialState
@@ -26,16 +27,16 @@ interface MaterialFileDialogs {
     fun open(startDir: File?): String?
 }
 
-/** Native dialogs (tinyfd), like Save Scene As. */
-object TinyMaterialFileDialogs : MaterialFileDialogs {
-    private const val FILTER = "*.${MaterialAsset.EXTENSION}"
+/** Native dialogs (tinyfd), like Save Scene As; titles and filter name from [strings]. */
+class TinyMaterialFileDialogs(private val strings: StringManager) : MaterialFileDialogs {
+    private val FILTER = "*.${MaterialAsset.EXTENSION}"
 
     override fun saveAs(suggested: File): String? = withFilter { f ->
-        TinyFileDialogs.tinyfd_saveFileDialog("Save Material", suggested.path, f, "Skate Material")
+        TinyFileDialogs.tinyfd_saveFileDialog(strings.getString("dialog.material.save_title"), suggested.path, f, strings.getString("dialog.material.filter"))
     }?.let { if (it.endsWith(".${MaterialAsset.EXTENSION}", ignoreCase = true)) it else "$it.${MaterialAsset.EXTENSION}" }
 
     override fun open(startDir: File?): String? = withFilter { f ->
-        TinyFileDialogs.tinyfd_openFileDialog("Load Material", startDir?.path?.plus(File.separator), f, "Skate Material", false)
+        TinyFileDialogs.tinyfd_openFileDialog(strings.getString("dialog.material.load_title"), startDir?.path?.plus(File.separator), f, strings.getString("dialog.material.filter"), false)
     }
 
     private fun withFilter(block: (org.lwjgl.PointerBuffer) -> String?): String? {
@@ -62,7 +63,7 @@ class MaterialActionHandler(
     private val logger: LoggerService,
     private val projectDir: () -> File?,
     private val resolveTexture: (String) -> Texture?,
-    private val dialogs: MaterialFileDialogs = TinyMaterialFileDialogs,
+    private val dialogs: MaterialFileDialogs,
 ) {
     init {
         eventSystem.subscribe<MaterialAction.Edit> { e ->
@@ -71,10 +72,10 @@ class MaterialActionHandler(
         }
         eventSystem.subscribe<MaterialAction.CreateOverride> { e ->
             val source = e.component.model?.mesh?.firstOrNull()?.material ?: Material()
-            assign(e.component, MaterialState.of(source).toMaterial(), null, "Override Material")
+            assign(e.component, MaterialState.of(source).toMaterial(), null, AssignMaterialCommand.Kind.OVERRIDE)
         }
-        eventSystem.subscribe<MaterialAction.RemoveOverride> { e -> assign(e.component, null, null, "Remove Material Override") }
-        eventSystem.subscribe<MaterialAction.Unlink> { e -> assign(e.component, e.component.material, null, "Unlink Material Asset") }
+        eventSystem.subscribe<MaterialAction.RemoveOverride> { e -> assign(e.component, null, null, AssignMaterialCommand.Kind.REMOVE_OVERRIDE) }
+        eventSystem.subscribe<MaterialAction.Unlink> { e -> assign(e.component, e.component.material, null, AssignMaterialCommand.Kind.UNLINK) }
         eventSystem.subscribe<MaterialAction.SaveAs> { e -> saveAs(e.component) }
         eventSystem.subscribe<MaterialAction.Save> { e ->
             val path = e.component.materialPath ?: return@subscribe saveAs(e.component)
@@ -83,8 +84,8 @@ class MaterialActionHandler(
         eventSystem.subscribe<MaterialAction.Load> { e -> load(e.component) }
     }
 
-    private fun assign(component: RenderComponent, material: Material?, path: String?, name: String) {
-        val command = AssignMaterialCommand(component, material, path, name)
+    private fun assign(component: RenderComponent, material: Material?, path: String?, kind: AssignMaterialCommand.Kind) {
+        val command = AssignMaterialCommand(component, material, path, kind)
         if (!command.isNoOp) undoRedoManager.executeCommand(command)
     }
 
@@ -97,7 +98,7 @@ class MaterialActionHandler(
             ?: "Material"
         val suggested = File(materialsDir() ?: File("."), "$baseName.${MaterialAsset.EXTENSION}")
         val path = dialogs.saveAs(suggested) ?: return
-        if (write(component, File(path))) assign(component, material, File(path).absolutePath, "Link Material Asset")
+        if (write(component, File(path))) assign(component, material, File(path).absolutePath, AssignMaterialCommand.Kind.LINK)
     }
 
     private fun write(component: RenderComponent, file: File): Boolean {
@@ -121,6 +122,6 @@ class MaterialActionHandler(
             logger.logEditor("Failed to load material $path: ${e.message}", LogLevel.ERROR)
             return
         }
-        assign(component, material, File(path).absolutePath, "Load Material Asset")
+        assign(component, material, File(path).absolutePath, AssignMaterialCommand.Kind.LOAD)
     }
 }

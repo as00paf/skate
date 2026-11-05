@@ -57,6 +57,12 @@ class GameLocale(val strings: com.pafoid.skate.engine.core.StringManager) {
         strings.setLocale(store.settings.locale)
     }
 
+    /** No project: forget the store (later changes are not saved anywhere) and go back to the default locale. */
+    fun detach() {
+        store = null
+        strings.setLocale(GameSettings.DEFAULT_LOCALE)
+    }
+
     fun set(locale: String) {
         strings.setLocale(locale)
         store?.update { it.copy(locale = locale) }

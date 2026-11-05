@@ -2,20 +2,47 @@ package com.pafoid.skate.editor.imgui.components
 
 import com.pafoid.skate.editor.commands.objects.AudioComponentSettings
 import com.pafoid.skate.editor.events.AudioAction
+import com.pafoid.skate.editor.imgui.EnumLabels
 import com.pafoid.skate.editor.imgui.ImGuiIds
 import com.pafoid.skate.engine.audio.AttenuationModel
 import com.pafoid.skate.engine.audio.BusId
 import com.pafoid.skate.engine.audio.StreamMode
 import com.pafoid.skate.engine.core.Engine
+import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.ecs.components.AudioComponent
 import imgui.ImGui
 import imgui.type.ImInt
 import imgui.type.ImString
 import java.io.File
-import java.util.WeakHashMap
+import java.util.IdentityHashMap
 
-/** Edits are made on a working copy while a widget is held, then committed as one command on release. */
-private val working = WeakHashMap<AudioComponent, AudioComponentSettings>()
+/** Working copy while a widget is held; [frame] is the last ImGui frame the inspector drew it. */
+private class AudioDraft(var settings: AudioComponentSettings, var frame: Int)
+
+/**
+ * Edits are made on a working copy while a widget is held, then committed as one command on release. Keyed by
+ * identity (AudioComponent is compared by value).
+ */
+private val working = IdentityHashMap<AudioComponent, AudioDraft>()
+
+/**
+ * Once per frame after every window drew (EDT-40): a draft whose inspector was not drawn this [frame] (another object
+ * selected mid-edit, window closed) is committed as one command instead of being lost.
+ */
+/** Test hook: an in-progress draft as the inspector would leave it after drawing it in [frame]. */
+internal fun trackAudioDraft(component: AudioComponent, settings: AudioComponentSettings, frame: Int) {
+    working[component] = AudioDraft(settings, frame)
+}
+
+fun flushAudioDrafts(events: EventSystem, frame: Int) {
+    val it = working.entries.iterator()
+    while (it.hasNext()) {
+        val (component, draft) = it.next()
+        if (draft.frame == frame) continue
+        if (draft.settings != AudioComponentSettings.of(component)) events.publish(AudioAction.EditComponent(component, draft.settings))
+        it.remove()
+    }
+}
 
 private const val SOUND_PAYLOAD = "SOUND"
 
@@ -26,7 +53,9 @@ fun AudioComponent.imgui(engine: Engine) {
     fun tip(key: String) { if (ImGui.isItemHovered()) ImGui.setTooltip(strings.getString("tooltip.audio.component.$key")) }
     ImGui.pushID(System.identityHashCode(this))
 
-    val draft0 = working[this] ?: AudioComponentSettings.of(this)
+    val frame = ImGui.getFrameCount()
+    working[this]?.frame = frame
+    val draft0 = working[this]?.settings ?: AudioComponentSettings.of(this)
     var draft = draft0
     var changed = false
     var commit = false
@@ -36,7 +65,7 @@ fun AudioComponent.imgui(engine: Engine) {
     fun edit(next: AudioComponentSettings) { draft = next; changed = true }
 
     fun <E : Enum<E>> enumField(key: String, entries: List<E>, value: E, apply: (E) -> AudioComponentSettings) {
-        val names = entries.map { it.name }.toTypedArray()
+        val names = EnumLabels.all(strings, entries)
         val index = ImInt(value.ordinal)
         if (ImGui.combo(ImGuiIds.stable(s(key), key), index, names, names.size)) publishNow = apply(entries[index.get()])
         tip(key)
@@ -125,7 +154,7 @@ fun AudioComponent.imgui(engine: Engine) {
             working.remove(this)
             engine.eventSystem.publish(AudioAction.EditComponent(this, draft))
         }
-        changed -> working[this] = draft
+        changed -> working[this] = AudioDraft(draft, frame)
         draft0 === draft && !ImGui.isAnyItemActive() -> working.remove(this)
     }
     ImGui.popID()

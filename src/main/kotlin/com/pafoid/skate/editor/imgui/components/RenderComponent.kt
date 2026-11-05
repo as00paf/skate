@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.imgui.components
 
+import com.pafoid.skate.editor.imgui.EnumLabels
 import com.pafoid.skate.editor.commands.objects.MaterialState
 import com.pafoid.skate.editor.events.MaterialAction
 import com.pafoid.skate.editor.imgui.MImGui
@@ -8,6 +9,7 @@ import com.pafoid.skate.engine.assets.data.Texture
 import com.pafoid.skate.engine.assets.data.models.AlphaMode
 import com.pafoid.skate.engine.assets.data.models.Material
 import com.pafoid.skate.engine.core.Engine
+import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.ecs.components.RenderComponent
 import imgui.ImGui
 import imgui.flag.ImGuiColorEditFlags
@@ -92,20 +94,25 @@ private fun RenderComponent.materialInspector(engine: Engine) {
     if (ImGui.button("${s("override.remove")}##override_remove")) publish(MaterialAction.RemoveOverride(this))
     tooltip(s("override.remove.tooltip"))
 
-    materialFields(mat, engine, ::s)
-
-    val target = gameObject?.name
-    materialSession.settle(ImGui.isAnyItemActive()).forEach { edit ->
-        publish(MaterialAction.Edit(edit.material, edit.before, edit.after, target))
-    }
+    materialFields(mat, engine, gameObject?.name, ::s)
     ImGui.popID()
 }
 
-private fun materialFields(mat: Material, engine: Engine, s: (String) -> String) {
+/**
+ * Once per frame after every window drew (EDT-40): turns finished material gestures into commands. Runs even when
+ * no material section is drawn, so a gesture cut short by a selection change is still recorded, on its own object.
+ */
+fun settleMaterialEdits(events: EventSystem, anyItemActive: Boolean) {
+    materialSession.settle(anyItemActive).forEach { edit ->
+        events.publish(MaterialAction.Edit(edit.material, edit.before, edit.after, edit.target))
+    }
+}
+
+private fun materialFields(mat: Material, engine: Engine, target: String?, s: (String) -> String) {
     var d = materialSession.current(mat)
     fun preview(next: MaterialState) {
         d = next
-        materialSession.preview(mat, next)
+        materialSession.preview(mat, next, target)
     }
 
     row("baseColor", s("baseColor")) {
@@ -131,7 +138,7 @@ private fun materialFields(mat: Material, engine: Engine, s: (String) -> String)
         if (ImGui.colorEdit3("##value", e, flags)) preview(d.copy(emissive = Vector3f(e[0], e[1], e[2])))
     }
     row("alphaMode", s("alphaMode")) {
-        val names = AlphaMode.entries.map { it.name }.toTypedArray()
+        val names = EnumLabels.all(engine.stringManager, AlphaMode.entries)
         val index = ImInt(d.alphaMode.ordinal)
         if (ImGui.combo("##value", index, names, names.size)) preview(d.copy(alphaMode = AlphaMode.entries[index.get()]))
     }

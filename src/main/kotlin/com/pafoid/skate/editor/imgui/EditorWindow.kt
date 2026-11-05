@@ -11,6 +11,12 @@ abstract class EditorWindow(
     abstract fun imgui()
 
     /**
+     * Called once when the window goes from open to closed by any path (title-bar X, View > Windows, Hide All, code).
+     * Closed windows get no [imgui] call, so per-session state (previews, drafts) must be dropped here.
+     */
+    open fun onClosed() {}
+
+    /**
      * Window title: translated text (of [textKey], [name] by default) with [name] as its stable ImGui ID, so docking,
      * imgui.ini and the open state survive a language change. Every `begin` of this window must use it.
      */

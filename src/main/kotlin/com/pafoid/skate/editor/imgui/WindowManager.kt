@@ -1,8 +1,10 @@
 package com.pafoid.skate.editor.imgui
 
 import com.pafoid.skate.editor.events.WindowAction
+import com.pafoid.skate.editor.imgui.components.InspectorDrafts
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.core.StringManager
+import imgui.ImGui
 import imgui.internal.ImGui.dockBuilderDockWindow
 import imgui.type.ImInt
 
@@ -33,11 +35,15 @@ class WindowManager(
         }
     }
 
+    private val closeTracker = WindowCloseTracker()
+
     fun update() {
         windowRegistry.windows.forEach { window ->
             if (!window.isOpen.get()) return@forEach
             window.imgui()
         }
+        closeTracker.update(windowRegistry.windows)
+        InspectorDrafts.endFrame(eventSystem, ImGui.getFrameCount(), ImGui.isAnyItemActive())
         windowRegistry.menuBar.render()
         windowRegistry.statusBar.render()
     }

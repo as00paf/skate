@@ -39,13 +39,32 @@ class CommandNamesTest {
 
     @Test
     fun EveryCommandWithAFixedName_HasAKey() {
+        // The key is named after the top-level class that declares the literal name (several commands can share a
+        // file; nested helper classes such as TransformCommand.Entry are not commands).
+        val classDecl = Regex("""(?m)^(?:(?:private|internal|open|data|abstract)\s+)*class\s+(\w+)""")
         val fixed = Regex("""override fun getDisplayName\(\): String = "[^"$]*"\s*$""", RegexOption.MULTILINE)
         val missing = File("src/main/kotlin/com/pafoid/skate/editor").walkTopDown()
-            .filter { it.isFile && it.extension == "kt" && fixed.containsMatchIn(it.readText()) }
-            .map { "command.${it.nameWithoutExtension}" }
+            .filter { it.isFile && it.extension == "kt" }
+            .flatMap { file ->
+                val text = file.readText()
+                fixed.findAll(text).mapNotNull { m -> classDecl.findAll(text.substring(0, m.range.first)).lastOrNull()?.groupValues?.get(1) }
+            }
+            .map { "command.$it" }
             .filter { it !in editorKeys }
             .toList()
         assertTrue(missing.isEmpty(), "Add these keys to assets/strings/editor/core.properties (+ _fr): $missing")
+    }
+
+    @Test
+    fun KeyedCommand_EveryAssignMaterialKindIsTranslated() {
+        val fr = strings("fr")
+        com.pafoid.skate.editor.commands.objects.AssignMaterialCommand.Kind.entries.forEach { kind ->
+            val command = com.pafoid.skate.editor.commands.objects.AssignMaterialCommand(
+                com.pafoid.skate.engine.ecs.components.RenderComponent(), null, null, kind,
+            )
+            assertTrue(command.displayNameKey in editorKeys, command.displayNameKey)
+            assertTrue(CommandNames.displayName(command, fr) != kind.englishName || kind == com.pafoid.skate.editor.commands.objects.AssignMaterialCommand.Kind.ASSIGN)
+        }
     }
 
     @Test

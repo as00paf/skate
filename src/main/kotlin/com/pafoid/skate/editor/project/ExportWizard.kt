@@ -69,11 +69,26 @@ class ExportWizard {
 
     val includedSceneCount: Int get() = scenes.count(::isIncluded)
 
-    fun options(): ExportOptions = ExportOptions(target, excluded.toSet(), compress, onlyReferenced, outputDir.trim().ifBlank { null })
+    /**
+     * The export settings. With a [project], a relative output folder is taken relative to the project folder
+     * (not the editor's working directory, EDT-40).
+     */
+    fun options(project: Project? = null): ExportOptions =
+        ExportOptions(target, excluded.toSet(), compress, onlyReferenced, resolvedOutput(project))
+
+    private fun resolvedOutput(project: Project?): String? {
+        val text = outputDir.trim().ifBlank { return null }
+        val file = File(text)
+        if (project == null || file.isAbsolute) return text
+        return File(project.getProjectDirectory(), text).path
+    }
 
     /** Every reason the export cannot start, empty when it can. [gameJar] is the jar `gradlew gameJar` built, if any. */
     fun issues(project: Project, gameJar: File?): List<Issue> = buildList {
-        if (ProjectExporter.validateOutput(project, ProjectExporter.outputDir(project, options())) != null) add(Issue.INVALID_OUTPUT)
+        // Runs every frame on whatever the user typed: a path the OS rejects (quotes, '<', '|') must not throw.
+        val invalid = runCatching { ProjectExporter.validateOutput(project, ProjectExporter.outputDir(project, options(project))) != null }
+            .getOrDefault(true)
+        if (invalid) add(Issue.INVALID_OUTPUT)
         if (target == ExportTarget.WINDOWS && gameJar?.isFile != true) add(Issue.GAME_JAR_MISSING)
     }
 
