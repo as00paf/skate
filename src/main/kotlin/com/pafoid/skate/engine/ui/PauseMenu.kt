@@ -120,6 +120,8 @@ class PauseMenuSystem(
 
     override fun init(scene: Scene) {
         super.init(scene)
+        // SystemManager.loadScene clears the pause, so the menu must not stay open over the new scene.
+        close()
         // Another scene (Restart reloads it): the menu moves there on the next playing frame.
         if (menu.parent != null && menu.parent !== scene) menu.parent?.removeChild(menu)
     }
