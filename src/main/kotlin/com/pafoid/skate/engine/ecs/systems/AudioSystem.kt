@@ -22,6 +22,7 @@ import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.ecs.systems.SystemManager.ExecutionPriority
 import com.pafoid.skate.engine.getComponent
 import com.pafoid.skate.engine.ecs.GameObject
+import com.pafoid.skate.engine.ecs.Scene
 import org.joml.Matrix4f
 import org.joml.Vector3f
 import java.io.File
@@ -69,6 +70,20 @@ class AudioSystem(
 
     /** Runs while paused to hold and later continue the playing voices. */
     override val runsWhilePaused get() = true
+
+    /**
+     * Another scene (switch, Restart): the old scene's voices are released, including ones held by the pause, so
+     * they neither keep playing as orphans nor resume in the new scene.
+     */
+    override fun init(scene: Scene) {
+        if (scene !== this.scene) {
+            heldByPause.clear()
+            wasPaused = false
+            wasRunning = false
+            playbacks.keys.toList().forEach { releasePlayback(it) }
+        }
+        super.init(scene)
+    }
 
     override fun update(dt: Float) {
         if (!isInitialized) {
