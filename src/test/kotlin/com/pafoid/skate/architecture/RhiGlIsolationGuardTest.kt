@@ -67,8 +67,6 @@ class RhiGlIsolationGuardTest {
         /** GL users outside the backend; shrink only (REN-12 steps 1-7). */
         val ALLOWED = setOf(
             "editor/imgui/ImGuiLayer.kt",
-            "engine/assets/data/Shader.kt",
-            "engine/assets/loaders/ShaderLoader.kt",
             "engine/render/cache/GpuResources.kt",
             "engine/render/data/RenderBatch2D.kt",
             "engine/render/data/RenderBatch3D.kt",

@@ -6,6 +6,7 @@ import com.pafoid.skate.engine.render.rhi.IntRect
 import com.pafoid.skate.engine.render.rhi.RhiBuffer
 import com.pafoid.skate.engine.render.rhi.RhiCommandList
 import com.pafoid.skate.engine.render.rhi.RhiRenderTarget
+import com.pafoid.skate.engine.render.rhi.ShaderParams
 import org.lwjgl.opengl.GL11.GL_COLOR_BUFFER_BIT
 import org.lwjgl.opengl.GL11.GL_DEPTH_BUFFER_BIT
 import org.lwjgl.opengl.GL11.GL_LINEAR
@@ -35,6 +36,8 @@ internal object GlCommandList : RhiCommandList {
         if (offset == 0L && size < 0) glBindBufferBase(GL_UNIFORM_BUFFER, binding, id)
         else glBindBufferRange(GL_UNIFORM_BUFFER, binding, id, offset, if (size < 0) buffer.size - offset else size)
     }
+
+    override fun setParams(params: ShaderParams) = GlPrograms.use((params as GlShaderParams).program)
 
     override fun beginPass(target: RhiRenderTarget?, layer: Int, clear: ClearValues?, viewport: IntRect?) {
         val gl = target as GlRenderTarget?

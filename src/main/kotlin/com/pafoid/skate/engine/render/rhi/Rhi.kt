@@ -7,8 +7,8 @@ import java.nio.FloatBuffer
  * Render hardware interface (REN-12, docs/design/REN-12.md). Backend-neutral: nothing in this package may use a
  * graphics API (RhiGlIsolationGuardTest). The OpenGL backend lives in `rhi/opengl/`.
  *
- * Migration status: step 4 (buffers, vertex inputs, textures, render targets, passes, readback and blit).
- * [RhiDevice] and [RhiCommandList] only declare what the backend implements; shaders (5), pipelines and draws (6) and
+ * Migration status: step 5 (buffers, vertex inputs, textures, render targets, passes, readback, blit, shaders and
+ * parameters). [RhiDevice] and [RhiCommandList] only declare what the backend implements; pipelines and draws (6) and
  * timers (7) are added by the step that migrates their callers. Everything runs on the main thread (§7.6).
  */
 
@@ -55,6 +55,9 @@ interface RhiDevice : AutoCloseable {
      * [RhiTexture.upload] (cube faces are layers 0-5 in +X, -X, +Y, -Y, +Z, -Z order).
      */
     fun createTexture(desc: TextureDesc): RhiTexture
+
+    /** A program from preprocessed stage sources; throws [ShaderCompileError] with the driver's log when one fails. */
+    fun createShader(desc: ShaderDesc): RhiShader
 
     /** Color and depth attachments in one target; see [RenderTargetDesc]. */
     fun createRenderTarget(desc: RenderTargetDesc): RhiRenderTarget
@@ -142,18 +145,34 @@ interface RhiRenderTarget : RhiResource {
     fun depthTexture(): RhiTexture?
 }
 
-/** Named shader parameters (today's `uName` uniforms); the backend uploads only changed values (§3). */
+/**
+ * Named shader parameters (today's `uName` uniforms), one table per shader. The backend uploads only values that
+ * changed (GL: at once, binding the program if needed; Vulkan: into the per-draw block at `setParams`). A name the
+ * shader lacks is ignored.
+ */
 interface ShaderParams {
     fun set(name: String, value: Float)
     fun set(name: String, value: Int)
+    fun set(name: String, x: Float, y: Float)
     fun set(name: String, x: Float, y: Float, z: Float)
     fun set(name: String, x: Float, y: Float, z: Float, w: Float)
+
+    /** An int array (sampler arrays). */
+    fun set(name: String, values: IntArray)
+
+    /** A column-major 4x4 matrix (16 values) or an array of them. */
     fun setMatrix4(name: String, values: FloatArray)
 }
 
 interface RhiShader : RhiResource {
     val desc: ShaderDesc
     fun parameters(): ShaderParams
+
+    /**
+     * Binds uniform block [blockName] to [binding] for [RhiCommandList.setUniformBuffer] (GL 3.3 has no `binding`
+     * qualifier; Vulkan declares it in the shader). Returns false when the shader has no such block.
+     */
+    fun bindUniformBlock(blockName: String, binding: Int): Boolean
 }
 
 interface RhiVertexLayout : RhiResource {
@@ -178,11 +197,13 @@ interface RhiTimer : RhiResource {
 }
 
 /**
- * Commands of a frame; immediate on GL, recorded on Vulkan. Grows with the migration: `setParams` arrives at step 5,
- * `setPipeline`, `setVertexInput`, `setTexture`, `setScissor` and the draws at 6, timers at 7 (docs/design/REN-12.md
- * §3).
+ * Commands of a frame; immediate on GL, recorded on Vulkan. Grows with the migration: `setPipeline`,
+ * `setVertexInput`, `setTexture`, `setScissor` and the draws arrive at step 6, timers at 7 (docs/design/REN-12.md §3).
  */
 interface RhiCommandList {
+    /** Makes [params]' shader the one later draws use and pushes its changed values. */
+    fun setParams(params: ShaderParams)
+
     /**
      * Starts rendering into [target] (null: the window's back buffer, which needs an explicit [viewport]); [layer]
      * selects the layer of a layered target. [clear] clears the attachments it names whatever the depth-write and

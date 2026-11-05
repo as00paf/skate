@@ -166,6 +166,11 @@ data class RenderTargetDesc(
 /** Preprocessed (REN-05 includes and variant defines applied) stage sources. */
 data class ShaderDesc(val name: String, val vertexSource: String, val fragmentSource: String)
 
+enum class ShaderStage { VERTEX, FRAGMENT, LINK }
+
+/** A shader stage failed to compile, or the program to link; [log] is the driver's message. */
+class ShaderCompileError(val stage: ShaderStage, val log: String) : RuntimeException("$stage failed: $log")
+
 enum class AttributeType(val components: Int, val isInteger: Boolean = false) {
     FLOAT(1), VEC2(2), VEC3(3), VEC4(4), INT(1, isInteger = true), IVEC4(4, isInteger = true)
 }

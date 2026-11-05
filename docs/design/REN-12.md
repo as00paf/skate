@@ -157,7 +157,7 @@ classes: allocation-free on the hot path and testable without GL.
 
 ## 5. Incremental migration plan
 
-Status: steps 0 to 4 are done. `RhiDevice` and `RhiCommandList` only declare what the backend implements so far;
+Status: steps 0 to 5 are done. `RhiDevice` and `RhiCommandList` only declare what the backend implements so far;
 each later step adds the methods it migrates to. Amendments made while implementing:
 
 - **`RhiVertexInput`** (step 2): vertex and index buffers bound to a vertex layout, created by
@@ -182,6 +182,13 @@ each later step adds the methods it migrates to. Amendments made while implement
   (post-processing result, the exported game's stretched present); `dst = null` is the back buffer.
   `readPixels(target, attachment, rect, format, out)` lives on the device and is synchronous (picking, thumbnails,
   screenshots, `FrameCapture`). The scene depth is `DEPTH32F` (it was 32-bit fixed point); frames are unchanged.
+- **Shaders** (step 5): `createShader(ShaderDesc)` throws `ShaderCompileError(stage, log)`; `ShaderLoader` turns
+  it into its usual log line and `ShaderCompileException`. `ShaderParams` gained vec2 and int-array setters, and
+  `RhiShader.bindUniformBlock` links std140 blocks (GL 3.3 has no `binding` qualifier). On GL a parameter upload
+  happens at once and is skipped when the program already holds that exact value (bit compare, `UniformCache`);
+  the backend tracks the current program (`GlPrograms`, invalidated with the state cache each frame) so an upload
+  always reaches its own program. `cmd.setParams(params)` makes the shader current; `Shader.stop()` no longer binds
+  program 0. The `Shader` asset is GL-free, so `engine/assets/` has no GL imports.
 
 Each step is one PR-sized commit. Each must keep the full test suite green, produce pixel-identical offscreen frames
 (REN-18/19/20 harness: default `MainScene` and `FeatureShowcase`, created, saved and reloaded, edit mode and Play),

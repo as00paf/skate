@@ -33,6 +33,7 @@ import com.pafoid.skate.engine.render.renderer.SkyDomeRenderer
 import com.pafoid.skate.engine.render.shadow.ShadowFrame
 import com.pafoid.skate.engine.render.utils.withBlendState
 import com.pafoid.skate.engine.render.rhi.opengl.GLStateTracker
+import com.pafoid.skate.engine.render.rhi.opengl.GlPrograms
 import com.pafoid.skate.engine.render.utils.withCullFace
 import com.pafoid.skate.engine.render.utils.withDepthMask
 import com.pafoid.skate.engine.render.utils.withDepthTest
@@ -45,7 +46,6 @@ import org.lwjgl.opengl.GL30.glActiveTexture
 import org.lwjgl.opengl.GL30.glBindBuffer
 import org.lwjgl.opengl.GL30.glBindTexture
 import org.lwjgl.opengl.GL30.glBindVertexArray
-import org.lwjgl.opengl.GL30.glUseProgram
 
 /**
  * Main geometry rendering pass.
@@ -205,7 +205,7 @@ class GeometryPass(
 
     override fun cleanup() {
         // Final state cleanup
-        glUseProgram(0)
+        GlPrograms.use(0)
         glBindVertexArray(0)
         glBindBuffer(GL_ARRAY_BUFFER, 0)
         glActiveTexture(GL_TEXTURE0)

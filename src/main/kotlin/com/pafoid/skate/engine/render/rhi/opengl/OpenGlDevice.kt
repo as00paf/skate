@@ -8,6 +8,8 @@ import com.pafoid.skate.engine.render.rhi.IntRect
 import com.pafoid.skate.engine.render.rhi.PixelFormat
 import com.pafoid.skate.engine.render.rhi.RenderTargetDesc
 import com.pafoid.skate.engine.render.rhi.RhiRenderTarget
+import com.pafoid.skate.engine.render.rhi.RhiShader
+import com.pafoid.skate.engine.render.rhi.ShaderDesc
 import com.pafoid.skate.engine.render.rhi.RhiBuffer
 import com.pafoid.skate.engine.render.rhi.RhiCaps
 import com.pafoid.skate.engine.render.rhi.RhiCommandList
@@ -94,6 +96,8 @@ class OpenGlDevice private constructor(
         GlVertexInput(layout as GlVertexLayout, vertexBuffers, indexBuffer)
 
     override fun createTexture(desc: TextureDesc): RhiTexture = GlTexture(desc, caps.maxAnisotropy > 1f)
+
+    override fun createShader(desc: ShaderDesc): RhiShader = GlShader(desc)
 
     override fun createRenderTarget(desc: RenderTargetDesc): RhiRenderTarget = GlRenderTarget(desc, caps.maxAnisotropy > 1f)
 
