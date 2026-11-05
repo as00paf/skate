@@ -67,7 +67,7 @@ enum class ExportDetail(val key: String) {
     /** Args: output folder. */
     OUTPUT_IS_FILE("lbl.export.detail.output_is_file"),
 
-    /** No args. */
+    /** Args: the folders and files searched, `; `-separated. */
     GAME_JAR_NOT_BUILT("lbl.export.detail.game_jar_not_built"),
 
     /** Args: mismatching entries, `; `-separated. */
@@ -96,12 +96,12 @@ data class ExportResult(
  * Exports a project to its output folder (`<project>/builds` by default): `game.bin` (referenced assets only,
  * compressed), `manifest.json` (checksums) and, for [ExportTarget.WINDOWS], the standalone game jar and
  * `run-game.bat`. The pack also carries the game string tables from [gameStringsDir] (see [AssetsPacker]).
- * [gameJarProvider] locates the jar produced by `gradlew gameJar`.
+ * [gameJarSearch] locates the jar produced by `gradlew gameJar` (see [GameJarLocator]).
  */
 class ProjectExporter(
     private val logger: LoggerService,
     gameStringsDir: File = File(Assets.Strings.GAME_STRINGS),
-    private val gameJarProvider: () -> File? = ::findGameJar,
+    private val gameJarSearch: () -> GameJarSearch = { GameJarLocator().locate() },
 ) {
     private val assetsPacker = AssetsPacker(logger, gameStringsDir)
 
@@ -114,7 +114,10 @@ class ProjectExporter(
         }
         validateOutput(project, outputDir)?.let { return fail(ExportFailure.INVALID_OUTPUT, it, listOf(outputDir.path)) }
         val jar = if (options.target == ExportTarget.WINDOWS) {
-            gameJarProvider()?.takeIf { it.isFile } ?: return fail(ExportFailure.GAME_JAR_MISSING, ExportDetail.GAME_JAR_NOT_BUILT, emptyList())
+            val search = gameJarSearch()
+            if (search.stale) logger.logEngine("Game jar ${search.jar} is older than the editor build; run `gradlew gameJar`", LogLevel.WARN)
+            search.jar?.takeIf { it.isFile }
+                ?: return fail(ExportFailure.GAME_JAR_MISSING, ExportDetail.GAME_JAR_NOT_BUILT, listOf(searchedList(search)))
         } else null
 
         return try {
@@ -171,12 +174,7 @@ class ProjectExporter(
             }
         }
 
-        /** Looks for `*-game.jar` in the working directory's `build/libs` and next to the running jar. */
-        fun findGameJar(): File? {
-            val running = runCatching { File(ProjectExporter::class.java.protectionDomain.codeSource.location.toURI()) }.getOrNull()
-            val dirs = listOfNotNull(File("build/libs"), running?.takeIf { it.isFile }?.parentFile)
-            return dirs.flatMap { it.listFiles { f -> f.name.endsWith("-game.jar") }?.toList().orEmpty() }
-                .maxByOrNull { it.lastModified() }
-        }
+        /** [GameJarSearch.searched] as one line for messages (`;`-separated, or "-" when nothing was searched). */
+        fun searchedList(search: GameJarSearch): String = search.searched.joinToString("; ") { it.path }.ifEmpty { "-" }
     }
 }

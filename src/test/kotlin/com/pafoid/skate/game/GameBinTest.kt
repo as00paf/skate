@@ -1,5 +1,6 @@
 package com.pafoid.skate.game
 
+import com.pafoid.skate.engine.utils.GameJarSearch
 import com.pafoid.skate.editor.project.Project
 import com.pafoid.skate.engine.assets.serialization.Serializer
 import com.pafoid.skate.engine.core.LoggerService
@@ -109,7 +110,7 @@ class GameBinTest {
         val projectFile = File(dir, "Game.skateproject").apply { writeText("{}") }
         val project = Project(name = "Game", projectPath = projectFile.absolutePath, defaultScene = scene.absolutePath, scenesPath = listOf(scene.absolutePath))
         val fakeJar = File(dir, "fake-game.jar").apply { writeText("jar") }
-        assertTrue(ProjectExporter(mockk(relaxed = true), File(dir, "no-strings")) { fakeJar }.export(project).success)
+        assertTrue(ProjectExporter(mockk(relaxed = true), File(dir, "no-strings")) { GameJarSearch(fakeJar, emptyList()) }.export(project).success)
         val builds = File(dir, "builds")
         val exportedJar = builds.listFiles { f -> f.name.endsWith(".jar") }!!.single()
 
