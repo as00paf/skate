@@ -47,6 +47,7 @@ import com.pafoid.skate.engine.physics3d.native.NativeLibraryLoader
 import com.pafoid.skate.engine.render.renderer.DebugRenderer
 import com.pafoid.skate.engine.utils.ExportTarget
 import com.pafoid.skate.engine.utils.ProjectExporter
+import com.pafoid.skate.game.GameBin
 import com.pafoid.skate.game.loadProjectAndIcon
 import com.pafoid.skate.game.readFileHeader
 import com.pafoid.skate.game.samples.FeatureShowcase
@@ -58,6 +59,7 @@ import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNotNull
+import org.junit.jupiter.api.Assertions.fail
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeAll
@@ -341,7 +343,10 @@ class ProjectLifecycleEndToEndTest {
         val hidden = File(dir, "Hidden")
         assertTrue(projectDir.renameTo(hidden), "could not move the project away")
 
-        val bin = File(exportDir, "game.bin").readBytes()
+        // GPL-18: GameMain's own lookup, as when the exported jar is double-clicked or started from another folder.
+        val launchedFrom = File(dir, "Elsewhere").also { it.mkdirs() }
+        val exportedJar = File(exportDir, "skate-game.jar").also { it.writeText("stand-in: the PACK_ONLY export has no jar") }
+        val bin = (GameBin.read(LoggerService(), GameBin.candidates(null, exportedJar, launchedFrom)) ?: fail("game.bin not found next to the jar")).bytes
         val (atlas, headerSize) = readFileHeader(bin)
         assertNotNull(atlas, "game.bin header unreadable")
         val (packed, _) = loadProjectAndIcon(bin, atlas!!, headerSize)
