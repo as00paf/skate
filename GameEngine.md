@@ -378,6 +378,10 @@ Audio needs a more complete implementation.
   - Do: Human request: use `assets/sounds/music/aquarela do brasil.mp3` (local asset, kept out of git) as looping background music in the default skate `MainScene`. The loader only decodes OGG (stb_vorbis) and WAV, and only OGG streams. Add MP3 decoding (a small, permissively licensed pure-Java decoder) with streaming for long tracks, route music through the music bus, and make a missing file a logged warning, not an error.
   - Done when: (Changed by the human on PR #16) MainScene has no music; the FeatureShowcase Audio area's 3D emitter plays the track looping in Play instead of the generated tone (streamed), the tone and its 2D ambient layer are removed; a missing file is tolerated; MP3 decode/stream tested; the showcase smoke test asserts it.
   - Deps: AUD-09
+- [x] **AUD-11** `P0` Music pitch drops when the camera glides (Doppler)
+  - Do: Human-reported on PR #16: the showcase song slows down when clicking demo-area buttons. The listener velocity is derived from camera motion, so the fast focus glide pitch-shifts sources via `SpatialAudio.dopplerPitch`. Music must never be Doppler-shifted (dopplerFactor 0 for music/Music bus sources), and camera-derived listener velocity should not produce Doppler from camera cuts/glides (e.g. only from a physics body, or clamped/smoothed).
+  - Done when: The song's pitch stays constant while gliding/flying in the showcase; Doppler still works for SFX moving with physics; tests.
+  - Deps: AUD-10
 
 ### Input — `INP` (`skate-input`)
 
@@ -514,6 +518,10 @@ In-game UI components need to be added (separate from the ImGui editor).
 - [ ] **GUI-08** `P3` Review AST-07 string loading changes
   - Do: From AST-07: review `engine/core/StringManager.kt`, `StringTables.kt`, the new `StringSource.kt` and `GameMain.loadGameStrings()` (pack-based game strings), and align with EDT-37's per-area tables.
   - Done when: Review fixes committed; runtime UI strings load from files and packs alike; tests.
+  - Deps: AST-07
+- [ ] **GUI-09** `P1` Pause menu in editor Play
+  - Do: Human request on PR #16: Esc opens the pause menu in editor Play too, not only in the exported game. Move the pause menu (`game/ui/GameUi.kt`, opened from `GameMain`) into runtime code that both `GameMain` and editor Play use (Resume, Restart, Language, Quit; in the editor, Quit/Restart map to Stop/restart-play). Route Esc to the game while playing (the editor's Esc = deselect only when not playing); coordinate the editor input side with `skate-editor`. Pausing freezes simulation, audio and animation; Resume continues.
+  - Done when: Esc toggles the pause menu in editor Play and in the exported game, with identical behaviour; Esc still deselects while editing; tests through the real path (load from disk, Play, Esc).
   - Deps: AST-07
 
 ### Scripting — `SCR` (`skate-scripting`)
