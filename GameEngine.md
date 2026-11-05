@@ -214,7 +214,7 @@ Asset management works but needs a complete review.
 - [x] **AST-10** `P2` Missing bundled metal.png (BUG-020)
   - Do: From QA-14: `Assets.Bundled.METAL` points at `assets/textures/metal.png`, which never existed; rails fall back to the default texture with an ERROR. Add a proper metal texture (or point METAL at an existing one), make `EngineAssetCopier` or a unit test over `Assets.Bundled.bundledAssets` fail on missing sources, and remove the entry from `ProjectLifecycleEndToEndTest.KNOWN_ISSUES`.
   - Done when: New projects log no missing-texture errors; the bundled-assets test guards it.
-- [ ] **AST-11** `P2` Exporter finds the game jar relative to the working directory
+- [~] @skate-assets **AST-11** `P2` Exporter finds the game jar relative to the working directory
   - Do: From GPL-18's audit: `ProjectExporter.findGameJar` searches `build/libs` relative to the working directory, so exporting fails or picks a stale jar when the editor starts from another folder. Resolve from the editor's install/jar location (or a configured path) and report clearly when no game jar exists.
   - Done when: Export finds the game jar regardless of the editor's working directory; test.
   - Deps: GPL-18
