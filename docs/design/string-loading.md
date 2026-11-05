@@ -41,8 +41,17 @@ So:
   and `setLocale` returns false.
 - The result is the same whatever order `loadStrings`, `addStrings` and `setLocale` are called in.
 
-Each change rebuilds the whole table off to the side and swaps it in one step. The editor loads on the IO thread
-while ImGui reads, and never sees a half-loaded table.
+## Threading (GUI-11)
+
+- **Reloads** (`loadStrings`, `addStrings`, `setLocale`) may run on any thread; the editor loads on the IO thread.
+  They are serialized on the manager's monitor. Each one reads the tables, builds a complete new immutable snapshot
+  (a plain `HashMap` of the table plus its locale and its "already reported" sets), and publishes it with one
+  `AtomicReference` swap.
+- **Lookups** (`getString`, `hasString`, `getQuantityString`, `locale`) take one volatile read of the snapshot and
+  never lock. They see either the old table or the new one, never a mix. A lookup of a defined key allocates
+  nothing. A missing key allocates its `!!key!!` placeholder once per snapshot; formatting allocates as
+  `String.format` does.
+- Locale listeners run after the swap, outside the lock.
 
 ## Lookups
 
