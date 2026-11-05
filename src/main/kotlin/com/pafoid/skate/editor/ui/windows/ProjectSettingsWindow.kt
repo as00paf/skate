@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.ui.windows
 
+import com.pafoid.skate.editor.imgui.tipped
 import com.pafoid.skate.editor.imgui.label
 import com.pafoid.skate.editor.events.ProjectEvent
 import com.pafoid.skate.editor.events.WindowAction
@@ -71,7 +72,7 @@ class ProjectSettingsWindow(
                 ImGui.text(stringManager.getString("settings.project.no_project"))
                 MImGui.textDisabled(stringManager.getString("settings.project.no_project_description"))
                 ImGui.spacing()
-                if (button(stringManager.getString("settings.project.btn.open_project"))) {
+                if (stringManager.tipped(button(stringManager.getString("settings.project.btn.open_project")), "settings.project.btn.open_project")) {
                     eventSystem.publish(WindowAction.Show("window.project_switcher"))
                 }
                 ImGui.spacing()

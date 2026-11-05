@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.ui.menus
 
+import com.pafoid.skate.editor.imgui.tipped
 import com.pafoid.skate.editor.imgui.label
 import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.engine.core.EventSystem
@@ -27,7 +28,7 @@ class FileMenuBuilder(
     }
 
     private fun renderNewSceneItem() {
-        if (menuItem("${Icons.PLUS} ${stringManager.getString("menu.file.new_scene")}", "Ctrl+N")) {
+        if (stringManager.tipped(menuItem("${Icons.PLUS} ${stringManager.getString("menu.file.new_scene")}", "Ctrl+N"), "menu.file.new_scene")) {
             eventSystem.publish(CreateRequested)
         }
     }
@@ -35,16 +36,16 @@ class FileMenuBuilder(
     private fun renderSaveSceneItems(currentScene: Scene?) {
         if (currentScene == null) return
 
-        if (menuItem("${Icons.SAVE} ${stringManager.getString("menu.file.save_scene")}", "Ctrl+S")) {
+        if (stringManager.tipped(menuItem("${Icons.SAVE} ${stringManager.getString("menu.file.save_scene")}", "Ctrl+S"), "menu.file.save_scene")) {
             eventSystem.publish(SaveRequested(currentScene))
         }
-        if (menuItem("${Icons.SAVE} ${stringManager.getString("menu.file.save_scene_as")}")) {
+        if (stringManager.tipped(menuItem("${Icons.SAVE} ${stringManager.getString("menu.file.save_scene_as")}"), "menu.file.save_scene_as")) {
             eventSystem.publish(SaveAsRequested(currentScene))
         }
     }
 
     private fun renderImportSceneItem() {
-        if (menuItem("${Icons.IMPORT_FILE} ${stringManager.getString("menu.file.import_scene")}", "Ctrl+I")) {
+        if (stringManager.tipped(menuItem("${Icons.IMPORT_FILE} ${stringManager.getString("menu.file.import_scene")}", "Ctrl+I"), "menu.file.import_scene")) {
             eventSystem.publish(SceneAction.ImportRequested)
         }
     }

@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.ui.windows
 
+import com.pafoid.skate.editor.imgui.tipped
 import com.pafoid.skate.editor.imgui.label
 import com.pafoid.skate.editor.imgui.contextPopupId
 import com.pafoid.skate.editor.events.ViewportAction.CreateEmpty
@@ -332,7 +333,7 @@ class SceneHierarchyWindow(
 
         if (ImGui.beginPopupContextItem(contextPopupId("hierarchy", obj.uId))) {
             if (ImGui.beginMenu(stringManager.label("context.hierarchy.create_empty_child", "${Icons.PLUS} "))) {
-                if (ImGui.menuItem(stringManager.getString("lbl.gameobject.empty"))) {
+                if (stringManager.tipped(ImGui.menuItem(stringManager.getString("lbl.gameobject.empty")), "lbl.gameobject.empty")) {
                     eventSystem.publish(CreateEmptyChild(obj))
                 }
                 ImGui.endMenu()
@@ -341,48 +342,48 @@ class SceneHierarchyWindow(
 
             ImGui.separator()
 
-            if (ImGui.menuItem("${Icons.COPY} ${stringManager.getString("context.hierarchy.duplicate")}")) {
+            if (stringManager.tipped(ImGui.menuItem("${Icons.COPY} ${stringManager.getString("context.hierarchy.duplicate")}"), "context.hierarchy.duplicate")) {
                 eventSystem.publish(Duplicate(obj))
             }
 
-            if (ImGui.menuItem("${Icons.COPY} ${stringManager.getString("context.hierarchy.copy")}")) {
+            if (stringManager.tipped(ImGui.menuItem("${Icons.COPY} ${stringManager.getString("context.hierarchy.copy")}"), "context.hierarchy.copy")) {
                 clipboardService.copy(obj)
             }
-            if (ImGui.menuItem("${Icons.CUT} ${stringManager.getString("context.hierarchy.cut")}")) {
+            if (stringManager.tipped(ImGui.menuItem("${Icons.CUT} ${stringManager.getString("context.hierarchy.cut")}"), "context.hierarchy.cut")) {
                 clipboardService.copy(obj)
                 sceneManager.currentScene?.let { scn ->
                     eventSystem.publish(Delete(obj, scn))
                 }
             }
-            if (ImGui.menuItem("${Icons.PASTE} ${stringManager.getString("context.hierarchy.paste_as_child")}")) {
+            if (stringManager.tipped(ImGui.menuItem("${Icons.PASTE} ${stringManager.getString("context.hierarchy.paste_as_child")}"), "context.hierarchy.paste_as_child")) {
                 eventSystem.publish(PasteClipboard(obj))
             }
 
             ImGui.separator()
 
-            if (ImGui.menuItem("${Icons.TRASH} ${stringManager.getString("context.hierarchy.delete")}")) {
+            if (stringManager.tipped(ImGui.menuItem("${Icons.TRASH} ${stringManager.getString("context.hierarchy.delete")}"), "context.hierarchy.delete")) {
                 sceneManager.currentScene?.let { scn ->
                     eventSystem.publish(Delete(obj, scn))
                 }
             }
 
-            if (ImGui.menuItem("${Icons.EDIT} ${stringManager.getString("context.hierarchy.rename")}")) {
+            if (stringManager.tipped(ImGui.menuItem("${Icons.EDIT} ${stringManager.getString("context.hierarchy.rename")}"), "context.hierarchy.rename")) {
                 startRename(obj)
             }
 
             ImGui.separator()
 
-            if (ImGui.menuItem("${Icons.EYE} ${stringManager.getString("context.hierarchy.focus_in_viewport")}")) {
+            if (stringManager.tipped(ImGui.menuItem("${Icons.EYE} ${stringManager.getString("context.hierarchy.focus_in_viewport")}"), "context.hierarchy.focus_in_viewport")) {
                 eventSystem.publish(GameObjectSelected(obj))
                 eventSystem.publish(FocusSelected)
             }
 
             ImGui.separator()
 
-            if (ImGui.menuItem(stringManager.getString("context.hierarchy.expand_all"))) {
+            if (stringManager.tipped(ImGui.menuItem(stringManager.getString("context.hierarchy.expand_all")), "context.hierarchy.expand_all")) {
                 expandAll(sceneManager.currentScene ?: return)
             }
-            if (ImGui.menuItem(stringManager.getString("context.hierarchy.collapse_all"))) {
+            if (stringManager.tipped(ImGui.menuItem(stringManager.getString("context.hierarchy.collapse_all")), "context.hierarchy.collapse_all")) {
                 collapseAll(sceneManager.currentScene ?: return)
             }
 

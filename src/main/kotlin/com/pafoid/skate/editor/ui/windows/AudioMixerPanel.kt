@@ -38,6 +38,7 @@ class AudioMixerPanel(
 
         fun mute(label: String, value: Boolean, apply: (Boolean) -> AudioSettings) {
             if (ImGui.checkbox(label, value)) { settings = apply(!value); changed = true; commit = true }
+            if (ImGui.isItemHovered()) ImGui.setTooltip(strings.getString("lbl.audio.mute.tooltip"))
         }
 
         fun header(key: String) { ImGui.separator(); ImGui.text(strings.getString(key)) }

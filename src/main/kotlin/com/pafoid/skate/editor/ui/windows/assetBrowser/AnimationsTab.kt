@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.ui.windows.assetBrowser
 
+import com.pafoid.skate.editor.imgui.tipped
 import com.pafoid.skate.editor.imgui.contextPopupId
 import com.pafoid.skate.editor.data.FileType
 import com.pafoid.skate.editor.imgui.data.Icons
@@ -35,19 +36,19 @@ class AnimationsTab(
         }
 
         if (ImGui.beginPopupContextItem(contextPopupId("animation"))) {
-            if (ImGui.menuItem("${Icons.PLAY} ${stringManager.getString("context.asset_browser.preview_animation")}")) {
+            if (stringManager.tipped(ImGui.menuItem("${Icons.PLAY} ${stringManager.getString("context.asset_browser.preview_animation")}"), "context.asset_browser.preview_animation")) {
                 previewAnimation(file)
             }
             ImGui.separator()
-            if (ImGui.menuItem("${Icons.CHECK} ${stringManager.getString("context.asset_browser.apply_to_selected")}")) {
+            if (stringManager.tipped(ImGui.menuItem("${Icons.CHECK} ${stringManager.getString("context.asset_browser.apply_to_selected")}"), "context.asset_browser.apply_to_selected")) {
                 applyAnimationToSelected(file.path)
             }
             ImGui.separator()
-            if (ImGui.menuItem("${Icons.FOLDER} ${stringManager.getString("context.asset_browser.show_in_folder")}")) {
+            if (stringManager.tipped(ImGui.menuItem("${Icons.FOLDER} ${stringManager.getString("context.asset_browser.show_in_folder")}"), "context.asset_browser.show_in_folder")) {
                 Desktop.getDesktop().open(file.parentFile)
             }
             ImGui.separator()
-            if (ImGui.menuItem("${Icons.INFO} ${stringManager.getString("context.asset_browser.properties")}")) {
+            if (stringManager.tipped(ImGui.menuItem("${Icons.INFO} ${stringManager.getString("context.asset_browser.properties")}"), "context.asset_browser.properties")) {
                 engine.logger.logEditor("Animation: ${file.name}, Format: ${file.extension}, Path: ${file.absolutePath}")
             }
             ImGui.endPopup()

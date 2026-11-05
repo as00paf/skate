@@ -1,5 +1,7 @@
 package com.pafoid.skate.editor.imgui.components
 
+import com.pafoid.skate.editor.imgui.Tooltips
+import com.pafoid.skate.editor.imgui.tipped
 import com.pafoid.skate.editor.imgui.label
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.ecs.components.Component
@@ -42,7 +44,7 @@ private fun Component.requirementHint(engine: Engine) {
         UiProblem.NO_CANVAS -> strings.getString("ui.hint.no_canvas") to ComponentType.UI_CANVAS
     }
     ImGui.textColored(1f, 0.75f, 0.2f, 1f, message)
-    if (ImGui.button(strings.getString("ui.hint.fix"))) engine.eventSystem.publish(ViewportAction.AddComponent(go, fix))
+    if (strings.tipped(ImGui.button(strings.getString("ui.hint.fix")), "ui.hint.fix")) engine.eventSystem.publish(ViewportAction.AddComponent(go, fix))
 }
 
 private fun UIElementComponent.anchorPresetCombo(engine: Engine) {
@@ -62,6 +64,7 @@ private fun drawObject(target: Any, engine: Engine, owner: Component) {
         val label = engine.stringManager.getString("ui.inspector.${field.name}")
         ImGui.pushID(field.name)
         drawField(target, field, label, engine, owner)
+        Tooltips.showIfPresent(engine.stringManager, "ui.inspector.${field.name}${Tooltips.SUFFIX}")
         ImGui.popID()
     }
 }
@@ -137,11 +140,11 @@ private fun stringList(target: Any, field: Field, label: String, engine: Engine,
         val s = ImString(items[i], 256)
         if (ImGui.inputText("##item", s)) { items[i] = s.get(); changed = true }
         ImGui.sameLine()
-        if (ImGui.button(engine.stringManager.getString("ui.inspector.remove"))) { items.removeAt(i); changed = true }
+        if (engine.stringManager.tipped(ImGui.button(engine.stringManager.getString("ui.inspector.remove")), "ui.inspector.remove")) { items.removeAt(i); changed = true }
         ImGui.popID()
         if (changed) return@forEach
     }
-    if (ImGui.button(engine.stringManager.getString("ui.inspector.add"))) { items.add(""); changed = true }
+    if (engine.stringManager.tipped(ImGui.button(engine.stringManager.getString("ui.inspector.add")), "ui.inspector.add")) { items.add(""); changed = true }
     if (changed) field.set(target, items.toList())
     ImGui.treePop()
 }
@@ -156,11 +159,11 @@ private fun UIListComponent.listItems(engine: Engine) {
         val s = ImString(rows[i].key, 256)
         if (ImGui.inputText("##key", s)) { rows[i] = UiListItem(s.get(), rows[i].args); changed = true }
         ImGui.sameLine()
-        if (ImGui.button(engine.stringManager.getString("ui.inspector.remove"))) { rows.removeAt(i); changed = true; ImGui.popID(); continue }
+        if (engine.stringManager.tipped(ImGui.button(engine.stringManager.getString("ui.inspector.remove")), "ui.inspector.remove")) { rows.removeAt(i); changed = true; ImGui.popID(); continue }
         ImGui.popID()
         i++
     }
-    if (ImGui.button(engine.stringManager.getString("ui.inspector.add"))) { rows.add(UiListItem("ui.default.text")); changed = true }
+    if (engine.stringManager.tipped(ImGui.button(engine.stringManager.getString("ui.inspector.add")), "ui.inspector.add")) { rows.add(UiListItem("ui.default.text")); changed = true }
     if (changed) items = rows.toList()
     ImGui.treePop()
 }

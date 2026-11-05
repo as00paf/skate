@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.ui.menus
 
+import com.pafoid.skate.editor.imgui.tipped
 import com.pafoid.skate.editor.imgui.label
 import com.pafoid.skate.editor.events.UndoRedoAction
 import com.pafoid.skate.editor.events.ViewportAction
@@ -28,16 +29,16 @@ class EditMenuBuilder(
     }
     
     private fun renderUndoRedoItems() {
-        if (menuItem("${Icons.UNDO} ${stringManager.getString("menu.edit.undo")}", "Ctrl+Z")) {
+        if (stringManager.tipped(menuItem("${Icons.UNDO} ${stringManager.getString("menu.edit.undo")}", "Ctrl+Z"), "menu.edit.undo")) {
             eventSystem.publish(UndoRedoAction.Undo)
         }
-        if (menuItem("${Icons.REDO} ${stringManager.getString("menu.edit.redo")}", "Ctrl+Y")) {
+        if (stringManager.tipped(menuItem("${Icons.REDO} ${stringManager.getString("menu.edit.redo")}", "Ctrl+Y"), "menu.edit.redo")) {
             eventSystem.publish(UndoRedoAction.Redo)
         }
     }
     
     private fun renderClipboardItems() {
-        if (menuItem("${Icons.CUT} ${stringManager.getString("menu.edit.cut")}", "Ctrl+X")) {
+        if (stringManager.tipped(menuItem("${Icons.CUT} ${stringManager.getString("menu.edit.cut")}", "Ctrl+X"), "menu.edit.cut")) {
             val scene = sceneManager.currentScene
             val selected = scene?.selectedGameObject
             if (selected != null) {
@@ -46,18 +47,13 @@ class EditMenuBuilder(
                 eventSystem.publish(ViewportAction.SelectionCleared)
             }
         }
-        if (menuItem("${Icons.COPY} ${stringManager.getString("menu.edit.copy")}", "Ctrl+C")) {
+        if (stringManager.tipped(menuItem("${Icons.COPY} ${stringManager.getString("menu.edit.copy")}", "Ctrl+C"), "menu.edit.copy")) {
             sceneManager.currentScene?.selectedGameObject?.let {
                 eventSystem.publish(ViewportAction.CopyClipboard(it))
             }
         }
-        if (menuItem("${Icons.PASTE} ${stringManager.getString("menu.edit.paste")}", "Ctrl+V")) {
+        if (stringManager.tipped(menuItem("${Icons.PASTE} ${stringManager.getString("menu.edit.paste")}", "Ctrl+V"), "menu.edit.paste")) {
             eventSystem.publish(ViewportAction.PasteClipboard())
-        }
-        if (menuItem("${Icons.PASTE} ${stringManager.getString("menu.edit.cut")}", "Ctrl+X")) {
-            sceneManager.currentScene?.selectedGameObject?.let {
-                eventSystem.publish(ViewportAction.CutClipboard(it))
-            }
         }
     }
 }

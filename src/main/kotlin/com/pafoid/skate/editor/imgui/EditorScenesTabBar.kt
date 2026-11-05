@@ -44,32 +44,32 @@ class EditorScenesTabBar(
 
                     // Scene tab context menu
                     if (ImGui.beginPopupContextItem(contextPopupId("sceneTab", scene.uId))) {
-                        if (ImGui.menuItem("${Icons.EDIT} ${stringManager.getString("context.scene_tab.rename")}")) {
+                        if (stringManager.tipped(ImGui.menuItem("${Icons.EDIT} ${stringManager.getString("context.scene_tab.rename")}"), "context.scene_tab.rename")) {
                             eventSystem.publish(RenameRequested(scene, scene.name))
                         }
                         ImGui.separator()
-                        if (ImGui.menuItem("${Icons.SAVE} ${stringManager.getString("context.scene_tab.save")}")) {
+                        if (stringManager.tipped(ImGui.menuItem("${Icons.SAVE} ${stringManager.getString("context.scene_tab.save")}"), "context.scene_tab.save")) {
                             eventSystem.publish(SaveRequested(scene))
                         }
-                        if (ImGui.menuItem(stringManager.getString("context.scene_tab.save_as"))) {
+                        if (stringManager.tipped(ImGui.menuItem(stringManager.getString("context.scene_tab.save_as")), "context.scene_tab.save_as")) {
                             eventSystem.publish(SaveAsRequested(scene))
                         }
                         ImGui.separator()
                         val canClose = sceneManager.openScenes.isNotEmpty()
-                        if (ImGui.menuItem(stringManager.getString("context.scene_tab.close"), null, false, canClose)) {
+                        if (stringManager.tipped(ImGui.menuItem(stringManager.getString("context.scene_tab.close"), null, false, canClose), "context.scene_tab.close")) {
                             if (scene.isDirty) {
                                 toRemove = index
                                 ImGui.openPopup(stringManager.label("context.scene_tab.close_confirmation_title"))
                             } else eventSystem.publish(CloseRequested(scene))
                         }
-                        if (ImGui.menuItem(stringManager.getString("context.scene_tab.close_others"), null, false, canClose)) {
+                        if (stringManager.tipped(ImGui.menuItem(stringManager.getString("context.scene_tab.close_others"), null, false, canClose), "context.scene_tab.close_others")) {
                             eventSystem.publish(CloseOthersRequested(scene))
                         }
-                        if (ImGui.menuItem(stringManager.getString("context.scene_tab.close_all"), null, false, canClose)) {
+                        if (stringManager.tipped(ImGui.menuItem(stringManager.getString("context.scene_tab.close_all"), null, false, canClose), "context.scene_tab.close_all")) {
                             eventSystem.publish(CloseAllRequested)
                         }
                         ImGui.separator()
-                        if (ImGui.menuItem("${Icons.TRASH} ${stringManager.getString("context.scene_tab.delete")}")) {
+                        if (stringManager.tipped(ImGui.menuItem("${Icons.TRASH} ${stringManager.getString("context.scene_tab.delete")}"), "context.scene_tab.delete")) {
                             eventSystem.publish(DeleteRequested(scene))
                         }
                         ImGui.endPopup()

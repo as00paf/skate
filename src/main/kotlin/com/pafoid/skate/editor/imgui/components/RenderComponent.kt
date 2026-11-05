@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.imgui.components
 
+import com.pafoid.skate.editor.imgui.Tooltips
 import com.pafoid.skate.editor.imgui.EnumLabels
 import com.pafoid.skate.editor.commands.objects.MaterialState
 import com.pafoid.skate.editor.events.MaterialAction
@@ -115,40 +116,40 @@ private fun materialFields(mat: Material, engine: Engine, target: String?, s: (S
         materialSession.preview(mat, next, target)
     }
 
-    row("baseColor", s("baseColor")) {
+    row("baseColor", s("baseColor"), "material.baseColor.tooltip") {
         val c = floatArrayOf(d.baseColor.x, d.baseColor.y, d.baseColor.z, d.baseColor.w)
         if (ImGui.colorEdit4("##value", c)) preview(d.copy(baseColor = Vector4f(c[0], c[1], c[2], c[3])))
     }
-    row("baseColorFactor", s("baseColorFactor")) {
+    row("baseColorFactor", s("baseColorFactor"), "material.baseColorFactor.tooltip") {
         val v = floatArrayOf(d.baseColorFactor)
         if (ImGui.dragFloat("##value", v, 0.01f, 0f, 10f)) preview(d.copy(baseColorFactor = v[0]))
     }
-    row("metallic", s("metallicFactor")) {
+    row("metallic", s("metallicFactor"), "material.metallicFactor.tooltip") {
         val v = floatArrayOf(d.metallic)
         if (ImGui.sliderFloat("##value", v, 0f, 1f)) preview(d.copy(metallic = v[0]))
     }
-    row("roughness", s("roughnessFactor")) {
+    row("roughness", s("roughnessFactor"), "material.roughnessFactor.tooltip") {
         val v = floatArrayOf(d.roughness)
         if (ImGui.sliderFloat("##value", v, 0f, 1f)) preview(d.copy(roughness = v[0]))
     }
-    row("emissive", s("emissiveFactor")) {
+    row("emissive", s("emissiveFactor"), "material.emissiveFactor.tooltip") {
         // HDR: emissive above 1 feeds bloom
         val e = floatArrayOf(d.emissive.x, d.emissive.y, d.emissive.z)
         val flags = ImGuiColorEditFlags.HDR or ImGuiColorEditFlags.Float
         if (ImGui.colorEdit3("##value", e, flags)) preview(d.copy(emissive = Vector3f(e[0], e[1], e[2])))
     }
-    row("alphaMode", s("alphaMode")) {
+    row("alphaMode", s("alphaMode"), "material.alphaMode.tooltip") {
         val names = EnumLabels.all(engine.stringManager, AlphaMode.entries)
         val index = ImInt(d.alphaMode.ordinal)
         if (ImGui.combo("##value", index, names, names.size)) preview(d.copy(alphaMode = AlphaMode.entries[index.get()]))
     }
     if (d.alphaMode == AlphaMode.MASK) {
-        row("alphaCutoff", s("alphaCutoff")) {
+        row("alphaCutoff", s("alphaCutoff"), "material.alphaCutoff.tooltip") {
             val v = floatArrayOf(d.alphaCutoff)
             if (ImGui.sliderFloat("##value", v, 0f, 1f)) preview(d.copy(alphaCutoff = v[0]))
         }
     }
-    row("doubleSided", s("doubleSided")) {
+    row("doubleSided", s("doubleSided"), "material.doubleSided.tooltip") {
         if (ImGui.checkbox("##value", d.doubleSided)) preview(d.copy(doubleSided = !d.doubleSided))
     }
 
@@ -167,7 +168,7 @@ private fun materialFields(mat: Material, engine: Engine, target: String?, s: (S
 }
 
 /** Label | control row with an ID that does not depend on the (translated) label. */
-private inline fun row(id: String, label: String, control: () -> Unit) {
+private inline fun row(id: String, label: String, tooltipKey: String, control: () -> Unit) {
     ImGui.pushID(id)
     ImGui.columns(2, "##cols", false)
     ImGui.setColumnWidth(0, MImGui.DEFAULT_COLUMN_WIDTH)
@@ -175,6 +176,7 @@ private inline fun row(id: String, label: String, control: () -> Unit) {
     ImGui.nextColumn()
     ImGui.pushItemWidth(-1f)
     control()
+    MImGui.strings?.let { Tooltips.showIfPresent(it, tooltipKey) }
     ImGui.popItemWidth()
     ImGui.columns(1)
     ImGui.popID()

@@ -1,5 +1,7 @@
 package com.pafoid.skate.editor.ui.menus
 
+import com.pafoid.skate.editor.imgui.tippedWith
+import com.pafoid.skate.editor.imgui.tipped
 import com.pafoid.skate.editor.events.EditorEvent
 import com.pafoid.skate.editor.events.WindowAction
 import com.pafoid.skate.editor.imgui.data.Icons
@@ -55,10 +57,10 @@ class WindowControlsRenderer(
         }
 
         if (ImGui.beginPopup("##SettingsPopup")) {
-            if (ImGui.menuItem(stringManager.getString("window.editor_settings"))) {
+            if (stringManager.tipped(ImGui.menuItem(stringManager.getString("window.editor_settings")), "window.editor_settings")) {
                 eventSystem.publish(WindowAction.Show("window.editor_settings"))
             }
-            if (ImGui.menuItem(stringManager.getString("window.project_settings"))) {
+            if (stringManager.tipped(ImGui.menuItem(stringManager.getString("window.project_settings")), "window.project_settings")) {
                 eventSystem.publish(WindowAction.Show("window.project_settings"))
             }
             ImGui.endPopup()
@@ -75,7 +77,7 @@ class WindowControlsRenderer(
     }
 
     private fun renderMinimizeButton() {
-        if (ImGui.button(Icons.WINDOW_MINIMIZE, WINDOW_BTN_SIZE, WINDOW_BTN_SIZE)) {
+        if (stringManager.tippedWith(ImGui.button(Icons.WINDOW_MINIMIZE, WINDOW_BTN_SIZE, WINDOW_BTN_SIZE), "tooltip.window_controls.minimize")) {
             eventSystem.publish(EditorEvent.Minimize)
         }
     }
@@ -94,7 +96,7 @@ class WindowControlsRenderer(
     private fun renderCloseButton() {
         pushStyleColor(ImGuiCol.ButtonHovered, 0.83f, 0.13f, 0.17f, 1f)
         pushStyleColor(ImGuiCol.ButtonActive, 0.93f, 0.23f, 0.27f, 1f)
-        if (ImGui.button(Icons.WINDOW_CLOSE, WINDOW_BTN_SIZE, WINDOW_BTN_SIZE)) {
+        if (stringManager.tippedWith(ImGui.button(Icons.WINDOW_CLOSE, WINDOW_BTN_SIZE, WINDOW_BTN_SIZE), "tooltip.window_controls.close")) {
             eventSystem.publish(EditorEvent.Exit)
         }
         popStyleColor(2)

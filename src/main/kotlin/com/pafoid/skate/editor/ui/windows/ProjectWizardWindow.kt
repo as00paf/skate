@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.ui.windows
 
+import com.pafoid.skate.editor.imgui.tipped
 import com.pafoid.skate.editor.systems.EditorPaths
 import com.pafoid.skate.editor.data.FileType
 import com.pafoid.skate.editor.events.ProjectEvent.CreateProjectRequested
@@ -96,7 +97,7 @@ class ProjectWizardWindow(
         ImGui.popItemWidth()
 
         ImGui.sameLine()
-        if (ImGui.button(stringManager.getString("wizard.project.browse"))) {
+        if (stringManager.tipped(ImGui.button(stringManager.getString("wizard.project.browse")), "wizard.project.browse")) {
             browseForFolder()
         }
 
@@ -207,7 +208,7 @@ class ProjectWizardWindow(
         ImGui.setCursorPosX(ImGui.getCursorPosX() + xPos)
 
         // Cancel button
-        if (ImGui.button(stringManager.getString("wizard.project.cancel"), cancelButtonWidth, buttonHeight)) {
+        if (stringManager.tipped(ImGui.button(stringManager.getString("wizard.project.cancel"), cancelButtonWidth, buttonHeight), "wizard.project.cancel")) {
             eventSystem.publish(WindowAction.Hide("window.project_wizard"))
             wizard.reset()
             projectNameInput.set("")
@@ -217,7 +218,7 @@ class ProjectWizardWindow(
         ImGui.sameLine(0f, buttonSpacing)
 
         // Open existing project button
-        if (ImGui.button("${Icons.FOLDER_OPEN} ${stringManager.getString("wizard.project.open_existing")}", openButtonWidth, buttonHeight)) {
+        if (stringManager.tipped(ImGui.button("${Icons.FOLDER_OPEN} ${stringManager.getString("wizard.project.open_existing")}", openButtonWidth, buttonHeight), "wizard.project.open_existing")) {
             openExistingProjectDialog()
         }
 
@@ -230,7 +231,7 @@ class ProjectWizardWindow(
             ImGui.pushStyleColor(ImGuiCol.ButtonHovered, 0.25f, 0.7f, 0.25f, 1f)
             ImGui.pushStyleColor(ImGuiCol.ButtonActive, 0.15f, 0.5f, 0.15f, 1f)
         }
-        if (ImGui.button("${Icons.PLUS} ${stringManager.getString("wizard.project.create")}", createButtonWidth, buttonHeight)) {
+        if (stringManager.tipped(ImGui.button("${Icons.PLUS} ${stringManager.getString("wizard.project.create")}", createButtonWidth, buttonHeight), "wizard.project.create")) {
             createProject()
         }
         if (canCreate) {

@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.ui.windows
 
+import com.pafoid.skate.editor.imgui.tipped
 import com.pafoid.skate.engine.core.StringManager
 import com.pafoid.skate.editor.events.ProjectEvent
 import com.pafoid.skate.editor.imgui.EditorDialog
@@ -69,7 +70,8 @@ class ExportWizardWindow(
     private fun options(project: Project) {
         MImGui.labeledSeparator(strings.getString("lbl.export.target"))
         ExportTarget.entries.forEach { target ->
-            if (ImGui.radioButton(strings.label("lbl.export.target.${target.name.lowercase()}"), wizard.target == target)) {
+            val key = "lbl.export.target.${target.name.lowercase()}"
+            if (strings.tipped(ImGui.radioButton(strings.label(key), wizard.target == target), key)) {
                 wizard.target = target
             }
         }
@@ -92,9 +94,9 @@ class ExportWizardWindow(
         ImGui.setNextItemWidth(ImGui.getContentRegionAvailX() - 200f)
         if (ImGui.inputText("##export_output", outputInput)) wizard.outputDir = outputInput.get()
         ImGui.sameLine()
-        if (ImGui.button(strings.label("btn.export.browse"))) browseForOutput()
+        if (strings.tipped(ImGui.button(strings.label("btn.export.browse")), "btn.export.browse")) browseForOutput()
         ImGui.sameLine()
-        if (ImGui.button(strings.label("btn.export.default_output"))) {
+        if (strings.tipped(ImGui.button(strings.label("btn.export.default_output")), "btn.export.default_output")) {
             outputInput.set(AssetsPacker.defaultOutputDir(project).path)
             wizard.outputDir = outputInput.get()
         }
@@ -104,7 +106,7 @@ class ExportWizardWindow(
 
         ImGui.spacing()
         ImGui.beginDisabled(!wizard.canStart(project, gameJar))
-        if (ImGui.button(strings.label("btn.export.start"), 160f, 0f)) {
+        if (strings.tipped(ImGui.button(strings.label("btn.export.start"), 160f, 0f), "btn.export.start")) {
             wizard.start()
             eventSystem.publish(ProjectEvent.ExportRequested(wizard.options(project)))
         }
@@ -159,10 +161,10 @@ class ExportWizardWindow(
         ImGui.spacing()
         val outputDir = wizard.result?.outputDir ?: ProjectExporter.outputDir(project, wizard.options(project))
         if (outputDir.isDirectory) {
-            if (ImGui.button(strings.label("btn.export.open_folder"))) openFolder(outputDir)
+            if (strings.tipped(ImGui.button(strings.label("btn.export.open_folder")), "btn.export.open_folder")) openFolder(outputDir)
             ImGui.sameLine()
         }
-        if (ImGui.button(strings.label("btn.export.back"))) wizard.reset()
+        if (strings.tipped(ImGui.button(strings.label("btn.export.back")), "btn.export.back")) wizard.reset()
     }
 
     private fun progressView(progress: ExportProgress) {

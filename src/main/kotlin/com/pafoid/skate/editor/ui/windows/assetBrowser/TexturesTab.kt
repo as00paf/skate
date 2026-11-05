@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.ui.windows.assetBrowser
 
+import com.pafoid.skate.editor.imgui.tipped
 import com.pafoid.skate.editor.imgui.contextPopupId
 import com.pafoid.skate.editor.events.ViewportAction
 import com.pafoid.skate.editor.data.FileType
@@ -40,22 +41,22 @@ class TexturesTab(
         
         // Context menu on right-click
         if (ImGui.beginPopupContextItem(contextPopupId("texture"))) {
-            if (ImGui.menuItem("${Icons.CHECK} ${stringManager.getString("context.asset_browser.apply_to_selected")}")) {
+            if (stringManager.tipped(ImGui.menuItem("${Icons.CHECK} ${stringManager.getString("context.asset_browser.apply_to_selected")}"), "context.asset_browser.apply_to_selected")) {
                 applyTextureToSelected(file.path)
             }
             ImGui.separator()
-            if (ImGui.menuItem("${Icons.EXTERNAL_LINK} ${stringManager.getString("context.asset_browser.open_external")}")) {
+            if (stringManager.tipped(ImGui.menuItem("${Icons.EXTERNAL_LINK} ${stringManager.getString("context.asset_browser.open_external")}"), "context.asset_browser.open_external")) {
                 Desktop.getDesktop().open(file)
             }
-            if (ImGui.menuItem("${Icons.FOLDER} ${stringManager.getString("context.asset_browser.show_in_folder")}")) {
+            if (stringManager.tipped(ImGui.menuItem("${Icons.FOLDER} ${stringManager.getString("context.asset_browser.show_in_folder")}"), "context.asset_browser.show_in_folder")) {
                 Desktop.getDesktop().open(file.parentFile)
             }
             ImGui.separator()
-            if (ImGui.menuItem("${Icons.ARROW_ROTATE} ${stringManager.getString("context.asset_browser.refresh")}")) {
+            if (stringManager.tipped(ImGui.menuItem("${Icons.ARROW_ROTATE} ${stringManager.getString("context.asset_browser.refresh")}"), "context.asset_browser.refresh")) {
                 engine.logger.logEditor("Refresh requested for: ${file.name}")
             }
             ImGui.separator()
-            if (ImGui.menuItem("${Icons.INFO} ${stringManager.getString("context.asset_browser.properties")}")) {
+            if (stringManager.tipped(ImGui.menuItem("${Icons.INFO} ${stringManager.getString("context.asset_browser.properties")}"), "context.asset_browser.properties")) {
                 val tex = assetsManager.getTexture(file.path)
                 engine.logger.logEditor("Texture: ${file.name}, Size: ${tex.width}x${tex.height}, ID: ${tex.texId}")
             }

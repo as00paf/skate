@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.ui.windows
 
+import com.pafoid.skate.editor.imgui.tipped
 import com.pafoid.skate.editor.commands.input.BindingOperation
 import com.pafoid.skate.editor.events.ConsoleAction
 import com.pafoid.skate.editor.events.KeyBindingsAction
@@ -195,9 +196,9 @@ class ActionBindingsPanel(
 
     private fun renderAddMenu(id: String) {
         if (!ImGui.beginPopup(contextPopupName(id))) return
-        if (ImGui.menuItem(s("lbl.keybindings.add_keyboard"))) startCapture(id, null, BindingCapture.Kind.KEYBOARD)
-        if (ImGui.menuItem(s("lbl.keybindings.add_mouse"))) mouseTarget = id to null
-        if (ImGui.menuItem(s("lbl.keybindings.add_gamepad"))) startCapture(id, null, BindingCapture.Kind.GAMEPAD)
+        if (strings.tipped(ImGui.menuItem(s("lbl.keybindings.add_keyboard")), "lbl.keybindings.add_keyboard")) startCapture(id, null, BindingCapture.Kind.KEYBOARD)
+        if (strings.tipped(ImGui.menuItem(s("lbl.keybindings.add_mouse")), "lbl.keybindings.add_mouse")) mouseTarget = id to null
+        if (strings.tipped(ImGui.menuItem(s("lbl.keybindings.add_gamepad")), "lbl.keybindings.add_gamepad")) startCapture(id, null, BindingCapture.Kind.GAMEPAD)
         ImGui.endPopup()
     }
 

@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.imgui.components
 
+import com.pafoid.skate.editor.imgui.Tooltips
 import com.pafoid.skate.editor.imgui.ImGuiIds
 import com.pafoid.skate.editor.commands.objects.ReverbZoneSettings
 import com.pafoid.skate.editor.events.AudioAction
@@ -25,18 +26,23 @@ fun ReverbZone.imgui(engine: Engine) {
     if (ImGui.combo(ImGuiIds.stable(s("preset"), "preset"), index, presets, presets.size)) {
         engine.eventSystem.publish(AudioAction.EditReverbZone(this, draft.copy(preset = ReverbPreset.entries[index.get()])))
     }
+    Tooltips.showIfPresent(strings, "component.ReverbZone.preset.tooltip")
 
     val radius = floatArrayOf(draft.radius)
     if (ImGui.dragFloat(s("radius"), radius, 0.1f, 0f, 1000f)) { draft = draft.copy(radius = radius[0]); changed = true }
+    Tooltips.showIfPresent(strings, "component.ReverbZone.radius.tooltip")
     if (ImGui.isItemDeactivatedAfterEdit()) commit = true
     val priority = intArrayOf(draft.priority)
     if (ImGui.dragInt(s("priority"), priority, 0.2f)) { draft = draft.copy(priority = priority[0]); changed = true }
+    Tooltips.showIfPresent(strings, "component.ReverbZone.priority.tooltip")
     if (ImGui.isItemDeactivatedAfterEdit()) commit = true
     val send = floatArrayOf(draft.sendLevel)
     if (ImGui.sliderFloat(s("sendLevel"), send, 0f, 1f)) { draft = draft.copy(sendLevel = send[0]); changed = true }
+    Tooltips.showIfPresent(strings, "component.ReverbZone.sendLevel.tooltip")
     if (ImGui.isItemDeactivatedAfterEdit()) commit = true
     val low = floatArrayOf(draft.lowPassGainHF)
     if (ImGui.sliderFloat(s("lowPassGainHF"), low, 0f, 1f)) { draft = draft.copy(lowPassGainHF = low[0]); changed = true }
+    Tooltips.showIfPresent(strings, "component.ReverbZone.lowPassGainHF.tooltip")
     if (ImGui.isItemDeactivatedAfterEdit()) commit = true
 
     if (commit) {
