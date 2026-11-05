@@ -17,6 +17,10 @@ data class AudioComponent(
     var minDistance: Float = 1f,
     var maxDistance: Float = 50f,
     var rolloff: Float = 1f,
+    /**
+     * Doppler strength (0 = off). Only physics bodies move sources and listeners for Doppler, and sounds on the
+     * MUSIC bus are never shifted (AUD-11).
+     */
     var dopplerFactor: Float = 1f,
     /** Higher wins when voices run out. */
     var priority: Int = 128,
