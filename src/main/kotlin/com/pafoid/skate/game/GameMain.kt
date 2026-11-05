@@ -40,7 +40,7 @@ fun main(args: Array<String>) {
     val window = Window(title = project.name, icon = icon)
 
     window.windowController.setFullscreen(true)
-    engine.start(window.glfwWindow)
+    engine.start(window.glfwWindow, window.device)
 
     if (projectManager.openProject(project, binFile, header, headerSize)) {
         // The project's mixer (bus volumes and mutes set in the editor) applies to the exported game too (EDT-14).

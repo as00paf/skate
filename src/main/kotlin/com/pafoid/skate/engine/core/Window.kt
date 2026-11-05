@@ -2,6 +2,7 @@ package com.pafoid.skate.engine.core
 
 import org.lwjgl.BufferUtils
 import org.lwjgl.glfw.Callbacks.glfwFreeCallbacks
+import com.pafoid.skate.engine.render.rhi.opengl.OpenGlDevice
 import org.lwjgl.glfw.GLFW
 import org.lwjgl.glfw.GLFW.GLFW_CONTEXT_VERSION_MAJOR
 import org.lwjgl.glfw.GLFW.GLFW_CONTEXT_VERSION_MINOR
@@ -35,15 +36,6 @@ import org.lwjgl.glfw.GLFW.glfwWindowHint
 import org.lwjgl.glfw.GLFW.glfwWindowShouldClose
 import org.lwjgl.glfw.GLFWErrorCallback
 import org.lwjgl.glfw.GLFWImage
-import org.lwjgl.opengl.GL
-import org.lwjgl.opengl.GL11.GL_BLEND
-import org.lwjgl.opengl.GL11.GL_ONE_MINUS_SRC_ALPHA
-import org.lwjgl.opengl.GL11.GL_SRC_ALPHA
-import org.lwjgl.opengl.GL11.glBlendFunc
-import org.lwjgl.opengl.GL11.glEnable
-import org.lwjgl.opengl.GL13
-import org.lwjgl.opengl.GL32.GL_TEXTURE_CUBE_MAP_SEAMLESS
-import org.lwjgl.opengl.GLUtil
 import org.lwjgl.stb.STBImage
 import org.lwjgl.stb.STBImage.stbi_load_from_memory
 import org.lwjgl.system.MemoryStack
@@ -65,6 +57,9 @@ class Window(
         private set
 
     private val openGLDebug = GLFW_FALSE
+
+    /** The RHI device of this window's context, created once the context is current. */
+    val device: OpenGlDevice
 
     init {
         // Error callback
@@ -125,18 +120,8 @@ class Window(
         // Disable v-sync
         glfwSwapInterval(0)
 
-        // This is needed for OpenGL
-        GL.createCapabilities()
-        if(openGLDebug == GLFW_TRUE) {
-            GLUtil.setupDebugMessageCallback(System.err)
-        }
-
-        glEnable(GL_BLEND)
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
-        glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS)
-
-        // Enable MSAA if configured
-        glEnable(GL13.GL_MULTISAMPLE)
+        // Graphics device of this context (REN-12): loads GL and sets the initial blend, cube map and MSAA state
+        device = OpenGlDevice.create(debugOutput = if (openGLDebug == GLFW_TRUE) System.err else null)
 
         GLFW.glfwSetWindowMaximizeCallback(glfwWindow) { _, maximized ->
             if (windowController.isFixingMaximize) return@glfwSetWindowMaximizeCallback

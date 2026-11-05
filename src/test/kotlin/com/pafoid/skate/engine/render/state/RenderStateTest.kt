@@ -1,5 +1,6 @@
 package com.pafoid.skate.engine.render.state
 
+import com.pafoid.skate.engine.render.rhi.opengl.BindingCache
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue

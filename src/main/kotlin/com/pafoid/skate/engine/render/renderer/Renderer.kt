@@ -7,8 +7,8 @@ import com.pafoid.skate.engine.render.FrameBuffer
 import com.pafoid.skate.engine.render.RenderResources
 import com.pafoid.skate.engine.render.cache.GpuResources
 import com.pafoid.skate.engine.render.graph.RenderGraph
-import com.pafoid.skate.engine.render.utils.GLStateTracker
-import com.pafoid.skate.engine.render.state.GLBindings
+import com.pafoid.skate.engine.render.rhi.opengl.GLStateTracker
+import com.pafoid.skate.engine.render.rhi.opengl.GLBindings
 
 class Renderer(
     var renderResources: RenderResources,

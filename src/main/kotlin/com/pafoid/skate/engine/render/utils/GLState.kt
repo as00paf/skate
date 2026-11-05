@@ -1,5 +1,6 @@
 package com.pafoid.skate.engine.render.utils
 
+import com.pafoid.skate.engine.render.rhi.opengl.GLStateTracker
 import org.lwjgl.opengl.GL11.GL_TEXTURE_2D
 import org.lwjgl.opengl.GL11.glBindTexture
 import org.lwjgl.opengl.GL11

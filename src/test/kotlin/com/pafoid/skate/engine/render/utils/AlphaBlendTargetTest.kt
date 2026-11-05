@@ -1,5 +1,6 @@
 package com.pafoid.skate.engine.render.utils
 
+import com.pafoid.skate.engine.render.rhi.opengl.GLStateTracker
 import io.mockk.every
 import io.mockk.just
 import io.mockk.mockkObject

@@ -12,7 +12,7 @@ import com.pafoid.skate.engine.getAllComponents
 import com.pafoid.skate.engine.render.EngineStats
 import com.pafoid.skate.engine.render.FrameBuffer
 import com.pafoid.skate.engine.render.particles.ParticleSimulator
-import com.pafoid.skate.engine.render.utils.GLStateTracker
+import com.pafoid.skate.engine.render.rhi.opengl.GLStateTracker
 import com.pafoid.skate.engine.render.utils.withBlendState
 import com.pafoid.skate.engine.render.utils.withCullFace
 import com.pafoid.skate.engine.render.utils.withDepthMask

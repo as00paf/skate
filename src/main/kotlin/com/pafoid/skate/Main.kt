@@ -12,7 +12,7 @@ fun main(args:Array<String>){
     val icon = Engine::class.java.getResourceAsStream(Assets.Bundled.APP_ICON)?.readAllBytes()
     val window = Window(title = "Skate Editor", icon = icon)
 
-    engine.start(window.glfwWindow)
+    engine.start(window.glfwWindow, window.device)
 
     val editorScreen = EditorScreen(window, engine)
     editorScreen.init()
