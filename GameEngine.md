@@ -753,6 +753,10 @@ All editor mutations must go through `Command` classes and the service layer (se
   - Do: Review the editor-side code written outside skate-editor in round 16: EDT-07 themes (gameui), EDT-08 shell panel (tooling), EDT-09 export wizard incl. `ExportWizardWindow`, `EditorMenuBar`/`WindowRegistry` additions, `ProjectEvents`, `ProjectActionHandler` (assets), EDT-14 audio inspector/mixer (audio), EDT-16 animator inspector (animation), EDT-17 material inspector (render), EDT-36 string fields/object picker (ecs). Check commands/undo, stable IDs, strings, window registration, consistency.
   - Done when: Review fixes committed with notes per task; tests green.
   - Deps: EDT-07, EDT-08, EDT-09, EDT-14, EDT-16, EDT-17, EDT-36
+- [x] **EDT-41** `P0` Reopening a recent project points to the wrong path
+  - Do: Human-reported on PR #20 (regression from AST-09): reopening a closed project from File > Recent Projects logs "Project file does not exist or invalid extension" with a wrong path. `EditorSettingsManager.recentProjects` decodes each `.skateproject` without a project root, so the AST-09 relative `projectPath` resolves against the working directory. Use the absolute path stored in the editor settings (and set `projectPath` from it), in the recent menu, `LoadLastProjectCommand` and `EditorScreen`; audit other places that decode a project file outside `openProjectFile`.
+  - Done when: Create, close, reopen from Recent Projects (and the startup last-project path) works, including after moving the project; test through the real path.
+  - Deps: AST-09
 
 ## Testing & tooling
 
