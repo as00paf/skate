@@ -11,15 +11,19 @@ data class NetConfig(
     val lagCompensationMs: Int = 250,
     /** Each INPUT message repeats this many of the newest unacknowledged inputs (loss tolerance). */
     val inputRedundancy: Int = 3,
+    /** Longest round trip prediction covers: the client keeps this much unacknowledged input for replays. */
+    val maxPredictionMs: Int = 3000,
 ) {
     init {
         require(snapshotRate in 1..tickRate && tickRate % snapshotRate == 0) { "tickRate must be a multiple of snapshotRate" }
         require(inputRedundancy in 1..32) { "inputRedundancy must be 1..32" }
         require(lagCompensationMs >= 0) { "lagCompensationMs must be >= 0" }
+        require(maxPredictionMs >= 100) { "maxPredictionMs must be >= 100" }
     }
 
     val snapshotIntervalTicks: Int get() = tickRate / snapshotRate
     val interpolationDelayTicks: Double get() = interpolationDelayMs / 1000.0 * tickRate
+    val maxPendingInputs: Int get() = maxPredictionMs * tickRate / 1000
 }
 
 internal object MessageType {

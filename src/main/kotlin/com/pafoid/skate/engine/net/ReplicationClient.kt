@@ -37,7 +37,7 @@ class ReplicationClient(
     private var inputSeq = 0
 
     /** Prediction for the locally owned object; null when prediction is disabled. */
-    val predictor: ClientPredictor? = prediction?.let { ClientPredictor(schema, it, 1f / config.tickRate) }
+    val predictor: ClientPredictor? = prediction?.let { ClientPredictor(schema, it, 1f / config.tickRate, maxPending = config.maxPendingInputs) }
 
     /** Net id of the predicted local object, or 0. */
     var predictedNetId = 0
