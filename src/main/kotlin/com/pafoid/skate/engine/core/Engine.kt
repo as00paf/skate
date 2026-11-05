@@ -35,6 +35,7 @@ import com.pafoid.skate.engine.scripting.runtime.ReaderScriptInput
 import com.pafoid.skate.engine.scripting.runtime.ScriptServices
 import com.pafoid.skate.engine.render.ui.UiFont
 import com.pafoid.skate.engine.ui.ReaderUiInputSource
+import com.pafoid.skate.engine.ui.GameLocale
 import com.pafoid.skate.engine.ui.PauseMenuActions
 import com.pafoid.skate.engine.ui.PauseMenuSystem
 import com.pafoid.skate.engine.ui.UiActions
@@ -65,7 +66,12 @@ class Engine {
     val eventSystem = EventSystem(logger)
 
     val assetsManager = AssetsManager(serializer, logger)
+    /** Editor/tool text. Runtime UI never reads it: see [gameStrings] (GUI-10). */
     val stringManager = StringManager(logger)
+
+    /** Runtime UI text (pause menu, HUD, game widgets) with the game's own locale, never the editor's. */
+    val gameStrings = StringManager(logger)
+    val gameLocale = GameLocale(gameStrings)
     init { assetsManager.attachAsyncLoading(jobSystem, eventSystem) }
     val audioEngine = AudioEngine(logger)
     val inputProvider = InputProvider(logger)
@@ -183,7 +189,7 @@ class Engine {
         val pauseMenu = PauseMenuSystem(
             setFrozen = ::setPaused,
             actions = pauseActions,
-            toggleLanguage = { stringManager.setLocale(if (stringManager.locale == "fr") "en" else "fr") },
+            toggleLanguage = { gameLocale.toggle() },
             volume = { systemManager.getSystem<AudioSystem>()?.masterVolume ?: 1f },
             setVolume = { v -> systemManager.getSystem<AudioSystem>()?.masterVolume = v },
             defer = { afterFrame.addLast(it) },
@@ -204,7 +210,7 @@ class Engine {
             },
             UiRenderSystem(
                 drawList = { geometry.renderer2D.ui },
-                strings = stringManager,
+                strings = gameStrings,
                 font = { font ?: SdfFont.create().also { font = it } },
                 textures = { assetsManager.getTexture(it) },
             ),
