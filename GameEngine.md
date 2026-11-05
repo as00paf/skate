@@ -115,7 +115,7 @@ The renderer works but needs cleaner APIs, caching, dynamic shaders, better mate
 - [~] @skate-render **REN-12** `P3` RHI abstraction (Vulkan-ready)
   - Do: Define backend-agnostic interfaces (`RhiDevice`, `RhiBuffer`, `RhiTexture`, `RhiPipeline`, `RhiCommandList`) and move all GL calls into an `OpenGlRhi` backend.
   - Done when: No GL call exists outside `render/rhi/opengl`. An architecture guard test enforces this.
-  - Design: `docs/design/REN-12.md` approved by the lead (round 15) with the §7 proposals as written: ImGuiLayer is the one allowed GL user; named uniforms via `ShaderParams`; Vulkan semantics (pass begin/end, depth range, Y-flip) owned by the backend; sync picking readback; main-thread only. Migrate in the §5 steps, one or two per round, starting with steps 0-1.
+  - Design: `docs/design/REN-12.md` approved by the lead (round 15) with the §7 proposals as written: ImGuiLayer is the one allowed GL user; named uniforms via `ShaderParams`; Vulkan semantics (pass begin/end, depth range, Y-flip) owned by the backend; sync picking readback; main-thread only. Migrate in the §5 steps, one or two per round. Steps 0-1 done (round 17).
   - Deps: REN-03, REN-04, REN-05
 - [ ] **REN-13** `P3` Vulkan backend spike
   - Do: Build a minimal `VulkanRhi` that renders the sample scene's geometry pass.
@@ -204,7 +204,7 @@ Asset management works but needs a complete review.
   - Do: From EDT-17: add `skmat` to `ReferenceCollector.scanExtensions` so exports include the textures a `.skmat` uses, and make packed `.skmat` files readable at runtime through `AssetsResolver.resolveData`.
   - Done when: An exported project using a saved `.skmat` renders it correctly; packing and runtime loading tested.
   - Deps: EDT-17, EDT-09
-- [~] @skate-assets **AST-09** `P1` Project-relative asset references
+- [x] **AST-09** `P1` Project-relative asset references
   - Do: From EDT-40: `Animator.readController` and `RenderComponent.resolveMaterialAsset` read absolute paths, so animator controllers and `.skmat` links break when a project moves or is exported. Store asset references relative to the project (resolve through `AssetsResolver`), and make every other saved asset reference relative too (audit). Localize the `ProjectExporter` failure details.
   - Done when: A project moved to another folder and an exported build both resolve controllers, materials, sounds and textures; saved scenes contain no absolute paths (test); exporter errors are translated.
   - Deps: AST-08, EDT-16, EDT-17
@@ -540,7 +540,7 @@ In-game UI components need to be added (separate from the ImGui editor).
   - Do: Human-reported on PR #17: switching language in the game's pause menu (editor Play) also switches the editor UI. Give the runtime/game its own locale (game string tables, saved in game settings) separate from the editor's locale; editor Play starts with the game locale; Stop leaves the editor language untouched.
   - Done when: Changing the game language in editor Play changes only runtime UI text; the editor stays in its language; exported game unaffected; tests.
   - Deps: GUI-09
-- [~] @skate-gameui **GUI-11** `P2` StringManager background loading race
+- [x] **GUI-11** `P2` StringManager background loading race
   - Do: From EDT-40: string tables can be reloaded on a background thread while the UI reads them. Make reload/lookup thread-safe (atomic table swap or a lock) without per-lookup cost.
   - Done when: Concurrent reload + lookup test passes; no visible cost in lookups.
   - Deps: GUI-08
