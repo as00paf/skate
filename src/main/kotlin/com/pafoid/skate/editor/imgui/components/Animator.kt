@@ -1,5 +1,8 @@
 package com.pafoid.skate.editor.imgui.components
 
+import com.pafoid.skate.editor.imgui.Tooltips
+import com.pafoid.skate.editor.imgui.tippedWith
+import com.pafoid.skate.editor.imgui.tipped
 import com.pafoid.skate.editor.animation.AnimatorControllerCatalog
 import com.pafoid.skate.editor.events.AnimatorAction
 import com.pafoid.skate.editor.imgui.label
@@ -102,17 +105,21 @@ fun Animator.imgui(engine: Engine) {
             }
         }
     }
+    Tooltips.showIfPresent(engine.stringManager, "lbl.animator.timeline.tooltip")
 
-    if (ImGui.button(
+    if (engine.stringManager.tippedWith(
+        ImGui.button(
             if (isPlaying) engine.stringManager.getString("lbl.animator.pause") else engine.stringManager.getString(
                 "lbl.animator.play"
             )
-        )
+        ),
+        if (isPlaying) "lbl.animator.pause.tooltip" else "lbl.animator.play.tooltip",
+    )
     ) {
         isPlaying = !isPlaying
     }
     ImGui.sameLine()
-    if (ImGui.button(engine.stringManager.getString("btn.reset"))) {
+    if (engine.stringManager.tipped(ImGui.button(engine.stringManager.getString("btn.reset")), "btn.reset")) {
         currentTime = 0f
         skeletonComponent?.pose?.let { pose ->
             val skeleton = pose.skeleton
@@ -178,6 +185,7 @@ private fun Animator.maskSection(engine: Engine, skeletonComponent: SkeletonComp
         }
         ImGui.endCombo()
     }
+    Tooltips.showIfPresent(strings, "lbl.animator.mask.tooltip")
     if (mask.preset != MaskPreset.SUBTREE) return
     val bones = skeletonComponent?.pose?.skeleton?.getAllBones()?.map { it.name } ?: return
     val preview = mask.rootBone.ifBlank { strings.getString("lbl.animator.select") }
@@ -189,4 +197,5 @@ private fun Animator.maskSection(engine: Engine, skeletonComponent: SkeletonComp
         }
         ImGui.endCombo()
     }
+    Tooltips.showIfPresent(strings, "lbl.animator.mask_bone.tooltip")
 }

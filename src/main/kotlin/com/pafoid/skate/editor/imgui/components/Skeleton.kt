@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.imgui.components
 
+import com.pafoid.skate.editor.imgui.tipped
 import com.pafoid.skate.engine.addComponent
 import com.pafoid.skate.engine.assets.data.models.animations.Bone
 import com.pafoid.skate.engine.core.Engine
@@ -18,13 +19,13 @@ fun SkeletonComponent.imgui(engine: Engine) {
     val go = gameObject ?: return
     //if (go != sceneManager.currentScene?.selectedGameObject) return
 
-    if (ImGui.button(engine.stringManager.getString("btn.save_pose"))) {
+    if (engine.stringManager.tipped(ImGui.button(engine.stringManager.getString("btn.save_pose")), "btn.save_pose")) {
         val boneOverride = go.getComponent<BoneOverride>() ?: BoneOverride().also { go.addComponent(it) }
         // TODO: use event system
         //poseSerializer.savePose(boneOverride, "assets/poses/${poseFileName.get()}.json")
     }
     ImGui.sameLine()
-    if (ImGui.button(engine.stringManager.getString("btn.load_pose"))) {
+    if (engine.stringManager.tipped(ImGui.button(engine.stringManager.getString("btn.load_pose")), "btn.load_pose")) {
         // TODO: use event system
         /* val loadedOverride = poseSerializer.loadPose("assets/poses/${poseFileName.get()}.json")
          loadedOverride?.let { bo ->

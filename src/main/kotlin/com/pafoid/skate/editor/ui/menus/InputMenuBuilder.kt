@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.ui.menus
 
+import com.pafoid.skate.editor.imgui.tipped
 import com.pafoid.skate.editor.imgui.label
 import com.pafoid.skate.editor.events.WindowAction
 import com.pafoid.skate.engine.core.EventSystem
@@ -13,7 +14,7 @@ class InputMenuBuilder(
 ) {
     fun render() {
         if (ImGui.beginMenu(stringManager.label("menu.input"))) {
-            if (ImGui.menuItem(stringManager.getString("menu.input.testing"), SHORTCUT_LABEL)) openInputTesting()
+            if (stringManager.tipped(ImGui.menuItem(stringManager.getString("menu.input.testing"), SHORTCUT_LABEL), "menu.input.testing")) openInputTesting()
             ImGui.endMenu()
         }
     }

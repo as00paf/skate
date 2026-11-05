@@ -1,5 +1,7 @@
 package com.pafoid.skate.editor.imgui.components
 
+import com.pafoid.skate.editor.imgui.Tooltips
+import com.pafoid.skate.editor.imgui.tipped
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.ecs.components.ParticleEmitter
 import imgui.ImGui
@@ -16,17 +18,20 @@ fun ParticleEmitter.imgui(engine: Engine) {
 
     reflectedImgui(engine, skip = CUSTOM_FIELDS)
     colorEdit(s("startColor"), startColor)
+    Tooltips.showIfPresent(strings, "component.ParticleEmitter.startColor.tooltip")
     colorEdit(s("endColor"), endColor)
+    Tooltips.showIfPresent(strings, "component.ParticleEmitter.endColor.tooltip")
 
     val path = ImString(texturePath, 512)
     if (ImGui.inputText(s("texturePath"), path)) texturePath = path.get().trim()
+    Tooltips.showIfPresent(strings, "component.ParticleEmitter.texturePath.tooltip")
 
     val scene = engine.sceneManager.currentScene
     if (scene?.isRunning == true) {
         ImGui.text(strings.getString("component.ParticleEmitter.liveCount", runtime.pool.count))
-        if (ImGui.button(s("restart"))) play()
+        if (strings.tipped(ImGui.button(s("restart")), "component.ParticleEmitter.restart")) play()
         ImGui.sameLine()
-        if (ImGui.button(s("stop"))) stop()
+        if (strings.tipped(ImGui.button(s("stop")), "component.ParticleEmitter.stop")) stop()
     }
     ImGui.popID()
 }

@@ -1,5 +1,7 @@
 package com.pafoid.skate.editor.ui.windows
 
+import com.pafoid.skate.editor.imgui.tippedWith
+import com.pafoid.skate.editor.imgui.tipped
 import com.pafoid.skate.editor.imgui.label
 import com.pafoid.skate.editor.events.ScriptEditorAction
 import com.pafoid.skate.editor.events.WindowAction
@@ -293,40 +295,40 @@ class ProjectWindow(
 
             if (target == null) {
                 // Background context — new folder/file at project root
-                if (menuItem("${Icons.FOLDER} ${stringManager.getString("context.project.new_folder")}")) {
+                if (stringManager.tipped(menuItem("${Icons.FOLDER} ${stringManager.getString("context.project.new_folder")}"), "context.project.new_folder")) {
                     showCreateDialog(isDirectory = true)
                 }
-                if (menuItem("${Icons.PLUS} ${stringManager.getString("context.project.new_file")}")) {
+                if (stringManager.tipped(menuItem("${Icons.PLUS} ${stringManager.getString("context.project.new_file")}"), "context.project.new_file")) {
                     showCreateDialog(isDirectory = false)
                 }
             } else {
                 when (target.type) {
                     FileType.FOLDER -> {
-                        if (menuItem("${Icons.FOLDER} ${stringManager.getString("context.project.new_folder")}")) {
+                        if (stringManager.tipped(menuItem("${Icons.FOLDER} ${stringManager.getString("context.project.new_folder")}"), "context.project.new_folder")) {
                             showCreateDialog(isDirectory = true, target)
                         }
-                        if (menuItem("${Icons.PLUS} ${stringManager.getString("context.project.new_file")}")) {
+                        if (stringManager.tipped(menuItem("${Icons.PLUS} ${stringManager.getString("context.project.new_file")}"), "context.project.new_file")) {
                             showCreateDialog(isDirectory = false, target)
                         }
                         separator()
-                        if (menuItem("${Icons.STAR} ${if (target.isFavorite)
+                        if (stringManager.tippedWith(menuItem("${Icons.STAR} ${if (target.isFavorite)
                             stringManager.getString("context.project.remove_favorite")
-                            else stringManager.getString("context.project.add_favorite")}")) {
+                            else stringManager.getString("context.project.add_favorite")}"), "context.project.toggle_favorite.tooltip")) {
                             fileSystemScanner.toggleFavorite(target.path)
                             needsRefresh = true
                         }
                         separator()
-                        if (menuItem("${Icons.EDIT} ${stringManager.getString("context.project.rename")}")) {
+                        if (stringManager.tipped(menuItem("${Icons.EDIT} ${stringManager.getString("context.project.rename")}"), "context.project.rename")) {
                             startRename(target)
                         }
-                        if (menuItem("${Icons.TRASH} ${stringManager.getString("context.project.delete")}")) {
+                        if (stringManager.tipped(menuItem("${Icons.TRASH} ${stringManager.getString("context.project.delete")}"), "context.project.delete")) {
                             deleteItem(target)
                         }
                         separator()
-                        if (menuItem("${Icons.EXTERNAL_LINK} ${stringManager.getString("context.project.show_in_explorer")}")) {
+                        if (stringManager.tipped(menuItem("${Icons.EXTERNAL_LINK} ${stringManager.getString("context.project.show_in_explorer")}"), "context.project.show_in_explorer")) {
                             openInExplorer(target.file)
                         }
-                        if (menuItem("${Icons.COPY} ${stringManager.getString("context.project.copy_path")}")) {
+                        if (stringManager.tipped(menuItem("${Icons.COPY} ${stringManager.getString("context.project.copy_path")}"), "context.project.copy_path")) {
                             copyPathToClipboard(target.path)
                         }
                     }
@@ -334,7 +336,7 @@ class ProjectWindow(
                         // File context menu
                         // Open action for scene files
                         if (target.type == FileType.SCENE) {
-                            if (menuItem("${Icons.FOLDER_OPEN} ${stringManager.getString("context.project.open")}")) {
+                            if (stringManager.tipped(menuItem("${Icons.FOLDER_OPEN} ${stringManager.getString("context.project.open")}"), "context.project.open")) {
                                 logger.logEditor("Opening scene: ${target.name}")
                                 //eventSystem.publish(SceneAction.OpenRequested(target.path))
                             }
@@ -342,39 +344,39 @@ class ProjectWindow(
                         }
                         // Show GUID if asset has one
                         if (target.assetGuid != null) {
-                            if (menuItem("${Icons.COPY} ${stringManager.getString("context.project.copy_guid")}")) {
+                            if (stringManager.tipped(menuItem("${Icons.COPY} ${stringManager.getString("context.project.copy_guid")}"), "context.project.copy_guid")) {
                                 copyPathToClipboard(target.assetGuid)
                                 logger.logEditor("Copied GUID: ${target.assetGuid}")
                             }
                             separator()
                         }
-                        if (menuItem("${Icons.STAR} ${if (target.isFavorite)
+                        if (stringManager.tippedWith(menuItem("${Icons.STAR} ${if (target.isFavorite)
                             stringManager.getString("context.project.remove_favorite")
-                            else stringManager.getString("context.project.add_favorite")}")) {
+                            else stringManager.getString("context.project.add_favorite")}"), "context.project.toggle_favorite.tooltip")) {
                             fileSystemScanner.toggleFavorite(target.path)
                             needsRefresh = true
                         }
                         separator()
-                        if (menuItem("${Icons.EDIT} ${stringManager.getString("context.project.rename")}")) {
+                        if (stringManager.tipped(menuItem("${Icons.EDIT} ${stringManager.getString("context.project.rename")}"), "context.project.rename")) {
                             startRename(target)
                         }
                         if (target.assetGuid != null) {
-                            if (menuItem("${Icons.ARROW_ROTATE} ${stringManager.getString("context.project.reimport")}")) {
+                            if (stringManager.tipped(menuItem("${Icons.ARROW_ROTATE} ${stringManager.getString("context.project.reimport")}"), "context.project.reimport")) {
                                 reimportAsset(target)
                             }
                             separator()
                         }
-                        if (menuItem("${Icons.TRASH} ${stringManager.getString("context.project.delete")}")) {
+                        if (stringManager.tipped(menuItem("${Icons.TRASH} ${stringManager.getString("context.project.delete")}"), "context.project.delete")) {
                             deleteItem(target)
                         }
                         separator()
-                        if (menuItem("${Icons.EXTERNAL_LINK} ${stringManager.getString("context.project.open_external")}")) {
+                        if (stringManager.tipped(menuItem("${Icons.EXTERNAL_LINK} ${stringManager.getString("context.project.open_external")}"), "context.project.open_external")) {
                             openInExternalEditor(target.file)
                         }
-                        if (menuItem("${Icons.EXTERNAL_LINK} ${stringManager.getString("context.project.show_in_explorer")}")) {
+                        if (stringManager.tipped(menuItem("${Icons.EXTERNAL_LINK} ${stringManager.getString("context.project.show_in_explorer")}"), "context.project.show_in_explorer")) {
                             openInExplorer(target.file.parentFile)
                         }
-                        if (menuItem("${Icons.COPY} ${stringManager.getString("context.project.copy_path")}")) {
+                        if (stringManager.tipped(menuItem("${Icons.COPY} ${stringManager.getString("context.project.copy_path")}"), "context.project.copy_path")) {
                             copyPathToClipboard(target.path)
                         }
                     }

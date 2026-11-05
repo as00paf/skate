@@ -78,7 +78,7 @@ class EditorMenuBar(
         val offsetY = (EDITOR_MENU_BAR_HEIGHT - btnSize) / 2f
         ImGui.setCursorPosY(offsetY)
 
-        if (ImGui.button(Icons.MENU, btnSize, btnSize)) {
+        if (stringManager.tippedWith(ImGui.button(Icons.MENU, btnSize, btnSize), "tooltip.menu_bar.main_menu")) {
             ImGui.openPopup("main_hamburger_menu")
         }
 
@@ -110,30 +110,30 @@ class EditorMenuBar(
 
             ImGui.separator()
 
-            if (menuItem("${Icons.PLUS} ${stringManager.getString("menu.file.new_project")}")) {
+            if (stringManager.tipped(menuItem("${Icons.PLUS} ${stringManager.getString("menu.file.new_project")}"), "menu.file.new_project")) {
                 eventSystem.publish(WindowAction.Show("window.project_wizard"))
             }
-            if (menuItem("${Icons.FOLDER_OPEN} ${stringManager.getString("menu.file.open_project_menu")}")) {
+            if (stringManager.tipped(menuItem("${Icons.FOLDER_OPEN} ${stringManager.getString("menu.file.open_project_menu")}"), "menu.file.open_project_menu")) {
                 eventSystem.publish(ProjectEvent.OpenProjectFileRequested)
             }
 
             if (projectManager.hasProject()) {
-                if (menuItem("${Icons.WINDOW_CLOSE} ${stringManager.getString("menu.file.close_project")}")) {
+                if (stringManager.tipped(menuItem("${Icons.WINDOW_CLOSE} ${stringManager.getString("menu.file.close_project")}"), "menu.file.close_project")) {
                     eventSystem.publish(ProjectEvent.CloseProjectRequested)
                 }
-                if (menuItem("${Icons.SAVE} ${stringManager.getString("menu.file.save_project")}", "Ctrl+S")) {
+                if (stringManager.tipped(menuItem("${Icons.SAVE} ${stringManager.getString("menu.file.save_project")}", "Ctrl+S"), "menu.file.save_project")) {
                     eventSystem.publish(ProjectEvent.SaveRequested)
                 }
-                if (menuItem("${Icons.SAVE} ${stringManager.getString("menu.file.save_project_as")}")) {
+                if (stringManager.tipped(menuItem("${Icons.SAVE} ${stringManager.getString("menu.file.save_project_as")}"), "menu.file.save_project_as")) {
                     eventSystem.publish(ProjectEvent.SaveAsRequested)
                 }
-                if (menuItem("${Icons.EXPORT} ${stringManager.getString("menu.file.export_project")}")) {
+                if (stringManager.tipped(menuItem("${Icons.EXPORT} ${stringManager.getString("menu.file.export_project")}"), "menu.file.export_project")) {
                     eventSystem.publish(WindowAction.Show(ExportWizardWindow.NAME))
                 }
             }
             ImGui.separator()
 
-            if (menuItem("${Icons.TRASH} ${stringManager.getString("menu.file.quit")}")) {
+            if (stringManager.tipped(menuItem("${Icons.TRASH} ${stringManager.getString("menu.file.quit")}"), "menu.file.quit")) {
                 eventSystem.publish(EditorEvent.Exit)
             }
             ImGui.endPopup()

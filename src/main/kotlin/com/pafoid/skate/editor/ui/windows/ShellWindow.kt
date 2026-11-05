@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.ui.windows
 
+import com.pafoid.skate.editor.imgui.tipped
 import com.pafoid.skate.editor.systems.EditorPaths
 import com.pafoid.skate.editor.imgui.EditorWindow
 import com.pafoid.skate.editor.imgui.data.Icons
@@ -87,16 +88,16 @@ class ShellWindow(
 
         ImGui.sameLine()
         ImGui.beginDisabled(session.isRunning || input.get().isBlank())
-        if (ImGui.button(strings.label("shell.run", "${Icons.PLAY} "))) run(input.get())
+        if (strings.tipped(ImGui.button(strings.label("shell.run", "${Icons.PLAY} ")), "shell.run")) run(input.get())
         ImGui.endDisabled()
 
         ImGui.sameLine()
         ImGui.beginDisabled(!session.isRunning)
-        if (ImGui.button(strings.label("shell.cancel", "${Icons.STOP} "))) session.cancel()
+        if (strings.tipped(ImGui.button(strings.label("shell.cancel", "${Icons.STOP} ")), "shell.cancel")) session.cancel()
         ImGui.endDisabled()
 
         ImGui.sameLine()
-        if (ImGui.button(strings.label("shell.clear", "${Icons.TRASH} "))) output.clear()
+        if (strings.tipped(ImGui.button(strings.label("shell.clear", "${Icons.TRASH} ")), "shell.clear")) output.clear()
 
         ImGui.sameLine()
         ImGui.checkbox(strings.label("lbl.console.auto_scroll"), autoScroll)
@@ -132,8 +133,8 @@ class ShellWindow(
             }
         })
         if (ImGui.beginPopupContextWindow("shell_output_context")) {
-            if (ImGui.menuItem(strings.label("context.console.copy_all"))) ImGui.setClipboardText(output.text())
-            if (ImGui.menuItem(strings.label("shell.clear"))) output.clear()
+            if (strings.tipped(ImGui.menuItem(strings.label("context.console.copy_all")), "context.console.copy_all")) ImGui.setClipboardText(output.text())
+            if (strings.tipped(ImGui.menuItem(strings.label("shell.clear")), "shell.clear")) output.clear()
             ImGui.endPopup()
         }
         if (autoScroll.get() && ImGui.getScrollY() >= ImGui.getScrollMaxY() - 1f) ImGui.setScrollHereY(1f)

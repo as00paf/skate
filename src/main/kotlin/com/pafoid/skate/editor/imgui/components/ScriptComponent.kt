@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.imgui.components
 
+import com.pafoid.skate.editor.imgui.tipped
 import com.pafoid.skate.editor.events.ScriptEditorAction
 import com.pafoid.skate.editor.events.WindowAction
 import com.pafoid.skate.editor.ui.handlers.ScriptEditorActionHandler
@@ -17,7 +18,7 @@ fun ScriptComponent.imgui(engine: Engine) {
     val buffer = pathBuffers.getOrPut(this) { ImString(path, 512) }
     if (!ImGui.isAnyItemActive() && buffer.get() != path) buffer.set(path)
     if (ImGui.inputText(strings.getString("lbl.script_editor.path"), buffer)) path = buffer.get()
-    if (ImGui.button(strings.getString("btn.script_editor.edit"))) {
+    if (strings.tipped(ImGui.button(strings.getString("btn.script_editor.edit")), "btn.script_editor.edit")) {
         val file: File = File(path)
         engine.eventSystem.publish(ScriptEditorAction.Open(file))
         engine.eventSystem.publish(WindowAction.Show(ScriptEditorActionHandler.WINDOW))

@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.ui.menus
 
+import com.pafoid.skate.editor.imgui.tipped
 import com.pafoid.skate.editor.imgui.label
 import com.pafoid.skate.editor.events.ViewportAction.CreateUi
 import com.pafoid.skate.engine.core.EventSystem
@@ -13,7 +14,8 @@ object UiCreateMenu {
     fun render(stringManager: StringManager, eventSystem: EventSystem, parent: GameObject?) {
         if (!ImGui.beginMenu(stringManager.label("context.create_ui"))) return
         UiKind.entries.forEach { kind ->
-            if (ImGui.menuItem(stringManager.getString("context.create_ui.${kind.name.lowercase()}"))) {
+            val key = "context.create_ui.${kind.name.lowercase()}"
+            if (stringManager.tipped(ImGui.menuItem(stringManager.getString(key)), key)) {
                 eventSystem.publish(CreateUi(kind, parent))
             }
         }

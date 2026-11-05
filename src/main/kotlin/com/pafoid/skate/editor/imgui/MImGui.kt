@@ -421,6 +421,7 @@ object MImGui {
             val result = ImGui.combo("##$label", index, labels.toTypedArray(), labels.size)
             ImGui.sameLine()
             removed = ImGui.button(Icons.TRASH, 15f, 15f)
+            strings?.let { Tooltips.show(it, "lbl.texture.remove.tooltip") }
 
             ImGui.endTable()
             if (removed) null

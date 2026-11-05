@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.imgui.components
 
+import com.pafoid.skate.editor.imgui.Tooltips
 import com.pafoid.skate.editor.imgui.ImGuiIds
 import com.pafoid.skate.editor.commands.objects.JointSettings
 import com.pafoid.skate.editor.events.JointAction
@@ -62,6 +63,7 @@ fun JointComponent.imgui(engine: Engine) {
         ImGui.popID()
         return
     }
+    Tooltips.showIfPresent(strings, "component.JointComponent.jointType.tooltip")
 
     val candidates = bodies(engine.sceneManager.currentScene).filter { it !== gameObject }
     val names = (listOf(s("worldAnchor")) + candidates.map { it.name }).toTypedArray()
@@ -74,6 +76,7 @@ fun JointComponent.imgui(engine: Engine) {
         ImGui.popID()
         return
     }
+    Tooltips.showIfPresent(strings, "component.JointComponent.connectedBody.tooltip")
 
     vec("anchor", draft.anchor)
     if (draft.connectedBodyId != -1) vec("connectedAnchor", draft.connectedAnchor)

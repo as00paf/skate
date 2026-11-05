@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.ui.windows
 
+import com.pafoid.skate.editor.imgui.tipped
 import com.pafoid.skate.editor.events.ViewportAction
 import com.pafoid.skate.editor.imgui.EditorWindow
 import com.pafoid.skate.editor.imgui.MImGui
@@ -38,14 +39,14 @@ class AudioInspectorWindow(private val engine: Engine, projectManager: ProjectMa
         if (audio == null) {
             MImGui.textDisabled(stringManager.getString("lbl.audio.no_audio_component_selected"))
             ImGui.separator()
-            if (ImGui.button("${stringManager.getString("btn.audio.add_component")}##add_audio")) {
+            if (stringManager.tipped(ImGui.button("${stringManager.getString("btn.audio.add_component")}##add_audio"), "btn.audio.add_component")) {
                 engine.eventSystem.publish(ViewportAction.AddComponent(selected, ComponentType.AUDIO))
             }
             return
         }
         audio.imgui(engine)
         ImGui.sameLine()
-        if (ImGui.button("${stringManager.getString("btn.audio.remove_component")}##remove_audio")) {
+        if (stringManager.tipped(ImGui.button("${stringManager.getString("btn.audio.remove_component")}##remove_audio"), "btn.audio.remove_component")) {
             engine.eventSystem.publish(ViewportAction.RemoveComponent(audio))
         }
     }

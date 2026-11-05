@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.ui.windows
 
+import com.pafoid.skate.editor.imgui.tipped
 import com.pafoid.skate.editor.events.ScriptEditorAction
 import com.pafoid.skate.editor.scripting.DiagnosticSource
 import com.pafoid.skate.editor.scripting.ScriptDiagnostic
@@ -206,16 +207,16 @@ class ScriptEditorWindow(
     }
 
     private fun toolbar() {
-        if (ImGui.button(strings.getString("btn.script_editor.save"))) save()
+        if (strings.tipped(ImGui.button(strings.getString("btn.script_editor.save")), "btn.script_editor.save")) save()
         ImGui.sameLine()
-        if (ImGui.button(strings.getString("btn.script_editor.check"))) check(active)
+        if (strings.tipped(ImGui.button(strings.getString("btn.script_editor.check")), "btn.script_editor.check")) check(active)
         ImGui.sameLine()
         ImGui.setNextItemWidth(160f)
         ImGui.inputTextWithHint("##new_script", strings.getString("hint.script_editor.new_name"), newName)
         ImGui.sameLine()
         val valid = ScriptTemplates.fileName(newName.get()) != null && scriptsDirectory() != null
         if (!valid) ImGui.beginDisabled()
-        if (ImGui.button(strings.getString("btn.script_editor.new"))) {
+        if (strings.tipped(ImGui.button(strings.getString("btn.script_editor.new")), "btn.script_editor.new")) {
             scriptsDirectory()?.let { events.publish(ScriptEditorAction.Create(it, newName.get())) }
             newName.set("")
         }
