@@ -45,6 +45,14 @@ class EditorStatusBar(engine: Engine) {
             val totalMB = rt.totalMemory() / (1024 * 1024)
             ImGui.text(stringManager.getString("lbl.status_bar.memory").format(usedMB, totalMB))
 
+            // Latest notice, e.g. where a screenshot was saved (EDT-42).
+            EditorToast.current()?.let { notice ->
+                ImGui.sameLine()
+                ImGui.textDisabled(" | ")
+                ImGui.sameLine()
+                ImGui.textColored(0.55f, 0.85f, 0.55f, 1f, notice)
+            }
+
             val sceneName = currentScene?.name ?: stringManager.getString("lbl.status_bar.no_scene")
             val sceneText = stringManager.getString("lbl.status_bar.scene").format(sceneName)
             val textSize = ImGui.calcTextSize(sceneText)

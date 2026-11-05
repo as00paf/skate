@@ -32,7 +32,7 @@ class WindowRegistry(
     val windows: List<EditorWindow> = listOf(
         SceneHierarchyWindow(engine, editor.clipboardService, projectManager::hasProject),
         PropertiesWindow(engine, projectManager::hasProject),
-        GameViewWindow(engine, editor, projectManager::hasProject),
+        GameViewWindow(engine, editor, projectManager::hasProject, projectManager::getProjectDirectory),
         AssetBrowserWindow(engine, editor.undoRedoManager),
         ProfilerWindow(engine.stringManager),
         ConsoleWindow(engine),

@@ -15,6 +15,12 @@ import io.mockk.unmockkObject
 import io.mockk.verify
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNull
+import com.pafoid.skate.editor.imgui.EditorToast
+import com.pafoid.skate.editor.systems.ScreenshotFolder
+import com.pafoid.skate.engine.core.StringManager
+import java.io.File
 
 class ViewportRendererScreenshotTest {
 
@@ -38,12 +44,14 @@ class ViewportRendererScreenshotTest {
         every { frameBuffer.fboId } returns 77
 
         mockkObject(ScreenshotUtils)
-        every { ScreenshotUtils.takeScreenshot(any(), any(), any()) } just Runs
+        every { ScreenshotUtils.takeScreenshot(any(), any(), any(), any(), any()) } just Runs
 
-        ViewportRenderer(engine).captureScreenshot()
+        val project = File("C:/Projects/Park")
+        ViewportRenderer(engine) { ScreenshotFolder.resolve(project) }.captureScreenshot()
 
+        // EDT-42: into the open project's Screenshots folder, never the working directory.
         verify(exactly = 1) {
-            ScreenshotUtils.takeScreenshot(1920, 1080, 77)
+            ScreenshotUtils.takeScreenshot(1920, 1080, 77, File(project, "Screenshots").absoluteFile, any())
         }
         verify { logger.logEditor(match { it.contains("Screenshot captured") && it.contains("1920x1080") }) }
     }
@@ -61,7 +69,7 @@ class ViewportRendererScreenshotTest {
         every { frameBuffer.fboId } returns 1
 
         mockkObject(ScreenshotUtils)
-        every { ScreenshotUtils.takeScreenshot(any(), any(), any()) } throws IllegalStateException("disk full")
+        every { ScreenshotUtils.takeScreenshot(any(), any(), any(), any(), any()) } throws IllegalStateException("disk full")
 
         ViewportRenderer(engine).captureScreenshot()
 
@@ -80,13 +88,42 @@ class ViewportRendererScreenshotTest {
         every { frameBuffer.height } returns 1080
 
         mockkObject(ScreenshotUtils)
-        every { ScreenshotUtils.takeScreenshot(any(), any(), any()) } just Runs
+        every { ScreenshotUtils.takeScreenshot(any(), any(), any(), any(), any()) } just Runs
 
         ViewportRenderer(engine).captureScreenshot()
 
         verify(exactly = 0) {
-            ScreenshotUtils.takeScreenshot(any(), any(), any())
+            ScreenshotUtils.takeScreenshot(any(), any(), any(), any(), any())
         }
         verify { logger.logEditor(match { it.contains("Screenshot skipped") }, LogLevel.WARN) }
+    }
+
+    @Test
+    fun Folder_IsTheProjectsOrTheUserDataOne() {
+        val userData = File("C:/Users/me/AppData/Roaming/Skate")
+        assertEquals(File("C:/Projects/Park/Screenshots").absoluteFile, ScreenshotFolder.resolve(File("C:/Projects/Park")) { userData })
+        assertEquals(File(userData, "Screenshots").absoluteFile, ScreenshotFolder.resolve(null) { userData })
+    }
+
+    @Test
+    fun SavedScreenshot_PathIsLoggedAndToasted() {
+        val engine = mockk<Engine>()
+        every { engine.logger } returns logger
+        val strings = mockk<StringManager>()
+        every { strings.getString("toast.screenshot_saved", *anyVararg()) } answers { "saved ${(args[1] as Array<*>)[0]}" }
+        every { engine.stringManager } returns strings
+        val file = File("C:/Projects/Park/Screenshots/shot.png")
+
+        ViewportRenderer(engine).onScreenshotSaved(Result.success(file))
+
+        verify { logger.logEditor(match { it.contains(file.absolutePath) }, LogLevel.ACTION) }
+        assertEquals("saved ${file.absolutePath}", EditorToast.current())
+    }
+
+    @Test
+    fun Toast_ExpiresAfterItsDuration() {
+        EditorToast.show("hello", now = 1000L)
+        assertEquals("hello", EditorToast.current(now = 1000L + EditorToast.DURATION_MS - 1))
+        assertNull(EditorToast.current(now = 1000L + EditorToast.DURATION_MS))
     }
 }
