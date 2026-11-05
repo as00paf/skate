@@ -376,7 +376,7 @@ Audio needs a more complete implementation.
   - Deps: TLG-09
 - [x] **AUD-10** `P1` MP3 playback and music in the default skate scene
   - Do: Human request: use `assets/sounds/music/aquarela do brasil.mp3` (local asset, kept out of git) as looping background music in the default skate `MainScene`. The loader only decodes OGG (stb_vorbis) and WAV, and only OGG streams. Add MP3 decoding (a small, permissively licensed pure-Java decoder) with streaming for long tracks, route music through the music bus, and make a missing file a logged warning, not an error.
-  - Done when: A new project's MainScene plays the track looping in Play (streamed, not fully loaded); a missing file is tolerated; MP3 decode/stream tested with a generated test file.
+  - Done when: (Changed by the human on PR #16) MainScene has no music; the FeatureShowcase Audio area's 3D emitter plays the track looping in Play instead of the generated tone (streamed), the tone and its 2D ambient layer are removed; a missing file is tolerated; MP3 decode/stream tested; the showcase smoke test asserts it.
   - Deps: AUD-09
 
 ### Input — `INP` (`skate-input`)
