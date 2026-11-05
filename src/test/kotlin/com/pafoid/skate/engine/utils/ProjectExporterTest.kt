@@ -133,6 +133,22 @@ class ProjectExporterTest {
     private fun manifestPaths(builds: File): List<String> =
         Serializer().json.decodeFromString(PackManifest.serializer(), File(builds, "manifest.json").readText()).entries.map { it.path }
 
+    /**
+     * QA-15: CI runners' temp folder is an 8.3 short path (`C:\Users\RUNNER~1\...`), so the project path the editor
+     * passes is not canonical while the packed files are. A `..` segment gives the same mismatch on any machine.
+     */
+    @Test
+    fun Export_NonCanonicalProjectPath_PacksProjectRelativePaths() {
+        val p = project()
+        File(dir, "detour").mkdirs()
+        val viaDetour = File(dir, "detour/../Game.skateproject")
+        val options = ExportOptions(target = ExportTarget.PACK_ONLY)
+        assertTrue(ProjectExporter(mockk<LoggerService>(relaxed = true)).export(p.copy(projectPath = viaDetour.path), options).success)
+        val paths = manifestPaths(File(dir, "builds"))
+        assertTrue("Textures/used.png" in paths && "Scenes/Main.scene" in paths, paths.toString())
+        assertTrue(paths.none { it.startsWith("..") }, paths.toString())
+    }
+
     @Test
     fun Export_PackOnlyTargetNeedsNoJarAndWritesNoLauncher() {
         val result = ProjectExporter(mockk<LoggerService>(relaxed = true)) { GameJarSearch(null, emptyList()) }.export(project(), ExportOptions(target = ExportTarget.PACK_ONLY))
