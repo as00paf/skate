@@ -1,8 +1,10 @@
 package com.pafoid.skate.editor.imgui.components
 
+import com.pafoid.skate.engine.core.LoggerService.LogLevel
 import com.pafoid.skate.editor.imgui.MImGui
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.ecs.components.AmbientLightComponent
+import com.pafoid.skate.engine.ecs.components.AudioComponent
 import com.pafoid.skate.engine.ecs.components.CameraComponent
 import com.pafoid.skate.engine.ecs.components.Component
 import com.pafoid.skate.engine.ecs.components.Component.Companion.getCachedFields
@@ -37,13 +39,14 @@ fun Component.imgui(engine: Engine) {
         is ScriptComponent -> this.imgui(engine)
         is JointComponent -> this.imgui(engine)
         is ReverbZone -> this.imgui(engine)
+        is AudioComponent -> this.imgui(engine)
         is ParticleEmitter -> this.imgui(engine)
 
         else -> if (this.isUiComponent()) this.uiImgui(engine) else reflectedImgui(engine)
     }
 }
 
-/** Inspector built from the component's declared fields (numbers, booleans, vectors, enums); [skip] hides fields by name. */
+/** Inspector built from the component's declared fields (numbers, booleans, strings, vectors, enums); [skip] hides fields by name. */
 fun Component.reflectedImgui(engine: Engine, skip: Set<String> = emptySet()) {
     try {
         ImGui.pushID(this.javaClass.simpleName + this.name)
@@ -52,6 +55,7 @@ fun Component.reflectedImgui(engine: Engine, skip: Set<String> = emptySet()) {
         fields.forEach { field ->
             val modifiers = field.modifiers
             if (Modifier.isTransient(modifiers) || Modifier.isStatic(modifiers)) return@forEach
+            if (field.name in skip) return@forEach
 
             if (Modifier.isPrivate(modifiers)) field.isAccessible = true
 
@@ -82,6 +86,12 @@ fun Component.reflectedImgui(engine: Engine, skip: Set<String> = emptySet()) {
                         if (ImGui.checkbox(localizedName, typedValue)) {
                             field.set(this, !typedValue)
                         }
+                    }
+                }
+
+                String::class.java -> {
+                    if (!isFinal && StringFields.isEditable(this.javaClass, field)) {
+                        StringFields.imgui(engine, this, field, localizedName)
                     }
                 }
 
@@ -118,7 +128,7 @@ fun Component.reflectedImgui(engine: Engine, skip: Set<String> = emptySet()) {
             if (Modifier.isPrivate(modifiers)) field.isAccessible = false
         }
     } catch (e: Exception) {
-        e.printStackTrace()
+        engine.logger.logEditor("Inspector failed to draw ${this.javaClass.simpleName}: ${e.message}", LogLevel.ERROR)
     } finally {
         ImGui.popID()
     }

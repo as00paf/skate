@@ -21,6 +21,7 @@ enum class WindowCategory(val labelKey: String) {
             "window.profiler" to DEBUG,
             "window.command_history" to DEBUG,
             "window.render_graph" to DEBUG,
+            "window.shell" to DEBUG,
             "window.keybindings" to INPUT,
             "window.script_editor" to SCRIPTING,
             "window.audio_inspector" to AUDIO,

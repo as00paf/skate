@@ -1,6 +1,7 @@
 package com.pafoid.skate.editor.ui.handlers
 
 import com.pafoid.skate.editor.commands.objects.EditAudioBusesCommand
+import com.pafoid.skate.editor.commands.objects.EditAudioComponentCommand
 import com.pafoid.skate.editor.commands.objects.EditReverbZoneCommand
 import com.pafoid.skate.editor.events.AudioAction
 import com.pafoid.skate.editor.events.ProjectEvent
@@ -21,6 +22,10 @@ class AudioActionHandler(
         }
         eventSystem.subscribe<AudioAction.EditReverbZone> { event ->
             val command = EditReverbZoneCommand(event.zone, event.settings)
+            if (!command.isNoOp) undoRedoManager.executeCommand(command)
+        }
+        eventSystem.subscribe<AudioAction.EditComponent> { event ->
+            val command = EditAudioComponentCommand(event.component, event.settings)
             if (!command.isNoOp) undoRedoManager.executeCommand(command)
         }
         eventSystem.subscribe<AudioAction.EditBuses> { event ->

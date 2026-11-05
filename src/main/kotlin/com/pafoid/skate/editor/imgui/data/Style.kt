@@ -12,5 +12,7 @@ data class Style(
     val indentSpacing: Float = 21f,
     val scrollbarSize: Float = 14f,
     val grabMinSize: Float = 10f,
+    val windowBorderSize: Float = 1f,
+    val frameBorderSize: Float = 0f,
     val theme: Theme = Theme()
 )

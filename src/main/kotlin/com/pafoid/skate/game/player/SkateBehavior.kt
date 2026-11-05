@@ -1,5 +1,8 @@
 package com.pafoid.skate.game.player
 
+import com.pafoid.skate.engine.assets.Assets
+import com.pafoid.skate.engine.net.PredictionModels
+import com.pafoid.skate.game.net.SkaterPredictionModel
 import com.pafoid.skate.engine.animation.graph.AnimParameters
 import com.pafoid.skate.engine.assets.PrefabsGenerator
 import com.pafoid.skate.engine.gameplay.CameraPreset
@@ -234,6 +237,10 @@ object SkateGameplay {
     fun register() {
         CharacterBehaviors.register(SkateBehavior.ID) { path ->
             SkateBehavior(CharacterConfigs.load(path) { SkateControllerConfig() })
+        }
+        if (PredictionModels[SkaterPredictionModel.ID] == null) {
+            val config = CharacterConfigs.load(Assets.Configs.SKATER_CHARACTER) { SkateControllerConfig() }
+            PredictionModels.register(SkaterPredictionModel.ID, SkaterPredictionModel(config))
         }
     }
 }

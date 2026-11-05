@@ -21,6 +21,7 @@ import com.pafoid.skate.editor.ui.windows.RenderGraphWindow
 import com.pafoid.skate.editor.ui.windows.SceneHierarchyWindow
 import com.pafoid.skate.editor.ui.windows.SearchEverywhereWindow
 import com.pafoid.skate.editor.ui.windows.ScriptEditorWindow
+import com.pafoid.skate.editor.ui.windows.ShellWindow
 import com.pafoid.skate.engine.core.Engine
 
 class WindowRegistry(
@@ -47,6 +48,7 @@ class WindowRegistry(
         AudioInspectorWindow(engine, projectManager),
         ProjectWindow(engine, projectManager),
         ScriptEditorWindow(engine, projectManager, editor.settingsManager),
+        ShellWindow(engine, projectManager),
         ExportWizardWindow(engine, projectManager),
     )
 

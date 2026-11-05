@@ -1,11 +1,15 @@
 package com.pafoid.skate.editor.imgui
 
+import com.pafoid.skate.editor.systems.EditorPaths
 import com.pafoid.skate.app.Editor
 import com.pafoid.skate.editor.events.EditorEvent
 import com.pafoid.skate.editor.events.WindowAction
 import com.pafoid.skate.editor.imgui.data.UiConstants
+import com.pafoid.skate.editor.imgui.theme.ThemeLibrary
+import java.io.File
 import com.pafoid.skate.editor.systems.ProjectManager
 import com.pafoid.skate.engine.assets.Assets
+import com.pafoid.skate.engine.core.LoggerService
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.core.WindowController
 import imgui.ImVec2
@@ -46,7 +50,6 @@ import imgui.internal.ImGui.updatePlatformWindows
 import imgui.type.ImBoolean
 import imgui.type.ImInt
 import org.lwjgl.glfw.GLFW
-import java.io.File
 
 class ImGuiLayer(
     engine: Engine,
@@ -54,6 +57,8 @@ class ImGuiLayer(
     projectManager: ProjectManager,
 ) {
     private val stringManager = engine.stringManager
+    private val settingsManager = editor.settingsManager
+    private val logger = engine.logger
     private val eventSystem = engine.eventSystem
     private val renderer = engine.renderer
 
@@ -68,7 +73,9 @@ class ImGuiLayer(
     private var layoutInitialized = false
     private var forceLayoutRebuild = false
 
-    private val layoutStore = EditorLayoutStore(File(Assets.Files.IMGUI), File(EditorLayoutStore.OPEN_WINDOWS_FILE))
+    private val layoutStore = EditorLayoutStore(
+        EditorPaths.file(EditorPaths.IMGUI_INI), EditorPaths.file(EditorPaths.OPEN_WINDOWS_FILE),
+    )
 
     private val windowRegistry = WindowRegistry(engine, editor, projectManager)
     private val windowManager = WindowManager(stringManager, windowRegistry, engine.eventSystem)
@@ -77,7 +84,7 @@ class ImGuiLayer(
         createContext()
 
         with(getIO()) {
-            iniFilename = Assets.Files.IMGUI
+            iniFilename = layoutStore.iniFile.path
             backendPlatformName = "imgui_java_impl_glfw"
             addConfigFlags(ImGuiConfigFlags.DockingEnable or ImGuiConfigFlags.ViewportsEnable)
             val fontsByteArray =
@@ -88,7 +95,8 @@ class ImGuiLayer(
         imGuiGlfw.init(windowController.glfwWindow, true)
         imGuiGl3.init(glslVersion)
 
-        ImGuiStyleManager.setupStyle()
+        loadThemes()
+        MImGui.strings = stringManager
 
         layoutStore.removeDockIds(windowRegistry.windows.filterIsInstance<EditorDialog>().map { it.name })
         windowManager.init()
@@ -174,7 +182,17 @@ class ImGuiLayer(
         endFrame()
     }
 
+    /** EDT-07: reads the theme files and shows the saved theme. */
+    private fun loadThemes() {
+        ImGuiStyleManager.library = ThemeLibrary.load(File(Assets.Themes.DIR))
+        ImGuiStyleManager.invalidate()
+        ImGuiStyleManager.library.errors.forEach { logger.logEditor("Theme skipped: $it", LoggerService.LogLevel.WARN) }
+        ImGuiStyleManager.sync(settingsManager.editorSettings.theme)
+    }
+
     fun startFrame() {
+        // A theme switch (settings window or saved setting) applies between frames.
+        ImGuiStyleManager.sync(settingsManager.editorSettings.theme)
         imGuiGlfw.newFrame()
         imGuiGl3.newFrame()
         newFrame()

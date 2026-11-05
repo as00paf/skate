@@ -22,6 +22,7 @@ class ActionSearchProvider(
     val engine: Engine
 ) : BaseSearchProvider() {
     private val sceneManager = engine.sceneManager
+    private val stringManager = engine.stringManager
     private val logger = engine.logger
     private val eventSystem = engine.eventSystem
 
@@ -30,137 +31,137 @@ class ActionSearchProvider(
     private val actions = listOf(
         EditorAction(
             actionId = "create_empty",
-            displayName = "Create Empty",
+            displayNameKey = "search.action.create_empty",
             keywords = listOf("create", "empty", "gameobject", "new", "add"),
-            description = "Create a new empty GameObject",
+            descriptionKey = "search.action.create_empty.desc",
             icon = Icons.PLUS,
             execute = { createEmptyGameObject() }
         ),
         EditorAction(
             actionId = "save_scene",
-            displayName = "Save Scene",
+            displayNameKey = "search.action.save_scene",
             keywords = listOf("save", "scene", "disk", "write", "store"),
-            description = "Save the current scene to disk",
+            descriptionKey = "search.action.save_scene.desc",
             icon = Icons.SAVE,
             execute = { saveScene() }
         ),
         EditorAction(
             actionId = "play",
-            displayName = "Play",
+            displayNameKey = "search.action.play",
             keywords = listOf("play", "start", "run", "simulate", "simulation"),
-            description = "Start the simulation",
+            descriptionKey = "search.action.play.desc",
             icon = Icons.PLAY,
             execute = { startSimulation() }
         ),
         EditorAction(
             actionId = "stop",
-            displayName = "Stop",
+            displayNameKey = "search.action.stop",
             keywords = listOf("stop", "pause", "end", "halt", "simulation"),
-            description = "Stop the simulation",
+            descriptionKey = "search.action.stop.desc",
             icon = Icons.STOP,
             execute = { stopSimulation() }
         ),
         EditorAction(
             actionId = "reset_transform",
-            displayName = "Reset Transform",
+            displayNameKey = "search.action.reset_transform",
             keywords = listOf("reset", "transform", "position", "rotation", "scale", "identity", "zero"),
-            description = "Reset selected object's transform to identity",
+            descriptionKey = "search.action.reset_transform.desc",
             icon = Icons.ARROW_ROTATE,
             execute = { resetTransform() }
         ),
         EditorAction(
             actionId = "delete",
-            displayName = "Delete",
+            displayNameKey = "search.action.delete",
             keywords = listOf("delete", "remove", "destroy", "trash", "kill"),
-            description = "Delete the selected object",
+            descriptionKey = "search.action.delete.desc",
             icon = Icons.TRASH,
             execute = { deleteSelected() }
         ),
         EditorAction(
             actionId = "duplicate",
-            displayName = "Duplicate",
+            displayNameKey = "search.action.duplicate",
             keywords = listOf("duplicate", "copy", "clone", "replicate"),
-            description = "Duplicate the selected object",
+            descriptionKey = "search.action.duplicate.desc",
             icon = Icons.COPY,
             execute = { duplicateSelected() }
         ),
         EditorAction(
             actionId = "rename_scene",
-            displayName = "Rename Scene",
+            displayNameKey = "search.action.rename_scene",
             keywords = listOf("rename", "scene", "name", "title"),
-            description = "Rename the current scene",
+            descriptionKey = "search.action.rename_scene.desc",
             icon = Icons.EDIT,
             execute = { renameScene() }
         ),
         EditorAction(
             actionId = "save_scene_as",
-            displayName = "Save Scene As",
+            displayNameKey = "search.action.save_scene_as",
             keywords = listOf("save", "as", "scene", "export", "copy"),
-            description = "Save the current scene to a new file",
+            descriptionKey = "search.action.save_scene_as.desc",
             icon = Icons.FOLDER_OPEN,
             execute = { saveSceneAs() }
         ),
         EditorAction(
             actionId = "close_scene",
-            displayName = "Close Scene",
+            displayNameKey = "search.action.close_scene",
             keywords = listOf("close", "scene", "remove", "exit"),
-            description = "Close the current scene",
+            descriptionKey = "search.action.close_scene.desc",
             icon = Icons.TRASH,
             execute = { closeScene() }
         ),
         EditorAction(
             actionId = "close_other_scenes",
-            displayName = "Close Other Scenes",
+            displayNameKey = "search.action.close_other_scenes",
             keywords = listOf("close", "others", "scenes", "remove"),
-            description = "Close all scenes except the current one",
+            descriptionKey = "search.action.close_other_scenes.desc",
             icon = Icons.TRASH,
             execute = { closeOtherScenes() }
         ),
         EditorAction(
             actionId = "create_scene",
-            displayName = "Create Scene",
+            displayNameKey = "search.action.create_scene",
             keywords = listOf("create", "new", "scene", "add", "empty"),
-            description = "Create a new empty scene",
+            descriptionKey = "search.action.create_scene.desc",
             icon = Icons.PLUS,
             execute = { createScene() }
         )/*,
         EditorAction(
             actionId = "create_primitive",
-            displayName = "Create Primitive",
+            displayNameKey = "search.action.create_primitive",
             keywords = listOf("create", "primitive", "cube", "sphere", "box", "cylinder", "plane", "3d", "object"),
-            description = "Create a 3D primitive object",
+            descriptionKey = "search.action.create_primitive.desc",
             icon = Icons.CUBE,
             execute = { createPrimitive() }
         )*/,
         EditorAction(
             actionId = "create_light",
-            displayName = "Create Light",
+            displayNameKey = "search.action.create_light",
             keywords = listOf("create", "light", "directional", "point", "spot", "lamp"),
-            description = "Create a light object",
+            descriptionKey = "search.action.create_light.desc",
             icon = Icons.SUN,
             execute = { createLight() }
         ),
         EditorAction(
             actionId = "spawn_prefab",
-            displayName = "Spawn Prefab",
+            displayNameKey = "search.action.spawn_prefab",
             keywords = listOf("spawn", "prefab", "ledge", "rail", "kicker", "ramp", "obstacle"),
-            description = "Spawn a prefab obstacle",
+            descriptionKey = "search.action.spawn_prefab.desc",
             icon = Icons.GEAR,
             execute = { spawnPrefab() }
         ),
         EditorAction(
             actionId = "rename_gameobject",
-            displayName = "Rename GameObject",
+            displayNameKey = "search.action.rename_gameobject",
             keywords = listOf("rename", "object", "gameobject", "name", "title"),
-            description = "Rename the selected GameObject",
+            descriptionKey = "search.action.rename_gameobject.desc",
             icon = Icons.EDIT,
             execute = { renameGameObject() }
         ),
         EditorAction(
             actionId = "delete_scene",
-            displayName = "Delete Scene",
+            displayNameKey = "search.action.delete_scene",
             keywords = listOf("delete", "scene", "remove", "destroy", "file"),
-            description = "Delete the current scene and its file",
+            descriptionKey = "search.action.delete_scene.desc",
             icon = Icons.TRASH,
             execute = { deleteScene() }
         )
@@ -190,7 +191,8 @@ class ActionSearchProvider(
     private fun calculateActionScore(action: EditorAction, query: String): Float {
         var bestScore = 0.0f
 
-        val displayNameScore = calculateRelevance(action.displayName, query)
+        val displayName = stringManager.getString(action.displayNameKey)
+        val displayNameScore = calculateRelevance(displayName, query)
         bestScore = maxOf(bestScore, displayNameScore)
 
         for (keyword in action.keywords) {
@@ -200,7 +202,7 @@ class ActionSearchProvider(
 
         // Try fuzzy match on display name if no exact match found
         if (bestScore == 0.0f) {
-            bestScore = fuzzyMatch(action.displayName, query)
+            bestScore = fuzzyMatch(displayName, query)
         }
 
         return bestScore
@@ -209,10 +211,10 @@ class ActionSearchProvider(
     private fun createSearchResult(action: EditorAction, score: Float): SearchResult {
         return SearchResult(
             id = "action_${action.actionId}",
-            displayName = action.displayName,
+            displayName = stringManager.getString(action.displayNameKey),
             category = SearchCategory.ACTION,
-            subcategory = "Editor Action",
-            description = action.description,
+            subcategory = stringManager.getString("search.action.subcategory"),
+            description = stringManager.getString(action.descriptionKey),
             icon = action.icon,
             relevanceScore = score,
             metadata = mapOf(

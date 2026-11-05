@@ -87,6 +87,9 @@ class StringManager(
         return false
     }
 
+    /** Whether [key] has a value (in the current locale or the base tables), without logging a miss. */
+    fun hasString(key: String): Boolean = properties.containsKey(key)
+
     fun getString(key: String): String {
         val value = properties.getProperty(key)
         if (value == null) {
