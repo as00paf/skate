@@ -214,6 +214,10 @@ Asset management works but needs a complete review.
 - [x] **AST-10** `P2` Missing bundled metal.png (BUG-020)
   - Do: From QA-14: `Assets.Bundled.METAL` points at `assets/textures/metal.png`, which never existed; rails fall back to the default texture with an ERROR. Add a proper metal texture (or point METAL at an existing one), make `EngineAssetCopier` or a unit test over `Assets.Bundled.bundledAssets` fail on missing sources, and remove the entry from `ProjectLifecycleEndToEndTest.KNOWN_ISSUES`.
   - Done when: New projects log no missing-texture errors; the bundled-assets test guards it.
+- [x] **AST-11** `P2` Exporter finds the game jar relative to the working directory
+  - Do: From GPL-18's audit: `ProjectExporter.findGameJar` searches `build/libs` relative to the working directory, so exporting fails or picks a stale jar when the editor starts from another folder. Resolve from the editor's install/jar location (or a configured path) and report clearly when no game jar exists.
+  - Done when: Export finds the game jar regardless of the editor's working directory; test.
+  - Deps: GPL-18
 
 ### ECS — `ECS` (`skate-ecs`)
 
@@ -505,6 +509,10 @@ The player controller was hardcoded at first and needs a big overhaul. Some skat
   - Do: From NET-03: a kinematic skater step (`PredictionStep`) that client and server run with the same result, reading only replicated state (no Bullet), so NET-03 prediction can be wired into the skate game, with a Feature Showcase demo.
   - Done when: Client and server produce identical skater states from the same inputs in a test; a showcase demo shows prediction under simulated latency.
   - Deps: NET-03
+- [x] **GPL-18** `P0` Exported game can't find game.bin unless started from its folder
+  - Do: Human-reported on PR #21: running an exported game fails with game.bin not found at a wrong path. `GameBin.file()` defaults to `game.bin` in the working directory, so any launch that isn't `run-game.bat` (double-clicked jar, IntelliJ run config, export wizard "run", shortcuts) looks in the wrong folder. Resolve in order: `-Dskate.bin`, next to the running jar (code source location), then the working directory; log the searched paths. Audit other working-directory-relative paths in `game/` and the launcher.
+  - Done when: The exported game starts from `run-game.bat`, a double-clicked jar, `java -jar <abs path>` from another directory, and the IntelliJ/Gradle run path; QA-14's end-to-end test covers a launch from a different working directory.
+  - Deps: GPL-08
 
 ### In-game UI — `GUI` (`skate-gameui`)
 
@@ -766,6 +774,10 @@ All editor mutations must go through `Command` classes and the service layer (se
   - Do: Human-reported on PR #20 (regression from AST-09): reopening a closed project from File > Recent Projects logs "Project file does not exist or invalid extension" with a wrong path. `EditorSettingsManager.recentProjects` decodes each `.skateproject` without a project root, so the AST-09 relative `projectPath` resolves against the working directory. Use the absolute path stored in the editor settings (and set `projectPath` from it), in the recent menu, `LoadLastProjectCommand` and `EditorScreen`; audit other places that decode a project file outside `openProjectFile`.
   - Done when: Create, close, reopen from Recent Projects (and the startup last-project path) works, including after moving the project; test through the real path.
   - Deps: AST-09
+- [ ] **EDT-42** `P3` Screenshots folder relative to the working directory
+  - Do: From GPL-18's audit: editor screenshots go to `screenshots/` in the working directory; store them under the project (or user data, EDT-18) instead.
+  - Done when: Screenshots land in a predictable folder regardless of the working directory; test.
+  - Deps: EDT-18
 
 ## Testing & tooling
 
