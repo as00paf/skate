@@ -1,10 +1,13 @@
 package com.pafoid.skate.editor.commands.project
 
+import com.pafoid.skate.editor.commands.ReportsFailure
 import com.pafoid.skate.editor.commands.ExecutionTrackedCommand
 import java.io.File
 
 /** Writes script text to disk; undo restores the previous content (or removes a newly created file). */
-class SaveScriptCommand(private val file: File, private val text: String) : ExecutionTrackedCommand {
+class SaveScriptCommand(private val file: File, private val text: String) : ReportsFailure {
+    override val errorTitleKey = "error.save_script.title"
+
     private var previous: String? = null
     private var existed = false
     private var succeeded = false
@@ -20,7 +23,7 @@ class SaveScriptCommand(private val file: File, private val text: String) : Exec
             file.writeText(text)
             succeeded = true
         } catch (e: Exception) {
-            failure = e.message ?: "write failed"
+            failure = "${file.absolutePath}: ${e.message ?: e.javaClass.simpleName}"
         }
     }
 

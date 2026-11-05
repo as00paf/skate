@@ -437,16 +437,8 @@ class ViewportActionHandler(
     }
 
     private fun applyAnimationToObject(gameObject: GameObject, animation: Animation) {
-        val animator = gameObject.getComponent<Animator>()
-
-        if (animator != null) {
-            undoRedoManager.executeCommand(
-                ApplyAnimationCommand(gameObject, animation, logger)
-            )
-            sceneManager.currentScene?.isDirty = true
-            logger.logEditor("Added animation to ${gameObject.name}: ${animation.name}")
-        } else {
-            logger.logEditor("Object has no Animator component")
-        }
+        // The command adds an Animator when the object has none; undo removes it again.
+        undoRedoManager.executeCommand(ApplyAnimationCommand(gameObject, animation, logger))
+        sceneManager.currentScene?.isDirty = true
     }
 }

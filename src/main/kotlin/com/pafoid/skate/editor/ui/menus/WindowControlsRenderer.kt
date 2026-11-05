@@ -1,5 +1,7 @@
 package com.pafoid.skate.editor.ui.menus
 
+import com.pafoid.skate.editor.imgui.Tooltips
+import com.pafoid.skate.editor.data.EditorShortcuts
 import com.pafoid.skate.editor.imgui.tippedWith
 import com.pafoid.skate.editor.imgui.tipped
 import com.pafoid.skate.editor.events.EditorEvent
@@ -57,10 +59,10 @@ class WindowControlsRenderer(
         }
 
         if (ImGui.beginPopup("##SettingsPopup")) {
-            if (stringManager.tipped(ImGui.menuItem(stringManager.getString("window.editor_settings")), "window.editor_settings")) {
+            if (stringManager.tipped(ImGui.menuItem("${Icons.GEAR} ${stringManager.getString("window.editor_settings")}"), "window.editor_settings")) {
                 eventSystem.publish(WindowAction.Show("window.editor_settings"))
             }
-            if (stringManager.tipped(ImGui.menuItem(stringManager.getString("window.project_settings")), "window.project_settings")) {
+            if (stringManager.tipped(ImGui.menuItem("${Icons.GEAR} ${stringManager.getString("window.project_settings")}"), "window.project_settings")) {
                 eventSystem.publish(WindowAction.Show("window.project_settings"))
             }
             ImGui.endPopup()
@@ -72,7 +74,7 @@ class WindowControlsRenderer(
             eventSystem.publish(WindowAction.Show("window.search"))
         }
         if (ImGui.isItemHovered()) {
-            ImGui.setTooltip(stringManager.getString("tooltip.search_everywhere_shortcut"))
+            ImGui.setTooltip(Tooltips.withShortcut(stringManager, stringManager.getString("tooltip.search_everywhere_shortcut"), EditorShortcuts.SEARCH))
         }
     }
 

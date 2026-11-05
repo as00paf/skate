@@ -1,5 +1,7 @@
 package com.pafoid.skate.editor.ui.windows
 
+import com.pafoid.skate.editor.data.EditorShortcuts
+import com.pafoid.skate.editor.data.EditorFocus
 import com.pafoid.skate.editor.imgui.tipped
 import com.pafoid.skate.editor.events.ScriptEditorAction
 import com.pafoid.skate.editor.scripting.DiagnosticSource
@@ -158,6 +160,10 @@ class ScriptEditorWindow(
 
     init {
         events.subscribe<ScriptEditorAction.Open> { pendingOpen.add(it.file) }
+        // Marked saved only once the write succeeded; a failure opens the error dialog instead (EDT-10).
+        events.subscribe<ScriptEditorAction.Saved> { saved ->
+            documents.filter { it.file.absoluteFile == saved.file.absoluteFile && it.text == saved.text }.forEach { it.markSaved() }
+        }
         events.subscribe<ScriptErrorEvent> {
             pendingRuntime.add(
                 ScriptEditorUpdate(it.error.path, DiagnosticSource.RUNTIME, listOf(ScriptDiagnostic.from(it.error, DiagnosticSource.RUNTIME)))
@@ -253,7 +259,6 @@ class ScriptEditorWindow(
         val doc = active ?: return
         syncBuffer(doc)
         events.publish(ScriptEditorAction.Save(doc.file, doc.text))
-        doc.markSaved()
         check(doc)
     }
 
@@ -365,9 +370,11 @@ class ScriptEditorWindow(
         }
         ImGui.endChild()
 
-        if (ImGui.isWindowFocused(imgui.flag.ImGuiFocusedFlags.RootAndChildWindows) &&
-            ImGui.getIO().keyCtrl && ImGui.isKeyPressed(ImGuiKey.S, false)
-        ) save()
+        if (ImGui.isWindowFocused(imgui.flag.ImGuiFocusedFlags.RootAndChildWindows)) {
+            // Ctrl+S saves the script here, not the scene (EDT-10).
+            EditorFocus.claim(EditorShortcuts.SAVE_SCENE.combo(), EditorShortcuts.SAVE_SCENE_AS.combo())
+            if (ImGui.getIO().keyCtrl && ImGui.isKeyPressed(ImGuiKey.S, false)) save()
+        }
     }
 
     private var focusedLast = false

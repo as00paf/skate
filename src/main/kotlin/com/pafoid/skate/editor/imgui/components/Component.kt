@@ -27,7 +27,16 @@ import org.joml.Vector3f
 import org.joml.Vector4f
 import java.lang.reflect.Modifier
 
+/**
+ * The inspector of a component. Every inspector runs inside [InspectorEditTracker.track], so values it writes
+ * directly still become one undoable command per gesture (EDT-10). This is the only entry point;
+ * UndoCoverageGuardTest checks that.
+ */
 fun Component.imgui(engine: Engine) {
+    InspectorEditTracker.shared.track(this) { dispatchInspector(engine) }
+}
+
+private fun Component.dispatchInspector(engine: Engine) {
     when (this) {
         is AmbientLightComponent -> this.imgui(engine)
         is DirectionalLightComponent -> this.imgui(engine)

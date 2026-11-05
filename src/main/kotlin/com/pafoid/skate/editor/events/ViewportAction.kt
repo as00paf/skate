@@ -42,6 +42,9 @@ sealed class ViewportAction(eventName: String) : Event(eventName) {
     data class CreateLight(val name: String, val type: LightType) : ViewportAction("viewport.create_light")
     data class CreateCamera(val scene: Scene) : ViewportAction("viewport.create_camera")
     object FocusSelected : ViewportAction("viewport.focus_selected")
+
+    /** Start renaming [gameObject] in the hierarchy (F2, EDT-10). */
+    data class StartRename(val gameObject: GameObject) : ViewportAction("viewport.start_rename")
     object ResetCamera : ViewportAction("viewport.reset_camera")
 
     // Prefabs

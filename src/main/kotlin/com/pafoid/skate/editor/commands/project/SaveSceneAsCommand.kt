@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.commands.project
 
+import com.pafoid.skate.editor.commands.ReportsFailure
 import com.pafoid.skate.engine.assets.serialization.FileKind
 import com.pafoid.skate.editor.commands.ExecuteOnlyCommand
 import com.pafoid.skate.engine.assets.serialization.Serializer
@@ -14,8 +15,15 @@ class SaveSceneAsCommand(
     private val scene: Scene,
     private val serializer: Serializer,
     private val logger: LoggerService
-) : ExecuteOnlyCommand {
+) : ExecuteOnlyCommand, ReportsFailure {
+    override val errorTitleKey = "error.save_scene.title"
+    private var failure: String? = null
+
+    override fun wasSuccessful(): Boolean = failure == null
+    override fun getFailureReason(): String? = failure
+
     override fun execute() {
+        failure = null
         val filter = MemoryUtil.memUTF8("*.scene")
         val filters = MemoryUtil.memAllocPointer(1)
         filters.put(0, filter)
@@ -28,12 +36,16 @@ class SaveSceneAsCommand(
         }
 
         if (path != null) {
+            val oldName = scene.name
             scene.name = File(path).nameWithoutExtension
             try {
                 File(path).writeText(serializer.encodeFile(FileKind.SCENE, scene))
                 logger.logEditor("Scene saved to $path")
             } catch (e: Exception) {
-                logger.logEditor("Failed to save scene to $path: ${e.message}", LogLevel.ERROR)
+                // The scene keeps its old name when the new file could not be written.
+                scene.name = oldName
+                failure = "$path: ${e.message ?: e.javaClass.simpleName}"
+                logger.logEditor("Failed to save scene to $failure", LogLevel.ERROR)
             }
         }
     }

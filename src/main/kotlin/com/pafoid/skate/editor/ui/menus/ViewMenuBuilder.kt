@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.ui.menus
 
+import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.editor.imgui.tipped
 import com.pafoid.skate.editor.imgui.label
 import com.pafoid.skate.editor.events.WindowAction
@@ -30,15 +31,15 @@ class ViewMenuBuilder(
                     windows.forEach { window -> checkbox(stringManager.getString(window.name), window.isOpen) }
                 }
                 separator()
-                if (stringManager.tipped(menuItem(stringManager.getString("menu.view.windows.open_all")), "menu.view.windows.open_all")) {
+                if (stringManager.tipped(menuItem("${Icons.WINDOW_RESTORE} ${stringManager.getString("menu.view.windows.open_all")}"), "menu.view.windows.open_all")) {
                     grouped.values.flatten().forEach { it.isOpen.set(true) }
                 }
-                if (stringManager.tipped(menuItem(stringManager.getString("menu.view.windows.close_all")), "menu.view.windows.close_all")) {
+                if (stringManager.tipped(menuItem("${Icons.WINDOW_CLOSE} ${stringManager.getString("menu.view.windows.close_all")}"), "menu.view.windows.close_all")) {
                     grouped.values.flatten().forEach { it.isOpen.set(false) }
                 }
                 endMenu()
             }
-            if (stringManager.tipped(menuItem(stringManager.getString("menu.view.reset_layout")), "menu.view.reset_layout")) {
+            if (stringManager.tipped(menuItem("${Icons.ARROW_ROTATE} ${stringManager.getString("menu.view.reset_layout")}"), "menu.view.reset_layout")) {
                 eventSystem.publish(WindowAction.ResetLayout)
             }
             endMenu()

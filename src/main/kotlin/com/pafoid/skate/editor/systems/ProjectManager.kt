@@ -2,6 +2,7 @@ package com.pafoid.skate.editor.systems
 
 import com.pafoid.skate.engine.assets.serialization.FileKind
 import com.pafoid.skate.editor.data.FileType
+import com.pafoid.skate.editor.events.EditorError
 import com.pafoid.skate.editor.events.ProjectEvent
 import com.pafoid.skate.editor.project.EngineAssetCopier
 import com.pafoid.skate.editor.project.Project
@@ -31,6 +32,10 @@ class ProjectManager(
     private val sceneManager = engine.sceneManager
 
     var currentProject: Project? = null
+        private set
+
+    /** Why the last open or save failed, for the error dialog (EDT-10); null after a success. */
+    var lastError: String? = null
         private set
 
     private var assetRegistry: AssetRegistry? = null
@@ -106,20 +111,32 @@ class ProjectManager(
     }
 
     fun openProjectFile(projectFile: File): Boolean {
-        if (!projectFile.exists() || !FileType.PROJECT_FILE.extensions.contains(projectFile.extension)) {
-            logger.logEditor(
-                "Project file does not exist or invalid extension: ${projectFile.absolutePath}",
-                LogLevel.ERROR
-            )
-            return false
+        lastError = null
+        val path = projectFile.absolutePath
+        if (!projectFile.isFile) return fail("File not found: $path")
+        if (!FileType.PROJECT_FILE.extensions.contains(projectFile.extension)) return fail("Not a .skateproject file: $path")
+        logger.logEditor("Opening project: $path")
+        val project = try {
+            ProjectFileReader.read(engine.serializer, projectFile)
+        } catch (e: Exception) {
+            return fail("Could not read $path: ${e.message ?: e.javaClass.simpleName}")
         }
-        logger.logEditor("Opening project: ${projectFile.absolutePath}")
         if (hasProject()) closeProject()
         // References in the project file and its scenes are relative to the folder the project is in now (AST-09).
         assetPaths.projectRoot = projectFile.absoluteFile.parentFile
-        val project = ProjectFileReader.read(engine.serializer, projectFile)
+        return try {
+            openProject(project)
+        } catch (e: Exception) {
+            currentProject = null
+            assetPaths.projectRoot = null
+            fail("Could not open $path: ${e.message ?: e.javaClass.simpleName}")
+        }
+    }
 
-        return openProject(project)
+    private fun fail(reason: String): Boolean {
+        lastError = reason
+        logger.logEditor(reason, LogLevel.ERROR)
+        return false
     }
 
     fun openProject(
@@ -206,15 +223,27 @@ class ProjectManager(
 
         if (!defaultSceneFile.exists()) {
             logger.logEditor("No default scene found at ${defaultSceneFile.absolutePath}", LogLevel.ERROR)
+            eventSystem.publish(EditorError("error.open_scene.title", defaultSceneFile.absolutePath, "error.default_scene_missing.message"))
             return
         }
 
+        // A missing or broken scene file is reported and skipped; the others still open (EDT-10).
+        val failed = mutableListOf<String>()
         val scenes = project.scenesPath.mapNotNull { path ->
             val file = File(path)
-            engine.serializer.decodeFile<Scene?>(FileKind.SCENE, file.readText())
+            try {
+                engine.serializer.decodeFile<Scene?>(FileKind.SCENE, file.readText())
+            } catch (e: Exception) {
+                failed += "${file.absolutePath}: ${e.message ?: e.javaClass.simpleName}"
+                null
+            }
+        }
+        if (failed.isNotEmpty()) {
+            failed.forEach { logger.logEditor("Could not load scene $it", LogLevel.ERROR) }
+            eventSystem.publish(EditorError("error.open_scene.title", failed.joinToString("\n")))
         }
         if (scenes.isEmpty()) {
-            logger.logEditor("Failed to load default scene from ${defaultSceneFile.absolutePath}")
+            logger.logEditor("Failed to load default scene from ${defaultSceneFile.absolutePath}", LogLevel.ERROR)
             return
         }
         sceneManager.openScenes(scenes)
@@ -223,18 +252,15 @@ class ProjectManager(
     }
 
     fun saveProject(): Boolean {
-        val project = currentProject ?: run {
-            logger.logEditor("No project to save")
-            return false
-        }
+        lastError = null
+        val project = currentProject ?: return fail("No project is open.")
 
         logger.logEditor("Saving project: ${project.name}")
         try {
             File(project.projectPath).writeText(engine.serializer.encodeFile(FileKind.PROJECT, project))
             eventSystem.publish(ProjectEvent.Saved(project))
         } catch (e: Exception) {
-            logger.logEditor("Error while saving project: ${e.message}", LogLevel.ERROR)
-            return false
+            return fail("Could not write ${project.projectPath}: ${e.message ?: e.javaClass.simpleName}")
         }
 
         return true
