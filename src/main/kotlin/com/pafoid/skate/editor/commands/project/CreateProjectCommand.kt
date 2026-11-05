@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.commands.project
 
+import com.pafoid.skate.editor.commands.ReportsFailure
 import com.pafoid.skate.editor.commands.ExecuteOnlyCommand
 import com.pafoid.skate.editor.commands.ExecutionTrackedCommand
 import com.pafoid.skate.editor.events.ProjectEvent.CreateProjectRequested
@@ -9,7 +10,9 @@ import java.io.File
 class CreateProjectCommand(
     private val event: CreateProjectRequested,
     private val projectManager: ProjectManager,
-) : ExecuteOnlyCommand, ExecutionTrackedCommand {
+) : ExecuteOnlyCommand, ReportsFailure {
+    override val errorTitleKey = "error.create_project.title"
+
     private var executeSucceeded = false
     private var failureReason: String? = null
 

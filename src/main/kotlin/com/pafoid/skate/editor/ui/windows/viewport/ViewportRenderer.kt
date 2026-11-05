@@ -49,7 +49,7 @@ class ViewportRenderer(
             engine.logger.logEditor("Screenshot skipped: the viewport has no size yet", LogLevel.WARN)
             return
         }
-        runCatching { ScreenshotUtils.takeScreenshot(frameBuffer.width, frameBuffer.height, frameBuffer.fboId) }
+        runCatching { ScreenshotUtils.takeScreenshot(frameBuffer.target, engine.device) }
             .onSuccess { engine.logger.logEditor("Screenshot captured (${frameBuffer.width}x${frameBuffer.height})") }
             .onFailure { engine.logger.logEditor("Screenshot failed: ${it.message}", LogLevel.ERROR) }
     }

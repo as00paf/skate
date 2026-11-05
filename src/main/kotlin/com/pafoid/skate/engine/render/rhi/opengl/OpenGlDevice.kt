@@ -4,6 +4,12 @@ import com.pafoid.skate.engine.render.graph.GpuQueryApi
 import com.pafoid.skate.engine.render.rhi.BufferDesc
 import com.pafoid.skate.engine.render.rhi.BufferUpdate
 import com.pafoid.skate.engine.render.rhi.BufferUsage
+import com.pafoid.skate.engine.render.rhi.IntRect
+import com.pafoid.skate.engine.render.rhi.PixelFormat
+import com.pafoid.skate.engine.render.rhi.RenderTargetDesc
+import com.pafoid.skate.engine.render.rhi.RhiRenderTarget
+import com.pafoid.skate.engine.render.rhi.RhiShader
+import com.pafoid.skate.engine.render.rhi.ShaderDesc
 import com.pafoid.skate.engine.render.rhi.RhiBuffer
 import com.pafoid.skate.engine.render.rhi.RhiCaps
 import com.pafoid.skate.engine.render.rhi.RhiCommandList
@@ -22,6 +28,13 @@ import org.lwjgl.opengl.GL11.GL_ONE_MINUS_SRC_ALPHA
 import org.lwjgl.opengl.GL11.GL_RENDERER
 import org.lwjgl.opengl.GL11.GL_SRC_ALPHA
 import org.lwjgl.opengl.GL11.GL_VERSION
+import org.lwjgl.opengl.GL11.GL_PACK_ALIGNMENT
+import org.lwjgl.opengl.GL11.glPixelStorei
+import org.lwjgl.opengl.GL11.glReadBuffer
+import org.lwjgl.opengl.GL11.glReadPixels
+import org.lwjgl.opengl.GL30.GL_COLOR_ATTACHMENT0
+import org.lwjgl.opengl.GL30.GL_READ_FRAMEBUFFER
+import org.lwjgl.opengl.GL30.glBindFramebuffer
 import org.lwjgl.opengl.GL11.glBlendFunc
 import org.lwjgl.opengl.GL11.glEnable
 import org.lwjgl.opengl.GL11.glGetFloat
@@ -33,6 +46,7 @@ import org.lwjgl.opengl.GL32.GL_TEXTURE_CUBE_MAP_SEAMLESS
 import org.lwjgl.opengl.GLCapabilities
 import org.lwjgl.opengl.GLUtil
 import java.io.PrintStream
+import java.nio.ByteBuffer
 
 /**
  * The OpenGL 3.3 core backend of the RHI (REN-12). Owns the context's state cache ([GLStateTracker]), binding cache
@@ -82,6 +96,22 @@ class OpenGlDevice private constructor(
         GlVertexInput(layout as GlVertexLayout, vertexBuffers, indexBuffer)
 
     override fun createTexture(desc: TextureDesc): RhiTexture = GlTexture(desc, caps.maxAnisotropy > 1f)
+
+    override fun createShader(desc: ShaderDesc): RhiShader = GlShader(desc)
+
+    override fun createRenderTarget(desc: RenderTargetDesc): RhiRenderTarget = GlRenderTarget(desc, caps.maxAnisotropy > 1f)
+
+    override fun readPixels(target: RhiRenderTarget?, attachment: Int, rect: IntRect, format: PixelFormat, out: ByteBuffer) {
+        require(!format.isDepth) { "readPixels reads color attachments" }
+        require(out.remaining() >= rect.width * rect.height * format.bytesPerPixel) { "Readback of $rect as $format overflows the buffer" }
+        val fbo = (target as GlRenderTarget?)?.fbo ?: 0
+        glBindFramebuffer(GL_READ_FRAMEBUFFER, fbo)
+        if (fbo != 0) glReadBuffer(GL_COLOR_ATTACHMENT0 + attachment)
+        glPixelStorei(GL_PACK_ALIGNMENT, 1)
+        val (_, glFormat, glType) = GlFormats.texture(format)
+        glReadPixels(rect.x, rect.y, rect.width, rect.height, glFormat, glType, out)
+        glBindFramebuffer(GL_READ_FRAMEBUFFER, 0)
+    }
 
     override fun commandList(): RhiCommandList = GlCommandList
 

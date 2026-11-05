@@ -47,6 +47,7 @@ class TooltipKeysTest {
             var i = at + ".tipped(".length
             var depth = 0
             var lastLiteral: String? = null
+            var arg = 0 // The key is the second argument; a shortcut may follow it (EDT-10).
             var inString = false
             val sb = StringBuilder()
             loop@ while (i < src.length) {
@@ -54,14 +55,14 @@ class TooltipKeysTest {
                 if (inString) {
                     when (c) {
                         '\\' -> { sb.append(c); i++; if (i < src.length) sb.append(src[i]) }
-                        '"' -> { inString = false; if (depth == 0) lastLiteral = sb.toString() }
+                        '"' -> { inString = false; if (depth == 0 && arg == 1) lastLiteral = sb.toString() }
                         else -> sb.append(c)
                     }
                 } else when (c) {
                     '"' -> { inString = true; sb.setLength(0) }
                     '(', '[', '{' -> depth++
                     ')', ']', '}' -> { if (depth == 0) break@loop; depth-- }
-                    ',' -> if (depth == 0) lastLiteral = null
+                    ',' -> if (depth == 0) arg++
                 }
                 i++
             }

@@ -1,21 +1,20 @@
 package com.pafoid.skate.editor.commands.scene
 
-import com.pafoid.skate.editor.commands.ExecuteOnlyCommand
 import com.pafoid.skate.engine.addComponent
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
-import com.pafoid.skate.engine.ecs.components.Component
 import com.pafoid.skate.engine.ecs.components.RenderComponent
 import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.ecs.systems.GameObjectManager
 import com.pafoid.skate.engine.getComponent
 
 class DuplicateGameObjectCommand(
-    private val gameObject: GameObject,
-    private val scene: Scene,
-    private val gameObjectManager: GameObjectManager,
-) : ExecuteOnlyCommand {
-    override fun execute() {
+    private val original: GameObject,
+    scene: Scene,
+    gameObjectManager: GameObjectManager,
+) : AddBuiltObjectCommand(scene, gameObjectManager) {
+    override fun build(): GameObject {
+        val gameObject = original
         val duplicated = GameObject("${gameObject.name} (Copy)")
         val originalTransform = gameObject.getComponent<Transform>()
         val newTransform = Transform()
@@ -27,20 +26,17 @@ class DuplicateGameObjectCommand(
 
         val originalRender = gameObject.getComponent<RenderComponent>()
         if (originalRender != null) {
-            val newRender = originalRender.copy()
-            originalRender.uId = Component.getIdCounter() + 1
+            // A fresh id for the copy; the original keeps its own (EDT-10: it used to be the one renumbered).
+            val newRender = originalRender.copy().also { it.uId = -1 }
             duplicated.addComponent(newRender)
         }
 
-        // A sibling of the original: top-level stays top-level, a child stays under the same parent.
-        gameObjectManager.addGameObject(duplicated, gameObject.parent ?: scene)
-        scene.selectedGameObject = duplicated
-        scene.isDirty = true
+        return duplicated
     }
 
-    override fun undo() {
-    }
+    /** A sibling of the original: top-level stays top-level, a child stays under the same parent. */
+    override fun parent(): GameObject = original.parent ?: scene
 
-    override fun getDisplayName(): String = "Duplicate ${gameObject.name}"
-    override fun getTargetName(): String = "${gameObject.name} (Copy)"
+    override fun getDisplayName(): String = "Duplicate ${original.name}"
+    override fun getTargetName(): String = "${original.name} (Copy)"
 }

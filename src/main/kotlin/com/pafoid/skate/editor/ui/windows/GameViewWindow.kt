@@ -1,5 +1,7 @@
 package com.pafoid.skate.editor.ui.windows
 
+import com.pafoid.skate.editor.imgui.data.Icons
+import com.pafoid.skate.editor.imgui.EmptyState
 import com.pafoid.skate.editor.imgui.label
 import com.pafoid.skate.app.Editor
 import com.pafoid.skate.editor.imgui.EditorScenesTabBar
@@ -22,6 +24,7 @@ import org.joml.Vector2f
 class GameViewWindow(
     private val engine: Engine,
     private val editor: Editor,
+    private val hasProject: () -> Boolean = { true },
 ) : EditorWindow("window.game_viewport", true) {
     private val stringManager = engine.stringManager
     private val sceneManager = engine.sceneManager
@@ -76,6 +79,7 @@ class GameViewWindow(
 
         viewportRenderer.render(windowSize)
         viewportRenderer.updateFramebuffer()
+        if (sceneManager.currentScene == null) renderEmptyState(windowPos)
 
         if (sceneManager.currentScene?.isRunning != true) {
             viewportContextMenu.render(windowPos, sceneManager.currentScene)
@@ -113,6 +117,16 @@ class GameViewWindow(
         }
 
         ImGui.end()
+    }
+
+    /** Over the blank viewport when no scene is open (EDT-10). */
+    private fun renderEmptyState(windowPos: ImVec2) {
+        ImGui.setCursorPos(windowPos.x, windowPos.y + TOOLBAR_HEIGHT)
+        if (ImGui.beginChild("##viewport_empty", 0f, 0f, false, ImGuiWindowFlags.NoBackground)) {
+            if (hasProject()) EmptyState.render(stringManager, Icons.CUBE, "empty.no_scene", "empty.viewport.hint")
+            else EmptyState.noProject(stringManager, engine.eventSystem)
+        }
+        ImGui.endChild()
     }
 
     private fun getLargestSizeForViewport(): ImVec2 {

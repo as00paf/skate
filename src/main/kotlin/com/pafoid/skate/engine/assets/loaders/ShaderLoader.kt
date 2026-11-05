@@ -3,7 +3,11 @@ package com.pafoid.skate.engine.assets.loaders
 import com.pafoid.skate.engine.assets.data.Shader
 import com.pafoid.skate.engine.core.LoggerService
 import com.pafoid.skate.engine.utils.ShaderConst
-import org.lwjgl.opengl.GL20
+import com.pafoid.skate.engine.render.rhi.RhiContext
+import com.pafoid.skate.engine.render.rhi.RhiDevice
+import com.pafoid.skate.engine.render.rhi.ShaderCompileError
+import com.pafoid.skate.engine.render.rhi.ShaderDesc
+import com.pafoid.skate.engine.render.rhi.ShaderStage
 import com.pafoid.skate.engine.render.shader.ShaderPreprocessor
 import java.io.File
 import java.io.IOException
@@ -17,6 +21,8 @@ class ShaderLoader(
     private val logger: LoggerService? = null,
     /** Directory holding the editable shader resources (e.g. `src/main/resources`); null disables live sources. */
     private val devSourceRoot: File? = null,
+    /** Device that compiles the programs; resolved at load time, so the loader can be built before the window. */
+    private val device: () -> RhiDevice = RhiContext::require,
 ) {
 
     private fun log(message: String, level: LoggerService.LogLevel = LoggerService.LogLevel.INFO) {
@@ -85,66 +91,15 @@ class ShaderLoader(
         return compile(filePath, vertexSrc, fragmentSrc)
     }
 
-    private fun compile(filePath: String, vertexSrc:String, fragmentSrc:String): Shader {
-        // First load and compile the vertex shader
-        val vertexShaderId = GL20.glCreateShader(GL20.GL_VERTEX_SHADER)
-        // Pass the shader source code to the GPU
-        GL20.glShaderSource(vertexShaderId, vertexSrc)
-        GL20.glCompileShader(vertexShaderId)
-
-        //Check for errors in compilation process
-        var success = GL20.glGetShaderi(vertexShaderId, GL20.GL_COMPILE_STATUS)
-        if(success == GL20.GL_FALSE) {
-            val len = GL20.glGetShaderi(vertexShaderId, GL20.GL_INFO_LOG_LENGTH)
-            fail(filePath, "Vertex compilation failed", GL20.glGetShaderInfoLog(vertexShaderId, len)) {
-                GL20.glDeleteShader(vertexShaderId)
-            }
+    private fun compile(filePath: String, vertexSrc: String, fragmentSrc: String): Shader = try {
+        Shader(device().createShader(ShaderDesc(filePath, vertexSrc, fragmentSrc)))
+    } catch (e: ShaderCompileError) {
+        val what = when (e.stage) {
+            ShaderStage.VERTEX -> "Vertex compilation failed"
+            ShaderStage.FRAGMENT -> "Fragment compilation failed"
+            ShaderStage.LINK -> "Linking of shaders failed"
         }
-
-        // Then load and compile the fragment shader
-        val fragmentShaderId = GL20.glCreateShader(GL20.GL_FRAGMENT_SHADER)
-        // Pass the shader source code to the GPU
-        GL20.glShaderSource(fragmentShaderId, fragmentSrc)
-        GL20.glCompileShader(fragmentShaderId)
-
-        //Check for errors in compilation process
-        success = GL20.glGetShaderi(fragmentShaderId, GL20.GL_COMPILE_STATUS)
-        if(success == GL20.GL_FALSE) {
-            val len = GL20.glGetShaderi(fragmentShaderId, GL20.GL_INFO_LOG_LENGTH)
-            fail(filePath, "Fragment compilation failed", GL20.glGetShaderInfoLog(fragmentShaderId, len)) {
-                GL20.glDeleteShader(vertexShaderId)
-                GL20.glDeleteShader(fragmentShaderId)
-            }
-        }
-
-        // Link shaders and check for error
-        val shaderProgId = GL20.glCreateProgram()
-        GL20.glAttachShader(shaderProgId, vertexShaderId)
-        GL20.glAttachShader(shaderProgId, fragmentShaderId)
-
-        GL20.glLinkProgram(shaderProgId)
-
-        // Check for linking errors
-        success = GL20.glGetProgrami(shaderProgId, GL20.GL_LINK_STATUS)
-        if(success == GL20.GL_FALSE) {
-            val len = GL20.glGetProgrami(shaderProgId, GL20.GL_INFO_LOG_LENGTH)
-            fail(filePath, "Linking of shaders failed", GL20.glGetProgramInfoLog(shaderProgId, len)) {
-                GL20.glDeleteProgram(shaderProgId)
-                GL20.glDeleteShader(vertexShaderId)
-                GL20.glDeleteShader(fragmentShaderId)
-            }
-        }
-
-        return Shader(shaderProgId, vertexShaderId, fragmentShaderId)
-    }
-
-    private fun fail(filePath: String, what: String, infoLog: String, cleanup: () -> Unit): Nothing {
-        cleanup()
-        log("$what for '$filePath': $infoLog", LoggerService.LogLevel.ERROR)
+        log("$what for '$filePath': ${e.log}", LoggerService.LogLevel.ERROR)
         throw ShaderCompileException("$what for '$filePath'")
-    }
-
-    private fun bindAttribute(shaderProgId:Int, attribute: Int, varName: String) {
-        GL20.glBindAttribLocation(shaderProgId, attribute, varName)
     }
 }

@@ -24,7 +24,7 @@ import org.junit.jupiter.api.Test
 class SyncCommandSemanticsTest {
 
     @Test
-    fun `create primitive command is execute only`() {
+    fun `create primitive command is undoable (EDT-10)`() {
         val command = CreatePrimitiveCommand(
             "Cube",
             PrimitiveType.CUBE,
@@ -33,39 +33,39 @@ class SyncCommandSemanticsTest {
             mockk<GameObjectManager>(relaxed = true),
             mockk<AssetsManager>(relaxed = true)
         )
-        assertEquals(CommandCategory.EXECUTE_ONLY, command.getCategory())
+        assertEquals(CommandCategory.UNDOABLE, command.getCategory())
     }
 
     @Test
-    fun `create light command is execute only`() {
+    fun `create light command is undoable (EDT-10)`() {
         val command = CreateLightCommand(
             "Directional Light",
             LightType.DIRECTIONAL,
             mockk<Scene>(relaxed = true),
             mockk<GameObjectManager>(relaxed = true)
         )
-        assertEquals(CommandCategory.EXECUTE_ONLY, command.getCategory())
+        assertEquals(CommandCategory.UNDOABLE, command.getCategory())
     }
 
     @Test
-    fun `duplicate game object command is execute only`() {
+    fun `duplicate game object command is undoable (EDT-10)`() {
         val command = DuplicateGameObjectCommand(
             GameObject("Original"),
             mockk<Scene>(relaxed = true),
             mockk<GameObjectManager>(relaxed = true)
         )
-        assertEquals(CommandCategory.EXECUTE_ONLY, command.getCategory())
+        assertEquals(CommandCategory.UNDOABLE, command.getCategory())
     }
 
     @Test
-    fun `apply texture command is execute only`() {
+    fun `apply texture command is undoable (EDT-10)`() {
         val command = ApplyTextureCommand(
             GameObject("Target"),
             "assets/textures/test.png",
             mockk<AssetsManager>(relaxed = true),
             mockk<EventSystem>(relaxed = true)
         )
-        assertEquals(CommandCategory.EXECUTE_ONLY, command.getCategory())
+        assertEquals(CommandCategory.UNDOABLE, command.getCategory())
     }
 
     @Test

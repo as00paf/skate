@@ -177,7 +177,7 @@ data class Animator(
     }
 
     /**
-     * Rebuilds the animations list from serialized file paths.
+     * Rebuilds the animations list from serialized file paths, read from disk or from the exported game's pack.
      * Called by SceneSerializer after scene deserialization.
      */
     fun resolveAnimationsFromPaths(assetsManager: AssetsManager, logger: LoggerService) {
@@ -186,14 +186,16 @@ data class Animator(
         currentAnimation = null
 
         for (path in animationPaths) {
-            val file = File(path)
-            if (file.exists()) {
-                try {
-                    val animation = assetsManager.loadAnimationSync(path)
-                    animations.add(animation)
-                } catch (e: Exception) {
-                    logger.log("Failed to load animation from path: $path - ${e.message}", LogLevel.ERROR)
-                }
+            // AssetPaths.localPath covers every form: absolute (editor), project-relative (AST-09) and packed clips of
+            // an exported game (extracted from the pack). A clip found nowhere is dropped with a warning.
+            if (!File(path).isFile && !File(assetsManager.paths.localPath(path)).isFile) {
+                logger.log("Animation clip not found, dropped: $path", LogLevel.WARN)
+                continue
+            }
+            try {
+                animations.add(assetsManager.loadAnimationSync(path))
+            } catch (e: Exception) {
+                logger.log("Failed to load animation from path: $path - ${e.message}", LogLevel.ERROR)
             }
         }
 

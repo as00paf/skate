@@ -14,7 +14,7 @@ import org.lwjgl.glfw.GLFW.glfwInit
 import org.lwjgl.glfw.GLFW.glfwMakeContextCurrent
 import org.lwjgl.glfw.GLFW.glfwTerminate
 import org.lwjgl.glfw.GLFW.glfwWindowHint
-import org.lwjgl.opengl.GL
+import com.pafoid.skate.engine.render.rhi.opengl.OpenGlDevice
 import org.lwjgl.system.MemoryUtil.NULL
 import java.io.File
 
@@ -22,6 +22,7 @@ class ShaderValidationTest {
 
     companion object {
         private var window: Long = NULL
+        private var device: OpenGlDevice? = null
 
         @BeforeAll
         @JvmStatic
@@ -36,12 +37,13 @@ class ShaderValidationTest {
                 throw IllegalStateException("Failed to create the GLFW window")
             }
             glfwMakeContextCurrent(window)
-            GL.createCapabilities()
+            device = OpenGlDevice.create()
         }
 
         @AfterAll
         @JvmStatic
         fun tearDown() {
+            device?.close()
             if (window != NULL) {
                 glfwDestroyWindow(window)
             }

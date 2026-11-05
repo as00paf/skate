@@ -175,6 +175,7 @@ object GLStateTracker {
      * Use this when external code (e.g., ImGui) may have modified OpenGL state.
      */
     fun invalidateCache() {
+        GlPrograms.invalidate()
         blendEnabled = glIsEnabled(GL_BLEND)
         depthTestEnabled = glIsEnabled(GL_DEPTH_TEST)
         depthMaskEnabled = glGetBoolean(GL_DEPTH_WRITEMASK)

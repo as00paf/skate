@@ -28,6 +28,7 @@ class SoundsTab(
         renderHeader(label, searchText)
 
         val files = items.filter { it.name.contains(searchText.get(), ignoreCase = true) }
+        if (renderEmptyState(items.size, files.size, searchText)) return
 
         val tableFlags = ImGuiTableFlags.RowBg or 
                          ImGuiTableFlags.BordersInnerV or 

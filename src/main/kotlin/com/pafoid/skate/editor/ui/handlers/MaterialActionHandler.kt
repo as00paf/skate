@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.ui.handlers
 
+import com.pafoid.skate.editor.events.EditorError
 import com.pafoid.skate.engine.core.StringManager
 import com.pafoid.skate.editor.commands.objects.AssignMaterialCommand
 import com.pafoid.skate.editor.commands.objects.EditMaterialCommand
@@ -58,7 +59,7 @@ class TinyMaterialFileDialogs(private val strings: StringManager) : MaterialFile
  * @param resolveTexture Loads the textures a `.skmat` references
  */
 class MaterialActionHandler(
-    eventSystem: EventSystem,
+    private val eventSystem: EventSystem,
     private val undoRedoManager: UndoRedoManager,
     private val logger: LoggerService,
     private val projectDir: () -> File?,
@@ -109,6 +110,7 @@ class MaterialActionHandler(
             true
         } catch (e: Exception) {
             logger.logEditor("Failed to save material to ${file.path}: ${e.message}", LogLevel.ERROR)
+            eventSystem.publish(EditorError("error.save_material.title", "${file.absolutePath}: ${e.message ?: e.javaClass.simpleName}"))
             false
         }
     }
@@ -120,6 +122,7 @@ class MaterialActionHandler(
             MaterialAsset.load(File(path)).toMaterial(resolveTexture)
         } catch (e: Exception) {
             logger.logEditor("Failed to load material $path: ${e.message}", LogLevel.ERROR)
+            eventSystem.publish(EditorError("error.load_material.title", "$path: ${e.message ?: e.javaClass.simpleName}"))
             return
         }
         assign(component, material, File(path).absolutePath, AssignMaterialCommand.Kind.LOAD)

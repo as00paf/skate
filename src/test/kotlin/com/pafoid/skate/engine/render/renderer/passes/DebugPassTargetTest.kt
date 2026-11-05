@@ -26,10 +26,11 @@ class DebugPassTargetTest {
             mockk<CameraManager>(relaxed = true),
             bindTarget = { events += "bindTarget" },
             drawState = { draw -> events += "state"; draw(); events += "restore" },
+            endTarget = { events += "endTarget" },
         )
 
         pass.execute(Scene())
 
-        assertEquals(listOf("bindTarget", "state", "draw", "restore"), events)
+        assertEquals(listOf("bindTarget", "state", "draw", "restore", "endTarget"), events)
     }
 }

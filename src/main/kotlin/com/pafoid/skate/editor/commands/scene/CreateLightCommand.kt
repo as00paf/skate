@@ -1,6 +1,5 @@
 package com.pafoid.skate.editor.commands.scene
 
-import com.pafoid.skate.editor.commands.ExecuteOnlyCommand
 import com.pafoid.skate.engine.addComponent
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
@@ -14,10 +13,10 @@ import com.pafoid.skate.engine.render.data.LightType
 class CreateLightCommand(
     private val name: String,
     private val type: LightType,
-    private val scene: Scene,
-    private val gameObjectManager: GameObjectManager,
-) : ExecuteOnlyCommand {
-    override fun execute() {
+    scene: Scene,
+    gameObjectManager: GameObjectManager,
+) : AddBuiltObjectCommand(scene, gameObjectManager) {
+    override fun build(): GameObject {
         val lightObj = GameObject(name)
         val transform = Transform()
         when (type) {
@@ -42,13 +41,7 @@ class CreateLightCommand(
             }
         }
         lightObj.addComponent(transform)
-
-        gameObjectManager.addGameObject(lightObj)
-        scene.selectedGameObject = lightObj
-        scene.isDirty = true
-    }
-
-    override fun undo() {
+        return lightObj
     }
 
     override fun getDisplayName(): String = "Create $name"

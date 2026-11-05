@@ -82,7 +82,7 @@ class ActionSearchProvider(
             displayNameKey = "search.action.duplicate",
             keywords = listOf("duplicate", "copy", "clone", "replicate"),
             descriptionKey = "search.action.duplicate.desc",
-            icon = Icons.COPY,
+            icon = Icons.CLONE,
             execute = { duplicateSelected() }
         ),
         EditorAction(
@@ -98,7 +98,7 @@ class ActionSearchProvider(
             displayNameKey = "search.action.save_scene_as",
             keywords = listOf("save", "as", "scene", "export", "copy"),
             descriptionKey = "search.action.save_scene_as.desc",
-            icon = Icons.FOLDER_OPEN,
+            icon = Icons.SAVE,
             execute = { saveSceneAs() }
         ),
         EditorAction(
@@ -106,7 +106,7 @@ class ActionSearchProvider(
             displayNameKey = "search.action.close_scene",
             keywords = listOf("close", "scene", "remove", "exit"),
             descriptionKey = "search.action.close_scene.desc",
-            icon = Icons.TRASH,
+            icon = Icons.WINDOW_CLOSE,
             execute = { closeScene() }
         ),
         EditorAction(
@@ -114,7 +114,7 @@ class ActionSearchProvider(
             displayNameKey = "search.action.close_other_scenes",
             keywords = listOf("close", "others", "scenes", "remove"),
             descriptionKey = "search.action.close_other_scenes.desc",
-            icon = Icons.TRASH,
+            icon = Icons.WINDOW_CLOSE,
             execute = { closeOtherScenes() }
         ),
         EditorAction(

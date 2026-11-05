@@ -24,6 +24,8 @@ data class EditorSettings(
     var completionAutoPopup: Boolean = true,
     var completionDelayMs: Int = 200,
     var graphics: GraphicsSettings = GraphicsSettings(),
+    /** Game jar (or folder holding it) used for exports when none is found next to the editor (AST-11). */
+    var gameJarPath: String? = null,
 ) {
 
     fun addRecentProject(projectPath: String): EditorSettings {

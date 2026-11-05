@@ -17,6 +17,8 @@ import com.pafoid.skate.engine.render.state.SortKey
 import com.pafoid.skate.engine.assets.data.models.AlphaMode
 import com.pafoid.skate.engine.getComponent
 import com.pafoid.skate.engine.render.FrameBuffer
+import com.pafoid.skate.engine.render.rhi.ClearValues
+import com.pafoid.skate.engine.render.rhi.RhiContext
 import com.pafoid.skate.engine.render.data.Renderable2D
 import com.pafoid.skate.engine.render.lighting.LightBuffer
 import com.pafoid.skate.engine.render.lighting.LightCulling
@@ -31,23 +33,19 @@ import com.pafoid.skate.engine.render.renderer.SkyDomeRenderer
 import com.pafoid.skate.engine.render.shadow.ShadowFrame
 import com.pafoid.skate.engine.render.utils.withBlendState
 import com.pafoid.skate.engine.render.rhi.opengl.GLStateTracker
+import com.pafoid.skate.engine.render.rhi.opengl.GlPrograms
 import com.pafoid.skate.engine.render.utils.withCullFace
 import com.pafoid.skate.engine.render.utils.withDepthMask
 import com.pafoid.skate.engine.render.utils.withDepthTest
 import com.pafoid.skate.engine.utils.ShaderConst.Uniforms
 import org.joml.Vector3f
-import org.lwjgl.opengl.GL30
 import org.lwjgl.opengl.GL30.GL_ARRAY_BUFFER
-import org.lwjgl.opengl.GL30.GL_FRAMEBUFFER
 import org.lwjgl.opengl.GL30.GL_TEXTURE0
 import org.lwjgl.opengl.GL30.GL_TEXTURE_2D
 import org.lwjgl.opengl.GL30.glActiveTexture
 import org.lwjgl.opengl.GL30.glBindBuffer
-import org.lwjgl.opengl.GL30.glBindFramebuffer
 import org.lwjgl.opengl.GL30.glBindTexture
 import org.lwjgl.opengl.GL30.glBindVertexArray
-import org.lwjgl.opengl.GL30.glUseProgram
-import org.lwjgl.opengl.GL30.glViewport
 
 /**
  * Main geometry rendering pass.
@@ -87,15 +85,15 @@ class GeometryPass(
     override fun execute(scene: Scene) {
         val renderables = mutableListOf<Renderable2D>()
 
-        // Setup framebuffer
-        if (useFbo) frameBuffer.bind() else glBindFramebuffer(GL_FRAMEBUFFER, 0)
-        glViewport(0, 0, frameBuffer.width, frameBuffer.height)
-
         // Clear with sky color from EnvironmentComponent
         val environmentComponent = scene.getComponent<EnvironmentComponent>()?.takeIf { it.enabled }
         val renderSky = environmentComponent?.renderSky == true
-        val skyColor = environmentComponent?.skyColor.takeIf { renderSky }
-        clearColor(skyColor ?: DEFAULT_SKY_COLOR)
+        val skyColor = environmentComponent?.skyColor.takeIf { renderSky } ?: DEFAULT_SKY_COLOR
+        clear.color!!.let { it[0] = skyColor.x; it[1] = skyColor.y; it[2] = skyColor.z }
+        GLStateTracker.setDepthTestEnabled(true)
+        GLStateTracker.setDepthMask(true)
+        val cmd = RhiContext.require().commandList()
+        cmd.beginPass(if (useFbo) frameBuffer.target else null, clear = clear, viewport = presentedViewport.of(frameBuffer, useFbo))
 
         val camera = cameraManager.camera
         val cameraPosition = cameraManager.transform.worldMatrix.getTranslation(Vector3f())
@@ -164,7 +162,12 @@ class GeometryPass(
 
         // Render Sky Dome
         skyDomeRenderer.render(camera, cameraPosition, scene)
+        cmd.endPass()
     }
+
+    /** Clear values of the scene target; the color is the frame's sky color. */
+    private val clear = ClearValues(floatArrayOf(0f, 0f, 0f, 1f), 1f)
+    private val presentedViewport = PresentedViewport()
 
     private val lightBuffer = LightBuffer()
     private val sceneLights = ArrayList<LightData>()
@@ -200,19 +203,9 @@ class GeometryPass(
         }
     }
 
-    private fun clearColor(sky: Vector3f) {
-        GLStateTracker.setDepthTestEnabled(true)
-        GLStateTracker.setDepthMask(true) // glClear only clears depth while depth writes are on
-        GL30.glClearColor(sky.x, sky.y, sky.z, 1.0f)
-        GL30.glClear(GL30.GL_COLOR_BUFFER_BIT or GL30.GL_DEPTH_BUFFER_BIT)
-    }
-
     override fun cleanup() {
-        if (useFbo) {
-            frameBuffer.unbind()
-        }
         // Final state cleanup
-        glUseProgram(0)
+        GlPrograms.use(0)
         glBindVertexArray(0)
         glBindBuffer(GL_ARRAY_BUFFER, 0)
         glActiveTexture(GL_TEXTURE0)
