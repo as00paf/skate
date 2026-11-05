@@ -200,7 +200,7 @@ Asset management works but needs a complete review.
   - Do: From EDT-37: bundle `assets/strings/game/` into exported builds (`ProjectExporter`/`AssetsPacker`) and load it from the pack in `GameMain`; today the exported game reads a relative path that isn't shipped.
   - Done when: An exported sample shows translated UI text (no raw keys) in EN and FR; packing and loading tested.
   - Deps: EDT-37
-- [~] @skate-assets **AST-08** `P1` Export materials with their textures
+- [x] **AST-08** `P1` Export materials with their textures
   - Do: From EDT-17: add `skmat` to `ReferenceCollector.scanExtensions` so exports include the textures a `.skmat` uses, and make packed `.skmat` files readable at runtime through `AssetsResolver.resolveData`.
   - Done when: An exported project using a saved `.skmat` renders it correctly; packing and runtime loading tested.
   - Deps: EDT-17, EDT-09
@@ -590,7 +590,7 @@ Multiplayer and Steam support need to be added.
   - Deps: NET-01
 
 ---
-- [~] @skate-online **NET-06** `P2` Review GPL-17 prediction wiring
+- [x] **NET-06** `P2` Review GPL-17 prediction wiring
   - Do: From GPL-17: review `engine/net/PredictionModels.kt`, `engine/net/LoopbackPrediction.kt` and their registration in `Serializer`/`Engine.kt`; update `docs/testing/NET-03.md` (prediction is now wired into the game via the Netcode showcase demo).
   - Done when: Review fixes committed; docs updated; tests green.
   - Deps: GPL-17
