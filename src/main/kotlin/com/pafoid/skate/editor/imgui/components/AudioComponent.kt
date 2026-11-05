@@ -35,19 +35,19 @@ fun AudioComponent.imgui(engine: Engine) {
     fun after() { if (ImGui.isItemDeactivatedAfterEdit()) commit = true }
     fun edit(next: AudioComponentSettings) { draft = next; changed = true }
 
-    fun <E : Enum<E>> combo(key: String, entries: List<E>, value: E, apply: (E) -> AudioComponentSettings) {
+    fun <E : Enum<E>> enumField(key: String, entries: List<E>, value: E, apply: (E) -> AudioComponentSettings) {
         val names = entries.map { it.name }.toTypedArray()
         val index = ImInt(value.ordinal)
         if (ImGui.combo(ImGuiIds.stable(s(key), key), index, names, names.size)) publishNow = apply(entries[index.get()])
         tip(key)
     }
 
-    fun check(key: String, value: Boolean, apply: (Boolean) -> AudioComponentSettings) {
+    fun boolField(key: String, value: Boolean, apply: (Boolean) -> AudioComponentSettings) {
         if (ImGui.checkbox("${s(key)}##$key", value)) publishNow = apply(!value)
         tip(key)
     }
 
-    fun drag(key: String, value: Float, speed: Float, min: Float, max: Float, apply: (Float) -> AudioComponentSettings) {
+    fun floatField(key: String, value: Float, speed: Float, min: Float, max: Float, apply: (Float) -> AudioComponentSettings) {
         val a = floatArrayOf(value)
         if (ImGui.dragFloat("${s(key)}##$key", a, speed, min, max)) edit(apply(a[0]))
         after()
@@ -82,13 +82,13 @@ fun AudioComponent.imgui(engine: Engine) {
     }
 
     ImGui.separator()
-    combo("bus", BusId.entries, draft.bus) { draft.copy(bus = it) }
+    enumField("bus", BusId.entries, draft.bus) { draft.copy(bus = it) }
     val volume = floatArrayOf(draft.volume)
     if (ImGui.sliderFloat("${s("volume")}##volume", volume, 0f, 1f)) edit(draft.copy(volume = volume[0]))
     after()
-    check("loops", draft.loops) { draft.copy(loops = it) }
-    check("playOnAwake", draft.playOnAwake) { draft.copy(playOnAwake = it) }
-    combo("streamMode", StreamMode.entries, draft.streamMode) { draft.copy(streamMode = it) }
+    boolField("loops", draft.loops) { draft.copy(loops = it) }
+    boolField("playOnAwake", draft.playOnAwake) { draft.copy(playOnAwake = it) }
+    enumField("streamMode", StreamMode.entries, draft.streamMode) { draft.copy(streamMode = it) }
     val priority = intArrayOf(draft.priority)
     if (ImGui.dragInt("${s("priority")}##priority", priority, 0.5f, 0, AudioComponentSettings.MAX_PRIORITY)) {
         edit(draft.copy(priority = priority[0]))
@@ -97,13 +97,13 @@ fun AudioComponent.imgui(engine: Engine) {
     tip("priority")
 
     ImGui.separator()
-    check("is3D", draft.is3D) { draft.copy(is3D = it) }
+    boolField("is3D", draft.is3D) { draft.copy(is3D = it) }
     if (draft.is3D) {
-        combo("attenuationModel", AttenuationModel.entries, draft.attenuationModel) { draft.copy(attenuationModel = it) }
-        drag("minDistance", draft.minDistance, 0.05f, 0f, 10_000f) { draft.copy(minDistance = it) }
-        drag("maxDistance", draft.maxDistance, 0.1f, 0f, 10_000f) { draft.copy(maxDistance = it) }
-        drag("rolloff", draft.rolloff, 0.01f, 0f, 100f) { draft.copy(rolloff = it) }
-        drag("dopplerFactor", draft.dopplerFactor, 0.01f, 0f, 10f) { draft.copy(dopplerFactor = it) }
+        enumField("attenuationModel", AttenuationModel.entries, draft.attenuationModel) { draft.copy(attenuationModel = it) }
+        floatField("minDistance", draft.minDistance, 0.05f, 0f, 10_000f) { draft.copy(minDistance = it) }
+        floatField("maxDistance", draft.maxDistance, 0.1f, 0f, 10_000f) { draft.copy(maxDistance = it) }
+        floatField("rolloff", draft.rolloff, 0.01f, 0f, 100f) { draft.copy(rolloff = it) }
+        floatField("dopplerFactor", draft.dopplerFactor, 0.01f, 0f, 10f) { draft.copy(dopplerFactor = it) }
         if (draft.bus == BusId.MUSIC && draft.dopplerFactor > 0f) ImGui.textDisabled(s("dopplerFactor.music"))
     }
 
