@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.ui.windows
 
+import com.pafoid.skate.editor.imgui.tipped
 import com.pafoid.skate.editor.events.ProjectEvent
 import com.pafoid.skate.editor.events.ProjectEvent.OpenProjectRequested
 import com.pafoid.skate.editor.events.WindowAction
@@ -119,11 +120,11 @@ class ProjectSwitcherDialog(
             val contentRegionWidth = ImGui.getContentRegionAvailX()
             ImGui.setCursorPosX(ImGui.getCursorPosX() + contentRegionWidth - totalWidth)
 
-            if (ImGui.button(
+            if (stringManager.tipped(ImGui.button(
                     "${Icons.PLUS} ${stringManager.getString("btn.new_project")}",
                     newButtonWidth,
                     buttonHeight
-                )
+                ), "btn.new_project")
             ) {
                 eventSystem.publish(WindowAction.Hide("window.project_switcher"))
                 eventSystem.publish(WindowAction.Show("window.project_wizard"))
@@ -131,11 +132,11 @@ class ProjectSwitcherDialog(
 
             ImGui.sameLine(0f, spacing)
 
-            if (ImGui.button(
+            if (stringManager.tipped(ImGui.button(
                     "${Icons.FOLDER_OPEN} ${stringManager.getString("btn.open_project")}",
                     openButtonWidth,
                     buttonHeight
-                )
+                ), "btn.open_project")
             ) {
                 eventSystem.publish(ProjectEvent.OpenProjectFileRequested)
             }

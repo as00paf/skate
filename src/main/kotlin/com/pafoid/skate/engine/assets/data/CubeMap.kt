@@ -1,78 +1,64 @@
 package com.pafoid.skate.engine.assets.data
 
-import com.pafoid.skate.engine.render.GpuResource
+import com.pafoid.skate.engine.render.rhi.Filter
+import com.pafoid.skate.engine.render.rhi.PixelFormat
+import com.pafoid.skate.engine.render.rhi.RhiContext
+import com.pafoid.skate.engine.render.rhi.RhiDevice
+import com.pafoid.skate.engine.render.rhi.RhiTexture
+import com.pafoid.skate.engine.render.rhi.SamplerDesc
+import com.pafoid.skate.engine.render.rhi.TextureDesc
+import com.pafoid.skate.engine.render.rhi.TextureType
+import com.pafoid.skate.engine.render.rhi.Wrap
 import org.lwjgl.BufferUtils
-import org.lwjgl.opengl.GL11.GL_LINEAR
-import org.lwjgl.opengl.GL11.GL_RGB
-import org.lwjgl.opengl.GL11.GL_RGBA
-import org.lwjgl.opengl.GL11.GL_TEXTURE_MAG_FILTER
-import org.lwjgl.opengl.GL11.GL_TEXTURE_MIN_FILTER
-import org.lwjgl.opengl.GL11.GL_TEXTURE_WRAP_S
-import org.lwjgl.opengl.GL11.GL_TEXTURE_WRAP_T
-import org.lwjgl.opengl.GL11.GL_UNSIGNED_BYTE
-import org.lwjgl.opengl.GL11.glBindTexture
-import org.lwjgl.opengl.GL11.glGenTextures
-import org.lwjgl.opengl.GL11.glTexImage2D
-import org.lwjgl.opengl.GL11.glTexParameteri
-import org.lwjgl.opengl.GL12.GL_CLAMP_TO_EDGE
-import org.lwjgl.opengl.GL12.GL_TEXTURE_WRAP_R
-import org.lwjgl.opengl.GL13.GL_TEXTURE_CUBE_MAP
-import org.lwjgl.opengl.GL13.GL_TEXTURE_CUBE_MAP_POSITIVE_X
 import org.lwjgl.stb.STBImage.stbi_image_free
 import org.lwjgl.stb.STBImage.stbi_load
 import org.lwjgl.stb.STBImage.stbi_set_flip_vertically_on_load
+import java.nio.ByteBuffer
 
-class CubeMap : AutoCloseable {
-    private var texture: GpuResource? = null
-    private var id: Int = -1
+/** Six-face sky texture (+X, -X, +Y, -Y, +Z, -Z) on the RHI device. */
+class CubeMap(private val device: () -> RhiDevice = RhiContext::require) : AutoCloseable {
+    var texture: RhiTexture? = null
+        private set
+
+    private class Face(val width: Int, val height: Int, val channels: Int, val pixels: ByteBuffer)
 
     fun init(filePaths: Array<String>): CubeMap {
         texture?.close()
-        id = glGenTextures()
-        texture = GpuResource.texture(id)
-        glBindTexture(GL_TEXTURE_CUBE_MAP, id)
-
-        for (i in filePaths.indices) {
+        texture = null
+        val faces = filePaths.map { path ->
             val width = BufferUtils.createIntBuffer(1)
             val height = BufferUtils.createIntBuffer(1)
             val channels = BufferUtils.createIntBuffer(1)
             stbi_set_flip_vertically_on_load(false)
-            val image = stbi_load(filePaths[i], width, height, channels, 0)
-
-            if (image != null) {
-                val format = if (channels.get(0) == 4) GL_RGBA else GL_RGB
-                glTexImage2D(
-                    GL_TEXTURE_CUBE_MAP_POSITIVE_X + i,
-                    0, format, width.get(0), height.get(0), 0, format, GL_UNSIGNED_BYTE, image
-                )
-                stbi_image_free(image)
-            } else {
-                assert(false) { "Error: (CubeMap) Unable to load image: ${filePaths[i]}" }
-            }
+            val image = stbi_load(path, width, height, channels, 0)
+            assert(image != null) { "Error: (CubeMap) Unable to load image: $path" }
+            image?.let { Face(width.get(0), height.get(0), channels.get(0), it) }
         }
-
-        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
-        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
-        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE)
-        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE)
-        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE)
-
+        try {
+            val first = faces.firstOrNull { it != null } ?: return this
+            // Faces with 4 channels are RGBA, anything else is uploaded as RGB (as before REN-12)
+            val format = if (first.channels == 4) PixelFormat.RGBA8 else PixelFormat.RGB8
+            require(faces.all { it == null || (it.channels == 4) == (format == PixelFormat.RGBA8) }) {
+                "CubeMap faces must all have the same channel count: ${filePaths.joinToString()}"
+            }
+            val cube = device().createTexture(TextureDesc(TextureType.CUBE, format, first.width, first.height, layers = 6, sampler = SAMPLER))
+            faces.forEachIndexed { i, face -> if (face != null) cube.upload(0, i, face.pixels) }
+            texture = cube
+        } finally {
+            faces.forEach { face -> face?.let { stbi_image_free(it.pixels) } }
+        }
         return this
     }
 
-    fun bind() {
-        glBindTexture(GL_TEXTURE_CUBE_MAP, id)
-    }
-
-    fun unbind() {
-        glBindTexture(GL_TEXTURE_CUBE_MAP, 0)
-    }
-
-    fun getId() = id
+    /** Backend handle of the cube texture, or -1 before [init]. */
+    fun getId(): Int = texture?.nativeHandle?.toInt() ?: -1
 
     override fun close() {
         texture?.close()
         texture = null
-        id = -1
+    }
+
+    private companion object {
+        val SAMPLER = SamplerDesc(minFilter = Filter.LINEAR, magFilter = Filter.LINEAR, wrap = Wrap.CLAMP_TO_EDGE)
     }
 }

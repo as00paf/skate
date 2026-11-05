@@ -1,5 +1,7 @@
 package com.pafoid.skate.editor.ui.menus
 
+import com.pafoid.skate.editor.imgui.tippedWith
+import com.pafoid.skate.editor.imgui.tipped
 import com.pafoid.skate.editor.imgui.label
 import com.pafoid.skate.game.prefabs.PrefabCatalog
 import com.pafoid.skate.game.prefabs.PrefabCategory
@@ -50,22 +52,22 @@ class ViewportContextMenu(
 
     private fun renderCreateMenu(scene: Scene?) {
         // Create Empty
-        if (ImGui.menuItem("${Icons.PLUS} ${stringManager.getString("context.viewport.create_empty")}")) {
+        if (stringManager.tipped(ImGui.menuItem("${Icons.PLUS} ${stringManager.getString("context.viewport.create_empty")}"), "context.viewport.create_empty")) {
             scene?.let { eventSystem.publish(CreateEmpty(it)) }
         }
 
         // Create 3D Object submenu
         if (ImGui.beginMenu(stringManager.label("context.viewport.create_3d_object", "${Icons.CUBE} "))) {
-            if (ImGui.menuItem(stringManager.getString("context.viewport.create_3d_object.cube"))) {
+            if (stringManager.tipped(ImGui.menuItem(stringManager.getString("context.viewport.create_3d_object.cube")), "context.viewport.create_3d_object.cube")) {
                 eventSystem.publish(CreatePrimitive("Cube", PrimitiveType.CUBE, Vector3f(0.5f, 0.5f, 0.5f)))
             }
-            if (ImGui.menuItem(stringManager.getString("context.viewport.create_3d_object.sphere"))) {
+            if (stringManager.tipped(ImGui.menuItem(stringManager.getString("context.viewport.create_3d_object.sphere")), "context.viewport.create_3d_object.sphere")) {
                 eventSystem.publish(CreatePrimitive("Sphere", PrimitiveType.SPHERE, Vector3f(0.5f, 0.5f, 0.5f)))
             }
-            if (ImGui.menuItem(stringManager.getString("context.viewport.create_3d_object.cylinder"))) {
+            if (stringManager.tipped(ImGui.menuItem(stringManager.getString("context.viewport.create_3d_object.cylinder")), "context.viewport.create_3d_object.cylinder")) {
                 eventSystem.publish(CreatePrimitive("Cylinder", PrimitiveType.CYLINDER, Vector3f(0.5f, 1f, 0.5f)))
             }
-            if (ImGui.menuItem(stringManager.getString("context.viewport.create_3d_object.plane"))) {
+            if (stringManager.tipped(ImGui.menuItem(stringManager.getString("context.viewport.create_3d_object.plane")), "context.viewport.create_3d_object.plane")) {
                 eventSystem.publish(CreatePrimitive("Plane", PrimitiveType.PLANE, Vector3f(5f, 0f, 5f)))
             }
             ImGui.endMenu()
@@ -73,13 +75,13 @@ class ViewportContextMenu(
 
         // Create Light submenu
         if (ImGui.beginMenu(stringManager.label("context.viewport.create_light", "${Icons.SUN} "))) {
-            if (ImGui.menuItem(stringManager.getString("context.viewport.create_light.directional"))) {
+            if (stringManager.tipped(ImGui.menuItem(stringManager.getString("context.viewport.create_light.directional")), "context.viewport.create_light.directional")) {
                 eventSystem.publish(CreateLight("DirectionalLight", LightType.DIRECTIONAL))
             }
-            if (ImGui.menuItem(stringManager.getString("context.viewport.create_light.point"))) {
+            if (stringManager.tipped(ImGui.menuItem(stringManager.getString("context.viewport.create_light.point")), "context.viewport.create_light.point")) {
                 eventSystem.publish(CreateLight("PointLight", LightType.POINT))
             }
-            if (ImGui.menuItem(stringManager.getString("context.viewport.create_light.spot"))) {
+            if (stringManager.tipped(ImGui.menuItem(stringManager.getString("context.viewport.create_light.spot")), "context.viewport.create_light.spot")) {
                 eventSystem.publish(CreateLight("SpotLight", LightType.SPOT))
             }
             ImGui.endMenu()
@@ -88,7 +90,7 @@ class ViewportContextMenu(
         UiCreateMenu.render(stringManager, eventSystem, null)
 
         // Create Camera
-        if (ImGui.menuItem("${Icons.CAMERA} ${stringManager.getString("context.viewport.create_camera")}")) {
+        if (stringManager.tipped(ImGui.menuItem("${Icons.CAMERA} ${stringManager.getString("context.viewport.create_camera")}"), "context.viewport.create_camera")) {
             scene?.let { eventSystem.publish(CreateCamera(it)) }
         }
 
@@ -99,7 +101,7 @@ class ViewportContextMenu(
             PrefabCategory.entries.filter { it != PrefabCategory.PLAYER }.forEach { category ->
                 if (ImGui.beginMenu(stringManager.getString("lbl.prefabs.${category.name.lowercase()}"))) {
                     PrefabCatalog.inCategory(category).forEach { entry ->
-                        if (ImGui.menuItem(stringManager.getString(entry.type.nameKey))) {
+                        if (stringManager.tippedWith(ImGui.menuItem(stringManager.getString(entry.type.nameKey)), "context.viewport.spawn_prefab.tooltip")) {
                             eventSystem.publish(SpawnPrefab(entry.type))
                         }
                     }
@@ -115,22 +117,22 @@ class ViewportContextMenu(
     private fun renderObjectManipulationMenu(scene: Scene?) {
         val selectedObject = scene?.selectedGameObject
         if (selectedObject != null) {
-            if (ImGui.menuItem("${Icons.COPY} ${stringManager.getString("context.viewport.duplicate")}")) {
+            if (stringManager.tipped(ImGui.menuItem("${Icons.COPY} ${stringManager.getString("context.viewport.duplicate")}"), "context.viewport.duplicate")) {
                 eventSystem.publish(Duplicate(selectedObject))
             }
-            if (ImGui.menuItem("${Icons.TRASH} ${stringManager.getString("context.viewport.delete")}")) {
+            if (stringManager.tipped(ImGui.menuItem("${Icons.TRASH} ${stringManager.getString("context.viewport.delete")}"), "context.viewport.delete")) {
                 scene?.let { eventSystem.publish(Delete(selectedObject, it)) }
             }
             ImGui.separator()
         }
 
         // Focus Selected
-        if (ImGui.menuItem("${Icons.EYE} ${stringManager.getString("context.viewport.focus_selected")}")) {
+        if (stringManager.tipped(ImGui.menuItem("${Icons.EYE} ${stringManager.getString("context.viewport.focus_selected")}"), "context.viewport.focus_selected")) {
             eventSystem.publish(FocusSelected)
         }
 
         // Reset Camera
-        if (ImGui.menuItem("${Icons.ROTATE} ${stringManager.getString("context.viewport.reset_camera")}")) {
+        if (stringManager.tipped(ImGui.menuItem("${Icons.ROTATE} ${stringManager.getString("context.viewport.reset_camera")}"), "context.viewport.reset_camera")) {
             eventSystem.publish(ResetCamera)
         }
     }

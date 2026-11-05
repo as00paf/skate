@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.ui.windows
 
+import com.pafoid.skate.editor.imgui.tipped
 import com.pafoid.skate.editor.imgui.label
 import com.pafoid.skate.editor.events.ConsoleAction
 import com.pafoid.skate.editor.imgui.EditorWindow
@@ -209,24 +210,24 @@ class ConsoleWindow(engine: Engine) : EditorWindow("window.console", true) {
 
         // Right-click context menu
         if (ImGui.beginPopupContextWindow()) {
-            if (ImGui.menuItem(
+            if (stringManager.tipped(ImGui.menuItem(
                     stringManager.getString("context.console.copy_selected"),
                     stringManager.getString("shortcut.copy")
-                )
+                ), "context.console.copy_selected")
             ) {
                 publishCopySelected()
             }
-            if (ImGui.menuItem(stringManager.getString("context.console.copy_all"))) {
+            if (stringManager.tipped(ImGui.menuItem(stringManager.getString("context.console.copy_all")), "context.console.copy_all")) {
                 val sb = StringBuilder()
                 logs.forEach { sb.append("[${it.level}] ${it.message}\n") }
                 eventSystem.publish(ConsoleAction.CopyToClipboard(sb.toString()))
             }
             ImGui.separator()
-            if (ImGui.menuItem(stringManager.getString("context.console.clear_selection"))) {
+            if (stringManager.tipped(ImGui.menuItem(stringManager.getString("context.console.clear_selection")), "context.console.clear_selection")) {
                 selectedLogs.clear()
                 lastSelectedIndex = -1
             }
-            if (ImGui.menuItem(stringManager.getString("context.console.clear_all_logs"))) {
+            if (stringManager.tipped(ImGui.menuItem(stringManager.getString("context.console.clear_all_logs")), "context.console.clear_all_logs")) {
                 eventSystem.publish(ConsoleAction.ClearLogs)
                 selectedLogs.clear()
                 lastSelectedIndex = -1

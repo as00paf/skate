@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.imgui.components
 
+import com.pafoid.skate.editor.imgui.tipped
 import com.pafoid.skate.editor.commands.objects.AudioComponentSettings
 import com.pafoid.skate.editor.events.AudioAction
 import com.pafoid.skate.editor.imgui.EnumLabels
@@ -101,7 +102,7 @@ fun AudioComponent.imgui(engine: Engine) {
             ImGui.textUnformatted(File(clip).name)
             if (ImGui.isItemHovered()) ImGui.setTooltip(clip)
         }
-        ImGui.button("${s("clips.drop")}##clips_drop")
+        strings.tipped(ImGui.button("${s("clips.drop")}##clips_drop"), "component.AudioComponent.clips.drop")
         if (ImGui.beginDragDropTarget()) {
             ImGui.acceptDragDropPayload<String>(SOUND_PAYLOAD)?.let { publishNow = draft.copy(clips = draft.clips + it) }
             ImGui.endDragDropTarget()
@@ -139,8 +140,8 @@ fun AudioComponent.imgui(engine: Engine) {
     // Preview: plays the sound in edit mode; not saved, so not a command.
     ImGui.separator()
     if (!isPlaying) {
-        if (ImGui.button("${strings.getString("btn.audio.play")}##preview_play")) play()
-    } else if (ImGui.button("${strings.getString("btn.audio.stop")}##preview_stop")) {
+        if (strings.tipped(ImGui.button("${strings.getString("btn.audio.play")}##preview_play"), "btn.audio.play")) play()
+    } else if (strings.tipped(ImGui.button("${strings.getString("btn.audio.stop")}##preview_stop"), "btn.audio.stop")) {
         stopPlayback()
     }
 

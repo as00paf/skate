@@ -1,27 +1,23 @@
 package com.pafoid.skate.engine.render.renderer
 
-import com.pafoid.skate.engine.render.GpuResource
+import com.pafoid.skate.engine.render.rhi.BufferDesc
+import com.pafoid.skate.engine.render.rhi.BufferUpdate
+import com.pafoid.skate.engine.render.rhi.BufferUsage
+import com.pafoid.skate.engine.render.rhi.RhiBuffer
+import com.pafoid.skate.engine.render.rhi.RhiContext
+import com.pafoid.skate.engine.render.rhi.RhiVertexInput
+import com.pafoid.skate.engine.render.data.VertexLayouts
 import com.pafoid.skate.engine.assets.data.Shader
 import com.pafoid.skate.engine.ecs.systems.CameraManager
 import com.pafoid.skate.engine.utils.ShaderConst.Uniforms.PROJECTION
 import com.pafoid.skate.engine.utils.ShaderConst.Uniforms.VIEW
 import org.joml.Quaternionf
 import org.joml.Vector3f
-import org.lwjgl.opengl.GL11.GL_FLOAT
 import org.lwjgl.opengl.GL11.GL_LINES
 import org.lwjgl.opengl.GL11.GL_TRIANGLES
 import org.lwjgl.opengl.GL11.glDrawArrays
 import org.lwjgl.opengl.GL11.glLineWidth
-import org.lwjgl.opengl.GL15.GL_ARRAY_BUFFER
-import org.lwjgl.opengl.GL15.GL_DYNAMIC_DRAW
-import org.lwjgl.opengl.GL15.glBindBuffer
-import org.lwjgl.opengl.GL15.glBufferData
-import org.lwjgl.opengl.GL15.glBufferSubData
-import org.lwjgl.opengl.GL15.glGenBuffers
-import org.lwjgl.opengl.GL20.glEnableVertexAttribArray
-import org.lwjgl.opengl.GL20.glVertexAttribPointer
 import org.lwjgl.opengl.GL30.glBindVertexArray
-import org.lwjgl.opengl.GL30.glGenVertexArrays
 import kotlin.math.abs
 import kotlin.math.cos
 import kotlin.math.sin
@@ -45,14 +41,12 @@ class DebugRenderer(
     private val lineVertexData = FloatArray(MAX_LINES * 6 * 2)
     private val triangleVertexData = FloatArray(MAX_TRIANGLES * 6 * 3)
 
-    private var vao: GpuResource? = null
-    private var vbo: GpuResource? = null
-    private var triangleVao: GpuResource? = null
-    private var triangleVbo: GpuResource? = null
-    private val vaoId get() = vao?.id ?: -1
-    private val vboId get() = vbo?.id ?: -1
-    private val triangleVaoId get() = triangleVao?.id ?: -1
-    private val triangleVboId get() = triangleVbo?.id ?: -1
+    private var vao: RhiVertexInput? = null
+    private var vbo: RhiBuffer? = null
+    private var triangleVao: RhiVertexInput? = null
+    private var triangleVbo: RhiBuffer? = null
+    private val vaoId get() = vao?.nativeHandle?.toInt() ?: -1
+    private val triangleVaoId get() = triangleVao?.nativeHandle?.toInt() ?: -1
     
     private var started = false
 
@@ -67,26 +61,15 @@ class DebugRenderer(
         started = true
 
         if (vaoId != -1) return
-        
-        vao = GpuResource.vertexArray(glGenVertexArrays())
-        glBindVertexArray(vaoId)
-        vbo = GpuResource.buffer(glGenBuffers())
-        glBindBuffer(GL_ARRAY_BUFFER, vboId)
-        glBufferData(GL_ARRAY_BUFFER, lineVertexData.size.toLong() * Float.SIZE_BYTES, GL_DYNAMIC_DRAW)
-        glVertexAttribPointer(0, 3, GL_FLOAT, false, 6 * Float.SIZE_BYTES, 0)
-        glEnableVertexAttribArray(0)
-        glVertexAttribPointer(1, 3, GL_FLOAT, false, 6 * Float.SIZE_BYTES, 3 * Float.SIZE_BYTES.toLong())
-        glEnableVertexAttribArray(1)
 
-        triangleVao = GpuResource.vertexArray(glGenVertexArrays())
-        glBindVertexArray(triangleVaoId)
-        triangleVbo = GpuResource.buffer(glGenBuffers())
-        glBindBuffer(GL_ARRAY_BUFFER, triangleVboId)
-        glBufferData(GL_ARRAY_BUFFER, triangleVertexData.size.toLong() * Float.SIZE_BYTES, GL_DYNAMIC_DRAW)
-        glVertexAttribPointer(0, 3, GL_FLOAT, false, 6 * Float.SIZE_BYTES, 0)
-        glEnableVertexAttribArray(0)
-        glVertexAttribPointer(1, 3, GL_FLOAT, false, 6 * Float.SIZE_BYTES, 3 * Float.SIZE_BYTES.toLong())
-        glEnableVertexAttribArray(1)
+        val device = RhiContext.require()
+        val layout = device.createVertexLayout(VertexLayouts.DEBUG)
+        val lineBuffer = device.createBuffer(BufferDesc(BufferUsage.VERTEX, lineVertexData.size.toLong() * Float.SIZE_BYTES, BufferUpdate.DYNAMIC))
+        vbo = lineBuffer
+        vao = device.createVertexInput(layout, listOf(lineBuffer))
+        val triangleBuffer = device.createBuffer(BufferDesc(BufferUsage.VERTEX, triangleVertexData.size.toLong() * Float.SIZE_BYTES, BufferUpdate.DYNAMIC))
+        triangleVbo = triangleBuffer
+        triangleVao = device.createVertexInput(layout, listOf(triangleBuffer))
 
         glLineWidth(4.0f)
     }
@@ -138,8 +121,7 @@ class DebugRenderer(
                 triangleVertexData[index++] = tri.color.z
             }
         }
-        glBindBuffer(GL_ARRAY_BUFFER, triangleVboId)
-        glBufferSubData(GL_ARRAY_BUFFER, 0, triangleVertexData)
+        triangleVbo?.update(0, triangleVertexData)
         glBindVertexArray(triangleVaoId)
         if (groundTriangles.isNotEmpty()) {
             shader.uploadInt(GROUND_UNIFORM, 1)
@@ -165,8 +147,7 @@ class DebugRenderer(
                 lineVertexData[index++] = line.color.z
             }
         }
-        glBindBuffer(GL_ARRAY_BUFFER, vboId)
-        glBufferSubData(GL_ARRAY_BUFFER, 0, lineVertexData)
+        vbo?.update(0, lineVertexData)
         glBindVertexArray(vaoId)
         if (groundLines.isNotEmpty()) {
             shader.uploadInt(GROUND_UNIFORM, 1)

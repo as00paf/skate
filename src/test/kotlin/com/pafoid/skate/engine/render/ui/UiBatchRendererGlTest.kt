@@ -11,8 +11,8 @@ import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.lwjgl.BufferUtils
+import com.pafoid.skate.engine.render.rhi.opengl.OpenGlDevice
 import org.lwjgl.glfw.GLFW
-import org.lwjgl.opengl.GL
 import org.lwjgl.opengl.GL11.GL_BLEND
 import org.lwjgl.opengl.GL11.GL_COLOR_BUFFER_BIT
 import org.lwjgl.opengl.GL11.GL_DEPTH_TEST
@@ -55,6 +55,7 @@ class UiBatchRendererGlTest {
     companion object {
         private const val SIZE = 64
         private var window = NULL
+        private var device: OpenGlDevice? = null
 
         @BeforeAll
         @JvmStatic
@@ -68,12 +69,14 @@ class UiBatchRendererGlTest {
             window = GLFW.glfwCreateWindow(SIZE, SIZE, "UiBatchRendererGlTest", NULL, NULL)
             if (window == NULL) return
             GLFW.glfwMakeContextCurrent(window)
-            GL.createCapabilities()
+            device = OpenGlDevice.create()
         }
 
         @AfterAll
         @JvmStatic
         fun tearDown() {
+            device?.close()
+            device = null
             if (window != NULL) GLFW.glfwDestroyWindow(window)
             window = NULL
             GLFW.glfwTerminate()

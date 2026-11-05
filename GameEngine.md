@@ -115,7 +115,7 @@ The renderer works but needs cleaner APIs, caching, dynamic shaders, better mate
 - [~] @skate-render **REN-12** `P3` RHI abstraction (Vulkan-ready)
   - Do: Define backend-agnostic interfaces (`RhiDevice`, `RhiBuffer`, `RhiTexture`, `RhiPipeline`, `RhiCommandList`) and move all GL calls into an `OpenGlRhi` backend.
   - Done when: No GL call exists outside `render/rhi/opengl`. An architecture guard test enforces this.
-  - Design: `docs/design/REN-12.md` approved by the lead (round 15) with the §7 proposals as written: ImGuiLayer is the one allowed GL user; named uniforms via `ShaderParams`; Vulkan semantics (pass begin/end, depth range, Y-flip) owned by the backend; sync picking readback; main-thread only. Migrate in the §5 steps, one or two per round. Steps 0-1 done (round 17).
+  - Design: `docs/design/REN-12.md` approved by the lead (round 15) with the §7 proposals as written: ImGuiLayer is the one allowed GL user; named uniforms via `ShaderParams`; Vulkan semantics (pass begin/end, depth range, Y-flip) owned by the backend; sync picking readback; main-thread only. Migrate in the §5 steps, one or two per round. Steps 0-1 done (round 17), steps 2-3 done (round 18).
   - Deps: REN-03, REN-04, REN-05
 - [ ] **REN-13** `P3` Vulkan backend spike
   - Do: Build a minimal `VulkanRhi` that renders the sample scene's geometry pass.
@@ -627,7 +627,7 @@ All editor mutations must go through `Command` classes and the service layer (se
   - Do: Billboard icons plus wire gizmos (camera frustum, light range/cone, direction arrow), all selectable.
   - Done when: Every camera and light is visible and clickable in the scene view.
   - Deps: EDT-03
-- [ ] **EDT-05** `P2` Tooltips everywhere
+- [x] **EDT-05** `P2` Tooltips everywhere
   - Do: Add tooltips (via `StringManager` keys) to every toolbar button, property and menu item.
   - Done when: No interactive widget lacks a tooltip. A test checks that all tooltip keys exist in the string files.
 - [x] **EDT-06** `P2` Complete translations
@@ -753,6 +753,10 @@ All editor mutations must go through `Command` classes and the service layer (se
   - Do: Review the editor-side code written outside skate-editor in round 16: EDT-07 themes (gameui), EDT-08 shell panel (tooling), EDT-09 export wizard incl. `ExportWizardWindow`, `EditorMenuBar`/`WindowRegistry` additions, `ProjectEvents`, `ProjectActionHandler` (assets), EDT-14 audio inspector/mixer (audio), EDT-16 animator inspector (animation), EDT-17 material inspector (render), EDT-36 string fields/object picker (ecs). Check commands/undo, stable IDs, strings, window registration, consistency.
   - Done when: Review fixes committed with notes per task; tests green.
   - Deps: EDT-07, EDT-08, EDT-09, EDT-14, EDT-16, EDT-17, EDT-36
+- [x] **EDT-41** `P0` Reopening a recent project points to the wrong path
+  - Do: Human-reported on PR #20 (regression from AST-09): reopening a closed project from File > Recent Projects logs "Project file does not exist or invalid extension" with a wrong path. `EditorSettingsManager.recentProjects` decodes each `.skateproject` without a project root, so the AST-09 relative `projectPath` resolves against the working directory. Use the absolute path stored in the editor settings (and set `projectPath` from it), in the recent menu, `LoadLastProjectCommand` and `EditorScreen`; audit other places that decode a project file outside `openProjectFile`.
+  - Done when: Create, close, reopen from Recent Projects (and the startup last-project path) works, including after moving the project; test through the real path.
+  - Deps: AST-09
 
 ## Testing & tooling
 

@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.ui.windows
 
+import com.pafoid.skate.editor.imgui.tipped
 import com.pafoid.skate.editor.imgui.ImGuiIds
 import com.pafoid.skate.editor.commands.input.snapshot
 import com.pafoid.skate.editor.events.ConsoleAction
@@ -240,9 +241,9 @@ class InputTestingWindow(
         ImGui.indent()
         if (ImGui.checkbox(s("lbl.input_testing.pause"), log.paused)) log.paused = !log.paused
         ImGui.sameLine()
-        if (ImGui.button(s("btn.input_testing.clear"))) log.clear()
+        if (strings.tipped(ImGui.button(s("btn.input_testing.clear")), "btn.input_testing.clear")) log.clear()
         ImGui.sameLine()
-        if (ImGui.button(s("btn.input_testing.copy_log"))) events.publish(ConsoleAction.CopyToClipboard(log.lines.joinToString("\n")))
+        if (strings.tipped(ImGui.button(s("btn.input_testing.copy_log")), "btn.input_testing.copy_log")) events.publish(ConsoleAction.CopyToClipboard(log.lines.joinToString("\n")))
         ImGui.beginChild("##inputLog", 0f, 150f, true)
         log.lines.asReversed().forEach { ImGui.textUnformatted(it) }
         ImGui.endChild()

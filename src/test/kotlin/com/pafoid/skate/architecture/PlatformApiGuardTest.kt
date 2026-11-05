@@ -43,7 +43,6 @@ class PlatformApiGuardTest {
     fun PlatformApi_OpenGlOnlyInRenderAndAssetLayers() {
         val allowedPrefixes = listOf("engine/render/", "engine/assets/", "engine/core/Window.kt")
         val exceptions = setOf(
-            "editor/systems/ThumbnailCache.kt",
             "engine/utils/ScreenshotUtils.kt",
             "engine/utils/testing/FrameCapture.kt",
             "game/GameMain.kt",
@@ -85,9 +84,6 @@ class PlatformApiGuardTest {
     @Test
     fun ResourceLifetime_FilesThatAllocateGlOrAlObjectsAlsoDeleteThem() {
         val exceptions = setOf(
-            "engine/assets/data/CubeMap.kt",
-            "engine/assets/loaders/TextureLoader.kt",
-            "engine/render/renderer/DebugRenderer.kt",
             "engine/render/renderer/PickingRenderer.kt",
         )
         val create = Regex("""glGen(Buffers|Textures|Framebuffers|VertexArrays|Renderbuffers)|glCreate(Program|Shader)|alGen(Buffers|Sources)""")

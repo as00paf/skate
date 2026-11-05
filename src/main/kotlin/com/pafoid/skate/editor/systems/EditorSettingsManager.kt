@@ -3,6 +3,7 @@ package com.pafoid.skate.editor.systems
 import com.pafoid.skate.editor.data.EditorInputMappings
 import com.pafoid.skate.editor.events.ProjectEvent
 import com.pafoid.skate.editor.project.Project
+import com.pafoid.skate.editor.project.ProjectFileReader
 import com.pafoid.skate.editor.settings.EditorSettings
 import com.pafoid.skate.editor.settings.ShadowQuality
 import com.pafoid.skate.engine.assets.serialization.Serializer
@@ -22,13 +23,15 @@ class EditorSettingsManager(
 ) {
     var editorSettings: EditorSettings = EditorSettings()
 
+    /**
+     * Recent projects that still exist, newest first. The absolute `.skateproject` path kept in the settings is the
+     * source of truth for [Project.projectPath] (EDT-41): the file itself stores it project-relative (AST-09).
+     */
     val recentProjects: List<Project>
-        get() {
-            return editorSettings.recentProjects.mapNotNull { path ->
-                val projectFile = File(path)
-                if (projectFile.exists()) serializer.decode<Project>(projectFile.readText()) else null
-            }.take(5)
-        }
+        get() = editorSettings.recentProjects.mapNotNull { path -> ProjectFileReader.readOrNull(serializer, File(path)) }.take(5)
+
+    /** The most recent project file that still exists, as stored in the settings, or null (EDT-41). */
+    fun lastProjectFile(): File? = editorSettings.recentProjects.asSequence().map(::File).firstOrNull { it.isFile }
 
     init {
         eventSystem.subscribe<ProjectEvent.Closed> { event -> setLastClosedProjectPath(event.project.projectPath) }

@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.ui.windows
 
+import com.pafoid.skate.editor.imgui.tipped
 import com.pafoid.skate.editor.imgui.label
 import com.pafoid.skate.editor.data.EditorInputMappings
 import com.pafoid.skate.editor.imgui.EditorWindow
@@ -80,7 +81,7 @@ class KeyBindingsWindow(
             }
             if (keyBindingTab != 0) {
                 sameLine()
-                if (button(stringManager.getString("btn.reset_to_defaults"))) {
+                if (stringManager.tipped(button(stringManager.getString("btn.reset_to_defaults")), "btn.reset_to_defaults")) {
                     inputMappings.resetToDefault()
                     settingsManager.updateInputMappings(inputMappings)
                 }

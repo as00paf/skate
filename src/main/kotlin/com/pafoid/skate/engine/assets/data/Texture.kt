@@ -1,6 +1,6 @@
 package com.pafoid.skate.engine.assets.data
 
-import com.pafoid.skate.engine.render.GpuResource
+import com.pafoid.skate.engine.render.rhi.RhiTexture
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 
@@ -14,5 +14,6 @@ data class Texture(
     var filePath: String? = null,
 ) {
     @Transient var texId: Int = -1
-    @Transient var gpu: GpuResource? = null
+    /** GPU texture ([texId] is its native handle, kept for draw code and ImGui until REN-12 step 6). */
+    @Transient var rhi: RhiTexture? = null
 }

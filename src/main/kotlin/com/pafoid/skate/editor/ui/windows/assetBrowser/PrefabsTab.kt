@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.ui.windows.assetBrowser
 
+import com.pafoid.skate.editor.imgui.tipped
 import com.pafoid.skate.editor.imgui.label
 import com.pafoid.skate.editor.data.PrefabData
 import com.pafoid.skate.editor.events.ViewportAction
@@ -89,15 +90,15 @@ class PrefabsTab(
         }
 
         if (ImGui.beginPopupContextItem(contextPopupId("prefab"))) {
-            if (ImGui.menuItem("${Icons.PLUS} ${stringManager.getString("context.asset_browser.spawn_in_scene")}")) {
+            if (stringManager.tipped(ImGui.menuItem("${Icons.PLUS} ${stringManager.getString("context.asset_browser.spawn_in_scene")}"), "context.asset_browser.spawn_in_scene")) {
                 spawnPrefab(data)
             }
             ImGui.separator()
-            if (ImGui.menuItem("${Icons.FOLDER} ${stringManager.getString("context.asset_browser.show_in_folder")}")) {
+            if (stringManager.tipped(ImGui.menuItem("${Icons.FOLDER} ${stringManager.getString("context.asset_browser.show_in_folder")}"), "context.asset_browser.show_in_folder")) {
                 File(entry.modelPath).absoluteFile.parentFile?.let { Desktop.getDesktop().open(it) }
             }
             ImGui.separator()
-            if (ImGui.menuItem("${Icons.INFO} ${stringManager.getString("context.asset_browser.properties")}")) {
+            if (stringManager.tipped(ImGui.menuItem("${Icons.INFO} ${stringManager.getString("context.asset_browser.properties")}"), "context.asset_browser.properties")) {
                 engine.logger.logEditor("Properties: $name, Type: ${entry.type}, Material: ${data.material?.displayName}")
             }
             ImGui.endPopup()

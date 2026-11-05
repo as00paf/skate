@@ -1,5 +1,7 @@
 package com.pafoid.skate.editor.ui.windows
 
+import com.pafoid.skate.editor.imgui.tippedWith
+import com.pafoid.skate.editor.imgui.tipped
 import com.pafoid.skate.editor.imgui.label
 import com.pafoid.skate.editor.events.ViewportAction.AddComponent
 import com.pafoid.skate.editor.events.ViewportAction.RemoveComponent
@@ -83,14 +85,14 @@ class PropertiesWindow(
         }
 
         if (ImGui.beginPopupContextItem("${component.javaClass.simpleName}_context")) {
-            if (ImGui.menuItem("${Icons.COPY} ${stringManager.getString("context.properties.copy_component")}")) {
+            if (stringManager.tipped(ImGui.menuItem("${Icons.COPY} ${stringManager.getString("context.properties.copy_component")}"), "context.properties.copy_component")) {
                 // Future enhancement: Copy component to clipboard for pasting to other objects
             }
-            if (ImGui.menuItem("${Icons.TRASH} ${stringManager.getString("context.properties.remove_component")}")) {
+            if (stringManager.tipped(ImGui.menuItem("${Icons.TRASH} ${stringManager.getString("context.properties.remove_component")}"), "context.properties.remove_component")) {
                 eventSystem.publish(RemoveComponent(component))
             }
             ImGui.separator()
-            if (ImGui.menuItem("${Icons.ARROW_ROTATE} ${stringManager.getString("context.properties.reset_to_default")}")) {
+            if (stringManager.tipped(ImGui.menuItem("${Icons.ARROW_ROTATE} ${stringManager.getString("context.properties.reset_to_default")}"), "context.properties.reset_to_default")) {
                 component.reset()
             }
             ImGui.endPopup()
@@ -164,7 +166,7 @@ class PropertiesWindow(
         ImGui.text(stringManager.getString("lbl.systems.enabled"))
         ImGui.sameLine()
         val buttonSize = ImGui.getFrameHeight()
-        if (ImGui.button(Icons.TRASH, buttonSize, buttonSize)) {
+        if (stringManager.tippedWith(ImGui.button(Icons.TRASH, buttonSize, buttonSize), "tooltip.properties.remove_component")) {
             ImGui.openPopup(stringManager.label("lbl.hierarchy.remove_component_title"))
         }
         MImGui.showConfirmationModal(

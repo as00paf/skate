@@ -50,6 +50,15 @@ class RhiTypesTest {
     }
 
     @Test
+    fun TextureDesc_FullMipChainAndItsLimit() {
+        assertEquals(1, TextureDesc.fullMipChain(1, 1))
+        assertEquals(9, TextureDesc.fullMipChain(256, 200))
+        assertEquals(11, TextureDesc.fullMipChain(1024, 1))
+        TextureDesc(TextureType.TEXTURE_2D, PixelFormat.RGBA8, 256, 256, mipLevels = 9)
+        assertThrows<IllegalArgumentException> { TextureDesc(TextureType.TEXTURE_2D, PixelFormat.RGBA8, 256, 256, mipLevels = 10) }
+    }
+
+    @Test
     fun RenderTargetDesc_ChecksAttachmentFormats() {
         // Scene target, picking target (RGB32F, own depth) and the shadow cascade array (depth only)
         RenderTargetDesc(1920, 1080)

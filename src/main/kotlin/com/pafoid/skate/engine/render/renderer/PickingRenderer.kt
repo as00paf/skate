@@ -1,6 +1,6 @@
 package com.pafoid.skate.engine.render.renderer
 
-import com.pafoid.skate.engine.render.GpuResource
+import com.pafoid.skate.engine.render.rhi.opengl.GpuResource
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.AssetsManager
 import com.pafoid.skate.engine.assets.data.Shader

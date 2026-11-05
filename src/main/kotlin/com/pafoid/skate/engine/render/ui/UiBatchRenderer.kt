@@ -1,23 +1,13 @@
 package com.pafoid.skate.engine.render.ui
 
+import com.pafoid.skate.engine.render.rhi.BufferUpdate
+import com.pafoid.skate.engine.render.rhi.BufferUsage
+import com.pafoid.skate.engine.render.rhi.RhiBuffer
+import com.pafoid.skate.engine.render.rhi.RhiContext
+import com.pafoid.skate.engine.render.rhi.RhiVertexInput
+import com.pafoid.skate.engine.render.data.VertexLayouts
 import com.pafoid.skate.engine.assets.data.Shader
-import com.pafoid.skate.engine.utils.RenderConsts2D.COLOR_LOCATION
-import com.pafoid.skate.engine.utils.RenderConsts2D.COLOR_OFFSET
-import com.pafoid.skate.engine.utils.RenderConsts2D.ENTITY_ID_LOCATION
-import com.pafoid.skate.engine.utils.RenderConsts2D.POS_LOCATION
-import com.pafoid.skate.engine.utils.RenderConsts2D.TEX_COORDS_LOCATION
-import com.pafoid.skate.engine.utils.RenderConsts2D.TEX_ID_LOCATION
-import com.pafoid.skate.engine.utils.RenderConsts2D.COLOR_SIZE
-import com.pafoid.skate.engine.utils.RenderConsts2D.ENTITY_ID_OFFSET
-import com.pafoid.skate.engine.utils.RenderConsts2D.ENTITY_ID_SIZE
-import com.pafoid.skate.engine.utils.RenderConsts2D.POS_OFFSET
-import com.pafoid.skate.engine.utils.RenderConsts2D.POS_SIZE
-import com.pafoid.skate.engine.utils.RenderConsts2D.TEX_COORDS_OFFSET
-import com.pafoid.skate.engine.utils.RenderConsts2D.TEX_COORDS_SIZE
-import com.pafoid.skate.engine.utils.RenderConsts2D.TEX_ID_OFFSET
-import com.pafoid.skate.engine.utils.RenderConsts2D.TEX_ID_SIZE
 import com.pafoid.skate.engine.utils.RenderConsts2D.VERTEX_SIZE
-import com.pafoid.skate.engine.utils.RenderConsts2D.VERTEX_SIZE_BYTES
 import com.pafoid.skate.engine.utils.ShaderConst.Uniforms
 import com.pafoid.skate.engine.render.EngineStats
 import com.pafoid.skate.engine.render.rhi.opengl.GLBindings
@@ -26,28 +16,17 @@ import org.lwjgl.opengl.GL11.GL_SCISSOR_TEST
 import org.lwjgl.opengl.GL11.glDisable
 import org.lwjgl.opengl.GL11.glEnable
 import org.lwjgl.opengl.GL11.glScissor
-import org.lwjgl.opengl.GL30.GL_ARRAY_BUFFER
-import org.lwjgl.opengl.GL30.GL_DYNAMIC_DRAW
-import org.lwjgl.opengl.GL30.GL_ELEMENT_ARRAY_BUFFER
-import org.lwjgl.opengl.GL30.GL_FLOAT
 import org.lwjgl.opengl.GL30.GL_TRIANGLES
 import org.lwjgl.opengl.GL30.GL_UNSIGNED_INT
-import org.lwjgl.opengl.GL30.glBindBuffer
 import org.lwjgl.opengl.GL30.glBindVertexArray
-import org.lwjgl.opengl.GL30.glBufferData
-import org.lwjgl.opengl.GL30.glDeleteBuffers
-import org.lwjgl.opengl.GL30.glDeleteVertexArrays
 import org.lwjgl.opengl.GL30.glDrawElements
-import org.lwjgl.opengl.GL30.glEnableVertexAttribArray
-import org.lwjgl.opengl.GL30.glGenBuffers
-import org.lwjgl.opengl.GL30.glGenVertexArrays
-import org.lwjgl.opengl.GL30.glVertexAttribPointer
 
 /** Draws a [UiDrawList] with the 2D batch shader and a top-left-origin pixel ortho projection. */
 class UiBatchRenderer {
-    private var vao = 0
-    private var vbo = 0
-    private var ebo = 0
+    private var vbo: RhiBuffer? = null
+    private var ebo: RhiBuffer? = null
+    private var input: RhiVertexInput? = null
+    private val vao: Int get() = input?.nativeHandle?.toInt() ?: 0
     private var indexCapacityQuads = 0
     private val projection = Matrix4f()
     private val view = Matrix4f()
@@ -63,9 +42,8 @@ class UiBatchRenderer {
         shader.uploadIntArray(Uniforms.TEXTURES, intArrayOf(0, 1, 2, 3, 4, 5, 6, 7))
 
         glBindVertexArray(vao)
-        glBindBuffer(GL_ARRAY_BUFFER, vbo)
         val floats = list.quadCount * 4 * VERTEX_SIZE
-        glBufferData(GL_ARRAY_BUFFER, list.vertexData.copyOf(floats), GL_DYNAMIC_DRAW)
+        vbo!!.replace(list.vertexData.copyOf(floats))
 
         for (batch in list.batches) {
             batch.texture?.let { GLBindings.cache.bindTexture(0, it.texId) }
@@ -86,36 +64,26 @@ class UiBatchRenderer {
     }
 
     private fun ensureBuffers(quads: Int) {
-        if (vao == 0) {
-            vao = glGenVertexArrays()
-            vbo = glGenBuffers()
-            ebo = glGenBuffers()
-            glBindVertexArray(vao)
-            glBindBuffer(GL_ARRAY_BUFFER, vbo)
-            attrib(POS_LOCATION, POS_SIZE, POS_OFFSET)
-            attrib(COLOR_LOCATION, COLOR_SIZE, COLOR_OFFSET)
-            attrib(TEX_COORDS_LOCATION, TEX_COORDS_SIZE, TEX_COORDS_OFFSET)
-            attrib(TEX_ID_LOCATION, TEX_ID_SIZE, TEX_ID_OFFSET)
-            attrib(ENTITY_ID_LOCATION, ENTITY_ID_SIZE, ENTITY_ID_OFFSET)
-        }
-        if (quads > indexCapacityQuads) {
+        val current = input
+        if (current == null) {
+            indexCapacityQuads = maxOf(quads, 256)
+            val device = RhiContext.require()
+            val vertices = device.createBuffer(BufferUsage.VERTEX, BufferUpdate.DYNAMIC, FloatArray(0))
+            val indices = device.createBuffer(BufferUsage.INDEX, BufferUpdate.DYNAMIC, quadIndices(indexCapacityQuads))
+            vbo = vertices
+            ebo = indices
+            input = device.createVertexInput(device.createVertexLayout(VertexLayouts.BATCH_2D), listOf(vertices), indices)
+        } else if (quads > indexCapacityQuads) {
             indexCapacityQuads = maxOf(quads, indexCapacityQuads * 2, 256)
-            glBindVertexArray(vao)
-            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo)
-            glBufferData(GL_ELEMENT_ARRAY_BUFFER, quadIndices(indexCapacityQuads), GL_DYNAMIC_DRAW)
+            ebo!!.replace(quadIndices(indexCapacityQuads))
         }
-    }
-
-    private fun attrib(index: Int, size: Int, offset: Int) {
-        glVertexAttribPointer(index, size, GL_FLOAT, false, VERTEX_SIZE_BYTES, offset.toLong())
-        glEnableVertexAttribArray(index)
     }
 
     fun destroy() {
-        if (vao != 0) glDeleteVertexArrays(vao)
-        if (vbo != 0) glDeleteBuffers(vbo)
-        if (ebo != 0) glDeleteBuffers(ebo)
-        vao = 0; vbo = 0; ebo = 0; indexCapacityQuads = 0
+        input?.close()
+        vbo?.close()
+        ebo?.close()
+        input = null; vbo = null; ebo = null; indexCapacityQuads = 0
     }
 
     companion object {

@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.imgui.components
 
+import com.pafoid.skate.editor.imgui.Tooltips
 import com.pafoid.skate.engine.core.LoggerService.LogLevel
 import com.pafoid.skate.editor.imgui.MImGui
 import com.pafoid.skate.engine.core.Engine
@@ -126,6 +127,7 @@ fun Component.reflectedImgui(engine: Engine, skip: Set<String> = emptySet()) {
                     }
                 }
             }
+            Tooltips.showIfPresent(engine.stringManager, "component.${this.javaClass.simpleName}.$name${Tooltips.SUFFIX}")
 
             if (Modifier.isPrivate(modifiers)) field.isAccessible = false
         }
