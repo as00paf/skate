@@ -115,7 +115,7 @@ The renderer works but needs cleaner APIs, caching, dynamic shaders, better mate
 - [~] @skate-render **REN-12** `P3` RHI abstraction (Vulkan-ready)
   - Do: Define backend-agnostic interfaces (`RhiDevice`, `RhiBuffer`, `RhiTexture`, `RhiPipeline`, `RhiCommandList`) and move all GL calls into an `OpenGlRhi` backend.
   - Done when: No GL call exists outside `render/rhi/opengl`. An architecture guard test enforces this.
-  - Design: `docs/design/REN-12.md` approved by the lead (round 15) with the §7 proposals as written: ImGuiLayer is the one allowed GL user; named uniforms via `ShaderParams`; Vulkan semantics (pass begin/end, depth range, Y-flip) owned by the backend; sync picking readback; main-thread only. Migrate in the §5 steps, one or two per round. Steps 0-1 done (round 17).
+  - Design: `docs/design/REN-12.md` approved by the lead (round 15) with the §7 proposals as written: ImGuiLayer is the one allowed GL user; named uniforms via `ShaderParams`; Vulkan semantics (pass begin/end, depth range, Y-flip) owned by the backend; sync picking readback; main-thread only. Migrate in the §5 steps, one or two per round. Steps 0-1 done (round 17), steps 2-3 done (round 18).
   - Deps: REN-03, REN-04, REN-05
 - [ ] **REN-13** `P3` Vulkan backend spike
   - Do: Build a minimal `VulkanRhi` that renders the sample scene's geometry pass.
@@ -627,7 +627,7 @@ All editor mutations must go through `Command` classes and the service layer (se
   - Do: Billboard icons plus wire gizmos (camera frustum, light range/cone, direction arrow), all selectable.
   - Done when: Every camera and light is visible and clickable in the scene view.
   - Deps: EDT-03
-- [~] @skate-editor **EDT-05** `P2` Tooltips everywhere
+- [x] **EDT-05** `P2` Tooltips everywhere
   - Do: Add tooltips (via `StringManager` keys) to every toolbar button, property and menu item.
   - Done when: No interactive widget lacks a tooltip. A test checks that all tooltip keys exist in the string files.
 - [x] **EDT-06** `P2` Complete translations
