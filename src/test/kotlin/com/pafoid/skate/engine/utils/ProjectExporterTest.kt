@@ -34,7 +34,7 @@ class ProjectExporterTest {
     @Test
     fun Export_PacksOnlyReferencedAssetsWritesManifestAndRunnableLayout() {
         val jar = File(dir, "fake-game.jar").also { it.writeText("jar") }
-        val ok = ProjectExporter(mockk<LoggerService>(relaxed = true)) { jar }.export(project())
+        val ok = ProjectExporter(mockk<LoggerService>(relaxed = true)) { GameJarSearch(jar, emptyList()) }.export(project())
         assertTrue(ok.success)
 
         val builds = File(dir, "builds")
@@ -53,7 +53,7 @@ class ProjectExporterTest {
 
     @Test
     fun Export_FailsClearlyWhenGameJarIsMissing() {
-        val result = ProjectExporter(mockk<LoggerService>(relaxed = true)) { null }.export(project())
+        val result = ProjectExporter(mockk<LoggerService>(relaxed = true)) { GameJarSearch(null, emptyList()) }.export(project())
         assertEquals(ExportFailure.GAME_JAR_MISSING, result.failure)
         assertFalse(File(dir, "builds/game.bin").exists(), "fails before packing")
     }
@@ -61,7 +61,7 @@ class ProjectExporterTest {
     @Test
     fun Export_ReexportDoesNotPackPreviousBuild() {
         val jar = File(dir, "fake-game.jar").also { it.writeText("jar") }
-        val exporter = ProjectExporter(mockk<LoggerService>(relaxed = true)) { jar }
+        val exporter = ProjectExporter(mockk<LoggerService>(relaxed = true)) { GameJarSearch(jar, emptyList()) }
         val p = project()
         exporter.export(p); exporter.export(p)
         val m = Serializer().json.decodeFromString(PackManifest.serializer(), File(dir, "builds/manifest.json").readText())
@@ -89,7 +89,7 @@ class ProjectExporterTest {
     fun Export_ShipsGameStringsAndTheGameReadsThemInEnglishAndFrench() {
         val jar = File(dir, "fake-game.jar").also { it.writeText("jar") }
         val stringsDir = File(Assets.Strings.GAME_STRINGS)
-        assertTrue(ProjectExporter(mockk<LoggerService>(relaxed = true), stringsDir) { jar }.export(project()).success)
+        assertTrue(ProjectExporter(mockk<LoggerService>(relaxed = true), stringsDir) { GameJarSearch(jar, emptyList()) }.export(project()).success)
         val builds = File(dir, "builds")
 
         val manifest = Serializer().json.decodeFromString(PackManifest.serializer(), File(builds, "manifest.json").readText())
@@ -116,7 +116,7 @@ class ProjectExporterTest {
         val p = project()
         File(dir, "strings/game").mkdirs()
         File(dir, "strings/game/hud.properties").writeText("pause.title=Project")
-        assertTrue(ProjectExporter(mockk<LoggerService>(relaxed = true), engineStrings) { jar }.export(p, ExportOptions(onlyReferenced = false)).success)
+        assertTrue(ProjectExporter(mockk<LoggerService>(relaxed = true), engineStrings) { GameJarSearch(jar, emptyList()) }.export(p, ExportOptions(onlyReferenced = false)).success)
 
         val manifest = Serializer().json.decodeFromString(PackManifest.serializer(), File(dir, "builds/manifest.json").readText())
         assertEquals(1, manifest.entries.count { it.path == "strings/game/hud.properties" })
@@ -126,7 +126,7 @@ class ProjectExporterTest {
     @Test
     fun Export_WithoutGameStringsStillSucceeds() {
         val jar = File(dir, "fake-game.jar").also { it.writeText("jar") }
-        assertTrue(ProjectExporter(mockk<LoggerService>(relaxed = true), File(dir, "none")) { jar }.export(project()).success)
+        assertTrue(ProjectExporter(mockk<LoggerService>(relaxed = true), File(dir, "none")) { GameJarSearch(jar, emptyList()) }.export(project()).success)
         assertTrue(packedTables(File(dir, "builds")).isEmpty())
     }
 
@@ -135,7 +135,7 @@ class ProjectExporterTest {
 
     @Test
     fun Export_PackOnlyTargetNeedsNoJarAndWritesNoLauncher() {
-        val result = ProjectExporter(mockk<LoggerService>(relaxed = true)) { null }.export(project(), ExportOptions(target = ExportTarget.PACK_ONLY))
+        val result = ProjectExporter(mockk<LoggerService>(relaxed = true)) { GameJarSearch(null, emptyList()) }.export(project(), ExportOptions(target = ExportTarget.PACK_ONLY))
         assertTrue(result.success)
         val builds = File(dir, "builds")
         assertTrue(File(builds, "game.bin").isFile && File(builds, "manifest.json").isFile)
@@ -160,7 +160,7 @@ class ProjectExporterTest {
     fun Export_WritesToACustomOutputFolderAndSkipsItWhenScanning() {
         val out = File(dir, "dist/win")
         val jar = File(dir, "fake-game.jar").also { it.writeText("jar") }
-        val exporter = ProjectExporter(mockk<LoggerService>(relaxed = true)) { jar }
+        val exporter = ProjectExporter(mockk<LoggerService>(relaxed = true)) { GameJarSearch(jar, emptyList()) }
         val options = ExportOptions(outputDir = out.path, onlyReferenced = false)
         assertTrue(exporter.export(project(), options).success)
         assertTrue(exporter.export(project(), options).success)
@@ -172,7 +172,7 @@ class ProjectExporterTest {
     @Test
     fun Export_RejectsTheProjectFolderAsOutput() {
         val p = project()
-        val result = ProjectExporter(mockk<LoggerService>(relaxed = true)) { null }
+        val result = ProjectExporter(mockk<LoggerService>(relaxed = true)) { GameJarSearch(null, emptyList()) }
             .export(p, ExportOptions(target = ExportTarget.PACK_ONLY, outputDir = dir.path))
         assertEquals(ExportFailure.INVALID_OUTPUT, result.failure)
         assertFalse(File(dir, "game.bin").exists())
@@ -182,7 +182,7 @@ class ProjectExporterTest {
     fun Export_ReportsEveryStepInOrderWithGrowingProgress() {
         val jar = File(dir, "fake-game.jar").also { it.writeText("jar") }
         val seen = mutableListOf<ExportProgress>()
-        assertTrue(ProjectExporter(mockk<LoggerService>(relaxed = true)) { jar }.export(project()) { seen += it }.success)
+        assertTrue(ProjectExporter(mockk<LoggerService>(relaxed = true)) { GameJarSearch(jar, emptyList()) }.export(project()) { seen += it }.success)
         assertEquals(ExportStep.entries.toList(), seen.map { it.step }.distinct())
         val overall = seen.map { it.overall }
         assertEquals(overall.sorted(), overall, "progress never goes back")
@@ -209,11 +209,11 @@ class ProjectExporterTest {
     @Test
     fun Export_FailuresCarryATranslatableDetail() {
         val p = project()
-        val invalid = ProjectExporter(mockk<LoggerService>(relaxed = true)) { null }
+        val invalid = ProjectExporter(mockk<LoggerService>(relaxed = true)) { GameJarSearch(null, emptyList()) }
             .export(p, ExportOptions(target = ExportTarget.PACK_ONLY, outputDir = dir.path))
         assertEquals(ExportDetail.OUTPUT_IS_PROJECT, invalid.detail)
         assertEquals(listOf(dir.path), invalid.detailArgs)
-        assertEquals(ExportDetail.GAME_JAR_NOT_BUILT, ProjectExporter(mockk<LoggerService>(relaxed = true)) { null }.export(p).detail)
+        assertEquals(ExportDetail.GAME_JAR_NOT_BUILT, ProjectExporter(mockk<LoggerService>(relaxed = true)) { GameJarSearch(null, emptyList()) }.export(p).detail)
     }
 
     @Test
