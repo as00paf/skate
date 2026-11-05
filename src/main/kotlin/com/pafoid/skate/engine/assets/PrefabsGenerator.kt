@@ -10,9 +10,7 @@ import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.assets.data.Texture
 import com.pafoid.skate.engine.assets.data.models.animations.Animation
 import com.pafoid.skate.engine.assets.data.models.animations.SkeletonPose
-import com.pafoid.skate.engine.audio.BusId
 import com.pafoid.skate.engine.ecs.components.AmbientLightComponent
-import com.pafoid.skate.engine.ecs.components.AudioComponent
 import com.pafoid.skate.engine.ecs.components.Animator
 import com.pafoid.skate.engine.ecs.components.BoxCollider3D
 import com.pafoid.skate.engine.ecs.components.CameraComponent
@@ -238,7 +236,7 @@ class PrefabsGenerator(
     /**
      * The scenes of a new project: `MainScene` (sky, sun, day/night cycle, the skater and board on an asphalt floor,
      * a concrete ledge to grind and a HUD canvas) and the [FeatureShowcase] scene (one labelled area per engine
-     * feature). Writes the showcase's assets into [projectAssetsDir]. See docs/samples.md.
+     * feature). See docs/samples.md.
      */
     fun createDefaultScenes(sceneDir: File): List<Scene> {
         val scene = sceneManager.createNewScene(DEFAULT_SCENE, sceneDir.path)
@@ -253,7 +251,6 @@ class PrefabsGenerator(
         spawnDefaultsSync().forEach { scene.addChild(it) }
         sceneManager.saveScene(scene, sceneDir.path)
 
-        FeatureShowcase.writeAssets(File(projectAssetsDir))
         val showcase = FeatureShowcase(this).populate(sceneManager.createNewScene(FeatureShowcase.SCENE_NAME, sceneDir.path))
         sceneManager.saveScene(showcase, sceneDir.path)
 
@@ -276,19 +273,8 @@ class PrefabsGenerator(
         val ledge = spawnLedge(Vector3f(3f, 0f, -3f), MaterialType.CONCRETE)
         val quarterPipe = spawn(PrefabType.QUARTER_PIPE, Vector3f(0f, 0f, -6f), MaterialType.WOOD_TAN)
         val funbox = spawn(PrefabType.FUNBOX, Vector3f(-4f, 0f, 4f), MaterialType.CONCRETE)
-        return listOf(camera, skate, skater, floor, ledge, quarterPipe, funbox, spawnHud(), spawnMusic())
+        return listOf(camera, skate, skater, floor, ledge, quarterPipe, funbox, spawnHud())
     }
-
-    /**
-     * Looping background music (AUD-10): non-positional, on the music bus, streamed, starting in Play. Points at the
-     * project's copy of [Assets.Bundled.MUSIC] (copied from the engine's bundled assets); if that copy is missing,
-     * AudioSystem logs one warning and the scene plays silently.
-     */
-    fun spawnMusic(): GameObject = GameObject("Music")
-        .addComponent(AudioComponent(
-            projectAssetsDir + Assets.Bundled.MUSIC, is3D = false, loops = true, volume = 0.5f,
-            bus = BusId.MUSIC, playOnAwake = true,
-        ))
 
     /** In-game (non-ImGui) HUD: a score line top-left and a restart button top-right. */
     fun spawnHud(): GameObject {

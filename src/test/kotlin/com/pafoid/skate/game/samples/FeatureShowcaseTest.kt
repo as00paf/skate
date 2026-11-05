@@ -101,8 +101,8 @@ class FeatureShowcaseTest {
         assertEquals(setOf(JointType.HINGE, JointType.CONE_TWIST, JointType.SLIDER), joints)
         val car = withComponent<VehicleComponent>().single()
         assertNotNull(car.getComponent<RigidBody3D>())
-        assertEquals(2, withComponent<AudioComponent>().size)
-        assertTrue(withComponent<AudioComponent>().all { it.getComponent<AudioComponent>()!!.soundFilePath == "P\\Assets\\tone.wav" })
+        val audio = withComponent<AudioComponent>().single().getComponent<AudioComponent>()!!
+        assertEquals("P\\Assets\\" + com.pafoid.skate.engine.assets.Assets.Bundled.MUSIC, audio.soundFilePath)
     }
 
     @Test
@@ -197,18 +197,6 @@ class FeatureShowcaseTest {
         FeatureShowcase.STRING_KEYS.forEach { key ->
             assertTrue(english.containsKey(key), "$key missing from the game tables")
             assertTrue(french.any { it.containsKey(key) }, "$key has no French translation")
-        }
-    }
-
-    @Test
-    fun `writeAssets writes the looping tone`() {
-        val dir = kotlin.io.path.createTempDirectory("showcase-assets").toFile()
-        try {
-            FeatureShowcase.writeAssets(dir)
-            val wav = File(dir, FeatureShowcase.TONE_FILE)
-            assertEquals("RIFF", String(wav.readBytes().copyOfRange(0, 4)))
-        } finally {
-            dir.deleteRecursively()
         }
     }
 

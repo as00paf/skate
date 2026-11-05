@@ -38,7 +38,9 @@ class ShowcaseProjectBuilderTest {
             val types = scene.children.first { it.name == "[UI] Canvas" }.children.flatMap { it.components }.map { it::class.simpleName }
             listOf("UITextComponent", "UIImageComponent", "UIButtonComponent", "UIProgressBarComponent", "UISliderComponent")
                 .forEach { assertTrue(it in types, "missing $it") }
-            assertTrue(java.io.File(dir, "FeatureShowcase/Assets/${FeatureShowcase.TONE_FILE}").exists())
+            val music = scene.children.single { it.name == "[Audio] Emitter3D" }.components
+                .filterIsInstance<com.pafoid.skate.engine.ecs.components.AudioComponent>().single()
+            assertTrue(music.soundFilePath.endsWith(com.pafoid.skate.engine.assets.Assets.Bundled.MUSIC))
             // The camera's focus targets survive the save/load round trip, so legend buttons work after reopening.
             val focus = scene.children.single { it.name == "Camera" }.components
                 .filterIsInstance<com.pafoid.skate.engine.ecs.components.CameraFocusComponent>().single()

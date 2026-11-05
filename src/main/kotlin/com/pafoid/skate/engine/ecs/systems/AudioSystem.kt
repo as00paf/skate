@@ -313,7 +313,7 @@ class AudioSystem(
         val source = audioEngine.createSource(!stream && ac.loops, !ac.is3D)
         try {
             if (stream) {
-                val player = StreamingPlayer(PcmDecoders.open(clip), source.asStreamSink(), ac.loops)
+                val player = StreamingPlayer(PcmDecoders.open(clip, mono = ac.is3D), source.asStreamSink(), ac.loops)
                 return Playback(clip, source, player)
             }
             val buffer = assetsManager.getSound(clip)

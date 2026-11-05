@@ -78,7 +78,7 @@ class PrefabsGeneratorTest {
         val spawned = PrefabsGenerator(engine).spawnDefaultsSync()
 
         assertEquals(
-            listOf("Camera", "Skateboard", "Skater", "Floor", "Concrete_Ledge", "QuarterPipe", "Funbox", "HUD", "Music"),
+            listOf("Camera", "Skateboard", "Skater", "Floor", "Concrete_Ledge", "QuarterPipe", "Funbox", "HUD"),
             spawned.map { it.name },
         )
         assertNotNull(spawned[0].getComponent<CameraComponent>())

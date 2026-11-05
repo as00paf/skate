@@ -280,12 +280,12 @@ class FeatureShowcaseSmokeTest {
         assertEquals(PLAY_FRAMES * DT, animationTimes.last(), 0.05f)
     }
 
-    /** Fails until AUD-09 merges: `playOnAwake` defaulted to false, so nothing started the showcase sources (shipped silent). */
+    /** AUD-09: `playOnAwake` starts the emitter in Play. AUD-10: it plays the bundled MP3 copied into the project. */
     @Test
     @Order(6)
-    fun Showcase_Audio_BothSourcesStartPlayingInPlay() {
+    fun Showcase_Audio_EmitterStartsPlayingInPlay() {
         val sources = area("Audio").filter { it.getComponent<AudioComponent>() != null }
-        assertEquals(listOf("[Audio] Emitter3D", "[Audio] Ambient2D"), sources.map { it.name })
+        assertEquals(listOf("[Audio] Emitter3D"), sources.map { it.name })
         sources.forEach { go ->
             val clip = File(go.getComponent<AudioComponent>()!!.soundFilePath)
             assertTrue(clip.isFile && clip.length() > 44, "${go.name} clip missing on disk: $clip")

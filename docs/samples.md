@@ -2,7 +2,7 @@
 
 ## Default project (`New Project` in the editor)
 
-`ProjectManager.createProject` copies the engine-bundled assets into `Assets/EngineDefaults` and calls `PrefabsGenerator.createDefaultScenes`, which writes two scenes: `MainScene` (the project's default scene, below) and `FeatureShowcase` (next section), plus `Assets/tone.wav` for the showcase's audio demo. Both scenes open with the project; `MainScene` is active. Keep them current with engine features; old projects are not migrated (GameEngine.md rule 8).
+`ProjectManager.createProject` copies the engine-bundled assets into `Assets/EngineDefaults` and calls `PrefabsGenerator.createDefaultScenes`, which writes two scenes: `MainScene` (the project's default scene, below) and `FeatureShowcase` (next section). Both scenes open with the project; `MainScene` is active. Keep them current with engine features; old projects are not migrated (GameEngine.md rule 8).
 
 | Part | Contents |
 |------|----------|
@@ -12,7 +12,6 @@
 | `Floor` | 20 x 20 m static asphalt slab, top surface at y = 0, box collider. |
 | `Concrete_Ledge` | Static concrete ledge at (3, 0.25, -3) with a box collider, to grind. |
 | `QuarterPipe`, `Funbox` | GPL-04 prefabs: a wooden quarter pipe 6 m behind the spawn (riding face toward the skater) and a concrete funbox at (-4, 0, 4). They also give the follow camera's spring arm something to collide with. |
-| `Music` | Looping background music (AUD-10): a non-positional `AudioComponent` on the `MUSIC` bus at volume 0.5, playing `Assets/EngineDefaults/Sounds/Music/aquarela do brasil.mp3` from Play until Stop. The MP3 is streamed. The track (by the project author) is bundled at `assets/sounds/music/aquarela do brasil.mp3` and copied into every new project. If a project's copy is missing, Play logs one `Sound file not found` warning and the scene runs silently. |
 | `HUD` | In-game UI canvas: `ScoreText` top-left (`hud.score`, "Score 0") and `RestartButton` top-right (`pause.restart`). Both keys exist in the bundled game and editor string tables. |
 
 No 2D sprites or test cubes. Feature demos live in `FeatureShowcase`, not in `MainScene`.
@@ -46,7 +45,7 @@ Both components are driven by the engine's `CameraControlSystem`, in editor Play
 | `Physics` (middle row, far left) | Play: five stacked boxes settle without jitter or tunnelling, the ball drops and rolls, the `Crate` and `Barrel` prefabs stay upright and can be knocked over. Turn on debug draw in the scene's `ScenePhysicsComponent` to see colliders. |
 | `Joints` (middle row, centre left) | Play: `HingePendulum` swings in its plane within about +/-69 degrees; `ConeTwistLamp` swings and circles under its pivot; `SliderBlock` drops 2 m along a vertical rail and stops. All are anchored to the world. |
 | `Vehicle` (middle row, centre right) | Play: the blue `Car` (`VehicleComponent`, four raycast wheels, PHY-09) drops onto its suspension, bounces once or twice and rests level. It is not driven: scripts cannot set throttle/steering yet. |
-| `Audio` (middle row, far right) | Play: a 440 Hz tone (`Assets/tone.wav`). `Emitter3D` is positional (louder and panned as the camera approaches); `Ambient2D` is a quiet non-positional layer. Both use `playOnAwake` (the default), so they start on Play and are silent while editing. Stopping play silences both. |
+| `Audio` (middle row, far right) | Play: `Emitter3D` (the cyan sphere) plays the bundled song `Assets/EngineDefaults/Sounds/Music/aquarela do brasil.mp3` on loop (AUD-10). It is positional: streamed on the music bus and downmixed to mono, so it gets louder from 25 m down to 1 m and pans as the camera moves around it. `playOnAwake` (the default) starts it on Play; it is silent while editing, and Stop silences it. |
 | `Prefabs` (front row, left) | The prefab library (GPL-04): ledge, hubba, manual pad, grind box, funbox, rail, handrail, kinked rail, 3- and 5-stair sets, kicker, bank, quarter pipe, crate, barrel and bench, in concrete and two woods. Each is static with its hull colliders (debug draw shows them). |
 | `Animation` (front row, right) | The bundled character looping the walking clip in place. |
 | `Fog` (front row, far right) | Eight orange `Post_*` pillars recede along the right edge of the floor. In Play, the overlay's **Cycle fog** button (top right) steps the scene fog through off, linear, exp, exp² and exp² with height fog. Models, the floor, the sky and particles fog alike. The sky fogs like geometry at the far plane, and height fog keeps the sky clear overhead. In the editor, set the same options on the scene's `EnvironmentComponent` (`renderFog`, `fogMode`, `fogDensity`, `fogStart`/`fogEnd`, `fogHeight`, `fogHeightFalloff`) (REN-09). |
