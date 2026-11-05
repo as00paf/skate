@@ -528,6 +528,10 @@ In-game UI components need to be added (separate from the ImGui editor).
   - Do: Human request on PR #16: Esc opens the pause menu in editor Play too, not only in the exported game. Move the pause menu (`game/ui/GameUi.kt`, opened from `GameMain`) into runtime code that both `GameMain` and editor Play use (Resume, Restart, Language, Quit; in the editor, Quit/Restart map to Stop/restart-play). Route Esc to the game while playing (the editor's Esc = deselect only when not playing); coordinate the editor input side with `skate-editor`. Pausing freezes simulation, audio and animation; Resume continues.
   - Done when: Esc toggles the pause menu in editor Play and in the exported game, with identical behaviour; Esc still deselects while editing; tests through the real path (load from disk, Play, Esc).
   - Deps: AST-07
+- [x] **GUI-10** `P0` Game language must not change the editor language
+  - Do: Human-reported on PR #17: switching language in the game's pause menu (editor Play) also switches the editor UI. Give the runtime/game its own locale (game string tables, saved in game settings) separate from the editor's locale; editor Play starts with the game locale; Stop leaves the editor language untouched.
+  - Done when: Changing the game language in editor Play changes only runtime UI text; the editor stays in its language; exported game unaffected; tests.
+  - Deps: GUI-09
 
 ### Scripting — `SCR` (`skate-scripting`)
 
@@ -721,6 +725,10 @@ All editor mutations must go through `Command` classes and the service layer (se
 - [x] **EDT-37** `P2` Split editor string tables to stop merge conflicts
   - Do: Every round, parallel agents conflict in `assets/strings/editor_strings(.properties/_fr)`. Split them into per-area files (e.g. `editor_strings_<area>[_fr].properties`) loaded and merged by `StringManager`, with a duplicate-key check test; same for game strings if needed.
   - Done when: Strings load from several files, duplicates fail a test, and existing keys are moved.
+- [x] **EDT-38** `P0` Stable ImGui IDs across editor languages
+  - Do: Human-reported on PR #17: changing the editor language breaks ImGui, likely because window/widget IDs come from translated labels. Use `translated###stable_id` (or `PushID`) for every window, menu, tab, tree node, popup, table and widget whose label is translated; keep docking layout/`imgui.ini`, open state and selection across a language switch at runtime.
+  - Done when: Switching language at runtime keeps docking layout, window open/collapsed state, tree expansion and popups working; a guard test fails on ImGui calls built from translated labels without a stable ID.
+  - Deps: EDT-37
 
 ## Testing & tooling
 
