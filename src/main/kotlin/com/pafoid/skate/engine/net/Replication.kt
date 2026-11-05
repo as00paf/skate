@@ -99,8 +99,10 @@ class ReplicationSchema(val replicators: List<ComponentReplicator> = listOf(Tran
 
     init { require(fieldCount in 1..63) { "Schema needs 1..63 fields (change mask is a Long), got $fieldCount" } }
 
-    fun capture(go: GameObject): IntArray {
-        val out = IntArray(fieldCount)
+    fun capture(go: GameObject): IntArray = capture(go, IntArray(fieldCount))
+
+    /** Captures into [out] (fieldCount long, fields of missing components are left as they are) and returns it. */
+    fun capture(go: GameObject, out: IntArray): IntArray {
         var off = 0
         for (r in replicators) { r.capture(go, out, off); off += r.fieldCount }
         return out
