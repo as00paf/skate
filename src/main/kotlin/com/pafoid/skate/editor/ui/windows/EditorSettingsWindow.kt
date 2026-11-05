@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.ui.windows
 
+import com.pafoid.skate.editor.imgui.tipped
 import com.pafoid.skate.editor.imgui.label
 import com.pafoid.skate.editor.data.EditorInputMappings
 import com.pafoid.skate.editor.imgui.EditorWindow
@@ -38,7 +39,8 @@ import org.lwjgl.glfw.GLFW
 
 class EditorSettingsWindow(
     private val settingsManager: EditorSettingsManager,
-    private val stringManager: StringManager
+    private val stringManager: StringManager,
+    private val openKeyBindings: () -> Unit = {},
 ) : EditorWindow("window.editor_settings") {
 
     private data class Category(
@@ -53,8 +55,6 @@ class EditorSettingsWindow(
     private var hasPendingChanges = false
 
     // Keybinding state
-    private var tempMappings = EditorInputMappings()
-    private var rebindingAction: String? = null
 
     private var tempLanguage = "en"
     private var tempTheme = EditorTheme.DEFAULT_ID
@@ -132,18 +132,6 @@ class EditorSettingsWindow(
             selected?.render()
             endChild()
 
-            // Handle key rebinding
-            rebindingAction?.let { action ->
-                for (i in 0..348) {
-                    if (isKeyPressed(i)) {
-                        assignKeyBinding(action, i)
-                        rebindingAction = null
-                        hasPendingChanges = true
-                        break
-                    }
-                }
-            }
-
             ImGui.spacing()
             val btnW = 100f
             if (button(stringManager.getString("btn.ok"), btnW, 0f)) {
@@ -155,7 +143,6 @@ class EditorSettingsWindow(
                 ImGuiStyleManager.preview = null
                 syncTempSettings()
                 hasPendingChanges = false
-                rebindingAction = null
                 isOpen.set(false)
             }
             sameLine()
@@ -172,7 +159,6 @@ class EditorSettingsWindow(
     override fun onClosed() {
         ImGuiStyleManager.preview = null
         hasPendingChanges = false
-        rebindingAction = null
     }
 
     private fun syncTempSettings() {
@@ -189,8 +175,6 @@ class EditorSettingsWindow(
             tempCompletionAuto = editor.completionAutoPopup
             tempCompletionDelay = editor.completionDelayMs
             tempShadowQuality = editor.graphics.shadowQuality
-            // Copy input mappings
-            tempMappings = editor.editorInputMappings.copy()
         }
     }
 
@@ -223,76 +207,11 @@ class EditorSettingsWindow(
 
     // ─── Key Bindings ───
 
+    /** Key bindings live in the Key Bindings window (EDT-10); one editor for them, not two. */
     private fun renderKeyBindings() {
-        // Editor section
-        ImGui.text(stringManager.getString("lbl.keybindings.editor_section"))
-        separator()
-        drawBindRow(stringManager.getString("lbl.keybindings.translate"), tempMappings.gizmoTranslate.keyboardKey, "editorGizmoTranslate")
-        drawBindRow(stringManager.getString("lbl.keybindings.rotate"), tempMappings.gizmoRotate.keyboardKey, "editorGizmoRotate")
-        drawBindRow(stringManager.getString("lbl.keybindings.scale"), tempMappings.gizmoScale.keyboardKey, "editorGizmoScale")
-        drawBindRow(stringManager.getString("lbl.keybindings.select"), tempMappings.gizmoSelect.keyboardKey, "editorGizmoSelect")
-        drawBindRow(stringManager.getString("lbl.keybindings.measure"), tempMappings.measureTool.keyboardKey, "editorMeasure")
-        drawBindRow(stringManager.getString("lbl.keybindings.deselect"), tempMappings.deselectAll.keyboardKey, "editorDeselect")
-        
-        separator()
-        // Camera section
-        ImGui.text(stringManager.getString("lbl.keybindings.camera_section"))
-        separator()
-        drawBindRow(
-            stringManager.getString("lbl.keybindings.camera_reset"),
-            tempMappings.reset.keyboardKey,
-            "cameraReset"
-        )
-        separator()
-        ImGui.text(stringManager.getString("lbl.keybindings.camera_look"))
-        MImGui.textDisabled(stringManager.getString("lbl.keybindings.camera_look_note"))
-    }
-
-    private fun drawBindRow(label: String, currentValue: Int, bindAction: String) {
-        ImGui.text(label)
-        sameLine(200f)
-
-        val keyName = getKeyName(currentValue)
-        val btnText = if (rebindingAction == bindAction) stringManager.getString("lbl.keybindings.press_key") else keyName
-
-        if (button("$btnText##$bindAction", 120f, 0f)) {
-            rebindingAction = bindAction
-        }
-    }
-
-    private fun assignKeyBinding(action: String, key: Int) {
-        when (action) {
-            "editorGizmoTranslate" -> tempMappings.gizmoTranslate.keyboardKey = key
-            "editorGizmoRotate" -> tempMappings.gizmoRotate.keyboardKey = key
-            "editorGizmoScale" -> tempMappings.gizmoScale.keyboardKey = key
-            "editorGizmoSelect" -> tempMappings.gizmoSelect.keyboardKey = key
-            "editorMeasure" -> tempMappings.measureTool.keyboardKey = key
-            "editorDeselect" -> tempMappings.deselectAll.keyboardKey = key
-            "cameraReset" -> tempMappings.reset.keyboardKey = key
-        }
-    }
-
-    private fun getKeyName(key: Int): String {
-        return when (key) {
-            GLFW.GLFW_KEY_ESCAPE -> "Esc"
-            GLFW.GLFW_KEY_ENTER -> "Enter"
-            GLFW.GLFW_KEY_TAB -> "Tab"
-            GLFW.GLFW_KEY_BACKSPACE -> "Backspace"
-            GLFW.GLFW_KEY_INSERT -> "Insert"
-            GLFW.GLFW_KEY_DELETE -> "Del"
-            GLFW.GLFW_KEY_RIGHT -> "Right"
-            GLFW.GLFW_KEY_LEFT -> "Left"
-            GLFW.GLFW_KEY_DOWN -> "Down"
-            GLFW.GLFW_KEY_UP -> "Up"
-            GLFW.GLFW_KEY_PAGE_UP -> "PgUp"
-            GLFW.GLFW_KEY_PAGE_DOWN -> "PgDn"
-            GLFW.GLFW_KEY_HOME -> "Home"
-            GLFW.GLFW_KEY_END -> "End"
-            else -> {
-                val name = GLFW.glfwGetKeyName(key, 0)
-                name?.uppercase() ?: "Key $key"
-            }
-        }
+        MImGui.textDisabled(stringManager.getString("settings.editor.keybindings.moved"))
+        ImGui.spacing()
+        if (stringManager.tipped(button(stringManager.label("menu.settings.keybindings")), "menu.settings.keybindings")) openKeyBindings()
     }
 
     private fun renderGamepadOverlay() {
@@ -416,10 +335,6 @@ class EditorSettingsWindow(
             showGamepadOverlay = tempShowOverlay,
             gamepadOverlaySize = tempOverlaySize
         )
-        // Save keybindings
-        settingsManager.updateEditorSettings(editorInputMappings = tempMappings)
-        // Save camera mappings
-        settingsManager.updateInputMappings(tempMappings)
         settingsManager.updateAutoSaveSettings(tempAutoSaveEnabled, tempAutoSaveInterval)
         settingsManager.updateCompletionSettings(tempCompletionAuto, tempCompletionDelay)
         settingsManager.updateShadowQuality(tempShadowQuality)

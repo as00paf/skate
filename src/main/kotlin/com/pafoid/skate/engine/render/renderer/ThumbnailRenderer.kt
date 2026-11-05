@@ -1,6 +1,9 @@
 package com.pafoid.skate.engine.render.renderer
 
+import com.pafoid.skate.engine.render.rhi.ClearValues
 import com.pafoid.skate.engine.render.rhi.Filter
+import com.pafoid.skate.engine.render.rhi.IntRect
+import com.pafoid.skate.engine.render.rhi.RhiDevice
 import com.pafoid.skate.engine.render.rhi.PixelFormat
 import com.pafoid.skate.engine.render.rhi.RhiContext
 import com.pafoid.skate.engine.render.rhi.RhiTexture
@@ -20,26 +23,15 @@ import com.pafoid.skate.engine.utils.ShaderConst
 import com.pafoid.skate.engine.utils.toRadiansF
 import org.joml.Matrix4f
 import org.joml.Vector3f
-import org.lwjgl.opengl.GL11.GL_COLOR_BUFFER_BIT
-import org.lwjgl.opengl.GL11.GL_DEPTH_BUFFER_BIT
 import org.lwjgl.opengl.GL11.GL_DEPTH_TEST
-import org.lwjgl.opengl.GL11.GL_RGBA
-import org.lwjgl.opengl.GL11.GL_UNSIGNED_BYTE
-import org.lwjgl.opengl.GL11.GL_VIEWPORT
-import org.lwjgl.opengl.GL11.glClear
-import org.lwjgl.opengl.GL11.glClearColor
 import org.lwjgl.opengl.GL11.glEnable
-import org.lwjgl.opengl.GL11.glGetInteger
-import org.lwjgl.opengl.GL11.glGetIntegerv
-import org.lwjgl.opengl.GL11.glReadPixels
-import org.lwjgl.opengl.GL11.glViewport
-import org.lwjgl.opengl.GL30.GL_FRAMEBUFFER
-import org.lwjgl.opengl.GL30.GL_FRAMEBUFFER_BINDING
-import org.lwjgl.opengl.GL30.glBindFramebuffer
 import java.nio.ByteBuffer
 import kotlin.math.max
 
 private const val THUMBNAIL_SIZE = 256
+
+/** Grey background, far depth. */
+private val CLEAR = ClearValues(floatArrayOf(0.5f, 0.5f, 0.5f, 1f), 1f)
 
 /**
  * Renders 3D model thumbnails to off-screen textures.
@@ -74,16 +66,10 @@ class ThumbnailRenderer(
      * @return A NEW texture holding the thumbnail; the caller owns it and closes it when done.
      */
     fun renderThumbnail(model: `3dModel`): RhiTexture {
-        // Save OpenGL state
-        val lastFbo = glGetInteger(GL_FRAMEBUFFER_BINDING)
-        val lastViewport = IntArray(4)
-        glGetIntegerv(GL_VIEWPORT, lastViewport)
-
-        // Setup FBO for off-screen rendering
-        fbo.bind()
-        glViewport(0, 0, THUMBNAIL_SIZE, THUMBNAIL_SIZE)
-        glClearColor(0.5f, 0.5f, 0.5f, 1.0f)
-        glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT)
+        // Off-screen pass on a grey background
+        val device = RhiContext.require()
+        val cmd = device.commandList()
+        cmd.beginPass(fbo.target, clear = CLEAR)
         glEnable(GL_DEPTH_TEST)
 
         // Auto-frame camera based on model bounds
@@ -123,28 +109,22 @@ class ThumbnailRenderer(
         )
 
         GLBindings.cache.reset()
+        cmd.endPass()
 
-        // Create a NEW texture and copy FBO content into it
-        val thumbnailTextureId = createTextureFromFbo(fbo)
-
-        // Restore OpenGL state
-        glBindFramebuffer(GL_FRAMEBUFFER, lastFbo)
-        glViewport(lastViewport[0], lastViewport[1], lastViewport[2], lastViewport[3])
-
-        return thumbnailTextureId
+        // Create a NEW texture and copy the target's content into it
+        return createTextureFromFbo(device, fbo)
     }
 
     /**
-     * Creates a new OpenGL texture and copies the FBO's color attachment into it.
-     * Uses glReadPixels for simplicity and reliability.
+     * Creates a new texture and copies the target's color attachment into it through a synchronous readback.
      */
-    private fun createTextureFromFbo(fbo: FrameBuffer): RhiTexture {
-        // Read pixels from FBO into CPU memory (bottom-up rows, as the texture expects)
+    private fun createTextureFromFbo(device: RhiDevice, fbo: FrameBuffer): RhiTexture {
+        // Read pixels from the target into CPU memory (bottom-up rows, as the texture expects)
         val pixelBuffer = ByteBuffer.allocateDirect(THUMBNAIL_SIZE * THUMBNAIL_SIZE * 4)
-        glReadPixels(0, 0, THUMBNAIL_SIZE, THUMBNAIL_SIZE, GL_RGBA, GL_UNSIGNED_BYTE, pixelBuffer)
+        device.readPixels(fbo.target, 0, IntRect(0, 0, THUMBNAIL_SIZE, THUMBNAIL_SIZE), PixelFormat.RGBA8, pixelBuffer)
         pixelBuffer.rewind()
 
-        val texture = RhiContext.require().createTexture(TextureDesc(
+        val texture = device.createTexture(TextureDesc(
             TextureType.TEXTURE_2D, PixelFormat.RGBA8, THUMBNAIL_SIZE, THUMBNAIL_SIZE,
             sampler = SamplerDesc(minFilter = Filter.LINEAR, magFilter = Filter.LINEAR, wrap = Wrap.CLAMP_TO_EDGE),
         ))

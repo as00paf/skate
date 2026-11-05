@@ -1,5 +1,7 @@
 package com.pafoid.skate.editor.ui.windows
 
+import com.pafoid.skate.editor.events.ComponentFieldAction
+import com.pafoid.skate.editor.imgui.EmptyState
 import com.pafoid.skate.editor.imgui.tippedWith
 import com.pafoid.skate.editor.imgui.tipped
 import com.pafoid.skate.editor.imgui.label
@@ -25,7 +27,8 @@ import imgui.type.ImBoolean
 import imgui.type.ImString
 
 class PropertiesWindow(
-    private val engine: Engine
+    private val engine: Engine,
+    private val hasProject: () -> Boolean = { true },
 ) : EditorWindow("window.properties", true) {
     private val stringManager = engine.stringManager
     private val eventSystem = engine.eventSystem
@@ -37,12 +40,19 @@ class PropertiesWindow(
         val go = sceneManager.currentScene?.selectedGameObject ?: sceneManager.currentScene
 
         ImGui.begin(stringManager.label("window.properties"), isOpen)
+        when {
+            go != null -> {}
+            hasProject() -> EmptyState.render(stringManager, Icons.INFO, "empty.no_scene", "empty.no_scene.hint")
+            else -> EmptyState.noProject(stringManager, eventSystem)
+        }
         go?.let { go ->
             if (go !is Scene) {
                 enabledCheckbox(go)
                 ImGui.spacing()
             }
             objectName(go)
+            // No selection: the inspector shows the scene itself; say so (EDT-10).
+            if (go is Scene) MImGui.textDisabled("${Icons.INFO} ${stringManager.getString("empty.no_selection")}")
             ImGui.spacing()
             ImGui.separator()
             ImGui.spacing()
@@ -93,7 +103,7 @@ class PropertiesWindow(
             }
             ImGui.separator()
             if (stringManager.tipped(ImGui.menuItem("${Icons.ARROW_ROTATE} ${stringManager.getString("context.properties.reset_to_default")}"), "context.properties.reset_to_default")) {
-                component.reset()
+                eventSystem.publish(ComponentFieldAction.Reset(component))
             }
             ImGui.endPopup()
         }

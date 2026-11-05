@@ -9,12 +9,14 @@ import com.pafoid.skate.editor.imgui.label
 import com.pafoid.skate.editor.project.ExportWizard
 import com.pafoid.skate.editor.project.ExportWizard.Phase
 import com.pafoid.skate.editor.project.Project
+import com.pafoid.skate.editor.systems.EditorSettingsManager
 import com.pafoid.skate.editor.systems.ProjectManager
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.core.LoggerService.LogLevel
 import com.pafoid.skate.engine.utils.AssetsPacker
 import com.pafoid.skate.engine.utils.ExportProgress
 import com.pafoid.skate.engine.utils.ExportTarget
+import com.pafoid.skate.engine.utils.GameJarSearch
 import com.pafoid.skate.engine.utils.ProjectExporter
 import imgui.ImGui
 import imgui.type.ImString
@@ -31,6 +33,7 @@ import javax.swing.UIManager
 class ExportWizardWindow(
     engine: Engine,
     private val projectManager: ProjectManager,
+    private val settingsManager: EditorSettingsManager,
 ) : EditorDialog(NAME, engine.stringManager, 600f, 640f) {
 
     private val strings = engine.stringManager
@@ -38,7 +41,10 @@ class ExportWizardWindow(
     private val logger = engine.logger
     val wizard = ExportWizard()
     private val outputInput = ImString(1024)
-    private var gameJar: File? = null
+    private var jarSearch = GameJarSearch(null, emptyList())
+    private val gameJar: File? get() = jarSearch.jar
+    private val jarInput = ImString(1024)
+    private val jarLocator = ExportWizard.gameJarLocator { settingsManager.editorSettings.gameJarPath }
     private var lastFrame = Int.MIN_VALUE
 
     init {
@@ -64,7 +70,8 @@ class ExportWizardWindow(
         wizard.load(project, ProjectExporter(logger).sceneFiles(project, wizard.options(project)))
         outputInput.set(wizard.outputDir.ifBlank { AssetsPacker.defaultOutputDir(project).path })
         wizard.outputDir = outputInput.get()
-        gameJar = ProjectExporter.findGameJar()
+        jarInput.set(settingsManager.editorSettings.gameJarPath.orEmpty())
+        jarSearch = jarLocator.locate()
     }
 
     private fun options(project: Project) {
@@ -75,11 +82,7 @@ class ExportWizardWindow(
                 wizard.target = target
             }
         }
-        if (wizard.target == ExportTarget.WINDOWS) {
-            val jar = gameJar
-            if (jar != null && jar.isFile) MImGui.textDisabled(strings.getString("lbl.export.jar_found", jar.path))
-            else MImGui.errorText(strings.getString("lbl.export.jar_missing"))
-        }
+        if (wizard.target == ExportTarget.WINDOWS) gameJarSection()
 
         MImGui.labeledSeparator(strings.getString("lbl.export.scenes", wizard.includedSceneCount, wizard.scenes.size))
         sceneList(project)
@@ -111,6 +114,43 @@ class ExportWizardWindow(
             eventSystem.publish(ProjectEvent.ExportRequested(wizard.options(project)))
         }
         ImGui.endDisabled()
+    }
+
+    /** Where the game jar was found (or every place searched), a stale-jar warning and the optional override (AST-11). */
+    private fun gameJarSection() {
+        val jar = gameJar
+        if (jar != null && jar.isFile) {
+            MImGui.textDisabled(strings.getString("lbl.export.jar_found", jar.path))
+            if (jarSearch.stale) MImGui.warningText(strings.getString("lbl.export.jar_stale"))
+        } else {
+            MImGui.errorText(strings.getString("lbl.export.jar_missing", ProjectExporter.searchedList(jarSearch)))
+        }
+        ImGui.text(strings.getString("lbl.export.jar_override"))
+        ImGui.setNextItemWidth(ImGui.getContentRegionAvailX() - 200f)
+        ImGui.inputText("##export_game_jar", jarInput)
+        if (ImGui.isItemDeactivatedAfterEdit()) setJarOverride(jarInput.get())
+        ImGui.sameLine()
+        if (strings.tipped(ImGui.button(strings.label("btn.export.jar_browse")), "btn.export.jar_browse")) browseForJar()
+        ImGui.sameLine()
+        if (strings.tipped(ImGui.button(strings.label("btn.export.jar_clear")), "btn.export.jar_clear")) setJarOverride("")
+    }
+
+    private fun setJarOverride(path: String) {
+        jarInput.set(path)
+        settingsManager.updateGameJarPath(path)
+        jarSearch = jarLocator.locate()
+    }
+
+    private fun browseForJar() {
+        try {
+            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName())
+            val chooser = JFileChooser(gameJar?.parentFile)
+            chooser.fileSelectionMode = JFileChooser.FILES_AND_DIRECTORIES
+            chooser.dialogTitle = strings.getString("dialog.export.select_jar")
+            if (chooser.showOpenDialog(null) == JFileChooser.APPROVE_OPTION) setJarOverride(chooser.selectedFile.absolutePath)
+        } catch (e: Exception) {
+            logger.logEditor("Error browsing for the game jar: ${e.message}", LogLevel.ERROR)
+        }
     }
 
     private fun sceneList(project: Project) {

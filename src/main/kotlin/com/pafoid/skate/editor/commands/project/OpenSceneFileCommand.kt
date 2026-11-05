@@ -27,7 +27,12 @@ class OpenSceneFileCommand(
         completedSuccessfully = false
         openedScene = null
 
-        val scene = serializer.decodeFile<Scene?>(FileKind.SCENE, sceneFile.readText())
+        val scene = try {
+            serializer.decodeFile<Scene?>(FileKind.SCENE, sceneFile.readText())
+        } catch (e: Exception) {
+            eventSystem.publish(OpenFailed("${sceneFile.absolutePath}: ${e.message ?: e.javaClass.simpleName}"))
+            return
+        }
         if (scene != null) {
             sceneManager.openScene(scene)
             openedScene = scene

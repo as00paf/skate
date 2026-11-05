@@ -92,19 +92,21 @@ class GizmoSystem(
             MEASURE_GIZMO -> measureGizmo.inUse = true
         }
 
-        // Handle gizmo selection key bindings
+        // Tool keys (EDT-10: not while Ctrl is held, so Ctrl+<key> shortcuts do not also switch tools).
         val bindings = settingsManager.editorSettings.editorInputMappings
-
-        if (engine.inputProvider.isKeyPressed(bindings.gizmoTranslate.keyboardKey)) {
-            usingGizmo = TRANSLATE_GIZMO
-        } else if (engine.inputProvider.isKeyPressed(bindings.gizmoRotate.keyboardKey)) {
-            usingGizmo = ROTATION_GIZMO
-        } else if (engine.inputProvider.isKeyPressed(bindings.gizmoScale.keyboardKey)) {
-            usingGizmo = SCALE_GIZMO
-        } else if (engine.inputProvider.isKeyPressed(bindings.gizmoSelect.keyboardKey)) {
-            usingGizmo = SELECTION_GIZMO
-        } else if (engine.inputProvider.isKeyPressed(bindings.measureTool.keyboardKey)) {
-            usingGizmo = MEASURE_GIZMO
+        val input = engine.inputProvider
+        if (!input.isControlKeyDown()) {
+            if (input.isKeyPressed(bindings.gizmoTranslate.keyboardKey)) {
+                usingGizmo = TRANSLATE_GIZMO
+            } else if (input.isKeyPressed(bindings.gizmoRotate.keyboardKey)) {
+                usingGizmo = ROTATION_GIZMO
+            } else if (input.isKeyPressed(bindings.gizmoScale.keyboardKey)) {
+                usingGizmo = SCALE_GIZMO
+            } else if (input.isKeyPressed(bindings.gizmoSelect.keyboardKey)) {
+                usingGizmo = SELECTION_GIZMO
+            } else if (input.isKeyPressed(bindings.measureTool.keyboardKey)) {
+                usingGizmo = MEASURE_GIZMO
+            }
         }
 
         // Update only the active gizmo

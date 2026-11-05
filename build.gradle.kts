@@ -141,6 +141,28 @@ tasks.register<Jar>("gameJar") {
         attributes["Main-Class"] = "com.pafoid.skate.game.GameMainKt"
     }
 }
+// Runs the standalone game (GameMain) on an exported pack (GPL-18). From classes there is no jar folder to find
+// game.bin in, so the pack is explicit: gradlew runGame -PskateBin=<project>/builds/game.bin (or SKATE_BIN=<path>).
+tasks.register<JavaExec>("runGame") {
+    group = "skate"
+    description = "Runs the exported game: -PskateBin=<path to game.bin> (File > Export Project writes it to <project>/builds)."
+    mainClass.set("com.pafoid.skate.game.GameMainKt")
+    classpath = sourceSets.main.get().runtimeClasspath
+    val bin = providers.gradleProperty("skateBin").orElse(providers.environmentVariable("SKATE_BIN"))
+    val root = layout.projectDirectory
+    doFirst {
+        val path = bin.orNull ?: throw GradleException(
+            "runGame needs an exported pack. Export the project (File > Export Project), then run " +
+                "gradlew runGame -PskateBin=<project>/builds/game.bin, or set SKATE_BIN."
+        )
+        val pack = File(path).let { if (it.isAbsolute) it else root.file(path).asFile }
+        if (!pack.isFile) throw GradleException("runGame: no game.bin at ${pack.absolutePath}. Export the project first.")
+        systemProperty("skate.bin", pack.absolutePath)
+        // game.settings.json is written next to the pack, like in an exported build.
+        workingDir = pack.parentFile
+    }
+}
+
 tasks.register<JavaExec>("completeScript") {
     group = "skate"
     description = "Prints script completions: --args=<file>@<line>:<col>"

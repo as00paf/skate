@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.ui.menus
 
+import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.editor.imgui.tipped
 import com.pafoid.skate.editor.imgui.label
 import com.pafoid.skate.editor.events.WindowAction
@@ -83,10 +84,10 @@ class SettingsMenuBuilder(
     }
     
     private fun renderWindowItems() {
-        if (stringManager.tipped(menuItem(stringManager.getString("menu.settings.keybindings")), "menu.settings.keybindings")) {
+        if (stringManager.tipped(menuItem("${Icons.KEYBOARD} ${stringManager.getString("menu.settings.keybindings")}"), "menu.settings.keybindings")) {
             eventSystem.publish(WindowAction.Show("window.keybindings"))
         }
-        if (stringManager.tipped(menuItem(stringManager.getString("menu.settings.settings")), "menu.settings.settings")) {
+        if (stringManager.tipped(menuItem("${Icons.GEAR} ${stringManager.getString("menu.settings.settings")}"), "menu.settings.settings")) {
             eventSystem.publish(WindowAction.Show("window.editor_settings"))
         }
     }

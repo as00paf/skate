@@ -321,7 +321,8 @@ class ViewportActionHandler(
             }
         }
         if (!playing) {
-            sceneManager.currentScene?.getComponent<DayNightCycleComponent>()?.timeScale = 1.0f
+            // Only the play-mode speed resets; the scene's saved timeScale is left alone (REN-23)
+            sceneManager.currentScene?.getComponent<DayNightCycleComponent>()?.playTimeScale = 1.0f
             eventSystem.publish(CameraAction.SetCamera(editorCamera.camera, editorCamera.transform))
         } else {
             val sceneCameras = sceneManager.currentScene?.getAllComponents<CameraComponent>().orEmpty()
@@ -338,7 +339,7 @@ class ViewportActionHandler(
     }
 
     private fun handleSetSimulationTimeScale(timeScale: Float) {
-        sceneManager.currentScene?.getComponent<DayNightCycleComponent>()?.timeScale = timeScale
+        sceneManager.currentScene?.getComponent<DayNightCycleComponent>()?.playTimeScale = timeScale
     }
 
     private fun handleResetSkateScene() {
@@ -437,16 +438,8 @@ class ViewportActionHandler(
     }
 
     private fun applyAnimationToObject(gameObject: GameObject, animation: Animation) {
-        val animator = gameObject.getComponent<Animator>()
-
-        if (animator != null) {
-            undoRedoManager.executeCommand(
-                ApplyAnimationCommand(gameObject, animation, logger)
-            )
-            sceneManager.currentScene?.isDirty = true
-            logger.logEditor("Added animation to ${gameObject.name}: ${animation.name}")
-        } else {
-            logger.logEditor("Object has no Animator component")
-        }
+        // The command adds an Animator when the object has none; undo removes it again.
+        undoRedoManager.executeCommand(ApplyAnimationCommand(gameObject, animation, logger))
+        sceneManager.currentScene?.isDirty = true
     }
 }

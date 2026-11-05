@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.imgui.components
 
+import com.pafoid.skate.editor.events.ComponentFieldAction
 import com.pafoid.skate.engine.core.EventSystem
 
 /**
@@ -13,5 +14,6 @@ object InspectorDrafts {
         StringFields.endFrame(events, frame)
         flushAudioDrafts(events, frame)
         settleMaterialEdits(events, anyItemActive)
+        InspectorEditTracker.shared.settle(anyItemActive).forEach { events.publish(ComponentFieldAction.Edited(it.component, it.changes)) }
     }
 }

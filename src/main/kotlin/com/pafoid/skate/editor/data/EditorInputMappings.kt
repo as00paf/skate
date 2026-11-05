@@ -4,10 +4,12 @@ import com.pafoid.skate.engine.input.InputBinding
 import kotlinx.serialization.Serializable
 import org.lwjgl.glfw.GLFW
 
+/** The editor's rebindable keys; [EditorShortcuts] describes each one (label, modifiers, scope). */
 @Serializable
 data class EditorInputMappings(
-    var pause: InputBinding = InputBinding(keyboardKey = GLFW.GLFW_KEY_P),
-    var reset: InputBinding = InputBinding(keyboardKey = GLFW.GLFW_KEY_R),
+    var playToggle: InputBinding = InputBinding(keyboardKey = GLFW.GLFW_KEY_F5),
+    var cameraReset: InputBinding = InputBinding(keyboardKey = GLFW.GLFW_KEY_HOME),
+    var focusSelected: InputBinding = InputBinding(keyboardKey = GLFW.GLFW_KEY_F),
 
     // EditorCamera
     var moveForward: InputBinding = InputBinding(keyboardKey = GLFW.GLFW_KEY_W),
@@ -42,36 +44,12 @@ data class EditorInputMappings(
     var toggleFullScreen: InputBinding = InputBinding(keyboardKey = GLFW.GLFW_KEY_F12),
 ) {
 
+    /** Every binding back to its default (all of them, from the constructor defaults). */
     fun resetToDefault() {
-        // Simulation
-        pause = InputBinding(keyboardKey = GLFW.GLFW_KEY_P)
-        reset = InputBinding(keyboardKey = GLFW.GLFW_KEY_R)
-
-        // Editor Camera
-        moveForward = InputBinding(keyboardKey = GLFW.GLFW_KEY_W)
-        moveBackward = InputBinding(keyboardKey = GLFW.GLFW_KEY_S)
-        moveLeft = InputBinding(keyboardKey = GLFW.GLFW_KEY_A)
-        moveRight = InputBinding(keyboardKey = GLFW.GLFW_KEY_D)
-
-        // Gizmos
-        gizmoSelect = InputBinding(keyboardKey = GLFW.GLFW_KEY_1)
-        gizmoTranslate = InputBinding(keyboardKey = GLFW.GLFW_KEY_2)
-        gizmoRotate = InputBinding(keyboardKey = GLFW.GLFW_KEY_3)
-        gizmoScale = InputBinding(keyboardKey = GLFW.GLFW_KEY_4)
-        measureTool = InputBinding(keyboardKey = GLFW.GLFW_KEY_M)
-        deselectAll = InputBinding(keyboardKey = GLFW.GLFW_KEY_ESCAPE)
-
-        // Hierarchy
-        hierarchyCreateNew = InputBinding(keyboardKey = GLFW.GLFW_KEY_INSERT)
-        hierarchyDelete = InputBinding(keyboardKey = GLFW.GLFW_KEY_DELETE)
-        hierarchySelectFirst = InputBinding(keyboardKey = GLFW.GLFW_KEY_HOME)
-        hierarchySelectLast = InputBinding(keyboardKey = GLFW.GLFW_KEY_END)
-        hierarchyNavigateUp = InputBinding(keyboardKey = GLFW.GLFW_KEY_UP)
-        hierarchyNavigateDown = InputBinding(keyboardKey = GLFW.GLFW_KEY_DOWN)
-        hierarchyToggleVisibility = InputBinding(keyboardKey = GLFW.GLFW_KEY_V)
-        hierarchyToggleLock = InputBinding(keyboardKey = GLFW.GLFW_KEY_L)
-        hierarchyDuplicate = InputBinding(keyboardKey = GLFW.GLFW_KEY_D)
-        hierarchyRename = InputBinding(keyboardKey = GLFW.GLFW_KEY_F2)
+        val defaults = EditorInputMappings()
+        EditorShortcuts.rebindable.forEach { shortcut ->
+            val binding = shortcut.binding ?: return@forEach
+            binding.set(this, binding.get(defaults).copy())
+        }
     }
-
 }

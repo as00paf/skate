@@ -27,6 +27,7 @@ import com.pafoid.skate.editor.events.ProjectEvent.OpenProjectSucceeded
 import com.pafoid.skate.editor.events.ProjectEvent.RenameFileRequested
 import com.pafoid.skate.editor.events.ProjectEvent.SaveRequested
 import com.pafoid.skate.editor.events.WindowAction
+import com.pafoid.skate.editor.project.ExportWizard
 import com.pafoid.skate.editor.systems.EditorSettingsManager
 import com.pafoid.skate.editor.systems.ProjectManager
 import com.pafoid.skate.editor.systems.UndoRedoManager
@@ -66,7 +67,7 @@ class ProjectActionHandler(
                 eventSystem.publish(WindowAction.ShowDefault)
                 eventSystem.publish(OpenProjectSucceeded(event.projectPath))
             } else {
-                eventSystem.publish(OpenProjectFailed(event.projectPath, "Failed to open project"))
+                eventSystem.publish(OpenProjectFailed(event.projectPath, projectManager.lastError ?: "Failed to open project"))
             }
         }
         eventSystem.subscribe<CreateProjectRequested> { event ->
@@ -172,7 +173,8 @@ class ProjectActionHandler(
             jobSystem.runIO {
                 // Anything thrown (validation, I/O, OutOfMemoryError while packing) still ends the export.
                 val result = try {
-                    ProjectExporter(logger).export(project, event.options) { progress ->
+                    val locator = ExportWizard.gameJarLocator { settingsManager.editorSettings.gameJarPath }
+                    ProjectExporter(logger, gameJarSearch = locator::locate).export(project, event.options) { progress ->
                         executeOnMainThread { eventSystem.publish(ProjectEvent.ExportProgressed(progress)) }
                     }
                 } catch (t: Throwable) {

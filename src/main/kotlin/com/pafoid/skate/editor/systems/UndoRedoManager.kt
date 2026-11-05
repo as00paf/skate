@@ -1,5 +1,7 @@
 package com.pafoid.skate.editor.systems
 
+import com.pafoid.skate.editor.events.EditorError
+import com.pafoid.skate.editor.commands.ReportsFailure
 import com.pafoid.skate.editor.commands.AsyncCommand
 import com.pafoid.skate.editor.commands.Command
 import com.pafoid.skate.editor.commands.CommandCategory
@@ -10,7 +12,7 @@ import com.pafoid.skate.engine.core.LoggerService
 import kotlinx.coroutines.Job
 
 class UndoRedoManager(
-    eventSystem: EventSystem,
+    private val eventSystem: EventSystem,
     private val logger: LoggerService,
 ) {
     private val undoStack = mutableListOf<Command>()
@@ -29,6 +31,7 @@ class UndoRedoManager(
     }
 
     fun executeCommand(command: Command) {
+        CommandClock.tick()
         when (command.getCategory()) {
             CommandCategory.UNDOABLE -> {
                 command.execute()
@@ -55,6 +58,7 @@ class UndoRedoManager(
     }
 
     fun pushCommand(command: Command) {
+        CommandClock.tick()
         synchronized(historyLock) {
             pushCommandInternal(command)
         }
@@ -72,6 +76,7 @@ class UndoRedoManager(
         synchronized(historyLock) {
             if (undoStack.isNotEmpty()) {
                 val command = undoStack.removeAt(undoStack.size - 1)
+                CommandClock.tick()
                 command.undo()
                 redoStack.add(command)
             }
@@ -79,6 +84,7 @@ class UndoRedoManager(
     }
 
     fun redo() {
+        CommandClock.tick()
         val command = synchronized(historyLock) {
             val redoCommand = redoStack.lastOrNull() ?: return
             if (redoCommand.getCategory() != CommandCategory.ASYNC) {
@@ -234,6 +240,9 @@ class UndoRedoManager(
 
     private fun didCommandSucceed(command: Command): Boolean {
         val trackedCommand = command as? ExecutionTrackedCommand ?: return true
-        return trackedCommand.wasSuccessful()
+        val ok = trackedCommand.wasSuccessful()
+        // EDT-10: failures the user must see open the error dialog, not only a console line.
+        if (!ok && command is ReportsFailure) eventSystem.publish(EditorError(command.errorTitleKey, command.getFailureReason()))
+        return ok
     }
 }
