@@ -113,16 +113,18 @@ class StringTablesTest {
 class StringTablesEditorLoadTest {
     @Test
     fun editorStartupLoadResolvesEditorAndGameKeysInBothLocales() {
-        // Same calls as Editor.init: editor tables, then the game tables, then the saved language.
-        val sm = StringManager(mockk(relaxed = true), "en")
-        assertTrue(sm.loadStrings(Assets.Strings.EDITOR_STRINGS))
-        assertTrue(sm.addStrings(Assets.Strings.GAME_STRINGS))
-        assertEquals("Redo", sm.getString("menu.edit.redo"))
-        assertTrue(!sm.getString("showcase.title").startsWith("!!"), "game key resolves in the editor")
+        // Same calls as Editor.init: editor tables in the editor's manager, game tables in the runtime one (GUI-10).
+        val editor = StringManager(mockk(relaxed = true), "en")
+        val game = StringManager(mockk(relaxed = true), "en", logSource = "game")
+        assertTrue(editor.loadStrings(Assets.Strings.EDITOR_STRINGS))
+        assertTrue(game.addStrings(Assets.Strings.GAME_STRINGS))
+        assertEquals("Redo", editor.getString("menu.edit.redo"))
+        assertTrue(!game.getString("showcase.title").startsWith("!!"), "game key resolves for runtime UI")
+        assertTrue(!editor.hasString("showcase.title"), "game text is not in the editor's table")
 
-        sm.setLocale("fr")
-        assertEquals("Rétablir", sm.getString("menu.edit.redo"), "French accents read as UTF-8")
-        assertTrue(!sm.getString("showcase.title").startsWith("!!"))
-        assertTrue(!sm.getString("component.Transform.translation").startsWith("!!"))
+        editor.setLocale("fr")
+        assertEquals("Rétablir", editor.getString("menu.edit.redo"), "French accents read as UTF-8")
+        assertTrue(!editor.getString("component.Transform.translation").startsWith("!!"))
+        assertEquals("en", game.locale, "the editor language does not change the game's")
     }
 }

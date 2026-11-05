@@ -70,7 +70,7 @@ class Engine {
     val stringManager = StringManager(logger)
 
     /** Runtime UI text (pause menu, HUD, game widgets) with the game's own locale, never the editor's. */
-    val gameStrings = StringManager(logger)
+    val gameStrings = StringManager(logger, logSource = "game")
     val gameLocale = GameLocale(gameStrings)
     init { assetsManager.attachAsyncLoading(jobSystem, eventSystem) }
     val audioEngine = AudioEngine(logger)
