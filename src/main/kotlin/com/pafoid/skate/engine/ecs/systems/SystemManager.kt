@@ -18,10 +18,15 @@ class SystemManager {
 
     /**
      * Runtime pause (pause menu): only [System.runsWhilePaused] systems update, fixed steps do not run and time does
-     * not accumulate, so the scene resumes exactly where it stopped. The loaded scene's [Scene.isPaused] mirrors it.
-     * Render systems always run.
+     * not accumulate, so the scene resumes exactly where it stopped. Render systems always run. The loaded scene's
+     * [Scene.isPaused] mirrors it immediately; [loadScene] (scene switch, Restart) clears it.
+     * See docs/design/pause-semantics.md.
      */
     var paused = false
+        set(value) {
+            field = value
+            loadedScene?.isPaused = value
+        }
 
     fun start() {
         sortSystemsIfNeeded()
@@ -31,7 +36,10 @@ class SystemManager {
 
     fun loadScene(scene: Scene) {
         sortSystemsIfNeeded()
+        // A pause never carries over to another scene.
+        loadedScene?.isPaused = false
         loadedScene = scene
+        paused = false
         systems.forEach {
             it.init(scene)
         }
@@ -41,7 +49,6 @@ class SystemManager {
         sortSystemsIfNeeded()
         // Snapshot: systems may be added/removed (deferred) while updating
         updating = true
-        loadedScene?.isPaused = paused
         try {
             runPhase(SystemPhase.PRE_UPDATE) { it.update(dt) }
 

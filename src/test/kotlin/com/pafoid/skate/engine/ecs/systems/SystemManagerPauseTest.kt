@@ -1,6 +1,12 @@
 package com.pafoid.skate.engine.ecs.systems
 
+import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.ecs.Scene
+import com.pafoid.skate.engine.physics3d.IPhysics3D
+import com.pafoid.skate.engine.ui.PauseMenuSystem
+import com.pafoid.skate.engine.ui.UiInputSystem
+import io.mockk.mockk
+import io.mockk.verify
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -64,5 +70,70 @@ class SystemManagerPauseTest {
         assertFalse(scene.isPaused)
         assertEquals(3, sim.updates)
         assertTrue(physics.fixed - fixedBefore <= 1, "resume ran ${physics.fixed - fixedBefore} fixed steps")
+    }
+
+    @Test
+    fun Paused_MirrorsToSceneImmediately() {
+        manager.paused = true
+        assertTrue(scene.isPaused, "systems later in the same frame must see the pause")
+        manager.paused = false
+        assertFalse(scene.isPaused)
+    }
+
+    @Test
+    fun SceneSwitch_ClearsPause() {
+        manager.paused = true
+        val other = Scene("Other")
+        manager.loadScene(other)
+        assertFalse(manager.paused)
+        assertFalse(scene.isPaused, "the previous scene must not stay paused")
+        assertFalse(other.isPaused)
+        frames(1)
+        assertEquals(1, sim.updates)
+    }
+
+    @Test
+    fun Paused_PhysicsDoesNotStep() {
+        val physics3d = mockk<IPhysics3D>(relaxed = true)
+        val running = Scene("Run").apply { isRunning = true }
+        val m = SystemManager().apply {
+            addSystem(PhysicsSystem(mockk(relaxed = true), null, physics3d))
+            start()
+            loadScene(running)
+        }
+        m.paused = true
+        repeat(30) { m.update(1f / 60f) }
+        verify(exactly = 0) { physics3d.step(any()) }
+        m.paused = false
+        m.update(1f / 60f)
+        verify(atMost = 1) { physics3d.step(any()) }
+    }
+
+    /** Which engine systems freeze: simulation and gameplay cameras freeze; input, UI, audio and derived state run. */
+    @Test
+    fun EngineSystems_PauseClassification() {
+        val events = EventSystem()
+        val frozen = listOf(
+            PhysicsSystem(mockk(relaxed = true), null, mockk(relaxed = true)),
+            AnimationSystem(),
+            ParticleSystem(),
+            ScriptingSystem(),
+            CameraControlSystem { mockk(relaxed = true) },
+            FollowCameraSystem(),
+            DayNightCycleSystem(),
+            RagdollSystem(),
+            MountFollowSystem(),
+            GameObjectManager(),
+        )
+        val running = listOf(
+            InputSystem(mockk(relaxed = true), events),
+            UiInputSystem { mockk(relaxed = true) },
+            PauseMenuSystem({}),
+            AudioSystem(mockk(relaxed = true), mockk(relaxed = true), mockk(relaxed = true), mockk(relaxed = true)),
+            CameraManager(events),
+            TransformSystem(),
+        )
+        frozen.forEach { assertFalse(it.runsWhilePaused, "${it.displayName} must freeze while paused") }
+        running.forEach { assertTrue(it.runsWhilePaused, "${it.displayName} must run while paused") }
     }
 }
