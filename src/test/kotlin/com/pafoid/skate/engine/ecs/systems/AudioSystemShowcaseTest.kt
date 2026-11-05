@@ -252,6 +252,34 @@ class AudioSystemShowcaseTest {
         assertEquals(0f, al.openAlDopplerFactor)
     }
 
+    /** EDT-14: mixer edits in the editor reach the song that is already playing, on the next frame. */
+    @Test
+    fun Showcase_Audio_MusicBusVolumeAndMuteApplyLiveToThePlayingSong() {
+        copyBundledMusic()
+        val scene = loadShowcaseFromDisk()
+        val emitterPos = scene.named("[Audio] Emitter3D").getComponent<Transform>()!!.translation
+        val engine = AudioEngine(logger, al.backend)
+        val system = AudioSystem(engine, logger, assetsManager, cameraManager).also { it.init(scene) }
+        camera.translation.set(emitterPos).add(0f, 0f, 0.5f)
+        scene.isRunning = true
+        frame(system, scene)
+        val source = al.playing.single()
+        assertEquals(0.6f * engine.mixer.bus(BusId.MUSIC).volume, source.gain, 1e-5f)
+
+        engine.applyConfig(engine.currentConfig().copy(musicVolume = 0.5f))
+        frame(system, scene)
+        assertEquals(0.3f, source.gain, 1e-5f)
+
+        engine.applyConfig(engine.currentConfig().copy(musicMuted = true))
+        frame(system, scene)
+        assertEquals(0f, source.gain)
+        assertTrue(source.isPlaying, "muting keeps the song playing silently")
+
+        engine.applyConfig(engine.currentConfig().copy(musicMuted = false, masterVolume = 0.5f))
+        frame(system, scene)
+        assertEquals(0.15f, source.gain, 1e-5f)
+    }
+
     @Test
     fun Showcase_Audio_MissingMp3LogsOneWarningAndTheSceneKeepsRunning() {
         val scene = loadShowcaseFromDisk()

@@ -7,11 +7,15 @@ import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.core.StringManager
 import imgui.ImGui
 
-/** Per-bus volume, mute, low-pass and reverb-send controls. Edits are committed as one command on release. */
+/**
+ * Per-bus volume, mute, low-pass and reverb-send controls. Edits are committed as one command on release; while a
+ * slider is held, [preview] applies the draft to the live mixer so the change is heard at once (EDT-14).
+ */
 class AudioMixerPanel(
     private val strings: StringManager,
     private val events: EventSystem,
     private val projectManager: ProjectManager,
+    private val preview: (AudioSettings) -> Unit = {},
 ) {
     private var draft: AudioSettings? = null
 
@@ -64,8 +68,11 @@ class AudioMixerPanel(
             events.publish(AudioAction.EditBuses(settings))
         } else if (changed) {
             draft = settings
-        } else if (!ImGui.isAnyItemActive()) {
+            preview(settings)
+        } else if (draft != null && !ImGui.isAnyItemActive()) {
+            // Released without an edit (or the edit was cancelled): back to the saved mix.
             draft = null
+            preview(project.gameplaySettings.audio)
         }
     }
 }
