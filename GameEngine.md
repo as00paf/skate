@@ -28,7 +28,7 @@ Each domain has a dedicated agent (see [Agents & herdr](#agents--herdr)).
 
 **Rules for agents**
 
-1. Only work on tasks in **your domain** (the ID prefix). If you need a change in another domain, report it to `skate-lead` instead of making it.
+1. Only work on tasks in **your domain** (the ID prefix). If you need a change in another domain, report it to `skate-lead` instead of making it. Exception: the lead may assign a task to another agent explicitly (`[~] @agent` on that task, e.g. EDT tasks spread across agents from round 16); the assignee owns it, follows the target domain's conventions, and the domain owner reviews.
 2. Pick the highest-priority task whose `Deps` are all `[x]`. Before you start, read the code under the domain's paths.
 3. Start every rewrite (`REWRITE` in the title) with a short design note in `docs/design/<task-id>.md`. Ask the lead for approval before you write code.
 4. Respect the architecture guards in `src/test/kotlin/com/pafoid/skate/architecture/` (engine ↛ editor, physics via factory, UI mutations through `Command` + service layer).
@@ -484,7 +484,7 @@ The player controller was hardcoded at first and needs a big overhaul. Some skat
   - Do: From REN-22: the skateboard prefab's model has 2.57M indices (~858K triangles, 55 parts); its shadow costs ~1.5 ms and picking ~1 ms per frame. Replace it with a decimated/game-ready mesh under ~20K triangles, keeping the GPL-14 orientation and collider fit.
   - Done when: The board renders the same at a glance with under 20K triangles; the frame time while orbiting is below the pre-round-11 baseline.
   - Deps: REN-22
-- [ ] **GPL-17** `P3` Deterministic skater prediction step
+- [~] @skate-gameplay **GPL-17** `P3` Deterministic skater prediction step
   - Do: From NET-03: a kinematic skater step (`PredictionStep`) that client and server run with the same result, reading only replicated state (no Bullet), so NET-03 prediction can be wired into the skate game, with a Feature Showcase demo.
   - Done when: Client and server produce identical skater states from the same inputs in a test; a showcase demo shows prediction under simulated latency.
   - Deps: NET-03
@@ -614,16 +614,16 @@ All editor mutations must go through `Command` classes and the service layer (se
 - [ ] **EDT-05** `P2` Tooltips everywhere
   - Do: Add tooltips (via `StringManager` keys) to every toolbar button, property and menu item.
   - Done when: No interactive widget lacks a tooltip. A test checks that all tooltip keys exist in the string files.
-- [ ] **EDT-06** `P2` Complete translations
+- [~] @skate-editor **EDT-06** `P2` Complete translations
   - Do: Find hardcoded UI strings and missing keys between `assets/strings/editor_strings.properties` and the locale files.
   - Done when: A unit test fails on missing keys, and `fr` is complete.
-- [ ] **EDT-07** `P2` Theming support
+- [~] @skate-gameui **EDT-07** `P2` Theming support
   - Do: Make `ImGuiStyleManager` load themes (colors, sizes, fonts) from files, ship light/dark/high-contrast themes, and add a theme picker in `EditorSettingsWindow`.
   - Done when: Switching theme applies live and persists. Theme parsing has unit tests.
-- [ ] **EDT-08** `P2` Shell command panel
+- [~] @skate-tooling **EDT-08** `P2` Shell command panel
   - Do: Add a dockable terminal-style panel that runs shell commands (Gradle tasks, the TLG-01 CLI) asynchronously, streams output, and keeps history.
   - Done when: Commands run without blocking the UI and can be cancelled.
-- [ ] **EDT-09** `P2` Export UX
+- [~] @skate-assets **EDT-09** `P2` Export UX
   - Do: Add an editor-side export wizard on top of AST-06 (target, included scenes, compression, output folder) with progress reporting.
   - Done when: A sample project can be exported from the UI.
   - Deps: AST-06
@@ -640,15 +640,15 @@ All editor mutations must go through `Command` classes and the service layer (se
   - Do: Add editor UI to create, edit and remove the PHY-03 joint component (type, connected body, anchors, limits, motor), through commands in `editor/commands`.
   - Done when: Joints can be created and edited in the editor with undo/redo; command tests under `editor/commands`.
   - Deps: PHY-03
-- [ ] **EDT-14** `P2` Audio bus and mute UI
+- [~] @skate-audio **EDT-14** `P2` Audio bus and mute UI
   - Do: Call `engine.audioEngine.applyConfig(settings.audio.toConfig())` on startup. Add UI bus volume, mute toggles and the new `AudioComponent` inspector fields from `docs/design/AUD-01.md`.
   - Done when: Bus volumes and mutes can be edited in the editor and persist.
   - Deps: AUD-02
-- [ ] **EDT-16** `P2` Animator inspector: controller and mask selection
+- [~] @skate-animation **EDT-16** `P2` Animator inspector: controller and mask selection
   - Do: Expose the ANI-02 controller asset and ANI-03 bone mask selection in the Animator inspector via commands.
   - Done when: Controller and mask can be assigned in the editor with undo/redo.
   - Deps: ANI-03
-- [ ] **EDT-17** `P2` Material inspector and save-as-asset
+- [~] @skate-render **EDT-17** `P2` Material inspector and save-as-asset
   - Do: Add a material inspector and a "save material as asset" action backed by the REN-04 `.skmat` assets, via commands.
   - Done when: A material can be edited and saved as `.skmat` from the editor.
   - Deps: REN-04
@@ -719,7 +719,7 @@ All editor mutations must go through `Command` classes and the service layer (se
   - Do: From INP-09: in `Engine.kt`, replace the two `ignoreImGui = true` workarounds with `reader.isMouseButtonDown(1)` for fly-cam look and the default `ReaderUiInputSource` pointer, so look keeps working when the cursor leaves the view mid-drag.
   - Done when: Fly-cam look and UI pointer behave as now plus mid-drag exit keeps working; tests.
   - Deps: INP-09
-- [ ] **EDT-36** `P2` Edit String fields in the generic inspector
+- [~] @skate-ecs **EDT-36** `P2` Edit String fields in the generic inspector
   - Do: From GPL-05: the generic Properties inspector doesn't show/edit `String` fields, so e.g. a follow camera's target can't be changed. Add text fields (and an object picker where the string names a GameObject) via commands.
   - Done when: String fields are editable with undo; test.
 - [x] **EDT-37** `P2` Split editor string tables to stop merge conflicts
