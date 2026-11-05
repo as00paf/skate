@@ -23,14 +23,24 @@ object ScreenshotUtils {
     private val screenshotSequence = AtomicInteger(0)
     private val screenshotTimestampFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm-ss-SSS")
 
-    /** Saves color attachment 0 of [target] as a PNG in `screenshots/` (read now, written in the background). */
-    fun takeScreenshot(target: RhiRenderTarget, device: RhiDevice = RhiContext.require()) {
+    /** Folder used when the caller gives none (relative to the working directory). */
+    const val DEFAULT_DIRECTORY = "screenshots"
+
+    /**
+     * Saves color attachment 0 of [target] as a PNG in [directory]: read now, written on a background thread. Then
+     * [onResult] runs on that thread with the saved file, or the failure. By default a native message box reports it.
+     */
+    fun takeScreenshot(
+        target: RhiRenderTarget,
+        device: RhiDevice = RhiContext.require(),
+        directory: File = File(DEFAULT_DIRECTORY),
+        onResult: (Result<File>) -> Unit = ::showResultPopup,
+    ) {
         val width = target.width
         val height = target.height
-        val screenshotsDir = "screenshots"
-        File(screenshotsDir).mkdirs()
-        val fileName = buildScreenshotFileName()
-        val filePath = "$screenshotsDir/$fileName"
+        directory.mkdirs()
+        val file = File(directory, buildScreenshotFileName())
+        val filePath = file.path
 
         val pixels = BufferUtils.createByteBuffer(width * height * 4)
         
@@ -48,24 +58,17 @@ object ScreenshotUtils {
                 }
             }
 
-            if (stbi_write_png(filePath, width, height, 4, flippedPixels, width * 4)) {
-                // UI interaction must be carefully handled if TinyFileDialogs blocks or needs specific thread
-                // TinyFileDialogs is usually thread-safe and creates its own window.
-                showScreenshotPopup(filePath)
-            } else {
-                TinyFileDialogs.tinyfd_messageBox("Screenshot Failed", "Failed to save screenshot.", "ok", "error", true)
-            }
+            val written = runCatching { stbi_write_png(filePath, width, height, 4, flippedPixels, width * 4) }.getOrDefault(false)
+            onResult(if (written) Result.success(file) else Result.failure(IllegalStateException("Could not write $filePath")))
         }
     }
 
-    private fun showScreenshotPopup(filePath: String) {
-        TinyFileDialogs.tinyfd_messageBox(
-            "Screenshot Saved",
-            "Screenshot saved to:\n$filePath",
-            "ok",
-            "info",
-            true
-        )
+    private fun showResultPopup(result: Result<File>) {
+        result.onSuccess {
+            TinyFileDialogs.tinyfd_messageBox("Screenshot Saved", "Screenshot saved to:\n${it.path}", "ok", "info", true)
+        }.onFailure {
+            TinyFileDialogs.tinyfd_messageBox("Screenshot Failed", "Failed to save screenshot.", "ok", "error", true)
+        }
     }
 
     internal fun buildScreenshotFileName(
