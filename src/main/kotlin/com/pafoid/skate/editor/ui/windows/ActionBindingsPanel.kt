@@ -145,7 +145,7 @@ class ActionBindingsPanel(
         )
         if (groups.isEmpty()) ImGui.textDisabled(s("lbl.keybindings.no_match"))
         for (group in groups) {
-            val title = "${contextLabel(group.context)} / ${group.categoryLabel}##kb_group_${group.context}_${group.category}"
+            val title = "${contextLabel(group.context)} / ${group.categoryLabel}###kb_group_${group.context}_${group.category}"
             val open = ImGui.collapsingHeader(title, imgui.flag.ImGuiTreeNodeFlags.DefaultOpen)
             ImGui.sameLine()
             if (ImGui.smallButton(s("btn.keybindings.reset_category") + "##kb_reset_${group.context}_${group.category}")) {

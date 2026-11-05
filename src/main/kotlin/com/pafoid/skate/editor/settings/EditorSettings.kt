@@ -21,6 +21,7 @@ data class EditorSettings(
     var editorInputMappings: EditorInputMappings = EditorInputMappings(),
     var completionAutoPopup: Boolean = true,
     var completionDelayMs: Int = 200,
+    var graphics: GraphicsSettings = GraphicsSettings(),
 ) {
 
     fun addRecentProject(projectPath: String): EditorSettings {

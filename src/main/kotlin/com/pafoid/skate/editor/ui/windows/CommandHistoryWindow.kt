@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.ui.windows
 
+import com.pafoid.skate.editor.imgui.label
 import com.pafoid.skate.editor.commands.Command
 import com.pafoid.skate.editor.events.UndoRedoAction
 import com.pafoid.skate.editor.imgui.EditorWindow
@@ -22,7 +23,7 @@ class CommandHistoryWindow(
     private val redoStackHeight = 150f
 
     override fun imgui() {
-        ImGui.begin(stringManager.getString("window.command_history"), isOpen)
+        ImGui.begin(stringManager.label("window.command_history"), isOpen)
 
         renderToolbar()
 

@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.ui.menus
 
+import com.pafoid.skate.editor.imgui.label
 import com.pafoid.skate.editor.events.UndoRedoAction
 import com.pafoid.skate.editor.events.ViewportAction
 import com.pafoid.skate.editor.imgui.data.Icons
@@ -18,7 +19,7 @@ class EditMenuBuilder(
 ) {
 
     fun render() {
-        if (beginMenu(stringManager.getString("menu.edit"))) {
+        if (beginMenu(stringManager.label("menu.edit"))) {
             renderUndoRedoItems()
             ImGui.separator()
             renderClipboardItems()

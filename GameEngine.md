@@ -112,9 +112,10 @@ The renderer works but needs cleaner APIs, caching, dynamic shaders, better mate
   - Do: Clean up `Renderer2D`, `TextureRenderer3D` and sprite batching. Add mipmaps/anisotropy from `TextureQuality`, sprite atlases and billboards.
   - Done when: Sprites and billboards batch correctly, and texture quality settings take effect.
   - Deps: REN-02
-- [ ] **REN-12** `P3` RHI abstraction (Vulkan-ready)
+- [~] @skate-render **REN-12** `P3` RHI abstraction (Vulkan-ready)
   - Do: Define backend-agnostic interfaces (`RhiDevice`, `RhiBuffer`, `RhiTexture`, `RhiPipeline`, `RhiCommandList`) and move all GL calls into an `OpenGlRhi` backend.
   - Done when: No GL call exists outside `render/rhi/opengl`. An architecture guard test enforces this.
+  - Design: `docs/design/REN-12.md` approved by the lead (round 15) with the §7 proposals as written: ImGuiLayer is the one allowed GL user; named uniforms via `ShaderParams`; Vulkan semantics (pass begin/end, depth range, Y-flip) owned by the backend; sync picking readback; main-thread only. Migrate in the §5 steps, one or two per round, starting with steps 0-1.
   - Deps: REN-03, REN-04, REN-05
 - [ ] **REN-13** `P3` Vulkan backend spike
   - Do: Build a minimal `VulkanRhi` that renders the sample scene's geometry pass.
@@ -247,6 +248,10 @@ The ECS is in good working shape but needs a complete review. It is probably mis
   - Do: Review EDT-33's top-level rule (parent is the Scene) and `GameObject.isTopLevel/ancestors()/linkChildren()`, `GameObjectManager.addGameObject(parent, index)`/`removeGameObject`, and REN-09's `EnvironmentComponent` fog fields and `EnvironmentSystem` fog cycle wiring. Fix issues, migrate remaining `parent == null` callers.
   - Done when: Review notes in the commit message; remaining callers use the helpers; tests green.
   - Deps: EDT-33, REN-09
+- [x] **ECS-13** `P2` Review GUI-09 runtime pause hooks
+  - Do: From GUI-09: review `System.runsWhilePaused`, `SystemManager.paused`, `Scene.isPaused` and the `AudioSystem` hold/resume; check every system's behaviour while paused (physics, animation, particles, camera control, UI input) and that Stop/restart clears pause.
+  - Done when: Review fixes committed; pause semantics documented; tests for paused systems.
+  - Deps: GUI-09
 
 ### Physics — `PHY` (`skate-physics`)
 
@@ -444,7 +449,7 @@ The player controller was hardcoded at first and needs a big overhaul. Some skat
 - [x] **GPL-07** `P2` Fix `CameraInterpolator.lerpToPreset` (BUG-014)
   - Do: `handleLerp` is private and never called, so `lerpToPreset` does nothing. Wire it into the camera update and re-enable the disabled `CameraTest` lerp case.
   - Done when: `CameraTest` lerp passes and BUG-014 is removed from `docs/bugs.md`.
-- [ ] **GPL-08** `P2` `GameMain` logging and paths
+- [x] **GPL-08** `P2` `GameMain` logging and paths
   - Do: Replace `println` and the hard-coded path in `GameMain` (QA-04, BUG-011).
   - Done when: No `println` or hard-coded paths in `game/`.
 - [x] **GPL-09** `P1` Walk/skate mount toggle
@@ -519,10 +524,14 @@ In-game UI components need to be added (separate from the ImGui editor).
   - Do: From AST-07: review `engine/core/StringManager.kt`, `StringTables.kt`, the new `StringSource.kt` and `GameMain.loadGameStrings()` (pack-based game strings), and align with EDT-37's per-area tables.
   - Done when: Review fixes committed; runtime UI strings load from files and packs alike; tests.
   - Deps: AST-07
-- [ ] **GUI-09** `P1` Pause menu in editor Play
+- [x] **GUI-09** `P1` Pause menu in editor Play
   - Do: Human request on PR #16: Esc opens the pause menu in editor Play too, not only in the exported game. Move the pause menu (`game/ui/GameUi.kt`, opened from `GameMain`) into runtime code that both `GameMain` and editor Play use (Resume, Restart, Language, Quit; in the editor, Quit/Restart map to Stop/restart-play). Route Esc to the game while playing (the editor's Esc = deselect only when not playing); coordinate the editor input side with `skate-editor`. Pausing freezes simulation, audio and animation; Resume continues.
   - Done when: Esc toggles the pause menu in editor Play and in the exported game, with identical behaviour; Esc still deselects while editing; tests through the real path (load from disk, Play, Esc).
   - Deps: AST-07
+- [x] **GUI-10** `P0` Game language must not change the editor language
+  - Do: Human-reported on PR #17: switching language in the game's pause menu (editor Play) also switches the editor UI. Give the runtime/game its own locale (game string tables, saved in game settings) separate from the editor's locale; editor Play starts with the game locale; Stop leaves the editor language untouched.
+  - Done when: Changing the game language in editor Play changes only runtime UI text; the editor stays in its language; exported game unaffected; tests.
+  - Deps: GUI-09
 
 ### Scripting — `SCR` (`skate-scripting`)
 
@@ -684,7 +693,7 @@ All editor mutations must go through `Command` classes and the service layer (se
 - [x] **EDT-28** `P1` Hierarchy empty after creating a new project
   - Do: Human-reported: after creating a new project in the editor, the Scene Hierarchy window does not show the current scene's game objects. Find why the hierarchy is not bound to the new project's active scene (stale scene reference, event not fired, lazy load) and fix it.
   - Done when: New project shows its scene's objects in the hierarchy immediately; regression test.
-- [ ] **EDT-29** `P2` Wire shadow quality setting to the engine
+- [x] **EDT-29** `P2` Wire shadow quality setting to the engine
   - Do: From REN-07: wherever `GraphicsSettings` is applied, set `ShadowSettings.quality = ShadowQualityLevel.fromName(graphicsSettings.shadowQuality.name)`; add a LOW/MEDIUM/HIGH selector for `ShadowPass` in `RenderGraphWindow`.
   - Done when: Changing shadow quality in settings or the render graph window switches shadows at runtime; test for the mapping.
   - Deps: REN-07
@@ -716,6 +725,10 @@ All editor mutations must go through `Command` classes and the service layer (se
 - [x] **EDT-37** `P2` Split editor string tables to stop merge conflicts
   - Do: Every round, parallel agents conflict in `assets/strings/editor_strings(.properties/_fr)`. Split them into per-area files (e.g. `editor_strings_<area>[_fr].properties`) loaded and merged by `StringManager`, with a duplicate-key check test; same for game strings if needed.
   - Done when: Strings load from several files, duplicates fail a test, and existing keys are moved.
+- [x] **EDT-38** `P0` Stable ImGui IDs across editor languages
+  - Do: Human-reported on PR #17: changing the editor language breaks ImGui, likely because window/widget IDs come from translated labels. Use `translated###stable_id` (or `PushID`) for every window, menu, tab, tree node, popup, table and widget whose label is translated; keep docking layout/`imgui.ini`, open state and selection across a language switch at runtime.
+  - Done when: Switching language at runtime keeps docking layout, window open/collapsed state, tree expansion and popups working; a guard test fails on ImGui calls built from translated labels without a stable ID.
+  - Deps: EDT-37
 
 ## Testing & tooling
 

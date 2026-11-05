@@ -16,6 +16,18 @@ class SystemManager {
 
     val systems: List<System> get() = _systems
 
+    /**
+     * Runtime pause (pause menu): only [System.runsWhilePaused] systems update, fixed steps do not run and time does
+     * not accumulate, so the scene resumes exactly where it stopped. Render systems always run. The loaded scene's
+     * [Scene.isPaused] mirrors it immediately; [loadScene] (scene switch, Restart) clears it.
+     * See docs/design/pause-semantics.md.
+     */
+    var paused = false
+        set(value) {
+            field = value
+            loadedScene?.isPaused = value
+        }
+
     fun start() {
         sortSystemsIfNeeded()
         systems.forEach { it.start() }
@@ -24,7 +36,10 @@ class SystemManager {
 
     fun loadScene(scene: Scene) {
         sortSystemsIfNeeded()
+        // A pause never carries over to another scene.
+        loadedScene?.isPaused = false
         loadedScene = scene
+        paused = false
         systems.forEach {
             it.init(scene)
         }
@@ -37,9 +52,9 @@ class SystemManager {
         try {
             runPhase(SystemPhase.PRE_UPDATE) { it.update(dt) }
 
-            accumulator += dt
+            if (!paused) accumulator += dt
             var steps = 0
-            while (accumulator >= fixedTimeStep && steps < maxFixedSteps) {
+            while (!paused && accumulator >= fixedTimeStep && steps < maxFixedSteps) {
                 runPhase(SystemPhase.FIXED_UPDATE) { it.fixedUpdate(fixedTimeStep) }
                 accumulator -= fixedTimeStep
                 steps++
@@ -80,7 +95,9 @@ class SystemManager {
 
     private inline fun runPhase(phase: SystemPhase, action: (System) -> Unit) {
         for (system in _systems.toTypedArray()) {
-            if (system.enabled && system.phase == phase && system !in pendingRemovals) action(system)
+            if (!system.enabled || system.phase != phase || system in pendingRemovals) continue
+            if (paused && phase != SystemPhase.RENDER && !system.runsWhilePaused) continue
+            action(system)
         }
     }
 

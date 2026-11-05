@@ -29,7 +29,7 @@ class WindowManager(
                 DefaultDockLayout.Zone.CENTER -> mainBodyId.get()
                 null -> return@forEach
             }
-            dockBuilderDockWindow(stringManager.getString(window.name), dockId)
+            dockBuilderDockWindow(window.title(stringManager), dockId)
         }
     }
 

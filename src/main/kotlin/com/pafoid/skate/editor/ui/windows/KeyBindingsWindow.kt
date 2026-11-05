@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.ui.windows
 
+import com.pafoid.skate.editor.imgui.label
 import com.pafoid.skate.editor.data.EditorInputMappings
 import com.pafoid.skate.editor.imgui.EditorWindow
 import com.pafoid.skate.editor.systems.EditorSettingsManager
@@ -46,7 +47,7 @@ class KeyBindingsWindow(
         if (!isOpen.get()) return
 
         imgui.ImGui.setNextWindowSize(780f, 520f, imgui.flag.ImGuiCond.FirstUseEver)
-        if (begin(stringManager.getString("window.keybindings"), ImGuiWindowFlags.None)) {
+        if (begin(stringManager.label("window.keybindings"), ImGuiWindowFlags.None)) {
             // Tab selection using combo
             val tabNames = arrayOf(
                 stringManager.getString("lbl.keybindings.tab_actions"),

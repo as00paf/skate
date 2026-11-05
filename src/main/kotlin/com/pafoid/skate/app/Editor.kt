@@ -4,6 +4,7 @@ import com.pafoid.skate.editor.data.EditorInputState
 import com.pafoid.skate.editor.gizmos.EditorCamera
 import com.pafoid.skate.editor.imgui.ImGuiLayer
 import com.pafoid.skate.editor.systems.ClipboardService
+import com.pafoid.skate.editor.systems.EditorPauseActions
 import com.pafoid.skate.editor.systems.EditorSettingsManager
 import com.pafoid.skate.editor.systems.GizmoSystem
 import com.pafoid.skate.editor.systems.ProjectManager
@@ -15,6 +16,9 @@ import com.pafoid.skate.engine.assets.Assets.Strings.EDITOR_STRINGS
 import com.pafoid.skate.engine.assets.Assets.Strings.GAME_STRINGS
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.core.Window
+import com.pafoid.skate.editor.events.ProjectEvent
+import com.pafoid.skate.engine.ui.GameSettings
+import com.pafoid.skate.engine.ui.GameSettingsStore
 import com.pafoid.skate.engine.input.PointerSource
 
 class Editor(
@@ -28,6 +32,12 @@ class Editor(
 
     init {
         engine.uiAuthoring = true
+        EditorPauseActions.install(engine.pauseActions, engine.eventSystem)
+        // The game's language lives in the project's game settings, never in the editor's (GUI-10).
+        engine.eventSystem.subscribe<ProjectEvent.Opened> { event ->
+            val file = GameSettings.fileIn(event.project.getProjectDirectory())
+            engine.gameLocale.attach(GameSettingsStore(file, engine.logger))
+        }
         // One pointer for picking, gizmos and runtime UI: ImGui's mouse is in the same desktop space as the
         // viewport image rect (also with multi-viewports); the GLFW cursor is relative to the main window.
         engine.inputProvider.mouseListener.pointerSource = PointerSource { out ->
@@ -65,7 +75,8 @@ class Editor(
         engine.jobSystem.runIO {
             settingsManager.loadSettings()
             engine.stringManager.loadStrings(EDITOR_STRINGS)
-            engine.stringManager.addStrings(GAME_STRINGS) // runtime UI in the viewport (HUD, showcase)
+            // Runtime UI in the viewport (HUD, showcase, pause menu) has its own strings and locale (GUI-10).
+            engine.gameStrings.addStrings(GAME_STRINGS)
             engine.stringManager.setLocale(settingsManager.editorSettings.language)
         }
 

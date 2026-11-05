@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.ui.menus
 
+import com.pafoid.skate.editor.imgui.label
 import com.pafoid.skate.game.prefabs.PrefabCatalog
 import com.pafoid.skate.game.prefabs.PrefabCategory
 import com.pafoid.skate.editor.data.PrimitiveType
@@ -54,7 +55,7 @@ class ViewportContextMenu(
         }
 
         // Create 3D Object submenu
-        if (ImGui.beginMenu("${Icons.CUBE} ${stringManager.getString("context.viewport.create_3d_object")}")) {
+        if (ImGui.beginMenu(stringManager.label("context.viewport.create_3d_object", "${Icons.CUBE} "))) {
             if (ImGui.menuItem(stringManager.getString("context.viewport.create_3d_object.cube"))) {
                 eventSystem.publish(CreatePrimitive("Cube", PrimitiveType.CUBE, Vector3f(0.5f, 0.5f, 0.5f)))
             }
@@ -71,7 +72,7 @@ class ViewportContextMenu(
         }
 
         // Create Light submenu
-        if (ImGui.beginMenu("${Icons.SUN} ${stringManager.getString("context.viewport.create_light")}")) {
+        if (ImGui.beginMenu(stringManager.label("context.viewport.create_light", "${Icons.SUN} "))) {
             if (ImGui.menuItem(stringManager.getString("context.viewport.create_light.directional"))) {
                 eventSystem.publish(CreateLight("DirectionalLight", LightType.DIRECTIONAL))
             }
@@ -94,7 +95,7 @@ class ViewportContextMenu(
         ImGui.separator()
 
         // One submenu per prefab picker section (PrefabCatalog), player prefabs excluded.
-        if (ImGui.beginMenu("${Icons.GEAR} ${stringManager.getString("context.viewport.create_obstacle")}")) {
+        if (ImGui.beginMenu(stringManager.label("context.viewport.create_obstacle", "${Icons.GEAR} "))) {
             PrefabCategory.entries.filter { it != PrefabCategory.PLAYER }.forEach { category ->
                 if (ImGui.beginMenu(stringManager.getString("lbl.prefabs.${category.name.lowercase()}"))) {
                     PrefabCatalog.inCategory(category).forEach { entry ->

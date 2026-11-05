@@ -163,6 +163,69 @@ class AudioSystemShowcaseTest {
         verify(exactly = 0) { logger.log(any(), LogLevel.ERROR, any()) }
     }
 
+    /** GUI-09: the pause menu holds the song where it is; Resume continues the same voice, Stop still releases it. */
+    @Test
+    fun Showcase_Audio_PauseHoldsTheSongAndResumeContinuesIt() {
+        copyBundledMusic()
+        val scene = loadShowcaseFromDisk()
+        val emitter = scene.named("[Audio] Emitter3D").getComponent<AudioComponent>()!!
+        val system = system(scene)
+        scene.isRunning = true
+        frame(system, scene)
+        val source = al.playing.single()
+
+        scene.isPaused = true
+        frame(system, scene)
+        assertFalse(source.isPlaying, "still playing while paused")
+        assertTrue(source.id in al.sources, "the voice must be held, not released")
+        val uploaded = al.uploads.size
+        repeat(30) { frame(system, scene) }
+        assertEquals(uploaded, al.uploads.size, "the stream kept decoding while paused")
+
+        scene.isPaused = false
+        frame(system, scene)
+        assertTrue(source.isPlaying, "Resume must continue the same voice")
+        assertEquals(listOf(source), al.playing)
+
+        // A sound paused by gameplay stays paused across the pause menu.
+        emitter.pause()
+        frame(system, scene)
+        scene.isPaused = true
+        frame(system, scene)
+        scene.isPaused = false
+        frame(system, scene)
+        assertFalse(source.isPlaying)
+
+        // Stop while the pause menu is open releases everything.
+        emitter.play()
+        frame(system, scene)
+        scene.isPaused = true
+        frame(system, scene)
+        scene.isRunning = false
+        frame(system, scene)
+        assertTrue(al.sources.isEmpty())
+    }
+
+    /** ECS-13: switching scenes while paused releases the held voice instead of resuming it in the new scene. */
+    @Test
+    fun Showcase_Audio_SceneSwitchWhilePausedReleasesHeldVoices() {
+        copyBundledMusic()
+        val scene = loadShowcaseFromDisk()
+        val system = system(scene)
+        scene.isRunning = true
+        frame(system, scene)
+        assertEquals(1, al.playing.size)
+        scene.isPaused = true
+        frame(system, scene)
+
+        val other = Scene("Other").apply { isRunning = true }
+        system.init(other)
+        frame(system, other)
+
+        assertTrue(al.playing.isEmpty(), "no voice may resume in the new scene")
+        assertTrue(al.sources.isEmpty(), "the old scene's voices must be released")
+    }
+
     /** AUD-11: clicking an area button glides the camera fast; the song must keep its pitch. */
     @Test
     fun Showcase_Audio_FastCameraGlideKeepsTheSongAtPitchOne() {

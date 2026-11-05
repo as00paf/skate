@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.ui.menus
 
+import com.pafoid.skate.editor.imgui.label
 import com.pafoid.skate.editor.events.WindowAction
 import com.pafoid.skate.editor.imgui.WindowCategory
 import com.pafoid.skate.editor.imgui.WindowRegistry
@@ -19,8 +20,8 @@ class ViewMenuBuilder(
 ) {
 
     fun render() {
-        if (beginMenu(stringManager.getString("menu.view"))) {
-            if (beginMenu(stringManager.getString("menu.view.windows"))) {
+        if (beginMenu(stringManager.label("menu.view"))) {
+            if (beginMenu(stringManager.label("menu.view.windows"))) {
                 val grouped = WindowCategory.grouped(windowRegistry.dockableWindows)
                 grouped.entries.forEachIndexed { index, (category, windows) ->
                     if (index > 0) separator()

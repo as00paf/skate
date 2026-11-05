@@ -43,6 +43,8 @@ import com.pafoid.skate.engine.physics3d.BodyType
 import com.pafoid.skate.engine.physics3d.bullet.BulletPhysics3D
 import com.pafoid.skate.engine.physics3d.native.NativeLibraryLoader
 import com.pafoid.skate.engine.render.renderer.DebugRenderer
+import com.pafoid.skate.engine.ui.PauseMenu
+import com.pafoid.skate.engine.ui.PauseMenuSystem
 import com.pafoid.skate.engine.ui.UIButtonComponent
 import com.pafoid.skate.engine.ui.UICanvasComponent
 import com.pafoid.skate.engine.ui.UIElementComponent
@@ -109,6 +111,7 @@ class FeatureShowcaseSmokeTest {
     }
 
     private var pointer = UiInputFrame()
+    private val pauseMenu = PauseMenuSystem(setFrozen = { systems.paused = it })
     private lateinit var world: BulletPhysics3D
     private lateinit var scene: Scene
     private val start = mutableMapOf<String, Vector3f>()
@@ -140,7 +143,8 @@ class FeatureShowcaseSmokeTest {
             AnimationSystem(), ParticleSystem(),
             CameraControlSystem { FlyInput() },
             UiLayoutSystem(screen = { UiScreenSize(1920, 1080) }),
-            UiInputSystem { pointer },
+            pauseMenu,
+            UiInputSystem { pointer }.also { it.onUnhandledCancel = pauseMenu::open },
         ).forEach { systems.addSystem(it) }
         systems.start()
 
@@ -176,7 +180,7 @@ class FeatureShowcaseSmokeTest {
         pointer = input
         systems.update(DT)
         scene.isRunning = true
-        scene.update(DT)
+        if (!systems.paused) scene.update(DT)
     }
 
     private fun sample(frame: Int) {
@@ -297,7 +301,7 @@ class FeatureShowcaseSmokeTest {
     @Test
     @Order(7)
     fun Showcase_UiLegend_EveryButtonIsBoundAndFliesTheCameraToItsArea() {
-        val canvas = scene.children.single { it.getComponent<UICanvasComponent>() != null }
+        val canvas = scene.children.single { it.getComponent<UICanvasComponent>() != null && it.name != PauseMenu.NAME }
         val scale = canvas.getComponent<UICanvasComponent>()!!.scale
         val focus = obj("Camera").getComponent<CameraFocusComponent>()!!
         val camera = obj("Camera").getComponent<Transform>()!!
@@ -317,6 +321,32 @@ class FeatureShowcaseSmokeTest {
             assertTrue(camera.translation.distance(target.position) < 0.05f,
                 "after clicking ${button.name} the camera is at ${camera.translation}, expected ${target.position}")
         }
+    }
+
+    /** GUI-09: Esc in Play opens the pause menu and freezes animation, particles and physics; Esc again resumes. */
+    @Test
+    @Order(8)
+    fun Showcase_PauseMenu_EscFreezesThePlayingSceneAndResumes() {
+        val animator = obj("[Animation] Character").getComponent<Animator>()!!
+        val emitter = area("Particles").first { it.getComponent<ParticleEmitter>()?.runtime?.pool?.count ?: 0 > 0 }
+            .getComponent<ParticleEmitter>()!!
+        val pendulum = obj("[Joints] HingePendulum").getComponent<Transform>()!!
+
+        frame(UiInputFrame(cancel = true))
+        assertTrue(pauseMenu.isOpen, "Esc did not open the pause menu")
+        assertTrue(systems.paused)
+        val time = animator.currentTime
+        val particles = emitter.runtime.pool.count
+        val swing = Vector3f(pendulum.rotation)
+        repeat(60) { frame() }
+        assertEquals(time, animator.currentTime, "animation advanced while paused")
+        assertEquals(particles, emitter.runtime.pool.count, "particles changed while paused")
+        assertEquals(swing, pendulum.rotation, "physics moved while paused")
+
+        frame(UiInputFrame(cancel = true))
+        assertTrue(!pauseMenu.isOpen && !systems.paused, "Esc did not resume")
+        repeat(10) { frame() }
+        assertEquals(time + 10 * DT, animator.currentTime, 1e-3f, "animation did not continue from where it paused")
     }
 
     private companion object {

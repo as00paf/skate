@@ -22,6 +22,7 @@ import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.ecs.systems.SystemManager.ExecutionPriority
 import com.pafoid.skate.engine.getComponent
 import com.pafoid.skate.engine.ecs.GameObject
+import com.pafoid.skate.engine.ecs.Scene
 import org.joml.Matrix4f
 import org.joml.Vector3f
 import java.io.File
@@ -63,6 +64,27 @@ class AudioSystem(
     private val missingClips = mutableSetOf<String>()
     private var wasRunning = false
 
+    /** Voices held by the runtime pause ([Scene.isPaused]); see [pauseAll]. */
+    private var wasPaused = false
+    private val heldByPause = mutableSetOf<Int>()
+
+    /** Runs while paused to hold and later continue the playing voices. */
+    override val runsWhilePaused get() = true
+
+    /**
+     * Another scene (switch, Restart): the old scene's voices are released, including ones held by the pause, so
+     * they neither keep playing as orphans nor resume in the new scene.
+     */
+    override fun init(scene: Scene) {
+        if (scene !== this.scene) {
+            heldByPause.clear()
+            wasPaused = false
+            wasRunning = false
+            playbacks.keys.toList().forEach { releasePlayback(it) }
+        }
+        super.init(scene)
+    }
+
     override fun update(dt: Float) {
         if (!isInitialized) {
             if (audioEngine.init()) {
@@ -83,13 +105,44 @@ class AudioSystem(
         if (wasRunning && !running) stopAll()
         wasRunning = running
 
+        val paused = running && scene.isPaused
+        if (paused != wasPaused) if (paused) pauseAll() else resumeAll()
+        wasPaused = paused
+        if (paused) return
+
         updateListener()
         updateReverbZone()
         updateAudioSources(running)
     }
 
+    /** Pause menu opened: holds every playing voice where it is (not released, so Resume continues it). */
+    private fun pauseAll() {
+        heldByPause.clear()
+        scene.children.forEach { go ->
+            val ac = go.getComponent<AudioComponent>() ?: return@forEach
+            val pb = playbacks[go.uId] ?: return@forEach
+            if (ac.isPaused) return@forEach
+            pb.source.pause()
+            pb.stream?.paused = true
+            heldByPause.add(go.uId)
+        }
+    }
+
+    /** Resume: continues only the voices [pauseAll] held; sounds paused by gameplay stay paused. */
+    private fun resumeAll() {
+        heldByPause.forEach { id ->
+            playbacks[id]?.let {
+                it.source.play()
+                it.stream?.paused = false
+            }
+        }
+        heldByPause.clear()
+    }
+
     /** End of Play: silence every source and re-arm playOnAwake. */
     private fun stopAll() {
+        heldByPause.clear()
+        wasPaused = false
         playbacks.keys.toList().forEach { releasePlayback(it) }
         scene.children.forEach { go ->
             go.getComponent<AudioComponent>()?.apply {

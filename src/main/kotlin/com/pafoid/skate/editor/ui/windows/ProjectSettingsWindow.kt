@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.ui.windows
 
+import com.pafoid.skate.editor.imgui.label
 import com.pafoid.skate.editor.events.ProjectEvent
 import com.pafoid.skate.editor.events.WindowAction
 import com.pafoid.skate.editor.imgui.EditorWindow
@@ -65,7 +66,7 @@ class ProjectSettingsWindow(
         setNextWindowPos(viewport.centerX, viewport.centerY, ImGuiCond.FirstUseEver, 0.5f, 0.5f)
         setNextWindowSize(defaultWidth, 550f, ImGuiCond.FirstUseEver)
 
-        if (begin(stringManager.getString("window.project_settings"), isOpen, ImGuiWindowFlags.NoDocking)) {
+        if (begin(stringManager.label("window.project_settings"), isOpen, ImGuiWindowFlags.NoDocking)) {
             if (!projectManager.hasProject()) {
                 ImGui.text(stringManager.getString("settings.project.no_project"))
                 MImGui.textDisabled(stringManager.getString("settings.project.no_project_description"))
