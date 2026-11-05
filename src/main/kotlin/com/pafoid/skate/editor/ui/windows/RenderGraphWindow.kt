@@ -3,17 +3,22 @@ package com.pafoid.skate.editor.ui.windows
 import com.pafoid.skate.editor.imgui.EditorWindow
 import com.pafoid.skate.editor.imgui.MImGui
 import com.pafoid.skate.editor.imgui.data.Icons
+import com.pafoid.skate.editor.settings.ShadowQuality
+import com.pafoid.skate.editor.systems.EditorSettingsManager
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.render.renderer.Renderer
 import com.pafoid.skate.engine.render.renderer.passes.PostProcessPass
 import com.pafoid.skate.engine.render.renderer.passes.RenderPass
+import com.pafoid.skate.engine.render.renderer.passes.ShadowPass
 import imgui.ImGui
 import imgui.flag.ImGuiCol
 import imgui.flag.ImGuiTreeNodeFlags
 import imgui.type.ImBoolean
+import imgui.type.ImInt
 
 class RenderGraphWindow(
     private val engine: Engine,
+    private val settingsManager: EditorSettingsManager,
 ) : EditorWindow("window.render_graph") {
     private val stringManager = engine.stringManager
     private val renderer: Renderer by lazy { engine.renderer }
@@ -160,6 +165,8 @@ class RenderGraphWindow(
                 }
             }
 
+            if (pass is ShadowPass) renderShadowQuality(pass)
+
             // Enable/disable toggle
             if (pass.canDisable) {
                 val enabled = ImBoolean(pass.isEnabled)
@@ -192,6 +199,19 @@ class RenderGraphWindow(
         }
 
         return clicked
+    }
+
+    /** LOW/MEDIUM/HIGH selector; writes the editor graphics setting, which applies and persists it. */
+    private fun renderShadowQuality(pass: ShadowPass) {
+        val labels = ShadowQuality.entries.map { stringManager.getString(EditorSettingsWindow.shadowQualityKey(it)) }.toTypedArray()
+        val selected = ImInt(settingsManager.editorSettings.graphics.shadowQuality.ordinal)
+        ImGui.setNextItemWidth(140f)
+        if (ImGui.combo("${stringManager.getString("lbl.render_graph.shadow_quality")}##${pass.name}.quality", selected, labels, labels.size)) {
+            settingsManager.updateShadowQuality(ShadowQuality.entries[selected.get()])
+        }
+        if (ImGui.isItemHovered()) {
+            ImGui.setTooltip(stringManager.getString("tooltip.render_graph.shadow_quality"))
+        }
     }
 
     private fun drawConnectionArrow(yPos: Float) {

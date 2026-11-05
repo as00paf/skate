@@ -4,6 +4,7 @@ import com.pafoid.skate.editor.data.EditorInputMappings
 import com.pafoid.skate.editor.events.ProjectEvent
 import com.pafoid.skate.editor.project.Project
 import com.pafoid.skate.editor.settings.EditorSettings
+import com.pafoid.skate.editor.settings.ShadowQuality
 import com.pafoid.skate.engine.assets.serialization.Serializer
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.core.LoggerService
@@ -16,9 +17,9 @@ class EditorSettingsManager(
     private val serializer: Serializer,
     private val eventSystem: EventSystem,
     private val logger: LoggerService,
-    private val stringManager: StringManager
+    private val stringManager: StringManager,
+    private val editorSettingsFile: File = File("editor.config"),
 ) {
-    private val editorSettingsFile = File("editor.config")
     var editorSettings: EditorSettings = EditorSettings()
 
     val recentProjects: List<Project>
@@ -47,6 +48,7 @@ class EditorSettingsManager(
             logger.logEditor("Error loading engine settings: ${e.message}", LogLevel.ERROR)
             editorSettings = EditorSettings()
         }
+        editorSettings.graphics.applyToEngine()
     }
 
     fun saveSettings(): Boolean {
@@ -114,5 +116,12 @@ class EditorSettingsManager(
         } catch (e: Exception) {
             logger.logEditor("Error saving input mappings: ${e.message}", LogLevel.ERROR)
         }
+    }
+
+    /** Stores [quality], applies it to the renderer right away and saves it to the settings file. */
+    fun updateShadowQuality(quality: ShadowQuality) {
+        editorSettings = editorSettings.copy(graphics = editorSettings.graphics.copy(shadowQuality = quality))
+        editorSettings.graphics.applyToEngine()
+        saveSettings()
     }
 }
