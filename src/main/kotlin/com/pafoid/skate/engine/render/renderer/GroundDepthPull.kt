@@ -6,8 +6,12 @@ import kotlin.math.min
 import kotlin.math.tan
 
 /**
- * How far `debugLine2D.glsl` pulls a debug vertex toward the camera (view depth, metres) so it wins the depth test
+ * How far `debugLine2D.glsl` pulls a debug fragment toward the camera (view depth, metres) so it wins the depth test
  * against the surface it lies on (REN-18, REN-19). CPU mirror of the shader for tests; keep the two in sync.
+ *
+ * The pull only changes the depth written for each fragment (`gl_FragDepth`), never a vertex position: pulling the
+ * vertex's view z moved it on screen (x/z, y/z), which lifted the far end of the 100 m origin axes above the floor
+ * and, interpolated along long segments, drew them over the skater.
  *
  * - Every vertex: [BASE_PULL] of its depth (covers depth-buffer precision).
  * - Ground lines (the editor grid, on a horizontal floor): plus the floor's depth change across [GROUND_PULL_PIXELS]
