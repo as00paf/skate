@@ -16,6 +16,13 @@ class SystemManager {
 
     val systems: List<System> get() = _systems
 
+    /**
+     * Runtime pause (pause menu): only [System.runsWhilePaused] systems update, fixed steps do not run and time does
+     * not accumulate, so the scene resumes exactly where it stopped. The loaded scene's [Scene.isPaused] mirrors it.
+     * Render systems always run.
+     */
+    var paused = false
+
     fun start() {
         sortSystemsIfNeeded()
         systems.forEach { it.start() }
@@ -34,12 +41,13 @@ class SystemManager {
         sortSystemsIfNeeded()
         // Snapshot: systems may be added/removed (deferred) while updating
         updating = true
+        loadedScene?.isPaused = paused
         try {
             runPhase(SystemPhase.PRE_UPDATE) { it.update(dt) }
 
-            accumulator += dt
+            if (!paused) accumulator += dt
             var steps = 0
-            while (accumulator >= fixedTimeStep && steps < maxFixedSteps) {
+            while (!paused && accumulator >= fixedTimeStep && steps < maxFixedSteps) {
                 runPhase(SystemPhase.FIXED_UPDATE) { it.fixedUpdate(fixedTimeStep) }
                 accumulator -= fixedTimeStep
                 steps++
@@ -80,7 +88,9 @@ class SystemManager {
 
     private inline fun runPhase(phase: SystemPhase, action: (System) -> Unit) {
         for (system in _systems.toTypedArray()) {
-            if (system.enabled && system.phase == phase && system !in pendingRemovals) action(system)
+            if (!system.enabled || system.phase != phase || system in pendingRemovals) continue
+            if (paused && phase != SystemPhase.RENDER && !system.runsWhilePaused) continue
+            action(system)
         }
     }
 

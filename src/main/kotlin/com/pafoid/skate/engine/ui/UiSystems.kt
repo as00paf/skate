@@ -13,6 +13,7 @@ class UiLayoutSystem(
 ) : System(priority = ExecutionPriority.LATE) {
 
     override val phase = SystemPhase.LATE_UPDATE
+    override val runsWhilePaused get() = true
 
     private val canvases = query(UICanvasComponent::class)
     private val signatures = HashMap<Int, Int>()
@@ -60,8 +61,15 @@ class UiInputSystem(private val source: UiInputSource) : System(priority = Execu
 
     override val phase = SystemPhase.LATE_UPDATE
     override val runsAfter get() = listOf(UiLayoutSystem::class)
+    override val runsWhilePaused get() = true
 
     private val canvases = query(UICanvasComponent::class)
+
+    /**
+     * Called when cancel (Esc / gamepad B) fires and no active canvas handles it: the pause menu opens this way, so
+     * a game's own dialogs (canvases with `onCancel`) close first.
+     */
+    var onUnhandledCancel: (() -> Unit)? = null
 
     /** True while UI is being authored (editor, not playing): modal canvases must not trap input then. */
     var authoring: () -> Boolean = { false }
@@ -139,8 +147,10 @@ class UiInputSystem(private val source: UiInputSource) : System(priority = Execu
         handlePointer(hit, byId, f)
         handleNavigation(widgets, byId, f)
 
-        if (f.cancel) active.lastOrNull { it.getComponent<UICanvasComponent>()?.onCancel != null }
-            ?.getComponent<UICanvasComponent>()?.onCancel?.invoke()
+        if (f.cancel) {
+            val handler = active.lastOrNull { it.getComponent<UICanvasComponent>()?.onCancel != null }
+            handler?.getComponent<UICanvasComponent>()?.onCancel?.invoke() ?: onUnhandledCancel?.invoke()
+        }
 
         if (!pointerActive) focusedId?.let { id -> byId[id]?.element?.focused = true }
     }
