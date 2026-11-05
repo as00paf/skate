@@ -5,7 +5,9 @@ exported game. Esc (or gamepad B) opens it while playing, and Esc or Resume clos
 animation, particles, scripts and audio are frozen, and Resume continues from the same point. Restart starts Play
 again from the pre-play state (in the editor) or the launch state (in the game). Quit is Stop in the editor and
 closes the window in the game. Language switches the runtime text between English and French (in the editor this
-also switches the editor's own strings until you change it back). While editing, Esc still only deselects.
+also switches the editor's own strings until you change it back). While editing, Esc still only deselects; in Play
+it does not deselect (unless the editor's Deselect key is rebound away from Esc). Ctrl+S during Play is refused with a
+console warning, so the pause menu never ends up in the scene file.
 
 Setup: run `.\gradlew.bat run`, create a NEW project (File > New Project), and open the Feature Showcase scene.
 
