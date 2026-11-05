@@ -1,42 +1,36 @@
 package com.pafoid.skate.engine.render.lighting
 
+import com.pafoid.skate.engine.render.rhi.BufferDesc
+import com.pafoid.skate.engine.render.rhi.BufferUpdate
+import com.pafoid.skate.engine.render.rhi.BufferUsage
+import com.pafoid.skate.engine.render.rhi.RhiBuffer
+import com.pafoid.skate.engine.render.rhi.RhiContext
 import com.pafoid.skate.engine.assets.data.Shader
 import com.pafoid.skate.engine.utils.ShaderConst.Uniforms
 import org.lwjgl.BufferUtils
-import org.lwjgl.opengl.GL15.GL_DYNAMIC_DRAW
-import org.lwjgl.opengl.GL15.glBindBuffer
-import org.lwjgl.opengl.GL15.glBufferData
-import org.lwjgl.opengl.GL15.glBufferSubData
-import org.lwjgl.opengl.GL15.glDeleteBuffers
-import org.lwjgl.opengl.GL15.glGenBuffers
-import org.lwjgl.opengl.GL30.glBindBufferBase
-import org.lwjgl.opengl.GL31.GL_UNIFORM_BUFFER
 
 /** Uniform buffer with up to [LightPacking.MAX_LIGHTS] lights (`LightBlock`), plus the per-object index list. GL thread only. */
 class LightBuffer {
-    private var buffer = 0
+    private var buffer: RhiBuffer? = null
     private val staging = BufferUtils.createFloatBuffer(LightPacking.MAX_LIGHTS * LightPacking.FLOATS_PER_LIGHT)
 
     var lightCount = 0
         private set
 
     fun upload(lights: List<LightData>) {
-        if (buffer == 0) {
-            buffer = glGenBuffers()
-            glBindBuffer(GL_UNIFORM_BUFFER, buffer)
-            glBufferData(GL_UNIFORM_BUFFER, LightPacking.MAX_LIGHTS.toLong() * LightPacking.BYTES_PER_LIGHT, GL_DYNAMIC_DRAW)
-        }
+        val gpu = buffer ?: RhiContext.require().createBuffer(
+            BufferDesc(BufferUsage.UNIFORM, LightPacking.MAX_LIGHTS.toLong() * LightPacking.BYTES_PER_LIGHT, BufferUpdate.DYNAMIC),
+        ).also { buffer = it }
         staging.clear()
         lightCount = LightPacking.pack(lights, staging)
         staging.flip()
-        glBindBuffer(GL_UNIFORM_BUFFER, buffer)
-        glBufferSubData(GL_UNIFORM_BUFFER, 0L, staging)
+        gpu.update(0L, staging)
     }
 
     fun bind(shader: Shader) {
-        if (buffer == 0) return
+        val gpu = buffer ?: return
         shader.bindUniformBlock(BLOCK_NAME, BINDING)
-        glBindBufferBase(GL_UNIFORM_BUFFER, BINDING, buffer)
+        RhiContext.require().commandList().setUniformBuffer(BINDING, gpu)
         shader.uploadInt(Uniforms.LIGHT_COUNT, lightCount)
     }
 
@@ -47,8 +41,8 @@ class LightBuffer {
     }
 
     fun destroy() {
-        if (buffer != 0) glDeleteBuffers(buffer)
-        buffer = 0
+        buffer?.close()
+        buffer = null
         lightCount = 0
     }
 

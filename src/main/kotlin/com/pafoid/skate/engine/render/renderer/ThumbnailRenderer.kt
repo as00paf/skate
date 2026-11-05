@@ -1,5 +1,13 @@
 package com.pafoid.skate.engine.render.renderer
 
+import com.pafoid.skate.engine.render.rhi.Filter
+import com.pafoid.skate.engine.render.rhi.PixelFormat
+import com.pafoid.skate.engine.render.rhi.RhiContext
+import com.pafoid.skate.engine.render.rhi.RhiTexture
+import com.pafoid.skate.engine.render.rhi.SamplerDesc
+import com.pafoid.skate.engine.render.rhi.TextureDesc
+import com.pafoid.skate.engine.render.rhi.TextureType
+import com.pafoid.skate.engine.render.rhi.Wrap
 import com.pafoid.skate.engine.render.rhi.opengl.GLBindings
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.AssetsManager
@@ -15,27 +23,16 @@ import org.joml.Vector3f
 import org.lwjgl.opengl.GL11.GL_COLOR_BUFFER_BIT
 import org.lwjgl.opengl.GL11.GL_DEPTH_BUFFER_BIT
 import org.lwjgl.opengl.GL11.GL_DEPTH_TEST
-import org.lwjgl.opengl.GL11.GL_LINEAR
 import org.lwjgl.opengl.GL11.GL_RGBA
-import org.lwjgl.opengl.GL11.GL_TEXTURE_2D
-import org.lwjgl.opengl.GL11.GL_TEXTURE_MAG_FILTER
-import org.lwjgl.opengl.GL11.GL_TEXTURE_MIN_FILTER
-import org.lwjgl.opengl.GL11.GL_TEXTURE_WRAP_S
-import org.lwjgl.opengl.GL11.GL_TEXTURE_WRAP_T
 import org.lwjgl.opengl.GL11.GL_UNSIGNED_BYTE
 import org.lwjgl.opengl.GL11.GL_VIEWPORT
-import org.lwjgl.opengl.GL11.glBindTexture
 import org.lwjgl.opengl.GL11.glClear
 import org.lwjgl.opengl.GL11.glClearColor
 import org.lwjgl.opengl.GL11.glEnable
-import org.lwjgl.opengl.GL11.glGenTextures
 import org.lwjgl.opengl.GL11.glGetInteger
 import org.lwjgl.opengl.GL11.glGetIntegerv
 import org.lwjgl.opengl.GL11.glReadPixels
-import org.lwjgl.opengl.GL11.glTexImage2D
-import org.lwjgl.opengl.GL11.glTexParameteri
 import org.lwjgl.opengl.GL11.glViewport
-import org.lwjgl.opengl.GL30.GL_CLAMP_TO_EDGE
 import org.lwjgl.opengl.GL30.GL_FRAMEBUFFER
 import org.lwjgl.opengl.GL30.GL_FRAMEBUFFER_BINDING
 import org.lwjgl.opengl.GL30.glBindFramebuffer
@@ -74,10 +71,9 @@ class ThumbnailRenderer(
 
     /**
      * Renders a thumbnail for the given model.
-     * @return A NEW OpenGL texture ID containing the rendered thumbnail.
-     *         The caller must eventually delete this texture with glDeleteTextures.
+     * @return A NEW texture holding the thumbnail; the caller owns it and closes it when done.
      */
-    fun renderThumbnail(model: `3dModel`): Int {
+    fun renderThumbnail(model: `3dModel`): RhiTexture {
         // Save OpenGL state
         val lastFbo = glGetInteger(GL_FRAMEBUFFER_BINDING)
         val lastViewport = IntArray(4)
@@ -142,36 +138,18 @@ class ThumbnailRenderer(
      * Creates a new OpenGL texture and copies the FBO's color attachment into it.
      * Uses glReadPixels for simplicity and reliability.
      */
-    private fun createTextureFromFbo(fbo: FrameBuffer): Int {
-        // Read pixels from FBO into CPU memory
+    private fun createTextureFromFbo(fbo: FrameBuffer): RhiTexture {
+        // Read pixels from FBO into CPU memory (bottom-up rows, as the texture expects)
         val pixelBuffer = ByteBuffer.allocateDirect(THUMBNAIL_SIZE * THUMBNAIL_SIZE * 4)
         glReadPixels(0, 0, THUMBNAIL_SIZE, THUMBNAIL_SIZE, GL_RGBA, GL_UNSIGNED_BYTE, pixelBuffer)
         pixelBuffer.rewind()
 
-        // Create new texture
-        val textureId = glGenTextures()
-        glBindTexture(GL_TEXTURE_2D, textureId)
-
-        // Upload pixel data (flip Y because OpenGL textures are bottom-up)
-        glTexImage2D(
-            GL_TEXTURE_2D,
-            0,
-            GL_RGBA,
-            THUMBNAIL_SIZE,
-            THUMBNAIL_SIZE,
-            0,
-            GL_RGBA,
-            GL_UNSIGNED_BYTE,
-            pixelBuffer
-        )
-
-        // Set texture filtering
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE)
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE)
-
-        return textureId
+        val texture = RhiContext.require().createTexture(TextureDesc(
+            TextureType.TEXTURE_2D, PixelFormat.RGBA8, THUMBNAIL_SIZE, THUMBNAIL_SIZE,
+            sampler = SamplerDesc(minFilter = Filter.LINEAR, magFilter = Filter.LINEAR, wrap = Wrap.CLAMP_TO_EDGE),
+        ))
+        texture.upload(0, 0, pixelBuffer)
+        return texture
     }
 
     /**

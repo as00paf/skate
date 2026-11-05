@@ -1,28 +1,23 @@
 package com.pafoid.skate.engine.render.data
 
+import com.pafoid.skate.engine.render.rhi.BufferDesc
+import com.pafoid.skate.engine.render.rhi.BufferUpdate
+import com.pafoid.skate.engine.render.rhi.BufferUsage
+import com.pafoid.skate.engine.render.rhi.RhiBuffer
+import com.pafoid.skate.engine.render.rhi.RhiContext
+import com.pafoid.skate.engine.render.rhi.RhiVertexInput
 import com.pafoid.skate.engine.assets.data.Shader
 import com.pafoid.skate.engine.assets.data.Texture
 import com.pafoid.skate.engine.render.renderer.Renderer2D
 import com.pafoid.skate.engine.utils.EntityIdEncoder
 import com.pafoid.skate.engine.utils.RenderConsts2D.COLOR_LOCATION
-import com.pafoid.skate.engine.utils.RenderConsts2D.COLOR_OFFSET
-import com.pafoid.skate.engine.utils.RenderConsts2D.COLOR_SIZE
 import com.pafoid.skate.engine.utils.RenderConsts2D.ENTITY_ID_LOCATION
-import com.pafoid.skate.engine.utils.RenderConsts2D.ENTITY_ID_OFFSET
-import com.pafoid.skate.engine.utils.RenderConsts2D.ENTITY_ID_SIZE
 import com.pafoid.skate.engine.utils.RenderConsts2D.POS_LOCATION
-import com.pafoid.skate.engine.utils.RenderConsts2D.POS_OFFSET
-import com.pafoid.skate.engine.utils.RenderConsts2D.POS_SIZE
 import com.pafoid.skate.engine.utils.RenderConsts2D.TEX_COORDS_LOCATION
-import com.pafoid.skate.engine.utils.RenderConsts2D.TEX_COORDS_OFFSET
-import com.pafoid.skate.engine.utils.RenderConsts2D.TEX_COORDS_SIZE
 import com.pafoid.skate.engine.utils.RenderConsts2D.TEX_ID_LOCATION
-import com.pafoid.skate.engine.utils.RenderConsts2D.TEX_ID_OFFSET
-import com.pafoid.skate.engine.utils.RenderConsts2D.TEX_ID_SIZE
 import com.pafoid.skate.engine.utils.RenderConsts2D.MAX_BATCH_TEXTURES
 import com.pafoid.skate.engine.utils.RenderConsts2D.SAMPLER_INDICES
 import com.pafoid.skate.engine.utils.RenderConsts2D.VERTEX_SIZE
-import com.pafoid.skate.engine.utils.RenderConsts2D.VERTEX_SIZE_BYTES
 import com.pafoid.skate.engine.utils.ShaderConst.Uniforms
 import org.joml.Vector2f
 import org.joml.Vector4f
@@ -30,25 +25,13 @@ import org.lwjgl.opengl.GL11
 import org.lwjgl.opengl.GL11.GL_TEXTURE_2D
 import org.lwjgl.opengl.GL11.glBindTexture
 import org.lwjgl.opengl.GL20
-import org.lwjgl.opengl.GL30
-import org.lwjgl.opengl.GL30.GL_ARRAY_BUFFER
-import org.lwjgl.opengl.GL30.GL_DYNAMIC_DRAW
-import org.lwjgl.opengl.GL30.GL_ELEMENT_ARRAY_BUFFER
-import org.lwjgl.opengl.GL30.GL_FLOAT
-import org.lwjgl.opengl.GL30.GL_STATIC_DRAW
 import org.lwjgl.opengl.GL30.GL_TEXTURE0
 import org.lwjgl.opengl.GL30.GL_TRIANGLES
 import org.lwjgl.opengl.GL30.GL_UNSIGNED_INT
 import org.lwjgl.opengl.GL30.glActiveTexture
-import org.lwjgl.opengl.GL30.glBindBuffer
 import org.lwjgl.opengl.GL30.glBindVertexArray
-import org.lwjgl.opengl.GL30.glBufferData
-import org.lwjgl.opengl.GL30.glBufferSubData
 import org.lwjgl.opengl.GL30.glDrawElements
 import org.lwjgl.opengl.GL30.glEnableVertexAttribArray
-import org.lwjgl.opengl.GL30.glGenBuffers
-import org.lwjgl.opengl.GL30.glGenVertexArrays
-import org.lwjgl.opengl.GL30.glVertexAttribPointer
 
 class RenderBatch2D(
     private val maxBatchSize: Int,
@@ -63,7 +46,9 @@ class RenderBatch2D(
     private val textureSlots = mutableListOf<Texture>()
 
     private var vaoId = 0
-    private var vboId = 0
+    private var vbo: RhiBuffer? = null
+    private var ebo: RhiBuffer? = null
+    private var input: RhiVertexInput? = null
     // The shader samples a fixed uTextures[MAX_BATCH_TEXTURES] array, so never exceed it even if the GPU has more units
     private val maxTextureSlots = minOf(GL11.glGetInteger(GL20.GL_MAX_TEXTURE_IMAGE_UNITS), MAX_BATCH_TEXTURES)
 
@@ -71,36 +56,11 @@ class RenderBatch2D(
     private val currentPos = Vector4f()
 
     fun start() {
-        // Generate and bind a Vertex Array Object
-        vaoId = glGenVertexArrays()
-        glBindVertexArray(vaoId)
-
-        // Allocate space for vertices
-        vboId = glGenBuffers()
-        glBindBuffer(GL_ARRAY_BUFFER, vboId)
-        glBufferData(GL_ARRAY_BUFFER, vertices.size.toLong() * Float.SIZE_BYTES, GL_DYNAMIC_DRAW)
-
-        // Create and upload indices buffer
-        val eboId = glGenBuffers()
-        val indices = generateIndices()
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, eboId)
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices, GL_STATIC_DRAW)
-
-        // Enable the buffer attribute pointers
-        glVertexAttribPointer(POS_LOCATION, POS_SIZE, GL_FLOAT, false, VERTEX_SIZE_BYTES, POS_OFFSET.toLong())
-        glEnableVertexAttribArray(POS_LOCATION)
-
-        glVertexAttribPointer(COLOR_LOCATION, COLOR_SIZE, GL_FLOAT, false, VERTEX_SIZE_BYTES, COLOR_OFFSET.toLong())
-        glEnableVertexAttribArray(COLOR_LOCATION)
-
-        glVertexAttribPointer(TEX_COORDS_LOCATION, TEX_COORDS_SIZE, GL_FLOAT, false, VERTEX_SIZE_BYTES, TEX_COORDS_OFFSET.toLong())
-        glEnableVertexAttribArray(TEX_COORDS_LOCATION)
-
-        glVertexAttribPointer(TEX_ID_LOCATION, TEX_ID_SIZE, GL_FLOAT, false, VERTEX_SIZE_BYTES, TEX_ID_OFFSET.toLong())
-        glEnableVertexAttribArray(TEX_ID_LOCATION)
-        
-        glVertexAttribPointer(ENTITY_ID_LOCATION, ENTITY_ID_SIZE, GL_FLOAT, false, VERTEX_SIZE_BYTES, ENTITY_ID_OFFSET.toLong())
-        glEnableVertexAttribArray(ENTITY_ID_LOCATION)
+        val device = RhiContext.require()
+        vbo = device.createBuffer(BufferDesc(BufferUsage.VERTEX, vertices.size.toLong() * Float.SIZE_BYTES, BufferUpdate.DYNAMIC))
+        ebo = device.createBuffer(BufferUsage.INDEX, BufferUpdate.STATIC, generateIndices())
+        input = device.createVertexInput(device.createVertexLayout(VertexLayouts.BATCH_2D), listOf(vbo!!), ebo)
+        vaoId = input!!.nativeHandle.toInt()
     }
 
     fun addSprite(renderable2D: Renderable2D) {
@@ -132,8 +92,7 @@ class RenderBatch2D(
         }
 
         if (rebufferData) {
-            glBindBuffer(GL_ARRAY_BUFFER, vboId)
-            glBufferSubData(GL_ARRAY_BUFFER, 0, vertices)
+            vbo?.update(0, vertices)
         }
 
         // Use shader
@@ -307,14 +266,11 @@ class RenderBatch2D(
     }
 
     fun destroy() {
-        if (vaoId != 0) {
-            GL30.glDeleteVertexArrays(vaoId)
-            vaoId = 0
-        }
-        if (vboId != 0) {
-            GL30.glDeleteBuffers(vboId)
-            vboId = 0
-        }
+        input?.close()
+        vbo?.close()
+        ebo?.close()
+        input = null; vbo = null; ebo = null
+        vaoId = 0
     }
 }
 

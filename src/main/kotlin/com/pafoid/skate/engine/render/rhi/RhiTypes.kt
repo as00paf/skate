@@ -80,7 +80,8 @@ data class PolygonOffset(val factor: Float, val units: Float)
 
 enum class BufferUsage { VERTEX, INDEX, UNIFORM, INSTANCE }
 
-enum class BufferUpdate { STATIC, DYNAMIC }
+/** Update frequency hint: STATIC (once), DYNAMIC (every few frames), STREAM (every frame, rewritten whole). */
+enum class BufferUpdate { STATIC, DYNAMIC, STREAM }
 
 data class BufferDesc(val usage: BufferUsage, val size: Long, val update: BufferUpdate = BufferUpdate.STATIC) {
     init {
@@ -94,7 +95,7 @@ enum class PixelFormat(val bytesPerPixel: Int, val isDepth: Boolean = false) {
     R8(1), RGB8(3), RGBA8(4), RGB32F(12), RGBA16F(8), DEPTH32F(4, isDepth = true)
 }
 
-enum class Filter { NEAREST, LINEAR, LINEAR_MIPMAP_LINEAR }
+enum class Filter { NEAREST, LINEAR, NEAREST_MIPMAP_LINEAR, LINEAR_MIPMAP_LINEAR }
 
 enum class Wrap { REPEAT, CLAMP_TO_EDGE }
 
@@ -122,6 +123,12 @@ data class TextureDesc(
         require(type == TextureType.TEXTURE_2D_ARRAY || layers == 1 || (type == TextureType.CUBE && layers == 6)) {
             "Only 2D arrays (or cubes with 6 faces) have several layers"
         }
+        require(mipLevels <= fullMipChain(width, height)) { "$mipLevels mip levels exceed the ${width}x$height chain" }
+    }
+
+    companion object {
+        /** Levels of a complete mip chain down to 1x1. */
+        fun fullMipChain(width: Int, height: Int): Int = 32 - Integer.numberOfLeadingZeros(maxOf(width, height, 1))
     }
 }
 

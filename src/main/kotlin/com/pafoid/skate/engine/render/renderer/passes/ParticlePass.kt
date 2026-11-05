@@ -1,5 +1,11 @@
 package com.pafoid.skate.engine.render.renderer.passes
 
+import com.pafoid.skate.engine.render.rhi.BufferUpdate
+import com.pafoid.skate.engine.render.rhi.BufferUsage
+import com.pafoid.skate.engine.render.rhi.RhiBuffer
+import com.pafoid.skate.engine.render.rhi.RhiContext
+import com.pafoid.skate.engine.render.rhi.RhiVertexInput
+import com.pafoid.skate.engine.render.data.VertexLayouts
 import com.pafoid.skate.engine.ecs.components.EnvironmentComponent
 import com.pafoid.skate.engine.render.fog.FogUniforms
 import com.pafoid.skate.engine.utils.ShaderConst.Uniforms
@@ -18,7 +24,6 @@ import com.pafoid.skate.engine.render.utils.withCullFace
 import com.pafoid.skate.engine.render.utils.withDepthMask
 import com.pafoid.skate.engine.render.utils.withDepthTest
 import org.joml.Vector4f
-import org.lwjgl.opengl.GL11.GL_FLOAT
 import org.lwjgl.opengl.GL11.GL_ONE
 import org.lwjgl.opengl.GL11.GL_ONE_MINUS_SRC_ALPHA
 import org.lwjgl.opengl.GL11.GL_SRC_ALPHA
@@ -28,23 +33,10 @@ import org.lwjgl.opengl.GL11.glBindTexture
 import org.lwjgl.opengl.GL11.glViewport
 import org.lwjgl.opengl.GL13.GL_TEXTURE0
 import org.lwjgl.opengl.GL13.glActiveTexture
-import org.lwjgl.opengl.GL15.GL_ARRAY_BUFFER
-import org.lwjgl.opengl.GL15.GL_STATIC_DRAW
-import org.lwjgl.opengl.GL15.GL_STREAM_DRAW
-import org.lwjgl.opengl.GL15.glBindBuffer
-import org.lwjgl.opengl.GL15.glBufferData
-import org.lwjgl.opengl.GL15.glBufferSubData
-import org.lwjgl.opengl.GL15.glDeleteBuffers
-import org.lwjgl.opengl.GL15.glGenBuffers
-import org.lwjgl.opengl.GL20.glEnableVertexAttribArray
-import org.lwjgl.opengl.GL20.glVertexAttribPointer
 import org.lwjgl.opengl.GL30.GL_FRAMEBUFFER
 import org.lwjgl.opengl.GL30.glBindFramebuffer
 import org.lwjgl.opengl.GL30.glBindVertexArray
-import org.lwjgl.opengl.GL30.glDeleteVertexArrays
-import org.lwjgl.opengl.GL30.glGenVertexArrays
 import org.lwjgl.opengl.GL31.glDrawArraysInstanced
-import org.lwjgl.opengl.GL33.glVertexAttribDivisor
 import org.lwjgl.system.MemoryUtil
 import java.nio.FloatBuffer
 
@@ -67,9 +59,10 @@ class ParticlePass(
     override val inputs: Set<String> = setOf("SceneColor")
     override val outputs: Set<String> = setOf("SceneColor")
 
-    private var vao = 0
-    private var quadVbo = 0
-    private var instanceVbo = 0
+    private var input: RhiVertexInput? = null
+    private var quadVbo: RhiBuffer? = null
+    private var instanceVbo: RhiBuffer? = null
+    private val vao: Int get() = input?.nativeHandle?.toInt() ?: 0
     private var instanceCapacity = 0
     private var instanceData: FloatBuffer? = null
     private val textureIds = HashMap<String, Int>()
@@ -124,8 +117,7 @@ class ParticlePass(
             buffer.put(uv)
         }
         buffer.flip()
-        glBindBuffer(GL_ARRAY_BUFFER, instanceVbo)
-        glBufferSubData(GL_ARRAY_BUFFER, 0, buffer)
+        instanceVbo!!.update(0, buffer)
 
         val tex = emitter.texturePath.takeIf { it.isNotBlank() }
             ?.let { path -> textureIds.getOrPut(path) { textureId(path) } } ?: 0
@@ -151,44 +143,33 @@ class ParticlePass(
         val buffer = MemoryUtil.memAllocFloat(capacity * FLOATS_PER_INSTANCE)
         instanceData = buffer
         instanceCapacity = capacity
-        glBindBuffer(GL_ARRAY_BUFFER, instanceVbo)
-        glBufferData(GL_ARRAY_BUFFER, capacity.toLong() * FLOATS_PER_INSTANCE * Float.SIZE_BYTES, GL_STREAM_DRAW)
+        instanceVbo!!.resize(capacity.toLong() * FLOATS_PER_INSTANCE * Float.SIZE_BYTES)
         return buffer
     }
 
     private fun createBuffers() {
-        vao = glGenVertexArrays()
-        glBindVertexArray(vao)
-
-        quadVbo = glGenBuffers()
-        glBindBuffer(GL_ARRAY_BUFFER, quadVbo)
-        glBufferData(GL_ARRAY_BUFFER, floatArrayOf(-0.5f, -0.5f, 0.5f, -0.5f, -0.5f, 0.5f, 0.5f, 0.5f), GL_STATIC_DRAW)
-        glEnableVertexAttribArray(0)
-        glVertexAttribPointer(0, 2, GL_FLOAT, false, 2 * Float.SIZE_BYTES, 0L)
-
-        instanceVbo = glGenBuffers()
-        glBindBuffer(GL_ARRAY_BUFFER, instanceVbo)
-        val stride = FLOATS_PER_INSTANCE * Float.SIZE_BYTES
-        for (attr in 1..3) {
-            glEnableVertexAttribArray(attr)
-            glVertexAttribPointer(attr, 4, GL_FLOAT, false, stride, (attr - 1) * 4L * Float.SIZE_BYTES)
-            glVertexAttribDivisor(attr, 1)
-        }
-        glBindVertexArray(0)
-        glBindBuffer(GL_ARRAY_BUFFER, 0)
+        val device = RhiContext.require()
+        val quad = device.createBuffer(
+            BufferUsage.VERTEX, BufferUpdate.STATIC, floatArrayOf(-0.5f, -0.5f, 0.5f, -0.5f, -0.5f, 0.5f, 0.5f, 0.5f),
+        )
+        // Sized by the first draw (instanceBuffer); the vertex input only needs the buffer object
+        val instances = device.createBuffer(BufferUsage.INSTANCE, BufferUpdate.STREAM, FloatArray(0))
+        quadVbo = quad
+        instanceVbo = instances
+        input = device.createVertexInput(device.createVertexLayout(VertexLayouts.PARTICLES), listOf(quad, instances))
     }
 
     fun destroy() {
-        if (vao != 0) glDeleteVertexArrays(vao)
-        if (quadVbo != 0) glDeleteBuffers(quadVbo)
-        if (instanceVbo != 0) glDeleteBuffers(instanceVbo)
-        vao = 0; quadVbo = 0; instanceVbo = 0; instanceCapacity = 0
+        input?.close()
+        quadVbo?.close()
+        instanceVbo?.close()
+        input = null; quadVbo = null; instanceVbo = null; instanceCapacity = 0
         instanceData?.let { MemoryUtil.memFree(it) }
         instanceData = null
         textureIds.clear()
     }
 
     private companion object {
-        const val FLOATS_PER_INSTANCE = 12
+        const val FLOATS_PER_INSTANCE = VertexLayouts.PARTICLE_FLOATS_PER_INSTANCE
     }
 }

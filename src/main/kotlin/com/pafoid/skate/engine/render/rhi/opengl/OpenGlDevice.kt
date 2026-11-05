@@ -1,8 +1,19 @@
 package com.pafoid.skate.engine.render.rhi.opengl
 
 import com.pafoid.skate.engine.render.graph.GpuQueryApi
+import com.pafoid.skate.engine.render.rhi.BufferDesc
+import com.pafoid.skate.engine.render.rhi.BufferUpdate
+import com.pafoid.skate.engine.render.rhi.BufferUsage
+import com.pafoid.skate.engine.render.rhi.RhiBuffer
 import com.pafoid.skate.engine.render.rhi.RhiCaps
+import com.pafoid.skate.engine.render.rhi.RhiCommandList
+import com.pafoid.skate.engine.render.rhi.RhiContext
 import com.pafoid.skate.engine.render.rhi.RhiDevice
+import com.pafoid.skate.engine.render.rhi.RhiTexture
+import com.pafoid.skate.engine.render.rhi.TextureDesc
+import com.pafoid.skate.engine.render.rhi.RhiVertexInput
+import com.pafoid.skate.engine.render.rhi.RhiVertexLayout
+import com.pafoid.skate.engine.render.rhi.VertexLayoutDesc
 import org.lwjgl.opengl.EXTTextureFilterAnisotropic.GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT
 import org.lwjgl.opengl.GL
 import org.lwjgl.opengl.GL11.GL_BLEND
@@ -28,7 +39,8 @@ import java.io.PrintStream
  * ([GLBindings]) and timer queries ([GlTimerQueries]); renderers still reach those through the existing objects
  * until steps 2-7 move them behind [RhiDevice].
  *
- * Create it with [create] once the window's context is current (it replaces `GL.createCapabilities()`).
+ * Create it with [create] once the window's context is current (it replaces `GL.createCapabilities()`); it then
+ * becomes [RhiContext.device].
  */
 class OpenGlDevice private constructor(
     val capabilities: GLCapabilities,
@@ -53,12 +65,30 @@ class OpenGlDevice private constructor(
     }
 
     override fun endFrame() {
-        // Nothing is deferred yet: resources still delete immediately (GpuResource) until step 4.
+        // Nothing is deferred yet: closing a resource deletes it at once (deferred deletion arrives with step 4).
     }
 
-    /** The context itself belongs to the window; nothing backend-owned needs releasing yet. */
+    override fun createBuffer(desc: BufferDesc): RhiBuffer = GlBuffer.create(desc.usage, desc.update, desc.size)
+
+    override fun createBuffer(usage: BufferUsage, update: BufferUpdate, data: FloatArray): RhiBuffer =
+        GlBuffer.create(usage, update, data)
+
+    override fun createBuffer(usage: BufferUsage, update: BufferUpdate, data: IntArray): RhiBuffer =
+        GlBuffer.create(usage, update, data)
+
+    override fun createVertexLayout(desc: VertexLayoutDesc): RhiVertexLayout = GlVertexLayout(desc)
+
+    override fun createVertexInput(layout: RhiVertexLayout, vertexBuffers: List<RhiBuffer>, indexBuffer: RhiBuffer?): RhiVertexInput =
+        GlVertexInput(layout as GlVertexLayout, vertexBuffers, indexBuffer)
+
+    override fun createTexture(desc: TextureDesc): RhiTexture = GlTexture(desc, caps.maxAnisotropy > 1f)
+
+    override fun commandList(): RhiCommandList = GlCommandList
+
+    /** The context itself belongs to the window; this device stops being the current one. */
     override fun close() {
         isClosed = true
+        if (RhiContext.device === this) RhiContext.device = null
     }
 
     companion object {
@@ -89,7 +119,7 @@ class OpenGlDevice private constructor(
                 maxAnisotropy = if (anisotropic) glGetFloat(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT) else 1f,
                 timerQueries = capabilities.OpenGL33 || capabilities.GL_ARB_timer_query,
             )
-            return OpenGlDevice(capabilities, caps)
+            return OpenGlDevice(capabilities, caps).also { RhiContext.device = it }
         }
     }
 }
