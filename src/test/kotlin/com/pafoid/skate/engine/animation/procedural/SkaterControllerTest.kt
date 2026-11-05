@@ -23,7 +23,7 @@ import org.junit.jupiter.api.Test
 class SkaterControllerTest {
     private val logger = LoggerService()
     private val skeleton = TestHumanoid.skeleton()
-    private val onFootClips = listOf("idle_0", "walking", "running", "jump", "falling idle")
+    private val onFootClips = listOf("idle_0", "walking", "running", "jump", "falling idle", "skate riding")
 
     private fun animator(clips: List<String> = onFootClips) =
         Animator(animations = clips.map { Animation(it, emptyList(), 1f, "$it.fbx") }.toMutableList()).apply {
@@ -54,7 +54,7 @@ class SkaterControllerTest {
         val states = asset.states.map { it.name }.toSet()
 
         assertEquals(emptyList<String>(), requested.filter { it !in states })
-        listOf("ride_idle", "push", "ride", "ollie", "land").forEach { assertTrue(it in asset.poses, "missing pose slot $it") }
+        listOf("push", "ollie", "land", "grind", "manual").forEach { assertTrue(it in asset.poses, "missing pose slot $it") }
         assertEquals(emptyList<String>(), asset.issues(onFootClips.toSet()))
     }
 

@@ -99,10 +99,14 @@ class ProjectManagerCreateTest {
         val project = result.getOrThrow()
         assertTrue(project.scenesPath.any { it.endsWith("FeatureShowcase.scene") }, project.scenesPath.toString())
         assertTrue(File(dir, "P/Scenes/FeatureShowcase.scene").exists())
-        assertTrue(File(dir, "P/Assets/tone.wav").exists())
         assertEquals(listOf("MainScene", "FeatureShowcase"), sceneManager.openScenes.map { it.name })
         assertEquals("MainScene", sceneManager.currentScene?.name)
         val showcase = sceneManager.openScenes.single { it.name == "FeatureShowcase" }
         assertTrue(showcase.children.any { it.name == "[Vehicle] Car" })
+        // AUD-10: the audio emitter's MP3 resolves to the project's copy of the bundled track.
+        val music = showcase.children.single { it.name == "[Audio] Emitter3D" }.components
+            .filterIsInstance<com.pafoid.skate.engine.ecs.components.AudioComponent>().single()
+        assertTrue(File(music.soundFilePath).isFile, music.soundFilePath)
+        assertTrue(music.soundFilePath.startsWith(File(dir, "P/Assets").absolutePath))
     }
 }

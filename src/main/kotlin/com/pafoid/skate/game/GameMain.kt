@@ -16,6 +16,7 @@ import com.pafoid.skate.game.ui.GameUi
 import com.pafoid.skate.game.ui.GameUiSystem
 import org.lwjgl.glfw.GLFW
 import com.pafoid.skate.engine.assets.pack.PackBuilder
+import com.pafoid.skate.engine.assets.pack.PackedStrings
 import com.pafoid.skate.engine.utils.AssetsPacker
 import com.pafoid.skate.engine.utils.Atlas
 import org.lwjgl.opengl.GL11
@@ -61,7 +62,7 @@ fun main(args: Array<String>) {
 
 private fun installGameUi(window: Window) {
     val scene = engine.sceneManager.currentScene ?: return
-    engine.stringManager.addStrings(Assets.Strings.GAME_STRINGS_EN)
+    loadGameStrings()
     val hud = GameUi.createHud()
     val pauseMenu = GameUi.createPauseMenu()
     GameUiSystem.attach(scene, hud, pauseMenu)
@@ -75,6 +76,17 @@ private fun installGameUi(window: Window) {
             onLanguageToggle = { engine.stringManager.setLocale(if (engine.stringManager.locale == "fr") "en" else "fr") },
         )
     )
+}
+
+/** Game UI text ships inside game.bin (AST-07); packs exported before that fall back to the tables on disk. */
+private fun loadGameStrings() {
+    val packed = engine.assetsManager.assetsResolver.readAll(PackedStrings::isTable)
+    if (packed.isNotEmpty()) {
+        engine.stringManager.addStrings(PackedStrings.source(packed))
+    } else {
+        engine.logger.logEngine("game.bin has no string tables, reading ${Assets.Strings.GAME_STRINGS}")
+        engine.stringManager.addStrings(Assets.Strings.GAME_STRINGS)
+    }
 }
 
 fun testDraw(window: Window) {// TODO : is working but needs to move

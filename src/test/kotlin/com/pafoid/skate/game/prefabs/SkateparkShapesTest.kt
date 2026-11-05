@@ -1,6 +1,7 @@
 package com.pafoid.skate.game.prefabs
 
 import com.pafoid.skate.engine.assets.Assets
+import com.pafoid.skate.engine.core.StringTables
 import org.joml.Vector3f
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
@@ -8,7 +9,6 @@ import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import java.io.File
-import java.util.Properties
 
 class SkateparkShapesTest {
 
@@ -111,8 +111,8 @@ class SkateparkShapesTest {
     @Test
     fun PrefabCatalog_EveryTypeHasABundledModelAndATranslatedName() {
         val bundled = Assets.Bundled.bundledAssets.toMap()
-        val en = properties("assets/strings/editor_strings.properties")
-        val fr = properties("assets/strings/editor_strings_fr.properties")
+        val en = StringTables.merged(File(Assets.Strings.EDITOR_STRINGS))
+        val fr = StringTables.merged(File(Assets.Strings.EDITOR_STRINGS), "fr")
         PrefabType.entries.forEach { type ->
             val entry = PrefabCatalog.entry(type)
             assertTrue(File(entry.modelPath).exists(), "$type model ${entry.modelPath} missing")
@@ -136,5 +136,4 @@ class SkateparkShapesTest {
         assertNull(PrefabCatalog.shape(PrefabType.SKATER))
     }
 
-    private fun properties(path: String) = Properties().apply { File(path).reader(Charsets.UTF_8).use { load(it) } }
 }

@@ -57,6 +57,10 @@ object Assets {
         const val SKATEBOARD = "assets/obj/skateboard.obj"
         const val JAMES = "assets/characters/james.glb"
     }
+    object Sounds {
+        /** Background music for the default MainScene (by the project author), copied into new projects. */
+        const val MUSIC = "assets/sounds/music/aquarela do brasil.mp3"
+    }
     object Fonts {
         const val FONTS_FILE = "/fonts/Font Awesome 7 Free-Solid-900.otf"
     }
@@ -89,11 +93,14 @@ object Assets {
         const val RIGHT_TURN_90 = "assets/characters/animations/right turn 90.fbx"
         const val RIGHT_STRAFE = "assets/characters/animations/right strafe.fbx"
         const val RIGHT_STRAFE_WALKING = "assets/characters/animations/right strafe walking.fbx"
+
+        const val SKATE_RIDING = "assets/characters/animations/skate riding.fbx"
     }
     object Strings {
-        const val EDITOR_STRINGS_EN = "assets/strings/editor_strings.properties"
-        const val GAME_STRINGS_EN = "assets/strings/game_strings.properties"
-        const val EDITOR_STRINGS_FR = "assets/strings/editor_strings_fr.properties"
+        /** Editor string tables, one file per area (`<area>.properties` + `<area>_fr.properties`). */
+        const val EDITOR_STRINGS = "assets/strings/editor"
+        /** Runtime/game string tables (HUD, showcase); the editor merges them too so the viewport shows game UI text. */
+        const val GAME_STRINGS = "assets/strings/game"
     }
 
     object Bundled {
@@ -139,6 +146,7 @@ object Assets {
         const val RIGHT_TURN_90 = "EngineDefaults\\Characters\\animations\\right turn 90.fbx"
         const val RIGHT_STRAFE = "EngineDefaults\\Characters\\animations\\right strafe.fbx"
         const val RIGHT_STRAFE_WALKING = "EngineDefaults\\Characters\\animations\\right strafe walking.fbx"
+        const val SKATE_RIDING = "EngineDefaults\\Characters\\animations\\skate riding.fbx"
 
         const val ASPHALT = "EngineDefaults\\Textures\\asphalt.png"
         const val CONCRETE_SIMPLE = "EngineDefaults\\Textures\\concrete_simple.png"
@@ -147,6 +155,8 @@ object Assets {
         const val WOOD_LIGHT = "EngineDefaults\\Textures\\wood_light.png"
         const val WOOD_TAN = "EngineDefaults\\Textures\\wood_tan.png"
         const val WOOD_DARK = "EngineDefaults\\Textures\\wood_dark.png"
+
+        const val MUSIC = "EngineDefaults\\Sounds\\Music\\aquarela do brasil.mp3"
 
         const val SKY = "EngineDefaults\\Textures\\sky_hdri.png"
         const val APP_ICON = "/app_icon.png"
@@ -184,6 +194,7 @@ object Assets {
             RIGHT_TURN_90 to Animations.RIGHT_TURN_90,
             RIGHT_STRAFE to Animations.RIGHT_STRAFE,
             RIGHT_STRAFE_WALKING to Animations.RIGHT_STRAFE_WALKING,
+            SKATE_RIDING to Animations.SKATE_RIDING,
             // Models
             SKATEBOARD to Models.SKATEBOARD,
             CUBE to Models.CUBE,
@@ -215,6 +226,8 @@ object Assets {
             WOOD_TAN to Textures.WOOD_TAN,
             WOOD_DARK to Textures.WOOD_DARK,
             SKY to Textures.SKY_HDRI,
+            // Sounds
+            MUSIC to Sounds.MUSIC,
             // Game
             "..\\builds\\skate-game.jar" to "build\\libs\\skate-game.jar",
         )

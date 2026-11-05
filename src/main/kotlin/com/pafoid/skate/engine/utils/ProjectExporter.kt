@@ -1,6 +1,7 @@
 package com.pafoid.skate.engine.utils
 
 import com.pafoid.skate.editor.project.Project
+import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.pack.PackBuilder
 import com.pafoid.skate.engine.assets.serialization.Serializer
 import com.pafoid.skate.engine.core.LoggerService
@@ -9,14 +10,15 @@ import java.io.File
 
 /**
  * Exports a project to `<project>/builds`: `game.bin` (referenced assets only, compressed), `manifest.json`
- * (checksums), the standalone game jar and `run-game.bat`.
- * [gameJarProvider] locates the jar produced by `gradlew gameJar`.
+ * (checksums), the standalone game jar and `run-game.bat`. The pack also carries the game string tables from
+ * [gameStringsDir] (see [AssetsPacker]). [gameJarProvider] locates the jar produced by `gradlew gameJar`.
  */
 class ProjectExporter(
     private val logger: LoggerService,
+    gameStringsDir: File = File(Assets.Strings.GAME_STRINGS),
     private val gameJarProvider: () -> File? = ::findGameJar,
 ) {
-    private val assetsPacker = AssetsPacker(logger)
+    private val assetsPacker = AssetsPacker(logger, gameStringsDir)
 
     fun export(project: Project, compress: Boolean = true, onlyReferenced: Boolean = true): Boolean {
         if (!assetsPacker.pack(project, compress, onlyReferenced)) return false

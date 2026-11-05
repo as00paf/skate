@@ -7,6 +7,7 @@ import com.pafoid.skate.engine.assets.data.Texture
 import com.pafoid.skate.engine.assets.data.models.`3dModel`
 import com.pafoid.skate.engine.assets.data.models.AlphaMode
 import com.pafoid.skate.engine.assets.data.models.Material
+import com.pafoid.skate.engine.audio.BusId
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.components.AmbientLightComponent
@@ -46,11 +47,6 @@ import com.pafoid.skate.game.prefabs.PrefabCatalog
 import com.pafoid.skate.game.prefabs.PrefabType
 import org.joml.Vector3f
 import org.joml.Vector4f
-import java.io.File
-import java.nio.ByteBuffer
-import java.nio.ByteOrder
-import kotlin.math.PI
-import kotlin.math.sin
 
 /**
  * The Feature Showcase scene (TLG-05/TLG-08): one labelled demo area per engine feature on a shared floor, plus an
@@ -71,7 +67,6 @@ class FeatureShowcase(private val prefabs: PrefabsGenerator) {
 
     companion object {
         const val SCENE_NAME = "FeatureShowcase"
-        const val TONE_FILE = "tone.wav"
 
         private const val BACK = -12f
         private const val MIDDLE = 2f
@@ -129,19 +124,6 @@ class FeatureShowcase(private val prefabs: PrefabsGenerator) {
 
         /** Name of the overlay button that focuses the view called [key] (an area key or [OVERVIEW]). */
         fun focusButtonName(key: String) = "Focus_$key"
-
-        /** Writes the files the scene references (a 1 s 440 Hz tone) into [assetsDir]. */
-        fun writeAssets(assetsDir: File) {
-            assetsDir.mkdirs()
-            val rate = 22050
-            val data = ByteBuffer.allocate(rate * 2).order(ByteOrder.LITTLE_ENDIAN)
-            repeat(rate) { data.putShort((sin(2 * PI * 440 * it / rate) * 8000).toInt().toShort()) }
-            val header = ByteBuffer.allocate(44).order(ByteOrder.LITTLE_ENDIAN)
-            header.put("RIFF".toByteArray()).putInt(36 + data.capacity()).put("WAVEfmt ".toByteArray())
-                .putInt(16).putShort(1).putShort(1).putInt(rate).putInt(rate * 2).putShort(2).putShort(16)
-                .put("data".toByteArray()).putInt(data.capacity())
-            File(assetsDir, TONE_FILE).writeBytes(header.array() + data.array())
-        }
     }
 
     private val assets get() = prefabs.projectAssetsDir
@@ -328,11 +310,15 @@ class FeatureShowcase(private val prefabs: PrefabsGenerator) {
     }
 
     private fun audio() {
+        // The bundled MP3 (AUD-10) as a positional source: streamed (music bus) and downmixed to mono so it pans; it gets
+        // louder from maxDistance (25 m, where attenuation stops) down to minDistance (1 m) as the camera approaches.
+        // No Doppler: music must not change pitch when the camera glides to an area (AUD-11).
         add(mesh("[Audio] Emitter3D", Assets.Bundled.SPHERE, at("audio", 0f, 1f, 0f), Vector3f(0.6f),
             Material(emissiveFactor = Vector3f(0.2f, 0.8f, 0.8f)))
-            .addComponent(AudioComponent(assets + TONE_FILE, is3D = true, loops = true, volume = 0.6f, maxDistance = 25f, playOnAwake = true)))
-        add(GameObject("[Audio] Ambient2D")
-            .addComponent(AudioComponent(assets + TONE_FILE, is3D = false, loops = true, volume = 0.1f, playOnAwake = true)))
+            .addComponent(AudioComponent(
+                assets + Assets.Bundled.MUSIC, is3D = true, loops = true, volume = 0.6f, bus = BusId.MUSIC,
+                maxDistance = 25f, dopplerFactor = 0f, playOnAwake = true,
+            )))
     }
 
     private fun prefabLibrary() {

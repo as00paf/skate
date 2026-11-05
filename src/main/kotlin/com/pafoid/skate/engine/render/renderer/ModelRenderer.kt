@@ -14,6 +14,7 @@ import com.pafoid.skate.engine.render.data.RenderMode
 import com.pafoid.skate.engine.render.material.MaterialBinder
 import com.pafoid.skate.engine.render.material.ShaderUniformSink
 import com.pafoid.skate.engine.render.state.GLBindings
+import com.pafoid.skate.engine.render.utils.setAlphaBlendKeepingTargetOpaque
 import com.pafoid.skate.engine.render.utils.withBlendState
 import com.pafoid.skate.engine.render.utils.withCullFace
 import com.pafoid.skate.engine.render.utils.withDepthMask
@@ -97,6 +98,8 @@ class ModelRenderer(
 
         // Configure render state
         withBlendState(alphaInt == 2) {
+            // Blend factors are set explicitly: the inherited ones depend on whatever drew last (REN-19)
+            if (alphaInt == 2) setAlphaBlendKeepingTargetOpaque()
             withDepthMask(alphaInt != 2) {
                 withCullFace(!material.doubleSided) {
                     GL11.glDrawElements(GL11.GL_TRIANGLES, part.vertexCount, GL11.GL_UNSIGNED_INT, 0)

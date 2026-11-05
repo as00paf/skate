@@ -9,13 +9,37 @@
 | Gameplay state | Request / controller state | Motion |
 |---|---|---|
 | on foot IDLE / WALK / RUN / TAKEOFF / AIR | `idle` / `walking` / `running` / `jump` / `falling idle` | bundled clips |
-| riding IDLE | `ride_idle` | procedural slot `ride_idle` |
+| riding IDLE | `ride_idle` | clip `skate riding` (ANI-10) |
 | PUSH | `push` | procedural slot `push` |
-| RIDE | `ride` | procedural slot `ride` |
+| RIDE | `ride` | clip `skate riding` (ANI-10) |
 | AIR | `ollie`, then `land` on touchdown | procedural slots `ollie`, `land` |
 | GRIND | `grind` | procedural slot `grind` |
 | MANUAL | `manual` | procedural slot `manual` |
 | BAIL | `bail` | clip `falling idle` |
+
+### Gameplay side (GPL-06)
+
+`PlayerMotionSystem` hands each frame's motion to `CharacterAnimationDriver`. The driver sends the request when the
+state changes, or on every mount and dismount. Every frame it also does two things:
+
+- **Blend times:** `blendTimes` in `skater.character.json` is a map from controller state (including `land`) to fade
+  seconds. It replaces the controller's transition durations through `AnimationStateMachine.blendOverrides`. States
+  not listed keep the JSON durations.
+- **Parameters:** `SkateBehavior.writeAnimationParameters` writes float parameters for blend trees and conditions:
+  `speed`, `verticalSpeed`, `airTime`, `landImpact` (fall speed of the last landing, m/s), `manualBalance` (-1..1
+  toward a bail) and `turn` (steering, -1..1).
+
+What decides each state:
+
+| State | Gameplay trigger |
+|---|---|
+| PUSH | push held (Shift / right trigger, or stick forward past `input.pushStickThreshold`) below `push.maxSpeed` |
+| RIDE | rolling at or above `ride.idleSpeed` without pushing |
+| AIR (`ollie`) | jump on the ground (`air.ollieImpulse`), or rolling off an edge for longer than `air.coyoteTime` |
+| `land` | the controller's own state, after touching down from AIR |
+| GRIND | `GRINDABLE`-tagged surface underfoot at `grind.minEntrySpeed` or faster, from RIDE or from AIR while falling. The ground probe reports the tag in `PlayerController.groundTag` with a short sphere sweep, so thin rails count. |
+| MANUAL | crouch held (Left Ctrl / LB) while riding at `manual.minSpeed` or faster |
+| BAIL | landing at `air.bailImpactSpeed` or faster, landing more than `air.landingToleranceDeg` sideways, losing the manual balance, or grinding too slowly |
 
 `land` is controller-only. It is entered from `ollie` when a ground request arrives, and it exits to that request after it has played. The any-state transitions into ground states list it in `exceptFrom` so they can't cut it short.
 
@@ -28,7 +52,17 @@ The `poses` entries are keyed `HumanoidPoseDef` lists baked on the character's o
 1. Save the clip as `push.fbx` (any Mixamo-rigged FBX) under `assets/characters/animations/` and add it to `Assets.Animations`/`Assets.Bundled` and `Skater.DEFAULT_ANIMATIONS`.
 2. Nothing else to change. The procedural `push` is no longer built. You can delete its `poses` entry.
 
-Alternatively, keep the file name and point the state's `motion` at it.
+Alternatively, keep the file name and point the state's `motion` at it. That's what ANI-10 does for `skate riding.fbx`: `ride` and `ride_idle` use it, and their procedural poses are gone.
+
+### Clip fits
+
+Mixamo skateboard clips are authored standing on a board, about 15 cm up, and the loader removes hips translation, so on our rig the feet would float above the deck. `clipFits` fixes placement per clip name:
+
+```json
+"clipFits": { "skate riding": { "groundFeet": true } }
+```
+
+`groundFeet` moves the hips so the lowest foot or toe joint of the clip's first frame sits at bind-pose height, which puts the feet on the deck. `offset` adds a manual (x, y, z) shift. Add a `groundFeet` fit for every board clip you drop in.
 
 ## Wanted clips
 
@@ -36,8 +70,7 @@ These are Mixamo search terms (search "skateboard"). The exact titles vary, so p
 
 | Slot | Look for | Notes |
 |---|---|---|
-| `ride_idle` | Skateboard Idle | looping, standing on deck |
-| `ride` | Skateboarding (rolling) / Skateboard Riding | looping, slight crouch |
+| `ride_idle`, `ride` | done: `skate riding.fbx` | a separate idle clip is optional |
 | `push` | Skateboard Push | looping, in place |
 | `ollie` | Skateboard Ollie / Skateboarding Jump | one-shot, ending in the air pose |
 | `land` | Skateboard Landing (or "Hard Landing" trimmed) | one-shot, about 0.4 s |

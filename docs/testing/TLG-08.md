@@ -2,7 +2,7 @@
 
 Start from a NEW project (`.\gradlew.bat run` → File > New Project → name, location, Create Project).
 
-1. The scene tabs show `MainScene` (active) and `FeatureShowcase`; `Scenes/FeatureShowcase.scene` and `Assets/tone.wav` exist in the project folder.
+1. The scene tabs show `MainScene` (active) and `FeatureShowcase`; `Scenes/FeatureShowcase.scene` and `Assets/EngineDefaults/Sounds/Music/aquarela do brasil.mp3` exist in the project folder.
 2. Switch to `FeatureShowcase`: a grey floor with ten coloured pads, the overlay legend top-left and the widget panel bottom-right. No `!!key!!` text. Every Hierarchy entry except `Camera` and `Floor` starts with `[Area]`.
 3. Without playing: in `Lights`, red/blue/green lighting is visible. In `Shadows`, the casters throw sun shadows and `NoCaster` throws none; the spot light and point light there also cast shadows. In `Materials`, the metal sweep, the glowing cube, the textured cube and the transparent cube are visible.
 4. Press Play: the view is the overview, looking down at all ten pads (not at the sky). Click each legend button on the left: the camera glides (about 1 s) to frame that pad. Click **Overview** to return to the start view.

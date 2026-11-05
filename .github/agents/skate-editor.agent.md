@@ -15,7 +15,7 @@ You are the **Editor** specialist for the Skate engine, a Kotlin/JVM 17 3D game 
 
 - `src/main/kotlin/com/pafoid/skate/editor/**`
 - `src/main/kotlin/com/pafoid/skate/app/**`
-- assets/strings/editor_strings*.properties
+- assets/strings/editor/core*.properties (other areas belong to their domains; see `.github/copilot-instructions.md`)
 - imgui.ini, editor.config
 
 Paths without a root are relative to `src/main/kotlin/com/pafoid/skate/`.

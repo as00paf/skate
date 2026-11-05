@@ -236,7 +236,7 @@ class PrefabsGenerator(
     /**
      * The scenes of a new project: `MainScene` (sky, sun, day/night cycle, the skater and board on an asphalt floor,
      * a concrete ledge to grind and a HUD canvas) and the [FeatureShowcase] scene (one labelled area per engine
-     * feature). Writes the showcase's assets into [projectAssetsDir]. See docs/samples.md.
+     * feature). See docs/samples.md.
      */
     fun createDefaultScenes(sceneDir: File): List<Scene> {
         val scene = sceneManager.createNewScene(DEFAULT_SCENE, sceneDir.path)
@@ -251,7 +251,6 @@ class PrefabsGenerator(
         spawnDefaultsSync().forEach { scene.addChild(it) }
         sceneManager.saveScene(scene, sceneDir.path)
 
-        FeatureShowcase.writeAssets(File(projectAssetsDir))
         val showcase = FeatureShowcase(this).populate(sceneManager.createNewScene(FeatureShowcase.SCENE_NAME, sceneDir.path))
         sceneManager.saveScene(showcase, sceneDir.path)
 

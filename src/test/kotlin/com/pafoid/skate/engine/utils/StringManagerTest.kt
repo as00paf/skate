@@ -109,4 +109,30 @@ class StringManagerLocaleTest {
         assertEquals("none", sm.getQuantityString("n", 0))
         assertEquals("3 things", sm.getQuantityString("n", 3))
     }
+
+    @Test
+    fun StringManager_InMemorySourceFollowsLocaleChanges() {
+        val sm = StringManager(mockk(relaxed = true), "en")
+        val source = com.pafoid.skate.engine.core.StringSource.memory(
+            "mem", mapOf("hud.properties" to "t=Paused\nk=Keep".toByteArray(), "hud_fr.properties" to "t=En pause".toByteArray())
+        )
+        assertEquals(true, sm.addStrings(source))
+        assertEquals("Paused", sm.getString("t"))
+        sm.setLocale("fr")
+        assertEquals("En pause", sm.getString("t"))
+        assertEquals("Keep", sm.getString("k"))
+        sm.setLocale("en")
+        assertEquals("Paused", sm.getString("t"))
+    }
+
+    @Test
+    fun StringManager_AddingStringsAppliesTheActiveTranslation() {
+        val sm = StringManager(mockk(relaxed = true), "fr")
+        sm.addStrings(
+            com.pafoid.skate.engine.core.StringSource.memory(
+                "mem", mapOf("hud.properties" to "t=Paused".toByteArray(), "hud_fr.properties" to "t=En pause".toByteArray())
+            )
+        )
+        assertEquals("En pause", sm.getString("t"))
+    }
 }

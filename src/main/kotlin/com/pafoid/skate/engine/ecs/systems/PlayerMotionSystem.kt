@@ -52,11 +52,7 @@ class PlayerMotionSystem(
                 footIk.update(animator.ik, controller.footTargets, controller.ground.standing && !riding, dt)
             }
 
-            // Mounting swaps clip sets even when the state name stays the same (on-foot IDLE -> riding IDLE)
-            if (motion.state != controller.state || motion.mount != MountRequest.NONE) {
-                controller.state = motion.state
-                motion.animation?.let { clip -> go.getComponent<Animator>()?.play(clip) }
-            }
+            controller.state = CharacterAnimationDriver.drive(controller.behavior, motion, controller.state, go.getComponent<Animator>())
         }
     }
 
@@ -82,6 +78,8 @@ class PlayerMotionSystem(
                 MountMath.grounded(controller.ground, m?.mounted == true, m?.rideHeight ?: 0f, controller.behavior.ground.groundedDistance)
             },
             horizontalSpeed = speed,
+            verticalSpeed = velocity.y,
+            groundTag = controller.groundTag,
             velocityYaw = if (speed > MIN_HEADING_SPEED) kotlin.math.atan2(velocity.x, velocity.z) else Float.NaN,
             yaw = MotionMath.yawOfRotation(body.getRotation()),
             cameraForward = Vector3f(camera.camForward),

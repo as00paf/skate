@@ -43,8 +43,9 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import com.pafoid.skate.engine.assets.Assets
+import com.pafoid.skate.engine.core.StringTables
 import java.io.File
-import java.util.Properties
 
 class FeatureShowcaseTest {
 
@@ -100,8 +101,8 @@ class FeatureShowcaseTest {
         assertEquals(setOf(JointType.HINGE, JointType.CONE_TWIST, JointType.SLIDER), joints)
         val car = withComponent<VehicleComponent>().single()
         assertNotNull(car.getComponent<RigidBody3D>())
-        assertEquals(2, withComponent<AudioComponent>().size)
-        assertTrue(withComponent<AudioComponent>().all { it.getComponent<AudioComponent>()!!.soundFilePath == "P\\Assets\\tone.wav" })
+        val audio = withComponent<AudioComponent>().single().getComponent<AudioComponent>()!!
+        assertEquals("P\\Assets\\" + com.pafoid.skate.engine.assets.Assets.Bundled.MUSIC, audio.soundFilePath)
     }
 
     @Test
@@ -188,22 +189,14 @@ class FeatureShowcaseTest {
     }
 
     @Test
-    fun `overlay string keys resolve in the bundled game and editor tables, English and French`() {
-        listOf("game_strings", "editor_strings", "game_strings_fr", "editor_strings_fr").forEach { name ->
-            val props = Properties().apply { File("assets/strings/$name.properties").reader(Charsets.UTF_8).use { load(it) } }
-            FeatureShowcase.STRING_KEYS.forEach { assertTrue(props.containsKey(it), "$it missing from $name") }
-        }
-    }
-
-    @Test
-    fun `writeAssets writes the looping tone`() {
-        val dir = kotlin.io.path.createTempDirectory("showcase-assets").toFile()
-        try {
-            FeatureShowcase.writeAssets(dir)
-            val wav = File(dir, FeatureShowcase.TONE_FILE)
-            assertEquals("RIFF", String(wav.readBytes().copyOfRange(0, 4)))
-        } finally {
-            dir.deleteRecursively()
+    fun `overlay string keys resolve in the bundled game tables, English and French`() {
+        // The editor merges the game tables too, so these keys also resolve in the editor viewport.
+        val dir = File(Assets.Strings.GAME_STRINGS)
+        val english = StringTables.merged(dir)
+        val french = StringTables.baseTables(dir).map { StringTables.localized(it, "fr") }.filter { it.exists() }.map(StringTables::read)
+        FeatureShowcase.STRING_KEYS.forEach { key ->
+            assertTrue(english.containsKey(key), "$key missing from the game tables")
+            assertTrue(french.any { it.containsKey(key) }, "$key has no French translation")
         }
     }
 

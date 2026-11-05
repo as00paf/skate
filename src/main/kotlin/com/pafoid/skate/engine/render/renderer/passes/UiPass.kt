@@ -3,14 +3,11 @@ package com.pafoid.skate.engine.render.renderer.passes
 import com.pafoid.skate.engine.assets.data.Shader
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.render.renderer.Renderer2D
-import com.pafoid.skate.engine.render.utils.GLStateTracker
+import com.pafoid.skate.engine.render.utils.setAlphaBlendKeepingTargetOpaque
 import com.pafoid.skate.engine.render.utils.withBlendState
 import com.pafoid.skate.engine.render.utils.withCullFace
 import com.pafoid.skate.engine.render.utils.withDepthMask
 import com.pafoid.skate.engine.render.utils.withDepthTest
-import org.lwjgl.opengl.GL11.GL_ONE
-import org.lwjgl.opengl.GL11.GL_ONE_MINUS_SRC_ALPHA
-import org.lwjgl.opengl.GL11.GL_SRC_ALPHA
 
 /**
  * Runtime UI overlay pass, the last pass of the frame.
@@ -59,7 +56,7 @@ fun withUiDrawState(draw: () -> Unit) {
         withDepthMask(false) {
             withBlendState(true) {
                 withCullFace(false) {
-                    GLStateTracker.setBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA)
+                    setAlphaBlendKeepingTargetOpaque()
                     draw()
                 }
             }
