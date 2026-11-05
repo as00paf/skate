@@ -7,9 +7,8 @@ import java.nio.FloatBuffer
  * Render hardware interface (REN-12, docs/design/REN-12.md). Backend-neutral: nothing in this package may use a
  * graphics API (RhiGlIsolationGuardTest). The OpenGL backend lives in `rhi/opengl/`.
  *
- * Migration status: step 5 (buffers, vertex inputs, textures, render targets, passes, readback, blit, shaders and
- * parameters). [RhiDevice] and [RhiCommandList] only declare what the backend implements; pipelines and draws (6) and
- * timers (7) are added by the step that migrates their callers. Everything runs on the main thread (§7.6).
+ * The migration is complete (steps 0-7): rendering code reaches the GPU only through these interfaces; the OpenGL
+ * 3.3 backend in `rhi/opengl/` implements them and only the window creates it. Everything runs on the main thread (§7.6).
  */
 
 /** What the device supports; read once at creation. */
@@ -58,6 +57,12 @@ interface RhiDevice : AutoCloseable {
 
     /** A program from preprocessed stage sources; throws [ShaderCompileError] with the driver's log when one fails. */
     fun createShader(desc: ShaderDesc): RhiShader
+
+    /** A GPU timer for `beginTimer`/`endTimer`; one that never reports when the device has no timer queries. */
+    fun createTimer(): RhiTimer
+
+    /** Shader, vertex layout and fixed-function state of a kind of draw; create once, bind with `setPipeline`. */
+    fun createPipeline(desc: PipelineDesc): RhiPipeline
 
     /** Color and depth attachments in one target; see [RenderTargetDesc]. */
     fun createRenderTarget(desc: RenderTargetDesc): RhiRenderTarget
@@ -182,25 +187,46 @@ interface RhiVertexLayout : RhiResource {
 /** Vertex (and index) buffers bound to a layout; see [RhiDevice.createVertexInput]. Closing it keeps the buffers. */
 interface RhiVertexInput : RhiResource {
     val layout: RhiVertexLayout
-
-    /** Backend handle for draw code not yet on [RhiCommandList] (GL: VAO name); removed at step 6. */
-    val nativeHandle: Long
 }
 
 interface RhiPipeline : RhiResource {
     val desc: PipelineDesc
 }
 
-/** Non-blocking GPU timer: results arrive a few frames later; [latestNs] is -1 until then. */
+/** Non-blocking GPU timer: results arrive a few frames later; [latestNs] is -1 until then. Read it after the frame's commands. */
 interface RhiTimer : RhiResource {
     val latestNs: Long
 }
 
 /**
- * Commands of a frame; immediate on GL, recorded on Vulkan. Grows with the migration: `setPipeline`,
- * `setVertexInput`, `setTexture`, `setScissor` and the draws arrive at step 6, timers at 7 (docs/design/REN-12.md §3).
+ * Commands of a frame; immediate on GL, recorded on Vulkan (docs/design/REN-12.md §3). A draw uses the last
+ * [setPipeline], [setVertexInput], textures, parameters and scissor.
  */
 interface RhiCommandList {
+    /** Shader and fixed-function state of the next draws (GL: only state that differs is changed). */
+    fun setPipeline(pipeline: RhiPipeline)
+
+    /** Vertex and index buffers of the next draws. */
+    fun setVertexInput(input: RhiVertexInput)
+
+    /** Binds [texture] to sampler unit [slot]; null leaves the unit empty. */
+    fun setTexture(slot: Int, texture: RhiTexture?)
+
+    /** Clips the next draws to [rect] (target pixels, bottom-left origin); null draws unclipped. */
+    fun setScissor(rect: IntRect?)
+
+    /** Draws [vertexCount] vertices from [firstVertex] with the pipeline's topology, [instances] times. */
+    fun draw(vertexCount: Int, firstVertex: Int = 0, instances: Int = 1)
+
+    /** Draws [indexCount] indices (32-bit) from [firstIndex] with the pipeline's topology, [instances] times. */
+    fun drawIndexed(indexCount: Int, firstIndex: Int = 0, instances: Int = 1)
+
+    /** Starts measuring the GPU time of the following commands with [timer] (timers do not nest). */
+    fun beginTimer(timer: RhiTimer)
+
+    /** Ends the span begun by [beginTimer]; [RhiTimer.latestNs] picks up finished spans without waiting. */
+    fun endTimer(timer: RhiTimer)
+
     /** Makes [params]' shader the one later draws use and pushes its changed values. */
     fun setParams(params: ShaderParams)
 

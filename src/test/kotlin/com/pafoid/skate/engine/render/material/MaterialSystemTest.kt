@@ -20,7 +20,7 @@ class MaterialSystemTest {
     }
 
     private val binds = mutableListOf<Pair<Int, Int>>()
-    private fun binder() = MaterialBinder { slot, id -> binds += slot to id }
+    private fun binder() = MaterialBinder { slot, texture -> binds += slot to texture.texId }
 
     private fun tex(id: Int, path: String? = null) = Texture(filePath = path).also { it.texId = id }
 

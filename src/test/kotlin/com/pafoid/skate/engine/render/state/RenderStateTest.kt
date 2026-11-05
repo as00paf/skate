@@ -49,7 +49,7 @@ class RenderStateTest {
     fun BindingCache_SkipsRedundantVaoAndTextureBinds() {
         val calls = mutableListOf<String>()
         var changes = 0
-        val c = BindingCache({ calls += "vao$it" }, { calls += "unit$it" }, { calls += "tex$it" }, { changes++ })
+        val c = BindingCache({ calls += "vao$it" }, { calls += "unit$it" }, { kind, id -> calls += if (kind == 0) "tex$id" else "tex$kind:$id" }, { changes++ })
         assertTrue(c.bindVao(3))
         assertFalse(c.bindVao(3))
         assertTrue(c.bindTexture(0, 10))
@@ -61,9 +61,19 @@ class RenderStateTest {
     }
 
     @Test
+    fun BindingCache_TracksEachTextureKindPerUnit() {
+        val calls = mutableListOf<String>()
+        val c = BindingCache({ calls += "vao$it" }, { calls += "unit$it" }, { kind, id -> calls += "tex$kind:$id" })
+        assertTrue(c.bindTexture(5, 20, kind = 1))
+        assertTrue(c.bindTexture(5, 21, kind = 0), "a 2D bind on a unit holding an array is a different binding")
+        assertFalse(c.bindTexture(5, 20, kind = 1))
+        assertEquals(listOf("unit5", "tex1:20", "tex0:21"), calls)
+    }
+
+    @Test
     fun BindingCache_InvalidateForcesRebindAndResetUnbindsKnownVao() {
         val calls = mutableListOf<String>()
-        val c = BindingCache({ calls += "vao$it" }, { calls += "unit$it" }, { calls += "tex$it" })
+        val c = BindingCache({ calls += "vao$it" }, { calls += "unit$it" }, { kind, id -> calls += if (kind == 0) "tex$id" else "tex$kind:$id" })
         c.bindVao(4)
         c.invalidate()
         assertTrue(c.bindVao(4))

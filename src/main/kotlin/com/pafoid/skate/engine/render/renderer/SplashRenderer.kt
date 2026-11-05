@@ -4,13 +4,10 @@ import com.pafoid.skate.engine.assets.data.Shader
 import com.pafoid.skate.engine.assets.data.Texture
 import com.pafoid.skate.engine.assets.data.models.MeshPart
 import com.pafoid.skate.engine.render.VAOLoader
+import com.pafoid.skate.engine.render.rhi.RhiContext
+import com.pafoid.skate.engine.render.state.PipelineCache
+import com.pafoid.skate.engine.render.state.PipelineStates
 import com.pafoid.skate.engine.utils.ShaderConst
-import org.lwjgl.opengl.GL11
-import org.lwjgl.opengl.GL11.GL_TEXTURE_2D
-import org.lwjgl.opengl.GL11.glBindTexture
-import org.lwjgl.opengl.GL13
-import org.lwjgl.opengl.GL20
-import org.lwjgl.opengl.GL30
 
 /**
  * Specialized renderer for the splash screen.
@@ -54,32 +51,24 @@ class SplashRenderer(private val vaoLoader: VAOLoader) {
      */
     fun render(shader: Shader, texture: Texture, progress: Float, alpha: Float) {
         val q = quad ?: return
+        val input = q.input ?: return
 
         shader.start()
         shader.uploadFloat(ShaderConst.Uniforms.PROGRESS, progress)
         shader.uploadFloat(ShaderConst.Uniforms.ALPHA, alpha)
 
-        GL13.glActiveTexture(GL13.GL_TEXTURE0)
-        glBindTexture(GL_TEXTURE_2D, texture.texId)
+        val cmd = RhiContext.require().commandList()
+        cmd.setTexture(0, texture.rhi)
         shader.uploadInt(ShaderConst.Uniforms.TEXTURE, 0)
 
-        GL30.glBindVertexArray(q.vaoId)
-        GL20.glEnableVertexAttribArray(0)
-        GL20.glEnableVertexAttribArray(1)
-
-        GL11.glDisable(GL11.GL_DEPTH_TEST)
-        GL11.glEnable(GL11.GL_BLEND)
-        GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA)
-
-        GL11.glDrawElements(GL11.GL_TRIANGLES, q.vertexCount, GL11.GL_UNSIGNED_INT, 0)
-
-        GL20.glDisableVertexAttribArray(0)
-        GL20.glDisableVertexAttribArray(1)
-        GL30.glBindVertexArray(0)
-
+        // No depth, straight alpha over whatever is on screen ([PipelineStates.SPLASH])
+        cmd.setPipeline(pipelines.get(shader, input.layout) ?: return)
+        cmd.setVertexInput(input)
+        cmd.drawIndexed(q.vertexCount)
         shader.stop()
-        GL11.glDisable(GL11.GL_BLEND)
     }
+
+    private val pipelines = PipelineCache(PipelineStates.SPLASH)
 
     /**
      * Cleans up the splash renderer resources.
@@ -89,5 +78,6 @@ class SplashRenderer(private val vaoLoader: VAOLoader) {
             vaoLoader.deleteVAO(it.vaoId)
         }
         quad = null
+        pipelines.close()
     }
 }

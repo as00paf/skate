@@ -3,11 +3,6 @@ package com.pafoid.skate.engine.render.renderer.passes
 import com.pafoid.skate.engine.assets.data.Shader
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.render.renderer.Renderer2D
-import com.pafoid.skate.engine.render.utils.setAlphaBlendKeepingTargetOpaque
-import com.pafoid.skate.engine.render.utils.withBlendState
-import com.pafoid.skate.engine.render.utils.withCullFace
-import com.pafoid.skate.engine.render.utils.withDepthMask
-import com.pafoid.skate.engine.render.utils.withDepthTest
 
 /**
  * Runtime UI overlay pass, the last pass of the frame.
@@ -20,14 +15,12 @@ import com.pafoid.skate.engine.render.utils.withDepthTest
  * @param bindTarget Binds the presented render target and its viewport (same target as the debug pass)
  * @param targetSize Size of the presented target in pixels, read every frame (it changes on resize)
  * @param endTarget Ends the pass [bindTarget] began
- * @param drawState Runs the draw inside the GL state the UI needs ([withUiDrawState]); injectable for tests
  */
 class UiPass(
     private val renderer2D: Renderer2D,
     private val batchShader: Shader,
     private val bindTarget: () -> Unit,
     private val targetSize: () -> Pair<Int, Int>,
-    private val drawState: (draw: () -> Unit) -> Unit = ::withUiDrawState,
     private val endTarget: () -> Unit = {},
 ) : BaseRenderPass() {
 
@@ -42,27 +35,8 @@ class UiPass(
             return
         }
         bindTarget()
-        drawState {
-            renderer2D.bindShader(batchShader)
-            renderer2D.renderUi(width, height)
-        }
+        renderer2D.bindShader(batchShader)
+        renderer2D.renderUi(width, height)
         endTarget()
-    }
-}
-
-/**
- * UI quads: no depth (drawn over everything, never written), straight alpha blending for colour, and alpha that only
- * accumulates so translucent UI never lowers the target's alpha (the editor viewport composites with it).
- */
-fun withUiDrawState(draw: () -> Unit) {
-    withDepthTest(false) {
-        withDepthMask(false) {
-            withBlendState(true) {
-                withCullFace(false) {
-                    setAlphaBlendKeepingTargetOpaque()
-                    draw()
-                }
-            }
-        }
     }
 }
