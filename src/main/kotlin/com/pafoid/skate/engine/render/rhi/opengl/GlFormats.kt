@@ -1,13 +1,24 @@
 package com.pafoid.skate.engine.render.rhi.opengl
 
+import com.pafoid.skate.engine.render.rhi.BlendFactor
 import com.pafoid.skate.engine.render.rhi.BufferUpdate
 import com.pafoid.skate.engine.render.rhi.BufferUsage
 import com.pafoid.skate.engine.render.rhi.CompareFunc
 import com.pafoid.skate.engine.render.rhi.Filter
 import com.pafoid.skate.engine.render.rhi.PixelFormat
 import com.pafoid.skate.engine.render.rhi.TextureType
+import com.pafoid.skate.engine.render.rhi.Topology
 import com.pafoid.skate.engine.render.rhi.Wrap
 import org.lwjgl.opengl.GL11.GL_ALWAYS
+import org.lwjgl.opengl.GL11.GL_DST_ALPHA
+import org.lwjgl.opengl.GL11.GL_LINES
+import org.lwjgl.opengl.GL11.GL_ONE
+import org.lwjgl.opengl.GL11.GL_ONE_MINUS_DST_ALPHA
+import org.lwjgl.opengl.GL11.GL_ONE_MINUS_SRC_ALPHA
+import org.lwjgl.opengl.GL11.GL_SRC_ALPHA
+import org.lwjgl.opengl.GL11.GL_TRIANGLES
+import org.lwjgl.opengl.GL11.GL_TRIANGLE_STRIP
+import org.lwjgl.opengl.GL11.GL_ZERO
 import org.lwjgl.opengl.GL11.GL_DEPTH_COMPONENT
 import org.lwjgl.opengl.GL11.GL_EQUAL
 import org.lwjgl.opengl.GL11.GL_FLOAT
@@ -95,5 +106,20 @@ internal object GlFormats {
         CompareFunc.NOT_EQUAL -> GL_NOTEQUAL
         CompareFunc.GREATER_EQUAL -> GL_GEQUAL
         CompareFunc.ALWAYS -> GL_ALWAYS
+    }
+
+    fun blend(factor: BlendFactor): Int = when (factor) {
+        BlendFactor.ZERO -> GL_ZERO
+        BlendFactor.ONE -> GL_ONE
+        BlendFactor.SRC_ALPHA -> GL_SRC_ALPHA
+        BlendFactor.ONE_MINUS_SRC_ALPHA -> GL_ONE_MINUS_SRC_ALPHA
+        BlendFactor.DST_ALPHA -> GL_DST_ALPHA
+        BlendFactor.ONE_MINUS_DST_ALPHA -> GL_ONE_MINUS_DST_ALPHA
+    }
+
+    fun topology(topology: Topology): Int = when (topology) {
+        Topology.TRIANGLES -> GL_TRIANGLES
+        Topology.TRIANGLE_STRIP -> GL_TRIANGLE_STRIP
+        Topology.LINES -> GL_LINES
     }
 }

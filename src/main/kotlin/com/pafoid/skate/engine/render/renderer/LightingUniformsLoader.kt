@@ -5,6 +5,7 @@ import com.pafoid.skate.engine.ecs.components.AmbientLightComponent
 import com.pafoid.skate.engine.ecs.components.DirectionalLightComponent
 import com.pafoid.skate.engine.ecs.components.EnvironmentComponent
 import com.pafoid.skate.engine.render.fog.FogUniforms
+import com.pafoid.skate.engine.render.rhi.RhiContext
 import com.pafoid.skate.engine.utils.ShaderConst.Uniforms
 import com.pafoid.skate.engine.render.shadow.CascadeSplits
 import com.pafoid.skate.engine.render.shadow.LocalShadows
@@ -12,10 +13,6 @@ import com.pafoid.skate.engine.render.shadow.ShadowBias
 import com.pafoid.skate.engine.render.shadow.ShadowFrame
 import org.joml.Vector3f
 import org.joml.Vector4f
-import org.lwjgl.opengl.GL11.glBindTexture
-import org.lwjgl.opengl.GL13.GL_TEXTURE0
-import org.lwjgl.opengl.GL13.glActiveTexture
-import org.lwjgl.opengl.GL30.GL_TEXTURE_2D_ARRAY
 
 /**
  * Uploads the global (non point/spot) lighting uniforms: sun, ambient, shadow and fog.
@@ -71,8 +68,8 @@ class LightingUniformsLoader {
     fun loadShadowUniforms(shader: Shader, frame: ShadowFrame?) {
         shader.uploadInt(Uniforms.CASCADE_SHADOW_MAP, Uniforms.SHADOW_TEXTURE_UNIT)
         shader.uploadInt(Uniforms.LOCAL_SHADOW_MAP, Uniforms.LOCAL_SHADOW_TEXTURE_UNIT)
-        val cascades = if (frame != null && frame.cascadeTextureId != 0) frame.cascadeCount else 0
-        val local = if (frame != null && frame.localTextureId != 0) frame.localSlots.size else 0
+        val cascades = if (frame != null && frame.cascadeTexture != null) frame.cascadeCount else 0
+        val local = if (frame != null && frame.localTexture != null) frame.localSlots.size else 0
         shader.uploadInt(Uniforms.CASCADE_COUNT, cascades)
         shader.uploadInt(Uniforms.SHADOWED_LIGHT_COUNT, local)
         if (frame == null || (cascades == 0 && local == 0)) return
@@ -93,8 +90,7 @@ class LightingUniformsLoader {
             shader.uploadVec4f(Uniforms.CASCADE_DEPTH_BIAS, depthBiases)
             shader.uploadFloat(Uniforms.SHADOW_TEXEL_SIZE, 1f / frame.cascadeResolution)
             shader.uploadFloat(Uniforms.SHADOW_FADE_START, frame.splits[cascades] * FADE_START_FRACTION)
-            glActiveTexture(GL_TEXTURE0 + Uniforms.SHADOW_TEXTURE_UNIT)
-            glBindTexture(GL_TEXTURE_2D_ARRAY, frame.cascadeTextureId)
+            RhiContext.require().commandList().setTexture(Uniforms.SHADOW_TEXTURE_UNIT, frame.cascadeTexture)
         }
 
         if (local > 0) {
@@ -111,10 +107,8 @@ class LightingUniformsLoader {
             shader.uploadIntArray(Uniforms.SHADOW_LIGHT_INDEX, lightIndices)
             shader.uploadIntArray(Uniforms.SHADOW_LIGHT_BASE, lightBases)
             shader.uploadFloat(Uniforms.LOCAL_SHADOW_TEXEL_SIZE, 1f / frame.localResolution)
-            glActiveTexture(GL_TEXTURE0 + Uniforms.LOCAL_SHADOW_TEXTURE_UNIT)
-            glBindTexture(GL_TEXTURE_2D_ARRAY, frame.localTextureId)
+            RhiContext.require().commandList().setTexture(Uniforms.LOCAL_SHADOW_TEXTURE_UNIT, frame.localTexture)
         }
-        glActiveTexture(GL_TEXTURE0)
     }
 
     /**

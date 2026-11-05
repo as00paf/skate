@@ -1,7 +1,18 @@
 package com.pafoid.skate.engine.render.renderer
 
-import com.pafoid.skate.engine.render.rhi.opengl.GpuResource
 import com.pafoid.skate.engine.assets.Assets
+import com.pafoid.skate.engine.render.rhi.AttributeType
+import com.pafoid.skate.engine.render.rhi.BufferDesc
+import com.pafoid.skate.engine.render.rhi.BufferUpdate
+import com.pafoid.skate.engine.render.rhi.BufferUsage
+import com.pafoid.skate.engine.render.rhi.RhiBuffer
+import com.pafoid.skate.engine.render.rhi.RhiContext
+import com.pafoid.skate.engine.render.rhi.RhiVertexInput
+import com.pafoid.skate.engine.render.rhi.VertexAttribute
+import com.pafoid.skate.engine.render.rhi.VertexBinding
+import com.pafoid.skate.engine.render.rhi.VertexLayoutDesc
+import com.pafoid.skate.engine.render.state.PipelineCache
+import com.pafoid.skate.engine.render.state.PipelineStates
 import com.pafoid.skate.engine.assets.AssetsManager
 import com.pafoid.skate.engine.assets.data.Shader
 import com.pafoid.skate.engine.core.LoggerService
@@ -10,22 +21,17 @@ import com.pafoid.skate.engine.render.data.PickingMesh
 import com.pafoid.skate.engine.utils.ShaderConst.Uniforms
 import org.joml.Matrix4f
 import org.joml.Vector4f
-import org.lwjgl.opengl.GL11.GL_FLOAT
-import org.lwjgl.opengl.GL11.GL_TRIANGLES
-import org.lwjgl.opengl.GL11.glDrawArrays
-import org.lwjgl.opengl.GL15.GL_ARRAY_BUFFER
-import org.lwjgl.opengl.GL15.GL_DYNAMIC_DRAW
-import org.lwjgl.opengl.GL15.glBindBuffer
-import org.lwjgl.opengl.GL15.glBufferData
-import org.lwjgl.opengl.GL15.glBufferSubData
-import org.lwjgl.opengl.GL15.glGenBuffers
-import org.lwjgl.opengl.GL20.glEnableVertexAttribArray
-import org.lwjgl.opengl.GL20.glVertexAttribPointer
-import org.lwjgl.opengl.GL30.glBindVertexArray
-import org.lwjgl.opengl.GL30.glGenVertexArrays
 
 private const val MAX_VERTICES = 50000
 private const val VERTEX_SIZE = 4 // x, y, z, id
+
+/** World-space position plus the entity id at `aEntityId` (location 9) of the 3D picking shader. */
+private val LAYOUT = VertexLayoutDesc(listOf(
+    VertexBinding(VERTEX_SIZE * Float.SIZE_BYTES, listOf(
+        VertexAttribute(0, AttributeType.VEC3, 0),
+        VertexAttribute(9, AttributeType.FLOAT, 3 * Float.SIZE_BYTES),
+    )),
+))
 
 class PickingRenderer(
     private val assetsManager: AssetsManager,
@@ -38,39 +44,28 @@ class PickingRenderer(
     private var totalVertices = 0
 
     private lateinit var shader: Shader
-    private var vao: GpuResource? = null
-    private var vbo: GpuResource? = null
-    private val vaoId get() = vao?.id ?: -1
-    private val vboId get() = vbo?.id ?: -1
+    private var input: RhiVertexInput? = null
+    private var vbo: RhiBuffer? = null
     private var started = false
+    private val pipelines = PipelineCache(PipelineStates.SPRITES)
 
     private val tempVec = Vector4f()
     private val identityMatrix = Matrix4f()
 
-    /** Frees the GL objects; [start] may be called again afterwards. */
+    /** Frees the GPU objects; [start] may be called again afterwards. */
     fun destroy() {
-        vao?.close(); vbo?.close()
-        vao = null; vbo = null
+        input?.close(); vbo?.close()
+        input = null; vbo = null
+        pipelines.close()
         started = false
     }
 
     fun start() {
         shader = assetsManager.getShader(Assets.Shaders.PICKING_3D)
-        
-        vao = GpuResource.vertexArray(glGenVertexArrays())
-        glBindVertexArray(vaoId)
-        vbo = GpuResource.buffer(glGenBuffers())
-        glBindBuffer(GL_ARRAY_BUFFER, vboId)
-        glBufferData(GL_ARRAY_BUFFER, vertexArray.size.toLong() * Float.SIZE_BYTES, GL_DYNAMIC_DRAW)
-        
-        // Position
-        glVertexAttribPointer(0, 3, GL_FLOAT, false, VERTEX_SIZE * Float.SIZE_BYTES, 0)
-        glEnableVertexAttribArray(0)
-        
-        // Entity ID (mapped to location 10 in shader)
-        glVertexAttribPointer(9, 1, GL_FLOAT, false, VERTEX_SIZE * Float.SIZE_BYTES, 3 * Float.SIZE_BYTES.toLong())
-        glEnableVertexAttribArray(10)
-        
+        val device = RhiContext.require()
+        val buffer = device.createBuffer(BufferDesc(BufferUsage.VERTEX, vertexArray.size.toLong() * Float.SIZE_BYTES, BufferUpdate.DYNAMIC))
+        vbo = buffer
+        input = device.createVertexInput(device.createVertexLayout(LAYOUT), listOf(buffer))
         started = true
     }
 
@@ -82,6 +77,7 @@ class PickingRenderer(
 
     fun draw() {
         if (meshes.isEmpty()) return
+        val vertexInput = input ?: return
 
         shader.start()
 
@@ -106,14 +102,12 @@ class PickingRenderer(
                 vertexArray[index++] = mesh.objectId.toFloat()
             }
         }
-        
-        glBindBuffer(GL_ARRAY_BUFFER, vboId)
-        glBufferSubData(GL_ARRAY_BUFFER, 0, vertexArray)
-        
-        glBindVertexArray(vaoId)
-        glDrawArrays(GL_TRIANGLES, 0, totalVertices)
+        vbo?.update(0, vertexArray)
 
-        glBindVertexArray(0)
+        val cmd = RhiContext.require().commandList()
+        cmd.setPipeline(pipelines.get(shader, vertexInput.layout) ?: return)
+        cmd.setVertexInput(vertexInput)
+        cmd.draw(totalVertices)
         shader.stop()
     }
 

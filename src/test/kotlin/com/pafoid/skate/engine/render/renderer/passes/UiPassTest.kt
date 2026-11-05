@@ -31,7 +31,6 @@ class UiPassTest {
         batchShader = batchShader,
         bindTarget = { events += "bindTarget" },
         targetSize = { 640 to 360 },
-        drawState = { draw -> events += "state"; draw(); events += "restore" },
         endTarget = { events += "endTarget" },
     )
 
@@ -41,7 +40,7 @@ class UiPassTest {
 
         pass().execute(Scene())
 
-        assertEquals(listOf("bindTarget", "state", "bindShader", "renderUi 640x360", "restore", "endTarget"), events)
+        assertEquals(listOf("bindTarget", "bindShader", "renderUi 640x360", "endTarget"), events)
         verify { renderer2D.bindShader(batchShader) }
     }
 

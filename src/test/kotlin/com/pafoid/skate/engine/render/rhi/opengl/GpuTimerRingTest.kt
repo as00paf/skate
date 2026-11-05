@@ -1,7 +1,5 @@
-package com.pafoid.skate.engine.render.graph
+package com.pafoid.skate.engine.render.rhi.opengl
 
-import com.pafoid.skate.engine.ecs.Scene
-import com.pafoid.skate.engine.render.renderer.passes.BaseRenderPass
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 
@@ -41,20 +39,17 @@ class GpuTimerRingTest {
         }
     }
 
-    private class Pass(override val name: String) : BaseRenderPass()
-
     @Test
-    fun RenderGraph_AssignsGpuTimePerEnabledPass() {
+    fun GlTimer_EachSpanIsOneSample_ReadWhenItEnds() {
         val api = FakeQueries(latency = 0)
-        val graph = RenderGraph { api }
-        val a = Pass("A")
-        val b = Pass("B").also { it.isEnabled = false }
-        graph.addPass(a); graph.addPass(b)
+        val timer = GlTimer(GpuTimerRing(api))
+        assertEquals(-1L, timer.latestNs)
         api.nextResult = 750_000L
-
-        graph.execute(Scene())
-
-        assertEquals(750_000L, a.gpuTimeNs)
-        assertEquals(-1L, b.gpuTimeNs)
+        timer.begin(); timer.end()
+        assertEquals(750_000L, timer.latestNs)
+        api.nextResult = 900_000L
+        timer.begin(); timer.end()
+        assertEquals(900_000L, timer.latestNs)
+        timer.close(); timer.close()
     }
 }

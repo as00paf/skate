@@ -5,6 +5,10 @@ import com.pafoid.skate.engine.render.rhi.BufferUsage
 import com.pafoid.skate.engine.render.rhi.RhiBuffer
 import com.pafoid.skate.engine.render.rhi.RhiContext
 import com.pafoid.skate.engine.render.rhi.RhiVertexInput
+import com.pafoid.skate.engine.render.rhi.RhiCommandList
+import com.pafoid.skate.engine.render.rhi.RhiTexture
+import com.pafoid.skate.engine.render.state.PipelineCache
+import com.pafoid.skate.engine.render.state.PipelineStates
 import com.pafoid.skate.engine.render.data.VertexLayouts
 import com.pafoid.skate.engine.ecs.components.EnvironmentComponent
 import com.pafoid.skate.engine.render.fog.FogUniforms
@@ -15,25 +19,9 @@ import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.components.ParticleEmitter
 import com.pafoid.skate.engine.ecs.systems.CameraManager
 import com.pafoid.skate.engine.getAllComponents
-import com.pafoid.skate.engine.render.EngineStats
 import com.pafoid.skate.engine.render.FrameBuffer
 import com.pafoid.skate.engine.render.particles.ParticleSimulator
-import com.pafoid.skate.engine.render.rhi.opengl.GLStateTracker
-import com.pafoid.skate.engine.render.utils.withBlendState
-import com.pafoid.skate.engine.render.utils.withCullFace
-import com.pafoid.skate.engine.render.utils.withDepthMask
-import com.pafoid.skate.engine.render.utils.withDepthTest
 import org.joml.Vector4f
-import org.lwjgl.opengl.GL11.GL_ONE
-import org.lwjgl.opengl.GL11.GL_ONE_MINUS_SRC_ALPHA
-import org.lwjgl.opengl.GL11.GL_SRC_ALPHA
-import org.lwjgl.opengl.GL11.GL_TEXTURE_2D
-import org.lwjgl.opengl.GL11.GL_TRIANGLE_STRIP
-import org.lwjgl.opengl.GL11.glBindTexture
-import org.lwjgl.opengl.GL13.GL_TEXTURE0
-import org.lwjgl.opengl.GL13.glActiveTexture
-import org.lwjgl.opengl.GL30.glBindVertexArray
-import org.lwjgl.opengl.GL31.glDrawArraysInstanced
 import org.lwjgl.system.MemoryUtil
 import java.nio.FloatBuffer
 
@@ -41,14 +29,14 @@ import java.nio.FloatBuffer
  * Draws every live [ParticleEmitter] as camera-facing quads with one instanced draw per emitter, on top of the
  * geometry pass output (depth-tested against it, without writing depth). Runs before post-processing.
  *
- * @param textureId resolves an emitter's `texturePath` to a GL texture id (results are cached per path)
+ * @param texture resolves an emitter's `texturePath` to its texture (results are cached per path)
  */
 class ParticlePass(
     private val shader: Shader,
     private val frameBuffer: FrameBuffer,
     private val useFbo: Boolean,
     private val cameraManager: CameraManager,
-    private val textureId: (String) -> Int,
+    private val texture: (String) -> RhiTexture?,
 ) : BaseRenderPass() {
 
     override val name: String = "ParticlePass"
@@ -59,10 +47,11 @@ class ParticlePass(
     private var input: RhiVertexInput? = null
     private var quadVbo: RhiBuffer? = null
     private var instanceVbo: RhiBuffer? = null
-    private val vao: Int get() = input?.nativeHandle?.toInt() ?: 0
     private var instanceCapacity = 0
     private var instanceData: FloatBuffer? = null
-    private val textureIds = HashMap<String, Int>()
+    private val textures = HashMap<String, RhiTexture>()
+    private val alphaPipelines = PipelineCache(PipelineStates.PARTICLES)
+    private val additivePipelines = PipelineCache(PipelineStates.PARTICLES_ADDITIVE)
     private val color = Vector4f()
     private val uv = FloatArray(4)
 
@@ -75,7 +64,8 @@ class ParticlePass(
 
         val cmd = RhiContext.require().commandList()
         cmd.beginPass(if (useFbo) frameBuffer.target else null, viewport = presentedViewport.of(frameBuffer, useFbo))
-        if (vao == 0) createBuffers()
+        if (input == null) createBuffers()
+        val vertexInput = input ?: return
 
         val camera = cameraManager.camera
         shader.start()
@@ -85,25 +75,15 @@ class ParticlePass(
         FogUniforms.upload(shader, scene.getComponent<EnvironmentComponent>()?.takeIf { it.enabled })
         shader.uploadVec3f(Uniforms.CAMERA_POSITION, cameraManager.transform.worldMatrix.getTranslation(cameraPosition))
 
-        withDepthTest(true) {
-            withDepthMask(false) {
-                withBlendState(true) {
-                    withCullFace(false) {
-                        glBindVertexArray(vao)
-                        emitters.forEach { draw(it) }
-                        glBindVertexArray(0)
-                        GLStateTracker.setBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA)
-                    }
-                }
-            }
-        }
+        cmd.setVertexInput(vertexInput)
+        for (emitter in emitters) draw(cmd, vertexInput, emitter)
         shader.stop()
         cmd.endPass()
     }
 
     private val presentedViewport = PresentedViewport()
 
-    private fun draw(emitter: ParticleEmitter) {
+    private fun draw(cmd: RhiCommandList, vertexInput: RhiVertexInput, emitter: ParticleEmitter) {
         val pool = emitter.runtime.pool
         val count = pool.count
         val buffer = instanceBuffer(count)
@@ -119,19 +99,17 @@ class ParticlePass(
         buffer.flip()
         instanceVbo!!.update(0, buffer)
 
-        val tex = emitter.texturePath.takeIf { it.isNotBlank() }
-            ?.let { path -> textureIds.getOrPut(path) { textureId(path) } } ?: 0
-        shader.uploadInt("uHasTexture", if (tex > 0) 1 else 0)
+        val tex = emitter.texturePath.takeIf { it.isNotBlank() }?.let { path ->
+            textures[path] ?: texture(path)?.also { textures[path] = it }
+        }
+        shader.uploadInt("uHasTexture", if (tex != null) 1 else 0)
         shader.uploadInt("uAdditive", if (emitter.additive) 1 else 0)
-        glActiveTexture(GL_TEXTURE0)
-        glBindTexture(GL_TEXTURE_2D, tex)
+        cmd.setTexture(0, tex)
 
         // Alpha uses (ONE, ONE_MINUS_SRC_ALPHA) so the opaque scene target keeps alpha 1 (the editor composites it).
-        GLStateTracker.setBlendFuncSeparate(
-            GL_SRC_ALPHA, if (emitter.additive) GL_ONE else GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA,
-        )
-        glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, 4, count)
-        EngineStats.drawCalls.incrementAndGet()
+        val pipelines = if (emitter.additive) additivePipelines else alphaPipelines
+        cmd.setPipeline(pipelines.get(shader, vertexInput.layout) ?: return)
+        cmd.draw(4, 0, instances = count)
     }
 
     /** Grows the CPU staging buffer and the GPU instance buffer to hold at least [count] instances. */
@@ -166,7 +144,9 @@ class ParticlePass(
         input = null; quadVbo = null; instanceVbo = null; instanceCapacity = 0
         instanceData?.let { MemoryUtil.memFree(it) }
         instanceData = null
-        textureIds.clear()
+        textures.clear()
+        alphaPipelines.close()
+        additivePipelines.close()
     }
 
     private companion object {

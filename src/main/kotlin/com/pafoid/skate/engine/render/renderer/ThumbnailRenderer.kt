@@ -11,7 +11,6 @@ import com.pafoid.skate.engine.render.rhi.SamplerDesc
 import com.pafoid.skate.engine.render.rhi.TextureDesc
 import com.pafoid.skate.engine.render.rhi.TextureType
 import com.pafoid.skate.engine.render.rhi.Wrap
-import com.pafoid.skate.engine.render.rhi.opengl.GLBindings
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.AssetsManager
 import com.pafoid.skate.engine.assets.data.Shader
@@ -23,8 +22,6 @@ import com.pafoid.skate.engine.utils.ShaderConst
 import com.pafoid.skate.engine.utils.toRadiansF
 import org.joml.Matrix4f
 import org.joml.Vector3f
-import org.lwjgl.opengl.GL11.GL_DEPTH_TEST
-import org.lwjgl.opengl.GL11.glEnable
 import java.nio.ByteBuffer
 import kotlin.math.max
 
@@ -66,11 +63,12 @@ class ThumbnailRenderer(
      * @return A NEW texture holding the thumbnail; the caller owns it and closes it when done.
      */
     fun renderThumbnail(model: `3dModel`): RhiTexture {
-        // Off-screen pass on a grey background
+        // Off-screen pass on a grey background. Called from the editor UI, possibly after ImGui drew: start from a
+        // clean slate like a frame does.
         val device = RhiContext.require()
+        device.beginFrame()
         val cmd = device.commandList()
         cmd.beginPass(fbo.target, clear = CLEAR)
-        glEnable(GL_DEPTH_TEST)
 
         // Auto-frame camera based on model bounds
         val (cameraPos, lookAt) = computeCameraTransform(model)
@@ -99,7 +97,6 @@ class ThumbnailRenderer(
         shader.uploadVec3f(ShaderConst.Uniforms.AMBIENT_LIGHT, Vector3f(0.8f, 0.8f, 0.8f))
         LightingUniformsLoader.disableShadows(shader)
 
-        GLBindings.cache.reset()
         // Delegate actual model rendering to ModelRenderer
         modelRenderer.render(
             transform = transform,
@@ -107,8 +104,6 @@ class ThumbnailRenderer(
             shader = shader,
             cameraPosition = cameraPos
         )
-
-        GLBindings.cache.reset()
         cmd.endPass()
 
         // Create a NEW texture and copy the target's content into it

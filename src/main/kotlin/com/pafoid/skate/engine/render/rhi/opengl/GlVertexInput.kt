@@ -53,7 +53,6 @@ internal class GlVertexInput(
     indexBuffer: RhiBuffer?,
 ) : RhiVertexInput {
     val vao: Int = glGenVertexArrays()
-    override val nativeHandle: Long get() = vao.toLong()
     private var closed = false
 
     init {

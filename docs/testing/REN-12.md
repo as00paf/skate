@@ -72,3 +72,28 @@ when they change.
 4. Edit `src/main/resources/shaders/post_gamma.glsl` (e.g. return `vec4(1.0, 0.0, 0.0, 1.0)`) while the editor runs →
    the viewport turns red (hot reload). Introduce a syntax error → the console logs "Fragment compilation failed"
    with the driver's message and the previous shader keeps rendering. Revert the file.
+
+## Step 6: pipelines and draws
+
+Every draw now goes through an RHI pipeline (shader plus depth, blend, cull, offset and line state) and the command
+list; the old GL state scopes are gone.
+
+1. `.\gradlew.bat run`, then create a NEW project → MainScene renders as before: shadows without acne, the grid
+   (thick lines) and gizmos on top, the HUD with its clipped panels.
+2. Open `FeatureShowcase` and fly to `Materials` → the glass cube is transparent from both sides (double-sided blend)
+   and opaque cubes hide their back faces. Fly to `Particles` → fire glows (additive) and smoke blends.
+3. Press Play, then fly near the spot and point lights → their shadows render; the sky stays behind everything.
+4. Click objects, including a sprite → each is selected (picking pipelines). Open the Prefabs tab → thumbnails render.
+5. Edit `src/main/resources/shaders/shader_3d_default.glsl` (e.g. output red) while the editor runs → models turn
+   red (pipelines rebuilt after the hot reload). Revert it.
+
+## Step 7: timers and cleanup
+
+The Render Graph times passes with RHI timers, and no OpenGL code is left outside the GL backend except the editor's
+ImGui renderer.
+
+1. `.\gradlew.bat run`, then create a NEW project → the editor and viewport look as before.
+2. Open the Render Graph window → every enabled pass shows a CPU time and, after a few frames, a GPU time; disable
+   the post-processing pass → its GPU time shows as unknown, and re-enabling it brings the time back.
+3. Press Play in `FeatureShowcase`, then Stop → rendering, picking and thumbnails behave as in step 6.
+4. Export the project and run the exported game → it renders the scene full screen.
