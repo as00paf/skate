@@ -16,16 +16,13 @@ import com.pafoid.skate.engine.render.renderer.ModelRenderer
 import com.pafoid.skate.engine.render.renderer.PickingRenderer
 import com.pafoid.skate.engine.render.renderer.Renderer2D
 import com.pafoid.skate.engine.render.renderer.RenderTraversal
+import com.pafoid.skate.engine.render.rhi.ClearValues
+import com.pafoid.skate.engine.render.rhi.RhiContext
 import com.pafoid.skate.engine.render.rhi.opengl.GLStateTracker
 import com.pafoid.skate.engine.utils.EntityIdEncoder
 import com.pafoid.skate.engine.utils.ShaderConst.Uniforms
-import org.lwjgl.opengl.GL30.GL_COLOR_BUFFER_BIT
-import org.lwjgl.opengl.GL30.GL_DEPTH_BUFFER_BIT
 import org.lwjgl.opengl.GL30.GL_SCISSOR_TEST
-import org.lwjgl.opengl.GL30.glClear
-import org.lwjgl.opengl.GL30.glClearColor
 import org.lwjgl.opengl.GL30.glDisable
-import org.lwjgl.opengl.GL30.glViewport
 
 /**
  * Render pass for object picking (selection/hover detection).
@@ -92,15 +89,12 @@ class PickingPass(
     }
 
     private fun render(scene: Scene) {
-        pickingTexture.enableWriting()
-        glViewport(0, 0, pickingTexture.width, pickingTexture.height)
-
         // CRITICAL: Reset state that might have been changed by ImGui or previous passes
         glDisable(GL_SCISSOR_TEST)
         GLStateTracker.resetToDefaults()
 
-        glClearColor(0f, 0f, 0f, 0f)
-        glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT)
+        val cmd = RhiContext.require().commandList()
+        cmd.beginPass(pickingTexture.target, clear = CLEAR)
 
         // Render 2D and 3D objects for picking
         renderer2D.bindCamera(cameraManager.camera)
@@ -108,7 +102,7 @@ class PickingPass(
         render3DPicking(scene)
         pickingRenderer.draw()
 
-        pickingTexture.disableWriting()
+        cmd.endPass()
     }
 
     private fun render3DPicking(scene: Scene) {
@@ -157,6 +151,9 @@ class PickingPass(
     }
 
     companion object {
+        /** Id 0 (nothing) everywhere, far depth. */
+        private val CLEAR = ClearValues(floatArrayOf(0f, 0f, 0f, 0f), 1f)
+
         /**
          * Visits every rendered ([RenderTraversal]), unlocked descendant of [node] at any depth, so models on child
          * objects get their own picking id. Hidden, disabled or locked objects prune their whole subtree;

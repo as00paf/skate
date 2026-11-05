@@ -127,4 +127,10 @@ class EditorSettingsManager(
         editorSettings.graphics.applyToEngine()
         saveSettings()
     }
+
+    /** Stores the export's game jar override ([EditorSettings.gameJarPath]); blank clears it. */
+    fun updateGameJarPath(path: String?) {
+        editorSettings = editorSettings.copy(gameJarPath = path?.trim()?.ifEmpty { null })
+        saveSettings()
+    }
 }

@@ -42,3 +42,33 @@ Image textures, cube maps, the UI font atlas and model thumbnails are now create
    (mipmaps).
 4. Replace a texture file used by the scene (same name) while the editor runs → the viewport updates (hot reload
    swaps the texture in place).
+
+## Step 4: render targets, passes, readback and blit
+
+The scene framebuffer, post-processing scratch targets, shadow maps and the picking target are now RHI render
+targets. Every pass starts with `beginPass` (target, clear, viewport) and ends with `endPass`. Picking, thumbnails and
+screenshots read pixels through the device, and the exported game presents with an RHI blit.
+
+1. `.\gradlew.bat run`, then create a NEW project → MainScene looks as before: sky color, sharp sun shadows, bloom and
+   gamma (post-processing), grid and HUD on top.
+2. Click the skater, then the ground → each gets selected (picking readback). Resize the viewport panel and click
+   again → selection still matches the cursor.
+3. Open `FeatureShowcase` and fly to `Lights` → the spot and point lights cast shadows (layered shadow map). Fly to
+   `Particles` → the particles blend over the scene.
+4. Click the viewport's screenshot button → a PNG appears under `screenshots/` and matches the viewport, right side up.
+5. Open the Asset Browser's Prefabs tab → model thumbnails show on a grey background.
+6. Export the project and run the exported game → it fills the window, stretched to the window size.
+
+## Step 5: shaders and parameters
+
+Shaders are compiled by the RHI device, and the `Shader` asset sets named parameters that the backend uploads only
+when they change.
+
+1. `.\gradlew.bat run`, then create a NEW project → MainScene renders as before (lit skater, shadows, sky, grid).
+2. Open `FeatureShowcase` and fly to `Materials` → each material keeps its own color, roughness and emissive glow (no
+   values leak between objects). Select the `[Materials] Asset` sphere and drag its base color → only that sphere
+   changes.
+3. Fly to `Fog` and change the fog density in the Environment component → the fog updates at once.
+4. Edit `src/main/resources/shaders/post_gamma.glsl` (e.g. return `vec4(1.0, 0.0, 0.0, 1.0)`) while the editor runs →
+   the viewport turns red (hot reload). Introduce a syntax error → the console logs "Fragment compilation failed"
+   with the driver's message and the previous shader keeps rendering. Revert the file.

@@ -3,8 +3,16 @@ package com.pafoid.skate.editor.project
 import com.pafoid.skate.engine.assets.Assets
 import java.io.File
 
-class EngineAssetCopier {
-    private val engineAssetsRoot: File = File(System.getProperty("user.dir"))
+/**
+ * Copies the engine's bundled assets ([Assets.Bundled.bundledAssets]) into a new project. A source missing from
+ * [engineAssetsRoot] makes the result a failure listing it (the other assets are still copied), so a broken entry
+ * shows up as an error instead of a silently missing texture (BUG-020).
+ */
+class EngineAssetCopier(private val engineAssetsRoot: File = File(System.getProperty("user.dir"))) {
+
+    /** Bundled-asset sources that do not exist under [engineAssetsRoot]. */
+    fun missingSources(): List<String> =
+        Assets.Bundled.bundledAssets.map { it.second }.filterNot { File(engineAssetsRoot, it).isFile }
 
     fun copyBundledAssets(projectDir: File): Result<Int> {
         return try {
@@ -20,9 +28,7 @@ class EngineAssetCopier {
                 val sourceFile = File(engineAssetsRoot, sourceRelative)
                 val destFile = File(assetsDir, destRelative)
 
-                if (!sourceFile.exists()) {
-                    continue
-                }
+                if (!sourceFile.isFile) continue // reported below
 
                 if (destFile.exists()) {
                     skippedCount++
@@ -51,18 +57,24 @@ class EngineAssetCopier {
             ).forEach { path ->
                 val outputFile = File(shadersDir, path)
                 outputFile.parentFile?.mkdirs()
-                EngineAssetCopier::class.java.getResourceAsStream(path)
-                    ?.copyTo(outputFile.outputStream())
+                EngineAssetCopier::class.java.getResourceAsStream(path)?.use { input ->
+                    outputFile.outputStream().use { input.copyTo(it) }
+                }
                 copiedCount++
             }
 
             // Copy assets bundled in jar
             val outputFile = File(assetsDir, Assets.Textures.APP_ICON)
             outputFile.parentFile?.mkdirs()
-            EngineAssetCopier::class.java.getResourceAsStream(Assets.Bundled.APP_ICON)
-                ?.copyTo(outputFile.outputStream())
+            EngineAssetCopier::class.java.getResourceAsStream(Assets.Bundled.APP_ICON)?.use { input ->
+                outputFile.outputStream().use { input.copyTo(it) }
+            }
             copiedCount++
 
+            val missing = missingSources()
+            if (missing.isNotEmpty()) {
+                return Result.failure(IllegalStateException("Missing bundled assets (copied the other $copiedCount): $missing"))
+            }
             Result.success(copiedCount)
         } catch (e: Exception) {
             Result.failure(e)

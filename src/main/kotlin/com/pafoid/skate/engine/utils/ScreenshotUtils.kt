@@ -1,11 +1,14 @@
 package com.pafoid.skate.engine.utils
 
+import com.pafoid.skate.engine.render.rhi.IntRect
+import com.pafoid.skate.engine.render.rhi.PixelFormat
+import com.pafoid.skate.engine.render.rhi.RhiContext
+import com.pafoid.skate.engine.render.rhi.RhiDevice
+import com.pafoid.skate.engine.render.rhi.RhiRenderTarget
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import org.lwjgl.BufferUtils
-import org.lwjgl.opengl.GL11.*
-import org.lwjgl.opengl.GL30.*
 import org.lwjgl.stb.STBImageWrite.stbi_write_png
 import org.lwjgl.util.tinyfd.TinyFileDialogs
 import java.io.File
@@ -24,25 +27,24 @@ object ScreenshotUtils {
     const val DEFAULT_DIRECTORY = "screenshots"
 
     /**
-     * Saves the [fboId] framebuffer as a PNG in [directory]. The file is written on a background thread, then
-     * [onResult] runs there with the saved file, or the failure. By default a native message box reports it.
+     * Saves color attachment 0 of [target] as a PNG in [directory]: read now, written on a background thread. Then
+     * [onResult] runs on that thread with the saved file, or the failure. By default a native message box reports it.
      */
     fun takeScreenshot(
-        width: Int,
-        height: Int,
-        fboId: Int,
+        target: RhiRenderTarget,
+        device: RhiDevice = RhiContext.require(),
         directory: File = File(DEFAULT_DIRECTORY),
         onResult: (Result<File>) -> Unit = ::showResultPopup,
     ) {
+        val width = target.width
+        val height = target.height
         directory.mkdirs()
         val file = File(directory, buildScreenshotFileName())
         val filePath = file.path
 
         val pixels = BufferUtils.createByteBuffer(width * height * 4)
         
-        glBindFramebuffer(GL_FRAMEBUFFER, fboId)
-        glReadPixels(0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, pixels)
-        glBindFramebuffer(GL_FRAMEBUFFER, 0)
+        device.readPixels(target, 0, IntRect(0, 0, width, height), PixelFormat.RGBA8, pixels)
 
         // Offload the heavy lifting to a background thread
         scope.launch {

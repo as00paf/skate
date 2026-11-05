@@ -79,7 +79,7 @@ class ProjectManager(
                 val count = copyResult.getOrNull() ?: 0
                 logger.logEditor("Copied $count engine-bundled assets to project")
             } else {
-                logger.logEditor("Failed to copy engine assets: ${copyResult.exceptionOrNull()?.message}")
+                logger.logEditor("Failed to copy engine assets: ${copyResult.exceptionOrNull()?.message}", LogLevel.ERROR)
             }
 
             // Create default scene with prefabs

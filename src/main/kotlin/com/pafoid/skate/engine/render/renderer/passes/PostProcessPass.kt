@@ -7,6 +7,7 @@ import com.pafoid.skate.engine.render.ColorTarget
 import com.pafoid.skate.engine.render.EngineStats
 import com.pafoid.skate.engine.render.FrameBuffer
 import com.pafoid.skate.engine.render.VAOLoader
+import com.pafoid.skate.engine.render.rhi.RhiContext
 import com.pafoid.skate.engine.render.utils.bindTexture
 import com.pafoid.skate.engine.render.utils.bindVAO
 import com.pafoid.skate.engine.render.utils.unbindVAO
@@ -16,16 +17,9 @@ import com.pafoid.skate.engine.render.utils.withDepthMask
 import com.pafoid.skate.engine.render.utils.withDepthTest
 import com.pafoid.skate.engine.utils.ShaderConst.Uniforms
 import org.joml.Vector2f
-import org.lwjgl.opengl.GL11.GL_COLOR_BUFFER_BIT
-import org.lwjgl.opengl.GL11.GL_NEAREST
 import org.lwjgl.opengl.GL11.GL_TRIANGLES
 import org.lwjgl.opengl.GL11.GL_UNSIGNED_INT
 import org.lwjgl.opengl.GL11.glDrawElements
-import org.lwjgl.opengl.GL11.glViewport
-import org.lwjgl.opengl.GL30.GL_DRAW_FRAMEBUFFER
-import org.lwjgl.opengl.GL30.GL_READ_FRAMEBUFFER
-import org.lwjgl.opengl.GL30.glBindFramebuffer
-import org.lwjgl.opengl.GL30.glBlitFramebuffer
 
 /**
  * Post-processing render pass implementing the post-processing stack.
@@ -92,14 +86,16 @@ open class PostProcessPass(
         pong.ensure(width, height)
         val steps = PostChain.plan(effects.size)
 
+        val cmd = RhiContext.require().commandList()
         quad.vaoId.bindVAO(quad.enabledAttributes)
         withDepthTest(false) {
             withDepthMask(false) {
                 withBlendState(false) {
                     withCullFace(false) {
                         for (i in effects.indices) {
-                            targetOf(steps[i].destination).bind()
+                            cmd.beginPass(targetOf(steps[i].destination).target)
                             apply(effects[i], textureOf(steps[i].source), quad)
+                            cmd.endPass()
                         }
                     }
                 }
@@ -109,11 +105,7 @@ open class PostProcessPass(
 
         // Copy the result back into the scene colour buffer (depth is left as the geometry pass wrote it).
         val result = targetOf(PostChain.resultTarget(effects.size))
-        glBindFramebuffer(GL_READ_FRAMEBUFFER, result.fboId)
-        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, frameBuffer.fboId)
-        glBlitFramebuffer(0, 0, width, height, 0, 0, width, height, GL_COLOR_BUFFER_BIT, GL_NEAREST)
-        frameBuffer.bind()
-        glViewport(0, 0, width, height)
+        cmd.blit(result.target!!, frameBuffer.target)
     }
 
     private fun targetOf(target: PostChain.Target): ColorTarget = when (target) {

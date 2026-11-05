@@ -55,7 +55,7 @@ class ViewportRenderer(
             return
         }
         val dir = screenshotDir()
-        runCatching { ScreenshotUtils.takeScreenshot(frameBuffer.width, frameBuffer.height, frameBuffer.fboId, dir, ::onScreenshotSaved) }
+        runCatching { ScreenshotUtils.takeScreenshot(frameBuffer.target, engine.device, dir, ::onScreenshotSaved) }
             .onSuccess { engine.logger.logEditor("Screenshot captured (${frameBuffer.width}x${frameBuffer.height})") }
             .onFailure { engine.logger.logEditor("Screenshot failed: ${it.message}", LogLevel.ERROR) }
     }

@@ -1,9 +1,11 @@
 package com.pafoid.skate.editor.project
 
+import com.pafoid.skate.editor.settings.EditorSettings
 import com.pafoid.skate.engine.utils.ExportOptions
 import com.pafoid.skate.engine.utils.ExportProgress
 import com.pafoid.skate.engine.utils.ExportResult
 import com.pafoid.skate.engine.utils.ExportTarget
+import com.pafoid.skate.engine.utils.GameJarLocator
 import com.pafoid.skate.engine.utils.ProjectExporter
 import java.io.File
 
@@ -117,5 +119,17 @@ class ExportWizard {
         phase = Phase.EDITING
         progress = null
         result = null
+    }
+
+    companion object {
+        /**
+         * The game jar search for this editor (AST-11): next to the editor's own jar or build, then the
+         * [EditorSettings.gameJarPath] override, then `-Dskate.gameJar`. Independent of the working directory.
+         */
+        fun gameJarLocator(configuredPath: () -> String?): GameJarLocator = GameJarLocator(
+            editorCodeSource = GameJarLocator.codeSourceOf(ExportWizard::class.java),
+            configuredPath = configuredPath,
+            editorBuildTime = { GameJarLocator.buildTimeOf(ExportWizard::class.java) },
+        )
     }
 }

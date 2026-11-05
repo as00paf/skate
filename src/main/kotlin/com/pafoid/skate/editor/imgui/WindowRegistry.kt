@@ -49,7 +49,7 @@ class WindowRegistry(
         ProjectWindow(engine, projectManager),
         ScriptEditorWindow(engine, projectManager, editor.settingsManager),
         ShellWindow(engine, projectManager),
-        ExportWizardWindow(engine, projectManager),
+        ExportWizardWindow(engine, projectManager, editor.settingsManager),
     )
 
     /** Windows listed in View > Windows and stored in the layout; dialogs are excluded. */

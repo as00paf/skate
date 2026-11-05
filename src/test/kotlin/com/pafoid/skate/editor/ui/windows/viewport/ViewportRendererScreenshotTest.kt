@@ -5,6 +5,8 @@ import com.pafoid.skate.engine.core.LoggerService.LogLevel
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.render.FrameBuffer
 import com.pafoid.skate.engine.render.renderer.Renderer
+import com.pafoid.skate.engine.render.rhi.RhiDevice
+import com.pafoid.skate.engine.render.rhi.RhiRenderTarget
 import com.pafoid.skate.engine.utils.ScreenshotUtils
 import io.mockk.Runs
 import io.mockk.every
@@ -25,6 +27,8 @@ import java.io.File
 class ViewportRendererScreenshotTest {
 
     private val logger = mockk<LoggerService>(relaxed = true)
+    private val device = mockk<RhiDevice>()
+    private val target = mockk<RhiRenderTarget>()
 
     @AfterEach
     fun tearDown() {
@@ -41,17 +45,18 @@ class ViewportRendererScreenshotTest {
         every { engine.renderer } returns renderer
         every { frameBuffer.width } returns 1920
         every { frameBuffer.height } returns 1080
-        every { frameBuffer.fboId } returns 77
+        every { frameBuffer.target } returns target
+        every { engine.device } returns device
 
         mockkObject(ScreenshotUtils)
-        every { ScreenshotUtils.takeScreenshot(any(), any(), any(), any(), any()) } just Runs
+        every { ScreenshotUtils.takeScreenshot(any(), any(), any(), any()) } just Runs
 
         val project = File("C:/Projects/Park")
         ViewportRenderer(engine) { ScreenshotFolder.resolve(project) }.captureScreenshot()
 
         // EDT-42: into the open project's Screenshots folder, never the working directory.
         verify(exactly = 1) {
-            ScreenshotUtils.takeScreenshot(1920, 1080, 77, File(project, "Screenshots").absoluteFile, any())
+            ScreenshotUtils.takeScreenshot(target, device, File(project, "Screenshots").absoluteFile, any())
         }
         verify { logger.logEditor(match { it.contains("Screenshot captured") && it.contains("1920x1080") }) }
     }
@@ -66,10 +71,11 @@ class ViewportRendererScreenshotTest {
         every { engine.renderer } returns renderer
         every { frameBuffer.width } returns 640
         every { frameBuffer.height } returns 480
-        every { frameBuffer.fboId } returns 1
+        every { frameBuffer.target } returns target
+        every { engine.device } returns device
 
         mockkObject(ScreenshotUtils)
-        every { ScreenshotUtils.takeScreenshot(any(), any(), any(), any(), any()) } throws IllegalStateException("disk full")
+        every { ScreenshotUtils.takeScreenshot(any(), any(), any(), any()) } throws IllegalStateException("disk full")
 
         ViewportRenderer(engine).captureScreenshot()
 
@@ -88,12 +94,12 @@ class ViewportRendererScreenshotTest {
         every { frameBuffer.height } returns 1080
 
         mockkObject(ScreenshotUtils)
-        every { ScreenshotUtils.takeScreenshot(any(), any(), any(), any(), any()) } just Runs
+        every { ScreenshotUtils.takeScreenshot(any(), any(), any(), any()) } just Runs
 
         ViewportRenderer(engine).captureScreenshot()
 
         verify(exactly = 0) {
-            ScreenshotUtils.takeScreenshot(any(), any(), any(), any(), any())
+            ScreenshotUtils.takeScreenshot(any(), any(), any(), any())
         }
         verify { logger.logEditor(match { it.contains("Screenshot skipped") }, LogLevel.WARN) }
     }
