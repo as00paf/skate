@@ -30,6 +30,18 @@ scan of `TODO`/`FIXME` markers in `src/main`. Runtime repro steps are marked
 - Cause: `SliderConstraint3D` documents the limits as travel of body A along `axisA`. `BulletPhysics3D` passes them straight to `SliderJoint.setLower/UpperLinLimit`, and Bullet measures the position as B relative to A. When the block falls, that value is positive, so the upper limit 0 pins it. With the limits flipped to `[0, 2]`, the block drops 2 m and stops (checked by hand, then reverted).
 - Fix (PHY): negate and swap the limits in the Bullet mapping (or the frames) so `[min, max]` means body displacement along the axis, plus a backend unit test. Don't change the showcase values.
 
+### BUG-020 — New projects reference a bundled `metal.png` that does not exist (P2, owner: AST)
+- Found by QA-14 (`ProjectLifecycleEndToEndTest`; the path is in its `KNOWN_ISSUES` list until this is fixed).
+- Repro: create a new project and open `MainScene` or `FeatureShowcase`. Every rail (`MaterialType.METAL`, also the material fallback) asks for `Assets/EngineDefaults/Textures/metal.png`. The console shows `ERROR Failed to load texture : …metal.png … Loading default texture.` and the rails get the default texture.
+- Cause: `Assets.Bundled.METAL` maps to `assets/textures/metal.png`, which has never been in the repo (`git log --all -- assets/textures/metal.png` is empty). `EngineAssetCopier` silently skips missing sources.
+- Fix (AST): add the texture, or point METAL at an existing one. Make the copier (or a unit test over `Assets.Bundled.bundledAssets`) fail on a missing source. Then remove the entry from `KNOWN_ISSUES`.
+
+### BUG-021 — Exported game: animated characters lose their clips and controller (P1, owner: ANI)
+- Found by QA-14 (`ProjectLifecycleEndToEndTest.Lifecycle_8_ExportedSkaterKeepsItsClipsAndControllerWithoutErrors`).
+- Repro: new project, export (Pack only or Windows), run the game. The skater does not animate, and the log shows `Controller 'configs/skater.controller.json': State 'idle' uses unknown motion 'idle_0'` (and so on for every state).
+- Cause: `ProjectManager.openProject` (pack path) fills `Animator.animations` from the pack, then `SceneManager.openScene` → `resolveSceneReferences` → `Animator.resolveAnimationsFromPaths`. That function clears the list and reloads only paths where `File(path).exists()`. Pack paths are project-relative and are not on disk next to the game, so every clip is dropped and the controller finds no motions.
+- Fix (ANI, with AST): resolve clips through `AssetsManager.paths` (pack or disk), e.g. `loadAnimationSync`/`resolveAnimation` by `paths`, instead of `File(path).exists()`. Alternatively, don't re-resolve clips that `openProject` already resolved. Add a unit test.
+
 ## Suspected (from source markers, to verify at runtime)
 
 | ID | Pri | Owner | File | Symptom / repro (to verify) |
@@ -43,7 +55,7 @@ scan of `TODO`/`FIXME` markers in `src/main`. Runtime repro steps are marked
 | BUG-008 | P2 | ANI | `engine/assets/AssetsManager.kt:72` | Only the first animation of a file is loaded. Repro: import FBX/glTF with several clips. |
 | BUG-009 | P2 | PHY | `engine/ecs/components/RagdollComponent.kt:9`, `physics3d/RagdollBuilder.kt` | Ragdoll builder flagged "check". Repro: enable ragdoll on a skeleton. |
 | BUG-010 | P2 | EDT | `engine/core/WindowController.kt:126` | "check if still works" (window behavior path). |
-| BUG-011 | P2 | GPL | `game/GameMain.kt:57` | Hard-coded `C:\workspace\skate_workspace\test\Builds` path; standalone game fails on other machines. Fixed: `game.bin` next to the game or `-Dskate.bin` (AST-07, `GameBin`); `GameLoggingAndPathsGuardTest` keeps paths and console output out of `game/` (GPL-08). |
+| BUG-011 | P2 | GPL | `game/GameMain.kt:57` | Hard-coded `C:\workspace\skate_workspace\test\Builds` path; standalone game fails on other machines. Fixed: `GameBin` looks for `game.bin` via `-Dskate.bin`, next to the running jar, then in the working directory, and logs every path searched (AST-07, GPL-18); `GameLoggingAndPathsGuardTest` keeps paths and console output out of `game/` (GPL-08). |
 | BUG-012 | P2 | EDT | `editor/search/history/SearchHistory.kt:10` | `search_history.json` written to the CWD. |
 | BUG-013 | P2 | EDT | `editor/ui/handlers/EditorInputHandler.kt:124` | Rename shortcut does not focus the name field in the property window. |
 

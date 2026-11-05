@@ -70,6 +70,18 @@ class RhiTypesTest {
     }
 
     @Test
+    fun RenderTargetDesc_LayeredTargetsUseArrayAttachments() {
+        val shadow = RenderTargetDesc(512, 512, colors = emptyList(), layers = 1, layered = true)
+        assertEquals(TextureType.TEXTURE_2D_ARRAY, shadow.depthTexture()!!.type)
+        assertEquals(1, shadow.depthTexture()!!.layers)
+        val scene = RenderTargetDesc(64, 32, colorSampler = SamplerDesc(wrap = Wrap.CLAMP_TO_EDGE))
+        assertEquals(TextureType.TEXTURE_2D, scene.colorTexture(0).type)
+        assertEquals(Wrap.CLAMP_TO_EDGE, scene.colorTexture(0).sampler.wrap)
+        assertEquals(64, scene.colorTexture(0).width)
+        assertThrows<IllegalArgumentException> { RenderTargetDesc(8, 8, layers = 2, layered = false) }
+    }
+
+    @Test
     fun VertexLayoutDesc_RejectsDuplicateLocationsAcrossBindings() {
         val mesh = VertexBinding(32, listOf(VertexAttribute(0, AttributeType.VEC3, 0), VertexAttribute(1, AttributeType.VEC2, 12)))
         val instances = VertexBinding(16, listOf(VertexAttribute(2, AttributeType.VEC4, 0)), perInstance = true)

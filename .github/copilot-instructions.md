@@ -10,7 +10,7 @@ Kotlin/JVM 17 game engine + editor ("Skate") using LWJGL (OpenGL, GLFW, OpenAL, 
   - `run`, and `assemble`/`build`, depend on `gameJar`; `test` does not.
   - IntelliJ's shared run configuration `PAFSK8` (`.idea/runConfigurations/`) runs Make, then the Gradle task `gameJar` before launching. A custom editor run configuration needs the same before-launch Gradle task.
   - It is incremental. Dependencies are packed once into `build/tmp/gameLibs/skate-game-libs.jar`, which is redone only when the runtime classpath changes. `gameJar` then compresses only the engine/game classes and copies the dependency entries raw. Cost: about 0.1 s when nothing changed, about 0.7 s after a code change, about 20 s cold.
-  - `.\gradlew.bat gameJar` still works alone. `tools/scripts/verify-game-jar.sh` checks end to end that a game code change reaches an export. The export still refuses to start when no game jar exists (AST-11).
+  - `.\gradlew.bat gameJar` still works alone. `tools/scripts/verify-game-jar.sh` checks end to end that a game code change reaches an export. The export still refuses to start when no game jar exists, and warns when the jar is older than the editor build (AST-11 safety net).
 - All tests: `.\gradlew.bat test` (JUnit 5, mockk, kotlinx-coroutines-test)
 - Single class: `.\gradlew.bat test --tests "com.pafoid.skate.architecture.UiMutationPipelineGuardTest"`
 - Single method: `.\gradlew.bat test --tests "com.pafoid.skate.architecture.EngineLayeringGuardTest.EngineLayering_SceneDoesNotConstructBulletPhysicsDirectly"`

@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.commands.project
 
+import com.pafoid.skate.editor.commands.ReportsFailure
 import com.pafoid.skate.editor.commands.ExecuteOnlyCommand
 import com.pafoid.skate.editor.systems.ProjectManager
 import com.pafoid.skate.engine.ecs.Scene
@@ -10,12 +11,22 @@ class SaveSceneCommand(
     private val scene: Scene,
     private val projectManager: ProjectManager,
     private val sceneManager: SceneManager
-) : ExecuteOnlyCommand {
+) : ExecuteOnlyCommand, ReportsFailure {
+    override val errorTitleKey = "error.save_scene.title"
+    private var failure: String? = null
+
     override fun execute() {
-        projectManager.currentProject?.let { project ->
-            sceneManager.saveScene(scene, File(project.getProjectDirectory(), "Scenes").absolutePath)
+        val project = projectManager.currentProject
+        if (project == null) {
+            failure = "No project is open."
+            return
         }
+        val dir = File(project.getProjectDirectory(), "Scenes")
+        failure = if (sceneManager.saveScene(scene, dir.absolutePath)) null else File(dir, "${scene.name}.scene").absolutePath
     }
+
+    override fun wasSuccessful(): Boolean = failure == null
+    override fun getFailureReason(): String? = failure
 
     override fun undo() {
         // Save operations are not reversible

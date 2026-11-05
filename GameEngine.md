@@ -774,7 +774,7 @@ All editor mutations must go through `Command` classes and the service layer (se
   - Do: Human-reported on PR #20 (regression from AST-09): reopening a closed project from File > Recent Projects logs "Project file does not exist or invalid extension" with a wrong path. `EditorSettingsManager.recentProjects` decodes each `.skateproject` without a project root, so the AST-09 relative `projectPath` resolves against the working directory. Use the absolute path stored in the editor settings (and set `projectPath` from it), in the recent menu, `LoadLastProjectCommand` and `EditorScreen`; audit other places that decode a project file outside `openProjectFile`.
   - Done when: Create, close, reopen from Recent Projects (and the startup last-project path) works, including after moving the project; test through the real path.
   - Deps: AST-09
-- [ ] **EDT-42** `P3` Screenshots folder relative to the working directory
+- [~] @skate-editor **EDT-42** `P3` Screenshots folder relative to the working directory
   - Do: From GPL-18's audit: editor screenshots go to `screenshots/` in the working directory; store them under the project (or user data, EDT-18) instead.
   - Done when: Screenshots land in a predictable folder regardless of the working directory; test.
   - Deps: EDT-18
@@ -815,7 +815,7 @@ All editor mutations must go through `Command` classes and the service layer (se
   - Do: Human-reported on PR #13: in Play the FeatureShowcase camera points up and can't move, so nothing is visible. Fix the camera's start pose (looking at the pads) and make the overlay's demo-area list clickable: clicking an item smoothly moves the camera to frame that area (with a 'Overview' entry to go back).
   - Done when: Play shows the scene; each list item focuses its area in the game view and in a standalone run (verified through the real path: generated project saved, reloaded from disk, Play, click through UI input); free-fly camera (WASD + mouse look, like the editor) works in Play and standalone; tests for the focus targets, camera pose math and the reloaded click path.
   - Deps: TLG-08
-- [ ] **TLG-10** `P1` Build the game jar together with the editor
+- [~] @skate-tooling **TLG-10** `P1` Build the game jar together with the editor
   - Do: Human request after PR #21 (a stale `skate-game.jar` got exported): compile `gameJar` whenever the editor is built or run, so exports always ship current game code. Wire it in Gradle (e.g. `run`/`build`/`classes`/`jar` depend on or are finalized by `gameJar`, incrementally so it's cheap when nothing changed) and make the IntelliJ run path pick it up (Gradle-delegated run, or a before-launch task). Keep AST-11's stale-jar warning as a safety net.
   - Done when: After changing game code, running the editor the usual way (IntelliJ and `gradlew run`) produces a fresh `skate-game.jar` that the export uses; build time impact measured and small; documented in `.github/copilot-instructions.md`.
   - Deps: AST-11

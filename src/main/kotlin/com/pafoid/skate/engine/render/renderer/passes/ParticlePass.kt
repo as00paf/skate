@@ -30,11 +30,8 @@ import org.lwjgl.opengl.GL11.GL_SRC_ALPHA
 import org.lwjgl.opengl.GL11.GL_TEXTURE_2D
 import org.lwjgl.opengl.GL11.GL_TRIANGLE_STRIP
 import org.lwjgl.opengl.GL11.glBindTexture
-import org.lwjgl.opengl.GL11.glViewport
 import org.lwjgl.opengl.GL13.GL_TEXTURE0
 import org.lwjgl.opengl.GL13.glActiveTexture
-import org.lwjgl.opengl.GL30.GL_FRAMEBUFFER
-import org.lwjgl.opengl.GL30.glBindFramebuffer
 import org.lwjgl.opengl.GL30.glBindVertexArray
 import org.lwjgl.opengl.GL31.glDrawArraysInstanced
 import org.lwjgl.system.MemoryUtil
@@ -76,8 +73,8 @@ class ParticlePass(
             .filter { it.enabled && it.runtime.pool.count > 0 && it.gameObject?.isVisible == true }
         if (emitters.isEmpty()) return
 
-        if (useFbo) frameBuffer.bind() else glBindFramebuffer(GL_FRAMEBUFFER, 0)
-        glViewport(0, 0, frameBuffer.width, frameBuffer.height)
+        val cmd = RhiContext.require().commandList()
+        cmd.beginPass(if (useFbo) frameBuffer.target else null, viewport = presentedViewport.of(frameBuffer, useFbo))
         if (vao == 0) createBuffers()
 
         val camera = cameraManager.camera
@@ -101,7 +98,10 @@ class ParticlePass(
             }
         }
         shader.stop()
+        cmd.endPass()
     }
+
+    private val presentedViewport = PresentedViewport()
 
     private fun draw(emitter: ParticleEmitter) {
         val pool = emitter.runtime.pool
