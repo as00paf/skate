@@ -24,6 +24,7 @@ import com.pafoid.skate.engine.ecs.components.AudioComponent
 import com.pafoid.skate.engine.ecs.components.CameraFocusComponent
 import com.pafoid.skate.engine.ecs.components.JointComponent
 import com.pafoid.skate.engine.ecs.components.ParticleEmitter
+import com.pafoid.skate.engine.ecs.components.RenderComponent
 import com.pafoid.skate.engine.ecs.components.RigidBody3D
 import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.ecs.components.VehicleComponent
@@ -347,6 +348,19 @@ class FeatureShowcaseSmokeTest {
         assertTrue(!pauseMenu.isOpen && !systems.paused, "Esc did not resume")
         repeat(10) { frame() }
         assertEquals(time + 10 * DT, animator.currentTime, 1e-3f, "animation did not continue from where it paused")
+    }
+
+    /** EDT-17: the generated project holds the `.skmat`, and the loaded scene took the material from it. */
+    @Test
+    @Order(9)
+    fun Showcase_MaterialAsset_SkmatIsInTheProjectAndLoadedWithTheScene() {
+        val rc = obj("[Materials] Asset").getComponent<RenderComponent>()!!
+        val file = File(rc.materialPath!!)
+        assertEquals(File(dir, "Smoke/Assets/${FeatureShowcase.ASSET_MATERIAL_DIR}").canonicalFile, file.parentFile.canonicalFile)
+        assertTrue(file.isFile, "${file.path} was not written")
+        val expected = FeatureShowcase.ASSET_MATERIAL.toMaterial { null }
+        assertEquals(expected.baseColor, rc.material!!.baseColor)
+        assertEquals(expected.roughnessFactor, rc.material!!.roughnessFactor)
     }
 
     private companion object {
