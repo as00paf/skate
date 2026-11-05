@@ -91,7 +91,7 @@ class ThemeParserTest {
             val text = File(Assets.Themes.DIR, "${t.id}${ThemeLibrary.SUFFIX}").readText()
             ThemeParser.COLOR_NAMES.forEach { assertTrue(text.contains("\"$it\""), "${t.id} lacks color $it") }
         }
-        val strings = listOf("gameui.properties", "gameui_fr.properties").map { name ->
+        val strings = listOf("core.properties", "core_fr.properties").map { name ->
             Properties().apply { File(Assets.Strings.EDITOR_STRINGS, name).reader(Charsets.UTF_8).use { load(it) } }
         }
         lib.themes.forEach { t -> strings.forEach { assertTrue(it.containsKey(t.nameKey), "missing string ${t.nameKey}") } }

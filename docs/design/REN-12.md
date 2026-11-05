@@ -157,6 +157,9 @@ classes: allocation-free on the hot path and testable without GL.
 
 ## 5. Incremental migration plan
 
+Status: steps 0 and 1 are done. `RhiDevice` only declares what its backend implements so far; each later step adds
+the `create*` methods it migrates to.
+
 Each step is one PR-sized commit. Each must keep the full test suite green, produce pixel-identical offscreen frames
 (REN-18/19/20 harness: default `MainScene` and `FeatureShowcase`, created, saved and reloaded, edit mode and Play),
 and keep the REN-22 timings within budget (§6). Domain agents keep working: renderers change internally, but public

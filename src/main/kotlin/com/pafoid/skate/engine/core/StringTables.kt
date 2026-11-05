@@ -35,14 +35,59 @@ object StringTables {
     /** Reads [file] as UTF-8 (the encoding the tables are stored in). */
     fun read(file: File): Properties = Properties().apply { file.reader(Charsets.UTF_8).use { load(it) } }
 
+    /** Language part of a locale: `fr` for `fr`, `fr-CA`, `fr_CA` or `FR`. Translation files are per language. */
+    fun languageOf(locale: String): String = locale.lowercase().substringBefore('_').substringBefore('-')
+
+    /** Result of [layer]: the merged table, which sources had all their default tables, and duplicate keys. */
+    class Layered(
+        val table: Properties,
+        val completeSources: Set<String>,
+        /** True when at least one translation table was applied. */
+        val translated: Boolean,
+        /** Keys defined by several default tables of the same source, with those table names. */
+        val duplicates: Map<String, List<String>>,
+    )
+
     /**
-     * All tables of [source] merged, with their [locale] translations applied on top when given; the same
-     * result [StringManager] builds.
+     * The one merge rule ([StringManager] and [merged] both use it): for each source in order, its default tables,
+     * then its [locale] translations. Later layers win, so missing translations fall back to the default language.
+     * Unreadable tables are passed to [onError] and skipped.
      */
-    fun merged(source: File, locale: String? = null): Properties = Properties().apply {
-        baseTables(source).forEach { putAll(read(it)) }
-        if (locale != null) baseTables(source).map { localized(it, locale) }.filter { it.exists() }.forEach { putAll(read(it)) }
+    fun layer(
+        sources: List<StringSource>,
+        locale: String?,
+        onError: (table: String, source: String, error: Exception) -> Unit = { _, _, _ -> },
+    ): Layered {
+        val table = Properties()
+        val complete = HashSet<String>()
+        val duplicates = LinkedHashMap<String, List<String>>()
+        var translated = false
+        val language = locale?.let(::languageOf)
+        fun read(source: StringSource, name: String): Properties? = try {
+            source.read(name)
+        } catch (e: Exception) {
+            onError(name, source.label, e)
+            null
+        }
+        for (source in sources) {
+            val names = source.baseTables()
+            val defaults = names.mapNotNull { name -> read(source, name)?.let { name to it } }
+            if (names.isNotEmpty() && defaults.size == names.size) complete += source.label
+            defaults.flatMap { (name, t) -> t.stringPropertyNames().map { it to name } }
+                .groupBy({ it.first }, { it.second }).filterValues { it.size > 1 }.forEach { (k, v) -> duplicates[k] = v }
+            defaults.forEach { (_, t) -> table.putAll(t) }
+            if (language != null) {
+                names.mapNotNull { read(source, localizedName(it, language)) }.forEach {
+                    table.putAll(it)
+                    translated = true
+                }
+            }
+        }
+        return Layered(table, complete, translated, duplicates)
     }
+
+    /** All tables of [source] merged, with their [locale] translations on top when given (see [layer]). */
+    fun merged(source: File, locale: String? = null): Properties = layer(listOf(StringSource.files(source.path)), locale).table
 
     /** Keys defined by more than one of [tables], mapped to the names of the files defining them. */
     fun duplicateKeys(tables: List<File>): Map<String, List<String>> =

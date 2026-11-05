@@ -30,7 +30,7 @@ import com.pafoid.skate.engine.render.renderer.passes.UiPass
 import com.pafoid.skate.engine.render.shader.ShaderFeature
 import com.pafoid.skate.engine.render.shadow.ShadowFrame
 import com.pafoid.skate.engine.render.shadow.ShadowSettings
-import com.pafoid.skate.engine.render.utils.GLStateTracker
+import com.pafoid.skate.engine.render.rhi.opengl.GLStateTracker
 
 class RenderResourcesFactory(
     engine: Engine,

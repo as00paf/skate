@@ -82,11 +82,7 @@ class EditorSettingsWindow(
     }
 
     override fun imgui() {
-        if (!isOpen.get()) {
-            // Closed without OK/Apply: drop the theme preview so the saved theme shows again.
-            ImGuiStyleManager.preview = null
-            return
-        }
+        if (!isOpen.get()) return
         if (!hasPendingChanges) syncTempSettings()
 
         val viewport = ImGui.getMainViewport()
@@ -120,8 +116,8 @@ class EditorSettingsWindow(
                 }
                 val label = stringManager.getString(cat.labelKey)
                 if (ImGui.selectable(label, isSelected, ImGuiSelectableFlags.SpanAllColumns)) {
+                    // Pending edits (and the theme preview) survive switching category until OK/Apply/Cancel.
                     selectedCategoryId = cat.id
-                    hasPendingChanges = false
                 }
                 if (isSelected) {
                     ImGui.popStyleColor()
@@ -170,6 +166,13 @@ class EditorSettingsWindow(
             ImGui.endDisabled()
         }
         end()
+    }
+
+    /** Closed without OK/Apply, by any path: drop the theme preview and unsaved edits (EDT-40). */
+    override fun onClosed() {
+        ImGuiStyleManager.preview = null
+        hasPendingChanges = false
+        rebindingAction = null
     }
 
     private fun syncTempSettings() {

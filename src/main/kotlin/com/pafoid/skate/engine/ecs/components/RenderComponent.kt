@@ -8,7 +8,6 @@ import com.pafoid.skate.engine.render.data.RenderMode
 import com.pafoid.skate.engine.render.material.MaterialAsset
 import kotlinx.serialization.Serializable
 import org.lwjgl.system.MemoryUtil
-import java.io.File
 import java.nio.charset.StandardCharsets
 
 @Serializable
@@ -38,7 +37,10 @@ data class RenderComponent(
 
     fun resolveModelFromPath(assetsManager: AssetsManager) {
         model = model?.path?.let { assetsManager.loadModel(it) }
-        resolveMaterialAsset({ File(it).takeIf(File::isFile)?.readText() }, assetsManager::getTexture)
+        // Project-relative or packed .skmat (AST-09); its texture paths are project-relative too.
+        resolveMaterialAsset({ path ->
+            assetsManager.readText(path)?.ifEmpty { null } ?: java.io.File(path).takeIf { it.isFile }?.readText()
+        }, assetsManager::getTexture)
         material?.baseColorTexture?.let {
             it.texId = assetsManager.getTexture(it.filePath.orEmpty()).texId
         }

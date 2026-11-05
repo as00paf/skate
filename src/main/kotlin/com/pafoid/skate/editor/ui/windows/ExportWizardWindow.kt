@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.ui.windows
 
+import com.pafoid.skate.engine.core.StringManager
 import com.pafoid.skate.editor.events.ProjectEvent
 import com.pafoid.skate.editor.imgui.EditorDialog
 import com.pafoid.skate.editor.imgui.MImGui
@@ -59,7 +60,7 @@ class ExportWizardWindow(
 
     /** The dialog was just opened: rescan scenes and look for the game jar again. */
     private fun onOpened(project: Project) {
-        wizard.load(project, ProjectExporter(logger).sceneFiles(project, wizard.options()))
+        wizard.load(project, ProjectExporter(logger).sceneFiles(project, wizard.options(project)))
         outputInput.set(wizard.outputDir.ifBlank { AssetsPacker.defaultOutputDir(project).path })
         wizard.outputDir = outputInput.get()
         gameJar = ProjectExporter.findGameJar()
@@ -105,7 +106,7 @@ class ExportWizardWindow(
         ImGui.beginDisabled(!wizard.canStart(project, gameJar))
         if (ImGui.button(strings.label("btn.export.start"), 160f, 0f)) {
             wizard.start()
-            eventSystem.publish(ProjectEvent.ExportRequested(wizard.options()))
+            eventSystem.publish(ProjectEvent.ExportRequested(wizard.options(project)))
         }
         ImGui.endDisabled()
     }
@@ -143,20 +144,20 @@ class ExportWizardWindow(
             Phase.SUCCEEDED -> {
                 val result = wizard.result ?: return
                 MImGui.successText(
-                    strings.getString("lbl.export.succeeded", result.assetCount, formatBytes(result.packedBytes), result.outputDir.path)
+                    strings.getString("lbl.export.succeeded", result.assetCount, formatBytes(result.packedBytes, strings), result.outputDir.path)
                 )
                 ImGui.progressBar(1f, -1f, 0f, "100%")
             }
             Phase.FAILED -> {
                 val result = wizard.result ?: return
                 MImGui.errorText(strings.getString("lbl.export.failure.${result.failure?.name?.lowercase()}"))
-                if (result.detail.isNotBlank()) MImGui.textDisabled(result.detail)
+                result.detail?.let { MImGui.textDisabled(strings.getString(it.key, *result.detailArgs.toTypedArray())) }
             }
             Phase.EDITING -> Unit
         }
         if (wizard.isBusy) return
         ImGui.spacing()
-        val outputDir = wizard.result?.outputDir ?: ProjectExporter.outputDir(project, wizard.options())
+        val outputDir = wizard.result?.outputDir ?: ProjectExporter.outputDir(project, wizard.options(project))
         if (outputDir.isDirectory) {
             if (ImGui.button(strings.label("btn.export.open_folder"))) openFolder(outputDir)
             ImGui.sameLine()
@@ -196,10 +197,10 @@ class ExportWizardWindow(
     companion object {
         const val NAME = "window.export_wizard"
 
-        fun formatBytes(bytes: Long): String = when {
-            bytes >= 1024L * 1024 -> "%.1f MB".format(bytes / (1024.0 * 1024))
-            bytes >= 1024 -> "%.1f KB".format(bytes / 1024.0)
-            else -> "$bytes B"
+        fun formatBytes(bytes: Long, strings: StringManager): String = when {
+            bytes >= 1024L * 1024 -> strings.getString("lbl.export.size.mb", bytes / (1024.0 * 1024))
+            bytes >= 1024 -> strings.getString("lbl.export.size.kb", bytes / 1024.0)
+            else -> strings.getString("lbl.export.size.bytes", bytes)
         }
     }
 }

@@ -5,6 +5,13 @@ import com.pafoid.skate.editor.imgui.theme.EditorTheme
 import com.pafoid.skate.editor.imgui.theme.ThemeLibrary
 import imgui.ImGui
 import imgui.flag.ImGuiCol.Border
+import imgui.flag.ImGuiCol.DockingEmptyBg
+import imgui.flag.ImGuiCol.DockingPreview
+import imgui.flag.ImGuiCol.TableBorderLight
+import imgui.flag.ImGuiCol.TableBorderStrong
+import imgui.flag.ImGuiCol.TableHeaderBg
+import imgui.flag.ImGuiCol.TableRowBg
+import imgui.flag.ImGuiCol.TableRowBgAlt
 import imgui.flag.ImGuiCol.BorderShadow
 import imgui.flag.ImGuiCol.Button
 import imgui.flag.ImGuiCol.ButtonActive
@@ -173,10 +180,22 @@ object ImGuiStyleManager {
             
             setColor(TextSelectedBg, t.selection)
             setColor(DragDropTarget, t.accent)
-            setColor(NavHighlight, t.accent)
+            setColor(NavHighlight, t.navHighlight)
             setColor(NavWindowingHighlight, t.navWindowingHighlight)
             setColor(NavWindowingDimBg, t.navWindowingDimBg)
             setColor(ModalWindowDimBg, t.modalDimBg)
+
+            // Tables and docking (EDT-40): without these, ImGui's dark defaults showed in light themes.
+            setColor(TableHeaderBg, t.header)
+            setColor(TableBorderStrong, t.border)
+            setColor(TableBorderLight, t.border.withAlpha(0.5f))
+            setColor(TableRowBg, t.background.withAlpha(0f))
+            setColor(TableRowBgAlt, t.widgetBg.withAlpha(0.35f))
+            setColor(DockingPreview, t.accent.withAlpha(0.7f))
+            setColor(DockingEmptyBg, t.background)
         }
     }
 }
+
+/** Copy of this colour with alpha [a]. */
+private fun org.joml.Vector4f.withAlpha(a: Float) = org.joml.Vector4f(x, y, z, a)

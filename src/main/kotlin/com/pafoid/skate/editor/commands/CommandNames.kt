@@ -14,6 +14,7 @@ object CommandNames {
     fun key(command: Command): String = "command.${command.javaClass.simpleName}"
 
     fun displayName(command: Command, strings: StringManager): String {
+        (command as? KeyedCommand)?.displayNameKey?.let { if (strings.hasString(it)) return strings.getString(it) }
         val key = key(command)
         return if (strings.hasString(key)) strings.getString(key) else command.getDisplayName()
     }

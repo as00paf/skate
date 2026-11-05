@@ -16,7 +16,7 @@ import com.pafoid.skate.engine.render.renderer.ModelRenderer
 import com.pafoid.skate.engine.render.renderer.PickingRenderer
 import com.pafoid.skate.engine.render.renderer.Renderer2D
 import com.pafoid.skate.engine.render.renderer.RenderTraversal
-import com.pafoid.skate.engine.render.utils.GLStateTracker
+import com.pafoid.skate.engine.render.rhi.opengl.GLStateTracker
 import com.pafoid.skate.engine.utils.EntityIdEncoder
 import com.pafoid.skate.engine.utils.ShaderConst.Uniforms
 import org.lwjgl.opengl.GL30.GL_COLOR_BUFFER_BIT

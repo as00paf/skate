@@ -33,6 +33,7 @@ import com.pafoid.skate.editor.systems.UndoRedoManager
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.core.LoggerService.LogLevel
 import com.pafoid.skate.engine.core.StringManager
+import com.pafoid.skate.engine.utils.ExportDetail
 import com.pafoid.skate.engine.utils.ExportFailure
 import com.pafoid.skate.engine.utils.ExportResult
 import com.pafoid.skate.engine.utils.ProjectExporter
@@ -51,6 +52,9 @@ class ProjectActionHandler(
     private val jobSystem = engine.jobSystem
     private val eventSystem = engine.eventSystem
     private val logger = engine.logger
+
+    /** True from an export request until its result is published (main thread only). */
+    private var exportRunning = false
 
     init {
         eventSystem.subscribe<OpenProjectRequested> { event ->
@@ -151,18 +155,34 @@ class ProjectActionHandler(
         }
 
         eventSystem.subscribe<ProjectEvent.ExportRequested> { event ->
-            val project = projectManager.currentProject ?: return@subscribe
+            val project = projectManager.currentProject
+            if (project == null) {
+                // The wizard already shows "saving": always answer so it can leave the busy state.
+                eventSystem.publish(ProjectEvent.ExportFinished(ExportResult(File(""), ExportFailure.IO_ERROR, ExportDetail.NO_PROJECT)))
+                return@subscribe
+            }
+            if (exportRunning) return@subscribe // one export at a time into the same folder
+            val outputDir = ProjectExporter.outputDir(project, event.options)
             // Save on the main thread so the scene is not serialized while it changes; pack and copy in the background.
             if (!projectManager.saveProject()) {
-                val outputDir = ProjectExporter.outputDir(project, event.options)
                 eventSystem.publish(ProjectEvent.ExportFinished(ExportResult(outputDir, ExportFailure.SAVE_FAILED)))
                 return@subscribe
             }
+            exportRunning = true
             jobSystem.runIO {
-                val result = ProjectExporter(logger).export(project, event.options) { progress ->
-                    executeOnMainThread { eventSystem.publish(ProjectEvent.ExportProgressed(progress)) }
+                // Anything thrown (validation, I/O, OutOfMemoryError while packing) still ends the export.
+                val result = try {
+                    ProjectExporter(logger).export(project, event.options) { progress ->
+                        executeOnMainThread { eventSystem.publish(ProjectEvent.ExportProgressed(progress)) }
+                    }
+                } catch (t: Throwable) {
+                    logger.logEditor("Export failed: ${t.message}", LogLevel.ERROR)
+                    ExportResult(outputDir, ExportFailure.IO_ERROR, ExportDetail.IO_FAILURE, listOf(t.message ?: t.javaClass.simpleName))
                 }
-                executeOnMainThread { eventSystem.publish(ProjectEvent.ExportFinished(result)) }
+                executeOnMainThread {
+                    exportRunning = false
+                    eventSystem.publish(ProjectEvent.ExportFinished(result))
+                }
             }
         }
     }

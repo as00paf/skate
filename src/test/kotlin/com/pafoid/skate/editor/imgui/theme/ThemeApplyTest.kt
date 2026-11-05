@@ -64,4 +64,18 @@ class ThemeApplyTest {
         assertBackground("dark")
         assertEquals(1f, ImGui.getIO().fontGlobalScale)
     }
+
+    @Test
+    fun TablesDockingAndNavHighlight_FollowTheTheme() {
+        ImGuiStyleManager.sync("light")
+        val t = ImGuiStyleManager.library.resolve("light").style.theme
+        fun color(col: Int) = ImVec4().also { ImGui.getStyle().getColor(col, it) }
+        fun same(expected: org.joml.Vector4f, actual: ImVec4, what: String) {
+            assertEquals(expected.x, actual.x, 1e-3f, what); assertEquals(expected.y, actual.y, 1e-3f, what); assertEquals(expected.z, actual.z, 1e-3f, what)
+        }
+        same(t.header, color(ImGuiCol.TableHeaderBg), "TableHeaderBg")
+        same(t.border, color(ImGuiCol.TableBorderStrong), "TableBorderStrong")
+        same(t.background, color(ImGuiCol.DockingEmptyBg), "DockingEmptyBg")
+        same(t.navHighlight, color(ImGuiCol.NavHighlight), "NavHighlight")
+    }
 }

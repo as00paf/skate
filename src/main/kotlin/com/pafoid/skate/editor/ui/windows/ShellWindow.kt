@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.ui.windows
 
+import com.pafoid.skate.editor.systems.EditorPaths
 import com.pafoid.skate.editor.imgui.EditorWindow
 import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.editor.imgui.label
@@ -25,14 +26,14 @@ import java.io.File
 /**
  * EDT-08: terminal-style panel. Runs one shell command at a time in the background ([ShellSession]): Gradle tasks,
  * the Skate CLI or anything else the platform shell runs. Output streams in live, Cancel kills the process tree, and
- * the command history ([ShellHistory], Up/Down to recall) persists in `shell_history.txt` next to `editor.config`.
+ * the command history ([ShellHistory], Up/Down to recall) persists in the user-data folder ([EditorPaths]).
  * Running a command changes no scene or project state, so nothing here goes through the undo stack.
  */
 class ShellWindow(
     engine: Engine,
     private val projectManager: ProjectManager,
     private val session: ShellSession = ShellSession(),
-    private val history: ShellHistory = ShellHistory(File(HISTORY_FILE)).load(),
+    private val history: ShellHistory = ShellHistory(EditorPaths.file(HISTORY_FILE)).load(),
     private val workingDir: File = File(".").absoluteFile,
 ) : EditorWindow(NAME) {
 
@@ -126,7 +127,7 @@ class ShellWindow(
                     ShellLine.Kind.OUTPUT -> null
                 }
                 if (color != null) ImGui.pushStyleColor(ImGuiCol.Text, color[0], color[1], color[2], color[3])
-                ImGui.textUnformatted(line.text)
+                ImGui.textUnformatted(line.key?.let { strings.getString(it, *line.args.toTypedArray()) } ?: line.text)
                 if (color != null) ImGui.popStyleColor()
             }
         })

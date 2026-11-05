@@ -1,4 +1,4 @@
-package com.pafoid.skate.engine.render.state
+package com.pafoid.skate.engine.render.rhi.opengl
 
 import com.pafoid.skate.engine.render.EngineStats
 import org.lwjgl.opengl.GL11.GL_TEXTURE_2D

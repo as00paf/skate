@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.commands.objects
 
+import com.pafoid.skate.editor.commands.KeyedCommand
 import com.pafoid.skate.editor.commands.Command
 import com.pafoid.skate.editor.commands.ExecuteOnlyCommand
 import com.pafoid.skate.engine.assets.data.Texture
@@ -96,8 +97,20 @@ class AssignMaterialCommand(
     private val component: RenderComponent,
     private val material: Material?,
     private val materialPath: String?,
-    private val displayName: String = "Assign Material",
-) : Command {
+    private val kind: Kind = Kind.ASSIGN,
+) : Command, KeyedCommand {
+    /** Which inspector action this is; shown translated in Command History (`command.AssignMaterialCommand.<kind>`). */
+    enum class Kind(val englishName: String) {
+        ASSIGN("Assign Material"),
+        OVERRIDE("Override Material"),
+        REMOVE_OVERRIDE("Remove Material Override"),
+        UNLINK("Unlink Material Asset"),
+        LINK("Link Material Asset"),
+        LOAD("Load Material Asset"),
+    }
+
+    override val displayNameKey: String get() = "command.AssignMaterialCommand.${kind.name.lowercase()}"
+
     private val beforeMaterial = component.material
     private val beforePath = component.materialPath
 
@@ -113,7 +126,7 @@ class AssignMaterialCommand(
         component.materialPath = beforePath
     }
 
-    override fun getDisplayName(): String = displayName
+    override fun getDisplayName(): String = kind.englishName
     override fun getTargetName(): String? = component.gameObject?.name
 }
 
@@ -121,10 +134,12 @@ class AssignMaterialCommand(
 class SaveMaterialAssetCommand(
     private val material: Material,
     private val file: File,
+    /** Texture paths inside this folder are saved relative to it (AST-09). */
+    private val projectRoot: File? = null,
 ) : ExecuteOnlyCommand {
     override fun execute() {
         file.parentFile?.mkdirs()
-        MaterialAsset.from(material, file.nameWithoutExtension).save(file)
+        MaterialAsset.from(material, file.nameWithoutExtension, projectRoot).save(file)
     }
 
     override fun undo() {}

@@ -42,7 +42,6 @@ import com.pafoid.skate.engine.ui.PauseMenuSystem
 import com.pafoid.skate.engine.ui.UiActions
 import com.pafoid.skate.engine.render.ui.SdfFont
 import com.pafoid.skate.engine.ui.UiInputSystem
-import com.pafoid.skate.engine.ui.UiPointer
 import com.pafoid.skate.engine.ui.UiLayoutSystem
 import com.pafoid.skate.engine.ui.UiRenderSystem
 import com.pafoid.skate.engine.ui.UiScreenSize
@@ -53,6 +52,7 @@ import com.pafoid.skate.engine.physics3d.native.NativeLibraryLoader
 import com.pafoid.skate.engine.render.RenderResourcesFactory
 import com.pafoid.skate.engine.render.renderer.Renderer
 import com.pafoid.skate.engine.render.renderer.SkinningUbo
+import com.pafoid.skate.engine.render.rhi.RhiDevice
 import org.lwjgl.glfw.GLFW
 import com.pafoid.skate.engine.core.LoggerService.LogLevel
 import java.util.concurrent.CopyOnWriteArrayList
@@ -71,7 +71,7 @@ class Engine {
     val stringManager = StringManager(logger)
 
     /** Runtime UI text (pause menu, HUD, game widgets) with the game's own locale, never the editor's. */
-    val gameStrings = StringManager(logger)
+    val gameStrings = StringManager(logger, logSource = "game")
     val gameLocale = GameLocale(gameStrings)
     init { assetsManager.attachAsyncLoading(jobSystem, eventSystem) }
     val audioEngine = AudioEngine(logger)
@@ -108,7 +108,12 @@ class Engine {
     val screens: MutableList<Screen> = CopyOnWriteArrayList()
     lateinit var renderer: Renderer
 
-    fun start(glfwWindow: Long) {
+    /** The graphics device of the window's context (REN-12 RHI); set by [start]. */
+    lateinit var device: RhiDevice
+        private set
+
+    fun start(glfwWindow: Long, device: RhiDevice) {
+        this.device = device
         MainThread.bind()
         MainThread.violationHandler = { logger.log(it, LogLevel.ERROR) }
         initCallbacks(glfwWindow)
@@ -147,7 +152,7 @@ class Engine {
             TransformSystem(),
             cameraManager,
             inputSystem,
-            AudioSystem(audioEngine, logger, assetsManager, cameraManager),
+            AudioSystem(audioEngine, logger, assetsManager, cameraManager, assetsManager.paths::localPath),
             EnvironmentSystem(),
             physicsSystem,
             PhysicsFrameSystem(physicsSystem),
@@ -166,10 +171,8 @@ class Engine {
             RagdollSystem(),
             ParticleSystem(),
             LoopbackPredictionSystem(),
-            // Raw right button over the game view: ImGui owns the editor viewport, as for the UI pointer below.
-            CameraControlSystem(ReaderFlyInputSource(inputSystem.reader) {
-                inputProvider.mouseListener.let { it.isMouseButtonDown(1, ignoreImGui = true) && it.isInsideView() }
-            }),
+            // Look while a right-button press that started in the game view is held (INP-09 button rule).
+            CameraControlSystem(ReaderFlyInputSource(inputSystem.reader)),
             ScriptingSystem(
                 logger, eventSystem,
                 ScriptServices(input = ReaderScriptInput(inputSystem.reader)),
@@ -200,12 +203,8 @@ class Engine {
             pauseMenu,
             UiLayoutSystem(screen = { UiScreenSize(framebuffer.width, framebuffer.height) }),
             UiInputSystem(
-                ReaderUiInputSource(inputSystem.reader) {
-                    // Same pointer source and view rect as picking; the raw button, since ImGui owns the editor viewport.
-                    val mouse = inputProvider.mouseListener
-                    val (x, y) = mouse.viewTarget()
-                    UiPointer(x, y, mouse.isMouseButtonDown(0, ignoreImGui = true))
-                }
+                // The reader's pointer: render-target pixels and game-view buttons, as for picking (INP-09).
+                ReaderUiInputSource(inputSystem.reader)
             ).also {
                 it.authoring = { uiAuthoring && !runtimePlaying }
                 it.onUnhandledCancel = pauseMenu::open

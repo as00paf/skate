@@ -20,7 +20,7 @@ import com.pafoid.skate.engine.utils.RenderConsts2D.VERTEX_SIZE
 import com.pafoid.skate.engine.utils.RenderConsts2D.VERTEX_SIZE_BYTES
 import com.pafoid.skate.engine.utils.ShaderConst.Uniforms
 import com.pafoid.skate.engine.render.EngineStats
-import com.pafoid.skate.engine.render.state.GLBindings
+import com.pafoid.skate.engine.render.rhi.opengl.GLBindings
 import org.joml.Matrix4f
 import org.lwjgl.opengl.GL11.GL_SCISSOR_TEST
 import org.lwjgl.opengl.GL11.glDisable

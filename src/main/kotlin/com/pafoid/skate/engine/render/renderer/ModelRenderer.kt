@@ -13,7 +13,7 @@ import com.pafoid.skate.engine.render.EngineStats
 import com.pafoid.skate.engine.render.data.RenderMode
 import com.pafoid.skate.engine.render.material.MaterialBinder
 import com.pafoid.skate.engine.render.material.ShaderUniformSink
-import com.pafoid.skate.engine.render.state.GLBindings
+import com.pafoid.skate.engine.render.rhi.opengl.GLBindings
 import com.pafoid.skate.engine.render.utils.setAlphaBlendKeepingTargetOpaque
 import com.pafoid.skate.engine.render.utils.withBlendState
 import com.pafoid.skate.engine.render.utils.withCullFace

@@ -205,4 +205,24 @@ class ProjectExporterTest {
         val scenes = ProjectExporter(mockk<LoggerService>(relaxed = true)).sceneFiles(p).map { it.relativeTo(dir).invariantSeparatorsPath }
         assertEquals(listOf("Scenes/Main.scene"), scenes)
     }
+
+    @Test
+    fun Export_FailuresCarryATranslatableDetail() {
+        val p = project()
+        val invalid = ProjectExporter(mockk<LoggerService>(relaxed = true)) { null }
+            .export(p, ExportOptions(target = ExportTarget.PACK_ONLY, outputDir = dir.path))
+        assertEquals(ExportDetail.OUTPUT_IS_PROJECT, invalid.detail)
+        assertEquals(listOf(dir.path), invalid.detailArgs)
+        assertEquals(ExportDetail.GAME_JAR_NOT_BUILT, ProjectExporter(mockk<LoggerService>(relaxed = true)) { null }.export(p).detail)
+    }
+
+    @Test
+    fun ExportDetail_EveryKeyIsTranslatedInEnglishAndFrench() {
+        val editorStrings = File(com.pafoid.skate.engine.assets.Assets.Strings.EDITOR_STRINGS)
+        for (locale in listOf(null, "fr")) {
+            val table = com.pafoid.skate.engine.core.StringTables.merged(editorStrings, locale)
+            ExportDetail.entries.forEach { assertTrue(table.containsKey(it.key), "${it.key} missing ($locale)") }
+            ExportFailure.entries.forEach { assertTrue(table.containsKey("lbl.export.failure.${it.name.lowercase()}"), "$it ($locale)") }
+        }
+    }
 }

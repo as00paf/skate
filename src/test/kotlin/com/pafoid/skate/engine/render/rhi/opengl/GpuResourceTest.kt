@@ -1,4 +1,4 @@
-package com.pafoid.skate.engine.render
+package com.pafoid.skate.engine.render.rhi.opengl
 
 import kotlin.test.Test
 import kotlin.test.assertEquals

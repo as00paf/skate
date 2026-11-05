@@ -36,6 +36,12 @@ class AssetsManager(
 
     val assetsResolver = AssetsResolver(serializer, logger)
 
+    /** Resolves project-relative references (editor) and packed ones (exported game); see [AssetPaths]. */
+    val paths: AssetPaths get() = serializer.assetPaths
+
+    /** Text of the asset at [path] from the pack or the project, or null. */
+    fun readText(path: String): String? = paths.readText(path)
+
     // Editor/dev runs from the repo: shader edits under resources/shaders are picked up live
     private val shaderDevRoot = File("src/main/resources").takeIf { File(it, "shaders").isDirectory }
     private val shaderLoader = ShaderLoader(false, logger, shaderDevRoot)
@@ -166,7 +172,8 @@ class AssetsManager(
         loadService ?: throw IllegalStateException("attachAsyncLoading() was not called")
 
     /** Non-blocking texture request; the ticket yields the default texture until ready. Release when done. */
-    fun requestTexture(path: String): AssetTicket<Texture> {
+    fun requestTexture(requested: String): AssetTicket<Texture> {
+        val path = paths.localPath(requested)
         val absolutePath = File(path).absolutePath
         val placeholder = runCatching { getBundledTexture(Assets.Bundled.DEFAULT_TEXTURE) }.getOrNull()
         return service().request(
@@ -180,7 +187,8 @@ class AssetsManager(
     }
 
     /** Non-blocking model request: the file import runs on a worker, VAO/texture creation on the main thread. */
-    fun requestModel(path: String): AssetTicket<`3dModel`> {
+    fun requestModel(requested: String): AssetTicket<`3dModel`> {
+        val path = paths.localPath(requested)
         val absolutePath = File(path).absolutePath
         val placeholder = runCatching { loadModel(Assets.Models.CUBE) }.getOrNull()
         return service().request(
@@ -197,6 +205,7 @@ class AssetsManager(
 
     fun initAssetsResolver(assetsAtlas: Atlas, binData: ByteArray, headerOffset: Int) {
         assetsResolver.initialize(assetsAtlas, binData, headerOffset)
+        paths.pack = assetsResolver
     }
 
     inline fun <reified T> resolve(path: String): T? {
@@ -227,7 +236,8 @@ class AssetsManager(
         return animation[0]
     }
 
-    fun getTexture(path: String): Texture {
+    fun getTexture(requested: String): Texture {
+        val path = paths.localPath(requested)
         val absolutePath = File(path).absolutePath
         textures[absolutePath]?.let { return it }
 
@@ -256,16 +266,19 @@ class AssetsManager(
 
     // Result-returning variants: no silent fallback to default assets.
     fun loadTextureResult(path: String): AssetResult<Texture> = AssetResult.attempt(path) {
+        @Suppress("NAME_SHADOWING") val path = paths.localPath(path)
         val key = File(path).absolutePath
         textures[key] ?: textureLoader.loadFromFile(path).also { textures[key] = it }
     }
 
     fun loadModelResult(path: String): AssetResult<`3dModel`> = AssetResult.attempt(path) {
+        @Suppress("NAME_SHADOWING") val path = paths.localPath(path)
         val key = File(path).absolutePath
         models[key] ?: assimpLoader.loadModel(key).also { models[key] = it }
     }
 
     fun loadSoundResult(path: String): AssetResult<SoundBuffer> = AssetResult.attempt(path) {
+        @Suppress("NAME_SHADOWING") val path = paths.localPath(path)
         val key = File(path).absolutePath
         sounds[key] ?: soundLoader.load(path).also { sounds[key] = it }
     }
@@ -335,7 +348,8 @@ class AssetsManager(
         }
     }
 
-    fun getSound(path: String): SoundBuffer {
+    fun getSound(requested: String): SoundBuffer {
+        val path = paths.localPath(requested)
         val file = File(path)
         val absolutePath = file.absolutePath
 
@@ -366,7 +380,8 @@ class AssetsManager(
         }
     }
 
-    fun loadModel(path: String): `3dModel` {
+    fun loadModel(requested: String): `3dModel` {
+        val path = paths.localPath(requested)
         val file = File(path)
         val absolutePath = file.absolutePath
 
@@ -385,10 +400,11 @@ class AssetsManager(
     }
 
     fun getModel(path: String): `3dModel`? {
-        return models[File(path).absolutePath]
+        return models[File(paths.localPath(path)).absolutePath]
     }
 
-    fun loadAnimationSync(path: String): Animation {
+    fun loadAnimationSync(requested: String): Animation {
+        val path = paths.localPath(requested)
         val file = File(path)
         val absolutePath = file.absolutePath
 
@@ -404,7 +420,7 @@ class AssetsManager(
     }
 
     fun getAnimation(filePath: String): Animation? {
-        val absolutePath = File(filePath).absolutePath
+        val absolutePath = File(paths.localPath(filePath)).absolutePath
         return animations[absolutePath]
     }
 

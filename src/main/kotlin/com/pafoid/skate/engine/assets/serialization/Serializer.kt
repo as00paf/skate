@@ -1,5 +1,6 @@
 package com.pafoid.skate.engine.assets.serialization
 
+import com.pafoid.skate.engine.assets.AssetPaths
 import com.pafoid.skate.engine.ecs.components.AmbientLightComponent
 import com.pafoid.skate.engine.ecs.components.Animator
 import com.pafoid.skate.engine.ecs.components.AudioComponent
@@ -58,7 +59,11 @@ import kotlinx.serialization.modules.contextual
 import kotlinx.serialization.modules.polymorphic
 import kotlinx.serialization.modules.subclass
 
-class Serializer {
+/**
+ * JSON for scenes, prefabs and projects. [assetPaths] makes asset references in versioned files project-relative
+ * on save and absolute again on load while a project is open (AST-09).
+ */
+class Serializer(val assetPaths: AssetPaths = AssetPaths()) {
     val engineModule = SerializersModule {
         contextual(Vector2iSerializer)
         contextual(Vector2fSerializer)
@@ -154,16 +159,17 @@ class Serializer {
 
     val migrations = SchemaMigrations()
 
-    /** Encodes a scene/prefab/project file with its `schema` version stamped at the root. */
+    /** Encodes a scene/prefab/project file with its `schema` version stamped at the root and project-relative paths. */
     inline fun <reified T> encodeFile(kind: FileKind, value: T): String {
         val root = json.encodeToJsonElement(kotlinx.serialization.serializer<T>(), value) as JsonObject
-        return json.encodeToString(JsonObject.serializer(), migrations.stamp(kind, root))
+        val relative = assetPaths.relativizeJson(root) as JsonObject
+        return json.encodeToString(JsonObject.serializer(), migrations.stamp(kind, relative))
     }
 
     /** Decodes a versioned file, running migrations on old (or unversioned) files first. */
     inline fun <reified T> decodeFile(kind: FileKind, text: String): T {
         val element = json.parseToJsonElement(text)
         val upgraded = if (element is JsonObject) migrations.upgrade(kind, element) else element
-        return json.decodeFromJsonElement(kotlinx.serialization.serializer<T>(), upgraded)
+        return json.decodeFromJsonElement(kotlinx.serialization.serializer<T>(), assetPaths.absoluteJson(upgraded))
     }
 }

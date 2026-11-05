@@ -21,6 +21,7 @@ object DefaultDockLayout {
         "window.profiler" to Zone.BOTTOM,
         "window.command_history" to Zone.BOTTOM,
         "window.render_graph" to Zone.BOTTOM,
+        "window.shell" to Zone.BOTTOM,
         "window.physics_tuner" to Zone.BOTTOM,
     )
 

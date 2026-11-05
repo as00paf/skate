@@ -1,4 +1,4 @@
-package com.pafoid.skate.engine.render.state
+package com.pafoid.skate.engine.render.rhi.opengl
 
 /**
  * Tracks the bound VAO and per-unit 2D textures so redundant binds are skipped.

@@ -14,10 +14,10 @@ import java.util.IdentityHashMap
  */
 class MaterialEditSession {
 
-    /** One finished gesture on [material]: [before] → [after]. */
-    data class Edit(val material: Material, val before: MaterialState, val after: MaterialState)
+    /** One finished gesture on [material]: [before] → [after]; [target] names the object it was made on. */
+    data class Edit(val material: Material, val before: MaterialState, val after: MaterialState, val target: String? = null)
 
-    private class Pending(val before: MaterialState, var draft: MaterialState)
+    private class Pending(val before: MaterialState, var draft: MaterialState, val target: String?)
 
     private val pending = IdentityHashMap<Material, Pending>()
 
@@ -26,10 +26,13 @@ class MaterialEditSession {
 
     fun isEditing(material: Material): Boolean = material in pending
 
-    /** Applies [draft] (clamped) to [material] now; the first preview of a gesture remembers the prior values. */
-    fun preview(material: Material, draft: MaterialState) {
+    /**
+     * Applies [draft] (clamped) to [material] now; the first preview of a gesture remembers the prior values and the
+     * [target] object name, so the edit is reported on the right object even if the selection changes meanwhile.
+     */
+    fun preview(material: Material, draft: MaterialState, target: String? = null) {
         val valid = draft.validated()
-        val entry = pending.getOrPut(material) { Pending(MaterialState.of(material), valid) }
+        val entry = pending.getOrPut(material) { Pending(MaterialState.of(material), valid, target) }
         entry.draft = valid
         valid.applyTo(material)
     }
@@ -37,7 +40,7 @@ class MaterialEditSession {
     /** Ends the gestures once no widget is active; returns the edits that changed something. */
     fun settle(anyItemActive: Boolean): List<Edit> {
         if (anyItemActive || pending.isEmpty()) return emptyList()
-        val edits = pending.mapNotNull { (material, p) -> Edit(material, p.before, p.draft).takeIf { p.before != p.draft } }
+        val edits = pending.mapNotNull { (material, p) -> Edit(material, p.before, p.draft, p.target).takeIf { p.before != p.draft } }
         pending.clear()
         return edits
     }
