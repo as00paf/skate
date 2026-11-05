@@ -5,6 +5,7 @@ import com.pafoid.skate.editor.data.FileType
 import com.pafoid.skate.editor.events.ProjectEvent
 import com.pafoid.skate.editor.project.EngineAssetCopier
 import com.pafoid.skate.editor.project.Project
+import com.pafoid.skate.editor.project.ProjectFileReader
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.AssetRegistry
 import com.pafoid.skate.engine.core.Engine
@@ -116,8 +117,7 @@ class ProjectManager(
         if (hasProject()) closeProject()
         // References in the project file and its scenes are relative to the folder the project is in now (AST-09).
         assetPaths.projectRoot = projectFile.absoluteFile.parentFile
-        val project = engine.serializer.decodeFile<Project>(FileKind.PROJECT, projectFile.readText())
-        project.projectPath = projectFile.absolutePath
+        val project = ProjectFileReader.read(engine.serializer, projectFile)
 
         return openProject(project)
     }

@@ -4,7 +4,6 @@ import com.pafoid.skate.editor.commands.ExecuteOnlyCommand
 import com.pafoid.skate.editor.commands.ExecutionTrackedCommand
 import com.pafoid.skate.editor.systems.EditorSettingsManager
 import com.pafoid.skate.editor.systems.ProjectManager
-import java.io.File
 
 class LoadLastProjectCommand(
     private val projectManager: ProjectManager,
@@ -13,12 +12,7 @@ class LoadLastProjectCommand(
     private var executeSucceeded = false
 
     override fun execute() {
-        settingsManager.recentProjects.firstOrNull()?.let { recent ->
-            val projectFile = File(recent.projectPath)
-            if (projectFile.exists()) {
-                executeSucceeded = projectManager.openProjectFile(projectFile)
-            }
-        }
+        settingsManager.lastProjectFile()?.let { executeSucceeded = projectManager.openProjectFile(it) }
     }
 
     override fun undo() {

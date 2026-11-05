@@ -5,7 +5,6 @@ import com.pafoid.skate.editor.systems.ProjectManager
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.core.Screen
 import com.pafoid.skate.engine.core.Window
-import java.io.File
 
 class EditorScreen(private val window: Window, private val engine: Engine) : Screen {
 
@@ -25,9 +24,7 @@ class EditorScreen(private val window: Window, private val engine: Engine) : Scr
     }
 
     fun loadLastProject(): Boolean {
-        val recent = editor.settingsManager.recentProjects.firstOrNull() ?: return false
-        val projectFile = File(recent.projectPath)
-        if (!projectFile.exists()) return false
+        val projectFile = editor.settingsManager.lastProjectFile() ?: return false
         return projectManager.openProjectFile(projectFile)
     }
 

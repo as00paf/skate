@@ -157,7 +157,7 @@ class ProjectSettingsWindow(
                 ImGui.tableSetColumnIndex(1)
                 ImGui.text(truncatePath(p.projectPath))
                 ImGui.tableSetColumnIndex(2)
-                if (File(project.projectPath).exists()) {
+                if (File(p.projectPath).exists()) {
                     ImGui.text(getLastOpenedString(p.lastOpenedDate))
                 } else {
                     ImGui.pushStyleColor(ImGuiCol.Text, 0.83f, 0.13f, 0.17f, 1f)
