@@ -11,12 +11,12 @@ import kotlin.io.path.isRegularFile
 import kotlin.io.path.readText
 
 /**
- * REN-12 ratchet: OpenGL belongs in the RHI's GL backend (`engine/render/rhi/opengl/`).
+ * REN-12: OpenGL belongs in the RHI's GL backend (`engine/render/rhi/opengl/`), strictly (migration complete).
  *
  * A file "uses GL" when its code (comments excluded) references `org.lwjgl.opengl.` or imgui-java's GL3 backend
- * (`imgui.gl3.`). [ALLOWED] lists the files that still do while the migration runs (docs/design/REN-12.md §5). The
- * guard fails when a file outside the backend starts using GL, and when a listed file stops using GL: remove it from
- * the list in the same change, so the list only shrinks. At step 7 only `editor/imgui/ImGuiLayer.kt` stays (§7).
+ * (`imgui.gl3.`). The one exception is the editor's ImGui renderer, which drives imgui-java's own GL3 backend
+ * (docs/design/REN-12.md §7, option 1). Outside the backend, only the window (the composition root that creates the
+ * device) may name a backend class; everything else goes through `engine/render/rhi/`.
  */
 class RhiGlIsolationGuardTest {
 
@@ -32,12 +32,18 @@ class RhiGlIsolationGuardTest {
     private fun glUsers(): Set<String> = mainFiles().filter { (_, text) -> usesGl(text) }.map { it.first }.toSet()
 
     @Test
-    fun GlUsers_OutsideTheGlBackend_OnlyShrink() {
+    fun GlUsers_OnlyTheGlBackendAndImGuiLayer() {
         val users = glUsers().filterNot { it.startsWith(GL_BACKEND) }.toSet()
-        val added = users - ALLOWED
-        val stale = ALLOWED - users
-        assertTrue(added.isEmpty(), "New OpenGL users outside $GL_BACKEND (go through the RHI instead): ${added.sorted()}")
-        assertTrue(stale.isEmpty(), "These files no longer use OpenGL, remove them from ALLOWED: ${stale.sorted()}")
+        assertEquals(setOf(IMGUI_LAYER), users, "OpenGL outside $GL_BACKEND (go through the RHI instead)")
+    }
+
+    @Test
+    fun GlBackend_IsNamedOnlyByTheWindow() {
+        val backendUsers = mainFiles()
+            .filter { (path, text) -> !path.startsWith(GL_BACKEND) && codeLines(text).any { BACKEND_REF.containsMatchIn(it) } }
+            .map { it.first }
+            .toSet()
+        assertEquals(setOf(COMPOSITION_ROOT), backendUsers, "Only the window creates the GL device; use the RHI interfaces")
     }
 
     @Test
@@ -60,13 +66,15 @@ class RhiGlIsolationGuardTest {
         private const val GL_BACKEND = "engine/render/rhi/opengl/"
         private val GL = Regex("""org\.lwjgl\.opengl\.|imgui\.gl3\.""")
 
-        fun usesGl(text: String): Boolean = text.lineSequence()
-            .filterNot { it.trimStart().let { l -> l.startsWith("//") || l.startsWith("*") || l.startsWith("/*") } }
-            .any { GL.containsMatchIn(it.substringBefore("//")) }
+        private val BACKEND_REF = Regex("""render\.rhi\.opengl\.""")
+        private const val IMGUI_LAYER = "editor/imgui/ImGuiLayer.kt"
+        private const val COMPOSITION_ROOT = "engine/core/Window.kt"
 
-        /** GL users outside the backend; shrink only (REN-12 steps 1-7). */
-        val ALLOWED = setOf(
-            "editor/imgui/ImGuiLayer.kt",
-        )
+        private fun codeLines(text: String): Sequence<String> = text.lineSequence()
+            .filterNot { it.trimStart().let { l -> l.startsWith("//") || l.startsWith("*") || l.startsWith("/*") } }
+            .map { it.substringBefore("//") }
+
+        fun usesGl(text: String): Boolean = codeLines(text).any { GL.containsMatchIn(it) }
+
     }
 }

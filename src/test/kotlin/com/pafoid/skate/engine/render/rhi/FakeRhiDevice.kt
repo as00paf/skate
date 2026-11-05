@@ -85,7 +85,17 @@ class FakeRhiDevice : RhiDevice {
         override fun close() { closed = true }
     }
 
+    inner class Timer : RhiTimer {
+        override var latestNs: Long = -1
+        var closed = false
+        override fun close() { closed = true }
+    }
+
     val pipelines = ArrayList<Pipeline>()
+    val timers = ArrayList<Timer>()
+
+    /** GPU time every timer reports when its span ends. */
+    var timerResultNs = -1L
     val textures = ArrayList<Texture>()
     val targets = ArrayList<Target>()
     val shaders = ArrayList<FakeShader>()
@@ -119,6 +129,8 @@ class FakeRhiDevice : RhiDevice {
         return FakeShader(desc).also { shaders += it }
     }
 
+    override fun createTimer(): RhiTimer = Timer().also { timers += it }
+
     override fun createPipeline(desc: PipelineDesc): RhiPipeline = Pipeline(desc).also { pipelines += it }
 
     override fun createRenderTarget(desc: RenderTargetDesc): RhiRenderTarget = Target(desc).also { targets += it }
@@ -136,6 +148,8 @@ class FakeRhiDevice : RhiDevice {
         override fun setScissor(rect: IntRect?) { events += "scissor $rect" }
         override fun draw(vertexCount: Int, firstVertex: Int, instances: Int) { events += "draw $vertexCount from $firstVertex x$instances" }
         override fun drawIndexed(indexCount: Int, firstIndex: Int, instances: Int) { events += "drawIndexed $indexCount from $firstIndex x$instances" }
+        override fun beginTimer(timer: RhiTimer) { events += "beginTimer" }
+        override fun endTimer(timer: RhiTimer) { events += "endTimer"; (timer as Timer).latestNs = timerResultNs }
 
         override fun setUniformBuffer(binding: Int, buffer: RhiBuffer, offset: Long, size: Long) {
             uniformBindings += binding to buffer

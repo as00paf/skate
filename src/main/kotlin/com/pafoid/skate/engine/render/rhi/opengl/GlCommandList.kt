@@ -9,6 +9,7 @@ import com.pafoid.skate.engine.render.EngineStats
 import com.pafoid.skate.engine.render.rhi.RhiPipeline
 import com.pafoid.skate.engine.render.rhi.RhiRenderTarget
 import com.pafoid.skate.engine.render.rhi.RhiTexture
+import com.pafoid.skate.engine.render.rhi.RhiTimer
 import com.pafoid.skate.engine.render.rhi.RhiVertexInput
 import com.pafoid.skate.engine.render.rhi.TextureType
 import com.pafoid.skate.engine.render.rhi.ShaderParams
@@ -92,6 +93,14 @@ internal object GlCommandList : RhiCommandList {
     }
 
     override fun setParams(params: ShaderParams) = GlPrograms.use((params as GlShaderParams).program)
+
+    override fun beginTimer(timer: RhiTimer) {
+        (timer as? GlTimer)?.begin()
+    }
+
+    override fun endTimer(timer: RhiTimer) {
+        (timer as? GlTimer)?.end()
+    }
 
     override fun beginPass(target: RhiRenderTarget?, layer: Int, clear: ClearValues?, viewport: IntRect?) {
         val gl = target as GlRenderTarget?

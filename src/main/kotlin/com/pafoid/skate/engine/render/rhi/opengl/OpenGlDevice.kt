@@ -1,6 +1,5 @@
 package com.pafoid.skate.engine.render.rhi.opengl
 
-import com.pafoid.skate.engine.render.graph.GpuQueryApi
 import com.pafoid.skate.engine.render.rhi.BufferDesc
 import com.pafoid.skate.engine.render.rhi.BufferUpdate
 import com.pafoid.skate.engine.render.rhi.BufferUsage
@@ -9,6 +8,7 @@ import com.pafoid.skate.engine.render.rhi.PixelFormat
 import com.pafoid.skate.engine.render.rhi.RenderTargetDesc
 import com.pafoid.skate.engine.render.rhi.RhiRenderTarget
 import com.pafoid.skate.engine.render.rhi.RhiShader
+import com.pafoid.skate.engine.render.rhi.RhiTimer
 import com.pafoid.skate.engine.render.rhi.PipelineDesc
 import com.pafoid.skate.engine.render.rhi.RhiPipeline
 import com.pafoid.skate.engine.render.rhi.ShaderDesc
@@ -58,12 +58,9 @@ import java.nio.ByteBuffer
  * becomes [RhiContext.device].
  */
 class OpenGlDevice private constructor(
-    val capabilities: GLCapabilities,
+    private val capabilities: GLCapabilities,
     override val caps: RhiCaps,
 ) : RhiDevice {
-
-    /** GPU timer queries, or null when the context has none. */
-    fun timerQueries(): GpuQueryApi? = GlTimerQueries.create()
 
     var isClosed = false
         private set
@@ -76,7 +73,7 @@ class OpenGlDevice private constructor(
     }
 
     override fun endFrame() {
-        // Nothing is deferred yet: closing a resource deletes it at once (deferred deletion arrives with step 4).
+        // GL deletes a closed resource at once; a Vulkan backend would free here what frames in flight released.
     }
 
     override fun createBuffer(desc: BufferDesc): RhiBuffer = GlBuffer.create(desc.usage, desc.update, desc.size)
@@ -95,6 +92,8 @@ class OpenGlDevice private constructor(
     override fun createTexture(desc: TextureDesc): RhiTexture = GlTexture(desc, caps.maxAnisotropy > 1f)
 
     override fun createShader(desc: ShaderDesc): RhiShader = GlShader(desc)
+
+    override fun createTimer(): RhiTimer = if (caps.timerQueries) GlTimer(GpuTimerRing(GlTimerQueries)) else NoTimer
 
     override fun createPipeline(desc: PipelineDesc): RhiPipeline = GlPipeline(desc)
 

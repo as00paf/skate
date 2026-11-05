@@ -7,8 +7,8 @@ import java.nio.FloatBuffer
  * Render hardware interface (REN-12, docs/design/REN-12.md). Backend-neutral: nothing in this package may use a
  * graphics API (RhiGlIsolationGuardTest). The OpenGL backend lives in `rhi/opengl/`.
  *
- * Migration status: step 6 (everything but timers). [RhiDevice] and [RhiCommandList] only declare what the backend
- * implements; timers arrive with step 7. Everything runs on the main thread (§7.6).
+ * The migration is complete (steps 0-7): rendering code reaches the GPU only through these interfaces; the OpenGL
+ * 3.3 backend in `rhi/opengl/` implements them and only the window creates it. Everything runs on the main thread (§7.6).
  */
 
 /** What the device supports; read once at creation. */
@@ -57,6 +57,9 @@ interface RhiDevice : AutoCloseable {
 
     /** A program from preprocessed stage sources; throws [ShaderCompileError] with the driver's log when one fails. */
     fun createShader(desc: ShaderDesc): RhiShader
+
+    /** A GPU timer for `beginTimer`/`endTimer`; one that never reports when the device has no timer queries. */
+    fun createTimer(): RhiTimer
 
     /** Shader, vertex layout and fixed-function state of a kind of draw; create once, bind with `setPipeline`. */
     fun createPipeline(desc: PipelineDesc): RhiPipeline
@@ -190,7 +193,7 @@ interface RhiPipeline : RhiResource {
     val desc: PipelineDesc
 }
 
-/** Non-blocking GPU timer: results arrive a few frames later; [latestNs] is -1 until then. */
+/** Non-blocking GPU timer: results arrive a few frames later; [latestNs] is -1 until then. Read it after the frame's commands. */
 interface RhiTimer : RhiResource {
     val latestNs: Long
 }
@@ -217,6 +220,12 @@ interface RhiCommandList {
 
     /** Draws [indexCount] indices (32-bit) from [firstIndex] with the pipeline's topology, [instances] times. */
     fun drawIndexed(indexCount: Int, firstIndex: Int = 0, instances: Int = 1)
+
+    /** Starts measuring the GPU time of the following commands with [timer] (timers do not nest). */
+    fun beginTimer(timer: RhiTimer)
+
+    /** Ends the span begun by [beginTimer]; [RhiTimer.latestNs] picks up finished spans without waiting. */
+    fun endTimer(timer: RhiTimer)
 
     /** Makes [params]' shader the one later draws use and pushes its changed values. */
     fun setParams(params: ShaderParams)

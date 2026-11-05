@@ -1,6 +1,6 @@
 # REN-12 — RHI abstraction (Vulkan-ready): design note
 
-Status: **approved** (§7 proposals as written); migration in progress, see §5. Owner: skate-render.
+Status: **complete** (approved with the §7 proposals as written; all of §5 landed, steps 0-7). Owner: skate-render.
 Paths are relative to `src/main/kotlin/com/pafoid/skate/` unless noted. Counts are from `master` at `c843d9fb` (PR #16).
 
 ## 1. Goal and non-goals
@@ -157,8 +157,8 @@ classes: allocation-free on the hot path and testable without GL.
 
 ## 5. Incremental migration plan
 
-Status: steps 0 to 6 are done. `RhiDevice` and `RhiCommandList` only declare what the backend implements so far;
-each later step adds the methods it migrates to. Amendments made while implementing:
+Status: **all steps (0-7) are done.** Each step added to `RhiDevice` and `RhiCommandList` only what it migrated to.
+Amendments made while implementing:
 
 - **`RhiVertexInput`** (step 2): vertex and index buffers bound to a vertex layout, created by
   `RhiDevice.createVertexInput`. On GL it is a VAO; on Vulkan it is the binding list recorded at draw time. It replaces
@@ -200,6 +200,18 @@ each later step adds the methods it migrates to. Amendments made while implement
   `beginFrame`, so nothing inherited from ImGui or an earlier draw leaks in. `EngineStats.drawCalls` now counts
   every draw (sprite batches, debug lines and the sky were not counted), and `stateChanges` counts binds that used
   to be raw GL (shadow draws, post-processing, batches).
+- **Timers and cleanup** (step 7): `RhiDevice.createTimer()` and `beginTimer`/`endTimer` replace `GpuQueryApi`; the
+  non-blocking query ring moved into the backend (`GlTimer`, a timer that never reports when the context lacks
+  timer queries). `RenderGraph` times each pass with its own timer and no longer resets the binding cache between
+  passes (nothing outside the backend touches GL any more). Removed shims: `GLStateTracker`, `utils/GLState.kt`,
+  `GpuResource`, `GpuQueryApi.openGl()`, `OpenGlDevice.timerQueries()`/`stateTracker`/`bindings`. The guard is
+  strict: no GL outside `rhi/opengl/` except `editor/imgui/ImGuiLayer.kt`, and only `engine/core/Window.kt` names a
+  backend class (it creates the device).
+  Timers are read (`latestNs`) once after the frame's passes, as before: reading each one right after its pass
+  checks query availability mid-frame, which on the test GPU flushed the driver early (idle frames +4%, GPU-bound
+  hover/orbit frames 15-29% faster). That early-flush effect may be worth a follow-up of its own.
+- **Left for a Vulkan backend**: `close()` still deletes at once on GL; the deferred-deletion queue of §6 belongs to
+  the backend that has frames in flight. `RhiTexture.nativeHandle` (and `Texture.texId`) remain for ImGui images.
 
 Each step is one PR-sized commit. Each must keep the full test suite green, produce pixel-identical offscreen frames
 (REN-18/19/20 harness: default `MainScene` and `FeatureShowcase`, created, saved and reloaded, edit mode and Play),

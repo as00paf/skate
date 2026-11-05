@@ -12,6 +12,7 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.lwjgl.BufferUtils
 import com.pafoid.skate.engine.render.rhi.Filter
+import com.pafoid.skate.testing.GpuTest
 import com.pafoid.skate.engine.render.rhi.PixelFormat
 import com.pafoid.skate.engine.render.rhi.RhiTexture
 import com.pafoid.skate.engine.render.rhi.SamplerDesc
@@ -56,7 +57,7 @@ import org.lwjgl.system.MemoryUtil.NULL
  * Offscreen render of UI quads with the real `shader_2d_batch.glsl` and [UiBatchRenderer] (GUI-07).
  * A stray texture is left on unit 0 on purpose, as other passes do: untextured backgrounds must ignore it.
  */
-@com.pafoid.skate.testing.GpuTest
+@GpuTest
 class UiBatchRendererGlTest {
 
     companion object {
