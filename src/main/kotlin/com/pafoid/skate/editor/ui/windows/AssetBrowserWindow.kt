@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.ui.windows
 
+import com.pafoid.skate.editor.imgui.label
 import com.pafoid.skate.editor.imgui.EditorWindow
 import com.pafoid.skate.editor.systems.UndoRedoManager
 import com.pafoid.skate.editor.ui.windows.assetBrowser.AnimationsTab
@@ -34,22 +35,22 @@ class AssetBrowserWindow(
     }
 
     override fun imgui() {
-        ImGui.begin(stringManager.getString("window.asset_browser"))
+        ImGui.begin(stringManager.label("window.asset_browser"))
 
         if (ImGui.beginTabBar("AssetBrowserTabs")) {
-            if (ImGui.beginTabItem(stringManager.getString("lbl.animations"))) {
+            if (ImGui.beginTabItem(stringManager.label("lbl.animations"))) {
                 animationsTab.imgui("##searchAnimations", searchText)
                 ImGui.endTabItem()
             }
-            if (ImGui.beginTabItem(stringManager.getString("lbl.textures"))) {
+            if (ImGui.beginTabItem(stringManager.label("lbl.textures"))) {
                 texturesTab.imgui("##searchTextures", searchText)
                 ImGui.endTabItem()
             }
-            if (ImGui.beginTabItem(stringManager.getString("lbl.sounds"))) {
+            if (ImGui.beginTabItem(stringManager.label("lbl.sounds"))) {
                 soundsTab.imgui("##searchSounds", searchText)
                 ImGui.endTabItem()
             }
-            if (ImGui.beginTabItem(stringManager.getString("lbl.prefabs"))) {
+            if (ImGui.beginTabItem(stringManager.label("lbl.prefabs"))) {
                 prefabsTab.imgui("##prefabs", searchText)
                 ImGui.endTabItem()
             }

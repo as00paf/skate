@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.ui.windows
 
+import com.pafoid.skate.editor.imgui.ImGuiIds
 import com.pafoid.skate.editor.commands.input.snapshot
 import com.pafoid.skate.editor.events.ConsoleAction
 import com.pafoid.skate.editor.events.InputSettingsAction
@@ -49,9 +50,9 @@ class InputTestingWindow(
         val zones = projectManager.currentProject?.gameplaySettings?.inputMappings?.deadZones
         val pads = (GLFW.GLFW_JOYSTICK_1..GLFW.GLFW_JOYSTICK_LAST).filter { input.isJoystickPresent(it) }
 
-        if (ImGui.collapsingHeader(s("lbl.input_testing.devices"))) renderDevices(pads)
-        if (ImGui.collapsingHeader(s("lbl.input_testing.gamepad_tuning"))) renderGamepad(pads, zones)
-        if (ImGui.collapsingHeader(s("lbl.input_testing.event_log"))) renderLog()
+        if (ImGui.collapsingHeader(ImGuiIds.stable(s("lbl.input_testing.devices"), "lbl.input_testing.devices"))) renderDevices(pads)
+        if (ImGui.collapsingHeader(ImGuiIds.stable(s("lbl.input_testing.gamepad_tuning"), "lbl.input_testing.gamepad_tuning"))) renderGamepad(pads, zones)
+        if (ImGui.collapsingHeader(ImGuiIds.stable(s("lbl.input_testing.event_log"), "lbl.input_testing.event_log"))) renderLog()
     }
 
     private fun pollEvents() {
@@ -121,7 +122,7 @@ class InputTestingWindow(
         selectedPad = selectedPad.coerceIn(0, pads.lastIndex)
         val names = pads.map { "${it + 1}: ${GLFW.glfwGetJoystickName(it) ?: s("lbl.input_testing.unknown_device")}" }.toTypedArray()
         val pick = ImInt(selectedPad)
-        if (ImGui.combo(s("lbl.input_testing.active_gamepad"), pick, names)) selectedPad = pick.get()
+        if (ImGui.combo(ImGuiIds.stable(s("lbl.input_testing.active_gamepad"), "lbl.input_testing.active_gamepad"), pick, names)) selectedPad = pick.get()
         tip("tip.input_testing.active_gamepad")
         val jid = pads[selectedPad]
         val axes = input.getAxes(jid)
@@ -168,7 +169,7 @@ class InputTestingWindow(
 
         val modes = arrayOf(s("lbl.deadzone.mode.axial"), s("lbl.deadzone.mode.radial"))
         val mode = ImInt(zone.mode.ordinal)
-        if (ImGui.combo("${s("lbl.deadzone.mode")}##$id", mode, modes)) {
+        if (ImGui.combo("${s("lbl.deadzone.mode")}###$id", mode, modes)) {
             val before = zones.snapshot()
             zone.mode = DeadZoneMode.entries[mode.get()]
             commit(before, zones, s("lbl.deadzone.$id"))

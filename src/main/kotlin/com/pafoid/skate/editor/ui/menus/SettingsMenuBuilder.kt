@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.ui.menus
 
+import com.pafoid.skate.editor.imgui.label
 import com.pafoid.skate.editor.events.WindowAction
 import com.pafoid.skate.editor.systems.EditorSettingsManager
 import com.pafoid.skate.engine.core.EventSystem
@@ -23,7 +24,7 @@ class SettingsMenuBuilder(
     private val editorSettings = settingsManager.editorSettings
 
     fun render() {
-        if (beginMenu(stringManager.getString("menu.settings"))) {
+        if (beginMenu(stringManager.label("menu.settings"))) {
             renderGamepadSettings()
             separator()
             renderUnitSystemSetting()
@@ -56,7 +57,7 @@ class SettingsMenuBuilder(
         val unitSystems = UnitSystem.entries.toTypedArray()
         val currentUnitIdx = ImInt(editorSettings.unitSystem.ordinal)
         if (combo(
-                stringManager.getString("menu.settings.unit_system"),
+                stringManager.label("menu.settings.unit_system"),
                 currentUnitIdx,
                 unitSystems.map { it.name }.toTypedArray()
             )
@@ -69,7 +70,7 @@ class SettingsMenuBuilder(
         val languages = arrayOf("en", "fr")
         val currentLangIdx = ImInt(languages.indexOf(editorSettings.language))
         if (combo(
-                stringManager.getString("menu.settings.language"),
+                stringManager.label("menu.settings.language"),
                 currentLangIdx,
                 languages,
                 languages.size

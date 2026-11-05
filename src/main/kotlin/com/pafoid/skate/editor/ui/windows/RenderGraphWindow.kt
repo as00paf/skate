@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.ui.windows
 
+import com.pafoid.skate.editor.imgui.label
 import com.pafoid.skate.editor.imgui.EditorWindow
 import com.pafoid.skate.editor.imgui.MImGui
 import com.pafoid.skate.editor.imgui.data.Icons
@@ -29,7 +30,7 @@ class RenderGraphWindow(
     private var zoomLevel = 1.0f
 
     override fun imgui() {
-        ImGui.begin(stringManager.getString("window.render_graph"), isOpen)
+        ImGui.begin(stringManager.label("window.render_graph"), isOpen)
 
         renderToolbar()
         ImGui.separator()
@@ -206,7 +207,7 @@ class RenderGraphWindow(
         val labels = ShadowQuality.entries.map { stringManager.getString(EditorSettingsWindow.shadowQualityKey(it)) }.toTypedArray()
         val selected = ImInt(settingsManager.editorSettings.graphics.shadowQuality.ordinal)
         ImGui.setNextItemWidth(140f)
-        if (ImGui.combo("${stringManager.getString("lbl.render_graph.shadow_quality")}##${pass.name}.quality", selected, labels, labels.size)) {
+        if (ImGui.combo("${stringManager.getString("lbl.render_graph.shadow_quality")}###${pass.name}.quality", selected, labels, labels.size)) {
             settingsManager.updateShadowQuality(ShadowQuality.entries[selected.get()])
         }
         if (ImGui.isItemHovered()) {

@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.imgui.components
 
+import com.pafoid.skate.editor.imgui.label
 import com.pafoid.skate.engine.assets.data.models.animations.Animation
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.core.LoggerService.LogLevel
@@ -22,7 +23,7 @@ fun Animator.imgui(engine: Engine) {
 
     ImGui.beginGroup()
     if (ImGui.beginCombo(
-            engine.stringManager.getString("lbl.animator.animations"),
+            engine.stringManager.label("lbl.animator.animations"),
             currentAnimation?.name
                 ?: if (animations.isEmpty()) engine.stringManager.getString("lbl.animator.drop_animations") else engine.stringManager.getString(
                     "lbl.animator.select"

@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.ui.menus
 
+import com.pafoid.skate.editor.imgui.label
 import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.core.StringManager
@@ -17,7 +18,7 @@ class FileMenuBuilder(
     private val eventSystem: EventSystem,
 ) {
     fun render(currentScene: Scene?) {
-        if (beginMenu(stringManager.getString("menu.file"))) {
+        if (beginMenu(stringManager.label("menu.file"))) {
             renderNewSceneItem()
             renderSaveSceneItems(currentScene)
             renderImportSceneItem()

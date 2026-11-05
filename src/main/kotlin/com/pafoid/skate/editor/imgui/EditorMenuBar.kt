@@ -89,7 +89,7 @@ class EditorMenuBar(
             viewMenu.render()
             ImGui.separator()
 
-            if (ImGui.beginMenu(stringManager.getString("menu.file.recent_projects"))) {
+            if (ImGui.beginMenu(stringManager.label("menu.file.recent_projects"))) {
                 val currentPath = projectManager.currentProject?.getProjectFile()?.absolutePath
                 val recentProjects = settingsManager.recentProjects
                 val filteredProjects = recentProjects.filter { it.projectPath != currentPath }

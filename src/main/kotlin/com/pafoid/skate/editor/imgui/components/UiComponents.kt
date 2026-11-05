@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.imgui.components
 
+import com.pafoid.skate.editor.imgui.label
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.ecs.components.Component
 import com.pafoid.skate.engine.ui.UIElementComponent
@@ -48,7 +49,7 @@ private fun UIElementComponent.anchorPresetCombo(engine: Engine) {
     val presets = UiAnchorPreset.entries
     val names = presets.map { engine.stringManager.getString("ui.anchor.${it.name.lowercase()}") }.toTypedArray()
     val index = ImInt(-1)
-    if (ImGui.combo(engine.stringManager.getString("ui.inspector.anchorPreset"), index, names, names.size) && index.get() >= 0) {
+    if (ImGui.combo(engine.stringManager.label("ui.inspector.anchorPreset"), index, names, names.size) && index.get() >= 0) {
         presets[index.get()].apply(this)
     }
 }
@@ -112,11 +113,11 @@ private fun drawField(target: Any, field: Field, label: String, engine: Engine, 
             val constants = type.enumConstants
             val names = constants.map { it.toString() }.toTypedArray()
             val idx = ImInt((value as Enum<*>).ordinal)
-            if (ImGui.combo(label, idx, names, names.size)) field.set(target, constants[idx.get()])
+            if (ImGui.combo("$label###${field.name}", idx, names, names.size)) field.set(target, constants[idx.get()])
         }
         value is List<*> && isStringList(field) -> stringList(target, field, label, engine, value)
         value != null && value !is List<*> && type.name.startsWith("com.pafoid.skate.engine.ui.") -> {
-            if (ImGui.treeNode(label)) {
+            if (ImGui.treeNode("$label###${field.name}")) {
                 drawObject(value, engine, owner)
                 ImGui.treePop()
             }
@@ -128,7 +129,7 @@ private fun isStringList(field: Field): Boolean =
     ((field.genericType as? ParameterizedType)?.actualTypeArguments?.firstOrNull() as? Class<*>) == String::class.java
 
 private fun stringList(target: Any, field: Field, label: String, engine: Engine, list: List<*>) {
-    if (!ImGui.treeNode(label)) return
+    if (!ImGui.treeNode("$label###${field.name}")) return
     val items = list.filterIsInstance<String>().toMutableList()
     var changed = false
     items.indices.forEach { i ->
@@ -146,7 +147,7 @@ private fun stringList(target: Any, field: Field, label: String, engine: Engine,
 }
 
 private fun UIListComponent.listItems(engine: Engine) {
-    if (!ImGui.treeNode(engine.stringManager.getString("ui.inspector.listItems"))) return
+    if (!ImGui.treeNode(engine.stringManager.label("ui.inspector.listItems"))) return
     val rows = items.toMutableList()
     var changed = false
     var i = 0

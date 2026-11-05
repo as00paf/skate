@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.imgui.components
 
+import com.pafoid.skate.editor.imgui.ImGuiIds
 import com.pafoid.skate.editor.commands.objects.JointSettings
 import com.pafoid.skate.editor.events.JointAction
 import com.pafoid.skate.editor.imgui.MImGui
@@ -54,7 +55,7 @@ fun JointComponent.imgui(engine: Engine) {
 
     val types = JointType.entries.map { it.name }.toTypedArray()
     val typeIndex = ImInt(draft.jointType.ordinal)
-    if (ImGui.combo(s("jointType"), typeIndex, types, types.size)) {
+    if (ImGui.combo(ImGuiIds.stable(s("jointType"), "jointType"), typeIndex, types, types.size)) {
         next = draft.copy(jointType = JointType.entries[typeIndex.get()])
         working.remove(this)
         engine.eventSystem.publish(JointAction.Edit(this, next))
@@ -66,7 +67,7 @@ fun JointComponent.imgui(engine: Engine) {
     val names = (listOf(s("worldAnchor")) + candidates.map { it.name }).toTypedArray()
     val currentIndex = candidates.indexOfFirst { it.uId == draft.connectedBodyId } + 1
     val connected = ImInt(currentIndex)
-    if (ImGui.combo(s("connectedBody"), connected, names, names.size)) {
+    if (ImGui.combo(ImGuiIds.stable(s("connectedBody"), "connectedBody"), connected, names, names.size)) {
         val id = if (connected.get() == 0) -1 else candidates[connected.get() - 1].uId
         working.remove(this)
         engine.eventSystem.publish(JointAction.Edit(this, draft.copy(connectedBodyId = id)))

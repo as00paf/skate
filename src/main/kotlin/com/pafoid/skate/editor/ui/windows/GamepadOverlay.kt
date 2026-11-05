@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.ui.windows
 
+import com.pafoid.skate.editor.imgui.label
 import com.pafoid.skate.editor.events.ProjectEvent
 import com.pafoid.skate.editor.imgui.data.UiConstants.CONTROLS_OVERLAY_BUTTON_SIZE
 import com.pafoid.skate.editor.systems.EditorSettingsManager
@@ -76,7 +77,7 @@ class GamepadOverlay(
         ImGui.setNextWindowSize(displayWidth, displayHeight)
         ImGui.setNextWindowBgAlpha(0.0f)
 
-        if (ImGui.begin(stringManager.getString("window.gamepad_overlay"), windowFlags)) {
+        if (ImGui.begin(stringManager.label("window.gamepad_overlay"), windowFlags)) {
             val drawList = ImGui.getWindowDrawList()
             val windowPos = ImGui.getWindowPos()
 

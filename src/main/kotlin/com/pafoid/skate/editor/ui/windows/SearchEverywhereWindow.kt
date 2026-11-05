@@ -77,7 +77,7 @@ class SearchEverywhereWindow(
                 ImGuiWindowFlags.NoResize or
                 ImGuiWindowFlags.NoMove
 
-        ImGui.begin(stringManager.getString("search.everywhere.title"), null, windowFlags)
+        ImGui.begin(title(stringManager, textKey = "search.everywhere.title"), null, windowFlags)
 
         handleKeyboardInput(isOpen)
         renderSearchInput()

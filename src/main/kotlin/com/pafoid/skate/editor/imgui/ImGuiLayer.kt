@@ -90,7 +90,7 @@ class ImGuiLayer(
 
         ImGuiStyleManager.setupStyle()
 
-        layoutStore.removeDockIds(windowRegistry.windows.filterIsInstance<EditorDialog>().map { stringManager.getString(it.name) })
+        layoutStore.removeDockIds(windowRegistry.windows.filterIsInstance<EditorDialog>().map { it.name })
         windowManager.init()
         eventSystem.subscribe<WindowAction.ResetLayout> { resetLayout() }
         windowController.onToggleMaximize = { maximized -> windowRegistry.menuBar.setMaximized(maximized) }
@@ -154,9 +154,9 @@ class ImGuiLayer(
             setNextWindowPos(getMainViewport().workPosX, getMainViewport().workPosY, ImGuiCond.Always)
             setNextWindowSize(getMainViewport().workSizeX, getMainViewport().workSizeY, ImGuiCond.Always)
             begin(
-                stringManager.getString(
+                ImGuiIds.stable(
+                    stringManager.getString("window.game_viewport.maximized", stringManager.getString("window.game_viewport")),
                     "window.game_viewport.maximized",
-                    stringManager.getString("window.game_viewport")
                 ),
                 ImGuiWindowFlags.NoScrollbar or ImGuiWindowFlags.NoScrollWithMouse or ImGuiWindowFlags.NoDecoration
             )
@@ -211,7 +211,8 @@ class ImGuiLayer(
         pushStyleVar(ImGuiStyleVar.WindowRounding, 0.0f)
         pushStyleVar(ImGuiStyleVar.WindowBorderSize, 0.0f)
 
-        begin(stringManager.getString("lbl.editor_title"), ImBoolean(true), windowFlags)
+        // Stable ID: the dock space below is keyed on this window, so a translated title would drop the whole layout.
+        begin(stringManager.label("lbl.editor_title"), ImBoolean(true), windowFlags)
 
         popStyleVar(4)
 

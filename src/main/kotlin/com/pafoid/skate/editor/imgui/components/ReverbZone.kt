@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.imgui.components
 
+import com.pafoid.skate.editor.imgui.ImGuiIds
 import com.pafoid.skate.editor.commands.objects.ReverbZoneSettings
 import com.pafoid.skate.editor.events.AudioAction
 import com.pafoid.skate.engine.audio.ReverbPreset
@@ -21,7 +22,7 @@ fun ReverbZone.imgui(engine: Engine) {
 
     val presets = ReverbPreset.entries.map { it.name }.toTypedArray()
     val index = ImInt(draft.preset.ordinal)
-    if (ImGui.combo(s("preset"), index, presets, presets.size)) {
+    if (ImGui.combo(ImGuiIds.stable(s("preset"), "preset"), index, presets, presets.size)) {
         engine.eventSystem.publish(AudioAction.EditReverbZone(this, draft.copy(preset = ReverbPreset.entries[index.get()])))
     }
 

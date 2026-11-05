@@ -86,7 +86,7 @@ class ProjectSwitcherDialog(
         ImGui.setNextWindowSize(500f, 400f)
 
         if (ImGui.begin(
-                stringManager.getString("window.switch_project"),
+                title(stringManager, textKey = "window.switch_project"),
                 isOpen,
                 ImGuiWindowFlags.NoResize or ImGuiWindowFlags.Modal
             )

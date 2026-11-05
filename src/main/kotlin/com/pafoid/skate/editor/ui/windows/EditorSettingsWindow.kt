@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.ui.windows
 
+import com.pafoid.skate.editor.imgui.label
 import com.pafoid.skate.editor.data.EditorInputMappings
 import com.pafoid.skate.editor.imgui.EditorWindow
 import com.pafoid.skate.editor.imgui.MImGui
@@ -87,7 +88,7 @@ class EditorSettingsWindow(
         setNextWindowPos(viewport.centerX, viewport.centerY, ImGuiCond.FirstUseEver, 0.5f, 0.5f)
         setNextWindowSize(defaultWidth, 550f, ImGuiCond.FirstUseEver)
 
-        if (begin(stringManager.getString("window.editor_settings"), isOpen, ImGuiWindowFlags.NoDocking)) {
+        if (begin(stringManager.label("window.editor_settings"), isOpen, ImGuiWindowFlags.NoDocking)) {
             val avail = ImVec2()
             ImGui.getContentRegionAvail(avail)
             val windowW = avail.x

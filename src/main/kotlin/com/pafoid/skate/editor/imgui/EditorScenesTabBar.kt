@@ -59,7 +59,7 @@ class EditorScenesTabBar(
                         if (ImGui.menuItem(stringManager.getString("context.scene_tab.close"), null, false, canClose)) {
                             if (scene.isDirty) {
                                 toRemove = index
-                                ImGui.openPopup(stringManager.getString("context.scene_tab.close_confirmation_title"))
+                                ImGui.openPopup(stringManager.label("context.scene_tab.close_confirmation_title"))
                             } else eventSystem.publish(CloseRequested(scene))
                         }
                         if (ImGui.menuItem(stringManager.getString("context.scene_tab.close_others"), null, false, canClose)) {
@@ -81,13 +81,13 @@ class EditorScenesTabBar(
                 if (!open.get()) {
                     if (scene.isDirty) {
                         toRemove = index
-                        ImGui.openPopup(stringManager.getString("context.scene_tab.close_confirmation_title"))
+                        ImGui.openPopup(stringManager.label("context.scene_tab.close_confirmation_title"))
                     } else eventSystem.publish(CloseRequested(scene))
                 }
             }
 
             MImGui.showConfirmationModal(
-                title = stringManager.getString("context.scene_tab.close_confirmation_title"),
+                title = stringManager.label("context.scene_tab.close_confirmation_title"),
                 message = stringManager.getString("context.scene_tab.close_confirmation_message"),
                 confirmText = stringManager.getString("lbl.input_system.yes"),
                 cancelText = stringManager.getString("lbl.input_system.no"),

@@ -168,7 +168,7 @@ class ScriptEditorWindow(
         drainPending()
         if (!isOpen.get()) return
         ImGui.setNextWindowSize(760f, 520f, imgui.flag.ImGuiCond.FirstUseEver)
-        if (ImGui.begin(strings.getString(name), isOpen, ImGuiWindowFlags.MenuBar)) {
+        if (ImGui.begin(title(strings), isOpen, ImGuiWindowFlags.MenuBar)) {
             toolbar()
             tabs()
             val doc = active
