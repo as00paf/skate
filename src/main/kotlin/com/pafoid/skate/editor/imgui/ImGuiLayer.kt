@@ -4,8 +4,10 @@ import com.pafoid.skate.app.Editor
 import com.pafoid.skate.editor.events.EditorEvent
 import com.pafoid.skate.editor.events.WindowAction
 import com.pafoid.skate.editor.imgui.data.UiConstants
+import com.pafoid.skate.editor.imgui.theme.ThemeLibrary
 import com.pafoid.skate.editor.systems.ProjectManager
 import com.pafoid.skate.engine.assets.Assets
+import com.pafoid.skate.engine.core.LoggerService
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.core.WindowController
 import imgui.ImVec2
@@ -54,6 +56,8 @@ class ImGuiLayer(
     projectManager: ProjectManager,
 ) {
     private val stringManager = engine.stringManager
+    private val settingsManager = editor.settingsManager
+    private val logger = engine.logger
     private val eventSystem = engine.eventSystem
     private val renderer = engine.renderer
 
@@ -88,7 +92,7 @@ class ImGuiLayer(
         imGuiGlfw.init(windowController.glfwWindow, true)
         imGuiGl3.init(glslVersion)
 
-        ImGuiStyleManager.setupStyle()
+        loadThemes()
 
         layoutStore.removeDockIds(windowRegistry.windows.filterIsInstance<EditorDialog>().map { it.name })
         windowManager.init()
@@ -174,7 +178,17 @@ class ImGuiLayer(
         endFrame()
     }
 
+    /** EDT-07: reads the theme files and shows the saved theme. */
+    private fun loadThemes() {
+        ImGuiStyleManager.library = ThemeLibrary.load(File(Assets.Themes.DIR))
+        ImGuiStyleManager.invalidate()
+        ImGuiStyleManager.library.errors.forEach { logger.logEditor("Theme skipped: $it", LoggerService.LogLevel.WARN) }
+        ImGuiStyleManager.sync(settingsManager.editorSettings.theme)
+    }
+
     fun startFrame() {
+        // A theme switch (settings window or saved setting) applies between frames.
+        ImGuiStyleManager.sync(settingsManager.editorSettings.theme)
         imGuiGlfw.newFrame()
         imGuiGl3.newFrame()
         newFrame()

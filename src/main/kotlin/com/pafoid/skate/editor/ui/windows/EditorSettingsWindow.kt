@@ -3,6 +3,8 @@ package com.pafoid.skate.editor.ui.windows
 import com.pafoid.skate.editor.imgui.label
 import com.pafoid.skate.editor.data.EditorInputMappings
 import com.pafoid.skate.editor.imgui.EditorWindow
+import com.pafoid.skate.editor.imgui.ImGuiStyleManager
+import com.pafoid.skate.editor.imgui.theme.EditorTheme
 import com.pafoid.skate.editor.imgui.MImGui
 import com.pafoid.skate.editor.settings.ShadowQuality
 import com.pafoid.skate.editor.systems.EditorSettingsManager
@@ -55,7 +57,7 @@ class EditorSettingsWindow(
     private var rebindingAction: String? = null
 
     private var tempLanguage = "en"
-    private var tempTheme = "Islands Dark"
+    private var tempTheme = EditorTheme.DEFAULT_ID
     private var tempUnitSystem = UnitSystem.METRIC
     private var tempShowOverlay = true
     private var tempOverlaySize = 0.225f
@@ -80,7 +82,11 @@ class EditorSettingsWindow(
     }
 
     override fun imgui() {
-        if (!isOpen.get()) return
+        if (!isOpen.get()) {
+            // Closed without OK/Apply: drop the theme preview so the saved theme shows again.
+            ImGuiStyleManager.preview = null
+            return
+        }
         if (!hasPendingChanges) syncTempSettings()
 
         val viewport = ImGui.getMainViewport()
@@ -150,6 +156,7 @@ class EditorSettingsWindow(
             }
             sameLine()
             if (button(stringManager.getString("btn.cancel"), btnW, 0f)) {
+                ImGuiStyleManager.preview = null
                 syncTempSettings()
                 hasPendingChanges = false
                 rebindingAction = null
@@ -309,11 +316,10 @@ class EditorSettingsWindow(
     }
 
     private fun renderInterface() {
-        val themeOptions = arrayOf(
-            stringManager.getString("settings.theme.islands_dark"),
-            stringManager.getString("settings.theme.default")
-        )
-        val themeValues = arrayOf("Islands Dark", "Default")
+        // EDT-07: the themes shipped in assets/themes; picking one previews it live until OK/Apply or Cancel.
+        val themes = ImGuiStyleManager.library.themes
+        val themeOptions = themes.map { stringManager.getString(it.nameKey) }.toTypedArray()
+        val themeValues = themes.map { it.id }.toTypedArray()
         val themeIdx = themeValues.indexOf(tempTheme).coerceAtLeast(0)
         val themeSel = ImInt(themeIdx)
         MImGui.propertyRow(
@@ -322,6 +328,7 @@ class EditorSettingsWindow(
         ) {
             if (combo("##theme", themeSel, themeOptions, themeOptions.size)) {
                 tempTheme = themeValues[themeSel.get()]
+                ImGuiStyleManager.preview = tempTheme
                 hasPendingChanges = true
             }
         }
@@ -413,6 +420,7 @@ class EditorSettingsWindow(
         settingsManager.updateAutoSaveSettings(tempAutoSaveEnabled, tempAutoSaveInterval)
         settingsManager.updateCompletionSettings(tempCompletionAuto, tempCompletionDelay)
         settingsManager.updateShadowQuality(tempShadowQuality)
+        ImGuiStyleManager.preview = null
         hasPendingChanges = false
     }
 
