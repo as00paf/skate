@@ -10,7 +10,11 @@ import com.pafoid.skate.engine.assets.data.models.`3dModel`
 import com.pafoid.skate.engine.audio.BusId
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
+import com.pafoid.skate.engine.animation.graph.AnimatorMaskDef
+import com.pafoid.skate.engine.animation.graph.MaskPreset
 import com.pafoid.skate.engine.ecs.components.AmbientLightComponent
+import com.pafoid.skate.engine.ecs.components.Animator
+import com.pafoid.skate.engine.getComponent
 import com.pafoid.skate.engine.ecs.components.AudioComponent
 import com.pafoid.skate.engine.ecs.components.BoxCollider3D
 import com.pafoid.skate.engine.ecs.components.CameraComponent
@@ -48,6 +52,7 @@ import com.pafoid.skate.engine.net.LoopbackPredictionComponent
 import com.pafoid.skate.game.net.SkaterPredictionModel
 import com.pafoid.skate.game.player.SkateGameplay
 import com.pafoid.skate.game.prefabs.MaterialType
+import com.pafoid.skate.game.prefabs.Skater
 import com.pafoid.skate.game.prefabs.PrefabCatalog
 import com.pafoid.skate.game.prefabs.PrefabType
 import org.joml.Vector3f
@@ -380,6 +385,15 @@ class FeatureShowcase(private val prefabs: PrefabsGenerator) {
 
     private fun animation() {
         add(prefabs.spawnAnimatedCharacter("[Animation] Character", at("animation", 0f, 0f, 0f), Assets.Bundled.WALKING))
+        // EDT-16: the walking clip drives the legs; the skater controller (default state: idle) only the upper body.
+        add(prefabs.spawnAnimatedCharacter(
+            "[Animation] Upper-body mask", at("animation", 1.5f, 0f, 0f), Assets.Bundled.WALKING, Skater.DEFAULT_ANIMATIONS,
+        ).apply {
+            getComponent<Animator>()?.apply {
+                controllerPath = Skater.CONTROLLER_PATH
+                mask = AnimatorMaskDef(MaskPreset.UPPER_BODY)
+            }
+        })
     }
 
     private fun fog() {
