@@ -17,13 +17,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: 17
 
       - uses: gradle/actions/setup-gradle@v4
 
+      # GitHub sets CI=true: tests annotated @GpuTest (need an OpenGL context) are skipped here, run them locally.
       - name: Build and test
         run: .\gradlew.bat build test jacocoTestReport --console=plain
 
@@ -34,5 +35,6 @@ jobs:
           name: reports
           path: |
             build/reports/tests/test
+            build/test-results/test
             build/reports/jacoco/test
           if-no-files-found: ignore

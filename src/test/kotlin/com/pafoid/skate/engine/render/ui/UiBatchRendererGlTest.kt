@@ -50,6 +50,7 @@ import org.lwjgl.system.MemoryUtil.NULL
  * Offscreen render of UI quads with the real `shader_2d_batch.glsl` and [UiBatchRenderer] (GUI-07).
  * A stray texture is left on unit 0 on purpose, as other passes do: untextured backgrounds must ignore it.
  */
+@com.pafoid.skate.testing.GpuTest
 class UiBatchRendererGlTest {
 
     companion object {
