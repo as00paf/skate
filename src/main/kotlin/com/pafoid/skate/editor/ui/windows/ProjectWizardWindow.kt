@@ -47,7 +47,7 @@ class ProjectWizardWindow(
 
 
         if (ImGui.begin(
-                stringManager.getString("wizard.project.title"),
+                title(stringManager, textKey = "wizard.project.title"),
                 isOpen,
                 ImGuiWindowFlags.NoResize or ImGuiWindowFlags.Modal
             )

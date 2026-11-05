@@ -555,25 +555,27 @@ object MImGui {
     /**
      * Renders a collapsible tree-node section.
      *
-     * @param title Section header
+     * @param title Section header (shown)
+     * @param id Stable ImGui ID for the open state; pass the string key when [title] is translated
      * @param defaultOpen Whether open by default
      * @param content Lambda rendered when section is open
      */
     fun section(
         title: String,
         defaultOpen: Boolean = true,
+        id: String = title,
         content: () -> Unit
     ) {
         val flags = imgui.flag.ImGuiTreeNodeFlags.FramePadding or
                     imgui.flag.ImGuiTreeNodeFlags.SpanAvailWidth
 
         if (defaultOpen) {
-            if (ImGui.treeNodeEx(title, flags)) {
+            if (ImGui.treeNodeEx(id, flags, title)) {
                 content()
                 ImGui.treePop()
             }
         } else {
-            if (ImGui.treeNodeEx(title, flags or imgui.flag.ImGuiTreeNodeFlags.DefaultOpen)) {
+            if (ImGui.treeNodeEx(id, flags or imgui.flag.ImGuiTreeNodeFlags.DefaultOpen, title)) {
                 content()
                 ImGui.treePop()
             }

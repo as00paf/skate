@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.ui.windows
 
+import com.pafoid.skate.editor.imgui.label
 import com.pafoid.skate.editor.imgui.contextPopupId
 import com.pafoid.skate.editor.events.ViewportAction.CreateEmpty
 import com.pafoid.skate.editor.events.ViewportAction.CreateEmptyChild
@@ -59,7 +60,7 @@ class SceneHierarchyWindow(
 
     override fun imgui() {
         val scene = sceneManager.currentScene ?: return
-        ImGui.begin(stringManager.getString("window.hierarchy"))
+        ImGui.begin(stringManager.label("window.hierarchy"))
 
         // Scene name header with rename button
         val sceneName = scene.name
@@ -330,7 +331,7 @@ class SceneHierarchyWindow(
         }
 
         if (ImGui.beginPopupContextItem(contextPopupId("hierarchy", obj.uId))) {
-            if (ImGui.beginMenu("${Icons.PLUS} ${stringManager.getString("context.hierarchy.create_empty_child")}")) {
+            if (ImGui.beginMenu(stringManager.label("context.hierarchy.create_empty_child", "${Icons.PLUS} "))) {
                 if (ImGui.menuItem(stringManager.getString("lbl.gameobject.empty"))) {
                     eventSystem.publish(CreateEmptyChild(obj))
                 }

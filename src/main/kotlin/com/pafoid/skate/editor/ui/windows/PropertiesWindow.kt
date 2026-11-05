@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.ui.windows
 
+import com.pafoid.skate.editor.imgui.label
 import com.pafoid.skate.editor.events.ViewportAction.AddComponent
 import com.pafoid.skate.editor.events.ViewportAction.RemoveComponent
 import com.pafoid.skate.editor.events.ViewportAction.RenameComponent
@@ -33,7 +34,7 @@ class PropertiesWindow(
     override fun imgui() {
         val go = sceneManager.currentScene?.selectedGameObject ?: sceneManager.currentScene
 
-        ImGui.begin(stringManager.getString("window.properties"), isOpen)
+        ImGui.begin(stringManager.label("window.properties"), isOpen)
         go?.let { go ->
             if (go !is Scene) {
                 enabledCheckbox(go)
@@ -164,10 +165,10 @@ class PropertiesWindow(
         ImGui.sameLine()
         val buttonSize = ImGui.getFrameHeight()
         if (ImGui.button(Icons.TRASH, buttonSize, buttonSize)) {
-            ImGui.openPopup(stringManager.getString("lbl.hierarchy.remove_component_title"))
+            ImGui.openPopup(stringManager.label("lbl.hierarchy.remove_component_title"))
         }
         MImGui.showConfirmationModal(
-            title = stringManager.getString("lbl.hierarchy.remove_component_title"),
+            title = stringManager.label("lbl.hierarchy.remove_component_title"),
             message = stringManager.getString("lbl.hierarchy.remove_component"),
             confirmText = stringManager.getString("lbl.input_system.yes"),
             cancelText = stringManager.getString("lbl.input_system.no"),

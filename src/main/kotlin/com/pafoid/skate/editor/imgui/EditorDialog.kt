@@ -30,7 +30,7 @@ abstract class EditorDialog(
     final override fun imgui() {
         ImGui.setNextWindowSize(defaultWidth, defaultHeight, ImGuiCond.FirstUseEver)
         val visible = ImGui.begin(
-            stringManager.getString(name), isOpen, ImGuiWindowFlags.NoDocking or ImGuiWindowFlags.NoCollapse,
+            title(stringManager), isOpen, ImGuiWindowFlags.NoDocking or ImGuiWindowFlags.NoCollapse,
         )
         if (visible) {
             content()

@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.ui.windows
 
+import com.pafoid.skate.editor.imgui.label
 import com.pafoid.skate.editor.events.ScriptEditorAction
 import com.pafoid.skate.editor.events.WindowAction
 import com.pafoid.skate.editor.scripting.ScriptTemplates
@@ -104,7 +105,7 @@ class ProjectWindow(
     override fun imgui() {
         if (!isOpen.get()) return
 
-        if (begin(stringManager.getString("window.project"), ImGuiWindowFlags.None)) {
+        if (begin(stringManager.label("window.project"), ImGuiWindowFlags.None)) {
             // Refresh tree if needed
             if (needsRefresh) {
                 treeCache = fileSystemScanner.scanProject()

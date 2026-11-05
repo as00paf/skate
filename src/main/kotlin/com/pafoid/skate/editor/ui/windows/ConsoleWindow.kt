@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.ui.windows
 
+import com.pafoid.skate.editor.imgui.label
 import com.pafoid.skate.editor.events.ConsoleAction
 import com.pafoid.skate.editor.imgui.EditorWindow
 import com.pafoid.skate.editor.imgui.data.Icons
@@ -27,7 +28,7 @@ class ConsoleWindow(engine: Engine) : EditorWindow("window.console", true) {
     private val autoScroll = ImBoolean(true)
 
     override fun imgui() {
-        if (!ImGui.begin(stringManager.getString("window.console"), isOpen)) {
+        if (!ImGui.begin(stringManager.label("window.console"), isOpen)) {
             ImGui.end()
             return
         }
@@ -35,11 +36,11 @@ class ConsoleWindow(engine: Engine) : EditorWindow("window.console", true) {
         renderToolbar()
 
         if (ImGui.beginTabBar("ConsoleTabs")) {
-            if (ImGui.beginTabItem("${Icons.GEAR} ${stringManager.getString("tab.console.engine")}")) {
+            if (ImGui.beginTabItem(stringManager.label("tab.console.engine", "${Icons.GEAR} "))) {
                 renderLogList(logger.logs.filter { it.source == "engine" }.toList(), "Engine")
                 ImGui.endTabItem()
             }
-            if (ImGui.beginTabItem("${Icons.USER} ${stringManager.getString("tab.console.editor")}")) {
+            if (ImGui.beginTabItem(stringManager.label("tab.console.editor", "${Icons.USER} "))) {
                 renderLogList(logger.logs.filter { it.source == "editor" }.toList(), "Editor")
                 ImGui.endTabItem()
             }

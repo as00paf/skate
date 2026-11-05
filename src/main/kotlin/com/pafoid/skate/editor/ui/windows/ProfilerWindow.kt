@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.ui.windows
 
+import com.pafoid.skate.editor.imgui.label
 import com.pafoid.skate.editor.imgui.EditorWindow
 import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.engine.core.StringManager
@@ -60,7 +61,7 @@ class ProfilerWindow(private val stringManager: StringManager) : EditorWindow("w
     }
 
     override fun imgui() {
-        ImGui.begin("${Icons.CHART_LINE} ${stringManager.getString("window.profiler")}")
+        ImGui.begin(stringManager.label("window.profiler", "${Icons.CHART_LINE} "))
 
         val io = ImGui.getIO()
         val frameTime = 1000.0f / io.framerate

@@ -44,6 +44,7 @@ Source root: `src/main/kotlin/com/pafoid/skate/`
   | `game/showcase` | TLG | `showcase.*` Feature Showcase overlay |
 
   A new area is a new `<area>.properties` + `<area>_fr.properties` pair in the same folder; it is picked up automatically.
+- **ImGui IDs** (EDT-38): windows, tabs, tree nodes, collapsing headers, menus, popups, child windows, tables and combos are identified by their label, so a translated label needs a stable ID: `stringManager.label("key")` / `EditorWindow.title(...)` (`text###key`). `text##id` is not enough, because ImGui still hashes the translated text. `ImGuiStableIdGuardTest` enforces this.
 - Test names follow `Area_Behavior` style (e.g. `EngineLayering_...`).
 - Backlog: `GameEngine.md` (domain sections, task IDs like `REN-01`, owner agents). `docs/roadmap.md` is the older high-level list.
 - Domain agents: `.github/agents/*.agent.md` (OpenCode copies in `.opencode/agents/` via `tools/herdr/sync-agents.sh`). Run the herd with `tools/herdr/herd.sh`; see `tools/herdr/README.md`.

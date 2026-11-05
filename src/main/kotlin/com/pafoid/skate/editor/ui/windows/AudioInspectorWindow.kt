@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.ui.windows
 
+import com.pafoid.skate.editor.imgui.label
 import com.pafoid.skate.editor.imgui.EditorWindow
 import com.pafoid.skate.editor.imgui.MImGui
 import com.pafoid.skate.editor.systems.ProjectManager
@@ -18,14 +19,14 @@ class AudioInspectorWindow(engine: Engine, projectManager: ProjectManager) : Edi
     private val mixerPanel = AudioMixerPanel(stringManager, engine.eventSystem, projectManager)
 
     override fun imgui() {
-        ImGui.begin(stringManager.getString("window.audio_inspector"))
+        ImGui.begin(stringManager.label("window.audio_inspector"))
         renderAudioComponentInspector()
-        if (ImGui.collapsingHeader(stringManager.getString("lbl.audio.mixer"))) mixerPanel.render()
+        if (ImGui.collapsingHeader(stringManager.label("lbl.audio.mixer"))) mixerPanel.render()
         ImGui.end()
     }
 
     private fun renderAudioComponentInspector() {
-        if (ImGui.collapsingHeader(stringManager.getString("lbl.audio.selected_object"))) {
+        if (ImGui.collapsingHeader(stringManager.label("lbl.audio.selected_object"))) {
             val selectedObject = sceneManager.currentScene?.selectedGameObject
 
             if (selectedObject == null) {

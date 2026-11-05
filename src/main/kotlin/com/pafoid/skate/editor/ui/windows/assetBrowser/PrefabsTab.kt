@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.ui.windows.assetBrowser
 
+import com.pafoid.skate.editor.imgui.label
 import com.pafoid.skate.editor.data.PrefabData
 import com.pafoid.skate.editor.events.ViewportAction
 import com.pafoid.skate.editor.imgui.contextPopupId
@@ -39,7 +40,7 @@ class PrefabsTab(
 
         val names = surfaces.map { it.displayName }.toTypedArray()
         ImGui.setNextItemWidth(180f)
-        ImGui.combo(stringManager.getString("lbl.material"), surfaceIndex, names, names.size)
+        ImGui.combo(stringManager.label("lbl.material"), surfaceIndex, names, names.size)
 
         PrefabCategory.entries.forEach { category ->
             val entries = PrefabCatalog.inCategory(category).filter {

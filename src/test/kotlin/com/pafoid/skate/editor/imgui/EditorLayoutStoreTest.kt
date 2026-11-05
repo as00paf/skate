@@ -44,7 +44,7 @@ class EditorLayoutStoreTest {
     @Test
     fun LayoutStore_Clear_RemovesIniAndWindows() {
         val store = store()
-        File(dir, "imgui.ini").writeText("[Window][x]")
+        File(dir, "imgui.ini").writeText("[Window][Console###window.console]")
         store.saveOpenWindows(listOf("a"))
         assertTrue(store.hasSavedDockLayout())
         store.clear()
