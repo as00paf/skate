@@ -69,9 +69,6 @@ class PlatformApiGuardTest {
     @Test
     fun Logging_NoDirectConsoleOutputOutsideLoggerService() {
         val exceptions = setOf(
-            "editor/imgui/components/Component.kt",
-            "editor/search/history/SearchHistory.kt",
-            "editor/search/SearchEngine.kt",
             "engine/core/LoggerService.kt",
             "engine/core/Window.kt",
             "engine/EngineExtensions.kt",

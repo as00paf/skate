@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.ui.windows
 
+import com.pafoid.skate.engine.core.StringManager
 import com.pafoid.skate.engine.input.StickDeadZone
 import com.pafoid.skate.engine.input.TriggerDeadZone
 import org.joml.Vector2f
@@ -13,6 +14,14 @@ object GamepadLayout {
 
     fun buttonName(index: Int): String = buttonNames.getOrNull(index) ?: "Button $index"
     fun axisName(index: Int): String = axisNames.getOrNull(index) ?: "Axis $index"
+
+    /** Translated button name (`lbl.gamepad.button.<i>`); face/shoulder letters stay as printed on the pad. */
+    fun buttonName(index: Int, strings: StringManager): String =
+        if (index in buttonNames.indices) strings.getString("lbl.gamepad.button.$index") else strings.getString("lbl.gamepad.button.n", index)
+
+    /** Translated axis name (`lbl.gamepad.axis.<i>`). */
+    fun axisName(index: Int, strings: StringManager): String =
+        if (index in axisNames.indices) strings.getString("lbl.gamepad.axis.$index") else strings.getString("lbl.gamepad.axis.n", index)
 }
 
 /** Raw and processed readout of one stick. */

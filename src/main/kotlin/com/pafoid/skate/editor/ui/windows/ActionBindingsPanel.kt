@@ -71,7 +71,7 @@ class ActionBindingsPanel(
         tip("tip.keybindings.search")
         ImGui.sameLine()
         if (ImGui.button(s("btn.keybindings.reset_all") + "##kb_reset_all")) {
-            send(BindingOperation.Reset(map.names.toList(), "Reset all bindings"))
+            send(BindingOperation.Reset(map.names.toList(), s("cmd.keybindings.reset_all")))
         }
         tip("tip.keybindings.reset_all")
 
@@ -242,9 +242,8 @@ class ActionBindingsPanel(
         }
         if (!ImGui.beginPopup(MOUSE_POPUP)) return
         val (id, index) = pendingMouse ?: run { ImGui.endPopup(); return }
-        val names = listOf("Left", "Right", "Middle", "Button 4", "Button 5")
-        names.forEachIndexed { button, name ->
-            if (ImGui.menuItem("Mouse $name")) {
+        MOUSE_BUTTON_KEYS.forEachIndexed { button, key ->
+            if (ImGui.menuItem(s(key))) {
                 actionMap()?.let { submit(it, id, index, ActionBinding.MouseButton(button)) }
             }
         }
@@ -294,6 +293,11 @@ class ActionBindingsPanel(
 
     private companion object {
         const val MOUSE_POPUP = "##kb_mouse_popup"
+        /** Menu labels of mouse buttons 0..4 (GLFW order). */
+        val MOUSE_BUTTON_KEYS = listOf(
+            "lbl.keybindings.mouse_left", "lbl.keybindings.mouse_right", "lbl.keybindings.mouse_middle",
+            "lbl.keybindings.mouse_button4", "lbl.keybindings.mouse_button5",
+        )
         const val CONFLICT_POPUP = "kb_conflict_dialog"
     }
 }

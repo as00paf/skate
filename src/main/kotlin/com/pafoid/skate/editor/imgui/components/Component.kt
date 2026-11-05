@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.imgui.components
 
+import com.pafoid.skate.engine.core.LoggerService.LogLevel
 import com.pafoid.skate.editor.imgui.MImGui
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.ecs.components.AmbientLightComponent
@@ -118,7 +119,7 @@ fun Component.reflectedImgui(engine: Engine, skip: Set<String> = emptySet()) {
             if (Modifier.isPrivate(modifiers)) field.isAccessible = false
         }
     } catch (e: Exception) {
-        e.printStackTrace()
+        engine.logger.logEditor("Inspector failed to draw ${this.javaClass.simpleName}: ${e.message}", LogLevel.ERROR)
     } finally {
         ImGui.popID()
     }

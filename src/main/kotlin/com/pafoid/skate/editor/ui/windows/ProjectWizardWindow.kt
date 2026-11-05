@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.ui.windows
 
+import com.pafoid.skate.editor.systems.EditorPaths
 import com.pafoid.skate.editor.data.FileType
 import com.pafoid.skate.editor.events.ProjectEvent.CreateProjectRequested
 import com.pafoid.skate.editor.events.ProjectEvent.OpenProjectRequested
@@ -78,7 +79,7 @@ class ProjectWizardWindow(
             if (!wizard.isProjectNameValid()) {
                 MImGui.errorText("${Icons.WINDOW_CLOSE} ${stringManager.getString("wizard.project.invalid_chars")}")
             } else {
-                MImGui.successText("${Icons.CHECK} Valid")
+                MImGui.successText("${Icons.CHECK} ${stringManager.getString("wizard.project.valid_name")}")
             }
         }
 
@@ -89,7 +90,8 @@ class ProjectWizardWindow(
         ImGui.text(stringManager.getString("wizard.project.location"))
         ImGui.spacing()
         ImGui.pushItemWidth(350f)
-        projectPathInput.set("C:\\workspace\\skate_workspace")
+        // Default once, then the field is the user's (typing and Browse used to be overwritten every frame).
+        if (projectPathInput.get().isBlank()) projectPathInput.set(defaultLocation())
         ImGui.inputText("##ProjectPath", projectPathInput, ImGuiInputTextFlags.None)
         ImGui.popItemWidth()
 
@@ -215,7 +217,7 @@ class ProjectWizardWindow(
         ImGui.sameLine(0f, buttonSpacing)
 
         // Open existing project button
-        if (ImGui.button("${Icons.FOLDER_OPEN} Open Project", openButtonWidth, buttonHeight)) {
+        if (ImGui.button("${Icons.FOLDER_OPEN} ${stringManager.getString("wizard.project.open_existing")}", openButtonWidth, buttonHeight)) {
             openExistingProjectDialog()
         }
 
@@ -237,13 +239,17 @@ class ProjectWizardWindow(
         ImGui.endDisabled()
     }
 
+    /** Default parent folder for new projects in the user's documents ([EditorPaths]); created so it validates. */
+    private fun defaultLocation(): String =
+        EditorPaths.defaultProjectsDir().also { it.mkdirs() }.absolutePath
+
     private fun openExistingProjectDialog() {
         try {
             UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName())
 
             val fileChooser = JFileChooser()
             fileChooser.fileSelectionMode = JFileChooser.FILES_ONLY
-            fileChooser.dialogTitle = "Open Existing Project"
+            fileChooser.dialogTitle = stringManager.getString("wizard.project.open_existing_title")
             fileChooser.addChoosableFileFilter(object : FileFilter() {
                 override fun accept(file: File): Boolean {
                     return file.isDirectory || file.extension in FileType.PROJECT_FILE.extensions
