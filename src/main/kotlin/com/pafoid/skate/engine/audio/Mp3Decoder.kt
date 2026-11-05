@@ -81,9 +81,35 @@ class Mp3Decoder(private val file: File) : PcmStreamDecoder {
 object PcmDecoders {
     val STREAMABLE_EXTENSIONS = setOf("ogg", "mp3")
 
-    fun open(path: String): PcmStreamDecoder = when (File(path).extension.lowercase()) {
-        "ogg" -> StbVorbisDecoder(path)
-        "mp3" -> Mp3Decoder(path)
-        else -> throw IOException("Cannot stream '$path': only ${STREAMABLE_EXTENSIONS.joinToString()} are streamable")
+    /** [mono] downmixes multichannel files: OpenAL only spatialises (pans) mono sources. */
+    fun open(path: String, mono: Boolean = false): PcmStreamDecoder {
+        val decoder = when (File(path).extension.lowercase()) {
+            "ogg" -> StbVorbisDecoder(path)
+            "mp3" -> Mp3Decoder(path)
+            else -> throw IOException("Cannot stream '$path': only ${STREAMABLE_EXTENSIONS.joinToString()} are streamable")
+        }
+        return if (mono && decoder.channels > 1) MonoDownmix(decoder) else decoder
     }
+}
+
+/** Averages the channels of [inner] into one, for positional (3D) sources. */
+class MonoDownmix(private val inner: PcmStreamDecoder) : PcmStreamDecoder {
+    override val channels = 1
+    override val sampleRate get() = inner.sampleRate
+    private var buffer = ShortArray(0)
+
+    override fun read(out: ShortArray): Int {
+        val n = inner.channels
+        if (buffer.size != out.size * n) buffer = ShortArray(out.size * n)
+        val frames = inner.read(buffer) / n
+        for (f in 0 until frames) {
+            var sum = 0
+            for (c in 0 until n) sum += buffer[f * n + c]
+            out[f] = (sum / n).toShort()
+        }
+        return frames
+    }
+
+    override fun rewind() = inner.rewind()
+    override fun close() = inner.close()
 }

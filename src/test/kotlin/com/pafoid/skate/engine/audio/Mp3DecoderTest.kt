@@ -45,6 +45,17 @@ class Mp3DecoderTest {
     }
 
     @Test
+    fun PcmDecoders_MonoDownmixAveragesTheChannelsFrameByFrame() {
+        val stereo = Mp3Decoder(fixture("tone-stereo-44k.mp3")).use { it.readAll() }
+        PcmDecoders.open(fixture("tone-stereo-44k.mp3").path, mono = true).use { mono ->
+            assertEquals(1, mono.channels)
+            val out = ShortArray(1000)
+            assertEquals(1000, mono.read(out))
+            for (f in 0 until 1000) assertEquals(((stereo[2 * f] + stereo[2 * f + 1]) / 2).toShort(), out[f])
+        }
+    }
+
+    @Test
     fun Mp3_MonoDecodes() {
         Mp3Decoder(fixture("tone-mono-44k.mp3")).use { mp3 ->
             assertEquals(1, mp3.channels)

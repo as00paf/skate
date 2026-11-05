@@ -31,7 +31,6 @@ class ShowcaseProjectBuilder(
         File(projectDir, "Builds").mkdirs()
         EngineAssetCopier().copyBundledAssets(projectDir)
         File(assetsDir, "strings.properties").writeText("project.name=$PROJECT_NAME\n")
-        FeatureShowcase.writeAssets(assetsDir)
 
         // Path references only: the CLI is headless, and the editor reloads every model and texture on open.
         val prefabs = PrefabsGenerator(engine, loadAssets = false).also { it.projectAssetsDir = assetsDir.absolutePath + File.separator }
