@@ -148,6 +148,24 @@ class PauseMenuSystemTest {
     }
 
     @Test
+    fun SceneChangeWhilePaused_HidesTheMenu_AndTheNewSceneRuns() {
+        play()
+        esc()
+        assertTrue(pause.isOpen && manager.paused)
+        val next = Scene("Next").also { it.isRunning = true }
+        manager.loadScene(next)
+        assertFalse(pause.isOpen, "menu still visible over the new scene")
+        assertFalse(manager.paused)
+        val before = sim.time
+        step()
+        assertTrue(sim.time > before, "the new scene does not run")
+        assertFalse(pause.isOpen)
+        // Esc works as usual in the new scene.
+        esc()
+        assertTrue(pause.isOpen && manager.paused)
+    }
+
+    @Test
     fun SceneReload_MovesTheMenuToTheNewScene() {
         play()
         val reloaded = Scene("Level").also { it.isRunning = true }
