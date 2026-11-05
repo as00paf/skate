@@ -157,7 +157,7 @@ classes: allocation-free on the hot path and testable without GL.
 
 ## 5. Incremental migration plan
 
-Status: steps 0 to 5 are done. `RhiDevice` and `RhiCommandList` only declare what the backend implements so far;
+Status: steps 0 to 6 are done. `RhiDevice` and `RhiCommandList` only declare what the backend implements so far;
 each later step adds the methods it migrates to. Amendments made while implementing:
 
 - **`RhiVertexInput`** (step 2): vertex and index buffers bound to a vertex layout, created by
@@ -189,6 +189,17 @@ each later step adds the methods it migrates to. Amendments made while implement
   the backend tracks the current program (`GlPrograms`, invalidated with the state cache each frame) so an upload
   always reaches its own program. `cmd.setParams(params)` makes the shader current; `Shader.stop()` no longer binds
   program 0. The `Shader` asset is GL-free, so `engine/assets/` has no GL imports.
+- **Pipelines and draws** (step 6): `PipelineDesc` is a shader, a vertex layout and a `PipelineState` (topology,
+  depth, blend, cull, polygon offset, line width). `state/PipelineStates` names every kind of draw, each spelling out
+  what the old `with*` scopes left in effect; `state/PipelineCache` keeps one pipeline per shader and layout and
+  rebuilds a shader's pipelines after a hot reload. The command list gained `setPipeline`, `setVertexInput`,
+  `setTexture` (2D, 2D array or cube by the texture's type), `setScissor`, `draw` and `drawIndexed`.
+  `RhiVertexInput.nativeHandle` is gone; `MeshPart.input` carries the vertex input and `MeshPart.vaoId` is now
+  `VAOLoader`'s mesh id. `SamplerDesc.wrapV` lets the sky texture repeat around and clamp at the poles. The GL
+  backend's `GlStateCache` (formerly `GLStateTracker`) diffs pipeline state from "unknown" after every
+  `beginFrame`, so nothing inherited from ImGui or an earlier draw leaks in. `EngineStats.drawCalls` now counts
+  every draw (sprite batches, debug lines and the sky were not counted), and `stateChanges` counts binds that used
+  to be raw GL (shadow draws, post-processing, batches).
 
 Each step is one PR-sized commit. Each must keep the full test suite green, produce pixel-identical offscreen frames
 (REN-18/19/20 harness: default `MainScene` and `FeatureShowcase`, created, saved and reloaded, edit mode and Play),

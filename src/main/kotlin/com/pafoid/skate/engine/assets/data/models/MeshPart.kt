@@ -1,5 +1,6 @@
 package com.pafoid.skate.engine.assets.data.models
 
+import com.pafoid.skate.engine.render.rhi.RhiVertexInput
 import org.joml.Matrix4f
 
 data class MeshPart(
@@ -16,7 +17,9 @@ data class MeshPart(
     val indices: IntArray = intArrayOf(),
     val material: Material = Material(),
     var inverseBindMatrices: List<Matrix4f> = emptyList(),
-    val enabledAttributes: MutableList<Int> = mutableListOf(0, 1, 2)
+    val enabledAttributes: MutableList<Int> = mutableListOf(0, 1, 2),
+    /** The uploaded vertex and index buffers ([vaoId] identifies them in `VAOLoader`); null until uploaded. */
+    val input: RhiVertexInput? = null,
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

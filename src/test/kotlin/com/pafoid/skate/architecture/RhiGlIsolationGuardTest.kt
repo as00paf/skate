@@ -67,25 +67,6 @@ class RhiGlIsolationGuardTest {
         /** GL users outside the backend; shrink only (REN-12 steps 1-7). */
         val ALLOWED = setOf(
             "editor/imgui/ImGuiLayer.kt",
-            "engine/render/cache/GpuResources.kt",
-            "engine/render/data/RenderBatch2D.kt",
-            "engine/render/data/RenderBatch3D.kt",
-            "engine/render/renderer/DebugRenderer.kt",
-            "engine/render/renderer/LightingUniformsLoader.kt",
-            "engine/render/renderer/ModelRenderer.kt",
-            "engine/render/renderer/PickingRenderer.kt",
-            "engine/render/renderer/ShadowRenderer.kt",
-            "engine/render/renderer/SkyDomeRenderer.kt",
-            "engine/render/renderer/SkyboxRenderer.kt",
-            "engine/render/renderer/SplashRenderer.kt",
-            "engine/render/renderer/ThumbnailRenderer.kt",
-            "engine/render/renderer/passes/DebugPass.kt",
-            "engine/render/renderer/passes/GeometryPass.kt",
-            "engine/render/renderer/passes/ParticlePass.kt",
-            "engine/render/renderer/passes/PickingPass.kt",
-            "engine/render/renderer/passes/PostProcessPass.kt",
-            "engine/render/ui/UiBatchRenderer.kt",
-            "engine/render/utils/GLState.kt",
         )
     }
 }

@@ -14,7 +14,11 @@ import org.joml.Vector3f
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import com.pafoid.skate.engine.render.rhi.FakeRhiDevice
+import com.pafoid.skate.engine.render.rhi.RhiContext
 
 /**
  * REN-19 follow-up: the origin axes lie on the floor and the debug shader never moves vertices. The blue Z axis
@@ -28,11 +32,17 @@ class DebugAxesOnFloorTest {
     }
     private val renderer = DebugRenderer(mockk<Shader>(relaxed = true), cameras)
 
+    @BeforeEach
+    fun setUp() { RhiContext.device = FakeRhiDevice() }
+
+    @AfterEach
+    fun tearDown() { RhiContext.device = null }
+
     @Test
     fun OriginAxes_XAndZRibbonsLieFlatOnTheFloorPlane() {
         val scene = Scene().also { it.addComponent(GridLines()) }
 
-        DebugPass(renderer, cameras, drawState = {}, targetHeight = { 720 }).execute(scene)
+        DebugPass(renderer, cameras, targetHeight = { 720 }).execute(scene)
 
         val vertices = renderer.groundTriangleVertices()
         assertEquals(4 * 3, vertices.size, "two ribbons (red X, blue Z), two triangles each")

@@ -18,11 +18,8 @@ import com.pafoid.skate.engine.render.renderer.Renderer2D
 import com.pafoid.skate.engine.render.renderer.RenderTraversal
 import com.pafoid.skate.engine.render.rhi.ClearValues
 import com.pafoid.skate.engine.render.rhi.RhiContext
-import com.pafoid.skate.engine.render.rhi.opengl.GLStateTracker
 import com.pafoid.skate.engine.utils.EntityIdEncoder
 import com.pafoid.skate.engine.utils.ShaderConst.Uniforms
-import org.lwjgl.opengl.GL30.GL_SCISSOR_TEST
-import org.lwjgl.opengl.GL30.glDisable
 
 /**
  * Render pass for object picking (selection/hover detection).
@@ -89,12 +86,10 @@ class PickingPass(
     }
 
     private fun render(scene: Scene) {
-        // CRITICAL: Reset state that might have been changed by ImGui or previous passes
-        glDisable(GL_SCISSOR_TEST)
-        GLStateTracker.resetToDefaults()
-
+        // Every draw below sets its own pipeline; only the scissor could be left over (ImGui, runtime UI)
         val cmd = RhiContext.require().commandList()
         cmd.beginPass(pickingTexture.target, clear = CLEAR)
+        cmd.setScissor(null)
 
         // Render 2D and 3D objects for picking
         renderer2D.bindCamera(cameraManager.camera)
