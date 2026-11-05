@@ -4,6 +4,7 @@ import java.io.File
 import java.nio.charset.Charset
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicInteger
 
 /** State of the last command run by a [ShellSession]. */
 sealed interface ShellStatus {
@@ -14,8 +15,11 @@ sealed interface ShellStatus {
     data class Failed(val command: String, val message: String) : ShellStatus
 }
 
-/** One output line; [kind] tells the panel how to colour it. */
-data class ShellLine(val text: String, val kind: Kind = Kind.OUTPUT) {
+/**
+ * One output line; [kind] tells the panel how to colour it. Status lines written by the session carry a string [key]
+ * and [args] so the panel shows them translated; [text] is the English form (logs, copy, tests).
+ */
+data class ShellLine(val text: String, val kind: Kind = Kind.OUTPUT, val key: String? = null, val args: List<Any> = emptyList()) {
     enum class Kind { COMMAND, OUTPUT, INFO, ERROR }
 }
 
@@ -29,9 +33,13 @@ class ShellSession(
     private val shellPrefix: List<String> = defaultShell(),
     private val charset: Charset = nativeCharset(),
     private val clock: () -> Long = System::currentTimeMillis,
+    private val maxPending: Int = MAX_PENDING,
 ) {
     companion object {
         private val ANSI = Regex("\u001B\\[[0-9;?]*[ -/]*[@-~]")
+
+        /** Lines kept while nobody drains (Shell panel closed); older ones are dropped. */
+        const val MAX_PENDING = 5000
 
         fun isWindows(os: String = System.getProperty("os.name")) = os.lowercase().contains("win")
 
@@ -47,6 +55,13 @@ class ShellSession(
     }
 
     private val pending = ConcurrentLinkedQueue<ShellLine>()
+    private val pendingCount = AtomicInteger()
+
+    /** Queues [line], dropping the oldest beyond [maxPending] so a closed panel cannot grow memory without bound. */
+    private fun enqueue(line: ShellLine) {
+        pending.add(line)
+        if (pendingCount.incrementAndGet() > maxPending && pending.poll() != null) pendingCount.decrementAndGet()
+    }
 
     @Volatile var status: ShellStatus = ShellStatus.Idle
         private set
@@ -68,7 +83,7 @@ class ShellSession(
         cancelRequested = false
         val started = clock()
         status = ShellStatus.Running(line, started)
-        pending.add(ShellLine("> $line", ShellLine.Kind.COMMAND))
+        enqueue(ShellLine("> $line", ShellLine.Kind.COMMAND))
         worker = Thread({ execute(line, workingDir, started) }, "shell-panel").apply { isDaemon = true; start() }
         return true
     }
@@ -76,20 +91,24 @@ class ShellSession(
     private fun execute(line: String, workingDir: File, started: Long) {
         try {
             val p = ProcessBuilder(shellPrefix + line).directory(workingDir).redirectErrorStream(true).start()
+            // No interactive input: prompts (del /p, pause, git commit) see end-of-input instead of hanging forever.
+            p.outputStream.close()
             process = p
             if (cancelRequested) killTree(p)
-            p.inputStream.bufferedReader(charset).useLines { lines -> lines.forEach { pending.add(ShellLine(clean(it))) } }
+            p.inputStream.bufferedReader(charset).useLines { lines -> lines.forEach { enqueue(ShellLine(clean(it))) } }
             val code = p.waitFor()
             val duration = clock() - started
             status = if (cancelRequested) {
-                pending.add(ShellLine("Cancelled after ${duration} ms", ShellLine.Kind.INFO))
+                enqueue(ShellLine("Cancelled after $duration ms", ShellLine.Kind.INFO, "shell.line.cancelled", listOf(duration)))
                 ShellStatus.Cancelled(line, duration)
             } else {
-                pending.add(ShellLine("Exited with code $code in ${duration} ms", if (code == 0) ShellLine.Kind.INFO else ShellLine.Kind.ERROR))
+                val kind = if (code == 0) ShellLine.Kind.INFO else ShellLine.Kind.ERROR
+                enqueue(ShellLine("Exited with code $code in $duration ms", kind, "shell.line.exited", listOf(code, duration)))
                 ShellStatus.Exited(line, code, duration)
             }
         } catch (e: Exception) {
-            pending.add(ShellLine("Could not run: ${e.message}", ShellLine.Kind.ERROR))
+            val reason = e.message ?: e.javaClass.simpleName
+            enqueue(ShellLine("Could not run: $reason", ShellLine.Kind.ERROR, "shell.line.failed", listOf(reason)))
             status = ShellStatus.Failed(line, e.message ?: e.javaClass.simpleName)
         } finally {
             process = null
@@ -111,7 +130,10 @@ class ShellSession(
     /** Lines produced since the last call, oldest first. Safe to call from any thread. */
     fun drain(max: Int = Int.MAX_VALUE): List<ShellLine> {
         val out = ArrayList<ShellLine>()
-        while (out.size < max) out.add(pending.poll() ?: break)
+        while (out.size < max) {
+            out.add(pending.poll() ?: break)
+            pendingCount.decrementAndGet()
+        }
         return out
     }
 

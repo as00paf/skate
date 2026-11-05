@@ -31,6 +31,7 @@ class EditorActionHandler(
         engine.eventSystem, undoRedoManager, engine.logger,
         projectDir = { projectManager.currentProject?.getProjectFile()?.absoluteFile?.parentFile },
         resolveTexture = engine.assetsManager::getTexture,
+        dialogs = TinyMaterialFileDialogs(engine.stringManager),
     )
     val keyBindingsActionHandler = KeyBindingsActionHandler(
         engine.eventSystem, projectManager, undoRedoManager

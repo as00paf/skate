@@ -4,6 +4,7 @@ import com.pafoid.skate.engine.core.LoggerService.LogLevel
 import com.pafoid.skate.editor.imgui.MImGui
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.ecs.components.AmbientLightComponent
+import com.pafoid.skate.engine.ecs.components.Animator
 import com.pafoid.skate.engine.ecs.components.AudioComponent
 import com.pafoid.skate.engine.ecs.components.CameraComponent
 import com.pafoid.skate.engine.ecs.components.Component
@@ -40,6 +41,7 @@ fun Component.imgui(engine: Engine) {
         is JointComponent -> this.imgui(engine)
         is ReverbZone -> this.imgui(engine)
         is AudioComponent -> this.imgui(engine)
+        is Animator -> this.imgui(engine)
         is ParticleEmitter -> this.imgui(engine)
 
         else -> if (this.isUiComponent()) this.uiImgui(engine) else reflectedImgui(engine)
