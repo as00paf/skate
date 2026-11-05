@@ -14,6 +14,7 @@ import com.pafoid.skate.editor.ui.menus.InputMenuBuilder
 import com.pafoid.skate.editor.ui.menus.SettingsMenuBuilder
 import com.pafoid.skate.editor.ui.menus.ViewMenuBuilder
 import com.pafoid.skate.editor.ui.menus.WindowControlsRenderer
+import com.pafoid.skate.editor.ui.windows.ExportWizardWindow
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.core.Engine
 import imgui.ImGui
@@ -127,7 +128,7 @@ class EditorMenuBar(
                     eventSystem.publish(ProjectEvent.SaveAsRequested)
                 }
                 if (menuItem("${Icons.EXPORT} ${stringManager.getString("menu.file.export_project")}")) {
-                    eventSystem.publish(ProjectEvent.ExportRequested)
+                    eventSystem.publish(WindowAction.Show(ExportWizardWindow.NAME))
                 }
             }
             ImGui.separator()

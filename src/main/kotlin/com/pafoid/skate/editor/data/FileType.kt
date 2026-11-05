@@ -17,7 +17,7 @@ enum class FileType(val extensions: List<String>) {
     JSON(listOf("json")),
     CONFIG(listOf("config")),
     SHADER(listOf("glsl")),
-    MATERIAL(listOf("mat", "material")),
+    MATERIAL(listOf("mat", "material", "skmat")),
     TEXT(listOf("txt", "properties")),
     FONT(listOf("ttf", "otf")),
     UNKNOWN(listOf());

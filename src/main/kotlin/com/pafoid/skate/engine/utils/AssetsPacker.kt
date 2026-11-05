@@ -51,15 +51,23 @@ class AssetsPacker(
         FileType.SHADER, FileType.MATERIAL, FileType.FONT, FileType.TEXT
     )
 
-    /** Returns the files that [pack] would include, without writing anything. */
-    fun selectFiles(project: Project, onlyReferenced: Boolean = true): List<File> {
+    /** Scene files of [project] that an export can include or leave out (output and hidden folders skipped). */
+    fun sceneFiles(project: Project, outputDir: File = defaultOutputDir(project)): List<File> =
+        projectFiles(project, outputDir).filter { FileTypeResolver.resolve(it) == FileType.SCENE }.sortedBy { it.path }
+
+    /**
+     * Returns the files that [pack] would include, without writing anything. Scenes in [excludedScenes] (absolute
+     * paths) are left out, except the project's default scene.
+     */
+    fun selectFiles(
+        project: Project,
+        onlyReferenced: Boolean = true,
+        outputDir: File = defaultOutputDir(project),
+        excludedScenes: Set<String> = emptySet(),
+    ): List<File> {
         val projectDir = File(project.projectPath).parentFile
-        val buildsDir = File(projectDir, BUILDS_DIR).canonicalFile
-        val all = projectDir.walkTopDown()
-            .onEnter { !it.name.startsWith(".") && it.canonicalFile != buildsDir }
-            .filter { it.isFile && !it.name.startsWith(".") && !AssetMeta.isSidecar(it) }
-            .filter { FileTypeResolver.resolve(it) in packable }
-            .toList()
+        val excluded = excludedScenes.map { File(it).canonicalFile }.toSet() - File(project.defaultScene).canonicalFile
+        val all = projectFiles(project, outputDir).filter { it.canonicalFile !in excluded }
         if (!onlyReferenced) return all.sortedBy { it.path }
 
         val roots = all.filter { FileTypeResolver.resolve(it) in alwaysPacked }.toMutableList()
@@ -67,15 +75,39 @@ class AssetsPacker(
         val registry = AssetRegistry(projectDir).also { it.scan() }
         val referenced = ReferenceCollector(projectDir, registry).collect(roots)
         val allowed = all.map { it.canonicalFile }.toSet()
-        return (referenced + roots.map { it.canonicalFile }).filter { it in allowed }.sortedBy { it.path }
+        return (referenced + roots.map { it.canonicalFile }).filter { it in allowed }.distinct().sortedBy { it.path }
     }
 
-    fun pack(project: Project, compress: Boolean = true, onlyReferenced: Boolean = true): Boolean {
+    private fun projectFiles(project: Project, outputDir: File): List<File> {
+        val projectDir = File(project.projectPath).parentFile
+        val skipped = outputDir.canonicalFile
+        return projectDir.walkTopDown()
+            .onEnter { !it.name.startsWith(".") && it.canonicalFile != skipped }
+            .filter { it.isFile && !it.name.startsWith(".") && !AssetMeta.isSidecar(it) }
+            .filter { FileTypeResolver.resolve(it) in packable }
+            .toList()
+    }
+
+    /**
+     * Writes [BIN_FILE], [MANIFEST_FILE] and `atlas_report.txt` to [outputDir]. [onProgress] gets the current step,
+     * its completed fraction (0..1) and the file being read, if any.
+     */
+    fun pack(
+        project: Project,
+        compress: Boolean = true,
+        onlyReferenced: Boolean = true,
+        outputDir: File = defaultOutputDir(project),
+        excludedScenes: Set<String> = emptySet(),
+        onProgress: (ExportStep, Float, String) -> Unit = { _, _, _ -> },
+    ): Boolean {
         atlas = Atlas()
         val projectDir = File(project.projectPath).parentFile
-        val files = selectFiles(project, onlyReferenced).sortedBy { FileTypeResolver.resolve(it) }
-        val projectInputs = files.map {
-            PackInput(it.absolutePath, it.relativeTo(projectDir).invariantSeparatorsPath, FileTypeResolver.resolve(it).name, it.readBytes())
+        onProgress(ExportStep.COLLECTING, 0f, "")
+        val files = selectFiles(project, onlyReferenced, outputDir, excludedScenes).sortedBy { FileTypeResolver.resolve(it) }
+        val projectInputs = files.mapIndexed { index, file ->
+            val relative = file.relativeTo(projectDir).invariantSeparatorsPath
+            onProgress(ExportStep.PACKING, index.toFloat() / files.size, relative)
+            PackInput(file.absolutePath, relative, FileTypeResolver.resolve(file).name, file.readBytes())
         }
         val inputs = projectInputs + gameStringInputs(projectInputs)
         val result = PackBuilder.build(project.name, inputs, compress)
@@ -89,7 +121,7 @@ class AssetsPacker(
             atlas[extension] = atlas[extension].orEmpty() + info
         }
 
-        val outputDir = File(projectDir, BUILDS_DIR).also { it.mkdirs() }
+        outputDir.mkdirs()
         val atlasData = serializer.encode(atlas)
         val encodedAtlas = atlasData.toByteArray(Charsets.UTF_8)
         val encodedAtlasSize = ByteBuffer.allocate(Int.SIZE_BYTES).putInt(encodedAtlas.size).array()
@@ -97,6 +129,7 @@ class AssetsPacker(
         File(outputDir, BIN_FILE).writeBytes(encodedAtlasSize + encodedAtlas + result.data)
         File(outputDir, MANIFEST_FILE).writeText(serializer.json.encodeToString(PackManifest.serializer(), result.manifest))
         lastManifest = result.manifest
+        onProgress(ExportStep.PACKING, 1f, "")
 
         val stored = result.manifest.entries.sumOf { it.storedSize }
         val raw = result.manifest.entries.sumOf { it.rawSize }
@@ -121,5 +154,8 @@ class AssetsPacker(
         const val BIN_FILE = "game.bin"
         const val MANIFEST_FILE = "manifest.json"
         const val BUILDS_DIR = "builds"
+
+        /** `<project folder>/builds`. */
+        fun defaultOutputDir(project: Project): File = File(File(project.projectPath).parentFile, BUILDS_DIR)
     }
 }
