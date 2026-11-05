@@ -245,7 +245,7 @@ class RenderGraphWindow(
 
         if (disabledCount > 0) {
             ImGui.sameLine()
-            MImGui.warningText("($disabledCount disabled)")
+            MImGui.warningText(stringManager.getString("lbl.render_graph.disabled_count", disabledCount))
         }
 
         // Help text

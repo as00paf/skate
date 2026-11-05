@@ -24,8 +24,14 @@ class EditorActionHandler(
     val scriptEditorActionHandler = ScriptEditorActionHandler(engine.eventSystem, undoRedoManager, engine.logger)
     val jointActionHandler = JointActionHandler(engine.eventSystem, undoRedoManager)
     val animatorActionHandler = AnimatorActionHandler(engine.eventSystem, undoRedoManager, engine.logger)
+    val componentFieldActionHandler = ComponentFieldActionHandler(engine.eventSystem, undoRedoManager, engine.sceneManager)
     val transformActionHandler = TransformActionHandler(engine.eventSystem, undoRedoManager, engine.sceneManager)
     val audioActionHandler = AudioActionHandler(engine.eventSystem, projectManager, undoRedoManager, engine.audioEngine)
+    val materialActionHandler = MaterialActionHandler(
+        engine.eventSystem, undoRedoManager, engine.logger,
+        projectDir = { projectManager.currentProject?.getProjectFile()?.absoluteFile?.parentFile },
+        resolveTexture = engine.assetsManager::getTexture,
+    )
     val keyBindingsActionHandler = KeyBindingsActionHandler(
         engine.eventSystem, projectManager, undoRedoManager
     ) { engine.systemManager.getSystem<com.pafoid.skate.engine.ecs.systems.InputSystem>()?.actionMap }

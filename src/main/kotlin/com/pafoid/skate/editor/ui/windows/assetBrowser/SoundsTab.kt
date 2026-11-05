@@ -92,8 +92,8 @@ class SoundsTab(
         if (ImGui.beginDragDropSource()) {
             ImGui.setDragDropPayload("SOUND", file.path)
             ImGui.text("${Icons.MUSIC} ${file.name}")
-            ImGui.textColored(0.7f, 0.7f, 0.7f, 1f, "Duration: ${duration}s")
-            ImGui.textColored(0.5f, 0.5f, 0.5f, 1f, "Drop on object to add AudioComponent")
+            ImGui.textColored(0.7f, 0.7f, 0.7f, 1f, stringManager.getString("lbl.sounds.drag_duration", duration))
+            ImGui.textColored(0.5f, 0.5f, 0.5f, 1f, stringManager.getString("lbl.sounds.drop_hint"))
             ImGui.endDragDropSource()
         }
 

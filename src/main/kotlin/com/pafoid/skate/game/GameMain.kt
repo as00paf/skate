@@ -43,6 +43,8 @@ fun main(args: Array<String>) {
     engine.start(window.glfwWindow)
 
     if (projectManager.openProject(project, binFile, header, headerSize)) {
+        // The project's mixer (bus volumes and mutes set in the editor) applies to the exported game too (EDT-14).
+        engine.audioEngine.applyConfig(project.gameplaySettings.audio.toConfig())
         engine.runtimePlaying = true
         installGameUi(window)
         window.show { dt ->
