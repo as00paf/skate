@@ -90,15 +90,23 @@ class PrefabsGenerator(
      * A plain animated character (bundled James model, no controller or physics) looping [clipPath] (a bundled
      * animation path such as [Assets.Bundled.WALKING]).
      */
-    fun spawnAnimatedCharacter(name: String, position: Vector3f, clipPath: String): GameObject {
+    fun spawnAnimatedCharacter(
+        name: String,
+        position: Vector3f,
+        clipPath: String,
+        /** More bundled clips for the Animator (e.g. the clips a controller needs); [clipPath] stays the one playing. */
+        extraClips: List<String> = emptyList(),
+    ): GameObject {
         val modelPath = projectAssetsDir + Assets.Bundled.JAMES
         val model = if (loadAssets) assetsManager.loadModel(modelPath) else `3dModel`(modelPath)
-        val clip = if (loadAssets) assetsManager.loadAnimationSync(projectAssetsDir + clipPath)
-            else Animation(File(clipPath).nameWithoutExtension, emptyList(), 0f, projectAssetsDir + clipPath)
+        fun load(path: String) = if (loadAssets) assetsManager.loadAnimationSync(projectAssetsDir + path)
+            else Animation(File(path).nameWithoutExtension, emptyList(), 0f, projectAssetsDir + path)
+        val clip = load(clipPath)
+        val clips = (listOf(clip) + (extraClips - clipPath).map(::load)).toMutableList()
         val go = GameObject(name)
             .addComponent(Transform(position))
             .addComponent(RenderComponent(model))
-            .addComponent(Animator(animations = mutableListOf(clip), isPlaying = true).also { it.currentAnimation = clip })
+            .addComponent(Animator(animations = clips, isPlaying = true).also { it.currentAnimation = clip })
         model.skeleton?.let { go.addComponent(SkeletonComponent(SkeletonPose(it))) }
         return go
     }
