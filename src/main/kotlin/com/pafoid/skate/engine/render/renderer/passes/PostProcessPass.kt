@@ -4,22 +4,16 @@ import com.pafoid.skate.engine.assets.data.Shader
 import com.pafoid.skate.engine.assets.data.models.MeshPart
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.render.ColorTarget
-import com.pafoid.skate.engine.render.EngineStats
 import com.pafoid.skate.engine.render.FrameBuffer
 import com.pafoid.skate.engine.render.VAOLoader
+import com.pafoid.skate.engine.render.rhi.RhiCommandList
 import com.pafoid.skate.engine.render.rhi.RhiContext
-import com.pafoid.skate.engine.render.utils.bindTexture
-import com.pafoid.skate.engine.render.utils.bindVAO
-import com.pafoid.skate.engine.render.utils.unbindVAO
-import com.pafoid.skate.engine.render.utils.withBlendState
-import com.pafoid.skate.engine.render.utils.withCullFace
-import com.pafoid.skate.engine.render.utils.withDepthMask
-import com.pafoid.skate.engine.render.utils.withDepthTest
+import com.pafoid.skate.engine.render.rhi.RhiTexture
+import com.pafoid.skate.engine.render.rhi.RhiVertexInput
+import com.pafoid.skate.engine.render.state.PipelineCache
+import com.pafoid.skate.engine.render.state.PipelineStates
 import com.pafoid.skate.engine.utils.ShaderConst.Uniforms
 import org.joml.Vector2f
-import org.lwjgl.opengl.GL11.GL_TRIANGLES
-import org.lwjgl.opengl.GL11.GL_UNSIGNED_INT
-import org.lwjgl.opengl.GL11.glDrawElements
 
 /**
  * Post-processing render pass implementing the post-processing stack.
@@ -86,22 +80,13 @@ open class PostProcessPass(
         pong.ensure(width, height)
         val steps = PostChain.plan(effects.size)
 
+        val input = quad.input ?: return
         val cmd = RhiContext.require().commandList()
-        quad.vaoId.bindVAO(quad.enabledAttributes)
-        withDepthTest(false) {
-            withDepthMask(false) {
-                withBlendState(false) {
-                    withCullFace(false) {
-                        for (i in effects.indices) {
-                            cmd.beginPass(targetOf(steps[i].destination).target)
-                            apply(effects[i], textureOf(steps[i].source), quad)
-                            cmd.endPass()
-                        }
-                    }
-                }
-            }
+        for (i in effects.indices) {
+            cmd.beginPass(targetOf(steps[i].destination).target)
+            apply(cmd, effects[i], textureOf(steps[i].source), input)
+            cmd.endPass()
         }
-        quad.vaoId.unbindVAO(quad.enabledAttributes)
 
         // Copy the result back into the scene colour buffer (depth is left as the geometry pass wrote it).
         val result = targetOf(PostChain.resultTarget(effects.size))
@@ -114,13 +99,16 @@ open class PostProcessPass(
         PostChain.Target.SCENE -> error("post effects never write the scene target")
     }
 
-    private fun textureOf(target: PostChain.Target): Int = when (target) {
-        PostChain.Target.SCENE -> frameBuffer.getTextureId()
-        PostChain.Target.PING -> ping.textureId
-        PostChain.Target.PONG -> pong.textureId
+    private fun textureOf(target: PostChain.Target): RhiTexture? = when (target) {
+        PostChain.Target.SCENE -> frameBuffer.target.colorTexture()
+        PostChain.Target.PING -> ping.target?.colorTexture()
+        PostChain.Target.PONG -> pong.target?.colorTexture()
     }
 
-    private fun apply(effect: PostEffect, source: Int, quad: MeshPart) {
+    /** No depth, no blending: each effect overwrites its target ([PipelineStates.FULLSCREEN]). */
+    private val pipelines = PipelineCache(PipelineStates.FULLSCREEN)
+
+    private fun apply(cmd: RhiCommandList, effect: PostEffect, source: RhiTexture?, input: RhiVertexInput) {
         val shader = when (effect) {
             PostEffect.SSAO -> ssaoShader
             PostEffect.BLOOM -> bloomShader
@@ -134,7 +122,7 @@ open class PostProcessPass(
                 shader.uploadFloat(Uniforms.SSAO_RADIUS, settings.ssaoRadius)
                 shader.uploadFloat(Uniforms.SSAO_INTENSITY, settings.ssaoIntensity)
                 shader.uploadInt(Uniforms.SSAO_DEPTH_TEXTURE, 1)
-                bindTexture(1, frameBuffer.getDepthTextureId())
+                cmd.setTexture(1, frameBuffer.target.depthTexture())
             }
             PostEffect.BLOOM -> {
                 shader.uploadFloat(Uniforms.BLOOM_INTENSITY, settings.bloomIntensity)
@@ -148,9 +136,10 @@ open class PostProcessPass(
             }
         }
         shader.uploadTexture(Uniforms.TEXTURE, 0)
-        bindTexture(0, source)
-        glDrawElements(GL_TRIANGLES, quad.vertexCount, GL_UNSIGNED_INT, 0)
-        EngineStats.drawCalls.incrementAndGet()
+        cmd.setTexture(0, source)
+        cmd.setPipeline(pipelines.get(shader, input.layout) ?: return)
+        cmd.setVertexInput(input)
+        cmd.drawIndexed(fullscreenQuad?.vertexCount ?: return)
         shader.stop()
     }
 
@@ -177,6 +166,7 @@ open class PostProcessPass(
     fun destroy() {
         fullscreenQuad?.let { vaoLoader.deleteVAO(it.vaoId) }
         fullscreenQuad = null
+        pipelines.close()
         ping.destroy()
         pong.destroy()
         bloomShader.destroy()

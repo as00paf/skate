@@ -13,7 +13,15 @@ data class Texture(
     var flip: Boolean = false,
     var filePath: String? = null,
 ) {
+    /** Native handle of [rhi] for ImGui images; -1 before upload. */
     @Transient var texId: Int = -1
-    /** GPU texture ([texId] is its native handle, kept for draw code and ImGui until REN-12 step 6). */
+
+    /** GPU texture that draws bind; null before upload. */
     @Transient var rhi: RhiTexture? = null
+
+    /** Points this (deserialized, path-only) texture at [loaded]'s GPU texture. */
+    fun adopt(loaded: Texture) {
+        texId = loaded.texId
+        rhi = loaded.rhi
+    }
 }

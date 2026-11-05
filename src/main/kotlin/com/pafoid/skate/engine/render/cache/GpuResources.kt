@@ -2,12 +2,11 @@ package com.pafoid.skate.engine.render.cache
 
 import com.pafoid.skate.engine.assets.data.Shader
 import com.pafoid.skate.engine.assets.data.Texture
-import org.lwjgl.opengl.GL11.glDeleteTextures
-import org.lwjgl.opengl.GL15.glDeleteBuffers
-import org.lwjgl.opengl.GL30.glDeleteVertexArrays
+import com.pafoid.skate.engine.render.rhi.RhiBuffer
+import com.pafoid.skate.engine.render.rhi.RhiVertexInput
 
-/** GPU handle of an uploaded mesh part: one VAO and the VBOs it owns. */
-class GpuMesh(val vaoId: Int, val vboIds: IntArray)
+/** GPU handle of an uploaded mesh part: its vertex input and the buffers it owns. */
+class GpuMesh(val input: RhiVertexInput, val buffers: List<RhiBuffer>)
 
 /**
  * Owns one [GpuResourceCache] per GPU resource kind. Key by a stable asset identity
@@ -16,10 +15,10 @@ class GpuMesh(val vaoId: Int, val vboIds: IntArray)
  */
 class GpuResources(
     destroyShader: (Shader) -> Unit = { it.destroy() },
-    destroyTexture: (Texture) -> Unit = { glDeleteTextures(it.texId) },
+    destroyTexture: (Texture) -> Unit = { it.rhi?.close() },
     destroyMesh: (GpuMesh) -> Unit = { mesh ->
-        glDeleteVertexArrays(mesh.vaoId)
-        mesh.vboIds.forEach { glDeleteBuffers(it) }
+        mesh.input.close()
+        mesh.buffers.forEach { it.close() }
     },
     maxIdle: Int = GpuResourceCache.DEFAULT_MAX_IDLE,
 ) {

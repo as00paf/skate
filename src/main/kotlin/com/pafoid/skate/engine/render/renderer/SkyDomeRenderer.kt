@@ -10,36 +10,24 @@ import com.pafoid.skate.engine.ecs.components.EnvironmentComponent
 import com.pafoid.skate.engine.render.fog.FogUniforms
 import com.pafoid.skate.engine.getComponent
 import com.pafoid.skate.engine.render.VAOLoader
+import com.pafoid.skate.engine.render.rhi.RhiContext
+import com.pafoid.skate.engine.render.rhi.Wrap
+import com.pafoid.skate.engine.render.state.PipelineCache
+import com.pafoid.skate.engine.render.state.PipelineStates
 import com.pafoid.skate.engine.utils.ShaderConst.Uniforms
 import org.joml.Matrix4f
 import org.joml.Vector3f
-import com.pafoid.skate.engine.render.rhi.opengl.GLStateTracker
-import org.lwjgl.opengl.GL11.GL_LEQUAL
-import org.lwjgl.opengl.GL11.GL_LESS
-import org.lwjgl.opengl.GL11.GL_REPEAT
-import org.lwjgl.opengl.GL11.GL_TEXTURE_2D
-import org.lwjgl.opengl.GL11.GL_TEXTURE_WRAP_S
-import org.lwjgl.opengl.GL11.GL_TEXTURE_WRAP_T
-import org.lwjgl.opengl.GL11.GL_TRIANGLES
-import org.lwjgl.opengl.GL11.GL_UNSIGNED_INT
-import org.lwjgl.opengl.GL11.glBindTexture
-import org.lwjgl.opengl.GL11.glDrawElements
-import org.lwjgl.opengl.GL11.glTexParameteri
-import org.lwjgl.opengl.GL13.GL_CLAMP_TO_EDGE
-import org.lwjgl.opengl.GL13.GL_TEXTURE0
-import org.lwjgl.opengl.GL13.glActiveTexture
-import org.lwjgl.opengl.GL20.glDisableVertexAttribArray
-import org.lwjgl.opengl.GL20.glEnableVertexAttribArray
-import org.lwjgl.opengl.GL30.glBindVertexArray
-import org.lwjgl.opengl.GL30.glDeleteVertexArrays
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sin
 
-class SkyDomeRenderer(private val shader: Shader, loader: VAOLoader) {
+class SkyDomeRenderer(private val shader: Shader, private val loader: VAOLoader) {
 
     private val sphere: MeshPart
     private val modelMatrix = Matrix4f()
+
+    /** At the far plane after the scene, no depth writes, both faces ([PipelineStates.SKY]). */
+    private val pipelines = PipelineCache(PipelineStates.SKY)
 
     init {
         sphere = generateUVSphere(loader, 50, 50, 500f)
@@ -103,12 +91,6 @@ class SkyDomeRenderer(private val shader: Shader, loader: VAOLoader) {
             return
         }
 
-        // Through the tracker so its cache stays true for later passes (raw calls left culling on for them).
-        val previousCull = GLStateTracker.isCullFaceEnabled()
-        GLStateTracker.setCullFaceEnabled(false)
-        GLStateTracker.setDepthFunc(GL_LEQUAL)
-        GLStateTracker.setDepthMask(false)
-
         shader.start()
 
         // Get time component for time of day
@@ -136,36 +118,24 @@ class SkyDomeRenderer(private val shader: Shader, loader: VAOLoader) {
         shader.uploadFloat(Uniforms.FOG_SKY_DISTANCE, camera.farPlane)
         shader.uploadVec3f(Uniforms.CAMERA_POSITION, cameraPosition)
 
-        // Draw sky texture
-        hdriTexture?.texId?.let { texId ->
-            if (texId < 0) return@let
-            glActiveTexture(GL_TEXTURE0)
-            glBindTexture(GL_TEXTURE_2D, texId)
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT)
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE)
+        // Draw sky texture: wraps around horizontally, clamps at the poles
+        val sky = hdriTexture?.rhi
+        val input = sphere.input
+        if (sky != null && input != null) {
+            sky.setSampler(sky.sampler.copy(wrap = Wrap.REPEAT, wrapV = Wrap.CLAMP_TO_EDGE))
+            val cmd = RhiContext.require().commandList()
+            cmd.setTexture(0, sky)
             shader.uploadInt(Uniforms.HDRI_TEXTURE, 0)
-
-            glBindVertexArray(sphere.vaoId)
-            glEnableVertexAttribArray(0)
-            glEnableVertexAttribArray(1)
-
-            glDrawElements(GL_TRIANGLES, sphere.vertexCount, GL_UNSIGNED_INT, 0)
-
-            glDisableVertexAttribArray(0)
-            glDisableVertexAttribArray(1)
-            glBindVertexArray(0)
+            cmd.setPipeline(pipelines.get(shader, input.layout) ?: return)
+            cmd.setVertexInput(input)
+            cmd.drawIndexed(sphere.vertexCount)
         }
 
         shader.stop()
-        
-        GLStateTracker.setDepthMask(true)
-        GLStateTracker.setDepthFunc(GL_LESS)
-        GLStateTracker.setCullFaceEnabled(previousCull)
     }
 
     fun destroy() {
-        if (sphere.vaoId != 0) {
-            glDeleteVertexArrays(sphere.vaoId)
-        }
+        pipelines.close()
+        loader.deleteVAO(sphere.vaoId)
     }
 }

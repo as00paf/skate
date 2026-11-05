@@ -66,11 +66,17 @@ data class BlendState(
     companion object {
         val OPAQUE = BlendState(enabled = false)
 
+        /** Classic straight alpha on color and alpha (splash screen over the back buffer). */
+        val ALPHA = BlendState(
+            true, BlendFactor.SRC_ALPHA, BlendFactor.ONE_MINUS_SRC_ALPHA, BlendFactor.SRC_ALPHA, BlendFactor.ONE_MINUS_SRC_ALPHA,
+        )
+
         /** Straight alpha whose target alpha only accumulates, so the target stays opaque (REN-19). */
         val ALPHA_KEEP_TARGET_OPAQUE = BlendState(
             true, BlendFactor.SRC_ALPHA, BlendFactor.ONE_MINUS_SRC_ALPHA, BlendFactor.ONE, BlendFactor.ONE_MINUS_SRC_ALPHA,
         )
-        val ADDITIVE = BlendState(true, BlendFactor.SRC_ALPHA, BlendFactor.ONE, BlendFactor.ONE, BlendFactor.ONE)
+        /** Additive color whose target alpha stays opaque, as [ALPHA_KEEP_TARGET_OPAQUE] (additive particles). */
+        val ADDITIVE = BlendState(true, BlendFactor.SRC_ALPHA, BlendFactor.ONE, BlendFactor.ONE, BlendFactor.ONE_MINUS_SRC_ALPHA)
     }
 }
 
@@ -99,13 +105,17 @@ enum class Filter { NEAREST, LINEAR, NEAREST_MIPMAP_LINEAR, LINEAR_MIPMAP_LINEAR
 
 enum class Wrap { REPEAT, CLAMP_TO_EDGE }
 
-/** Sampler state lives with the texture description; [compare] makes a shadow (depth compare) sampler. */
+/**
+ * Sampler state lives with the texture description; [compare] makes a shadow (depth compare) sampler. [wrap] applies
+ * to U (and W), [wrapV] to V (an equirectangular sky repeats around but clamps at the poles).
+ */
 data class SamplerDesc(
     val minFilter: Filter = Filter.LINEAR,
     val magFilter: Filter = Filter.LINEAR,
     val wrap: Wrap = Wrap.REPEAT,
     val anisotropy: Float = 1f,
     val compare: CompareFunc? = null,
+    val wrapV: Wrap = wrap,
 )
 
 data class TextureDesc(
@@ -188,13 +198,22 @@ data class VertexLayoutDesc(val bindings: List<VertexBinding>) {
     }
 }
 
-/** Immutable fixed-function state; pipelines are created once and reused every frame. */
-data class PipelineDesc(
-    val shader: RhiShader,
-    val layout: RhiVertexLayout,
+/** Fixed-function state of a pipeline, without its shader and vertex layout (one per draw kind). */
+data class PipelineState(
     val topology: Topology = Topology.TRIANGLES,
     val depth: DepthState = DepthState.READ_WRITE_LESS,
     val blend: BlendState = BlendState.OPAQUE,
     val cull: CullMode = CullMode.BACK,
     val polygonOffset: PolygonOffset? = null,
+    /** Width of [Topology.LINES] in pixels (Vulkan: the wideLines feature). */
+    val lineWidth: Float = 1f,
+) {
+    fun desc(shader: RhiShader, layout: RhiVertexLayout) = PipelineDesc(shader, layout, this)
+}
+
+/** Immutable pipeline: shader, vertex layout and fixed-function state; created once and reused every frame. */
+data class PipelineDesc(
+    val shader: RhiShader,
+    val layout: RhiVertexLayout,
+    val state: PipelineState = PipelineState(),
 )

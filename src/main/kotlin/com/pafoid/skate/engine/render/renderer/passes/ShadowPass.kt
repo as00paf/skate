@@ -123,7 +123,7 @@ class ShadowPass(
             renderLayer(cascadeMap, i) { shadowRenderer.drawCascade(frame.cascades[i]) }
         }
         frame.cascadeCount = count
-        frame.cascadeTextureId = cascadeMap.getDepthTextureId()
+        frame.cascadeTexture = cascadeMap.target?.depthTexture()
         frame.cascadeResolution = res
         frame.extraDepthBias = light.depthBias
         frame.extraNormalOffset = light.slopeScaledBias
@@ -146,7 +146,7 @@ class ShadowPass(
                 }
             }
         }
-        frame.localTextureId = localMap.getDepthTextureId()
+        frame.localTexture = localMap.target?.depthTexture()
         frame.localResolution = localMap.resolution
     }
 

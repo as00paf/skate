@@ -6,6 +6,7 @@ import com.pafoid.skate.engine.render.rhi.FakeRhiDevice
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNull
+import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
@@ -23,7 +24,8 @@ class VAOLoaderTest {
     fun Mesh_OneBufferPerPresentAttribute_PlusIndices() {
         val part = skinned()
         val input = device.inputs.single()
-        assertEquals(input.nativeHandle.toInt(), part.vaoId)
+        assertSame(input, part.input)
+        assertTrue(part.vaoId > 0)
         assertEquals(listOf(0, 1, 2, 6, 7), part.enabledAttributes)
         assertEquals(3, part.vertexCount)
         val layout = input.layout.desc.bindings.map { it.attributes.single().let { a -> a.location to a.type } }
@@ -37,8 +39,8 @@ class VAOLoaderTest {
 
     @Test
     fun Meshes_WithTheSameAttributes_ShareOneLayout() {
-        skinned(); skinned()
-        loader.loadToVAO(FloatArray(6), 2)
+        val ids = listOf(skinned(), skinned(), loader.loadToVAO(FloatArray(6), 2)).map { it.vaoId }
+        assertEquals(ids.distinct(), ids, "every mesh gets its own id")
         assertEquals(2, device.layoutsCreated.size)
     }
 

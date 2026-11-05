@@ -1,18 +1,19 @@
 package com.pafoid.skate.engine.render.material
 
+import com.pafoid.skate.engine.assets.data.Texture
 import com.pafoid.skate.engine.assets.data.models.Material
 
 /**
  * Uploads a [Material] through its [MaterialSchema]. Per bind it fills a reusable snapshot (no allocation)
  * and skips parameter/sampler uploads when the same sink (shader) already holds an identical snapshot,
  * which is the common case for consecutive draws after sorting. Textures always go through [bindTexture]
- * (the caller's binding cache dedupes those).
+ * (the backend's binding cache dedupes those).
  *
  * Assumes only this binder writes material uniforms on a given shader.
  */
 class MaterialBinder(
     private val schema: MaterialSchema = MaterialSchema.PBR,
-    private val bindTexture: (slot: Int, textureId: Int) -> Unit,
+    private val bindTexture: (slot: Int, texture: Texture) -> Unit,
 ) {
     private var current = Snapshot(schema)
     private var last = Snapshot(schema)
@@ -46,8 +47,7 @@ class MaterialBinder(
         fill(material, current)
         // Texture units are shared across materials, so always (re)bind; the binding cache skips repeats.
         for ((i, t) in schema.textures.withIndex()) {
-            val id = current.textureIds[i]
-            if (id != 0) bindTexture(t.slot, id)
+            if (current.textureIds[i] != 0) material.textureFor(t.name)?.let { bindTexture(t.slot, it) }
         }
         if (lastSink === sink && current.sameAs(last)) {
             uploadsSkipped++

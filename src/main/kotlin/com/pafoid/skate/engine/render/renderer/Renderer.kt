@@ -7,13 +7,14 @@ import com.pafoid.skate.engine.render.FrameBuffer
 import com.pafoid.skate.engine.render.RenderResources
 import com.pafoid.skate.engine.render.cache.GpuResources
 import com.pafoid.skate.engine.render.graph.RenderGraph
-import com.pafoid.skate.engine.render.rhi.opengl.GLStateTracker
-import com.pafoid.skate.engine.render.rhi.opengl.GLBindings
+import com.pafoid.skate.engine.render.rhi.RhiContext
+import com.pafoid.skate.engine.render.rhi.RhiDevice
 
 class Renderer(
     var renderResources: RenderResources,
     val cameraManager: CameraManager,
     val gpuResources: GpuResources = GpuResources(),
+    private val device: () -> RhiDevice = RhiContext::require,
 ) {
     val frameBuffer: FrameBuffer
         get() = renderResources.frameBuffer
@@ -28,8 +29,8 @@ class Renderer(
         // Reset per-frame draw call counter
         EngineStats.resetDrawCalls()
         EngineStats.resetStateChanges()
-        // ImGui and raw GL calls outside the tracker change state between frames; resync the cache once per frame.
-        GLStateTracker.invalidateCache()
+        // ImGui changes GL state between frames: the device forgets its cached state, bindings and program.
+        device().beginFrame()
 
         // Execute the render graph - this handles all preparation, execution, and cleanup of passes
         renderResources.renderGraph.execute(scene)
@@ -49,9 +50,9 @@ class Renderer(
         // The picking pass renders on demand: draw it now if it was not rendered last frame, and keep it fresh
         val picking = renderResources.renderPasses.picking
         if (!picking.isFresh) lastScene?.let { scene ->
-            GLBindings.cache.reset()
+            // Called from editor input, possibly after ImGui drew: start from a clean slate like a frame does
+            device().beginFrame()
             picking.renderNow(scene)
-            GLBindings.cache.reset()
         }
         picking.requestPick()
 
