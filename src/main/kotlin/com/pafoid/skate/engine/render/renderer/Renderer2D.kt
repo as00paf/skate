@@ -1,6 +1,8 @@
 package com.pafoid.skate.engine.render.renderer
 
 import com.pafoid.skate.engine.assets.data.Shader
+import com.pafoid.skate.engine.render.state.PipelineCache
+import com.pafoid.skate.engine.render.state.PipelineStates
 import com.pafoid.skate.engine.ecs.components.CameraComponent
 import com.pafoid.skate.engine.render.data.RenderBatch2D
 import com.pafoid.skate.engine.render.data.Renderable2D
@@ -16,6 +18,9 @@ class Renderer2D {
     private var uiRenderer: UiBatchRenderer? = null
 
     lateinit var shader: Shader
+
+    /** Pipeline of the batches: depth read/write, no blending, both faces ([PipelineStates.SPRITES]). */
+    val pipelines = PipelineCache(PipelineStates.SPRITES)
     lateinit var camera: CameraComponent
 
     fun addAll(renderables: List<Renderable2D>) {

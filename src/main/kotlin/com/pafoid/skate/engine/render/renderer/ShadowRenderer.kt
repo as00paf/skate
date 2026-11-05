@@ -7,27 +7,17 @@ import com.pafoid.skate.engine.ecs.components.RenderComponent
 import com.pafoid.skate.engine.ecs.components.SkeletonComponent
 import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.getComponent
-import com.pafoid.skate.engine.render.EngineStats
 import com.pafoid.skate.engine.render.lighting.ModelBounds
+import com.pafoid.skate.engine.render.rhi.RhiContext
+import com.pafoid.skate.engine.render.state.PipelineCache
+import com.pafoid.skate.engine.render.state.PipelineStates
 import com.pafoid.skate.engine.render.shadow.CascadeFit
 import com.pafoid.skate.engine.render.shadow.ShadowCulling
 import com.pafoid.skate.engine.render.shadow.ShadowSignature
-import com.pafoid.skate.engine.render.rhi.opengl.GLStateTracker
-import com.pafoid.skate.engine.render.utils.bindTexture
-import com.pafoid.skate.engine.render.utils.bindVAO
 import com.pafoid.skate.engine.utils.ShaderConst.Uniforms
 import com.pafoid.skate.engine.utils.TextureSlots
 import org.joml.Matrix4f
 import org.joml.Vector3f
-import org.lwjgl.opengl.GL11.GL_POLYGON_OFFSET_FILL
-import org.lwjgl.opengl.GL11.GL_TRIANGLES
-import org.lwjgl.opengl.GL11.GL_UNSIGNED_INT
-import org.lwjgl.opengl.GL11.glDisable
-import org.lwjgl.opengl.GL11.glDrawElements
-import org.lwjgl.opengl.GL11.glEnable
-import org.lwjgl.opengl.GL11.glPolygonOffset
-import org.lwjgl.opengl.GL30.glBindVertexArray
-import org.lwjgl.opengl.GL32.GL_DEPTH_CLAMP
 
 /** A shadow-casting object with its world bounding sphere, gathered once per frame. */
 class ShadowCaster {
@@ -42,8 +32,9 @@ class ShadowCaster {
  * Draws shadow casters into the currently bound shadow-map layer with the depth-only shadow shader.
  *
  * Per frame: [collect] the casters once, then [begin], one draw call per layer ([drawCascade] / [drawLocal], each
- * culling casters by bounding sphere), then [end]. Back-face culling is off so open meshes (planes, decks) still cast;
- * acne is handled by slope-scaled polygon offset here plus the receiver normal offset in the main shader.
+ * culling casters by bounding sphere), then [end]. The pipeline ([PipelineStates.SHADOW]) culls no faces so open
+ * meshes (planes, decks) still cast; acne is handled by its slope-scaled polygon offset plus the receiver normal
+ * offset in the main shader.
  */
 class ShadowRenderer(
     private val shadowShader: Shader,
@@ -51,7 +42,7 @@ class ShadowRenderer(
 ) {
     private val pool = ArrayList<ShadowCaster>()
     private val casters = ArrayList<ShadowCaster>()
-    private var previousCull = false
+    private val pipelines = PipelineCache(PipelineStates.SHADOW)
 
     /**
      * Gathers every rendered object under [root] at any depth ([RenderTraversal]: hidden or disabled subtrees are
@@ -78,21 +69,9 @@ class ShadowRenderer(
 
     fun begin() {
         shadowShader.start()
-        GLStateTracker.setDepthTestEnabled(true)
-        GLStateTracker.setDepthMask(true)
-        previousCull = GLStateTracker.isCullFaceEnabled()
-        GLStateTracker.setCullFaceEnabled(false)
-        glEnable(GL_POLYGON_OFFSET_FILL)
-        glPolygonOffset(POLYGON_OFFSET_FACTOR, POLYGON_OFFSET_UNITS)
-        // Casters between the sun and the cascade's near plane are clamped onto it instead of clipped away.
-        glEnable(GL_DEPTH_CLAMP)
     }
 
     fun end() {
-        glDisable(GL_DEPTH_CLAMP)
-        glPolygonOffset(0f, 0f)
-        glDisable(GL_POLYGON_OFFSET_FILL)
-        GLStateTracker.setCullFaceEnabled(previousCull)
         shadowShader.stop()
     }
 
@@ -169,8 +148,9 @@ class ShadowRenderer(
         val skeleton = caster.skeleton
         var hasMasked = false
         var prepared = false
+        val cmd = RhiContext.require().commandList()
         for (part in model.mesh) {
-            if (part.vaoId <= 0) continue
+            val input = part.input ?: continue
             val material = part.material
             val isMasked = material.alphaMode == AlphaMode.MASK && material.baseColorTexture != null
             hasMasked = hasMasked || isMasked
@@ -181,30 +161,30 @@ class ShadowRenderer(
                 shader.uploadBoolean(Uniforms.HAS_SKIN, skeleton != null)
                 prepared = true
             }
-            part.vaoId.bindVAO(part.enabledAttributes)
             if (isMasked) {
                 shader.uploadInt(Uniforms.ALPHA_MODE, 1)
                 shader.uploadFloat(Uniforms.ALPHA_CUTOFF, material.alphaCutoff)
                 shader.uploadBoolean(Uniforms.HAS_BASE_COLOR_TEXTURE, true)
-                material.baseColorTexture?.texId?.let { bindTexture(TextureSlots.BASE_COLOR, it) }
+                material.baseColorTexture?.let { cmd.setTexture(TextureSlots.BASE_COLOR, it.rhi) }
                 shader.uploadInt(Uniforms.BASE_COLOR_TEXTURE, TextureSlots.BASE_COLOR)
             }
-            glDrawElements(GL_TRIANGLES, part.vertexCount, GL_UNSIGNED_INT, 0)
-            EngineStats.drawCalls.incrementAndGet()
+            cmd.setPipeline(pipelines.get(shader, input.layout) ?: continue)
+            cmd.setVertexInput(input)
+            cmd.drawIndexed(part.vertexCount)
         }
-        glBindVertexArray(0)
         return hasMasked
     }
 
     fun destroy() {
+        pipelines.close()
         shadowShader.destroy()
         // alphaTestShader is a variant owned by the AssetsManager's variant cache
     }
 
     companion object {
         /** Slope-scaled caster offset: pushes steep caster depths back, the main fix for acne on sloped receivers. */
-        const val POLYGON_OFFSET_FACTOR = 1.5f
-        const val POLYGON_OFFSET_UNITS = 2f
+        const val POLYGON_OFFSET_FACTOR = PipelineStates.SHADOW_OFFSET_FACTOR
+        const val POLYGON_OFFSET_UNITS = PipelineStates.SHADOW_OFFSET_UNITS
 
         /** Bind-pose bounds understate animated meshes; inflate so limbs do not pop out of the map. */
         const val SKINNED_BOUNDS_SCALE = 1.5f

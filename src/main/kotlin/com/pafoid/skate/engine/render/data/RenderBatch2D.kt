@@ -10,28 +10,12 @@ import com.pafoid.skate.engine.assets.data.Shader
 import com.pafoid.skate.engine.assets.data.Texture
 import com.pafoid.skate.engine.render.renderer.Renderer2D
 import com.pafoid.skate.engine.utils.EntityIdEncoder
-import com.pafoid.skate.engine.utils.RenderConsts2D.COLOR_LOCATION
-import com.pafoid.skate.engine.utils.RenderConsts2D.ENTITY_ID_LOCATION
-import com.pafoid.skate.engine.utils.RenderConsts2D.POS_LOCATION
-import com.pafoid.skate.engine.utils.RenderConsts2D.TEX_COORDS_LOCATION
-import com.pafoid.skate.engine.utils.RenderConsts2D.TEX_ID_LOCATION
 import com.pafoid.skate.engine.utils.RenderConsts2D.MAX_BATCH_TEXTURES
 import com.pafoid.skate.engine.utils.RenderConsts2D.SAMPLER_INDICES
 import com.pafoid.skate.engine.utils.RenderConsts2D.VERTEX_SIZE
 import com.pafoid.skate.engine.utils.ShaderConst.Uniforms
 import org.joml.Vector2f
 import org.joml.Vector4f
-import org.lwjgl.opengl.GL11
-import org.lwjgl.opengl.GL11.GL_TEXTURE_2D
-import org.lwjgl.opengl.GL11.glBindTexture
-import org.lwjgl.opengl.GL20
-import org.lwjgl.opengl.GL30.GL_TEXTURE0
-import org.lwjgl.opengl.GL30.GL_TRIANGLES
-import org.lwjgl.opengl.GL30.GL_UNSIGNED_INT
-import org.lwjgl.opengl.GL30.glActiveTexture
-import org.lwjgl.opengl.GL30.glBindVertexArray
-import org.lwjgl.opengl.GL30.glDrawElements
-import org.lwjgl.opengl.GL30.glEnableVertexAttribArray
 
 class RenderBatch2D(
     private val maxBatchSize: Int,
@@ -45,12 +29,11 @@ class RenderBatch2D(
     private var vertices: FloatArray = FloatArray(maxBatchSize * 4 * VERTEX_SIZE)
     private val textureSlots = mutableListOf<Texture>()
 
-    private var vaoId = 0
     private var vbo: RhiBuffer? = null
     private var ebo: RhiBuffer? = null
     private var input: RhiVertexInput? = null
-    // The shader samples a fixed uTextures[MAX_BATCH_TEXTURES] array, so never exceed it even if the GPU has more units
-    private val maxTextureSlots = minOf(GL11.glGetInteger(GL20.GL_MAX_TEXTURE_IMAGE_UNITS), MAX_BATCH_TEXTURES)
+    // The shader samples a fixed uTextures[MAX_BATCH_TEXTURES] array (GL 3.3 guarantees 16 units, more than enough)
+    private val maxTextureSlots = MAX_BATCH_TEXTURES
 
     // Reusable objects to minimize allocations in hot loop
     private val currentPos = Vector4f()
@@ -60,7 +43,6 @@ class RenderBatch2D(
         vbo = device.createBuffer(BufferDesc(BufferUsage.VERTEX, vertices.size.toLong() * Float.SIZE_BYTES, BufferUpdate.DYNAMIC))
         ebo = device.createBuffer(BufferUsage.INDEX, BufferUpdate.STATIC, generateIndices())
         input = device.createVertexInput(device.createVertexLayout(VertexLayouts.BATCH_2D), listOf(vbo!!), ebo)
-        vaoId = input!!.nativeHandle.toInt()
     }
 
     fun addSprite(renderable2D: Renderable2D) {
@@ -101,24 +83,17 @@ class RenderBatch2D(
         shader.uploadMat4f(Uniforms.PROJECTION, renderer.camera.projection)
         shader.uploadMat4f(Uniforms.VIEW, renderer.camera.view)
 
-        // Bind textures to texture units starting at GL_TEXTURE0 so sampler indices match slot indices
-        for (i in 0 until textureSlots.size) {
-            glActiveTexture(GL_TEXTURE0 + i)
-            glBindTexture(GL_TEXTURE_2D, textureSlots[i].texId)
-        }
+        // Bind textures to units 0.. so sampler indices match slot indices
+        val cmd = RhiContext.require().commandList()
+        for (i in 0 until textureSlots.size) cmd.setTexture(i, textureSlots[i].rhi)
         // Upload sampler indices that map uTextures[0] -> texture unit 0, etc.
         shader.uploadIntArray(Uniforms.TEXTURES, SAMPLER_INDICES)
 
-        glBindVertexArray(vaoId)
-        glEnableVertexAttribArray(POS_LOCATION)
-        glEnableVertexAttribArray(COLOR_LOCATION)
-        glEnableVertexAttribArray(TEX_COORDS_LOCATION)
-        glEnableVertexAttribArray(TEX_ID_LOCATION)
-        glEnableVertexAttribArray(ENTITY_ID_LOCATION)
-
-        glDrawElements(GL_TRIANGLES, numSprites * 6, GL_UNSIGNED_INT, 0)
-
-        glBindVertexArray(0)
+        val vertexInput = input ?: return
+        val pipeline = renderer.pipelines.get(shader, vertexInput.layout) ?: return
+        cmd.setPipeline(pipeline)
+        cmd.setVertexInput(vertexInput)
+        cmd.drawIndexed(numSprites * 6)
 
         shader.stop()
     }
@@ -270,7 +245,6 @@ class RenderBatch2D(
         vbo?.close()
         ebo?.close()
         input = null; vbo = null; ebo = null
-        vaoId = 0
     }
 }
 

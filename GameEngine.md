@@ -112,12 +112,12 @@ The renderer works but needs cleaner APIs, caching, dynamic shaders, better mate
   - Do: Clean up `Renderer2D`, `TextureRenderer3D` and sprite batching. Add mipmaps/anisotropy from `TextureQuality`, sprite atlases and billboards.
   - Done when: Sprites and billboards batch correctly, and texture quality settings take effect.
   - Deps: REN-02
-- [~] @skate-render **REN-12** `P3` RHI abstraction (Vulkan-ready)
+- [x] **REN-12** `P3` RHI abstraction (Vulkan-ready)
   - Do: Define backend-agnostic interfaces (`RhiDevice`, `RhiBuffer`, `RhiTexture`, `RhiPipeline`, `RhiCommandList`) and move all GL calls into an `OpenGlRhi` backend.
   - Done when: No GL call exists outside `render/rhi/opengl`. An architecture guard test enforces this.
-  - Design: `docs/design/REN-12.md` approved by the lead (round 15) with the §7 proposals as written: ImGuiLayer is the one allowed GL user; named uniforms via `ShaderParams`; Vulkan semantics (pass begin/end, depth range, Y-flip) owned by the backend; sync picking readback; main-thread only. Migrate in the §5 steps, one or two per round. Steps 0-1 done (round 17), steps 2-3 done (round 18), steps 4-5 done (round 19).
+  - Design: `docs/design/REN-12.md` approved by the lead (round 15) with the §7 proposals as written: ImGuiLayer is the one allowed GL user; named uniforms via `ShaderParams`; Vulkan semantics (pass begin/end, depth range, Y-flip) owned by the backend; sync picking readback; main-thread only. Migrate in the §5 steps, one or two per round. Steps 0-1 done (round 17), steps 2-3 done (round 18), steps 4-5 done (round 19), steps 6-7 done (round 21): migration complete.
   - Deps: REN-03, REN-04, REN-05
-- [ ] **REN-13** `P3` Vulkan backend spike
+- [~] @skate-render **REN-13** `P3` Vulkan backend spike
   - Do: Build a minimal `VulkanRhi` that renders the sample scene's geometry pass.
   - Done when: A config flag switches backend, and the spike's findings are documented.
   - Deps: REN-12

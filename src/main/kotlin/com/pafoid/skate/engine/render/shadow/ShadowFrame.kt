@@ -1,5 +1,6 @@
 package com.pafoid.skate.engine.render.shadow
 
+import com.pafoid.skate.engine.render.rhi.RhiTexture
 import org.joml.Matrix4f
 import org.joml.Vector3f
 import org.joml.Vector4f
@@ -19,12 +20,12 @@ class ShadowFrame {
 
     /** Far distance (view depth) of each cascade; `splits[0]` is the camera near plane. */
     val splits = FloatArray(CascadeSplits.MAX_CASCADES + 1)
-    var cascadeTextureId = 0
+    var cascadeTexture: RhiTexture? = null
     var cascadeResolution = 0
 
     val localSlots = ArrayList<LocalShadowSlot>(LocalShadows.MAX_SHADOWED_LIGHTS)
     val localMatrices = Array(LocalShadows.MAX_LAYERS) { Matrix4f() }
-    var localTextureId = 0
+    var localTexture: RhiTexture? = null
     var localResolution = 0
 
     /** Extra receiver biases from the directional light component (metres). */

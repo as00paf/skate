@@ -28,7 +28,7 @@ class FakeRhiDevice : RhiDevice {
     }
 
     inner class Input(override val layout: RhiVertexLayout, val buffers: List<RhiBuffer>, val indices: RhiBuffer?) : RhiVertexInput {
-        override val nativeHandle = 100 + nextHandle++
+        val nativeHandle = 100 + nextHandle++
         var closed = false
         override fun close() { closed = true; events += "close vao$nativeHandle" }
     }
@@ -80,6 +80,22 @@ class FakeRhiDevice : RhiDevice {
         override fun close() { closed = true; events += "close shader ${desc.name}" }
     }
 
+    inner class Pipeline(override val desc: PipelineDesc) : RhiPipeline {
+        var closed = false
+        override fun close() { closed = true }
+    }
+
+    inner class Timer : RhiTimer {
+        override var latestNs: Long = -1
+        var closed = false
+        override fun close() { closed = true }
+    }
+
+    val pipelines = ArrayList<Pipeline>()
+    val timers = ArrayList<Timer>()
+
+    /** GPU time every timer reports when its span ends. */
+    var timerResultNs = -1L
     val textures = ArrayList<Texture>()
     val targets = ArrayList<Target>()
     val shaders = ArrayList<FakeShader>()
@@ -113,6 +129,10 @@ class FakeRhiDevice : RhiDevice {
         return FakeShader(desc).also { shaders += it }
     }
 
+    override fun createTimer(): RhiTimer = Timer().also { timers += it }
+
+    override fun createPipeline(desc: PipelineDesc): RhiPipeline = Pipeline(desc).also { pipelines += it }
+
     override fun createRenderTarget(desc: RenderTargetDesc): RhiRenderTarget = Target(desc).also { targets += it }
 
     override fun readPixels(target: RhiRenderTarget?, attachment: Int, rect: IntRect, format: PixelFormat, out: ByteBuffer) {
@@ -121,7 +141,15 @@ class FakeRhiDevice : RhiDevice {
     }
 
     override fun commandList(): RhiCommandList = object : RhiCommandList {
-        override fun setParams(params: ShaderParams) { events += "use ${(params as Params).name}" }
+        override fun setParams(params: ShaderParams) { events += "use ${(params as? Params)?.name}" }
+        override fun setPipeline(pipeline: RhiPipeline) { events += "pipeline ${pipeline.desc.state.topology}" }
+        override fun setVertexInput(input: RhiVertexInput) { events += "input" }
+        override fun setTexture(slot: Int, texture: RhiTexture?) { events += "texture $slot ${texture?.let { (it as Texture).nativeHandle }}" }
+        override fun setScissor(rect: IntRect?) { events += "scissor $rect" }
+        override fun draw(vertexCount: Int, firstVertex: Int, instances: Int) { events += "draw $vertexCount from $firstVertex x$instances" }
+        override fun drawIndexed(indexCount: Int, firstIndex: Int, instances: Int) { events += "drawIndexed $indexCount from $firstIndex x$instances" }
+        override fun beginTimer(timer: RhiTimer) { events += "beginTimer" }
+        override fun endTimer(timer: RhiTimer) { events += "endTimer"; (timer as Timer).latestNs = timerResultNs }
 
         override fun setUniformBuffer(binding: Int, buffer: RhiBuffer, offset: Long, size: Long) {
             uniformBindings += binding to buffer

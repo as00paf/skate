@@ -42,19 +42,19 @@ data class RenderComponent(
             assetsManager.readText(path)?.ifEmpty { null } ?: java.io.File(path).takeIf { it.isFile }?.readText()
         }, assetsManager::getTexture)
         material?.baseColorTexture?.let {
-            it.texId = assetsManager.getTexture(it.filePath.orEmpty()).texId
+            it.adopt(assetsManager.getTexture(it.filePath.orEmpty()))
         }
         material?.normalMap?.let {
-            it.texId = assetsManager.getTexture(it.filePath.orEmpty()).texId
+            it.adopt(assetsManager.getTexture(it.filePath.orEmpty()))
         }
         material?.metallicRoughnessTexture?.let {
-            it.texId = assetsManager.getTexture(it.filePath.orEmpty()).texId
+            it.adopt(assetsManager.getTexture(it.filePath.orEmpty()))
         }
         material?.aoTexture?.let {
-            it.texId = assetsManager.getTexture(it.filePath.orEmpty()).texId
+            it.adopt(assetsManager.getTexture(it.filePath.orEmpty()))
         }
         material?.emissiveTexture?.let {
-            it.texId = assetsManager.getTexture(it.filePath.orEmpty()).texId
+            it.adopt(assetsManager.getTexture(it.filePath.orEmpty()))
         }
     }
 

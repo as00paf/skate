@@ -93,7 +93,7 @@ class GpuResourceCacheTest {
         res.shaders.acquire("s") { mockk<Shader>() }
         res.textures.acquire("t") { Texture() }
         res.textures.acquire("t") { Texture() }
-        res.meshes.acquire("m") { GpuMesh(1, intArrayOf(2)) }
+        res.meshes.acquire("m") { GpuMesh(mockk(), emptyList()) }
         assertEquals(3, res.totalCount)
         res.disposeAll()
         assertEquals(0, res.totalCount)

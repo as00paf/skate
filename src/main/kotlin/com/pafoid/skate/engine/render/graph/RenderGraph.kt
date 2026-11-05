@@ -2,16 +2,18 @@ package com.pafoid.skate.engine.render.graph
 
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.render.renderer.passes.RenderPass
-import com.pafoid.skate.engine.render.rhi.opengl.GLBindings
+import com.pafoid.skate.engine.render.rhi.RhiContext
+import com.pafoid.skate.engine.render.rhi.RhiDevice
+import com.pafoid.skate.engine.render.rhi.RhiTimer
 
 /**
  * Ordered list of render passes executed once per frame. Each pass gets its CPU time
- * ([RenderPass.executionTimeNs]) and, when the context has timer queries, its GPU time ([RenderPass.gpuTimeNs], read
- * a few frames late without stalling).
+ * ([RenderPass.executionTimeNs]) and its GPU time ([RenderPass.gpuTimeNs]) from an [RhiTimer], read a few frames late
+ * without stalling (-1 while unknown or when the device has no timer queries).
  *
- * @param gpuQueries Creates the timer-query API on first use (needs a current GL context); null disables GPU timing.
+ * @param device The device timing the passes; null (no device yet, unit tests) skips GPU timing.
  */
-class RenderGraph(private val gpuQueries: () -> GpuQueryApi? = { GpuQueryApi.openGl() }) {
+class RenderGraph(private val device: () -> RhiDevice? = { RhiContext.device }) {
     private val passes = mutableListOf<RenderPass>()
 
     fun addPass(pass: RenderPass) {
@@ -24,17 +26,11 @@ class RenderGraph(private val gpuQueries: () -> GpuQueryApi? = { GpuQueryApi.ope
         return passes.find { it.name == name }
     }
 
-    private val gpuTimers = java.util.IdentityHashMap<RenderPass, GpuTimerRing>()
-    private var gpuApi: GpuQueryApi? = null
-    private var gpuApiResolved = false
-    private var frame = 0L
+    private val gpuTimers = java.util.IdentityHashMap<RenderPass, RhiTimer>()
 
     fun execute(scene: Scene) {
-        if (!gpuApiResolved) {
-            gpuApi = gpuQueries()
-            gpuApiResolved = true
-        }
-        val api = gpuApi
+        val d = device()
+        val cmd = d?.commandList()
 
         // 1. Prepare all enabled nodes
         for (pass in passes) if (pass.isEnabled) pass.prepare()
@@ -45,30 +41,24 @@ class RenderGraph(private val gpuQueries: () -> GpuQueryApi? = { GpuQueryApi.ope
                 pass.gpuTimeNs = -1
                 continue
             }
-            val timer = api?.let { a -> gpuTimers.getOrPut(pass) { GpuTimerRing(a) } }
-            // Passes may use raw GL, so cached bindings are not trusted across pass boundaries
-            GLBindings.cache.reset()
-            timer?.begin(frame)
+            val timer = d?.let { gpuTimers.getOrPut(pass) { it.createTimer() } }
+            timer?.let { cmd?.beginTimer(it) }
             try {
                 pass.executeWithTiming(scene)
             } finally {
-                timer?.end(frame)
+                timer?.let { cmd?.endTimer(it) }
             }
-            GLBindings.cache.reset()
         }
 
         // 3. Cleanup all nodes (even disabled ones may need cleanup)
         passes.forEach { it.cleanup() }
 
-        for ((pass, timer) in gpuTimers) {
-            timer.collect()
-            if (pass.isEnabled) pass.gpuTimeNs = timer.latestNs
-        }
-        frame++
+        // 4. Read finished timings once, after the frame's commands
+        for ((pass, timer) in gpuTimers) if (pass.isEnabled) pass.gpuTimeNs = timer.latestNs
     }
 
     fun clear() {
-        gpuTimers.values.forEach { it.destroy() }
+        gpuTimers.values.forEach { it.close() }
         gpuTimers.clear()
         passes.clear()
     }
