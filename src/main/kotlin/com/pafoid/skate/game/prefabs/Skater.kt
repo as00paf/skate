@@ -71,9 +71,9 @@ class Skater(
     }
 
     companion object {
-        const val CONFIG_PATH = "configs/skater.character.json"
+        const val CONFIG_PATH = Assets.Configs.SKATER_CHARACTER
         /** Animation controller; the behavior's animation names in [CONFIG_PATH] are its state requests. */
-        const val CONTROLLER_PATH = "configs/skater.controller.json"
+        const val CONTROLLER_PATH = Assets.Configs.SKATER_CONTROLLER
 
         val DEFAULT_ANIMATIONS = listOf(
             Assets.Bundled.IDLE_0,

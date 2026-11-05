@@ -43,7 +43,7 @@ scan of `TODO`/`FIXME` markers in `src/main`. Runtime repro steps are marked
 | BUG-008 | P2 | ANI | `engine/assets/AssetsManager.kt:72` | Only the first animation of a file is loaded. Repro: import FBX/glTF with several clips. |
 | BUG-009 | P2 | PHY | `engine/ecs/components/RagdollComponent.kt:9`, `physics3d/RagdollBuilder.kt` | Ragdoll builder flagged "check". Repro: enable ragdoll on a skeleton. |
 | BUG-010 | P2 | EDT | `engine/core/WindowController.kt:126` | "check if still works" (window behavior path). |
-| BUG-011 | P2 | GPL | `game/GameMain.kt:57` | Hard-coded `C:\workspace\skate_workspace\test\Builds` path; standalone game fails on other machines. |
+| BUG-011 | P2 | GPL | `game/GameMain.kt:57` | Hard-coded `C:\workspace\skate_workspace\test\Builds` path; standalone game fails on other machines. Fixed: `game.bin` next to the game or `-Dskate.bin` (AST-07, `GameBin`); `GameLoggingAndPathsGuardTest` keeps paths and console output out of `game/` (GPL-08). |
 | BUG-012 | P2 | EDT | `editor/search/history/SearchHistory.kt:10` | `search_history.json` written to the CWD. |
 | BUG-013 | P2 | EDT | `editor/ui/handlers/EditorInputHandler.kt:124` | Rename shortcut does not focus the name field in the property window. |
 

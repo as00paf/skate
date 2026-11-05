@@ -76,7 +76,6 @@ class PlatformApiGuardTest {
             "engine/core/Window.kt",
             "engine/EngineExtensions.kt",
             "engine/physics3d/native/NativeLibraryLoader.kt",
-            "game/GameMain.kt",
         )
         val console = Regex("""\bprintln\(|\bprint\(|printStackTrace\(|System\.(out|err)\b""")
         val violators = mainFiles()

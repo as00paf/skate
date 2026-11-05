@@ -7,7 +7,7 @@ import com.pafoid.skate.editor.systems.ProjectManager
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.game.player.SkateGameplay
 import com.pafoid.skate.engine.core.Window
-import com.pafoid.skate.engine.assets.Assets
+import com.pafoid.skate.engine.core.LoggerService
 import com.pafoid.skate.engine.events.EngineAction
 import com.pafoid.skate.engine.fileExtension
 import com.pafoid.skate.engine.input.ViewRect
@@ -17,20 +17,18 @@ import com.pafoid.skate.game.ui.GameUiSystem
 import org.lwjgl.glfw.GLFW
 import com.pafoid.skate.engine.assets.pack.PackBuilder
 import com.pafoid.skate.engine.assets.pack.PackedStrings
-import com.pafoid.skate.engine.utils.AssetsPacker
 import com.pafoid.skate.engine.utils.Atlas
 import org.lwjgl.opengl.GL11
 import org.lwjgl.opengl.GL30
 import org.lwjgl.opengl.GL30.GL_DRAW_FRAMEBUFFER
 import org.lwjgl.opengl.GL30.GL_READ_FRAMEBUFFER
-import java.io.File
 import java.nio.ByteBuffer
 
 private val engine = Engine()
 
 fun main(args: Array<String>) {
     SkateGameplay.register()
-    val binFile = loadBinFile() ?: return
+    val binFile = GameBin.read(engine.logger) ?: return
     val (header, headerSize) = readFileHeader(binFile)
     if (header == null || headerSize <= 0) return
 
@@ -78,15 +76,14 @@ private fun installGameUi(window: Window) {
     )
 }
 
-/** Game UI text ships inside game.bin (AST-07); packs exported before that fall back to the tables on disk. */
+/** Game UI text ships only inside game.bin (AST-07); nothing is read from the working directory. */
 private fun loadGameStrings() {
     val packed = engine.assetsManager.assetsResolver.readAll(PackedStrings::isTable)
-    if (packed.isNotEmpty()) {
-        engine.stringManager.addStrings(PackedStrings.source(packed))
-    } else {
-        engine.logger.logEngine("game.bin has no string tables, reading ${Assets.Strings.GAME_STRINGS}")
-        engine.stringManager.addStrings(Assets.Strings.GAME_STRINGS)
+    if (packed.isEmpty()) {
+        engine.logger.logGame("game.bin has no string tables; UI text shows its keys", LoggerService.LogLevel.WARN)
+        return
     }
+    engine.stringManager.addStrings(PackedStrings.source(packed))
 }
 
 fun testDraw(window: Window) {// TODO : is working but needs to move
@@ -100,17 +97,6 @@ fun testDraw(window: Window) {// TODO : is working but needs to move
     )
 }
 
-fun loadBinFile(): ByteArray? {
-    // Exported games ship game.bin next to the jar; -Dskate.bin=<path> overrides it.
-    val file = System.getProperty("skate.bin")?.let { File(it) } ?: File(AssetsPacker.BIN_FILE)
-    if (!file.exists()) {
-        println("${file.absolutePath} does not exist")
-        return null
-    }
-    val data = file.readBytes()
-    return data
-}
-
 fun readFileHeader(binFile: ByteArray): Pair<Atlas?, Int> {
     val headerSizeData = ByteBuffer.wrap(binFile.copyOfRange(0, Int.SIZE_BYTES))
     val headerSize = headerSizeData.int + Int.SIZE_BYTES
@@ -120,8 +106,7 @@ fun readFileHeader(binFile: ByteArray): Pair<Atlas?, Int> {
         val parsedData = engine.serializer.decode<Atlas?>(data)
         return Pair(parsedData, headerSize)
     } catch (ex: Exception) {
-        engine.logger.logEngine("Could not load header file: $ex")
-        ex.printStackTrace()
+        engine.logger.logError("Could not read the game.bin header", ex, source = "game")
     }
     return null to 0
 }
@@ -137,7 +122,7 @@ fun loadProjectAndIcon(binFile: ByteArray, atlas: Atlas, offset: Int): Pair<Proj
                 try {
                     project = engine.serializer.decodeFile<Project?>(FileKind.PROJECT, data)
                 } catch (e: Exception) {
-                    engine.logger.logEngine("Error loading project file: $e")
+                    engine.logger.logError("Could not load the project file from game.bin", e, source = "game")
                 }
             }
             currentOffset += info.size

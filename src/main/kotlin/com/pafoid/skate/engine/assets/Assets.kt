@@ -103,6 +103,12 @@ object Assets {
         const val GAME_STRINGS = "assets/strings/game"
     }
 
+    /** Bundled config resources (classpath `configs/`); a file at the same path under the working directory overrides them. */
+    object Configs {
+        const val SKATER_CHARACTER = "configs/skater.character.json"
+        const val SKATER_CONTROLLER = "configs/skater.controller.json"
+    }
+
     object Bundled {
         const val JAMES = "EngineDefaults\\Characters\\james.glb"
 
