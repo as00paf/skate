@@ -156,7 +156,7 @@ The renderer works but needs cleaner APIs, caching, dynamic shaders, better mate
   - Do: Human-reported on PR #13: FPS fell drastically (to ~40) in the editor. Profile per pass and per system (CPU and GPU) on the default project, bisect across the round-11 merges (REN-07 shadows, REN-21 UiPass, PHY-11 transform sync, ANI-09 procedural poses, EDT-30, ECS-11, REN-10), find the cause(s) and fix them; report causes outside render as NEEDS.
   - Done when: The default project runs at the pre-round-11 frame rate (or better) at MEDIUM shadows; per-pass timings visible in the Render Graph window; a regression guard where feasible.
   - Deps: REN-07
-- [~] @skate-render **REN-23** `P2` Day/night time scale overwritten on Stop
+- [x] **REN-23** `P2` Day/night time scale overwritten on Stop
   - Do: From EDT-10: stopping Play resets `DayNightCycleComponent.timeScale` to 1.0 (`ViewportActionHandler`), overwriting the scene's saved value. Keep the play-mode time scale separate from the saved field.
   - Done when: A saved timeScale survives Play/Stop and save/reload; test.
 
@@ -211,7 +211,7 @@ Asset management works but needs a complete review.
   - Do: From EDT-40: `Animator.readController` and `RenderComponent.resolveMaterialAsset` read absolute paths, so animator controllers and `.skmat` links break when a project moves or is exported. Store asset references relative to the project (resolve through `AssetsResolver`), and make every other saved asset reference relative too (audit). Localize the `ProjectExporter` failure details.
   - Done when: A project moved to another folder and an exported build both resolve controllers, materials, sounds and textures; saved scenes contain no absolute paths (test); exporter errors are translated.
   - Deps: AST-08, EDT-16, EDT-17
-- [~] @skate-assets **AST-10** `P2` Missing bundled metal.png (BUG-020)
+- [x] **AST-10** `P2` Missing bundled metal.png (BUG-020)
   - Do: From QA-14: `Assets.Bundled.METAL` points at `assets/textures/metal.png`, which never existed; rails fall back to the default texture with an ERROR. Add a proper metal texture (or point METAL at an existing one), make `EngineAssetCopier` or a unit test over `Assets.Bundled.bundledAssets` fail on missing sources, and remove the entry from `ProjectLifecycleEndToEndTest.KNOWN_ISSUES`.
   - Done when: New projects log no missing-texture errors; the bundled-assets test guards it.
 
@@ -357,7 +357,7 @@ The animation system needs improvements.
   - Do: The human provided `assets/characters/animations/skate riding.fbx` (first real skateboarding clip). Import it for the skater (retarget if needed), put it in the ANI-09 controller's riding slot(s) instead of the procedural pose, and keep the procedural fallback for slots still missing clips.
   - Done when: Riding in the default project uses the clip (aligned on the deck, facing the nose, looping cleanly); the clip loads and maps to its slot in a test.
   - Deps: ANI-09
-- [~] @skate-animation **ANI-11** `P1` Exported game drops Animator clips (BUG-021)
+- [x] **ANI-11** `P1` Exported game drops Animator clips (BUG-021)
   - Do: From QA-14: in an exported game, `Animator.resolveAnimationsFromPaths` keeps only clips where `File(path).exists()`, so pack-relative clips are dropped and the controller finds no motions; the skater doesn't animate. Resolve clips through `AssetsManager.paths` (pack or disk), or don't re-resolve clips `openProject` already resolved.
   - Done when: `ProjectLifecycleEndToEndTest.Lifecycle_8` passes; the exported skater animates; unit test.
 
