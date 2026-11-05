@@ -869,6 +869,10 @@ A lot of features are broken. Many unit tests are missing (**no integration test
   - Do: Regressions reached the human twice in workflows no test exercised as they do (EDT-41 recent projects after AST-09, AUD-09 silent showcase). Add an automated end-to-end test of the editor project lifecycle through the real managers and disk: create a new project, save, close, reopen via the recent-projects list and via the startup last-project path, move the folder and open it, switch scenes, Play/Stop, export (wizard model) and load the exported pack headless. Assert no errors logged and that scenes, assets and settings resolve.
   - Done when: The test runs in `gradlew test`, would have caught EDT-41 (verify by reverting it locally), and is documented as the place to extend for future workflow changes.
   - Deps: EDT-41
+- [~] @skate-qa **QA-15** `P1` Make CI green
+  - Do: The GitHub Actions `build` workflow (windows-latest) has failed on every run since at least 2026-10-29, including master, while the local `gradlew test` passes. Latest failures (PR #21): `ShaderValidationTest` initializationError (IllegalStateException), five `ProjectExporterTest`/`ExportedReferencesTest` failures (probably no game jar on CI after AST-11), plus whatever failed earlier. Find each root cause from the run logs (`gh run view --log-failed`), fix tests that depend on the developer machine (GL context, built jars, user data, fonts, paths) with proper skips/fakes or CI setup (e.g. run `gameJar` before `test` in the workflow), and fix real bugs (report other domains' bugs as NEEDS).
+  - Done when: CI is green on a branch from current master and stays green on the next PR; tests that need a GPU are explicitly tagged and skipped on CI with a reason.
+  - Deps: QA-06
 
 ## Agents & herdr
 
