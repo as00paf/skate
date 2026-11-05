@@ -9,6 +9,8 @@ import com.pafoid.skate.engine.render.rhi.RhiCaps
 import com.pafoid.skate.engine.render.rhi.RhiCommandList
 import com.pafoid.skate.engine.render.rhi.RhiContext
 import com.pafoid.skate.engine.render.rhi.RhiDevice
+import com.pafoid.skate.engine.render.rhi.RhiTexture
+import com.pafoid.skate.engine.render.rhi.TextureDesc
 import com.pafoid.skate.engine.render.rhi.RhiVertexInput
 import com.pafoid.skate.engine.render.rhi.RhiVertexLayout
 import com.pafoid.skate.engine.render.rhi.VertexLayoutDesc
@@ -78,6 +80,8 @@ class OpenGlDevice private constructor(
 
     override fun createVertexInput(layout: RhiVertexLayout, vertexBuffers: List<RhiBuffer>, indexBuffer: RhiBuffer?): RhiVertexInput =
         GlVertexInput(layout as GlVertexLayout, vertexBuffers, indexBuffer)
+
+    override fun createTexture(desc: TextureDesc): RhiTexture = GlTexture(desc, caps.maxAnisotropy > 1f)
 
     override fun commandList(): RhiCommandList = GlCommandList
 

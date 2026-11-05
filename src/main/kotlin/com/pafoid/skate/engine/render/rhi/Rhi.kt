@@ -7,9 +7,9 @@ import java.nio.FloatBuffer
  * Render hardware interface (REN-12, docs/design/REN-12.md). Backend-neutral: nothing in this package may use a
  * graphics API (RhiGlIsolationGuardTest). The OpenGL backend lives in `rhi/opengl/`.
  *
- * Migration status: step 2 (buffers and vertex inputs). [RhiDevice] and [RhiCommandList] only declare what the
- * backend implements; textures (step 3), render targets and readback (4), shaders (5), pipelines and draws (6) and
- * timers (7) are added by the step that migrates their callers. Everything runs on the main thread (§7.6).
+ * Migration status: step 3 (buffers, vertex inputs, textures). [RhiDevice] and [RhiCommandList] only declare what
+ * the backend implements; render targets and readback (step 4), shaders (5), pipelines and draws (6) and timers (7)
+ * are added by the step that migrates their callers. Everything runs on the main thread (§7.6).
  */
 
 /** What the device supports; read once at creation. */
@@ -49,6 +49,12 @@ interface RhiDevice : AutoCloseable {
      * [layout]. GL: a VAO; Vulkan: the binding list recorded at draw time.
      */
     fun createVertexInput(layout: RhiVertexLayout, vertexBuffers: List<RhiBuffer>, indexBuffer: RhiBuffer? = null): RhiVertexInput
+
+    /**
+     * A texture object with [TextureDesc.sampler] applied and no contents yet: fill each level and layer with
+     * [RhiTexture.upload] (cube faces are layers 0-5 in +X, -X, +Y, -Y, +Z, -Z order).
+     */
+    fun createTexture(desc: TextureDesc): RhiTexture
 
     /** The frame's command list (GL: one shared immediate list). */
     fun commandList(): RhiCommandList
@@ -96,10 +102,20 @@ interface RhiBuffer : RhiResource {
 
 interface RhiTexture : RhiResource {
     val desc: TextureDesc
+
+    /** Current sampler state; starts as [TextureDesc.sampler]. */
+    val sampler: SamplerDesc
+
+    /** (Re)specifies [level] of [layer] from [data] in [TextureDesc.format]; null allocates without contents. */
     fun upload(level: Int, layer: Int, data: ByteBuffer?)
+
+    /** Builds levels 1.. from level 0. */
     fun generateMips()
 
-    /** Backend handle for ImGui only (GL: texture name), see §7.2. */
+    /** Changes filtering, wrapping or anisotropy (texture quality settings). */
+    fun setSampler(sampler: SamplerDesc)
+
+    /** Backend handle for ImGui and for draw code not yet on [RhiCommandList] (GL: texture name), see §7.2. */
     val nativeHandle: Long
 }
 

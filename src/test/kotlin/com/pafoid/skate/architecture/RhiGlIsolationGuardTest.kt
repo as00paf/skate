@@ -67,11 +67,8 @@ class RhiGlIsolationGuardTest {
         /** GL users outside the backend; shrink only (REN-12 steps 1-7). */
         val ALLOWED = setOf(
             "editor/imgui/ImGuiLayer.kt",
-            "editor/systems/ThumbnailCache.kt",
-            "engine/assets/data/CubeMap.kt",
             "engine/assets/data/Shader.kt",
             "engine/assets/loaders/ShaderLoader.kt",
-            "engine/assets/loaders/TextureLoader.kt",
             "engine/render/ColorTarget.kt",
             "engine/render/FrameBuffer.kt",
             "engine/render/PickingTexture.kt",
@@ -94,8 +91,6 @@ class RhiGlIsolationGuardTest {
             "engine/render/renderer/passes/ParticlePass.kt",
             "engine/render/renderer/passes/PickingPass.kt",
             "engine/render/renderer/passes/PostProcessPass.kt",
-            "engine/render/texture/TextureQualitySettings.kt",
-            "engine/render/ui/SdfFont.kt",
             "engine/render/ui/UiBatchRenderer.kt",
             "engine/render/utils/GLState.kt",
             "engine/utils/ScreenshotUtils.kt",

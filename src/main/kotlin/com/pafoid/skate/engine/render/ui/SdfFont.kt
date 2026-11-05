@@ -1,5 +1,12 @@
 package com.pafoid.skate.engine.render.ui
 
+import com.pafoid.skate.engine.render.rhi.Filter
+import com.pafoid.skate.engine.render.rhi.PixelFormat
+import com.pafoid.skate.engine.render.rhi.RhiContext
+import com.pafoid.skate.engine.render.rhi.SamplerDesc
+import com.pafoid.skate.engine.render.rhi.TextureDesc
+import com.pafoid.skate.engine.render.rhi.TextureType
+import com.pafoid.skate.engine.render.rhi.Wrap
 import com.pafoid.skate.engine.assets.data.Texture
 import java.awt.Color
 import java.awt.Font
@@ -7,7 +14,6 @@ import java.awt.RenderingHints
 import java.awt.image.BufferedImage
 import java.io.File
 import org.lwjgl.BufferUtils
-import org.lwjgl.opengl.GL11.*
 
 /**
  * One glyph of an SDF atlas. [x],[y],[w],[h] is the atlas cell in texels (including the distance-field spread);
@@ -121,7 +127,8 @@ class SdfFont(val texture: Texture, private val data: SdfFontData) : UiFont {
     private val fallback = data.glyphs['?'.code]
 
     fun destroy() {
-        if (texture.texId != 0) glDeleteTextures(texture.texId)
+        texture.rhi?.close()
+        texture.rhi = null
         texture.texId = 0
     }
 
@@ -141,13 +148,14 @@ class SdfFont(val texture: Texture, private val data: SdfFontData) : UiFont {
             for (d in data.distances) buffer.put(-1).put(-1).put(-1).put(d)
             buffer.flip()
             val texture = Texture(data.width, data.height, 1, 4, false, null)
-            texture.texId = glGenTextures()
-            glBindTexture(GL_TEXTURE_2D, texture.texId)
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP)
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP)
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, data.width, data.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, buffer)
+            // Clamped so glyphs on the atlas border never sample the opposite side (was legacy GL_CLAMP)
+            val rhi = RhiContext.require().createTexture(TextureDesc(
+                TextureType.TEXTURE_2D, PixelFormat.RGBA8, data.width, data.height,
+                sampler = SamplerDesc(minFilter = Filter.LINEAR, magFilter = Filter.LINEAR, wrap = Wrap.CLAMP_TO_EDGE),
+            ))
+            rhi.upload(0, 0, buffer)
+            texture.rhi = rhi
+            texture.texId = rhi.nativeHandle.toInt()
             return texture
         }
     }

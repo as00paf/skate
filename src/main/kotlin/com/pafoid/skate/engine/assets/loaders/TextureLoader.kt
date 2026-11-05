@@ -1,23 +1,16 @@
 package com.pafoid.skate.engine.assets.loaders
 
+import com.pafoid.skate.engine.render.rhi.Filter
+import com.pafoid.skate.engine.render.rhi.PixelFormat
+import com.pafoid.skate.engine.render.rhi.RhiContext
+import com.pafoid.skate.engine.render.rhi.RhiDevice
+import com.pafoid.skate.engine.render.rhi.SamplerDesc
+import com.pafoid.skate.engine.render.rhi.TextureDesc
+import com.pafoid.skate.engine.render.rhi.TextureType
+import com.pafoid.skate.engine.render.rhi.Wrap
+import org.lwjgl.stb.STBImage.stbi_failure_reason
 import com.pafoid.skate.engine.assets.data.Texture
-import com.pafoid.skate.engine.render.GpuResource
 import org.lwjgl.BufferUtils
-import org.lwjgl.opengl.GL11.GL_LINEAR
-import org.lwjgl.opengl.GL11.GL_LINEAR_MIPMAP_LINEAR
-import org.lwjgl.opengl.GL11.GL_REPEAT
-import org.lwjgl.opengl.GL11.GL_RGBA
-import org.lwjgl.opengl.GL11.GL_TEXTURE_2D
-import org.lwjgl.opengl.GL11.GL_TEXTURE_MAG_FILTER
-import org.lwjgl.opengl.GL11.GL_TEXTURE_MIN_FILTER
-import org.lwjgl.opengl.GL11.GL_TEXTURE_WRAP_S
-import org.lwjgl.opengl.GL11.GL_TEXTURE_WRAP_T
-import org.lwjgl.opengl.GL11.GL_UNSIGNED_BYTE
-import org.lwjgl.opengl.GL11.glBindTexture
-import org.lwjgl.opengl.GL11.glGenTextures
-import org.lwjgl.opengl.GL11.glTexImage2D
-import org.lwjgl.opengl.GL11.glTexParameteri
-import org.lwjgl.opengl.GL30.glGenerateMipmap
 import org.lwjgl.stb.STBImage.stbi_image_free
 import org.lwjgl.stb.STBImage.stbi_load
 import org.lwjgl.stb.STBImage.stbi_load_from_memory
@@ -29,7 +22,7 @@ import java.nio.ByteBuffer
 /** CPU-side decoded pixels (owned by stb); hand to [TextureLoader.upload] or [TextureLoader.discard]. */
 class TextureData(val width: Int, val height: Int, val pixels: ByteBuffer, val flip: Boolean, val filePath: String?)
 
-class TextureLoader() {
+class TextureLoader(private val device: () -> RhiDevice = RhiContext::require) {
 
     /** Thread-safe: touches no GL state. */
     fun decodeFromFile(filePath: String, flipOnLoad: Boolean = false): TextureData = MemoryStack.stackPush().use { stack ->
@@ -60,8 +53,8 @@ class TextureLoader() {
     }
 
     fun delete(texture: Texture) {
-        texture.gpu?.close()
-        texture.gpu = null
+        texture.rhi?.close()
+        texture.rhi = null
         texture.texId = -1
     }
 
@@ -71,6 +64,7 @@ class TextureLoader() {
         val channels = BufferUtils.createIntBuffer(1)
         stbi_set_flip_vertically_on_load(flipOnLoad)
         val image = stbi_load(filePath, width, height, channels, 4) // Force 4 channels
+            ?: throw IllegalStateException("Could not decode texture $filePath: ${stbi_failure_reason()}")
         val texture = Texture(width.get(0), height.get(0), 1, 4, flipOnLoad, filePath)
         uploadToGPU(texture, image)
 
@@ -83,36 +77,33 @@ class TextureLoader() {
         val channels = BufferUtils.createIntBuffer(1)
         stbi_set_flip_vertically_on_load(flipOnLoad)
         val image = stbi_load_from_memory(buffer, width, height, channels, 4) // Force 4 channels
+            ?: throw IllegalStateException("Could not decode texture data: ${stbi_failure_reason()}")
         val texture = Texture(width.get(0), height.get(0), 1, 4, flipOnLoad)
         uploadToGPU(texture, image)
 
         return texture
     }
 
-    private fun uploadToGPU(texture: Texture, pixels: ByteBuffer?) {// Must be called on GL thread
-        texture.gpu?.close()
-        texture.gpu = GpuResource.texture(glGenTextures())
-        texture.texId = texture.gpu!!.id
+    private fun uploadToGPU(texture: Texture, pixels: ByteBuffer) { // Must be called on the GL thread
+        try {
+            texture.rhi?.close()
+            val rhi = device().createTexture(
+                TextureDesc(
+                    TextureType.TEXTURE_2D, PixelFormat.RGBA8, texture.width, texture.height,
+                    mipLevels = TextureDesc.fullMipChain(texture.width, texture.height), sampler = SAMPLER,
+                ),
+            )
+            rhi.upload(0, 0, pixels)
+            rhi.generateMips()
+            texture.rhi = rhi
+            texture.texId = rhi.nativeHandle.toInt()
+        } finally {
+            stbi_image_free(pixels)
+        }
+    }
 
-        glBindTexture(GL_TEXTURE_2D, texture.texId)
-
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT)
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT)
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR)
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
-
-        glTexImage2D(
-            GL_TEXTURE_2D,
-            0,
-            GL_RGBA,
-            texture.width,
-            texture.height,
-            0,
-            GL_RGBA,
-            GL_UNSIGNED_BYTE,
-            pixels
-        )
-        glGenerateMipmap(GL_TEXTURE_2D)
-        pixels?.let { stbi_image_free(it) }
+    private companion object {
+        /** Mipmapped, repeating: what every loaded image texture uses (TextureQualitySettings may change it). */
+        val SAMPLER = SamplerDesc(minFilter = Filter.LINEAR_MIPMAP_LINEAR, magFilter = Filter.LINEAR, wrap = Wrap.REPEAT)
     }
 }

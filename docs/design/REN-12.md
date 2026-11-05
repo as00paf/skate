@@ -157,7 +157,7 @@ classes: allocation-free on the hot path and testable without GL.
 
 ## 5. Incremental migration plan
 
-Status: steps 0 to 2 are done. `RhiDevice` and `RhiCommandList` only declare what the backend implements so far;
+Status: steps 0 to 3 are done. `RhiDevice` and `RhiCommandList` only declare what the backend implements so far;
 each later step adds the methods it migrates to. Amendments made while implementing:
 
 - **`RhiVertexInput`** (step 2): vertex and index buffers bound to a vertex layout, created by
@@ -169,6 +169,11 @@ each later step adds the methods it migrates to. Amendments made while implement
 - **Buffer updates** (step 2): `RhiBuffer.update` takes float arrays, float buffers or byte buffers; `resize` and
   `replace` give new storage (GL: orphaning). Index buffers upload through `GL_COPY_WRITE_BUFFER`, so an upload never
   rebinds the index buffer of the VAO that happens to be bound.
+- **Textures** (step 3): `createTexture` returns an empty texture with its sampler applied; `upload(level, layer,
+  data)` fills a level of a 2D texture, a cube face or an array layer, and `setSampler` changes filtering later
+  (texture quality). Formats are sized on GL (`RGBA8` -> `GL_RGBA8`; the loaders used unsized `GL_RGBA`, which renders
+  the same). Asset `Texture.texId` stays the native handle for draw code and ImGui until step 6. The SDF font atlas
+  asked for legacy `GL_CLAMP`; it is now `CLAMP_TO_EDGE`, which Vulkan can express.
 
 Each step is one PR-sized commit. Each must keep the full test suite green, produce pixel-identical offscreen frames
 (REN-18/19/20 harness: default `MainScene` and `FeatureShowcase`, created, saved and reloaded, edit mode and Play),

@@ -11,6 +11,8 @@ import org.lwjgl.opengl.GL11.GL_LESS
 import org.lwjgl.opengl.GL11.GL_TRIANGLES
 import org.lwjgl.opengl.GL11.glDepthFunc
 import org.lwjgl.opengl.GL11.glDrawArrays
+import org.lwjgl.opengl.GL11.glBindTexture
+import org.lwjgl.opengl.GL13.GL_TEXTURE_CUBE_MAP
 import org.lwjgl.opengl.GL20.glDisableVertexAttribArray
 import org.lwjgl.opengl.GL20.glEnableVertexAttribArray
 import org.lwjgl.opengl.GL30.glBindVertexArray
@@ -28,7 +30,7 @@ class SkyboxRenderer(private val shader: Shader, loader: VAOLoader) {
         glBindVertexArray(cube.vaoId)
         glEnableVertexAttribArray(0)
 
-        cubeMap.bind()
+        glBindTexture(GL_TEXTURE_CUBE_MAP, cubeMap.getId())
 
         // Depth test should be less or equal to pass since skybox is at max depth
         glDepthFunc(GL_LEQUAL)
