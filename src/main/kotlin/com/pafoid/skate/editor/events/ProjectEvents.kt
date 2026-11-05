@@ -2,6 +2,9 @@ package com.pafoid.skate.editor.events
 
 import com.pafoid.skate.editor.project.Project
 import com.pafoid.skate.engine.events.Event
+import com.pafoid.skate.engine.utils.ExportOptions
+import com.pafoid.skate.engine.utils.ExportProgress
+import com.pafoid.skate.engine.utils.ExportResult
 
 sealed class ProjectEvent(eventName: String) : Event(eventName) {
     data class Opened(val project: Project) : ProjectEvent("editor.project_opened")
@@ -28,5 +31,10 @@ sealed class ProjectEvent(eventName: String) : Event(eventName) {
     object SaveAsRequested : ProjectEvent("project.action.save_project_as_requested")
     object LoadLastProjectRequested : ProjectEvent("project.action.load_last_project_requested")
 
-    object ExportRequested : ProjectEvent("project.action.export_project_requested")
+    /** Saves the project, then exports it in the background with [options] (EDT-09 export wizard). */
+    data class ExportRequested(val options: ExportOptions = ExportOptions()) : ProjectEvent("project.action.export_project_requested")
+    /** Published on the main thread for every export step while an export runs. */
+    data class ExportProgressed(val progress: ExportProgress) : ProjectEvent("project.action.export_progressed")
+    /** Published on the main thread when an export ends, successful or not. */
+    data class ExportFinished(val result: ExportResult) : ProjectEvent("project.action.export_finished")
 }

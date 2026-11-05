@@ -1,6 +1,8 @@
 package com.pafoid.skate.editor.imgui
 
 import com.pafoid.skate.editor.imgui.data.Style
+import com.pafoid.skate.editor.imgui.theme.EditorTheme
+import com.pafoid.skate.editor.imgui.theme.ThemeLibrary
 import imgui.ImGui
 import imgui.flag.ImGuiCol.Border
 import imgui.flag.ImGuiCol.BorderShadow
@@ -51,7 +53,42 @@ import imgui.flag.ImGuiCol.TitleBgActive
 import imgui.flag.ImGuiCol.TitleBgCollapsed
 import imgui.flag.ImGuiCol.WindowBg
 
+/**
+ * Applies editor themes (EDT-07). Themes come from [library] (the `*.theme.json` files); [sync] applies the
+ * effective one ([preview] while the settings window shows a choice, else the saved one) whenever it changes, so a
+ * switch takes effect on the next frame without a restart.
+ */
 object ImGuiStyleManager {
+
+    var library: ThemeLibrary = ThemeLibrary(emptyList())
+
+    /** Theme id the settings window is previewing; null when none (the saved theme applies). */
+    var preview: String? = null
+
+    /** Id of the theme currently applied to ImGui, if any. */
+    var appliedId: String? = null
+        private set
+
+    /** The theme that should be showing: the previewed one, else [savedId], resolved through [library]. */
+    fun effective(savedId: String): EditorTheme = library.resolve(preview ?: savedId)
+
+    /** Applies [effective] when it differs from what is showing. Call between frames (before `newFrame`). */
+    fun sync(savedId: String) {
+        val theme = effective(savedId)
+        if (theme.id == appliedId) return
+        apply(theme)
+    }
+
+    /** Forgets what is applied (a new ImGui context starts with ImGui's default style), so [sync] reapplies. */
+    fun invalidate() {
+        appliedId = null
+    }
+
+    fun apply(theme: EditorTheme) {
+        setupStyle(theme.style)
+        ImGui.getIO().fontGlobalScale = theme.fontScale
+        appliedId = theme.id
+    }
 
     fun setupStyle(s: Style = Style()) {
         val t = s.theme
@@ -72,6 +109,10 @@ object ImGuiStyleManager {
             indentSpacing = s.indentSpacing
             scrollbarSize = s.scrollbarSize
             grabMinSize = s.grabMinSize
+            windowBorderSize = s.windowBorderSize
+            childBorderSize = s.windowBorderSize
+            popupBorderSize = s.windowBorderSize
+            frameBorderSize = s.frameBorderSize
 
             // Colors
             setColor(Text, t.text)

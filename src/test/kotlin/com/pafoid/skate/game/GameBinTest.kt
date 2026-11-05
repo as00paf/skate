@@ -69,7 +69,7 @@ class GameBinTest {
         val projectFile = File(dir, "Game.skateproject").apply { writeText("{}") }
         val project = Project(name = "Game", projectPath = projectFile.absolutePath, defaultScene = scene.absolutePath, scenesPath = listOf(scene.absolutePath))
         val jar = File(dir, "fake-game.jar").apply { writeText("jar") }
-        assertTrue(ProjectExporter(mockk(relaxed = true), File(dir, "no-strings")) { jar }.export(project))
+        assertTrue(ProjectExporter(mockk(relaxed = true), File(dir, "no-strings")) { jar }.export(project).success)
         val exported = File(dir, "builds/${AssetsPacker.BIN_FILE}")
 
         val bin = GameBin.read(logger, GameBin.file(override = exported.absolutePath))!!

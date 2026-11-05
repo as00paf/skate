@@ -54,8 +54,8 @@ class ComponentSearchProvider(
             id = "comp_${go.uId}_${componentType}",
             displayName = componentType,
             category = SearchCategory.COMPONENT,
-            subcategory = "Component",
-            description = "${stringManager.getString("search.everywhere.category.component")} on ${go.name}",
+            subcategory = stringManager.getString("search.category.component"),
+            description = stringManager.getString("search.component.on_object", go.name),
             icon = icon,
             relevanceScore = score,
             metadata = mapOf(

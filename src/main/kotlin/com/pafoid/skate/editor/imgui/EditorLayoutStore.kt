@@ -63,6 +63,5 @@ class EditorLayoutStore(
         /** Whether [ini] has at least one window saved under a stable `###window.` ID. */
         fun isCurrentFormat(ini: String): Boolean = ini.contains("[Window][") && ini.contains("${ImGuiIds.STABLE}window.")
 
-        const val OPEN_WINDOWS_FILE = "imgui.windows"
     }
 }

@@ -1,106 +1,52 @@
 package com.pafoid.skate.editor.ui.windows
 
-import com.pafoid.skate.editor.imgui.label
+import com.pafoid.skate.editor.events.ViewportAction
 import com.pafoid.skate.editor.imgui.EditorWindow
 import com.pafoid.skate.editor.imgui.MImGui
+import com.pafoid.skate.editor.imgui.components.imgui
+import com.pafoid.skate.editor.imgui.label
 import com.pafoid.skate.editor.systems.ProjectManager
-import com.pafoid.skate.engine.addComponent
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.ecs.components.AudioComponent
+import com.pafoid.skate.engine.ecs.components.ComponentType
 import com.pafoid.skate.engine.getComponent
-import com.pafoid.skate.engine.removeComponent
 import imgui.ImGui
-import imgui.type.ImString
 
-class AudioInspectorWindow(engine: Engine, projectManager: ProjectManager) : EditorWindow("window.audio_inspector") {
+/** The selected object's audio source (same inspector as the Properties window) and the project mixer (EDT-14). */
+class AudioInspectorWindow(private val engine: Engine, projectManager: ProjectManager) : EditorWindow("window.audio_inspector") {
 
     private val stringManager = engine.stringManager
     private val sceneManager = engine.sceneManager
-    private val mixerPanel = AudioMixerPanel(stringManager, engine.eventSystem, projectManager)
+    private val mixerPanel = AudioMixerPanel(stringManager, engine.eventSystem, projectManager) { settings ->
+        engine.audioEngine.applyConfig(settings.toConfig())
+    }
 
     override fun imgui() {
         ImGui.begin(stringManager.label("window.audio_inspector"))
-        renderAudioComponentInspector()
+        if (ImGui.collapsingHeader(stringManager.label("lbl.audio.selected_object"))) renderSelectedSource()
         if (ImGui.collapsingHeader(stringManager.label("lbl.audio.mixer"))) mixerPanel.render()
         ImGui.end()
     }
 
-    private fun renderAudioComponentInspector() {
-        if (ImGui.collapsingHeader(stringManager.label("lbl.audio.selected_object"))) {
-            val selectedObject = sceneManager.currentScene?.selectedGameObject
-
-            if (selectedObject == null) {
-                MImGui.textDisabled(stringManager.getString("lbl.audio.no_object_selected"))
-                return
-            }
-
-            val audioComponent = selectedObject.getComponent<AudioComponent>()
-
-            if (audioComponent == null) {
-                MImGui.textDisabled(stringManager.getString("lbl.audio.no_audio_component_selected"))
-
-                ImGui.separator()
-
-                if (ImGui.button(stringManager.getString("btn.audio.add_component"))) {
-                    selectedObject.addComponent(AudioComponent())
-                }
-                return
-            }
-
-            val filePath = ImString(audioComponent.soundFilePath, 256)
-            ImGui.inputText(
-                stringManager.getString("lbl.audio.sound_file"),
-                filePath
-            )
-
-            if (ImGui.beginDragDropTarget()) {
-                val payload = ImGui.acceptDragDropPayload<String>("SOUND")
-                if (payload != null) {
-                    audioComponent.soundFilePath = payload
-                }
-                ImGui.endDragDropTarget()
-            } else {
-                audioComponent.soundFilePath = filePath.get()
-            }
-
+    private fun renderSelectedSource() {
+        val selected = sceneManager.currentScene?.selectedGameObject
+        if (selected == null) {
+            MImGui.textDisabled(stringManager.getString("lbl.audio.no_object_selected"))
+            return
+        }
+        val audio = selected.getComponent<AudioComponent>()
+        if (audio == null) {
+            MImGui.textDisabled(stringManager.getString("lbl.audio.no_audio_component_selected"))
             ImGui.separator()
-
-            val is3D = audioComponent.is3D
-            if (ImGui.checkbox(stringManager.getString("lbl.audio.is_3d"), is3D)) {
-                audioComponent.apply3D(!is3D)
+            if (ImGui.button("${stringManager.getString("btn.audio.add_component")}##add_audio")) {
+                engine.eventSystem.publish(ViewportAction.AddComponent(selected, ComponentType.AUDIO))
             }
-
-            val loops = audioComponent.loops
-            if (ImGui.checkbox(stringManager.getString("lbl.audio.looping"), loops)) {
-                audioComponent.applyLooping(!loops)
-            }
-
-            ImGui.separator()
-
-            val volumeArray = floatArrayOf(audioComponent.volume)
-            if (ImGui.dragFloat(stringManager.getString("lbl.audio.volume"), volumeArray, 0.01f, 0f, 1f)) {
-                audioComponent.applyVolume(volumeArray[0])
-            }
-
-            ImGui.separator()
-
-            val isPlaying = audioComponent.isPlaying
-
-            if (!isPlaying) {
-                if (ImGui.button(stringManager.getString("btn.audio.play"))) {
-                    audioComponent.play()
-                }
-            } else {
-                if (ImGui.button(stringManager.getString("btn.audio.stop"))) {
-                    audioComponent.stopPlayback()
-                }
-            }
-
-            ImGui.sameLine()
-
-            if (ImGui.button(stringManager.getString("btn.audio.remove_component"))) {
-                selectedObject.removeComponent<AudioComponent>()
-            }
+            return
+        }
+        audio.imgui(engine)
+        ImGui.sameLine()
+        if (ImGui.button("${stringManager.getString("btn.audio.remove_component")}##remove_audio")) {
+            engine.eventSystem.publish(ViewportAction.RemoveComponent(audio))
         }
     }
 }

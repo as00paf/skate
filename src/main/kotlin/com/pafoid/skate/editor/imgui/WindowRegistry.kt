@@ -7,6 +7,7 @@ import com.pafoid.skate.editor.ui.windows.AudioInspectorWindow
 import com.pafoid.skate.editor.ui.windows.CommandHistoryWindow
 import com.pafoid.skate.editor.ui.windows.ConsoleWindow
 import com.pafoid.skate.editor.ui.windows.EditorSettingsWindow
+import com.pafoid.skate.editor.ui.windows.ExportWizardWindow
 import com.pafoid.skate.editor.ui.windows.GameViewWindow
 import com.pafoid.skate.editor.ui.windows.InputTestingWindow
 import com.pafoid.skate.editor.ui.windows.KeyBindingsWindow
@@ -20,6 +21,7 @@ import com.pafoid.skate.editor.ui.windows.RenderGraphWindow
 import com.pafoid.skate.editor.ui.windows.SceneHierarchyWindow
 import com.pafoid.skate.editor.ui.windows.SearchEverywhereWindow
 import com.pafoid.skate.editor.ui.windows.ScriptEditorWindow
+import com.pafoid.skate.editor.ui.windows.ShellWindow
 import com.pafoid.skate.engine.core.Engine
 
 class WindowRegistry(
@@ -46,6 +48,8 @@ class WindowRegistry(
         AudioInspectorWindow(engine, projectManager),
         ProjectWindow(engine, projectManager),
         ScriptEditorWindow(engine, projectManager, editor.settingsManager),
+        ShellWindow(engine, projectManager),
+        ExportWizardWindow(engine, projectManager),
     )
 
     /** Windows listed in View > Windows and stored in the layout; dialogs are excluded. */

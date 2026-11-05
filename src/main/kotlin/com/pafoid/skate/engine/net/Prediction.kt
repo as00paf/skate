@@ -33,19 +33,28 @@ class ClientPredictor(
     private val fixedDt: Float,
     var smoothingTimeS: Float = 0.1f,
     var snapDistance: Float = 2f,
-    private val maxPending: Int = 128,
+    /** Inputs kept for replay; must cover the round trip (see [NetConfig.maxPendingInputs]) or replays diverge. */
+    private val maxPending: Int = NetConfig().maxPendingInputs,
 ) {
-    private val pending = ArrayDeque<InputCommand>()
+    private val pending = ArrayDeque<InputCommand>(maxPending + 1)
     private val posOffset: Int = run {
         var off = 0
         for (r in schema.replicators) { if (r === TransformReplicator) return@run off; off += r.fieldCount }
         -1
     }
 
+    // Reused buffers: predict/reconcile/render run every tick and allocate nothing per step.
+    private val state = IntArray(schema.fieldCount)
+    private val previous = IntArray(schema.fieldCount)
+    private val visual = IntArray(schema.fieldCount)
+    private var active = false
+
     var gameObject: GameObject? = null
         private set
-    var predictedState: IntArray? = null
-        private set
+
+    /** Current predicted simulation state (live buffer, do not keep), or null when nothing is attached. */
+    val predictedState: IntArray? get() = if (active) state else null
+
     var lastAckedSeq = 0
         private set
 
@@ -60,67 +69,69 @@ class ClientPredictor(
 
     val pendingCount: Int get() = pending.size
 
-    fun attach(go: GameObject, state: IntArray) {
+    fun attach(go: GameObject, initial: IntArray) {
         gameObject = go
-        predictedState = state.copyOf()
+        initial.copyInto(state)
+        active = true
         pending.clear()
         correction.fill(0f)
+        lastAckedSeq = 0
         schema.apply(go, state)
     }
 
     fun detach() {
         gameObject = null
-        predictedState = null
+        active = false
         pending.clear()
     }
 
     /** Applies [cmd] locally right away. */
     fun predict(cmd: InputCommand) {
-        val state = predictedState ?: return
+        if (!active) return
         pending.addLast(cmd)
         while (pending.size > maxPending) pending.removeFirst()
-        predictedState = simulate(state, cmd.payload)
+        simulate(cmd.payload)
     }
 
     /** Corrects the prediction with the server's [authoritative] state after it processed input [ackedSeq]. */
     fun reconcile(ackedSeq: Int, authoritative: IntArray) {
-        val old = predictedState ?: return
-        if (ackedSeq < lastAckedSeq) return
+        if (!active || ackedSeq < lastAckedSeq) return
         lastAckedSeq = ackedSeq
         while (pending.isNotEmpty() && pending.first().seq <= ackedSeq) pending.removeFirst()
 
-        var state = authoritative.copyOf()
-        for (cmd in pending) state = simulate(state, cmd.payload)
-        predictedState = state
+        state.copyInto(previous)
+        authoritative.copyInto(state)
+        for (cmd in pending) simulate(cmd.payload)
 
         if (posOffset < 0) return
         var d2 = 0f
-        val err = FloatArray(3)
         for (i in 0 until 3) {
-            err[i] = (old[posOffset + i] - state[posOffset + i]) / TransformReplicator.POS_SCALE
-            d2 += err[i] * err[i]
+            val e = (previous[posOffset + i] - state[posOffset + i]) / TransformReplicator.POS_SCALE
+            d2 += e * e
         }
         lastErrorDistance = sqrt(d2)
         if (lastErrorDistance > VISIBLE_ERROR) correctionCount++
-        if (lastErrorDistance > snapDistance) correction.fill(0f) else for (i in 0 until 3) correction[i] += err[i]
+        if (lastErrorDistance > snapDistance) correction.fill(0f)
+        else for (i in 0 until 3) correction[i] += (previous[posOffset + i] - state[posOffset + i]) / TransformReplicator.POS_SCALE
     }
 
     /** Decays the visual correction and writes the predicted state to the object. */
     fun render(dt: Float) {
         val go = gameObject ?: return
-        val state = predictedState ?: return
+        if (!active) return
         val k = if (smoothingTimeS <= 0f) 0f else exp(-dt / smoothingTimeS)
-        for (i in 0 until 3) correction[i] = if (k == 0f) 0f else correction[i] * k
-        val visual = state.copyOf()
+        for (i in 0 until 3) correction[i] *= k
+        state.copyInto(visual)
         if (posOffset >= 0) for (i in 0 until 3) visual[posOffset + i] += Quantize.toInt(correction[i], TransformReplicator.POS_SCALE)
         schema.apply(go, visual)
     }
 
-    private fun simulate(state: IntArray, input: ByteArray): IntArray {
-        val go = gameObject ?: return state
+    /** Steps [state] in place: the object is the scratch the game step reads and writes. */
+    private fun simulate(input: ByteArray) {
+        val go = gameObject ?: return
         schema.apply(go, state)
         step.step(go, input, fixedDt)
-        return schema.capture(go)
+        schema.capture(go, state)
     }
 
     companion object {

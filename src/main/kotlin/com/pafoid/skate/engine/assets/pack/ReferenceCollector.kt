@@ -5,13 +5,13 @@ import java.io.File
 
 /**
  * Finds the project files reachable from [roots] by following string values in JSON-like asset files
- * (scenes, prefabs, materials, ...). A string counts as a reference when it is an absolute or project-relative
+ * (scenes, prefabs, materials and `.skmat` material assets, ...). A string counts as a reference when it is an absolute or project-relative
  * path of an existing project file, or a GUID known to [registry].
  */
 class ReferenceCollector(
     private val projectDir: File,
     private val registry: AssetRegistry? = null,
-    private val scanExtensions: Set<String> = setOf("scene", "prefab", "json", "mat", "material", "skateproject"),
+    private val scanExtensions: Set<String> = setOf("scene", "prefab", "json", "mat", "material", "skmat", "skateproject"),
     private val modelExtensions: Set<String> = setOf("gltf", "obj", "dae"),
     private val modelCompanions: Set<String> = setOf("bin", "mtl", "png", "jpg", "jpeg", "tga", "bmp"),
 ) {

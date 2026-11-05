@@ -83,6 +83,11 @@
         "recoverySec": 1.2,
         "drag": 4.0
     },
+    "prediction": {
+        "mass": 180.0,
+        "gravity": 9.81,
+        "groundY": 0.0
+    },
     "animations": {
         "IDLE": "ride_idle",
         "PUSH": "push",

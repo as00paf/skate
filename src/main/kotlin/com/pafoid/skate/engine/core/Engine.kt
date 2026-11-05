@@ -15,6 +15,7 @@ import com.pafoid.skate.engine.ecs.systems.ParticleSystem
 import com.pafoid.skate.engine.ecs.systems.DirectionalLightSystem
 import com.pafoid.skate.engine.ecs.systems.EnvironmentSystem
 import com.pafoid.skate.engine.ecs.systems.CameraControlSystem
+import com.pafoid.skate.engine.net.LoopbackPredictionSystem
 import com.pafoid.skate.engine.ecs.components.RigidBody3D
 import com.pafoid.skate.engine.ecs.systems.CameraProbe
 import com.pafoid.skate.engine.getComponent
@@ -164,6 +165,7 @@ class Engine {
             },
             RagdollSystem(),
             ParticleSystem(),
+            LoopbackPredictionSystem(),
             // Raw right button over the game view: ImGui owns the editor viewport, as for the UI pointer below.
             CameraControlSystem(ReaderFlyInputSource(inputSystem.reader) {
                 inputProvider.mouseListener.let { it.isMouseButtonDown(1, ignoreImGui = true) && it.isInsideView() }

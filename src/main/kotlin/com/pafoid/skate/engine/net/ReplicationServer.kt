@@ -24,7 +24,7 @@ class ReplicationServer(
     }
 
     private val objects = LinkedHashMap<Int, GameObject>()
-    private val slots = HashMap<ConnectionId, Slot>()
+    private val slots = LinkedHashMap<ConnectionId, Slot>() // join order = client id order
     private var nextNetId = 1
     private var nextClientId = 1
 
@@ -68,15 +68,15 @@ class ReplicationServer(
     fun gameObject(netId: Int): GameObject? = objects[netId]
 
     /** Objects owned by [clientId] (e.g. its player), in net id order. */
-    fun ownedBy(clientId: Int): List<GameObject> =
-        objects.entries.sortedBy { it.key }.filter { it.value.getComponent<NetworkIdentity>()?.ownerClientId == clientId }.map { it.value }
+    fun ownedBy(clientId: Int): List<GameObject> = // objects is in spawn order = net id order
+        objects.values.filter { it.getComponent<NetworkIdentity>()?.ownerClientId == clientId }
 
     /**
      * Applies at most one queued input per connected client: calls [handler] with the client id and the game-defined
      * payload. Clients without a queued input this tick are skipped. Call between [poll] and [tick].
      */
     fun processInputs(handler: (clientId: Int, payload: ByteArray) -> Unit) {
-        for (slot in slots.values.sortedBy { it.clientId }) {
+        for (slot in slots.values) {
             if (!slot.ready) continue
             val cmd = slot.inputs.take() ?: continue
             handler(slot.clientId, cmd.payload)

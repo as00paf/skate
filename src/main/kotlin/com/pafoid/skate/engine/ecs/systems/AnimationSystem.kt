@@ -6,6 +6,7 @@ import com.pafoid.skate.engine.animation.ik.IkDebugDraw
 import com.pafoid.skate.engine.animation.ik.IkDebugSink
 import com.pafoid.skate.engine.animation.ik.IkPass
 import com.pafoid.skate.engine.animation.graph.AnimationStateMachine
+import com.pafoid.skate.engine.animation.graph.Pose
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.events.AnimationEvent
 import com.pafoid.skate.engine.ecs.components.Animator
@@ -35,6 +36,7 @@ class AnimationSystem(
 
     private val animated = query(Animator::class, SkeletonComponent::class, topLevelOnly = true)
     private val gates = IdentityHashMap<SkeletonComponent, AnimationUpdateGate>()
+    private val maskPoses = IdentityHashMap<SkeletonComponent, Pair<Pose, Pose>>()
     private val tmpCenter = Vector3f()
     private val tmpScale = Vector3f()
     private val tmpWorldToModel = Matrix4f()
@@ -42,6 +44,7 @@ class AnimationSystem(
     override fun invalidateCache() {
         super.invalidateCache()
         gates.clear()
+        maskPoses.clear()
     }
 
     override fun update(dt: Float) {
@@ -105,6 +108,18 @@ class AnimationSystem(
         IkPass.run(rig, pose.skeleton, pose.localTransforms, worldToModel, sourceFresh)
     }
 
+    /** The controller pose limited to the animator's mask, over the base pose; [controller] itself when unmasked. */
+    private fun masked(ago: AnimatedGameObject, controller: Pose, dt: Float): Pose {
+        val skeleton = ago.skeleton.pose.skeleton
+        val mask = ago.animator.boneMask(skeleton) ?: return controller
+        val base = maskPoses.getOrPut(ago.skeleton) { Pose(controller.boneCount) to Pose(controller.boneCount) }
+            .takeIf { it.first.boneCount == controller.boneCount }
+            ?: (Pose(controller.boneCount) to Pose(controller.boneCount)).also { maskPoses[ago.skeleton] = it }
+        ago.animator.evaluateBasePose(skeleton, dt, base.first)
+        Pose.blendMasked(base.first, controller, 1f, mask, base.second)
+        return base.second
+    }
+
     private fun updateAnimation(ago: AnimatedGameObject, dt: Float) {
         val animator = ago.animator
         val pose = ago.skeleton.pose
@@ -114,7 +129,7 @@ class AnimationSystem(
         if (machine != null) {
             machine.update(dt)
             publishEvents(ago, machine)
-            val result = machine.pose
+            val result = masked(ago, machine.pose, dt)
             for (i in 0 until minOf(result.boneCount, pose.localTransforms.size)) {
                 result.toMatrix(i, pose.localTransforms[i])
             }

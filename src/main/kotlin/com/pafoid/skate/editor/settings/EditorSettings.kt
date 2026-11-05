@@ -1,6 +1,7 @@
 package com.pafoid.skate.editor.settings
 
 import com.pafoid.skate.editor.data.EditorInputMappings
+import com.pafoid.skate.editor.imgui.theme.EditorTheme
 import com.pafoid.skate.engine.utils.UnitSystem
 import kotlinx.serialization.Serializable
 
@@ -9,7 +10,8 @@ data class EditorSettings(
     var autoSaveEnabled: Boolean = true,
     var autorSaveIntervalMinutes: Int = 5,
     var language: String = "en",
-    var theme: String = "Islands Dark",
+    /** Id of the editor theme (`assets/themes/<id>.theme.json`, EDT-07). */
+    var theme: String = EditorTheme.DEFAULT_ID,
     var fontSize: Float = 1.0f,
     var showGamepadOverlay: Boolean = true,
     var gamepadOverlaySize: Float = 0.225f,

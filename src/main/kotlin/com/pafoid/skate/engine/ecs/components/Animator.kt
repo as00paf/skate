@@ -5,7 +5,10 @@ import com.pafoid.skate.engine.animation.graph.AnimationControllerAsset
 import com.pafoid.skate.engine.animation.ik.IkRig
 import com.pafoid.skate.engine.animation.procedural.HumanoidPoseBuilder
 import com.pafoid.skate.engine.animation.graph.AnimationStateMachine
+import com.pafoid.skate.engine.animation.graph.AnimatorMaskDef
+import com.pafoid.skate.engine.animation.graph.BoneMask
 import com.pafoid.skate.engine.animation.graph.ClipMotion
+import com.pafoid.skate.engine.animation.graph.Pose
 import com.pafoid.skate.engine.animation.graph.FittedMotion
 import com.pafoid.skate.engine.animation.graph.Motion
 import com.pafoid.skate.engine.assets.AssetsManager
@@ -37,6 +40,33 @@ data class Animator(
 
     /** Path to an [AnimationControllerAsset] JSON file. Saved with the scene; the state machine is rebuilt from it on load. */
     var controllerPath: String? = null
+
+    /** Bones the controller drives; the rest keep the base pose (see [AnimatorMaskDef]). Saved with the scene. */
+    var mask: AnimatorMaskDef = AnimatorMaskDef()
+
+    @Transient
+    private var maskCache: Triple<AnimatorMaskDef, Skeleton, BoneMask?>? = null
+
+    /** The resolved [mask] for [skeleton] (cached), or null when the controller drives every bone. */
+    fun boneMask(skeleton: Skeleton): BoneMask? {
+        maskCache?.let { (def, sk, m) -> if (def == mask && sk === skeleton) return m }
+        return mask.build(skeleton).also { maskCache = Triple(mask, skeleton, it) }
+    }
+
+    /**
+     * Base pose under a partial mask: the selected clip advanced by [dt] while [isPlaying], else the bind pose.
+     * Pure apart from advancing [currentTime].
+     */
+    fun evaluateBasePose(skeleton: Skeleton, dt: Float, out: Pose) {
+        val clip = currentAnimation
+        if (clip != null && isPlaying) {
+            currentTime += dt
+            clip.update(currentTime, skeleton)
+            for (bone in skeleton.getAllBones()) if (bone.index < out.boneCount) out.setBone(bone.index, bone.localTransform)
+        } else {
+            for (bone in skeleton.getAllBones()) if (bone.index < out.boneCount) out.setBone(bone.index, bone.bindLocalTransform)
+        }
+    }
 
     /** Parameters of the active state machine (gameplay writes floats/bools/triggers here), or null without a controller. */
     val parameters: AnimParameters?

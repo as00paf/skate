@@ -73,9 +73,9 @@ class GameObjectSearchProvider(
 
     private fun determineSubcategory(go: GameObject): String {
         return when {
-            go.hasComponent<PointLightComponent>() -> "Light"
-            go.hasComponent<AudioComponent>() -> "Audio Source"
-            go.hasComponent<RenderComponent>() -> "Mesh"
+            go.hasComponent<PointLightComponent>() -> stringManager.getString("search.category.gameobject.light")
+            go.hasComponent<AudioComponent>() -> stringManager.getString("search.category.gameobject.audio")
+            go.hasComponent<RenderComponent>() -> stringManager.getString("search.category.gameobject.mesh")
             else -> stringManager.getString("search.category.gameobject.default")
         }
     }

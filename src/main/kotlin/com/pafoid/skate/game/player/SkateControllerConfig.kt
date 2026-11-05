@@ -19,6 +19,8 @@ data class SkateControllerConfig(
     val grind: GrindTuning = GrindTuning(),
     val manual: ManualTuning = ManualTuning(),
     val bail: BailTuning = BailTuning(),
+    /** Kinematic network step (GPL-17, [com.pafoid.skate.game.net.SkaterPredictionStep]). */
+    val prediction: PredictionTuning = PredictionTuning(),
     /** Animation clip per [SkateState] name. */
     val animations: Map<String, String> = mapOf(
         // State requests for configs/skater.controller.json (ANI-09); its procedural poses stand in until real clips ship.
@@ -123,6 +125,17 @@ data class ManualTuning(
     /** Rate at which the balance angle grows away from zero (1/s). */
     val instability: Float = 1.2f,
     val bailAngleDeg: Float = 35f,
+)
+
+/**
+ * The networked skater is stepped without Bullet: it rides on a flat ground at [groundY] and turns the ollie impulse
+ * into a take-off speed with [mass] (the Skater prefab's body mass).
+ */
+@Serializable
+data class PredictionTuning(
+    val mass: Float = 180f,
+    val gravity: Float = 9.81f,
+    val groundY: Float = 0f,
 )
 
 @Serializable

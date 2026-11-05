@@ -25,7 +25,7 @@ class SearchEverywhereWindow(
 ) : EditorWindow("window.search") {
     private val stringManager = engine.stringManager
 
-    private val searchHistory: SearchHistory = SearchHistory(serializer = engine.serializer)
+    private val searchHistory: SearchHistory = SearchHistory(engine.serializer, engine.logger)
     private val searchEngine: SearchEngine = SearchEngine(engine, stringManager)
 
     private val searchQuery = ImString(256)
