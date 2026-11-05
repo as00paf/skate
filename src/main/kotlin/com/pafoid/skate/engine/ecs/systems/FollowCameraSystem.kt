@@ -56,7 +56,7 @@ class FollowCameraSystem(
             val camera = go.getComponent<FollowCameraComponent>() ?: return@forEach
             val transform = go.getComponent<Transform>() ?: return@forEach
             if (!camera.enabled) return@forEach
-            val target = scene.children.firstOrNull { it !== go && it.name == camera.targetName } ?: return@forEach
+            val target = scene.findFirstByName(camera.targetName, exclude = go) ?: return@forEach
             impacts.forEach { if (it.self === target && it.impulse >= camera.impactShakeImpulse) camera.shake(camera.impactShake) }
             val sphere = probe?.let { p -> SphereProbe { from, to, r -> p.cast(from, to, r, target) } }
             FollowCameraRig.update(camera, followTarget(target), dt, sphere, transform)
