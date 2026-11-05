@@ -43,7 +43,7 @@ fun Component.imgui(engine: Engine) {
     }
 }
 
-/** Inspector built from the component's declared fields (numbers, booleans, vectors, enums); [skip] hides fields by name. */
+/** Inspector built from the component's declared fields (numbers, booleans, strings, vectors, enums); [skip] hides fields by name. */
 fun Component.reflectedImgui(engine: Engine, skip: Set<String> = emptySet()) {
     try {
         ImGui.pushID(this.javaClass.simpleName + this.name)
@@ -52,6 +52,7 @@ fun Component.reflectedImgui(engine: Engine, skip: Set<String> = emptySet()) {
         fields.forEach { field ->
             val modifiers = field.modifiers
             if (Modifier.isTransient(modifiers) || Modifier.isStatic(modifiers)) return@forEach
+            if (field.name in skip) return@forEach
 
             if (Modifier.isPrivate(modifiers)) field.isAccessible = true
 
@@ -82,6 +83,12 @@ fun Component.reflectedImgui(engine: Engine, skip: Set<String> = emptySet()) {
                         if (ImGui.checkbox(localizedName, typedValue)) {
                             field.set(this, !typedValue)
                         }
+                    }
+                }
+
+                String::class.java -> {
+                    if (!isFinal && StringFields.isEditable(this.javaClass, field)) {
+                        StringFields.imgui(engine, this, field, localizedName)
                     }
                 }
 

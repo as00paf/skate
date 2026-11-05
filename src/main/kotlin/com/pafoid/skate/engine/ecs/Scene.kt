@@ -54,6 +54,18 @@ class Scene(@SerialName("sceneName") override var name: String = "MainScene") : 
 
     fun findFirstByTag(tag: String): GameObject? = findByTag(tag).firstOrNull()
 
+    /** First descendant named [name] in pre-order (any depth), skipping [exclude]; null when none. */
+    fun findFirstByName(name: String, exclude: GameObject? = null): GameObject? {
+        fun walk(node: GameObject): GameObject? {
+            for (child in node.children) {
+                if (child !== exclude && child.name == name) return child
+                walk(child)?.let { return it }
+            }
+            return null
+        }
+        return walk(this)
+    }
+
     /** All descendants whose layer is set in [layerMask] (bit i = layer i), pre-order. */
     fun findByLayer(layerMask: Int): List<GameObject> = collectWhere { (layerMask and GameObject.layerBit(it.layer)) != 0 }
 
