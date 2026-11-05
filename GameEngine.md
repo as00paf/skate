@@ -156,7 +156,7 @@ The renderer works but needs cleaner APIs, caching, dynamic shaders, better mate
   - Do: Human-reported on PR #13: FPS fell drastically (to ~40) in the editor. Profile per pass and per system (CPU and GPU) on the default project, bisect across the round-11 merges (REN-07 shadows, REN-21 UiPass, PHY-11 transform sync, ANI-09 procedural poses, EDT-30, ECS-11, REN-10), find the cause(s) and fix them; report causes outside render as NEEDS.
   - Done when: The default project runs at the pre-round-11 frame rate (or better) at MEDIUM shadows; per-pass timings visible in the Render Graph window; a regression guard where feasible.
   - Deps: REN-07
-- [~] @skate-render **REN-23** `P2` Day/night time scale overwritten on Stop
+- [x] **REN-23** `P2` Day/night time scale overwritten on Stop
   - Do: From EDT-10: stopping Play resets `DayNightCycleComponent.timeScale` to 1.0 (`ViewportActionHandler`), overwriting the scene's saved value. Keep the play-mode time scale separate from the saved field.
   - Done when: A saved timeScale survives Play/Stop and save/reload; test.
 
@@ -211,9 +211,13 @@ Asset management works but needs a complete review.
   - Do: From EDT-40: `Animator.readController` and `RenderComponent.resolveMaterialAsset` read absolute paths, so animator controllers and `.skmat` links break when a project moves or is exported. Store asset references relative to the project (resolve through `AssetsResolver`), and make every other saved asset reference relative too (audit). Localize the `ProjectExporter` failure details.
   - Done when: A project moved to another folder and an exported build both resolve controllers, materials, sounds and textures; saved scenes contain no absolute paths (test); exporter errors are translated.
   - Deps: AST-08, EDT-16, EDT-17
-- [~] @skate-assets **AST-10** `P2` Missing bundled metal.png (BUG-020)
+- [x] **AST-10** `P2` Missing bundled metal.png (BUG-020)
   - Do: From QA-14: `Assets.Bundled.METAL` points at `assets/textures/metal.png`, which never existed; rails fall back to the default texture with an ERROR. Add a proper metal texture (or point METAL at an existing one), make `EngineAssetCopier` or a unit test over `Assets.Bundled.bundledAssets` fail on missing sources, and remove the entry from `ProjectLifecycleEndToEndTest.KNOWN_ISSUES`.
   - Done when: New projects log no missing-texture errors; the bundled-assets test guards it.
+- [x] **AST-11** `P2` Exporter finds the game jar relative to the working directory
+  - Do: From GPL-18's audit: `ProjectExporter.findGameJar` searches `build/libs` relative to the working directory, so exporting fails or picks a stale jar when the editor starts from another folder. Resolve from the editor's install/jar location (or a configured path) and report clearly when no game jar exists.
+  - Done when: Export finds the game jar regardless of the editor's working directory; test.
+  - Deps: GPL-18
 
 ### ECS — `ECS` (`skate-ecs`)
 
@@ -357,7 +361,7 @@ The animation system needs improvements.
   - Do: The human provided `assets/characters/animations/skate riding.fbx` (first real skateboarding clip). Import it for the skater (retarget if needed), put it in the ANI-09 controller's riding slot(s) instead of the procedural pose, and keep the procedural fallback for slots still missing clips.
   - Done when: Riding in the default project uses the clip (aligned on the deck, facing the nose, looping cleanly); the clip loads and maps to its slot in a test.
   - Deps: ANI-09
-- [~] @skate-animation **ANI-11** `P1` Exported game drops Animator clips (BUG-021)
+- [x] **ANI-11** `P1` Exported game drops Animator clips (BUG-021)
   - Do: From QA-14: in an exported game, `Animator.resolveAnimationsFromPaths` keeps only clips where `File(path).exists()`, so pack-relative clips are dropped and the controller finds no motions; the skater doesn't animate. Resolve clips through `AssetsManager.paths` (pack or disk), or don't re-resolve clips `openProject` already resolved.
   - Done when: `ProjectLifecycleEndToEndTest.Lifecycle_8` passes; the exported skater animates; unit test.
 
@@ -505,6 +509,10 @@ The player controller was hardcoded at first and needs a big overhaul. Some skat
   - Do: From NET-03: a kinematic skater step (`PredictionStep`) that client and server run with the same result, reading only replicated state (no Bullet), so NET-03 prediction can be wired into the skate game, with a Feature Showcase demo.
   - Done when: Client and server produce identical skater states from the same inputs in a test; a showcase demo shows prediction under simulated latency.
   - Deps: NET-03
+- [x] **GPL-18** `P0` Exported game can't find game.bin unless started from its folder
+  - Do: Human-reported on PR #21: running an exported game fails with game.bin not found at a wrong path. `GameBin.file()` defaults to `game.bin` in the working directory, so any launch that isn't `run-game.bat` (double-clicked jar, IntelliJ run config, export wizard "run", shortcuts) looks in the wrong folder. Resolve in order: `-Dskate.bin`, next to the running jar (code source location), then the working directory; log the searched paths. Audit other working-directory-relative paths in `game/` and the launcher.
+  - Done when: The exported game starts from `run-game.bat`, a double-clicked jar, `java -jar <abs path>` from another directory, and the IntelliJ/Gradle run path; QA-14's end-to-end test covers a launch from a different working directory.
+  - Deps: GPL-08
 
 ### In-game UI — `GUI` (`skate-gameui`)
 
@@ -766,6 +774,10 @@ All editor mutations must go through `Command` classes and the service layer (se
   - Do: Human-reported on PR #20 (regression from AST-09): reopening a closed project from File > Recent Projects logs "Project file does not exist or invalid extension" with a wrong path. `EditorSettingsManager.recentProjects` decodes each `.skateproject` without a project root, so the AST-09 relative `projectPath` resolves against the working directory. Use the absolute path stored in the editor settings (and set `projectPath` from it), in the recent menu, `LoadLastProjectCommand` and `EditorScreen`; audit other places that decode a project file outside `openProjectFile`.
   - Done when: Create, close, reopen from Recent Projects (and the startup last-project path) works, including after moving the project; test through the real path.
   - Deps: AST-09
+- [ ] **EDT-42** `P3` Screenshots folder relative to the working directory
+  - Do: From GPL-18's audit: editor screenshots go to `screenshots/` in the working directory; store them under the project (or user data, EDT-18) instead.
+  - Done when: Screenshots land in a predictable folder regardless of the working directory; test.
+  - Deps: EDT-18
 
 ## Testing & tooling
 
@@ -803,6 +815,10 @@ All editor mutations must go through `Command` classes and the service layer (se
   - Do: Human-reported on PR #13: in Play the FeatureShowcase camera points up and can't move, so nothing is visible. Fix the camera's start pose (looking at the pads) and make the overlay's demo-area list clickable: clicking an item smoothly moves the camera to frame that area (with a 'Overview' entry to go back).
   - Done when: Play shows the scene; each list item focuses its area in the game view and in a standalone run (verified through the real path: generated project saved, reloaded from disk, Play, click through UI input); free-fly camera (WASD + mouse look, like the editor) works in Play and standalone; tests for the focus targets, camera pose math and the reloaded click path.
   - Deps: TLG-08
+- [ ] **TLG-10** `P1` Build the game jar together with the editor
+  - Do: Human request after PR #21 (a stale `skate-game.jar` got exported): compile `gameJar` whenever the editor is built or run, so exports always ship current game code. Wire it in Gradle (e.g. `run`/`build`/`classes`/`jar` depend on or are finalized by `gameJar`, incrementally so it's cheap when nothing changed) and make the IntelliJ run path pick it up (Gradle-delegated run, or a before-launch task). Keep AST-11's stale-jar warning as a safety net.
+  - Done when: After changing game code, running the editor the usual way (IntelliJ and `gradlew run`) produces a fresh `skate-game.jar` that the export uses; build time impact measured and small; documented in `.github/copilot-instructions.md`.
+  - Deps: AST-11
 
 ### Quality — `QA` (`skate-qa`)
 
