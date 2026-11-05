@@ -729,6 +729,10 @@ All editor mutations must go through `Command` classes and the service layer (se
   - Do: Human-reported on PR #17: changing the editor language breaks ImGui, likely because window/widget IDs come from translated labels. Use `translated###stable_id` (or `PushID`) for every window, menu, tab, tree node, popup, table and widget whose label is translated; keep docking layout/`imgui.ini`, open state and selection across a language switch at runtime.
   - Done when: Switching language at runtime keeps docking layout, window open/collapsed state, tree expansion and popups working; a guard test fails on ImGui calls built from translated labels without a stable ID.
   - Deps: EDT-37
+- [ ] **EDT-39** `P3` Review GUI-10 additions to `app/Editor.kt`
+  - Do: From GUI-10: review the game string tables loading into `engine.gameStrings` and `ProjectEvent.Opened` applying the project's `game.settings.json`.
+  - Done when: Review fixes committed or noted; tests green.
+  - Deps: GUI-10
 
 ## Testing & tooling
 
