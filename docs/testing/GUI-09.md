@@ -4,8 +4,9 @@ The pause menu (Resume, Restart, Language, Quit, Volume) is engine runtime UI, s
 exported game. Esc (or gamepad B) opens it while playing, and Esc or Resume closes it. While it is open, simulation,
 animation, particles, scripts and audio are frozen, and Resume continues from the same point. Restart starts Play
 again from the pre-play state (in the editor) or the launch state (in the game). Quit is Stop in the editor and
-closes the window in the game. Language switches the runtime text between English and French (in the editor this
-also switches the editor's own strings until you change it back). While editing, Esc still only deselects; in Play
+closes the window in the game. Language switches the game's text between English and French (GUI-10). It never changes
+the editor's language, and Stop doesn't either. The game's language is saved in `game.settings.json`: in the project
+folder for editor Play, next to `game.bin` for the exported game. The next Play or launch starts with it. While editing, Esc still only deselects; in Play
 it does not deselect (unless the editor's Deselect key is rebound away from Esc). Ctrl+S during Play is refused with a
 console warning, so the pause menu never ends up in the scene file.
 
@@ -16,11 +17,13 @@ Setup: run `.\gradlew.bat run`, create a NEW project (File > New Project), and o
    "Paused" panel. The character animation, particles, swinging pendulum and music all stop.
 3. Press Esc again (or click Resume) -> everything continues from where it stopped. The music does not restart.
 4. Esc, then click Restart -> the scene jumps back to its pre-play state and keeps playing (the boxes fall again).
-5. Esc, click Language -> the menu text switches to French. Click it again to return to English. Drag Volume to
-   change the music level.
+5. Set the editor to English. Esc, click Language -> the menu, HUD and showcase text switch to French, while the
+   editor's menus and panels stay in English. Stop, then Play again -> the game text is still French and the editor
+   is still English. Click Language again to go back to English. Drag Volume to change the music level.
 6. Esc, click Quit -> Play stops, as with the toolbar's Stop. The pause menu is gone and does not appear in the
    Hierarchy.
-7. Game: export the project (the editor's Export action), then run the exported game. Press Esc -> the same menu with the same behaviour. Restart
+7. Game: export the project (the editor's Export action), then run the exported game. Press Esc -> the same menu with the same behaviour. Language
+   switches the game text, and the choice is still there after you quit and relaunch. Restart
    reloads the level and resets the HUD timer. Quit closes the window.
 8. Run `.\gradlew.bat test` -> BUILD SUCCESSFUL (`PauseMenuSystemTest`, `SystemManagerPauseTest`,
-   `FeatureShowcaseSmokeTest`, `AudioSystemShowcaseTest`, `InputSystemTest`, `EditorPauseActionsTest`).
+   `FeatureShowcaseSmokeTest`, `AudioSystemShowcaseTest`, `InputSystemTest`, `EditorPauseActionsTest`, `GameLocaleTest`).

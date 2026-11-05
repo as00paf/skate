@@ -11,6 +11,8 @@ import com.pafoid.skate.engine.core.Window
 import com.pafoid.skate.engine.core.LoggerService
 import com.pafoid.skate.engine.fileExtension
 import com.pafoid.skate.engine.input.ViewRect
+import com.pafoid.skate.engine.ui.GameSettings
+import com.pafoid.skate.engine.ui.GameSettingsStore
 import com.pafoid.skate.game.ui.GameHudState
 import com.pafoid.skate.game.ui.GameUiSystem
 import org.lwjgl.glfw.GLFW
@@ -64,6 +66,8 @@ fun main(args: Array<String>) {
 private fun installGameUi(window: Window) {
     val scene = engine.sceneManager.currentScene ?: return
     loadGameStrings()
+    // The player's language choice is kept next to game.bin (GUI-10).
+    engine.gameLocale.attach(GameSettingsStore(GameSettings.fileIn(GameBin.file().absoluteFile.parentFile), engine.logger))
     val launchState = ScenePlaySnapshot.capture(scene, engine.serializer)
     val hud = GameUiSystem(GameHudState())
     engine.systemManager.addSystem(hud)
@@ -81,7 +85,7 @@ private fun loadGameStrings() {
         engine.logger.logGame("game.bin has no string tables; UI text shows its keys", LoggerService.LogLevel.WARN)
         return
     }
-    engine.stringManager.addStrings(PackedStrings.source(packed))
+    engine.gameStrings.addStrings(PackedStrings.source(packed))
 }
 
 fun testDraw(window: Window) {// TODO : is working but needs to move
