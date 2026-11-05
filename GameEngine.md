@@ -815,6 +815,10 @@ All editor mutations must go through `Command` classes and the service layer (se
   - Do: Human-reported on PR #13: in Play the FeatureShowcase camera points up and can't move, so nothing is visible. Fix the camera's start pose (looking at the pads) and make the overlay's demo-area list clickable: clicking an item smoothly moves the camera to frame that area (with a 'Overview' entry to go back).
   - Done when: Play shows the scene; each list item focuses its area in the game view and in a standalone run (verified through the real path: generated project saved, reloaded from disk, Play, click through UI input); free-fly camera (WASD + mouse look, like the editor) works in Play and standalone; tests for the focus targets, camera pose math and the reloaded click path.
   - Deps: TLG-08
+- [ ] **TLG-10** `P1` Build the game jar together with the editor
+  - Do: Human request after PR #21 (a stale `skate-game.jar` got exported): compile `gameJar` whenever the editor is built or run, so exports always ship current game code. Wire it in Gradle (e.g. `run`/`build`/`classes`/`jar` depend on or are finalized by `gameJar`, incrementally so it's cheap when nothing changed) and make the IntelliJ run path pick it up (Gradle-delegated run, or a before-launch task). Keep AST-11's stale-jar warning as a safety net.
+  - Done when: After changing game code, running the editor the usual way (IntelliJ and `gradlew run`) produces a fresh `skate-game.jar` that the export uses; build time impact measured and small; documented in `.github/copilot-instructions.md`.
+  - Deps: AST-11
 
 ### Quality — `QA` (`skate-qa`)
 
