@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.ui.windows
 
+import com.pafoid.skate.editor.imgui.EmptyState
 import com.pafoid.skate.editor.imgui.tippedWith
 import com.pafoid.skate.editor.imgui.tipped
 import com.pafoid.skate.editor.imgui.label
@@ -121,12 +122,16 @@ class ProjectWindow(
                 separator()
             }
 
-            // ── Search ──
-            renderSearchBar()
-            separator()
+            if (!projectManager.hasProject()) {
+                EmptyState.noProject(stringManager, eventSystem)
+            } else {
+                // ── Search ──
+                renderSearchBar()
+                separator()
 
-            // ── Tree ──
-            renderTree()
+                // ── Tree ──
+                renderTree()
+            }
 
             // ── Context Menu ──
             renderContextMenu()
@@ -154,6 +159,10 @@ class ProjectWindow(
 
     private fun renderTree() {
         val filter = searchText.get().trim()
+        if (filter.isNotEmpty() && treeCache.none { matchesFilter(it, filter) }) {
+            EmptyState.render(stringManager, Icons.SEARCH, "empty.search", "empty.search.hint")
+            return
+        }
         for (item in treeCache) {
             renderTreeNode(item, filter)
         }
@@ -206,6 +215,7 @@ class ProjectWindow(
         }
 
         if (opened) {
+            if (item.children.isEmpty()) MImGui.textDisabled(stringManager.getString("empty.folder"))
             for (child in item.children) {
                 renderTreeNode(child, filter)
             }

@@ -1,8 +1,5 @@
 package com.pafoid.skate.engine.render
 
-import org.lwjgl.opengl.GL30.GL_FRAMEBUFFER
-import org.lwjgl.opengl.GL30.glBindFramebuffer
-import org.lwjgl.opengl.GL11.glViewport
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.AssetsManager
 import com.pafoid.skate.engine.core.Engine
@@ -24,12 +21,14 @@ import com.pafoid.skate.engine.render.renderer.passes.GeometryPass
 import com.pafoid.skate.engine.render.renderer.passes.ParticlePass
 import com.pafoid.skate.engine.render.renderer.passes.PickingPass
 import com.pafoid.skate.engine.render.renderer.passes.PostProcessPass
+import com.pafoid.skate.engine.render.renderer.passes.PresentedViewport
 import com.pafoid.skate.engine.render.renderer.passes.RenderPass
 import com.pafoid.skate.engine.render.renderer.passes.ShadowPass
 import com.pafoid.skate.engine.render.renderer.passes.UiPass
 import com.pafoid.skate.engine.render.shader.ShaderFeature
 import com.pafoid.skate.engine.render.shadow.ShadowFrame
 import com.pafoid.skate.engine.render.shadow.ShadowSettings
+import com.pafoid.skate.engine.render.rhi.RhiContext
 import com.pafoid.skate.engine.render.rhi.opengl.GLStateTracker
 
 class RenderResourcesFactory(
@@ -175,16 +174,22 @@ class RenderResourcesFactory(
             shadowFrame = shadowFrame,
         )
         // Debug visuals and the runtime UI draw into the presented target after post-processing
+        val presentedViewport = PresentedViewport()
         val bindPresentedTarget = {
-            if (useFbo) frameBuffer.bind() else glBindFramebuffer(GL_FRAMEBUFFER, 0)
-            glViewport(0, 0, frameBuffer.width, frameBuffer.height)
+            RhiContext.require().commandList()
+                .beginPass(if (useFbo) frameBuffer.target else null, viewport = presentedViewport.of(frameBuffer, useFbo))
         }
-        val debugPass = DebugPass(renderers.debug, cameraManager, bindTarget = bindPresentedTarget, targetHeight = { frameBuffer.height })
+        val endPresentedTarget = { RhiContext.require().commandList().endPass() }
+        val debugPass = DebugPass(
+            renderers.debug, cameraManager,
+            bindTarget = bindPresentedTarget, targetHeight = { frameBuffer.height }, endTarget = endPresentedTarget,
+        )
         val uiPass = UiPass(
             renderer2D = renderer2D,
             batchShader = shaders.batch,
             bindTarget = bindPresentedTarget,
             targetSize = { frameBuffer.width to frameBuffer.height },
+            endTarget = endPresentedTarget,
         )
         val particlePass = ParticlePass(
             shader = assetsManager.getShader("/shaders/particles.glsl"),

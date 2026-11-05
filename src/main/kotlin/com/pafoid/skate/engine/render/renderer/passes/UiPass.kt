@@ -19,6 +19,7 @@ import com.pafoid.skate.engine.render.utils.withDepthTest
  * @param batchShader The 2D batch shader the UI quads are drawn with
  * @param bindTarget Binds the presented render target and its viewport (same target as the debug pass)
  * @param targetSize Size of the presented target in pixels, read every frame (it changes on resize)
+ * @param endTarget Ends the pass [bindTarget] began
  * @param drawState Runs the draw inside the GL state the UI needs ([withUiDrawState]); injectable for tests
  */
 class UiPass(
@@ -27,6 +28,7 @@ class UiPass(
     private val bindTarget: () -> Unit,
     private val targetSize: () -> Pair<Int, Int>,
     private val drawState: (draw: () -> Unit) -> Unit = ::withUiDrawState,
+    private val endTarget: () -> Unit = {},
 ) : BaseRenderPass() {
 
     override val name: String = "UiPass"
@@ -44,6 +46,7 @@ class UiPass(
             renderer2D.bindShader(batchShader)
             renderer2D.renderUi(width, height)
         }
+        endTarget()
     }
 }
 

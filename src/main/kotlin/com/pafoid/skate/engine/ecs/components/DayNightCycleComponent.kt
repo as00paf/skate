@@ -23,6 +23,13 @@ data class DayNightCycleComponent(
     @Transient
     var isDaytime: Boolean = true
 
+    /**
+     * Play-mode simulation speed set from the viewport toolbar (REN-23). Never saved, and reset to 1 when Play stops,
+     * so it never overwrites the scene's saved [timeScale].
+     */
+    @Transient
+    var playTimeScale: Float = 1.0f
+
     fun getFormattedTime(): String {
         val hours = timeOfDay.toInt()
         val minutes = ((timeOfDay - hours) * 60).toInt()
@@ -39,6 +46,7 @@ data class DayNightCycleComponent(
         dayDuration = 300f
         timeOfDay = 12.0f
         timeScale = 1.0f
+        playTimeScale = 1.0f
         resetComputedValues()
     }
 }

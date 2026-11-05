@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.ui.handlers
 
+import com.pafoid.skate.editor.events.EditorError
 import com.pafoid.skate.editor.commands.project.CloseAllScenesCommand
 import com.pafoid.skate.editor.commands.project.CloseOtherScenesCommand
 import com.pafoid.skate.editor.commands.project.CloseSceneCommand
@@ -188,6 +189,7 @@ class SceneActionHandler(
 
     private fun handleOpenFailed(reason: String) {
         logger.logEditor("Scene open failed: $reason", LogLevel.ERROR)
+        eventSystem.publish(EditorError("error.open_scene.title", reason))
     }
 
     private fun generateUniqueScenePath(projectDir: File): String {

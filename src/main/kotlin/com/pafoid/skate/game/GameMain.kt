@@ -19,17 +19,17 @@ import org.lwjgl.glfw.GLFW
 import com.pafoid.skate.engine.assets.pack.PackBuilder
 import com.pafoid.skate.engine.assets.pack.PackedStrings
 import com.pafoid.skate.engine.utils.Atlas
-import org.lwjgl.opengl.GL11
-import org.lwjgl.opengl.GL30
-import org.lwjgl.opengl.GL30.GL_DRAW_FRAMEBUFFER
-import org.lwjgl.opengl.GL30.GL_READ_FRAMEBUFFER
+import com.pafoid.skate.engine.render.rhi.Filter
+import com.pafoid.skate.engine.render.rhi.IntRect
+import java.io.File
 import java.nio.ByteBuffer
 
 private val engine = Engine()
 
 fun main(args: Array<String>) {
     SkateGameplay.register()
-    val binFile = GameBin.read(engine.logger) ?: return
+    val pack = GameBin.read(engine.logger) ?: return
+    val binFile = pack.bytes
     val (header, headerSize) = readFileHeader(binFile)
     if (header == null || headerSize <= 0) return
 
@@ -46,7 +46,7 @@ fun main(args: Array<String>) {
         // The project's mixer (bus volumes and mutes set in the editor) applies to the exported game too (EDT-14).
         engine.audioEngine.applyConfig(project.gameplaySettings.audio.toConfig())
         engine.runtimePlaying = true
-        installGameUi(window)
+        installGameUi(window, pack.file.parentFile)
         window.show { dt ->
             // The framebuffer is blitted over the whole window, so UI pointer mapping uses the window's size.
             val w = IntArray(1)
@@ -65,11 +65,11 @@ fun main(args: Array<String>) {
  * HUD plus the engine's pause menu (GUI-09), which behaves as in editor Play; only Restart and Quit are the game's:
  * Restart reloads the scene as it was at launch, Quit closes the window.
  */
-private fun installGameUi(window: Window) {
+private fun installGameUi(window: Window, packDir: File) {
     val scene = engine.sceneManager.currentScene ?: return
     loadGameStrings()
-    // The player's language choice is kept next to game.bin (GUI-10).
-    engine.gameLocale.attach(GameSettingsStore(GameSettings.fileIn(GameBin.file().absoluteFile.parentFile), engine.logger))
+    // The player's language choice is kept next to the game.bin that was loaded (GUI-10), wherever the game was started from.
+    engine.gameLocale.attach(GameSettingsStore(GameSettings.fileIn(packDir), engine.logger))
     val launchState = ScenePlaySnapshot.capture(scene, engine.serializer)
     val hud = GameUiSystem(GameHudState())
     engine.systemManager.addSystem(hud)
@@ -90,16 +90,15 @@ private fun loadGameStrings() {
     engine.gameStrings.addStrings(PackedStrings.source(packed))
 }
 
+/** Presents the scene framebuffer, stretched over the whole window. */
 fun testDraw(window: Window) {// TODO : is working but needs to move
-    GL30.glBindFramebuffer(GL_READ_FRAMEBUFFER, engine.renderer.frameBuffer.fboId)
-    GL30.glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0)
-    GL30.glBlitFramebuffer(
-        0, 0, engine.renderer.frameBuffer.width, engine.renderer.frameBuffer.height,
-        0, 0, window.width, window.height,
-        GL11.GL_COLOR_BUFFER_BIT,
-        GL11.GL_LINEAR
-    )
+    if (presentRect.width != window.width || presentRect.height != window.height) {
+        presentRect = IntRect(0, 0, window.width, window.height)
+    }
+    engine.device.commandList().blit(engine.renderer.frameBuffer.target, null, dstRect = presentRect, filter = Filter.LINEAR)
 }
+
+private var presentRect = IntRect(0, 0, 0, 0)
 
 fun readFileHeader(binFile: ByteArray): Pair<Atlas?, Int> {
     val headerSizeData = ByteBuffer.wrap(binFile.copyOfRange(0, Int.SIZE_BYTES))

@@ -28,6 +28,7 @@ import kotlin.math.tan
  * viewport. Called before drawing because earlier passes (shadow, picking) bind their own targets. Debug geometry is
  * drawn after post-processing, so it is not tonemapped, and it depth-tests against the scene depth that the geometry
  * pass left in that target.
+ * @param endTarget Ends the pass [bindTarget] began.
  * @param targetHeight Height in pixels of the presented target, for the grid's depth pull.
  * @param drawState Runs the draw inside the GL state debug geometry needs ([withDebugDrawState]); injectable so the
  * pass can be tested without a GL context.
@@ -38,6 +39,7 @@ class DebugPass(
     private val bindTarget: () -> Unit = {},
     private val drawState: (draw: () -> Unit) -> Unit = ::withDebugDrawState,
     private val targetHeight: () -> Int = { 1080 },
+    private val endTarget: () -> Unit = {},
 ) : BaseRenderPass() {
 
     override val name: String = "DebugPass"
@@ -69,6 +71,7 @@ class DebugPass(
         val camera = cameraManager.camera
         debugRenderer.pixelAngle = GroundDepthPull.pixelAngle(Math.toRadians(camera.fov.toDouble()).toFloat() * camera.zoom, targetHeight())
         drawState { debugRenderer.draw() }
+        endTarget()
     }
 
     private fun renderGridLines(scene: Scene, gridLines: GridLines) {

@@ -51,21 +51,21 @@ class EditorScenesTabBar(
                         if (stringManager.tipped(ImGui.menuItem("${Icons.SAVE} ${stringManager.getString("context.scene_tab.save")}"), "context.scene_tab.save")) {
                             eventSystem.publish(SaveRequested(scene))
                         }
-                        if (stringManager.tipped(ImGui.menuItem(stringManager.getString("context.scene_tab.save_as")), "context.scene_tab.save_as")) {
+                        if (stringManager.tipped(ImGui.menuItem("${Icons.SAVE} ${stringManager.getString("context.scene_tab.save_as")}"), "context.scene_tab.save_as")) {
                             eventSystem.publish(SaveAsRequested(scene))
                         }
                         ImGui.separator()
                         val canClose = sceneManager.openScenes.isNotEmpty()
-                        if (stringManager.tipped(ImGui.menuItem(stringManager.getString("context.scene_tab.close"), null, false, canClose), "context.scene_tab.close")) {
+                        if (stringManager.tipped(ImGui.menuItem("${Icons.WINDOW_CLOSE} ${stringManager.getString("context.scene_tab.close")}", null, false, canClose), "context.scene_tab.close")) {
                             if (scene.isDirty) {
                                 toRemove = index
                                 ImGui.openPopup(stringManager.label("context.scene_tab.close_confirmation_title"))
                             } else eventSystem.publish(CloseRequested(scene))
                         }
-                        if (stringManager.tipped(ImGui.menuItem(stringManager.getString("context.scene_tab.close_others"), null, false, canClose), "context.scene_tab.close_others")) {
+                        if (stringManager.tipped(ImGui.menuItem("${Icons.WINDOW_CLOSE} ${stringManager.getString("context.scene_tab.close_others")}", null, false, canClose), "context.scene_tab.close_others")) {
                             eventSystem.publish(CloseOthersRequested(scene))
                         }
-                        if (stringManager.tipped(ImGui.menuItem(stringManager.getString("context.scene_tab.close_all"), null, false, canClose), "context.scene_tab.close_all")) {
+                        if (stringManager.tipped(ImGui.menuItem("${Icons.WINDOW_CLOSE} ${stringManager.getString("context.scene_tab.close_all")}", null, false, canClose), "context.scene_tab.close_all")) {
                             eventSystem.publish(CloseAllRequested)
                         }
                         ImGui.separator()

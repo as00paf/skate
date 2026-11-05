@@ -1,5 +1,7 @@
 package com.pafoid.skate.editor.ui.handlers
 
+import com.pafoid.skate.editor.commands.objects.EditComponentFieldsCommand
+import com.pafoid.skate.editor.commands.objects.ResetComponentCommand
 import com.pafoid.skate.editor.commands.objects.SetComponentFieldCommand
 import com.pafoid.skate.editor.events.ComponentFieldAction
 import com.pafoid.skate.editor.systems.UndoRedoManager
@@ -19,5 +21,10 @@ class ComponentFieldActionHandler(
             undoRedoManager.executeCommand(command)
             sceneManager?.currentScene?.isDirty = true
         }
+        eventSystem.subscribe<ComponentFieldAction.Edited> { event ->
+            val command = EditComponentFieldsCommand(event.component, event.changes)
+            if (!command.isNoOp) undoRedoManager.executeCommand(command)
+        }
+        eventSystem.subscribe<ComponentFieldAction.Reset> { event -> undoRedoManager.executeCommand(ResetComponentCommand(event.component)) }
     }
 }

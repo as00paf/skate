@@ -1,5 +1,6 @@
 package com.pafoid.skate.app
 
+import com.pafoid.skate.editor.data.EditorShortcuts
 import com.pafoid.skate.editor.data.EditorInputState
 import com.pafoid.skate.editor.gizmos.EditorCamera
 import com.pafoid.skate.editor.imgui.ImGuiLayer
@@ -63,6 +64,8 @@ class Editor(
     val editorEventHandler = EditorEventHandler(engine.eventSystem, imGuiLayer, undoRedoManager)
 
     fun init(window: Window) {
+        // Menus, tooltips and the Key Bindings window show the live bindings (EDT-10).
+        EditorShortcuts.mappings = { settingsManager.editorSettings.editorInputMappings }
         engine.cameraManager.camera = editorCamera.camera
         engine.cameraManager.transform = editorCamera.transform
         editorEventHandler.init()
@@ -79,6 +82,7 @@ class Editor(
     }
 
     fun update(dt: Float) {
+        editorInputHandler.updateAlways()
         if (engine.sceneManager.currentScene?.isRunning == false) {
             editorInputHandler.update()
             editorCamera.update(dt)

@@ -1,6 +1,5 @@
 package com.pafoid.skate.editor.commands.scene
 
-import com.pafoid.skate.editor.commands.ExecuteOnlyCommand
 import com.pafoid.skate.editor.data.PrimitiveType
 import com.pafoid.skate.engine.addComponent
 import com.pafoid.skate.engine.assets.Assets
@@ -18,11 +17,11 @@ class CreatePrimitiveCommand(
     private val name: String,
     private val type: PrimitiveType,
     private val halfExtents: Vector3f,
-    private val scene: Scene,
-    private val gameObjectManager: GameObjectManager,
+    scene: Scene,
+    gameObjectManager: GameObjectManager,
     private val assetsManager: AssetsManager
-) : ExecuteOnlyCommand {
-    override fun execute() {
+) : AddBuiltObjectCommand(scene, gameObjectManager) {
+    override fun build(): GameObject {
         val primitive = GameObject(name)
         val transform = Transform()
         transform.translation.set(0f, 1f, 0f)
@@ -38,13 +37,7 @@ class CreatePrimitiveCommand(
         val model = `3dModel`(path = baseModel.path, mesh = baseModel.mesh)
         val renderComponent = RenderComponent(model, material = material)
         primitive.addComponent(renderComponent)
-
-        gameObjectManager.addGameObject(primitive)
-        scene.selectedGameObject = primitive
-        scene.isDirty = true
-    }
-
-    override fun undo() {
+        return primitive
     }
 
     override fun getDisplayName(): String = "Create $name"
