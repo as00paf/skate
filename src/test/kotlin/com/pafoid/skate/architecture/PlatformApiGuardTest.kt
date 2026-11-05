@@ -42,11 +42,7 @@ class PlatformApiGuardTest {
     @Test
     fun PlatformApi_OpenGlOnlyInRenderAndAssetLayers() {
         val allowedPrefixes = listOf("engine/render/", "engine/assets/", "engine/core/Window.kt")
-        val exceptions = setOf(
-            "engine/utils/ScreenshotUtils.kt",
-            "engine/utils/testing/FrameCapture.kt",
-            "game/GameMain.kt",
-        )
+        val exceptions = emptySet<String>()
         val violators = mainFiles()
             .filter { (path, text) -> allowedPrefixes.none { path.startsWith(it) } && text.contains("org.lwjgl.opengl") }
             .map { it.first }

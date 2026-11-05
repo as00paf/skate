@@ -156,7 +156,7 @@ class ViewportToolbar(
         if (isPlaying) {
             // Pause/Resume button — visual state reflects time scale
             buttons.add {
-                val timeScale = scene?.getComponent<DayNightCycleComponent>()?.timeScale ?: 1.0f
+                val timeScale = scene?.getComponent<DayNightCycleComponent>()?.playTimeScale ?: 1.0f
                 if (timeScale == 1.0f) {
                     // Currently running — show Pause
                     ImGui.pushStyleColor(ImGuiCol.Button, 0.6f, 0.4f, 0.1f, 1f)

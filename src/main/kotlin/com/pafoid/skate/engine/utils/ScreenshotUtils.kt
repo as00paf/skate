@@ -1,11 +1,14 @@
 package com.pafoid.skate.engine.utils
 
+import com.pafoid.skate.engine.render.rhi.IntRect
+import com.pafoid.skate.engine.render.rhi.PixelFormat
+import com.pafoid.skate.engine.render.rhi.RhiContext
+import com.pafoid.skate.engine.render.rhi.RhiDevice
+import com.pafoid.skate.engine.render.rhi.RhiRenderTarget
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import org.lwjgl.BufferUtils
-import org.lwjgl.opengl.GL11.*
-import org.lwjgl.opengl.GL30.*
 import org.lwjgl.stb.STBImageWrite.stbi_write_png
 import org.lwjgl.util.tinyfd.TinyFileDialogs
 import java.io.File
@@ -20,7 +23,10 @@ object ScreenshotUtils {
     private val screenshotSequence = AtomicInteger(0)
     private val screenshotTimestampFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm-ss-SSS")
 
-    fun takeScreenshot(width: Int, height: Int, fboId: Int) {
+    /** Saves color attachment 0 of [target] as a PNG in `screenshots/` (read now, written in the background). */
+    fun takeScreenshot(target: RhiRenderTarget, device: RhiDevice = RhiContext.require()) {
+        val width = target.width
+        val height = target.height
         val screenshotsDir = "screenshots"
         File(screenshotsDir).mkdirs()
         val fileName = buildScreenshotFileName()
@@ -28,9 +34,7 @@ object ScreenshotUtils {
 
         val pixels = BufferUtils.createByteBuffer(width * height * 4)
         
-        glBindFramebuffer(GL_FRAMEBUFFER, fboId)
-        glReadPixels(0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, pixels)
-        glBindFramebuffer(GL_FRAMEBUFFER, 0)
+        device.readPixels(target, 0, IntRect(0, 0, width, height), PixelFormat.RGBA8, pixels)
 
         // Offload the heavy lifting to a background thread
         scope.launch {
