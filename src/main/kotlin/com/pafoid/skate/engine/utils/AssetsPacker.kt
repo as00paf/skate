@@ -81,8 +81,9 @@ class AssetsPacker(
     private fun projectFiles(project: Project, outputDir: File): List<File> {
         val projectDir = File(project.projectPath).parentFile
         val skipped = outputDir.canonicalFile
+        // The project folder itself is never hidden, even when its path ends in `..` (QA-15).
         return projectDir.walkTopDown()
-            .onEnter { !it.name.startsWith(".") && it.canonicalFile != skipped }
+            .onEnter { (it == projectDir || !it.name.startsWith(".")) && it.canonicalFile != skipped }
             .filter { it.isFile && !it.name.startsWith(".") && !AssetMeta.isSidecar(it) }
             .filter { FileTypeResolver.resolve(it) in packable || isModelCompanion(it) }
             .toList()
@@ -105,11 +106,13 @@ class AssetsPacker(
         onProgress: (ExportStep, Float, String) -> Unit = { _, _, _ -> },
     ): Boolean {
         atlas = Atlas()
-        val projectDir = File(project.projectPath).parentFile
+        // Both sides canonical: a project path in another form than the files (an 8.3 short name such as RUNNER~1 on
+        // CI, a `..` segment, a junction) otherwise turns every pack entry into a `../../..` path (QA-15).
+        val projectDir = File(project.projectPath).parentFile.canonicalFile
         onProgress(ExportStep.COLLECTING, 0f, "")
         val files = selectFiles(project, onlyReferenced, outputDir, excludedScenes).sortedBy { FileTypeResolver.resolve(it) }
         val projectInputs = files.mapIndexed { index, file ->
-            val relative = file.relativeTo(projectDir).invariantSeparatorsPath
+            val relative = file.canonicalFile.relativeTo(projectDir).invariantSeparatorsPath
             onProgress(ExportStep.PACKING, index.toFloat() / files.size, relative)
             PackInput(file.absolutePath, relative, FileTypeResolver.resolve(file).name, file.readBytes())
         }
