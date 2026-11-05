@@ -43,6 +43,9 @@ class PrefabsTab(
         ImGui.setNextItemWidth(180f)
         ImGui.combo(stringManager.label("lbl.material"), surfaceIndex, names, names.size)
 
+        val matching = PrefabCategory.entries.sumOf { c -> PrefabCatalog.inCategory(c).count { displayName(it).contains(searchText.get(), ignoreCase = true) } }
+        if (renderEmptyState(PrefabCategory.entries.sumOf { PrefabCatalog.inCategory(it).size }, matching, searchText)) return
+
         PrefabCategory.entries.forEach { category ->
             val entries = PrefabCatalog.inCategory(category).filter {
                 displayName(it).contains(searchText.get(), ignoreCase = true)

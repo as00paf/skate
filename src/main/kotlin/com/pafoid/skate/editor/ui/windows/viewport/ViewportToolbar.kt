@@ -1,5 +1,7 @@
 package com.pafoid.skate.editor.ui.windows.viewport
 
+import com.pafoid.skate.editor.imgui.Tooltips
+import com.pafoid.skate.editor.data.EditorShortcuts
 import com.pafoid.skate.editor.imgui.tippedWith
 import com.pafoid.skate.editor.events.ViewportAction.ScreenshotRequested
 import com.pafoid.skate.editor.events.ViewportAction.ToggleGizmo
@@ -70,7 +72,7 @@ class ViewportToolbar(
                 eventSystem.publish(ToggleGizmo(GizmoSystem.SELECTION_GIZMO))
             }
             if (isActive) ImGui.popStyleColor()
-            if (ImGui.isItemHovered()) ImGui.setTooltip(stringManager.getString("tooltip.viewport_toolbar.select_tool"))
+            if (ImGui.isItemHovered()) ImGui.setTooltip(Tooltips.withShortcut(stringManager, stringManager.getString("tooltip.viewport_toolbar.select_tool"), EditorShortcuts.GIZMO_SELECT))
         }
 
         // Translate Tool
@@ -81,7 +83,7 @@ class ViewportToolbar(
                 eventSystem.publish(ToggleGizmo(GizmoSystem.TRANSLATE_GIZMO))
             }
             if (isActive) ImGui.popStyleColor()
-            if (ImGui.isItemHovered()) ImGui.setTooltip(stringManager.getString("tooltip.viewport_toolbar.translate_tool"))
+            if (ImGui.isItemHovered()) ImGui.setTooltip(Tooltips.withShortcut(stringManager, stringManager.getString("tooltip.viewport_toolbar.translate_tool"), EditorShortcuts.GIZMO_TRANSLATE))
         }
 
         // Rotate Tool
@@ -92,7 +94,7 @@ class ViewportToolbar(
                 eventSystem.publish(ToggleGizmo(GizmoSystem.ROTATION_GIZMO))
             }
             if (isActive) ImGui.popStyleColor()
-            if (ImGui.isItemHovered()) ImGui.setTooltip(stringManager.getString("tooltip.viewport_toolbar.rotate_tool"))
+            if (ImGui.isItemHovered()) ImGui.setTooltip(Tooltips.withShortcut(stringManager, stringManager.getString("tooltip.viewport_toolbar.rotate_tool"), EditorShortcuts.GIZMO_ROTATE))
         }
 
         // Scale Tool
@@ -103,7 +105,7 @@ class ViewportToolbar(
                 eventSystem.publish(ToggleGizmo(GizmoSystem.SCALE_GIZMO))
             }
             if (isActive) ImGui.popStyleColor()
-            if (ImGui.isItemHovered()) ImGui.setTooltip(stringManager.getString("tooltip.viewport_toolbar.scale_tool"))
+            if (ImGui.isItemHovered()) ImGui.setTooltip(Tooltips.withShortcut(stringManager, stringManager.getString("tooltip.viewport_toolbar.scale_tool"), EditorShortcuts.GIZMO_SCALE))
         }
 
         // Local/world space toggle
@@ -126,7 +128,7 @@ class ViewportToolbar(
         buttons.add {
             val isActive = gizmoSystem.usingGizmo == GizmoSystem.MEASURE_GIZMO
             if (isActive) ImGui.pushStyleColor(ImGuiCol.Button, 0.2f, 0.6f, 0.2f, 1f)
-            if (stringManager.tippedWith(ImGui.button(Icons.RULER, TOOLBAR_BUTTON_HEIGHT, TOOLBAR_BUTTON_HEIGHT), "tooltip.viewport_toolbar.measure_tool")) {
+            if (stringManager.tippedWith(ImGui.button(Icons.RULER, TOOLBAR_BUTTON_HEIGHT, TOOLBAR_BUTTON_HEIGHT), "tooltip.viewport_toolbar.measure_tool", EditorShortcuts.MEASURE)) {
                 eventSystem.publish(ToggleGizmo(GizmoSystem.MEASURE_GIZMO))
             }
             if (isActive) {
@@ -142,7 +144,7 @@ class ViewportToolbar(
                     }
                 }
             }
-            if (ImGui.isItemHovered()) ImGui.setTooltip(stringManager.getString("tooltip.viewport_toolbar.measure_tool"))
+            if (ImGui.isItemHovered()) ImGui.setTooltip(Tooltips.withShortcut(stringManager, stringManager.getString("tooltip.viewport_toolbar.measure_tool"), EditorShortcuts.MEASURE))
         }
     }
 
@@ -183,7 +185,7 @@ class ViewportToolbar(
                     logger.logEditor("Simulation stopped")
                 }
                 ImGui.popStyleColor(2)
-                if (ImGui.isItemHovered()) ImGui.setTooltip(stringManager.getString("tooltip.viewport_toolbar.stop_simulation"))
+                if (ImGui.isItemHovered()) ImGui.setTooltip(Tooltips.withShortcut(stringManager, stringManager.getString("tooltip.viewport_toolbar.stop_simulation"), EditorShortcuts.PLAY_TOGGLE))
             }
         } else {
             // Play button
@@ -192,7 +194,7 @@ class ViewportToolbar(
                     eventSystem.publish(EngineAction.SetRuntimePlaying(true))
                     logger.logEditor("Simulation started")
                 }
-                if (ImGui.isItemHovered()) ImGui.setTooltip(stringManager.getString("tooltip.viewport_toolbar.play_simulation"))
+                if (ImGui.isItemHovered()) ImGui.setTooltip(Tooltips.withShortcut(stringManager, stringManager.getString("tooltip.viewport_toolbar.play_simulation"), EditorShortcuts.PLAY_TOGGLE))
             }
         }
     }

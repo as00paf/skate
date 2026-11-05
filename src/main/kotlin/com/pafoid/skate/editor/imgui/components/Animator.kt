@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.imgui.components
 
+import com.pafoid.skate.editor.events.ViewportAction
 import com.pafoid.skate.editor.imgui.Tooltips
 import com.pafoid.skate.editor.imgui.tippedWith
 import com.pafoid.skate.editor.imgui.tipped
@@ -52,35 +53,9 @@ fun Animator.imgui(engine: Engine) {
 
     if (ImGui.beginDragDropTarget()) {
         val newAnimation = ImGui.acceptDragDropPayload<Animation>("ANIMATION", ImGuiDragDropFlags.None)
-        if (newAnimation != null) {
-
-            val skeleton = gameObject?.getComponent<SkeletonComponent>()?.pose?.skeleton
-            val isValid = validateSkeletonCompatibility(skeleton, newAnimation)
-            val alreadyHasAnimation = animations.any { it.name == newAnimation.name }
-
-            when {
-                skeleton == null -> engine.logger.log(
-                    "Animation '${newAnimation.name}' cannot be added because ${gameObject?.name} does not currently have a skeleton.",
-                    LogLevel.ERROR
-                )
-
-                !isValid -> engine.logger.log(
-                    "Animation '${newAnimation.name}' is incompatible with the current skeleton. Skipping.",
-                    LogLevel.ERROR
-                )
-
-                alreadyHasAnimation -> engine.logger.log(
-                    "'${gameObject?.name}' already contains '${newAnimation.name}' animation.",
-                    LogLevel.ERROR
-                )
-
-                else -> {
-                    if (addAnimation(newAnimation)) {
-                        engine.logger.log("Animation '${newAnimation.name}' added successfully!", LogLevel.ACTION)
-                    }
-                }
-            }
-        }
+        // Through the same undoable command as a drop in the viewport (EDT-10).
+        val target = gameObject
+        if (newAnimation != null && target != null) engine.eventSystem.publish(ViewportAction.ApplyAnimation(newAnimation, target))
         ImGui.endDragDropTarget()
     }
 

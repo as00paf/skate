@@ -64,4 +64,7 @@ object Icons {
     const val MAGIC = "\uf0d0"
     const val IMPORT_FILE = "\uf56f"
     const val EXPORT = "\uf56e"
+    const val CLONE = "\uf24d"
+    const val SIGN_OUT = "\uf2f5"
+    const val KEYBOARD = "\uf11c"
 }

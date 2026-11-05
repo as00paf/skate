@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.imgui
 
+import com.pafoid.skate.editor.data.EditorShortcuts
 import com.pafoid.skate.app.Editor
 import com.pafoid.skate.editor.events.EditorEvent
 import com.pafoid.skate.editor.events.ProjectEvent
@@ -113,7 +114,7 @@ class EditorMenuBar(
             if (stringManager.tipped(menuItem("${Icons.PLUS} ${stringManager.getString("menu.file.new_project")}"), "menu.file.new_project")) {
                 eventSystem.publish(WindowAction.Show("window.project_wizard"))
             }
-            if (stringManager.tipped(menuItem("${Icons.FOLDER_OPEN} ${stringManager.getString("menu.file.open_project_menu")}"), "menu.file.open_project_menu")) {
+            if (stringManager.tipped(menuItem("${Icons.FOLDER_OPEN} ${stringManager.getString("menu.file.open_project_menu")}", EditorShortcuts.OPEN_PROJECT.display()), "menu.file.open_project_menu", EditorShortcuts.OPEN_PROJECT)) {
                 eventSystem.publish(ProjectEvent.OpenProjectFileRequested)
             }
 
@@ -121,7 +122,7 @@ class EditorMenuBar(
                 if (stringManager.tipped(menuItem("${Icons.WINDOW_CLOSE} ${stringManager.getString("menu.file.close_project")}"), "menu.file.close_project")) {
                     eventSystem.publish(ProjectEvent.CloseProjectRequested)
                 }
-                if (stringManager.tipped(menuItem("${Icons.SAVE} ${stringManager.getString("menu.file.save_project")}", "Ctrl+S"), "menu.file.save_project")) {
+                if (stringManager.tipped(menuItem("${Icons.SAVE} ${stringManager.getString("menu.file.save_project")}"), "menu.file.save_project")) {
                     eventSystem.publish(ProjectEvent.SaveRequested)
                 }
                 if (stringManager.tipped(menuItem("${Icons.SAVE} ${stringManager.getString("menu.file.save_project_as")}"), "menu.file.save_project_as")) {
@@ -133,7 +134,7 @@ class EditorMenuBar(
             }
             ImGui.separator()
 
-            if (stringManager.tipped(menuItem("${Icons.TRASH} ${stringManager.getString("menu.file.quit")}"), "menu.file.quit")) {
+            if (stringManager.tipped(menuItem("${Icons.SIGN_OUT} ${stringManager.getString("menu.file.quit")}"), "menu.file.quit")) {
                 eventSystem.publish(EditorEvent.Exit)
             }
             ImGui.endPopup()

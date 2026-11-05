@@ -66,7 +66,7 @@ class ProjectActionHandler(
                 eventSystem.publish(WindowAction.ShowDefault)
                 eventSystem.publish(OpenProjectSucceeded(event.projectPath))
             } else {
-                eventSystem.publish(OpenProjectFailed(event.projectPath, "Failed to open project"))
+                eventSystem.publish(OpenProjectFailed(event.projectPath, projectManager.lastError ?: "Failed to open project"))
             }
         }
         eventSystem.subscribe<CreateProjectRequested> { event ->

@@ -1,5 +1,7 @@
 package com.pafoid.skate.editor.ui.windows
 
+import com.pafoid.skate.editor.data.EditorShortcuts
+import com.pafoid.skate.editor.data.EditorFocus
 import com.pafoid.skate.editor.imgui.tipped
 import com.pafoid.skate.editor.imgui.label
 import com.pafoid.skate.editor.events.ConsoleAction
@@ -48,8 +50,10 @@ class ConsoleWindow(engine: Engine) : EditorWindow("window.console", true) {
             ImGui.endTabBar()
         }
 
-        if (ImGui.isWindowFocused() && ImGui.getIO().keyCtrl && ImGui.isKeyPressed(GLFW.GLFW_KEY_C)) {
-            publishCopySelected()
+        if (ImGui.isWindowFocused()) {
+            // Ctrl+C copies log lines here, not the selected object (EDT-10).
+            EditorFocus.claim(EditorShortcuts.COPY.combo())
+            if (ImGui.getIO().keyCtrl && ImGui.isKeyPressed(GLFW.GLFW_KEY_C)) publishCopySelected()
         }
 
         ImGui.end()
@@ -211,13 +215,13 @@ class ConsoleWindow(engine: Engine) : EditorWindow("window.console", true) {
         // Right-click context menu
         if (ImGui.beginPopupContextWindow()) {
             if (stringManager.tipped(ImGui.menuItem(
-                    stringManager.getString("context.console.copy_selected"),
+                    "${Icons.COPY} ${stringManager.getString("context.console.copy_selected")}",
                     stringManager.getString("shortcut.copy")
                 ), "context.console.copy_selected")
             ) {
                 publishCopySelected()
             }
-            if (stringManager.tipped(ImGui.menuItem(stringManager.getString("context.console.copy_all")), "context.console.copy_all")) {
+            if (stringManager.tipped(ImGui.menuItem("${Icons.COPY} ${stringManager.getString("context.console.copy_all")}"), "context.console.copy_all")) {
                 val sb = StringBuilder()
                 logs.forEach { sb.append("[${it.level}] ${it.message}\n") }
                 eventSystem.publish(ConsoleAction.CopyToClipboard(sb.toString()))
@@ -227,7 +231,7 @@ class ConsoleWindow(engine: Engine) : EditorWindow("window.console", true) {
                 selectedLogs.clear()
                 lastSelectedIndex = -1
             }
-            if (stringManager.tipped(ImGui.menuItem(stringManager.getString("context.console.clear_all_logs")), "context.console.clear_all_logs")) {
+            if (stringManager.tipped(ImGui.menuItem("${Icons.TRASH} ${stringManager.getString("context.console.clear_all_logs")}"), "context.console.clear_all_logs")) {
                 eventSystem.publish(ConsoleAction.ClearLogs)
                 selectedLogs.clear()
                 lastSelectedIndex = -1
