@@ -312,11 +312,12 @@ class FeatureShowcase(private val prefabs: PrefabsGenerator) {
     private fun audio() {
         // The bundled MP3 (AUD-10) as a positional source: streamed (music bus) and downmixed to mono so it pans; it gets
         // louder from maxDistance (25 m, where attenuation stops) down to minDistance (1 m) as the camera approaches.
+        // No Doppler: music must not change pitch when the camera glides to an area (AUD-11).
         add(mesh("[Audio] Emitter3D", Assets.Bundled.SPHERE, at("audio", 0f, 1f, 0f), Vector3f(0.6f),
             Material(emissiveFactor = Vector3f(0.2f, 0.8f, 0.8f)))
             .addComponent(AudioComponent(
                 assets + Assets.Bundled.MUSIC, is3D = true, loops = true, volume = 0.6f, bus = BusId.MUSIC,
-                maxDistance = 25f, playOnAwake = true,
+                maxDistance = 25f, dopplerFactor = 0f, playOnAwake = true,
             )))
     }
 

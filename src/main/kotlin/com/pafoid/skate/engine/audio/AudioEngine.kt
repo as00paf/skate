@@ -150,11 +150,14 @@ class AudioEngine(
         backend.listener.setVelocity(x, y, z)
     }
 
-    /** Distance attenuation is computed per source in [SpatialAudio], so OpenAL's own model is disabled. */
-    fun configureSpatial(dopplerFactor: Float = 1f, speedOfSound: Float = SpatialAudio.DEFAULT_SPEED_OF_SOUND) {
+    /**
+     * Distance attenuation and Doppler are computed per source in [SpatialAudio] (gain and pitch), so OpenAL's own
+     * distance model and Doppler are disabled; otherwise the velocities sent to OpenAL would shift the pitch twice.
+     */
+    fun configureSpatial(speedOfSound: Float = SpatialAudio.DEFAULT_SPEED_OF_SOUND) {
         if (!isInitialized) return
         backend.listener.disableDistanceModel()
-        backend.listener.setDopplerFactor(dopplerFactor)
+        backend.listener.setDopplerFactor(0f)
         backend.listener.setSpeedOfSound(speedOfSound)
     }
 

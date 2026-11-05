@@ -163,6 +163,32 @@ class AudioSystemShowcaseTest {
         verify(exactly = 0) { logger.log(any(), LogLevel.ERROR, any()) }
     }
 
+    /** AUD-11: clicking an area button glides the camera fast; the song must keep its pitch. */
+    @Test
+    fun Showcase_Audio_FastCameraGlideKeepsTheSongAtPitchOne() {
+        copyBundledMusic()
+        val scene = loadShowcaseFromDisk()
+        val emitterPos = scene.named("[Audio] Emitter3D").getComponent<Transform>()!!.translation
+        val system = system(scene)
+        camera.translation.set(FeatureShowcase.overviewTarget().position)
+        scene.isRunning = true
+        frame(system, scene)
+        val source = al.playing.single()
+
+        // ~150 m/s straight at the emitter, then away, like a focus glide or a cut.
+        val toward = Vector3f(emitterPos).sub(camera.translation).normalize(2.5f)
+        repeat(20) {
+            camera.translation.add(toward)
+            frame(system, scene)
+            assertEquals(1f, source.pitch, 1e-6f, "pitch while gliding in, frame $it")
+        }
+        camera.translation.set(FeatureShowcase.overviewTarget().position)
+        frame(system, scene)
+        assertEquals(1f, source.pitch, 1e-6f)
+        // OpenAL's own Doppler is off, so the velocities it receives cannot shift the pitch either.
+        assertEquals(0f, al.openAlDopplerFactor)
+    }
+
     @Test
     fun Showcase_Audio_MissingMp3LogsOneWarningAndTheSceneKeepsRunning() {
         val scene = loadShowcaseFromDisk()

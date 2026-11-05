@@ -55,6 +55,7 @@ class FakeAudioBackend {
     val listenerPosition = Vector3f()
     val listenerForward = Vector3f(0f, 0f, -1f)
     var distanceModelDisabled = false
+    var openAlDopplerFactor = 1f
 
     val playing: List<Source> get() = sources.values.filter { it.isPlaying }
 
@@ -77,7 +78,7 @@ class FakeAudioBackend {
         override fun setVelocity(x: Float, y: Float, z: Float) {}
         override fun setOrientation(forward: FloatArray, up: FloatArray) { listenerForward.set(forward[0], forward[1], forward[2]) }
         override fun disableDistanceModel() { distanceModelDisabled = true }
-        override fun setDopplerFactor(factor: Float) {}
+        override fun setDopplerFactor(factor: Float) { openAlDopplerFactor = factor }
         override fun setSpeedOfSound(speed: Float) {}
     }
 

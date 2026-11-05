@@ -3,6 +3,7 @@ package com.pafoid.skate.engine.ecs.systems
 import com.pafoid.skate.engine.assets.AssetsManager
 import com.pafoid.skate.engine.assets.data.SoundSource
 import com.pafoid.skate.engine.audio.AudioEngine
+import com.pafoid.skate.engine.audio.BusId
 import com.pafoid.skate.engine.audio.ClipPicker
 import com.pafoid.skate.engine.audio.ReverbZoneResolver
 import com.pafoid.skate.engine.audio.PcmDecoders
@@ -119,7 +120,10 @@ class AudioSystem(
             forward = Vector3f(camera.camForward)
             up = Vector3f(camera.camRight).cross(forward).normalize()
         }
-        val velocity = motionVelocity(listenerObject?.let { -it.uId - 1 } ?: CAMERA_KEY, pos, listenerObject?.getComponent<RigidBody3D>())
+        // Only a physics body gives the listener a velocity: camera glides, cuts and free-fly are not physical motion
+        // and must not Doppler-shift what you hear (AUD-11).
+        val body = listenerObject?.getComponent<RigidBody3D>()?.takeIf { it.rawBody != null }
+        val velocity = body?.let { Vector3f(it.linearVelocity) } ?: Vector3f()
 
         listenerPos.set(pos)
         listenerVel.set(velocity)
@@ -172,9 +176,12 @@ class AudioSystem(
         val attenuation = SpatialAudio.attenuation(
             ac.attenuationModel, worldPos.distance(listenerPos), ac.minDistance, ac.maxDistance, ac.rolloff
         )
-        val pitch = SpatialAudio.dopplerPitch(listenerPos, listenerVel, worldPos, vel, ac.dopplerFactor)
+        val pitch = SpatialAudio.dopplerPitch(listenerPos, listenerVel, worldPos, vel, effectiveDoppler(ac))
         return SpatialState(base * attenuation, pitch, worldPos, vel)
     }
+
+    /** Music is never Doppler-shifted, whatever its own factor (AUD-11). */
+    private fun effectiveDoppler(ac: AudioComponent) = if (ac.bus == BusId.MUSIC) 0f else ac.dopplerFactor
 
     private fun applyParams(pb: Playback, ac: AudioComponent, sp: SpatialState) {
         // Streamed sources loop by re-queueing, never through AL_LOOPING.
@@ -333,7 +340,4 @@ class AudioSystem(
         audioEngine.voices.clear()
     }
 
-    private companion object {
-        const val CAMERA_KEY = Int.MIN_VALUE
-    }
 }
