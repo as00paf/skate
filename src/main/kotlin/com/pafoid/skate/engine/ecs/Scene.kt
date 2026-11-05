@@ -74,6 +74,10 @@ class Scene(@SerialName("sceneName") override var name: String = "MainScene") : 
     }
 
     var isRunning: Boolean = false
+
+    /** In Play but paused (pause menu); set by [com.pafoid.skate.engine.ecs.systems.SystemManager.paused]. */
+    @Transient
+    var isPaused: Boolean = false
     var isDirty: Boolean = false
 
     override fun start() {

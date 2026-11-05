@@ -163,6 +163,49 @@ class AudioSystemShowcaseTest {
         verify(exactly = 0) { logger.log(any(), LogLevel.ERROR, any()) }
     }
 
+    /** GUI-09: the pause menu holds the song where it is; Resume continues the same voice, Stop still releases it. */
+    @Test
+    fun Showcase_Audio_PauseHoldsTheSongAndResumeContinuesIt() {
+        copyBundledMusic()
+        val scene = loadShowcaseFromDisk()
+        val emitter = scene.named("[Audio] Emitter3D").getComponent<AudioComponent>()!!
+        val system = system(scene)
+        scene.isRunning = true
+        frame(system, scene)
+        val source = al.playing.single()
+
+        scene.isPaused = true
+        frame(system, scene)
+        assertFalse(source.isPlaying, "still playing while paused")
+        assertTrue(source.id in al.sources, "the voice must be held, not released")
+        val uploaded = al.uploads.size
+        repeat(30) { frame(system, scene) }
+        assertEquals(uploaded, al.uploads.size, "the stream kept decoding while paused")
+
+        scene.isPaused = false
+        frame(system, scene)
+        assertTrue(source.isPlaying, "Resume must continue the same voice")
+        assertEquals(listOf(source), al.playing)
+
+        // A sound paused by gameplay stays paused across the pause menu.
+        emitter.pause()
+        frame(system, scene)
+        scene.isPaused = true
+        frame(system, scene)
+        scene.isPaused = false
+        frame(system, scene)
+        assertFalse(source.isPlaying)
+
+        // Stop while the pause menu is open releases everything.
+        emitter.play()
+        frame(system, scene)
+        scene.isPaused = true
+        frame(system, scene)
+        scene.isRunning = false
+        frame(system, scene)
+        assertTrue(al.sources.isEmpty())
+    }
+
     /** AUD-11: clicking an area button glides the camera fast; the song must keep its pitch. */
     @Test
     fun Showcase_Audio_FastCameraGlideKeepsTheSongAtPitchOne() {

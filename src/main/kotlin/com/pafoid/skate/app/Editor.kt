@@ -4,6 +4,7 @@ import com.pafoid.skate.editor.data.EditorInputState
 import com.pafoid.skate.editor.gizmos.EditorCamera
 import com.pafoid.skate.editor.imgui.ImGuiLayer
 import com.pafoid.skate.editor.systems.ClipboardService
+import com.pafoid.skate.editor.systems.EditorPauseActions
 import com.pafoid.skate.editor.systems.EditorSettingsManager
 import com.pafoid.skate.editor.systems.GizmoSystem
 import com.pafoid.skate.editor.systems.ProjectManager
@@ -28,6 +29,7 @@ class Editor(
 
     init {
         engine.uiAuthoring = true
+        EditorPauseActions.install(engine.pauseActions, engine.eventSystem)
         // One pointer for picking, gizmos and runtime UI: ImGui's mouse is in the same desktop space as the
         // viewport image rect (also with multi-viewports); the GLFW cursor is relative to the main window.
         engine.inputProvider.mouseListener.pointerSource = PointerSource { out ->

@@ -4,15 +4,14 @@ import com.pafoid.skate.engine.assets.serialization.FileKind
 import com.pafoid.skate.editor.data.FileType
 import com.pafoid.skate.editor.project.Project
 import com.pafoid.skate.editor.systems.ProjectManager
+import com.pafoid.skate.editor.systems.ScenePlaySnapshot
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.game.player.SkateGameplay
 import com.pafoid.skate.engine.core.Window
 import com.pafoid.skate.engine.assets.Assets
-import com.pafoid.skate.engine.events.EngineAction
 import com.pafoid.skate.engine.fileExtension
 import com.pafoid.skate.engine.input.ViewRect
 import com.pafoid.skate.game.ui.GameHudState
-import com.pafoid.skate.game.ui.GameUi
 import com.pafoid.skate.game.ui.GameUiSystem
 import org.lwjgl.glfw.GLFW
 import com.pafoid.skate.engine.assets.pack.PackBuilder
@@ -60,22 +59,21 @@ fun main(args: Array<String>) {
     }
 }
 
+/**
+ * HUD plus the engine's pause menu (GUI-09), which behaves as in editor Play; only Restart and Quit are the game's:
+ * Restart reloads the scene as it was at launch, Quit closes the window.
+ */
 private fun installGameUi(window: Window) {
     val scene = engine.sceneManager.currentScene ?: return
     loadGameStrings()
-    val hud = GameUi.createHud()
-    val pauseMenu = GameUi.createPauseMenu()
-    GameUiSystem.attach(scene, hud, pauseMenu)
-    engine.systemManager.addSystem(
-        GameUiSystem(
-            state = GameHudState(),
-            hud = hud,
-            pauseMenu = pauseMenu,
-            onPauseChanged = { paused -> engine.eventSystem.publish(EngineAction.SetRuntimePlaying(!paused)) },
-            onQuit = { GLFW.glfwSetWindowShouldClose(window.glfwWindow, true) },
-            onLanguageToggle = { engine.stringManager.setLocale(if (engine.stringManager.locale == "fr") "en" else "fr") },
-        )
-    )
+    val launchState = ScenePlaySnapshot.capture(scene, engine.serializer)
+    val hud = GameUiSystem(GameHudState())
+    engine.systemManager.addSystem(hud)
+    engine.pauseActions.restart = {
+        engine.sceneManager.currentScene?.let { launchState.restore(engine.sceneManager, engine.serializer, it) }
+        hud.resetState()
+    }
+    engine.pauseActions.quit = { GLFW.glfwSetWindowShouldClose(window.glfwWindow, true) }
 }
 
 /** Game UI text ships inside game.bin (AST-07); packs exported before that fall back to the tables on disk. */
