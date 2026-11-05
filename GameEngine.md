@@ -248,7 +248,7 @@ The ECS is in good working shape but needs a complete review. It is probably mis
   - Do: Review EDT-33's top-level rule (parent is the Scene) and `GameObject.isTopLevel/ancestors()/linkChildren()`, `GameObjectManager.addGameObject(parent, index)`/`removeGameObject`, and REN-09's `EnvironmentComponent` fog fields and `EnvironmentSystem` fog cycle wiring. Fix issues, migrate remaining `parent == null` callers.
   - Done when: Review notes in the commit message; remaining callers use the helpers; tests green.
   - Deps: EDT-33, REN-09
-- [~] @skate-ecs **ECS-13** `P2` Review GUI-09 runtime pause hooks
+- [x] **ECS-13** `P2` Review GUI-09 runtime pause hooks
   - Do: From GUI-09: review `System.runsWhilePaused`, `SystemManager.paused`, `Scene.isPaused` and the `AudioSystem` hold/resume; check every system's behaviour while paused (physics, animation, particles, camera control, UI input) and that Stop/restart clears pause.
   - Done when: Review fixes committed; pause semantics documented; tests for paused systems.
   - Deps: GUI-09
