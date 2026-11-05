@@ -239,8 +239,7 @@ object Assets {
             SKY to Textures.SKY_HDRI,
             // Sounds
             MUSIC to Sounds.MUSIC,
-            // Game
-            "..\\builds\\skate-game.jar" to "build\\libs\\skate-game.jar",
+            // The standalone game jar is a build output, copied by ProjectExporter at export time (not listed here).
         )
     }
 }
