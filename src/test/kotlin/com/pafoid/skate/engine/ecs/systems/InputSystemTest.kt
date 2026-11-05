@@ -12,6 +12,7 @@ import com.pafoid.skate.engine.events.JumpReleased
 import com.pafoid.skate.engine.events.MovementInput
 import com.pafoid.skate.engine.input.InputProvider
 import com.pafoid.skate.engine.input.listeners.MouseListener
+import com.pafoid.skate.engine.ui.UiActions
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
@@ -51,6 +52,25 @@ class InputSystemTest {
             eventSystem = eventSystem
         )
         inputSystem.init(scene)
+    }
+
+    /** GUI-09: while the pause menu is open Esc still reaches the UI, but gameplay gets no input. */
+    @Test
+    fun `paused - UI cancel is still read and gameplay input is not fed`() {
+        val player = GameObject("TestPlayer").addComponent(InputStateComponent())
+        scene.children.add(player)
+        scene.isPaused = true
+        every { inputProvider.isKeyPressed(GLFW.GLFW_KEY_ESCAPE) } returns true
+        every { inputProvider.keyBeginPress(GLFW.GLFW_KEY_ESCAPE) } returns true
+        every { inputProvider.isKeyPressed(GLFW.GLFW_KEY_W) } returns true
+        var moves = 0
+        eventSystem.subscribe(MovementInput::class) { moves++ }
+
+        inputSystem.update(0.016f)
+
+        assertTrue(inputSystem.runsWhilePaused)
+        assertTrue(inputSystem.reader.wasActionPressed(UiActions.CANCEL), "Esc must reach the pause menu")
+        assertEquals(0, moves, "gameplay received movement while paused")
     }
 
     @Test

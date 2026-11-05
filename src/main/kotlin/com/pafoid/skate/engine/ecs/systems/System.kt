@@ -18,6 +18,12 @@ abstract class System(
     /** Systems of the same phase that must run after this one. */
     open val runsBefore: List<KClass<out System>> get() = emptyList()
 
+    /**
+     * True for systems that keep updating while the game is paused ([SystemManager.paused]): input, UI, audio and
+     * derived state such as transforms and the camera. Simulation (physics, animation, scripts, particles) freezes.
+     */
+    open val runsWhilePaused: Boolean get() = false
+
     /** Progress between the last two fixed steps in [0, 1]; set by [SystemManager] before the variable-rate phases. */
     var fixedStepAlpha = 0f
         internal set

@@ -6,6 +6,7 @@ import com.pafoid.skate.engine.ecs.systems.SystemPhase
 /** Pumps [PlatformServices] callbacks once per frame, before gameplay systems run. */
 class PlatformSystem(val services: PlatformServices) : System() {
     override val phase: SystemPhase get() = SystemPhase.PRE_UPDATE
+    override val runsWhilePaused get() = true
 
     override fun update(dt: Float) = services.update()
 
