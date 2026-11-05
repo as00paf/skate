@@ -3,6 +3,7 @@ package com.pafoid.skate.editor.ui.windows
 import com.pafoid.skate.editor.data.EditorInputMappings
 import com.pafoid.skate.editor.imgui.EditorWindow
 import com.pafoid.skate.editor.imgui.MImGui
+import com.pafoid.skate.editor.settings.ShadowQuality
 import com.pafoid.skate.editor.systems.EditorSettingsManager
 import com.pafoid.skate.engine.core.StringManager
 import com.pafoid.skate.engine.utils.UnitSystem
@@ -61,6 +62,7 @@ class EditorSettingsWindow(
     private var tempAutoSaveInterval = 5
     private var tempCompletionAuto = true
     private var tempCompletionDelay = 200
+    private var tempShadowQuality = ShadowQuality.MEDIUM
 
     private val tempShowOverlayBool = ImBoolean(true)
 
@@ -70,6 +72,7 @@ class EditorSettingsWindow(
             Category("keybindings", "settings.editor.keybindings", arrayOf("key", "binding", "gizmo", "translate", "rotate", "scale", "select", "measure", "deselect", "camera", "reset")) { renderKeyBindings() },
             Category("gamepad_overlay", "settings.editor.gamepad_overlay", arrayOf("gamepad", "overlay", "show", "size", "scale")) { renderGamepadOverlay() },
             Category("interface", "settings.editor.interface", arrayOf("interface", "theme")) { renderInterface() },
+            Category("graphics", "settings.editor.graphics", arrayOf("graphics", "shadow", "quality")) { renderGraphics() },
             Category("autosave", "settings.editor.autosave", arrayOf("auto", "save", "autosave", "interval")) { renderAutoSave() },
             Category("script_editor", "settings.editor.script_editor", arrayOf("script", "completion", "popup", "delay", "autocomplete")) { renderScriptEditor() }
         )
@@ -174,6 +177,7 @@ class EditorSettingsWindow(
             tempAutoSaveInterval = editor.autorSaveIntervalMinutes
             tempCompletionAuto = editor.completionAutoPopup
             tempCompletionDelay = editor.completionDelayMs
+            tempShadowQuality = editor.graphics.shadowQuality
             // Copy input mappings
             tempMappings = editor.editorInputMappings.copy()
         }
@@ -322,6 +326,21 @@ class EditorSettingsWindow(
         }
     }
 
+    private fun renderGraphics() {
+        val labels = ShadowQuality.entries.map { stringManager.getString(shadowQualityKey(it)) }.toTypedArray()
+        val selected = ImInt(tempShadowQuality.ordinal)
+        MImGui.propertyRow(
+            label = stringManager.getString("settings.editor.graphics.shadow_quality"),
+            helpTooltip = stringManager.getString("settings.editor.graphics.shadow_quality.desc"),
+            onReset = { tempShadowQuality = ShadowQuality.MEDIUM; hasPendingChanges = true }
+        ) {
+            if (combo("##shadow_quality", selected, labels, labels.size)) {
+                tempShadowQuality = ShadowQuality.entries[selected.get()]
+                hasPendingChanges = true
+            }
+        }
+    }
+
     private fun renderAutoSave() {
         MImGui.propertyRow(
             label = stringManager.getString("settings.editor.autosave.enabled"),
@@ -392,10 +411,14 @@ class EditorSettingsWindow(
         settingsManager.updateInputMappings(tempMappings)
         settingsManager.updateAutoSaveSettings(tempAutoSaveEnabled, tempAutoSaveInterval)
         settingsManager.updateCompletionSettings(tempCompletionAuto, tempCompletionDelay)
+        settingsManager.updateShadowQuality(tempShadowQuality)
         hasPendingChanges = false
     }
 
     companion object {
+        /** String key for a shadow quality option, shared with the Render Graph window. */
+        fun shadowQualityKey(quality: ShadowQuality): String = "settings.graphics.shadow_quality.${quality.name.lowercase()}"
+
         private fun matchesSearch(query: String, vararg terms: String): Boolean {
             if (query.isBlank()) return true
             return terms.any { it.contains(query, ignoreCase = true) }

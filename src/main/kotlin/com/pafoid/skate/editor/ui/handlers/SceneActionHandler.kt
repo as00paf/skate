@@ -13,6 +13,7 @@ import com.pafoid.skate.editor.commands.project.SaveSceneCommand
 import com.pafoid.skate.editor.commands.scene.SwitchSceneCommand
 import com.pafoid.skate.editor.events.ViewportAction.TabSelected
 import com.pafoid.skate.editor.gizmos.EditorCamera
+import com.pafoid.skate.editor.systems.PlayModeGuards
 import com.pafoid.skate.editor.systems.ProjectManager
 import com.pafoid.skate.editor.systems.UndoRedoManager
 import com.pafoid.skate.engine.core.Engine
@@ -33,7 +34,7 @@ import com.pafoid.skate.engine.events.SceneAction.SaveRequested
 import java.io.File
 
 class SceneActionHandler(
-    engine: Engine,
+    private val engine: Engine,
     private val projectManager: ProjectManager,
     private val undoRedoManager: UndoRedoManager,
     private val editorCamera: EditorCamera
@@ -113,12 +114,20 @@ class SceneActionHandler(
     }
 
     private fun handleSaveRequested(scene: Scene) {
+        if (!PlayModeGuards.canSaveScene(engine.runtimePlaying)) {
+            logger.logEditor("Scene save skipped: stop Play first", LogLevel.WARN)
+            return
+        }
         val command = SaveSceneCommand(scene, projectManager, sceneManager)
         undoRedoManager.executeCommand(command)
         logger.logEditor("Scene save requested: ${scene.name}")
     }
 
     private fun handleSaveAsRequested(scene: Scene) {
+        if (!PlayModeGuards.canSaveScene(engine.runtimePlaying)) {
+            logger.logEditor("Scene save-as skipped: stop Play first", LogLevel.WARN)
+            return
+        }
         val command = SaveSceneAsCommand(scene, serializer, logger)
         undoRedoManager.executeCommand(command)
         logger.logEditor("Scene save-as requested: ${scene.name}")

@@ -5,9 +5,13 @@ import com.pafoid.skate.editor.events.EditorEvent
 import com.pafoid.skate.editor.events.ViewportAction
 import com.pafoid.skate.editor.systems.ClipboardService
 import com.pafoid.skate.editor.systems.EditorSettingsManager
+import com.pafoid.skate.editor.systems.PlayModeGuards
 import com.pafoid.skate.editor.systems.UndoRedoManager
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.ecs.Scene
+import com.pafoid.skate.engine.ecs.systems.InputSystem
+import com.pafoid.skate.engine.input.ActionBinding
+import com.pafoid.skate.engine.input.DefaultActions
 import com.pafoid.skate.engine.events.SceneAction
 import org.joml.Vector2f
 import org.lwjgl.glfw.GLFW
@@ -124,12 +128,19 @@ class EditorInputHandler(
                 // TODO: publish rename request to focus on name in property window
                 //eventSystem.publish(ViewportAction.RenameGameObject)
             }
-            if (inputProvider.isKeyPressed(inputMappings.deselectAll.keyboardKey) && selected != null) {
+            val deselectKey = inputMappings.deselectAll.keyboardKey
+            if (inputProvider.isKeyPressed(deselectKey) && selected != null &&
+                !PlayModeGuards.deselectClaimedByGame(engine.runtimePlaying, deselectKey, cancelBindings())
+            ) {
                 eventSystem.publish(ViewportAction.SelectionCleared)
                 logger.logEditor("Deselected GameObject")
             }
         }
     }
+
+    /** The game's UI cancel bindings (Esc / gamepad B by default), which open the pause menu in Play. */
+    private fun cancelBindings(): List<ActionBinding> =
+        engine.systemManager.getSystem<InputSystem>()?.actionMap?.bindings(DefaultActions.UI_CANCEL).orEmpty()
 
     private fun handleClipboardAndUndo(currentScene: Scene) {
         val selected = currentScene.selectedGameObject
