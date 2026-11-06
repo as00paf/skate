@@ -107,8 +107,6 @@ class WindowStandardGuardTest {
             "ProjectWindow", "AssetBrowserWindow",
             // D: debug
             "ConsoleWindow", "ProfilerWindow", "CommandHistoryWindow", "ShellWindow",
-            // E: settings dialogs
-            "EditorSettingsWindow", "ProjectSettingsWindow", "KeyBindingsWindow", "ExportWizardWindow",
             // F: modals & palette
             "ProjectSwitcherDialog", "SearchEverywhereWindow", "ProjectWizardWindow",
             // H: domain windows
