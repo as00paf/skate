@@ -57,6 +57,11 @@ class WindowRegistry(
 
     val inputTestingDialog: EditorDialog = windows.filterIsInstance<InputTestingWindow>().first()
 
+    init {
+        // The help popover's "Related windows" buttons (EDT-51 §2.4).
+        HelpPopover.openWindow = { name -> getWindow(name)?.isOpen?.set(true) }
+    }
+
     val menuBar = EditorMenuBar(engine, editor, this, projectManager)
     val statusBar = EditorStatusBar(engine)
 
