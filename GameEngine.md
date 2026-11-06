@@ -146,9 +146,9 @@ Round 27+ goals: the Asset Browser shows every asset type, one assets folder, ex
   - Do: Write `docs/design/AST-15.md`: refined export wizard flow plus settings (splash image, icon, target platform, graphics backend, compression/packing, debug vs release, target FPS).
   - Done when: The human approves the note.
   - Deps: EDT-59
-- [~] @skate-online **AST-16** `P2` Asset store window: design note
-  - Do: Write `docs/design/AST-16.md`: a provider plugin interface (search, preview, license, download, import), license display and attribution tracking. Providers: NVIDIA SimReady via Hugging Face (https://huggingface.co/spaces/nvidia/simready-central, USD assets, so it needs USD→glTF conversion), Poly Haven, ambientCG, Kenney, Quaternius, Sketchfab (CC licenses, login). No Mixamo (no public API; human decision 2026-11-06: no scraping).
-  - Done when: The human approves the note.
+- [~] @skate-online **AST-16** `P2` Asset store window — design approved 2026-11-06 (`docs/design/AST-16.md`, revised after the skate-assets review)
+  - Do: Human priority: **free libraries that need no login first.** Slices in order: a) SPI, registry, HTTP seam, pipeline, ledger, window skeleton + Poly Haven, b) ambientCG + texture sets, d) Kenney/Quaternius catalogs + "Import downloaded pack", f) credits on export (with AST-15), e) SimReady via Hugging Face + USD→glTF through Blender (needs AST-19), c) Sketchfab login (last, optional). No Mixamo, no Poly Pizza for now. ND licenses: warn and record the conversion.
+  - Done when: Each slice imports a real asset with its license recorded; tests on fixtures, no sockets.
 - [ ] **AST-17** `P2` City generation from OpenStreetMap: design note
   - Do: Write `docs/design/AST-17.md` evaluating OSM2World (Java, open source, glTF export) as the open-source alternative to commercial OSM city tools: area picker, import to a scene with colliders and materials, licensing (ODbL attribution).
   - Done when: The human approves the note.
@@ -203,9 +203,26 @@ Round 27+ goals: a Jolt backend selectable per project, a terrain heightfield co
 
 Round 27+ goals: an animation authoring tool and animation from video.
 
-- [~] @skate-animation **ANI-12** `P2` Animation tool and video-to-animation: design note
-  - Do: Write `docs/design/ANI-12.md`: an animation editor window (timeline, keyframes, curve editor, preview, events) and a video→animation pipeline from **local video files only** (human decision 2026-11-06). Run an existing pose-estimation tool as an external process (evaluate MediaPipe, GVHMR/WHAM, FreeMoCap, and NVIDIA's offering the human mentioned, "motion bricks") on license, quality, hardware needs and install story, then output BVH/glTF and use the existing retargeting.
-  - Done when: The human approves the note.
+- [x] **ANI-12** `P2` Animation tool and video-to-animation: design note — approved 2026-11-06 (`docs/design/ANI-12.md`). Human: drop MotionBricks and the GEM-X backend for now (revisit later); the goal is a tool that makes creating and editing animations from video **easy**.
+- [~] @skate-animation **ANI-13** `P2` `.skanim` clip format, loader and pure editing core
+  - Do: ANI-12 §2.2 and §5.1: JSON `*.skanim` format (versioned), loader to the existing `Animation` types, and the pure editing core under `engine/animation/edit/` (keys, tangents, Euler↔quat curves, keyframe reduction, filters, loop seam, foot-lock).
+  - Done when: A `.skanim` round-trips and plays on the skater; the core is unit-tested.
+  - Deps: ANI-12
+- [ ] **ANI-14** `P2` Animation editor window: timeline, dope sheet, events, preview
+  - Do: ANI-12 §2.1. Written by skate-animation, reviewed by skate-editor (lead decision); edits go through `Command`s; offscreen preview with REN help.
+  - Done when: A clip can be scrubbed, keyed, retimed and saved, with undo; window logic tested.
+  - Deps: ANI-13, EDT-52
+- [ ] **ANI-15** `P2` Curve editor and cleanup tools
+  - Do: ANI-12 §2.1: curve editor (tangent modes) and cleanup tools (resample, reduction, smoothing, foot-lock, mirror, trim, loop seam).
+  - Done when: The tools work on a mocap clip in the editor; core logic tested.
+  - Deps: ANI-14
+- [ ] **ANI-16** `P2` Retargeter rest-pose compensation
+  - Do: ANI-12 §3.4: compensate rest-pose differences (T-pose vs A-pose) per bone in `Retargeter`.
+  - Done when: A T-pose source retargets cleanly onto the skater rig; tests.
+- [ ] **ANI-17** `P2` Video to animation with MediaPipe (local files)
+  - Do: ANI-12 §3: process runner, BVH writer, MediaPipe adapter script and position→rotation solver with filtering, foot contacts and optional root motion; "Import mocap file…" for BVH/FBX/glTF from any tool; "Check setup" in Editor Settings and a setup doc. Make the flow **easy**: pick a video, preview, one click to a clip that opens in the animation editor.
+  - Done when: A local sample video produces a clip on the skater rig that opens in the animation editor; solver tested on synthetic landmarks.
+  - Deps: ANI-13, ANI-16
 
 ### Audio — `AUD` (`skate-audio`)
 
@@ -288,9 +305,9 @@ Round 27+ goals (human, 2026-11-06): fix editor bugs, make every window, dialog 
 - [x] **EDT-50** `P0` Missing editor strings
   - Do: Find hardcoded UI text and keys missing from `assets/strings/**` (all locales) and fix them. Extend the key test so any missing key or hardcoded label fails.
   - Done when: No raw keys or missing strings in the editor; the test enforces it.
-- [~] @skate-editor **EDT-51** `P1` Editor consistency audit: design note
-  - Do: Write `docs/design/EDT-51.md`: an inventory of every window, dialog and menu (hamburger and settings menus included) and one standard for header icons, right-click menus, a `?` help button, empty states, and window vs. modal. List the windows that become dialogs and the dialogs that become windows, plus the missing settings (feeds EDT-57).
-  - Done when: The human approves the note.
+- [~] @skate-editor **EDT-51** `P1` Editor consistency audit: design note — human decisions 2026-11-06, note to be updated
+  - Do: Update `docs/design/EDT-51.md` with the decisions: `?` help in the header strip; Key Bindings becomes a dialog; Input Testing's content moves elsewhere (propose where); keep the Settings submenu but review its content; "Show tooltips" off keeps field explanations in inspectors; most common icons (Console = list/log icon, Shell = terminal); new File/Edit/View/Play/Tools/Help menus inside the hamburger menu.
+  - Done when: The updated note is approved by the lead.
   - Deps: EDT-45
 - [ ] **EDT-52** `P1` Apply the editor consistency standard
   - Do: Apply EDT-51 to every window, dialog and menu (may be split across agents).
