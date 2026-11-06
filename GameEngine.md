@@ -173,19 +173,19 @@ Goal (human, after REN-13): full Vulkan support for **exported games**, chosen p
   - Do: Memory allocator (e.g. lwjgl-vma), staging uploads for buffers/textures (mips, arrays, cube maps, depth/compare formats), sampler objects, descriptor set layouts/pools derived from SPIR-V reflection, and the `ShaderParams` named-uniform mapping to per-draw UBO data (ring buffer per frame in flight).
   - Done when: Every `RhiDevice.create*` used by the passes works on Vulkan; reflection/layout/ring logic unit-tested; zero validation errors.
   - Deps: REN-13
-- [~] @skate-vulkan **VK-03** `P1` Geometry pass parity on Vulkan
+- [~] @skate-vulkan **VK-03** `P1` Geometry pass parity on Vulkan — code merged (round 24); validation run pending the SDK
   - Do: Port the geometry pass with materials (PBR inputs, alpha modes), UBO lights and culling, skinning, sky dome/skybox and fog to Vulkan.
   - Done when: MainScene's lit, textured, skinned frame matches OpenGL within a documented tolerance (GpuTest); zero validation errors.
   - Deps: VK-01, VK-02
-- [ ] **VK-04** `P2` Shadows on Vulkan
+- [~] @skate-render **VK-04** `P2` Shadows on Vulkan
   - Do: Cascaded sun shadows and spot/point shadow maps (depth arrays, compare samplers, depth bias/clamp) with the backend depth-range fix-up; REN-22 caching behaviour preserved.
   - Done when: Showcase shadow area matches OpenGL within tolerance at each quality level (GpuTest).
   - Deps: VK-03
-- [ ] **VK-05** `P2` Post-processing on Vulkan
+- [~] @skate-vulkan **VK-05** `P2` Post-processing on Vulkan
   - Do: PostChain ping-pong, blits, bloom/FXAA/tonemap/gamma with a documented texture-orientation (Y-flip) convention.
   - Done when: Showcase post-effects area matches OpenGL within tolerance (GpuTest).
   - Deps: VK-03
-- [ ] **VK-06** `P2` Runtime UI, particles and debug lines on Vulkan
+- [~] @skate-gameui **VK-06** `P2` Runtime UI, particles and debug lines on Vulkan
   - Do: UiPass (batches, SDF text, scissor, blending), instanced particles and debug lines on Vulkan.
   - Done when: Showcase UI/particles areas match OpenGL within tolerance (GpuTest).
   - Deps: VK-03
@@ -547,7 +547,7 @@ The player controller was hardcoded at first and needs a big overhaul. Some skat
   - Do: Human-reported on PR #21: running an exported game fails with game.bin not found at a wrong path. `GameBin.file()` defaults to `game.bin` in the working directory, so any launch that isn't `run-game.bat` (double-clicked jar, IntelliJ run config, export wizard "run", shortcuts) looks in the wrong folder. Resolve in order: `-Dskate.bin`, next to the running jar (code source location), then the working directory; log the searched paths. Audit other working-directory-relative paths in `game/` and the launcher.
   - Done when: The exported game starts from `run-game.bat`, a double-clicked jar, `java -jar <abs path>` from another directory, and the IntelliJ/Gradle run path; QA-14's end-to-end test covers a launch from a different working directory.
   - Deps: GPL-08
-- [~] @skate-gameplay **GPL-19** `P1` Exported game starts the chosen graphics backend
+- [x] **GPL-19** `P1` Exported game starts the chosen graphics backend
   - Do: `GameMain` reads the exported backend setting, creates the matching window/RHI (no GL context for Vulkan), and falls back to OpenGL with a clear log line (and settings note) when Vulkan is unavailable or fails to initialize.
   - Done when: An exported Vulkan game runs on Vulkan where supported and falls back to OpenGL otherwise; selection/fallback tested.
   - Deps: AST-12, VK-01
@@ -816,7 +816,7 @@ All editor mutations must go through `Command` classes and the service layer (se
   - Do: From GPL-18's audit: editor screenshots go to `screenshots/` in the working directory; store them under the project (or user data, EDT-18) instead.
   - Done when: Screenshots land in a predictable folder regardless of the working directory; test.
   - Deps: EDT-18
-- [~] @skate-editor **EDT-43** `P1` Graphics backend option in New Project and project settings
+- [x] **EDT-43** `P1` Graphics backend option in New Project and project settings
   - Do: Add the AST-12 backend choice to the New Project dialog and project settings (OpenGL default; Vulkan labelled experimental with a tooltip that only exported games use it), via commands, EN+FR.
   - Done when: The choice is saved with the project and visible in the export wizard; tests.
   - Deps: AST-12
