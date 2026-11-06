@@ -99,4 +99,19 @@ class ScenePlaySnapshotTest {
         assertSame(fresh, parent.parent)
         assertSame(parent, parent.children.single().parent)
     }
+
+    @Test
+    fun ScenePlaySnapshot_Restore_KeepsThePrePlayDirtyFlag() {
+        val manager = SceneManager(mockk(relaxed = true), EventSystem(), serializer, mockk(relaxed = true), mockk(relaxed = true))
+        val playing = scene()
+        manager.openScene(playing)
+        playing.isDirty = false
+        val snap = ScenePlaySnapshot.capture(playing, serializer)
+        mutate(playing)
+        playing.isDirty = true // an edit made during Play, thrown away by Stop
+
+        val fresh = snap.restore(manager, serializer, playing)
+
+        assertEquals(false, fresh.isDirty)
+    }
 }

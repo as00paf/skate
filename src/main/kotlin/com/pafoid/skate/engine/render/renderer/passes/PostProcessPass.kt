@@ -132,6 +132,8 @@ open class PostProcessPass(
             PostEffect.GAMMA_CORRECTION -> shader.uploadFloat(Uniforms.GAMMA_VALUE, settings.gammaValue)
             PostEffect.FXAA -> {
                 shader.uploadFloat(Uniforms.FXAA_STRENGTH, settings.fxaaStrength)
+                shader.uploadFloat(Uniforms.FXAA_EDGE_THRESHOLD, FxaaEdge.EDGE_THRESHOLD)
+                shader.uploadFloat(Uniforms.FXAA_EDGE_THRESHOLD_MIN, FxaaEdge.EDGE_THRESHOLD_MIN)
                 shader.uploadVec2f(Uniforms.FXAA_TEXEL_SIZE, texelSize.set(1f / frameBuffer.width, 1f / frameBuffer.height))
             }
         }

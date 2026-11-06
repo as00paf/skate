@@ -60,8 +60,12 @@ fun main(args: Array<String>) {
             val h = IntArray(1)
             GLFW.glfwGetWindowSize(window.glfwWindow, w, h)
             engine.inputProvider.mouseListener.setViewRect(ViewRect(0f, 0f, w[0].toFloat(), h[0].toFloat()))
+            // Render (and lay out the UI) at the window's pixel size, as editor Play does for its viewport (GUI-12).
+            GLFW.glfwGetFramebufferSize(window.glfwWindow, w, h)
+            val fb = engine.renderer.frameBuffer
+            GameView.resize(w[0] to h[0], fb.width to fb.height)?.let { (fw, fh) -> engine.resizeFrameBuffer(fw, fh) }
             engine.update(dt)
-            testDraw(window)
+            testDraw(engine.renderer.frameBuffer.width, engine.renderer.frameBuffer.height)
         }
     }
 }
@@ -95,10 +99,13 @@ private fun loadGameStrings() {
     engine.gameStrings.addStrings(PackedStrings.source(packed))
 }
 
-/** Presents the scene framebuffer, stretched over the whole window. */
-fun testDraw(window: Window) {// TODO : is working but needs to move
-    if (presentRect.width != window.width || presentRect.height != window.height) {
-        presentRect = IntRect(0, 0, window.width, window.height)
+/**
+ * Presents the scene framebuffer over the whole window. It has the window's framebuffer size ([GameView]); the
+ * Window's own width/height are only its initial size and stay 1920x1080 after going fullscreen.
+ */
+fun testDraw(width: Int, height: Int) {// TODO : is working but needs to move
+    if (presentRect.width != width || presentRect.height != height) {
+        presentRect = IntRect(0, 0, width, height)
     }
     engine.device.commandList().blit(engine.renderer.frameBuffer.target, null, dstRect = presentRect, filter = Filter.LINEAR)
 }

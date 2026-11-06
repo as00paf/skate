@@ -109,7 +109,8 @@ object PrefabCatalog {
     fun defaultPosition(type: PrefabType): Vector3f = when (type) {
         PrefabType.POINT_LIGHT, PrefabType.SPOT_LIGHT -> Vector3f(0f, 3f, 0f)
         PrefabType.CRATE -> Vector3f(0f, 0.4f, 0f)
-        PrefabType.BARREL -> Vector3f(0f, 0.43f, 0f)
+        // Half of the 0.3-scaled cylinder.obj height (2.85), so the barrel spawns resting on the ground.
+        PrefabType.BARREL -> Vector3f(0f, 0.4276f, 0f)
         PrefabType.TRIGGER_VOLUME -> Vector3f(0f, 1f, 0f)
         else -> Vector3f()
     }
