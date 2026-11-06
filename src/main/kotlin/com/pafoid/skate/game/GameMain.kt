@@ -21,7 +21,6 @@ import com.pafoid.skate.engine.assets.pack.PackedStrings
 import com.pafoid.skate.engine.utils.Atlas
 import com.pafoid.skate.engine.render.rhi.Filter
 import com.pafoid.skate.engine.render.rhi.IntRect
-import java.io.File
 import java.nio.ByteBuffer
 
 private val engine = Engine()
@@ -37,7 +36,12 @@ fun main(args: Array<String>) {
     if (project == null) return
 
     val projectManager = ProjectManager(engine)
-    val window = Window(title = project.name, icon = icon)
+    // game.settings.json next to the pack: the player's backend choice (AST-12) and locale (GUI-10).
+    val settings = GameSettingsStore(GameSettings.fileIn(pack.file.parentFile), engine.logger)
+    val requested = GameGraphics.requested(project.graphicsBackend, settings)
+    val window = GameGraphics.start(requested, engine.logger, settings) { backend ->
+        Window(title = project.name, icon = icon, backend = backend)
+    }.window
 
     window.windowController.setFullscreen(true)
     engine.start(window.glfwWindow, window.device)
@@ -46,8 +50,11 @@ fun main(args: Array<String>) {
         // The project's mixer (bus volumes and mutes set in the editor) applies to the exported game too (EDT-14).
         engine.audioEngine.applyConfig(project.gameplaySettings.audio.toConfig())
         engine.runtimePlaying = true
-        installGameUi(window, pack.file.parentFile)
-        window.show { dt ->
+        installGameUi(window, settings)
+        window.show(onClose = {
+            // Engine first: on Vulkan the device and its window are released right after (VK-01 shutdown order).
+            engine.destroy()
+        }) { dt ->
             // The framebuffer is blitted over the whole window, so UI pointer mapping uses the window's size.
             val w = IntArray(1)
             val h = IntArray(1)
@@ -56,8 +63,6 @@ fun main(args: Array<String>) {
             engine.update(dt)
             testDraw(window)
         }
-
-        engine.destroy()
     }
 }
 
@@ -65,11 +70,11 @@ fun main(args: Array<String>) {
  * HUD plus the engine's pause menu (GUI-09), which behaves as in editor Play; only Restart and Quit are the game's:
  * Restart reloads the scene as it was at launch, Quit closes the window.
  */
-private fun installGameUi(window: Window, packDir: File) {
+private fun installGameUi(window: Window, settings: GameSettingsStore) {
     val scene = engine.sceneManager.currentScene ?: return
     loadGameStrings()
-    // The player's language choice is kept next to the game.bin that was loaded (GUI-10), wherever the game was started from.
-    engine.gameLocale.attach(GameSettingsStore(GameSettings.fileIn(packDir), engine.logger))
+    // The player's language choice is kept in the same game.settings.json (GUI-10).
+    engine.gameLocale.attach(settings)
     val launchState = ScenePlaySnapshot.capture(scene, engine.serializer)
     val hud = GameUiSystem(GameHudState())
     engine.systemManager.addSystem(hud)
