@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.project
 
+import com.pafoid.skate.engine.render.rhi.GraphicsBackend
 import java.io.File
 
 class ProjectWizard {
@@ -13,6 +14,9 @@ class ProjectWizard {
 
     var projectPath: String = ""
         private set
+
+    /** Backend of the new project's exported games (EDT-43); the editor always uses OpenGL. */
+    var graphicsBackend: GraphicsBackend = GraphicsBackend.DEFAULT
 
 
     fun setProjectName(name: String) {

@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.systems
 
+import com.pafoid.skate.engine.render.rhi.GraphicsBackend
 import com.pafoid.skate.engine.assets.serialization.FileKind
 import com.pafoid.skate.editor.data.FileType
 import com.pafoid.skate.editor.events.EditorError
@@ -49,7 +50,8 @@ class ProjectManager(
 
     private val assetPaths get() = engine.serializer.assetPaths
 
-    fun createProject(name: String, folder: File): Result<Project> {
+    /** Creates [name] in [folder]; [graphicsBackend] is what its exported games start with (EDT-43). */
+    fun createProject(name: String, folder: File, graphicsBackend: GraphicsBackend = GraphicsBackend.DEFAULT): Result<Project> {
         logger.logEditor("Creating project: $name in ${folder.absolutePath}")
         return try {
             val projectDir = File(folder, name)
@@ -92,7 +94,8 @@ class ProjectManager(
                 iconPath = assetsDir.absolutePath + Assets.Textures.APP_ICON,
                 defaultScene = scenesDir.path + "\\MainScene.scene",
                 scenesPath = scenes.map { "${scenesDir.path}\\${it.name}.scene" },
-                resolution = Vector2i(1920, 1080)
+                resolution = Vector2i(1920, 1080),
+                graphicsBackend = graphicsBackend,
             )
             currentProject = project
             eventSystem.publish(EngineAction.ApplyMappings(project.gameplaySettings.inputMappings))

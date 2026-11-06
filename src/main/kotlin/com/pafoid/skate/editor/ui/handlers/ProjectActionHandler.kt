@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.ui.handlers
 
+import com.pafoid.skate.editor.commands.project.SetGraphicsBackendCommand
 import com.pafoid.skate.editor.commands.ExecutionTrackedCommand
 import com.pafoid.skate.editor.commands.project.CloseProjectCommand
 import com.pafoid.skate.editor.commands.project.CreateFileCommand
@@ -86,6 +87,11 @@ class ProjectActionHandler(
                     )
                 )
             }
+        }
+        eventSystem.subscribe<ProjectEvent.SetGraphicsBackendRequested> { event ->
+            val project = projectManager.currentProject ?: return@subscribe
+            val command = SetGraphicsBackendCommand(project, event.backend)
+            if (!command.isNoOp) undoRedoManager.executeCommand(command)
         }
         eventSystem.subscribe<CreateFileRequested> { event ->
             val command = CreateFileCommand(event.path, event.isDirectory, logger)

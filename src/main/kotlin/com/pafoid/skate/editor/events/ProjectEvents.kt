@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.events
 
+import com.pafoid.skate.engine.render.rhi.GraphicsBackend
 import com.pafoid.skate.editor.project.Project
 import com.pafoid.skate.engine.events.Event
 import com.pafoid.skate.engine.utils.ExportOptions
@@ -18,8 +19,14 @@ sealed class ProjectEvent(eventName: String) : Event(eventName) {
     data class OpenProjectSucceeded(val projectPath: String?) : ProjectEvent("project.action.open_project_succeeded")
     data class OpenProjectFailed(val projectPath: String?, val reason: String) :
         ProjectEvent("project.action.open_project_failed")
-    data class CreateProjectRequested(val name: String, val folderPath: String) :
-        ProjectEvent("project.action.create_project_requested")
+    data class CreateProjectRequested(
+        val name: String,
+        val folderPath: String,
+        val graphicsBackend: GraphicsBackend = GraphicsBackend.DEFAULT,
+    ) : ProjectEvent("project.action.create_project_requested")
+
+    /** Change the open project's graphics backend (EDT-43), as an undoable command. */
+    data class SetGraphicsBackendRequested(val backend: GraphicsBackend) : ProjectEvent("project.action.set_graphics_backend")
     data class CreateProjectSucceeded(val name: String, val folderPath: String) : ProjectEvent("project.action.create_project_succeeded")
     data class CreateProjectFailed(val name: String, val folderPath: String, val reason: String) : ProjectEvent("project.action.create_project_failed")
     data class CreateFileRequested(val path: String, val isDirectory: Boolean) : ProjectEvent("project.action.create_file_requested")
