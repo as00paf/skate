@@ -4,6 +4,9 @@ import com.pafoid.skate.editor.imgui.tipped
 import com.pafoid.skate.engine.core.StringManager
 import com.pafoid.skate.editor.events.ProjectEvent
 import com.pafoid.skate.editor.imgui.EditorDialog
+import com.pafoid.skate.editor.imgui.EmptyState
+import com.pafoid.skate.editor.imgui.FooterButton
+import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.editor.imgui.MImGui
 import com.pafoid.skate.editor.imgui.label
 import com.pafoid.skate.editor.project.ExportWizard
@@ -36,6 +39,9 @@ class ExportWizardWindow(
     private val settingsManager: EditorSettingsManager,
 ) : EditorDialog(NAME, engine.stringManager, 600f, 640f) {
 
+    override val icon: String = Icons.EXPORT
+    override val relatedWindows = listOf("window.project_settings")
+
     private val strings = engine.stringManager
     private val eventSystem = engine.eventSystem
     private val logger = engine.logger
@@ -52,17 +58,44 @@ class ExportWizardWindow(
         eventSystem.subscribe<ProjectEvent.ExportFinished> { wizard.onFinished(it.result) }
     }
 
+    /**
+     * Standard footer (EDT-51 §2.6). Editing: [Cancel] [Start export]. Running: [Close] (the export goes on).
+     * Finished: [Open folder] [Back] [Close].
+     */
+    override fun footerButtons(): List<FooterButton> {
+        val project = projectManager.currentProject ?: return footer(FooterState.NO_PROJECT)
+        val state = when {
+            wizard.phase == Phase.EDITING -> FooterState.EDITING
+            wizard.isBusy -> FooterState.RUNNING
+            else -> FooterState.FINISHED
+        }
+        val outputDir = wizard.result?.outputDir ?: ProjectExporter.outputDir(project, wizard.options(project))
+        return footer(
+            state,
+            canStart = wizard.canStart(project, gameJar),
+            hasOutputFolder = state == FooterState.FINISHED && outputDir.isDirectory,
+            onStart = {
+                wizard.start()
+                eventSystem.publish(ProjectEvent.ExportRequested(wizard.options(project)))
+            },
+            onOpenFolder = { openFolder(outputDir) },
+            onBack = { wizard.reset() },
+        )
+    }
+
     override fun content() {
         val project = projectManager.currentProject
         if (project == null) {
-            MImGui.textDisabled(strings.getString("lbl.export.no_project"))
+            ImGui.beginChild("##export_no_project", 0f, ImGui.getContentRegionAvailY() - dialogFooterHeight())
+            EmptyState.noProject(strings, eventSystem)
+            ImGui.endChild()
             return
         }
         val frame = ImGui.getFrameCount()
         if (frame > lastFrame + 1) onOpened(project)
         lastFrame = frame
 
-        if (wizard.phase == Phase.EDITING) options(project) else status(project)
+        if (wizard.phase == Phase.EDITING) options(project) else status()
     }
 
     /** The dialog was just opened: rescan scenes and look for the game jar again. */
@@ -107,14 +140,6 @@ class ExportWizardWindow(
 
         val issues = wizard.issues(project, gameJar)
         if (ExportWizard.Issue.INVALID_OUTPUT in issues) MImGui.errorText(strings.getString("lbl.export.failure.invalid_output"))
-
-        ImGui.spacing()
-        ImGui.beginDisabled(!wizard.canStart(project, gameJar))
-        if (strings.tipped(ImGui.button(strings.label("btn.export.start"), 160f, 0f), "btn.export.start")) {
-            wizard.start()
-            eventSystem.publish(ProjectEvent.ExportRequested(wizard.options(project)))
-        }
-        ImGui.endDisabled()
     }
 
     /** The project's graphics backend the exported game starts with (AST-12; chosen in the project settings, EDT-43). */
@@ -185,7 +210,7 @@ class ExportWizardWindow(
         ImGui.endChild()
     }
 
-    private fun status(project: Project) {
+    private fun status() {
         when (wizard.phase) {
             Phase.SAVING -> {
                 ImGui.text(strings.getString("lbl.export.saving"))
@@ -206,14 +231,6 @@ class ExportWizardWindow(
             }
             Phase.EDITING -> Unit
         }
-        if (wizard.isBusy) return
-        ImGui.spacing()
-        val outputDir = wizard.result?.outputDir ?: ProjectExporter.outputDir(project, wizard.options(project))
-        if (outputDir.isDirectory) {
-            if (strings.tipped(ImGui.button(strings.label("btn.export.open_folder")), "btn.export.open_folder")) openFolder(outputDir)
-            ImGui.sameLine()
-        }
-        if (strings.tipped(ImGui.button(strings.label("btn.export.back")), "btn.export.back")) wizard.reset()
     }
 
     private fun progressView(progress: ExportProgress) {
@@ -245,8 +262,32 @@ class ExportWizardWindow(
         }
     }
 
+    /** What the footer offers (EDT-51 §2.6). */
+    enum class FooterState { NO_PROJECT, EDITING, RUNNING, FINISHED }
+
     companion object {
         const val NAME = "window.export_wizard"
+
+        /** No project or running: [Close]. Editing: [Cancel] [Export]. Finished: [Open folder] [Back] [Close]. */
+        internal fun footer(
+            state: FooterState,
+            canStart: Boolean = false,
+            hasOutputFolder: Boolean = false,
+            onStart: () -> Unit = {},
+            onOpenFolder: () -> Unit = {},
+            onBack: () -> Unit = {},
+        ): List<FooterButton> = when (state) {
+            FooterState.NO_PROJECT, FooterState.RUNNING -> listOf(FooterButton("btn.close", FooterButton.Role.CANCEL))
+            FooterState.EDITING -> listOf(
+                FooterButton("btn.cancel", FooterButton.Role.CANCEL),
+                FooterButton("btn.export.start", FooterButton.Role.PRIMARY, enabled = canStart, closes = false, onClick = onStart),
+            )
+            FooterState.FINISHED -> buildList {
+                if (hasOutputFolder) add(FooterButton("btn.export.open_folder", FooterButton.Role.SECONDARY, closes = false, onClick = onOpenFolder))
+                add(FooterButton("btn.export.back", FooterButton.Role.SECONDARY, closes = false, onClick = onBack))
+                add(FooterButton("btn.close", FooterButton.Role.CANCEL))
+            }
+        }
 
         fun formatBytes(bytes: Long, strings: StringManager): String = when {
             bytes >= 1024L * 1024 -> strings.getString("lbl.export.size.mb", bytes / (1024.0 * 1024))
