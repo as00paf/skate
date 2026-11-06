@@ -33,6 +33,7 @@ class PlayModeHandler(
         eventSystem.subscribe<PlayModeAction.Stop> { pending.addLast(it) }
         eventSystem.subscribe<PlayModeAction.TogglePlay> { pending.addLast(it) }
         eventSystem.subscribe<PlayModeAction.Reset> { pending.addLast(it) }
+        eventSystem.subscribe<PlayModeAction.StopThen> { pending.addLast(it) }
         eventSystem.subscribe<ProjectEvent.Closing> {
             pending.clear()
             controller.stop()
@@ -51,6 +52,10 @@ class PlayModeHandler(
         PlayModeAction.Stop -> controller.stop()
         PlayModeAction.TogglePlay -> controller.togglePlay()
         PlayModeAction.Reset -> controller.reset()
+        is PlayModeAction.StopThen -> {
+            controller.stop()
+            action.then()
+        }
     }
 
     /** Quitting: the scenes are discarded, so there is nothing to restore. */
