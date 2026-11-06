@@ -18,11 +18,11 @@ import com.pafoid.skate.engine.render.renderer.SplashRenderer
 import com.pafoid.skate.engine.render.renderer.ThumbnailRenderer
 import com.pafoid.skate.engine.render.renderer.passes.DebugPass
 import com.pafoid.skate.engine.render.renderer.passes.GeometryPass
+import com.pafoid.skate.engine.render.renderer.passes.NoShadowPass
 import com.pafoid.skate.engine.render.renderer.passes.ParticlePass
 import com.pafoid.skate.engine.render.renderer.passes.PickingPass
 import com.pafoid.skate.engine.render.renderer.passes.PostProcessPass
 import com.pafoid.skate.engine.render.renderer.passes.PresentedViewport
-import com.pafoid.skate.engine.render.renderer.passes.RenderPass
 import com.pafoid.skate.engine.render.renderer.passes.ShadowPass
 import com.pafoid.skate.engine.render.renderer.passes.UiPass
 import com.pafoid.skate.engine.render.shader.ShaderFeature
@@ -216,11 +216,7 @@ class RenderResourcesFactory(
                 frame = shadowFrame,
             )
         } else {
-            object : RenderPass {
-                override var executionTimeNs: Long = 0
-                override var gpuTimeNs: Long = -1
-                override var isEnabled: Boolean = true
-            }
+            NoShadowPass()
         }
 
         return RenderPasses(
