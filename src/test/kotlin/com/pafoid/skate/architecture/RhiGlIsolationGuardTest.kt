@@ -38,6 +38,14 @@ class RhiGlIsolationGuardTest {
     }
 
     @Test
+    fun VulkanApi_OnlyInTheVulkanBackend() {
+        val users = mainFiles()
+            .filter { (path, text) -> !path.startsWith(VK_BACKEND) && codeLines(text).any { VK_API.containsMatchIn(it) } }
+            .map { it.first }
+        assertTrue(users.isEmpty(), "Vulkan/shaderc outside $VK_BACKEND (REN-13 spike stays opt-in): $users")
+    }
+
+    @Test
     fun GlBackend_IsNamedOnlyByTheWindow() {
         val backendUsers = mainFiles()
             .filter { (path, text) -> !path.startsWith(GL_BACKEND) && codeLines(text).any { BACKEND_REF.containsMatchIn(it) } }
@@ -66,6 +74,8 @@ class RhiGlIsolationGuardTest {
         private const val GL_BACKEND = "engine/render/rhi/opengl/"
         private val GL = Regex("""org\.lwjgl\.opengl\.|imgui\.gl3\.""")
 
+        private const val VK_BACKEND = "engine/render/rhi/vulkan/"
+        private val VK_API = Regex("""org\.lwjgl\.vulkan\.|org\.lwjgl\.util\.shaderc\.""")
         private val BACKEND_REF = Regex("""render\.rhi\.opengl\.""")
         private const val IMGUI_LAYER = "editor/imgui/ImGuiLayer.kt"
         private const val COMPOSITION_ROOT = "engine/core/Window.kt"

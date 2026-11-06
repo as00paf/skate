@@ -23,6 +23,9 @@ lwjgl-openal = { group = "org.lwjgl", name = "lwjgl-openal" }
 lwjgl-opengl = { group = "org.lwjgl", name = "lwjgl-opengl" }
 lwjgl-stb = { group = "org.lwjgl", name = "lwjgl-stb" }
 lwjgl-tinyfd = { group = "org.lwjgl", name = "lwjgl-tinyfd" }
+# REN-13 Vulkan spike (opt-in backend): LWJGL bindings (BSD-3-Clause) and shaderc (Apache-2.0, GLSL -> SPIR-V)
+lwjgl-vulkan = { group = "org.lwjgl", name = "lwjgl-vulkan" }
+lwjgl-shaderc = { group = "org.lwjgl", name = "lwjgl-shaderc" }
 
 libbulletjme = { group = "com.github.stephengold", name = "Libbulletjme-Windows64", version.ref = "libbulletjme" }
 
