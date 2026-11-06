@@ -14,8 +14,20 @@ object CommandNames {
     fun key(command: Command): String = "command.${command.javaClass.simpleName}"
 
     fun displayName(command: Command, strings: StringManager): String {
-        (command as? KeyedCommand)?.displayNameKey?.let { if (strings.hasString(it)) return strings.getString(it) }
+        (command as? KeyedCommand)?.let { keyed ->
+            if (strings.hasString(keyed.displayNameKey)) {
+                val args = keyed.displayNameArgs
+                return if (args.isEmpty()) strings.getString(keyed.displayNameKey) else strings.getString(keyed.displayNameKey, *args.toTypedArray())
+            }
+        }
         val key = key(command)
         return if (strings.hasString(key)) strings.getString(key) else command.getDisplayName()
     }
+
+    /**
+     * Translated target shown next to the name. Commands whose target is not an object or file (a window, the input
+     * settings) return a string key from [Command.getTargetName]; object and file names are shown as they are.
+     */
+    fun targetName(command: Command, strings: StringManager): String? =
+        command.getTargetName()?.let { if (strings.hasString(it)) strings.getString(it) else it }
 }
