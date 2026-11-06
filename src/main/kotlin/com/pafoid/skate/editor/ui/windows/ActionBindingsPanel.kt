@@ -41,6 +41,9 @@ class ActionBindingsPanel(
     private var profilesStale = true
     private var status: String? = null
 
+    /** A click-to-rebind capture is waiting for input; the dialog must not treat that key as its own (Esc). */
+    val isCapturing: Boolean get() = capturing != null
+
     private fun s(key: String) = strings.getString(key)
 
     /** Null when the key is missing, so unknown actions and categories fall back to their ids. */
