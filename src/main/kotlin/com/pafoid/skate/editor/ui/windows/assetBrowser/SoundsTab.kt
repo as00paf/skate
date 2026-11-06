@@ -2,7 +2,6 @@ package com.pafoid.skate.editor.ui.windows.assetBrowser
 
 import com.pafoid.skate.editor.imgui.tipped
 import com.pafoid.skate.editor.imgui.contextPopupId
-import com.pafoid.skate.editor.data.FileType
 import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.engine.assets.data.SoundBuffer
 import com.pafoid.skate.engine.assets.data.SoundSource
@@ -25,6 +24,7 @@ class SoundsTab(
     private var currentPlayingFile: File? = null
 
     override fun imgui(label: String, searchText: ImString) {
+        refreshOnProjectChange()
         renderHeader(label, searchText)
 
         val files = items.filter { it.name.contains(searchText.get(), ignoreCase = true) }
@@ -148,18 +148,7 @@ class SoundsTab(
         }
     }
 
-    override fun refreshAssets() {
-        engine.jobSystem.runIO {
-            items.clear()
-            val soundsDir = File("assets/sounds")
-            if (soundsDir.exists()) {
-                items.addAll(soundsDir.walkTopDown().filter { file ->
-                    val ext = file.extension.lowercase()
-                    ext in FileType.SOUND.extensions && assetsManager.hasSound(file.absolutePath)
-                })
-            }
-        }
-    }
+    override fun refreshAssets() = scan(BrowserAssetType.SOUND) { job -> engine.jobSystem.runIO { job() } }
 
     fun destroy() {
         playingSource?.close()
