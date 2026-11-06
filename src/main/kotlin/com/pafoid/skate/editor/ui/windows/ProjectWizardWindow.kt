@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.ui.windows
 
+import com.pafoid.skate.editor.imgui.GraphicsBackendField
 import com.pafoid.skate.editor.imgui.tipped
 import com.pafoid.skate.editor.systems.EditorPaths
 import com.pafoid.skate.editor.data.FileType
@@ -69,7 +70,7 @@ class ProjectWizardWindow(
         ImGui.spacing()
         ImGui.pushItemWidth(450f)
         val nameFlags = ImGuiInputTextFlags.AutoSelectAll
-        projectNameInput.set("test")
+        // EDT-43: the name used to be reset to "test" every frame, so typing had no effect.
         ImGui.inputText("##ProjectName", projectNameInput, nameFlags)
         ImGui.popItemWidth()
 
@@ -116,6 +117,12 @@ class ProjectWizardWindow(
                 MImGui.successText("${Icons.CHECK} ${stringManager.getString("wizard.project.valid_location")}")
             }
         }
+
+        ImGui.spacing()
+        ImGui.spacing()
+
+        // Graphics backend of exported games (EDT-43); the editor itself stays on OpenGL.
+        GraphicsBackendField.render(stringManager, wizard.graphicsBackend)?.let { wizard.graphicsBackend = it }
 
         ImGui.spacing()
         ImGui.spacing()
@@ -295,6 +302,6 @@ class ProjectWizardWindow(
         val path = File(wizard.projectPath)
 
         logger.logEditor("Creating project: $name at ${path.absolutePath}")
-        eventSystem.publish(CreateProjectRequested(name, path.absolutePath))
+        eventSystem.publish(CreateProjectRequested(name, path.absolutePath, wizard.graphicsBackend))
     }
 }
