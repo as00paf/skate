@@ -29,6 +29,12 @@ sealed class ProjectEvent(eventName: String) : Event(eventName) {
 
     /** Change the open project's graphics backend (EDT-43), as an undoable command. */
     data class SetGraphicsBackendRequested(val backend: GraphicsBackend) : ProjectEvent("project.action.set_graphics_backend")
+    /** Project Settings (EDT-57): the scene the project opens with, as an undoable command. */
+    data class SetDefaultSceneRequested(val scenePath: String) : ProjectEvent("project.action.set_default_scene")
+    /** Project Settings (EDT-57): physics steps per second, as an undoable command applied to the engine. */
+    data class SetPhysicsRateRequested(val stepsPerSecond: Int) : ProjectEvent("project.action.set_physics_rate")
+    /** Project Settings (EDT-57): the language the game starts in, as an undoable command. */
+    data class SetGameLanguageRequested(val locale: String) : ProjectEvent("project.action.set_game_language")
     data class CreateProjectSucceeded(val name: String, val folderPath: String) : ProjectEvent("project.action.create_project_succeeded")
     data class CreateProjectFailed(val name: String, val folderPath: String, val reason: String) : ProjectEvent("project.action.create_project_failed")
     data class CreateFileRequested(val path: String, val isDirectory: Boolean) : ProjectEvent("project.action.create_file_requested")

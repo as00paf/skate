@@ -544,9 +544,7 @@ object MImGui {
             active -> ImGui.popStyleColor(1)
         }
 
-        if (tooltip != null && ImGui.isItemHovered()) {
-            ImGui.setTooltip(tooltip)
-        }
+        if (tooltip != null) Tooltips.text(tooltip)
 
         return clicked && !disabled
     }
@@ -776,9 +774,8 @@ object MImGui {
             ImGui.tableNextRow()
             ImGui.tableSetColumnIndex(0)
             ImGui.text(label)
-            if (helpTooltip != null && ImGui.isItemHovered()) {
-                ImGui.setTooltip(helpTooltip)
-            }
+            // A settings field explanation: shown even with tooltips off (EDT-57).
+            if (helpTooltip != null) Tooltips.always(helpTooltip)
             ImGui.tableSetColumnIndex(1)
             ImGui.pushItemWidth(-1f)
             widget()
@@ -805,9 +802,8 @@ object MImGui {
             ImGui.tableNextRow()
             ImGui.tableSetColumnIndex(0)
             ImGui.text(label)
-            if (helpTooltip != null && ImGui.isItemHovered()) {
-                ImGui.setTooltip(helpTooltip)
-            }
+            // A settings field explanation: shown even with tooltips off (EDT-57).
+            if (helpTooltip != null) Tooltips.always(helpTooltip)
             ImGui.tableSetColumnIndex(1)
             textDisabled(value)
             ImGui.endTable()

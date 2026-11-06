@@ -95,9 +95,7 @@ object DialogFooter {
         colors?.let { ImGui.pushStyleColor(ImGuiCol.Button, it.x, it.y, it.z, it.w) }
         ImGui.beginDisabled(!button.enabled)
         val pressed = ImGui.button(strings.label(button.labelKey), width, 0f)
-        if (ImGui.isItemHovered(ImGuiHoveredFlags.AllowWhenDisabled) && strings.hasString(Tooltips.keyFor(button.labelKey))) {
-            ImGui.setTooltip(strings.getString(Tooltips.keyFor(button.labelKey)))
-        }
+        if (strings.hasString(Tooltips.keyFor(button.labelKey))) Tooltips.text(strings.getString(Tooltips.keyFor(button.labelKey)))
         ImGui.endDisabled()
         colors?.let { ImGui.popStyleColor() }
         return pressed

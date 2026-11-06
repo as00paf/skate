@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.ui.windows
 
+import com.pafoid.skate.editor.imgui.Tooltips
 import com.pafoid.skate.editor.events.ComponentFieldAction
 import com.pafoid.skate.editor.imgui.EmptyState
 import com.pafoid.skate.editor.imgui.tippedWith
@@ -163,7 +164,7 @@ class PropertiesWindow(
         if(ImGui.button(Icons.PLUS, buttonSize, buttonSize)) {
             ImGui.openPopup("add_component_popup")
         }
-        if (ImGui.isItemHovered()) ImGui.setTooltip(stringManager.getString("tooltip.properties.add_component"))
+        Tooltips.text(stringManager.getString("tooltip.properties.add_component"))
     }
 
     /** Right-click on empty space (EDT-51 §2.3): add a component. */

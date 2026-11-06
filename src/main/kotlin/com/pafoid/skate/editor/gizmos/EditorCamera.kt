@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.gizmos
 
+import com.pafoid.skate.editor.settings.EditorCameraSettings
 import com.pafoid.skate.editor.data.EditorInputState
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.ecs.Scene
@@ -16,6 +17,8 @@ import kotlin.math.sign
 class EditorCamera(
     private val engine: Engine,
     private val editorState: EditorInputState,
+    /** Move speed and look sensitivity from the editor settings (EDT-57). */
+    private val settings: () -> EditorCameraSettings = { EditorCameraSettings() },
 ) {
     var camera = CameraComponent().also { it.name = "EditorCamera" }
     var transform = Transform(Vector3f(0f, 5f, 20f))
@@ -47,7 +50,7 @@ class EditorCamera(
     private fun handleFreeFlyMovement(dt: Float) {
         // Mouse look (RMB) - only when inside viewport
         if (editorState.mouseLook.lengthSquared() > 0f && editorState.isInsideViewport) {
-            val sensitivity = 0.1f
+            val sensitivity = LOOK_SENSITIVITY * settings().lookSensitivity
             val dx = editorState.mouseLook.x
             val dy = editorState.mouseLook.y
 
@@ -67,10 +70,11 @@ class EditorCamera(
 
     /**
      * Moves the camera along its right ([right] in -1..1), forward ([forward]) and world-up ([up]) axes at
-     * [EditorCameraMotion.FLY_SPEED] for one frame of [dt] seconds.
+     * the move speed setting ([EditorCameraSettings.moveSpeed], [EditorCameraMotion.FLY_SPEED] by default) for one
+     * frame of [dt] seconds.
      */
     fun flyStep(right: Float, forward: Float, up: Float, dt: Float) {
-        val distance = EditorCameraMotion.step(EditorCameraMotion.FLY_SPEED, dt)
+        val distance = EditorCameraMotion.step(settings().moveSpeed, dt)
         if (distance == 0f) return
         if (forward != 0f) transform.translation.add(Vector3f(camera.camForward).mul(forward * distance))
         if (right != 0f) transform.translation.add(Vector3f(camera.camRight).mul(right * distance))
@@ -116,8 +120,8 @@ class EditorCamera(
             val dy = editorState.mouseLook.y
 
             if (abs(dx) > 0.01f || abs(dy) > 0.01f) {
-                transform.rotation.y += dx * rotationSensitivity
-                transform.rotation.x += dy * rotationSensitivity
+                transform.rotation.y += dx * rotationSensitivity * settings().lookSensitivity
+                transform.rotation.x += dy * rotationSensitivity * settings().lookSensitivity
 
                 if (transform.rotation.x > 89f) transform.rotation.x = 89f
                 if (transform.rotation.x < -89f) transform.rotation.x = -89f
@@ -135,6 +139,8 @@ class EditorCamera(
     }
 
     companion object {
+        /** Mouse-look degrees per pixel at a look sensitivity of 1. */
+        private const val LOOK_SENSITIVITY = 0.1f
         private val RESET_TRANSLATION = Vector3f(0f, 0f, 20f)
         private val RESET_ROTATION = Vector3f(0f, 0f, 0f)
         private const val RESET_ZOOM = 1f

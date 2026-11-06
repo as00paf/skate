@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.ui.windows
 
+import com.pafoid.skate.editor.imgui.Tooltips
 import com.pafoid.skate.editor.imgui.tipped
 import com.pafoid.skate.engine.core.StringManager
 import com.pafoid.skate.editor.events.ProjectEvent
@@ -124,9 +125,9 @@ class ExportWizardWindow(
 
         MImGui.labeledSeparator(strings.getString("lbl.export.options"))
         if (ImGui.checkbox(strings.label("lbl.export.compress"), wizard.compress)) wizard.compress = !wizard.compress
-        if (ImGui.isItemHovered()) ImGui.setTooltip(strings.getString("tip.export.compress"))
+        Tooltips.always(strings.getString("tip.export.compress"))
         if (ImGui.checkbox(strings.label("lbl.export.only_referenced"), wizard.onlyReferenced)) wizard.onlyReferenced = !wizard.onlyReferenced
-        if (ImGui.isItemHovered()) ImGui.setTooltip(strings.getString("tip.export.only_referenced"))
+        Tooltips.always(strings.getString("tip.export.only_referenced"))
 
         MImGui.labeledSeparator(strings.getString("lbl.export.output"))
         ImGui.setNextItemWidth(ImGui.getContentRegionAvailX() - 200f)
@@ -147,7 +148,7 @@ class ExportWizardWindow(
     private fun backendLine(project: Project) {
         val backend = project.graphicsBackend
         MImGui.textDisabled(strings.getString("lbl.export.backend", strings.getString(backend.labelKey)))
-        if (ImGui.isItemHovered()) ImGui.setTooltip(strings.getString("lbl.export.backend.tooltip"))
+        Tooltips.always(strings.getString("lbl.export.backend.tooltip"))
         if (backend.experimental) MImGui.warningText(strings.getString("lbl.export.backend_experimental"))
     }
 

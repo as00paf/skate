@@ -12,6 +12,7 @@ data class EditorSettings(
     var language: String = "en",
     /** Id of the editor theme (`assets/themes/<id>.theme.json`, EDT-07). */
     var theme: String = EditorTheme.DEFAULT_ID,
+    /** UI scale (EDT-57), multiplied with the theme's own font scale; 1 = 100 %. */
     var fontSize: Float = 1.0f,
     var showGamepadOverlay: Boolean = true,
     var gamepadOverlaySize: Float = 0.225f,
@@ -26,7 +27,19 @@ data class EditorSettings(
     var graphics: GraphicsSettings = GraphicsSettings(),
     /** Game jar (or folder holding it) used for exports when none is found next to the editor (AST-11). */
     var gameJarPath: String? = null,
+    /**
+     * Button and menu tooltips (EDT-57). Off hides them; inspector and settings field explanations stay
+     * (docs/design/EDT-51.md §4.1).
+     */
+    var showTooltips: Boolean = true,
+    var gizmoSnap: GizmoSnapSettings = GizmoSnapSettings(),
+    var camera: EditorCameraSettings = EditorCameraSettings(),
 ) {
+
+    companion object {
+        const val MIN_UI_SCALE = 0.75f
+        const val MAX_UI_SCALE = 2f
+    }
 
     fun addRecentProject(projectPath: String): EditorSettings {
         val updatedList = mutableListOf<String>()

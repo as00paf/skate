@@ -10,6 +10,9 @@ import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.editor.imgui.ImGuiStyleManager
 import com.pafoid.skate.editor.imgui.theme.EditorTheme
 import com.pafoid.skate.editor.imgui.MImGui
+import com.pafoid.skate.editor.settings.EditorCameraSettings
+import com.pafoid.skate.editor.settings.EditorSettings
+import com.pafoid.skate.editor.settings.GizmoSnapSettings
 import com.pafoid.skate.editor.settings.ShadowQuality
 import com.pafoid.skate.editor.systems.EditorSettingsManager
 import com.pafoid.skate.engine.core.StringManager
@@ -66,15 +69,21 @@ class EditorSettingsWindow(
     private var tempCompletionAuto = true
     private var tempCompletionDelay = 200
     private var tempShadowQuality = ShadowQuality.MEDIUM
+    private var tempShowTooltips = true
+    private var tempUiScale = 1f
+    private var tempLoadLastProject = true
+    private var tempSnap = GizmoSnapSettings()
+    private var tempCamera = EditorCameraSettings()
 
     private val tempShowOverlayBool = ImBoolean(true)
 
     private val categories: List<Category> by lazy {
         listOf(
-            Category("general", "settings.editor.general", arrayOf("general", "language", "unit", "metric", "imperial")) { renderGeneral() },
+            Category("general", "settings.editor.general", arrayOf("general", "language", "unit", "metric", "imperial", "startup", "project", "last")) { renderGeneral() },
             Category("keybindings", "settings.editor.keybindings", arrayOf("key", "binding", "gizmo", "translate", "rotate", "scale", "select", "measure", "deselect", "camera", "reset")) { renderKeyBindings() },
             Category("gamepad_overlay", "settings.editor.gamepad_overlay", arrayOf("gamepad", "overlay", "show", "size", "scale")) { renderGamepadOverlay() },
-            Category("interface", "settings.editor.interface", arrayOf("interface", "theme")) { renderInterface() },
+            Category("interface", "settings.editor.interface", arrayOf("interface", "theme", "tooltip", "scale", "font", "size")) { renderInterface() },
+            Category("scene_view", "settings.editor.scene_view", arrayOf("scene", "view", "snap", "gizmo", "grid", "camera", "speed", "sensitivity", "mouse")) { renderSceneView() },
             Category("graphics", "settings.editor.graphics", arrayOf("graphics", "shadow", "quality")) { renderGraphics() },
             Category("autosave", "settings.editor.autosave", arrayOf("auto", "save", "autosave", "interval")) { renderAutoSave() },
             Category("script_editor", "settings.editor.script_editor", arrayOf("script", "completion", "popup", "delay", "autocomplete")) { renderScriptEditor() }
@@ -157,6 +166,11 @@ class EditorSettingsWindow(
             tempCompletionAuto = editor.completionAutoPopup
             tempCompletionDelay = editor.completionDelayMs
             tempShadowQuality = editor.graphics.shadowQuality
+            tempShowTooltips = editor.showTooltips
+            tempUiScale = editor.fontSize
+            tempLoadLastProject = editor.loadLastProjectOnStartup
+            tempSnap = editor.gizmoSnap
+            tempCamera = editor.camera
         }
     }
 
@@ -185,6 +199,8 @@ class EditorSettingsWindow(
                 hasPendingChanges = true
             }
         }
+
+        boolRow("settings.editor.general.load_last_project", tempLoadLastProject, default = true) { tempLoadLastProject = it }
     }
 
     // ─── Key Bindings ───
@@ -233,6 +249,70 @@ class EditorSettingsWindow(
             if (combo("##theme", themeSel, themeOptions, themeOptions.size)) {
                 tempTheme = themeValues[themeSel.get()]
                 ImGuiStyleManager.preview = tempTheme
+                hasPendingChanges = true
+            }
+        }
+
+        boolRow("settings.editor.interface.show_tooltips", tempShowTooltips, default = true) { tempShowTooltips = it }
+        floatRow(
+            "settings.editor.interface.ui_scale", tempUiScale, 1f,
+            EditorSettings.MIN_UI_SCALE, EditorSettings.MAX_UI_SCALE, "%.2fx",
+        ) { tempUiScale = it }
+    }
+
+    /** Gizmo snap steps and the editor camera (EDT-57). */
+    private fun renderSceneView() {
+        ImGui.text(stringManager.getString("settings.editor.scene_view.snap"))
+        floatRow(
+            "settings.editor.scene_view.snap_translate", tempSnap.translate, GizmoSnapSettings.DEFAULT_TRANSLATE,
+            GizmoSnapSettings.MIN_STEP, GizmoSnapSettings.MAX_TRANSLATE, "%.3f",
+        ) { tempSnap = tempSnap.copy(translate = it) }
+        floatRow(
+            "settings.editor.scene_view.snap_rotate", tempSnap.rotateDegrees, GizmoSnapSettings.DEFAULT_ROTATE_DEGREES,
+            GizmoSnapSettings.MIN_STEP, GizmoSnapSettings.MAX_ROTATE_DEGREES, "%.1f°",
+        ) { tempSnap = tempSnap.copy(rotateDegrees = it) }
+        floatRow(
+            "settings.editor.scene_view.snap_scale", tempSnap.scale, GizmoSnapSettings.DEFAULT_SCALE,
+            GizmoSnapSettings.MIN_STEP, GizmoSnapSettings.MAX_SCALE, "%.3f",
+        ) { tempSnap = tempSnap.copy(scale = it) }
+
+        ImGui.spacing()
+        ImGui.text(stringManager.getString("settings.editor.scene_view.camera"))
+        floatRow(
+            "settings.editor.scene_view.camera_speed", tempCamera.moveSpeed, EditorCameraSettings.DEFAULT_MOVE_SPEED,
+            EditorCameraSettings.MIN_MOVE_SPEED, EditorCameraSettings.MAX_MOVE_SPEED, "%.1f",
+        ) { tempCamera = tempCamera.copy(moveSpeed = it) }
+        floatRow(
+            "settings.editor.scene_view.look_sensitivity", tempCamera.lookSensitivity, EditorCameraSettings.DEFAULT_LOOK_SENSITIVITY,
+            EditorCameraSettings.MIN_LOOK_SENSITIVITY, EditorCameraSettings.MAX_LOOK_SENSITIVITY, "%.2fx",
+        ) { tempCamera = tempCamera.copy(lookSensitivity = it) }
+    }
+
+    /** A checkbox row with its explanation (`<key>.desc`) and a reset to [default]. */
+    private fun boolRow(key: String, value: Boolean, default: Boolean, set: (Boolean) -> Unit) {
+        MImGui.propertyRow(
+            label = stringManager.getString(key),
+            helpTooltip = stringManager.getString("$key.desc"),
+            onReset = { set(default); hasPendingChanges = true },
+        ) {
+            val flag = ImBoolean(value)
+            if (checkbox("##$key", flag)) {
+                set(flag.get())
+                hasPendingChanges = true
+            }
+        }
+    }
+
+    /** A slider row from [min] to [max] with its explanation (`<key>.desc`) and a reset to [default]. */
+    private fun floatRow(key: String, value: Float, default: Float, min: Float, max: Float, format: String, set: (Float) -> Unit) {
+        MImGui.propertyRow(
+            label = stringManager.getString(key),
+            helpTooltip = stringManager.getString("$key.desc"),
+            onReset = { set(default); hasPendingChanges = true },
+        ) {
+            val v = floatArrayOf(value)
+            if (sliderFloat("##$key", v, min, max, format)) {
+                set(v[0].coerceIn(min, max))
                 hasPendingChanges = true
             }
         }
@@ -320,6 +400,15 @@ class EditorSettingsWindow(
         settingsManager.updateAutoSaveSettings(tempAutoSaveEnabled, tempAutoSaveInterval)
         settingsManager.updateCompletionSettings(tempCompletionAuto, tempCompletionDelay)
         settingsManager.updateShadowQuality(tempShadowQuality)
+        settingsManager.update {
+            it.copy(
+                showTooltips = tempShowTooltips,
+                fontSize = tempUiScale,
+                loadLastProjectOnStartup = tempLoadLastProject,
+                gizmoSnap = tempSnap,
+                camera = tempCamera,
+            )
+        }
         ImGuiStyleManager.preview = null
         hasPendingChanges = false
     }

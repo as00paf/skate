@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.ui.windows
 
+import com.pafoid.skate.editor.commands.project.PhysicsRates
 import com.pafoid.skate.editor.imgui.GraphicsBackendField
 import com.pafoid.skate.editor.events.ProjectEvent
 import com.pafoid.skate.editor.imgui.EditorDialog
@@ -20,6 +21,7 @@ import imgui.internal.ImGui.beginChild
 import imgui.internal.ImGui.endChild
 import imgui.internal.ImGui.inputText
 import imgui.internal.ImGui.sameLine
+import imgui.type.ImInt
 import imgui.type.ImString
 import java.io.File
 import java.time.Instant
@@ -35,6 +37,7 @@ class ProjectSettingsWindow(
 ) : EditorDialog("window.project_settings", engine.stringManager, 760f, 550f) {
     private val eventSystem = engine.eventSystem
     private val stringManager: StringManager = engine.stringManager
+    private val gameLocale = engine.gameLocale
 
     override val icon: String = Icons.CUBE
     override val relatedWindows = listOf("window.editor_settings", "window.export_wizard")
@@ -53,6 +56,8 @@ class ProjectSettingsWindow(
     private val categories: List<Category> by lazy {
         listOf(
             Category("general", "settings.project.metadata", arrayOf("general", "metadata", "project", "name", "version", "engine", "path", "description", "recent")) { renderGeneral() },
+            Category("game", "settings.project.game", arrayOf("game", "language", "locale", "english", "french")) { renderGame() },
+            Category("physics", "settings.project.physics", arrayOf("physics", "rate", "fps", "step", "hz", "simulation")) { renderPhysics() },
             Category("graphics", "settings.project.graphics", arrayOf("graphics", "backend", "vulkan", "opengl", "render", "export")) { renderGraphics() },
             Category("input", "settings.project.input", arrayOf("input", "gamepad", "dead", "zone", "deadzone", "stick", "trigger", "threshold")) { renderInput() },
         )
@@ -120,6 +125,53 @@ class ProjectSettingsWindow(
         EmptyState.nothingYet(stringManager, Icons.SLIDERS, "settings.project.input.empty", "settings.project.input.empty.hint")
     }
 
+    /** The scene the project opens with (EDT-57), among the project's scenes; an undoable command. */
+    private fun renderDefaultScene() {
+        val project = projectManager.currentProject ?: return
+        val scenes = project.scenesPath
+        if (scenes.isEmpty()) return
+        val names = scenes.map { File(it).nameWithoutExtension }.toTypedArray()
+        val current = ImInt(ProjectSettingsChoices.sceneIndex(scenes, project.defaultScene).coerceAtLeast(0))
+        MImGui.propertyRow(
+            label = stringManager.getString("settings.project.default_scene"),
+            helpTooltip = stringManager.getString("settings.project.default_scene.desc"),
+        ) {
+            if (ImGui.combo("##default_scene", current, names, names.size)) {
+                eventSystem.publish(ProjectEvent.SetDefaultSceneRequested(scenes[current.get()]))
+            }
+        }
+    }
+
+    /** The language the game starts in (EDT-57), saved in the project's game.settings.json; an undoable command. */
+    private fun renderGame() {
+        val labels = ProjectSettingsChoices.LANGUAGES.map { stringManager.getString(it.second) }.toTypedArray()
+        val current = ImInt(ProjectSettingsChoices.languageIndex(gameLocale.strings.locale))
+        MImGui.propertyRow(
+            label = stringManager.getString("settings.project.game.language"),
+            helpTooltip = stringManager.getString("settings.project.game.language.desc"),
+        ) {
+            if (ImGui.combo("##game_language", current, labels, labels.size)) {
+                eventSystem.publish(ProjectEvent.SetGameLanguageRequested(ProjectSettingsChoices.LANGUAGES[current.get()].first))
+            }
+        }
+    }
+
+    /** Physics steps per second (EDT-57), applied to the engine right away and saved with the project. */
+    private fun renderPhysics() {
+        val project = projectManager.currentProject ?: return
+        val rates = PhysicsRates.CHOICES
+        val labels = rates.map { stringManager.getString("settings.project.physics.rate_value", it) }.toTypedArray()
+        val current = ImInt(ProjectSettingsChoices.rateIndex(project.physicsFPS))
+        MImGui.propertyRow(
+            label = stringManager.getString("settings.project.gameplay.physics_fps"),
+            helpTooltip = stringManager.getString("settings.project.gameplay.physics_fps.desc"),
+        ) {
+            if (ImGui.combo("##physics_rate", current, labels, labels.size)) {
+                eventSystem.publish(ProjectEvent.SetPhysicsRateRequested(rates[current.get()]))
+            }
+        }
+    }
+
     /** The backend exported games start with (EDT-43); each change is an undoable command, saved with OK/Apply. */
     private fun renderGraphics() {
         val project = projectManager.currentProject ?: return
@@ -137,6 +189,7 @@ class ProjectSettingsWindow(
         MImGui.propertyRowReadOnly(stringManager.getString("settings.project.path"), truncatePath(project.projectPath))
         val desc = project.description.ifBlank { stringManager.getString("settings.project.description.none") }
         MImGui.propertyRowReadOnly(stringManager.getString("settings.project.description"), desc)
+        renderDefaultScene()
 
         ImGui.spacing()
         ImGui.text(stringManager.getString("settings.project.recent_projects"))
@@ -183,4 +236,22 @@ class ProjectSettingsWindow(
     private fun matchesSearch(query: String, vararg terms: String) =
         if (query.isBlank()) true else terms.any { it.contains(query, ignoreCase = true) }
 
+}
+
+/** Choice lists of Project Settings (EDT-57), kept free of ImGui for tests. */
+internal object ProjectSettingsChoices {
+    /** Game languages: locale code and the label key. */
+    val LANGUAGES = listOf("en" to "settings.editor.language.english", "fr" to "settings.editor.language.french")
+
+    fun languageIndex(locale: String): Int = LANGUAGES.indexOfFirst { it.first == locale }.coerceAtLeast(0)
+
+    /** The offered rate closest to [stepsPerSecond] (a hand-edited project can hold any number). */
+    fun rateIndex(stepsPerSecond: Int): Int =
+        PhysicsRates.CHOICES.indices.minBy { kotlin.math.abs(PhysicsRates.CHOICES[it] - stepsPerSecond) }
+
+    /** Where [defaultScene] is in [scenes], comparing normalized paths; -1 when it is not one of them. */
+    fun sceneIndex(scenes: List<String>, defaultScene: String): Int {
+        val target = File(defaultScene).normalize().path.replace('\\', '/')
+        return scenes.indexOfFirst { File(it).normalize().path.replace('\\', '/') == target }
+    }
 }

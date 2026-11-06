@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.ui.windows
 
+import com.pafoid.skate.editor.imgui.Tooltips
 import com.pafoid.skate.editor.events.ViewportAction
 import com.pafoid.skate.editor.data.EditorShortcuts
 import com.pafoid.skate.editor.data.EditorFocus
@@ -106,9 +107,7 @@ class SceneHierarchyWindow(
         if (ImGui.button("${Icons.EDIT}##RenameScene")) {
             startSceneRename(scene)
         }
-        if (ImGui.isItemHovered()) {
-            ImGui.setTooltip(stringManager.getString("tooltip.hierarchy.rename_scene"))
-        }
+        Tooltips.text(stringManager.getString("tooltip.hierarchy.rename_scene"))
 
         // Inline scene rename input
         if (editingObjUid == SPECIAL_UID_SCENE_RENAME) {
@@ -168,9 +167,7 @@ class SceneHierarchyWindow(
         if (ImGui.button(Icons.PLUS)) {
             eventSystem.publish(CreateEmpty(scene))
         }
-        if (ImGui.isItemHovered()) {
-            ImGui.setTooltip(stringManager.getString("tooltip.hierarchy.add_gameobject"))
-        }
+        Tooltips.text(stringManager.getString("tooltip.hierarchy.add_gameobject"))
 
         ImGui.sameLine()
         if (isLinked) {
@@ -182,9 +179,7 @@ class SceneHierarchyWindow(
         if (isLinked) {
             ImGui.popStyleColor()
         }
-        if (ImGui.isItemHovered()) {
-            ImGui.setTooltip(stringManager.getString("tooltip.hierarchy.link_selection"))
-        }
+        Tooltips.text(stringManager.getString("tooltip.hierarchy.link_selection"))
     }
 
     /**
@@ -478,7 +473,7 @@ class SceneHierarchyWindow(
             val newVis = !obj.isVisible
             eventSystem.publish(ToggleVisibility(obj, newVis))
         }
-        if (ImGui.isItemHovered()) ImGui.setTooltip(stringManager.getString("tooltip.hierarchy.toggle_visibility"))
+        Tooltips.text(stringManager.getString("tooltip.hierarchy.toggle_visibility"))
         ImGui.popStyleColor(4)
 
         ImGui.tableNextColumn()
@@ -494,7 +489,7 @@ class SceneHierarchyWindow(
             val newLock = !obj.isLocked
             eventSystem.publish(ToggleLock(obj, newLock))
         }
-        if (ImGui.isItemHovered()) ImGui.setTooltip(stringManager.getString("tooltip.hierarchy.toggle_lock"))
+        Tooltips.text(stringManager.getString("tooltip.hierarchy.toggle_lock"))
         ImGui.popStyleColor(4)
 
         if (nodeOpen) {
