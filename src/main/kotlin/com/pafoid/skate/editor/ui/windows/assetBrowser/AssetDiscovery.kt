@@ -1,12 +1,12 @@
 package com.pafoid.skate.editor.ui.windows.assetBrowser
 
 import com.pafoid.skate.editor.data.FileType
+import com.pafoid.skate.engine.assets.ProjectLayout
 import java.io.File
 
 /** Asset kinds listed by the file-based Asset Browser tabs, matched by extension (any case). */
 enum class BrowserAssetType(val extensions: Set<String>) {
-    // stb_image decodes .jpg too; FileType.TEXTURE only lists .jpeg
-    TEXTURE((FileType.TEXTURE.extensions + "jpg").toSet()),
+    TEXTURE(FileType.TEXTURE.extensions.toSet()),
     ANIMATION(FileType.ANIMATION.extensions.toSet()),
     SOUND(FileType.SOUND.extensions.toSet());
 
@@ -19,7 +19,7 @@ enum class BrowserAssetType(val extensions: Set<String>) {
  * listed whether or not they are loaded yet: thumbnails and previews load them on demand.
  */
 object AssetDiscovery {
-    const val PROJECT_ASSETS_DIR = "Assets"
+    const val PROJECT_ASSETS_DIR = ProjectLayout.ASSETS_DIR
     const val ENGINE_ASSETS_DIR = "assets"
 
     fun root(projectRoot: File?, engineRoot: File = File(System.getProperty("user.dir"))): File =
