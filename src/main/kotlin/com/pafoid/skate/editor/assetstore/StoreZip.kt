@@ -12,8 +12,17 @@ object StoreZip {
     const val MAX_ENTRIES = 500
     const val MAX_TOTAL_BYTES = 4L * 1024 * 1024 * 1024
 
-    /** Returns the extracted files relative to [destDir], in archive order. Directories are skipped. */
-    fun extract(zip: File, destDir: File, maxEntries: Int = MAX_ENTRIES, maxTotalBytes: Long = MAX_TOTAL_BYTES): List<String> {
+    /**
+     * Returns the extracted files relative to [destDir], in archive order. Directories are skipped, and so are entries
+     * whose (sanitised) path [keep] rejects; every entry still counts toward [maxEntries].
+     */
+    fun extract(
+        zip: File,
+        destDir: File,
+        maxEntries: Int = MAX_ENTRIES,
+        maxTotalBytes: Long = MAX_TOTAL_BYTES,
+        keep: (String) -> Boolean = { true },
+    ): List<String> {
         val extracted = ArrayList<String>()
         var total = 0L
         var entries = 0
@@ -23,6 +32,7 @@ object StoreZip {
                 if (++entries > maxEntries) throw IOException("Archive ${zip.name} has more than $maxEntries entries")
                 if (entry.isDirectory) continue
                 val relative = StorePaths.safeRelative(entry.name) ?: throw IOException("Unsafe path in archive ${zip.name}: ${entry.name}")
+                if (!keep(relative)) continue
                 val target = StorePaths.resolveInside(destDir, relative) ?: throw IOException("Path escapes staging: ${entry.name}")
                 target.parentFile.mkdirs()
                 target.outputStream().use { out ->

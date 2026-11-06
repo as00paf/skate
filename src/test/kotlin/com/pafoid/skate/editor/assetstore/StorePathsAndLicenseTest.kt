@@ -16,8 +16,10 @@ class StorePathsAndLicenseTest {
     fun StorePaths_SafeRelative_RejectsZipSlipAndAbsolutePaths() {
         assertEquals("textures/a_1k.jpg", StorePaths.safeRelative("textures\\a_1k.jpg"))
         assertEquals("a.gltf", StorePaths.safeRelative("./a.gltf"))
-        listOf("../a.gltf", "textures/../../a", "/etc/passwd", "C:/x.png", "c:x.png", "a//b", "", "a/b c.png", "..")
-            .forEach { assertNull(StorePaths.safeRelative(it), it) }
+        assertEquals("Models/GLB format/a (1).glb", StorePaths.safeRelative("Models\\GLB format\\a (1).glb"))
+        listOf("../a.gltf", "textures/../../a", "/etc/passwd", "C:/x.png", "c:x.png", "a//b", "", "..", "a/b?.png", "a/b:c.png",
+            "a/b|c", "a/<b>", "a/b.", "a/b ", "a/ b", "a/\u0001b").forEach { assertNull(StorePaths.safeRelative(it), it) }
+        assertFalse(StorePaths.isSafeSegment("GLB format"), "our own folder names stay strict")
     }
 
     @Test
@@ -35,9 +37,9 @@ class StorePathsAndLicenseTest {
     }
 
     @Test
-    fun StoreFormats_V1ImportsGltfAndTexturesOnly() {
-        listOf("a.gltf", "a.glb", "a.bin", "t.JPG", "t.png", "sky.hdr").forEach { assertTrue(StoreFormats.isImportable(it), it) }
-        listOf("a.fbx", "a.obj", "a.blend", "a.usd", "a.usdz", "a.zip", "noext").forEach { assertFalse(StoreFormats.isImportable(it), it) }
+    fun StoreFormats_V1ImportsGltfObjAndTexturesOnly() {
+        listOf("a.gltf", "a.glb", "a.bin", "a.obj", "a.mtl", "t.JPG", "t.png", "sky.hdr").forEach { assertTrue(StoreFormats.isImportable(it), it) }
+        listOf("a.fbx", "a.blend", "a.usd", "a.usdz", "a.zip", "noext").forEach { assertFalse(StoreFormats.isImportable(it), it) }
     }
 
     @Test

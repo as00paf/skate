@@ -14,6 +14,7 @@ object StorePaths {
     const val CACHE_DIR = "assetstore-cache"
 
     private val SEGMENT = Regex("""[A-Za-z0-9_][A-Za-z0-9_.-]*""")
+    private const val RESERVED = "<>:\"/\\|?*"
 
     fun storeDir(projectDir: File): File = File(ProjectLayout.assetsDir(projectDir), STORE_DIR)
 
@@ -50,17 +51,27 @@ object StorePaths {
         return cleaned.ifEmpty { "asset" }
     }
 
+    /** Strict name for folders we create (provider ids, slugs): `[A-Za-z0-9_][A-Za-z0-9_.-]*`. */
     fun isSafeSegment(segment: String): Boolean = segment != ".." && SEGMENT.matches(segment)
 
     /**
-     * [path] as a `/`-separated relative path made only of safe segments, or null when it is absolute, has a drive
-     * letter, a `..`/empty segment or other characters (zip-slip guard; also applied to converter output).
+     * One segment of a relative path from a provider or an archive: any name Windows accepts (spaces and brackets are
+     * common in packs, e.g. `GLB format`), but not `.`/`..`, reserved characters, control characters, or a trailing
+     * space or dot.
+     */
+    fun isSafePathSegment(segment: String): Boolean =
+        segment.isNotEmpty() && segment != "." && segment != ".." && segment.length <= 255 &&
+            segment.none { it < ' ' || it in RESERVED } && !segment.endsWith(' ') && !segment.endsWith('.') && !segment.startsWith(' ')
+
+    /**
+     * [path] as a `/`-separated relative path of safe segments ([isSafePathSegment]), or null when it is absolute, has
+     * a drive letter, a `..`/empty segment or reserved characters (zip-slip guard; also applied to converter output).
      */
     fun safeRelative(path: String): String? {
         val normalized = path.replace('\\', '/')
         if (normalized.isEmpty() || normalized.startsWith("/") || Regex("^[A-Za-z]:").containsMatchIn(normalized)) return null
         val segments = normalized.split('/').filter { it != "." }
-        if (segments.isEmpty() || segments.any { !isSafeSegment(it) }) return null
+        if (segments.isEmpty() || segments.any { !isSafePathSegment(it) }) return null
         return segments.joinToString("/")
     }
 

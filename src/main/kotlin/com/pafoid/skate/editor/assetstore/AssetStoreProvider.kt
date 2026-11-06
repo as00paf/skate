@@ -15,6 +15,15 @@ interface AssetStoreProvider {
     /** Provider-level credit shown in the window, as a string key (Poly Haven API condition), or null. */
     val poweredByKey: String?
 
+    /**
+     * True for libraries without a download API (Kenney, Quaternius): the user downloads the pack from its page and
+     * imports the zip with "Import downloaded pack…"; [resolveDownload] is never called.
+     */
+    val manualDownload: Boolean get() = false
+
+    /** For [manualDownload] providers: the item a downloaded file name belongs to, or null when unsure. */
+    fun matchPack(fileName: String): StoreAssetRef? = null
+
     fun search(query: StoreQuery): StorePage
 
     fun details(ref: StoreAssetRef): StoreAssetDetails

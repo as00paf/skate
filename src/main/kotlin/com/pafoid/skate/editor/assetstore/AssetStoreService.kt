@@ -1,8 +1,10 @@
 package com.pafoid.skate.editor.assetstore
 
+import com.pafoid.skate.editor.assetstore.providers.catalog.CatalogPackProvider.Companion.PACK_MAX_ENTRIES
 import com.pafoid.skate.editor.events.AssetStoreEvent
 import com.pafoid.skate.engine.events.Event
 import java.io.File
+import java.io.IOException
 import java.security.MessageDigest
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Semaphore
@@ -156,6 +158,49 @@ class AssetStoreService(
                 if (job.cancel.isCancelled) throw StoreCancelledException()
                 val prepared = p.postProcess(target, variant, staging, staged)
                 StoreImportRequest(target, variant, staging, p.importPlan(target, variant, prepared))
+            }
+            jobs.main {
+                download = null
+                result.onSuccess { publish(AssetStoreEvent.ImportRequested(it)) }
+                    .onFailure { if (it !is StoreCancelledException) downloadError = it.message ?: it.javaClass.simpleName }
+            }
+        }
+    }
+
+    /**
+     * "Import downloaded pack…" for a manual-download provider (AST-16 §5.4–5.5): extracts the models of [zip] (a file
+     * the user downloaded) into staging, then asks for the import command. [target] is the selected pack, or null to
+     * pick it from the file name. A zip that clearly belongs to another pack is refused.
+     */
+    fun importPack(target: StoreAssetDetails?, zip: File) {
+        if (download != null) return
+        val project = projectDir() ?: run { downloadError = "No project is open"; return }
+        val p = target?.let { registry.get(it.summary.ref.providerId) } ?: provider
+        if (!p.manualDownload) return
+        val matched = p.matchPack(zip.name)
+        if (target != null && matched != null && matched != target.summary.ref) {
+            downloadError = "${zip.name} looks like the '${matched.sourceId}' pack, not '${target.summary.ref.sourceId}'"
+            return
+        }
+        val ref = target?.summary?.ref ?: matched ?: run {
+            downloadError = "Cannot tell which pack ${zip.name} is: select the pack in the list first"
+            return
+        }
+        val job = StoreDownload(target?.summary?.title ?: ref.sourceId, CancelToken())
+        download = job
+        downloadError = null
+        jobs.io {
+            val result = runCatching {
+                val details = target ?: p.details(ref)
+                val variant = details.variants.first()
+                StorePaths.ensureHiddenDir(project)
+                val staging = StorePaths.stagingDir(project, ref.providerId, ref.sourceId, variant.id)
+                staging.deleteRecursively()
+                val staged = StoreZip.extract(zip, staging, maxEntries = PACK_MAX_ENTRIES) { StoreFormats.isImportable(it) }
+                if (job.cancel.isCancelled) throw StoreCancelledException()
+                val plan = p.importPlan(details, variant, staged)
+                if (plan.entries.isEmpty()) throw IOException("${zip.name} has no glTF, GLB or OBJ models (FBX and Blend packs are not importable yet)")
+                StoreImportRequest(details, variant, staging, plan)
             }
             jobs.main {
                 download = null

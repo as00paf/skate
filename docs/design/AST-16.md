@@ -1,6 +1,6 @@
 # AST-16 — Asset store window
 
-Status: **approved** 2026-11-06 (human). Slice order: a → b → d → f → e → c (no-login libraries first; Sketchfab last and optional; no Mixamo, no Poly Pizza). ND licenses: warn and record the conversion. Slices a (Poly Haven) and b (ambientCG) implemented (`editor/assetstore/**`), with the skate-assets review fixes for slice a (items 3–10, 11, 13–15). Items 1–2 (glTF `textures/` URIs at load and pack) are AST-22 for skate-assets: store models keep the provider's `textures/` layout. Author: `skate-online` (lead-assigned; `skate-assets` reviews).
+Status: **approved** 2026-11-06 (human). Slice order: a → b → d → f → e → c (no-login libraries first; Sketchfab last and optional; no Mixamo, no Poly Pizza). ND licenses: warn and record the conversion. Slices a (Poly Haven), b (ambientCG) and d (Kenney/Quaternius catalogs) implemented (`editor/assetstore/**`), with the skate-assets review fixes for slice a (items 3–10, 11, 13–15). Items 1–2 (glTF `textures/` URIs at load and pack) are AST-22 for skate-assets: store models keep the provider's `textures/` layout. Author: `skate-online` (lead-assigned; `skate-assets` reviews).
 Paths are relative to `src/main/kotlin/com/pafoid/skate/`.
 
 Marker: **⚠ UNVERIFIED** = an API detail I could not confirm from the provider's public docs on 2026-11-06. Each one needs a spike before its provider ships.
@@ -120,15 +120,17 @@ Flow for OAuth2: the window shows "Log in to Sketchfab", which opens the system 
 - Download: `GET https://api.sketchfab.com/v3/models/{uid}/download` with a Bearer token. The response has `gltf` and `usdz` objects with `url`, `size` and `expires` (example shows 300 s). The glTF is a zip with `scene.gltf`, `scene.bin` and `textures/`. URLs are temporary and **must not be cached**, so `resolveDownload` runs right before each download. No source formats (FBX/OBJ) via the API.
 - License: per model (CC-BY, CC-BY-SA, CC-BY-ND, CC-BY-NC, CC-BY-NC-SA, CC-BY-NC-ND, CC0). The author and model URL are stored for attribution. Developer Terms and integration guidelines (login UI, branding) still need a read before shipping (⚠ UNVERIFIED).
 
-### 5.4 Kenney (packs) — no API
-- Facts: all game assets are CC0 and attribution is optional (kenney.nl/support). No API or programmatic download is documented. The Kenney logo must not be used.
-- v1 design: a **curated catalog** `assets/assetstore/kenney.catalog.json` ships with the editor: pack name, page URL, preview image (bundled, our own render or none), tags, license `CC0-1.0`. "Get" opens the pack page in the browser, and the user downloads the zip. **"Import downloaded pack…"** takes the zip, matches it to the catalog entry by filename, and imports the selected models with the license recorded. v1 imports only the **glTF/GLB** files inside the pack (§7.1). Packs that ship only FBX/OBJ are listed as "not importable yet" until the follow-up task in §7.1 lands.
-- ⚠ UNVERIFIED: whether stable direct zip URLs exist that Kenney allows hot-linking to. Ask before automating.
+### 5.4 Kenney (packs) — no API, implemented in slice d
+- Facts: all game assets are CC0, and attribution is optional (kenney.nl/support). No API or programmatic download is documented. The Kenney logo must not be used.
+- Curated catalog `src/main/resources/assetstore/kenney.catalog.json`, 13 3D kits. Each pack page was checked by hand on 2026-11-06: HTTP 200 and "License Creative Commons CC0". Unknown slugs return 404. Nothing is fetched at runtime and there are no thumbnails, so nothing is hot-linked.
+- The window shows the pack, its CC0 badge and **Open on website**. The user downloads the zip there, then uses **Import downloaded pack…** (in the details pane, or in the toolbar, where the pack is recognised from the file name: letters and digits only, version suffix dropped, longest match wins, e.g. `kenney_toy-car-kit_1.0.zip` → `toy-car-kit`, not `car-kit`). A zip that clearly belongs to another pack is refused.
+- Import: only importable entries are extracted (zip-slip and size limits, at most 20 000 entries). The plan takes the pack's **glTF/GLB** models plus `.bin` and images under their folders, else its **OBJ** models plus `.mtl` and images. The layout is kept below the common root, so relative URIs resolve (AST-22). FBX/Blend-only packs are refused with a clear message.
+- ⚠ UNVERIFIED: which formats each Kenney zip contains (the pack page does not list them) and the exact zip file names. The import decides from the zip's contents, and the user can always select the pack by hand.
 
-### 5.5 Quaternius (packs) — no API
-- Facts: "All models are under the CC0 License", with no attribution required (quaternius.com/faq). Formats mentioned: `.blend` and FBX. The "All in one" bundle is on Patreon.
-- Same design as Kenney: curated catalog plus manual download plus "Import downloaded pack…". ⚠ UNVERIFIED: where individual pack downloads are hosted, and whether glTF is available. If a pack has only FBX or `.blend`, v1 cannot import it (§7.1). Later routes: the FBX model importer task in §7.1, or `.blend` via AST-19.
-- Optional later provider: **Poly Pizza** API (`https://api.poly.pizza/v1/`, `X-Auth-Token` API key, GLB). It hosts many CC0/CC-BY low-poly models and could cover individual Kenney/Quaternius models. ⚠ UNVERIFIED: the official docs page returned 404, and the endpoints are known only from third-party code. Not in v1.
+### 5.5 Quaternius (packs) — no API, implemented in slice d
+- Facts: "All models are under the CC0 License", with no attribution required (quaternius.com/faq). Downloads go through the pack pages (and Patreon for bundles).
+- Curated catalog `src/main/resources/assetstore/quaternius.catalog.json`, 10 packs (city, streets, vehicles, buildings, furniture, nature). Each page was checked by hand on 2026-11-06 (CC0; formats noted in `formats`). Most packs list only **FBX/OBJ/Blend**; only the newer MegaKits list glTF. That is why the pack import falls back to OBJ (which `AssetMeta` and `FileType` class as a model, unlike FBX).
+- Same flow as Kenney. No Poly Pizza (human decision 2026-11-06).
 
 ### 5.6 NVIDIA SimReady via Hugging Face (USD models) — partly verified
 - Facts: SimReady Central (`nvidia/simready-central` Space) is a semantic-search demo. Its index is pulled from an unnamed S3 bucket, so the Space itself is **not an API**. The registry is the dataset `nvidia/simready-central-library` (Apache-2.0), with a GitHub index (`NVIDIA-Omniverse/simready-central`) of PR-submitted references to contributor datasets at a **pinned commit**. Contributors keep their own licenses, which **can be non-commercial**. Known datasets: `nvidia/simready-assets` (CC-BY-4.0, about 2,677 USD assets), `nvidia/PhysicalAI-SimReady-Warehouse-01` (CC-BY-4.0, 753 assets), plus partner datasets (Vertiv, Trane, Robotiq CC-BY-4.0; FANUC Apache-2.0; DEEP Robotics CC-BY-4.0 + BSD notices).
@@ -191,7 +193,7 @@ search/details (provider) → user picks variant → resolveDownload (fresh URLs
 
 ### 7.1 Importable formats (v1)
 - Imported files must match an existing importer. Today `AssetMeta.importerFor` treats `fbx` as `model`, but the editor's `FileType.ANIMATION` (`editor/data/FileType.kt`) and the Asset Browser's `AssetDiscovery` classify **every `.fbx` as an animation**. An FBX model from the store would land in the Animations tab.
-- **v1 imports only glTF/GLB models plus textures** (PNG/JPG/HDR, which `TextureLoader` handles). Poly Haven (`gltf`), Sketchfab (glTF zip), ambientCG (texture sets) and converted USD (GLB) are all covered. Kenney/Quaternius packs import their glTF/GLB files only (§5.4, §5.5).
+- **v1 imports glTF/GLB and OBJ (+ `.mtl`) models plus textures** (PNG/JPG/HDR, which `TextureLoader` handles). OBJ was added in slice d for Quaternius packs: it is a `model` for `AssetMeta.importerFor` and `FileType.MODEL_3D`. Poly Haven (`gltf`), Sketchfab (glTF zip), ambientCG (texture sets) and converted USD (GLB) are all covered. Kenney/Quaternius packs import their glTF/GLB files only (§5.4, §5.5).
 - Follow-up (AST, to be filed by the lead): classify `.fbx` as model vs animation by content (meshes vs animations only) so FBX packs become importable.
 
 ### 7.2 Caching (window)

@@ -34,5 +34,13 @@ Needs an internet connection. Poly Haven is CC0 and needs no login.
 24. Start an import, and switch project before it finishes: nothing is written to either project, and an error says the project changed.
 25. Scroll through several pages of results, then close the window: the console shows no texture errors (thumbnails are freed; at most 96 are kept on the GPU).
 
+## Slice d: Kenney and Quaternius packs
+
+26. Source **Kenney**: the grid lists the curated kits (blank tiles, with titles on hover) and the credit "Packs by Kenney (kenney.nl), CC0…". Search `skate` finds **Mini Skate**.
+27. Open Mini Skate: CC0 badge, author Kenney, the hint explaining the manual download, no Variant list, and **Import downloaded pack...**. **Open on website** opens kenney.nl/assets/mini-skate. Download the zip there.
+28. Click **Import downloaded pack...**, pick the zip. `Assets\Store\kenney\mini-skate\` receives the pack's GLB/glTF models (or OBJ+MTL if it has no glTF) with their textures folder, no FBX. Drop one model in the scene: it is textured. The Attribution tab lists Mini Skate / kenney / CC0-1.0 / Kenney. Undo removes it.
+29. With Mini Skate selected, pick a different Kenney zip (e.g. the Car Kit): an error says the zip looks like `car-kit`. With nothing selected, the toolbar's **Import downloaded pack...** recognises the Car Kit zip from its name.
+30. Source **Quaternius**: open **Downtown City MegaKit**, download it from its page, import it: glTF models land in `Assets\Store\quaternius\downtowncitymegakit\`. A pack with only FBX/Blend files is refused with "no glTF, GLB or OBJ models".
+
 Automated (recorded Poly Haven and ambientCG fixtures in `src/test/resources/assetstore/`, generated zips, no sockets):
 `.\gradlew.bat :test --tests "com.pafoid.skate.editor.assetstore.*"`.

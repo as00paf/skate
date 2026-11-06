@@ -10,6 +10,7 @@ import com.pafoid.skate.editor.assetstore.StoreAssetKind
 import com.pafoid.skate.editor.assetstore.StoreAssetSummary
 import com.pafoid.skate.editor.assetstore.StoreJobs
 import com.pafoid.skate.editor.assetstore.providers.ambientcg.AmbientCgProvider
+import com.pafoid.skate.editor.assetstore.providers.catalog.CatalogPackProvider
 import com.pafoid.skate.editor.assetstore.providers.polyhaven.PolyHavenProvider
 import com.pafoid.skate.editor.events.AssetStoreEvent
 import com.pafoid.skate.editor.events.ProjectEvent
@@ -36,6 +37,7 @@ import kotlin.math.max
 class AssetStoreWindow(
     private val engine: Engine,
     private val projectManager: ProjectManager,
+    private val picker: PackFilePicker = TinyPackFilePicker(engine.stringManager),
 ) : EditorWindow(NAME) {
     private val strings = engine.stringManager
 
@@ -51,7 +53,12 @@ class AssetStoreWindow(
             }
         }
         AssetStoreService(
-            AssetStoreRegistry(listOf(PolyHavenProvider(http), AmbientCgProvider(http))),
+            AssetStoreRegistry(listOf(
+                PolyHavenProvider(http),
+                AmbientCgProvider(http),
+                CatalogPackProvider.load("/assetstore/kenney.catalog.json", "assetstore.provider.kenney", "assetstore.provider.kenney.powered_by"),
+                CatalogPackProvider.load("/assetstore/quaternius.catalog.json", "assetstore.provider.quaternius", "assetstore.provider.quaternius.powered_by"),
+            )),
             http, jobs, engine.eventSystem::publish,
             projectDir = { projectManager.getProjectDirectory()?.absoluteFile },
         ).also { it.refreshLedger() }
@@ -86,11 +93,20 @@ class AssetStoreWindow(
         textures.clear()
     }
 
+    override val icon = Icons.CLOUD
+    override val relatedWindows = listOf("window.asset_browser", "window.project")
+
     override fun imgui() {
-        ImGui.begin(title(strings))
+        if (beginWindow(strings)) {
+            header(strings)
+            content()
+        }
+        ImGui.end()
+    }
+
+    private fun content() {
         if (!projectManager.hasProject()) {
             EmptyState.render(strings, Icons.FOLDER, "assetstore.empty.no_project")
-            ImGui.end()
             return
         }
         if (!started) {
@@ -110,7 +126,6 @@ class AssetStoreWindow(
             }
             ImGui.endTabBar()
         }
-        ImGui.end()
     }
 
     private fun toolbar() {
@@ -149,6 +164,14 @@ class AssetStoreWindow(
             service.search(service.query.copy(text = searchText.get()))
         }
         provider.poweredByKey?.let { ImGui.textDisabled(strings.getString(it)) }
+        if (provider.manualDownload) {
+            ImGui.sameLine()
+            if (service.download != null) ImGui.beginDisabled()
+            if (strings.tipped(ImGui.smallButton(strings.label("assetstore.pack.import_any", "${Icons.IMPORT_FILE} ")), "assetstore.pack.import_any")) {
+                picker.pick(strings.getString("assetstore.pack.dialog_title"))?.let { service.importPack(null, it) }
+            }
+            if (service.download != null) ImGui.endDisabled()
+        }
     }
 
     private fun status() {
@@ -272,15 +295,23 @@ class AssetStoreWindow(
             return
         }
         variantIndex = variantIndex.coerceIn(0, variants.lastIndex)
-        val names = variants.map { v -> "${v.resolution ?: v.id} (${megabytes(v.sizeBytes)})" }
-        ImGui.setNextItemWidth(ImGui.getContentRegionAvailX() * 0.6f)
-        if (ImGui.beginCombo(strings.label("assetstore.variant"), names[variantIndex])) {
-            names.forEachIndexed { i, name -> if (ImGui.selectable(name, i == variantIndex)) variantIndex = i }
-            ImGui.endCombo()
+        val manual = service.registry.get(details.summary.ref.providerId)?.manualDownload == true
+        if (!manual) {
+            val names = variants.map { v -> "${v.resolution ?: v.id} (${megabytes(v.sizeBytes)})" }
+            ImGui.setNextItemWidth(ImGui.getContentRegionAvailX() * 0.6f)
+            if (ImGui.beginCombo(strings.label("assetstore.variant"), names[variantIndex])) {
+                names.forEachIndexed { i, name -> if (ImGui.selectable(name, i == variantIndex)) variantIndex = i }
+                ImGui.endCombo()
+            }
         }
         val busy = service.download != null || !details.license.isKnown
         if (busy) ImGui.beginDisabled()
-        if (strings.tipped(ImGui.button(strings.label("assetstore.import", "${Icons.IMPORT_FILE} ")), "assetstore.import")) {
+        if (manual) {
+            ImGui.textWrapped(strings.getString("assetstore.pack.manual_hint"))
+            if (strings.tipped(ImGui.button(strings.label("assetstore.pack.import", "${Icons.IMPORT_FILE} ")), "assetstore.pack.import")) {
+                picker.pick(strings.getString("assetstore.pack.dialog_title"))?.let { service.importPack(details, it) }
+            }
+        } else if (strings.tipped(ImGui.button(strings.label("assetstore.import", "${Icons.IMPORT_FILE} ")), "assetstore.import")) {
             service.import(details, variants[variantIndex])
         }
         if (busy) ImGui.endDisabled()

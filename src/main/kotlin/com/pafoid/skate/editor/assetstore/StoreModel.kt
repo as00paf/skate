@@ -4,7 +4,7 @@ package com.pafoid.skate.editor.assetstore
 enum class StoreAssetKind { MODEL, TEXTURE_SET, HDRI }
 
 /** Source file format of a variant. Only formats in [StoreFormats.IMPORTABLE] reach the project in v1 (§7.1). */
-enum class SourceFormat { GLTF, GLB, FBX, OBJ, USD, BLEND, TEXTURE_SET }
+enum class SourceFormat { GLTF, GLB, FBX, OBJ, USD, BLEND, TEXTURE_SET, ZIP_PACK }
 
 /** Stable reference to one provider item; [revision] pins a version where the provider has one (Hugging Face commit). */
 data class StoreAssetRef(val providerId: String, val sourceId: String, val revision: String? = null)
@@ -58,9 +58,16 @@ data class MaterialSpec(val name: String, val textures: Map<String, String>)
 
 data class ImportPlan(val entries: List<ImportEntry>, val material: MaterialSpec? = null)
 
-/** Formats the v1 store may import (AST-16 §7.1): FBX is classed as an animation by the editor today. */
+/**
+ * Formats the v1 store may import (AST-16 §7.1): glTF/GLB (+ `.bin`), OBJ (+ `.mtl`, a model for `AssetMeta` and
+ * `FileType`) and images. FBX is classed as an animation by the editor today, so it is not imported.
+ */
 object StoreFormats {
-    val IMPORTABLE = setOf("gltf", "glb", "bin", "png", "jpg", "jpeg", "hdr")
+    val MODELS_GLTF = setOf("gltf", "glb")
+    val MODELS_OBJ = setOf("obj")
+    val IMPORTABLE = setOf("gltf", "glb", "bin", "obj", "mtl", "png", "jpg", "jpeg", "hdr")
 
-    fun isImportable(path: String): Boolean = path.substringAfterLast('.', "").lowercase() in IMPORTABLE
+    fun extension(path: String): String = path.substringAfterLast('.', "").lowercase()
+
+    fun isImportable(path: String): Boolean = extension(path) in IMPORTABLE
 }
