@@ -43,6 +43,7 @@ import com.pafoid.skate.engine.scripting.runtime.ScriptServices
 import com.pafoid.skate.engine.render.ui.UiFont
 import com.pafoid.skate.engine.ui.ReaderUiInputSource
 import com.pafoid.skate.engine.ui.GameLocale
+import com.pafoid.skate.engine.ui.GameOptions
 import com.pafoid.skate.engine.ui.PauseMenuActions
 import com.pafoid.skate.engine.ui.PauseMenuSystem
 import com.pafoid.skate.engine.ui.UiActions
@@ -80,6 +81,9 @@ class Engine {
     /** Runtime UI text (pause menu, HUD, game widgets) with the game's own locale, never the editor's. */
     val gameStrings = StringManager(logger, logSource = "game")
     val gameLocale = GameLocale(gameStrings)
+
+    /** Game-defined pause menu options (GPL-21); hosts install the game's at startup. */
+    val gameOptions = GameOptions()
     init { assetsManager.attachAsyncLoading(jobSystem, eventSystem) }
     val audioEngine = AudioEngine(logger)
     val inputProvider = InputProvider(logger)
@@ -215,6 +219,9 @@ class Engine {
         volume = { systemManager.getSystem<AudioSystem>()?.masterVolume ?: 1f },
         setVolume = { v -> systemManager.getSystem<AudioSystem>()?.masterVolume = v },
         defer = defer,
+        // Game options (GPL-21) are saved next to the language choice.
+        options = gameOptions,
+        settings = { gameLocale.store },
     )
 
     private fun uiSystems(inputSystem: InputSystem): List<System> {

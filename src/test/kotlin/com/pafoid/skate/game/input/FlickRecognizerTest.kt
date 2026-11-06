@@ -79,6 +79,15 @@ class FlickRecognizerTest {
     }
 
     @Test
+    fun aJumpStraightAcross_IsALineNotACircle() {
+        // Keys go from K (down) straight to I+J (up-left): a 135 degree step with no sample in between.
+        val flick = requireNotNull(recognize(listOf(Vector2f(0f, -1f), Vector2f(0f, -1f), Vector2f(-1f, 1f))))
+
+        assertEquals(FlickShape.LINE, flick.shape)
+        assertEquals(7, flick.sector)
+    }
+
+    @Test
     fun readsATrackedSourceOfInputHistory() {
         val history = InputHistory()
         val points = arc(-90f, 0f, 8)

@@ -45,6 +45,7 @@ fun main(args: Array<String>) {
 
     window.windowController.setFullscreen(true)
     engine.start(window.glfwWindow, window.device)
+    SkateGameplay.install(engine)
 
     if (projectManager.openProject(project, binFile, header, headerSize)) {
         // The project's mixer (bus volumes and mutes set in the editor) applies to the exported game too (EDT-14).

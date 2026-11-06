@@ -33,17 +33,22 @@ class MountFollowSystem : System(priority = ExecutionPriority.LATE) {
             if (!mountable.mounted) return@forEach
             val rider = go.getComponent<Transform>() ?: return@forEach
             val mount = findMountObject(scene, mountable.mountTargetName, go)?.getComponent<Transform>() ?: return@forEach
-            follow(rider, mount, mountable.mountOffset)
+            follow(rider, mount, mountable.mountOffset, mountable.mountSpin)
         }
     }
 
-    /** Sets [mount] to the pose under [rider] given the mount [offset] (see [MountMath.mountPosition]). */
-    fun follow(rider: Transform, mount: Transform, offset: Vector3f) {
+    /**
+     * Sets [mount] to the pose under [rider] given the mount [offset] (see [MountMath.mountPosition]), turned by
+     * [spin] in the mount's own frame when given ([Mountable.mountSpin]).
+     */
+    fun follow(rider: Transform, mount: Transform, offset: Vector3f, spin: Quaternionf? = null) {
         val r = rider.rotation
         rotation.rotationXYZ(r.x.toRadiansF(), r.y.toRadiansF(), r.z.toRadiansF())
         val yaw = MotionMath.yawOfRotation(rotation)
         mount.translation.set(MountMath.mountPosition(rider.translation, yaw, offset, position))
-        rotation.rotationY(yaw).getEulerAnglesXYZ(euler)
+        rotation.rotationY(yaw)
+        spin?.let { rotation.mul(it) }
+        MotionMath.eulerXYZ(rotation, euler)
         mount.rotation.set(euler.x.toDegreesF(), euler.y.toDegreesF(), euler.z.toDegreesF())
     }
 }

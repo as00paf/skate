@@ -40,6 +40,11 @@ data class FlickSettings(
     val quarterCircleDeg: Float = 60f,
     /** Turns of at least this many degrees are a half circle. */
     val halfCircleDeg: Float = 135f,
+    /**
+     * A turn of more than this between two samples is a move straight across (keys jumping from K to I+J, or a stick
+     * snapped over), not a circle: the turn starts over there.
+     */
+    val maxStepDeg: Float = 100f,
 )
 
 /**
@@ -99,7 +104,10 @@ class FlickRecognizer(var settings: FlickSettings = FlickSettings()) {
                 continue
             }
             val angle = atan2(y[i].toDouble(), x[i].toDouble())
-            if (!previousAngle.isNaN()) sweep += wrap(angle - previousAngle)
+            if (!previousAngle.isNaN()) {
+                val step = wrap(angle - previousAngle)
+                if (abs(Math.toDegrees(step)) > s.maxStepDeg) sweep = 0.0 else sweep += step
+            }
             previousAngle = angle
         }
         val speed = travel / duration

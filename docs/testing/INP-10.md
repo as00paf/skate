@@ -31,7 +31,7 @@ The skate demo should play **exactly as before**. Run the steps on Windows from 
 6. Ride, then press **Esc** and navigate the pause menu with the arrows or d-pad. Choose **Restart**, then stop Play while riding and press Play again.
    Expected: the menu works as before. After Restart and after Stop/Play the skater starts on foot, and Shift sprints (no riding controls stay active).
 7. Open the **Key Bindings** window.
-   Expected: Gameplay (Movement / Camera / Actions), **Skateboard** (Push, Manual, Ollie) and UI (Navigation). Rebind **Ollie** to **Q** and press Play: on the board Q ollies, and on foot Space still jumps. Reset the binding; the change persists after you save and reopen the project.
+   Expected: Gameplay (Movement / Camera / Actions), **Skateboard** (Push, Manual, Ollie and the GPL-21 trick actions) and UI (Navigation). Rebind **Ollie** to **Q** and press Play: on the board Q ollies, and on foot Space still jumps. Reset the binding; the change persists after you save and reopen the project.
 8. Run `.\gradlew.bat gameJar`, export the game, run it, and repeat steps 2, 3 and 6.
    Expected: the controls behave the same in the exported game.
 

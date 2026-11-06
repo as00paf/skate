@@ -166,6 +166,8 @@ class PrefabsGeneratorTest {
         assertEquals("hud.camera", button.labelKey)
         // GPL-22: restart moved to the Esc pause menu.
         assertTrue(hud.children.none { it.name == "RestartButton" })
+        // GPL-21: the trick name, filled by the trick HUD while riding; hidden (no key) until then.
+        assertEquals("", hud.children.single { it.name == PrefabsGenerator.TRICK_TEXT }.getComponent<UITextComponent>()!!.key)
         // Keys must resolve both in the editor viewport and in the exported game.
         listOf(com.pafoid.skate.engine.assets.Assets.Strings.GAME_STRINGS).forEach { path ->
             val props = com.pafoid.skate.engine.core.StringTables.merged(File(path))
