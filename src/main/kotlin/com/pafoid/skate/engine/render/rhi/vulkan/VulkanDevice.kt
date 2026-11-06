@@ -3,8 +3,6 @@ package com.pafoid.skate.engine.render.rhi.vulkan
 import com.pafoid.skate.engine.render.rhi.BufferDesc
 import com.pafoid.skate.engine.render.rhi.BufferUpdate
 import com.pafoid.skate.engine.render.rhi.BufferUsage
-import com.pafoid.skate.engine.render.rhi.CompareFunc
-import com.pafoid.skate.engine.render.rhi.Filter
 import com.pafoid.skate.engine.render.rhi.IntRect
 import com.pafoid.skate.engine.render.rhi.PipelineDesc
 import com.pafoid.skate.engine.render.rhi.PixelFormat
@@ -21,19 +19,15 @@ import com.pafoid.skate.engine.render.rhi.RhiTexture
 import com.pafoid.skate.engine.render.rhi.RhiTimer
 import com.pafoid.skate.engine.render.rhi.RhiVertexInput
 import com.pafoid.skate.engine.render.rhi.RhiVertexLayout
-import com.pafoid.skate.engine.render.rhi.SamplerDesc
 import com.pafoid.skate.engine.render.rhi.ShaderDesc
 import com.pafoid.skate.engine.render.rhi.TextureDesc
-import com.pafoid.skate.engine.render.rhi.TextureType
 import com.pafoid.skate.engine.render.rhi.VertexLayoutDesc
-import com.pafoid.skate.engine.render.rhi.Wrap
 import org.lwjgl.system.MemoryStack.stackPush
 import org.lwjgl.system.MemoryUtil.NULL
 import org.lwjgl.system.MemoryUtil
 import org.lwjgl.vulkan.VK10.*
 import org.lwjgl.vulkan.VkBufferImageCopy
 import java.nio.ByteBuffer
-import java.nio.ByteOrder
 
 /**
  * Vulkan backend of the RHI (REN-13 spike, VK-01; docs/design/REN-13.md). Opt-in only ([RhiBackend]): the editor
@@ -62,6 +56,9 @@ class VulkanDevice private constructor(
         maxAnisotropy = if (core.anisotropy) core.maxAnisotropy else 1f,
         timerQueries = false,
     )
+
+    /** Memory, uploads, samplers, descriptor layouts and per-frame transient resources (VK-02). */
+    internal val resources = VkResourceFactory(core, framesInFlight)
 
     private val commands = VkCommandList(core, this, framesInFlight)
     private val frames = VkFrameLoop(
@@ -92,38 +89,12 @@ class VulkanDevice private constructor(
     /** Whether the Khronos validation layer is active on this device. */
     val validation: Boolean get() = core.validation
 
-    /** The GPU is done with frame slot [slot]: its transient memory can be reused (VK-02 hooks its frame resources here). */
+    /** The GPU is done with frame slot [slot]: its uniform/vertex rings and descriptor pools are reused (VK-02). */
     private fun onFrameSlotReady(slot: Int) {
-        commands.resetSlot(slot)
+        resources.frames.beginFrame(slot)
     }
     private val renderPasses = HashMap<List<Any>, Long>()
     private val pipelines = ArrayList<VkRhiPipeline>()
-
-    internal val dummyFloatVertex = core.hostBuffer(16, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT).also {
-        MemoryUtil.memByteBuffer(it.address, 16).order(ByteOrder.nativeOrder()).putFloat(0f).putFloat(0f).putFloat(0f).putFloat(1f)
-    }
-    internal val dummyIntVertex = core.hostBuffer(16, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT).also {
-        MemoryUtil.memSet(it.address, 0, 16)
-    }
-    private val dummies = HashMap<Pair<SpirvReflection.ImageDim, Boolean>, VkRhiTexture>()
-
-    /** Texture bound where a sampler's unit holds nothing usable: opaque black (GL's unbound result), or far depth. */
-    internal fun dummyFor(d: SpirvReflection.Descriptor): VkRhiTexture = dummies.getOrPut(d.dim!! to d.depth) {
-        val type = when (d.dim) {
-            SpirvReflection.ImageDim.D2 -> TextureType.TEXTURE_2D
-            SpirvReflection.ImageDim.D2_ARRAY -> TextureType.TEXTURE_2D_ARRAY
-            SpirvReflection.ImageDim.CUBE -> TextureType.CUBE
-        }
-        val layers = if (type == TextureType.CUBE) 6 else 1
-        val format = if (d.depth) PixelFormat.DEPTH32F else PixelFormat.RGBA8
-        val sampler = SamplerDesc(Filter.NEAREST, Filter.NEAREST, Wrap.CLAMP_TO_EDGE, compare = if (d.depth) CompareFunc.LESS_EQUAL else null)
-        VkRhiTexture(core, TextureDesc(type, format, 1, 1, layers, sampler = sampler), attachment = d.depth).also { t ->
-            if (!d.depth) {
-                val black = ByteBuffer.allocateDirect(4).put(0).put(0).put(0).put(-1).flip()
-                for (layer in 0 until layers) t.upload(0, layer, black.duplicate())
-            }
-        }
-    }
 
     /** Starts a frame, ending (submitting and presenting) one still open; waits when [framesInFlight] are queued. */
     override fun beginFrame() = frames.beginFrame()
@@ -131,22 +102,22 @@ class VulkanDevice private constructor(
     /** Submits the frame and presents its back buffer, if it drew to one. */
     override fun endFrame() = frames.endFrame()
 
-    override fun createBuffer(desc: BufferDesc): RhiBuffer = VkRhiBuffer(core, desc.usage, desc.update, desc.size)
+    override fun createBuffer(desc: BufferDesc): RhiBuffer = resources.createBuffer(desc)
 
     override fun createBuffer(usage: BufferUsage, update: BufferUpdate, data: FloatArray): RhiBuffer =
-        VkRhiBuffer(core, usage, update, maxOf(data.size * 4L, 4L)).also { if (data.isNotEmpty()) it.update(0, data) }
+        resources.createBuffer(usage, update, data)
 
     override fun createBuffer(usage: BufferUsage, update: BufferUpdate, data: IntArray): RhiBuffer =
-        VkRhiBuffer(core, usage, update, maxOf(data.size * 4L, 4L)).also { it.replace(data) }
+        resources.createBuffer(usage, update, data)
 
-    override fun createVertexLayout(desc: VertexLayoutDesc): RhiVertexLayout = VkRhiVertexLayout(desc)
+    override fun createVertexLayout(desc: VertexLayoutDesc): RhiVertexLayout = resources.createVertexLayout(desc)
 
     override fun createVertexInput(layout: RhiVertexLayout, vertexBuffers: List<RhiBuffer>, indexBuffer: RhiBuffer?): RhiVertexInput =
-        VkRhiVertexInput(layout as VkRhiVertexLayout, vertexBuffers.map { it as VkRhiBuffer }, indexBuffer as VkRhiBuffer?)
+        resources.createVertexInput(layout, vertexBuffers, indexBuffer)
 
-    override fun createTexture(desc: TextureDesc): RhiTexture = VkRhiTexture(core, desc)
+    override fun createTexture(desc: TextureDesc): RhiTexture = resources.createTexture(desc)
 
-    override fun createShader(desc: ShaderDesc): RhiShader = VkRhiShader(core, desc)
+    override fun createShader(desc: ShaderDesc): RhiShader = resources.createShader(desc)
 
     override fun createTimer(): RhiTimer = NoVkTimer
 
@@ -155,7 +126,7 @@ class VulkanDevice private constructor(
         pipelines += p
     }
 
-    override fun createRenderTarget(desc: RenderTargetDesc): RhiRenderTarget = VkRhiRenderTarget(core, desc)
+    override fun createRenderTarget(desc: RenderTargetDesc): RhiRenderTarget = resources.createRenderTarget(desc)
 
     internal fun renderPass(target: VkRhiRenderTarget, clearColor: Boolean, clearDepth: Boolean): Long {
         val colors = target.colors.map { it.format }.toIntArray()
@@ -251,10 +222,8 @@ class VulkanDevice private constructor(
         frames.close()
         pipelines.forEach { it.close() }
         renderPasses.values.forEach { vkDestroyRenderPass(core.device, it, null) }
-        dummies.values.forEach { it.close() }
-        dummyFloatVertex.close()
-        dummyIntVertex.close()
         commands.destroy()
+        resources.close()
         if (RhiContext.device === this) RhiContext.device = null
         core.close()
     }

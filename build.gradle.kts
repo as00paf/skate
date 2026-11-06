@@ -48,6 +48,8 @@ dependencies {
     implementation(libs.lwjgl.vulkan)
     implementation(libs.lwjgl.shaderc)
     implementation(libs.lwjgl.shaderc) { artifact { classifier = lwjglNatives } }
+    implementation(libs.lwjgl.vma)
+    implementation(libs.lwjgl.vma) { artifact { classifier = lwjglNatives } }
     
     // Bullet Physics
     implementation(libs.libbulletjme)

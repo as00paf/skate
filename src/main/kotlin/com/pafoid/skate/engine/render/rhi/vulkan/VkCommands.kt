@@ -13,22 +13,14 @@ import com.pafoid.skate.engine.render.rhi.RhiTexture
 import com.pafoid.skate.engine.render.rhi.RhiTimer
 import com.pafoid.skate.engine.render.rhi.RhiVertexInput
 import com.pafoid.skate.engine.render.rhi.ShaderParams
-import com.pafoid.skate.engine.render.rhi.TextureType
 import com.pafoid.skate.engine.render.rhi.Topology
-import org.lwjgl.system.MemoryStack
 import org.lwjgl.system.MemoryStack.stackPush
-import org.lwjgl.system.MemoryUtil
 import org.lwjgl.vulkan.VK10.*
 import org.lwjgl.vulkan.VK11.VK_ERROR_OUT_OF_POOL_MEMORY
 import org.lwjgl.vulkan.VkAttachmentDescription
 import org.lwjgl.vulkan.VkAttachmentReference
 import org.lwjgl.vulkan.VkClearValue
 import org.lwjgl.vulkan.VkCommandBuffer
-import org.lwjgl.vulkan.VkDescriptorBufferInfo
-import org.lwjgl.vulkan.VkDescriptorImageInfo
-import org.lwjgl.vulkan.VkDescriptorPoolCreateInfo
-import org.lwjgl.vulkan.VkDescriptorPoolSize
-import org.lwjgl.vulkan.VkDescriptorSetAllocateInfo
 import org.lwjgl.vulkan.VkGraphicsPipelineCreateInfo
 import org.lwjgl.vulkan.VkImageBlit
 import org.lwjgl.vulkan.VkPipelineColorBlendAttachmentState
@@ -49,7 +41,6 @@ import org.lwjgl.vulkan.VkSubpassDescription
 import org.lwjgl.vulkan.VkVertexInputAttributeDescription
 import org.lwjgl.vulkan.VkVertexInputBindingDescription
 import org.lwjgl.vulkan.VkViewport
-import org.lwjgl.vulkan.VkWriteDescriptorSet
 
 /** A pipeline description; its Vulkan pipelines are built per render pass on first draw (formats come from the pass). */
 internal class VkRhiPipeline(override val desc: PipelineDesc) : RhiPipeline {
@@ -66,8 +57,8 @@ internal class VkRhiPipeline(override val desc: PipelineDesc) : RhiPipeline {
 /**
  * Recorded command list (REN-13, VK-01). Passes record into the current frame's command buffer ([VkFrameLoop]),
  * submitted once per frame; a null target is the swapchain's back buffer. GL-style immediate state (textures per
- * unit, uniform buffers per slot, named parameters) is resolved into one descriptor set per draw, with the
- * parameters and uniform blocks copied into the frame slot's uniform ring.
+ * unit, uniform buffers per slot, named parameters) is resolved into one descriptor set per draw by the frame
+ * resources (VK-02, [VkFrameResources.bindDraw]).
  */
 internal class VkCommandList(
     private val core: VkCore,
@@ -77,23 +68,8 @@ internal class VkCommandList(
     private lateinit var frames: VkFrameLoop
     private var cmd: VkCommandBuffer? = null
 
-    // Interim per-slot transient memory (VK-01). VK-02 replaces this block with VkFrameResources/bindDraw.
-    private val rings = Array(framesInFlight) { core.hostBuffer(RING_SIZE, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT) }
-    private val ringOffsets = LongArray(framesInFlight)
-    private val descriptorPools = Array(framesInFlight) { arrayListOf(createDescriptorPool()) }
-    private val poolInUse = IntArray(framesInFlight)
-    private var slot = 0
-    private val ring get() = rings[slot]
-    private var ringOffset: Long
-        get() = ringOffsets[slot]
-        set(value) { ringOffsets[slot] = value }
-
-    /** Called by the frame loop once the GPU is done with [slot]: its ring and descriptor pools are reused. */
-    fun resetSlot(slot: Int) {
-        ringOffsets[slot] = 0
-        descriptorPools[slot].forEach { vkResetDescriptorPool(core.device, it, 0) }
-        poolInUse[slot] = 0
-    }
+    /** Per-frame-in-flight uniform/vertex rings and descriptor pools (VK-02). */
+    private val frameResources get() = device.resources.frames
 
     fun attach(frames: VkFrameLoop) {
         this.frames = frames
@@ -122,7 +98,6 @@ internal class VkCommandList(
     override fun beginPass(target: RhiRenderTarget?, layer: Int, clear: ClearValues?, viewport: IntRect?) {
         check(!inPass) { "beginPass inside a pass" }
         val cmd = frames.commandBuffer()
-        slot = frames.slot
         this.cmd = cmd
         val t = target as VkRhiRenderTarget?
         this.target = t
@@ -244,85 +219,12 @@ internal class VkCommandList(
             vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, built.handle)
             boundPipeline = built.handle
         }
-        stackPush().use { s ->
-            val buffers = vi.vertexBuffers.map { it.gpu!!.buffer } + built.dummyInputs.map { if (it) device.dummyIntVertex.buffer else device.dummyFloatVertex.buffer }
-            vkCmdBindVertexBuffers(cmd, 0, s.longs(*buffers.toLongArray()), s.callocLong(buffers.size))
-            if (indexed) vkCmdBindIndexBuffer(cmd, vi.indexBuffer!!.gpu!!.buffer, 0, VK_INDEX_TYPE_UINT32)
-            val set = descriptorSet(s, shader, compiled)
-            vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, compiled.pipelineLayout, 0, s.longs(set), null)
+        val dummies = LongArray(built.dummyInputs.size) {
+            if (built.dummyInputs[it]) device.resources.dummyIntVertex.buffer else device.resources.dummyFloatVertex.buffer
         }
+        frameResources.bindVertexInput(cmd, vi, dummies, indexed)
+        frameResources.bindDraw(cmd, shader, textures, uniformBuffers, uniformOffsets, device.resources::dummyFor)
         return true
-    }
-
-    private fun descriptorSet(s: MemoryStack, shader: VkRhiShader, compiled: VkRhiShader.Compiled): Long {
-        val set = allocateSet(s, compiled.setLayout)
-        val params = shader.parameters() as VkShaderParams
-        val writes = VkWriteDescriptorSet.calloc(compiled.descriptors.size, s)
-        compiled.descriptors.forEachIndexed { i, d ->
-            val w = writes[i].`sType$Default`().dstSet(set).dstBinding(d.binding).dstArrayElement(0)
-                .descriptorType(VkRhiShader.descriptorType(d)).descriptorCount(d.count)
-            if (d.kind == SpirvReflection.DescriptorKind.UNIFORM_BUFFER) {
-                val size = maxOf(d.size, 16).toLong()
-                val offset = if (d.binding == GlslToVulkan.PARAMS_BINDING) {
-                    ringCopy(params.block.data, 0, size)
-                } else {
-                    val slot = shader.blockSlots[d.binding]
-                    val buffer = slot?.let { uniformBuffers[it] }
-                    if (buffer == null) ringCopy(null, 0, size) else ringCopy(buffer.contents, uniformOffsets[slot].toInt(), size)
-                }
-                w.pBufferInfo(VkDescriptorBufferInfo.calloc(1, s).also { it[0].buffer(ring.buffer).offset(offset).range(size) })
-            } else {
-                val units = params.units.of(d.binding)
-                val infos = VkDescriptorImageInfo.calloc(d.count, s)
-                for (e in 0 until d.count) {
-                    val tex = textures.getOrNull(units.getOrElse(e) { 0 })?.takeIf { compatible(it, d) } ?: device.dummyFor(d)
-                    infos[e].sampler(tex.vkSampler).imageView(tex.view).imageLayout(tex.sampledLayout)
-                }
-                w.pImageInfo(infos)
-            }
-        }
-        vkUpdateDescriptorSets(core.device, writes, null)
-        return set
-    }
-
-    /** A set from the slot's pools, adding a pool when they are full. */
-    private fun allocateSet(s: MemoryStack, layout: Long): Long {
-        val pools = descriptorPools[slot]
-        val p = s.mallocLong(1)
-        while (true) {
-            val alloc = VkDescriptorSetAllocateInfo.calloc(s).`sType$Default`()
-                .descriptorPool(pools[poolInUse[slot]]).pSetLayouts(s.longs(layout))
-            val r = vkAllocateDescriptorSets(core.device, alloc, p)
-            if (r == VK_SUCCESS) return p[0]
-            check(r == VK_ERROR_OUT_OF_POOL_MEMORY || r == VK_ERROR_FRAGMENTED_POOL) { "Vulkan vkAllocateDescriptorSets failed: $r" }
-            poolInUse[slot]++
-            if (poolInUse[slot] == pools.size) pools += createDescriptorPool()
-        }
-    }
-
-    private fun compatible(t: VkRhiTexture, d: SpirvReflection.Descriptor): Boolean {
-        val dim = when (t.desc.type) {
-            TextureType.TEXTURE_2D -> SpirvReflection.ImageDim.D2
-            TextureType.TEXTURE_2D_ARRAY -> SpirvReflection.ImageDim.D2_ARRAY
-            TextureType.CUBE -> SpirvReflection.ImageDim.CUBE
-        }
-        return dim == d.dim && t.isDepth == d.depth && t.vkSampler != VK_NULL_HANDLE
-    }
-
-    /** Copies [size] bytes of [src] from [from] (zeros past its end, or all zeros when null) into the ring. */
-    private fun ringCopy(src: java.nio.ByteBuffer?, from: Int, size: Long): Long {
-        val align = core.minUniformAlignment
-        val offset = (ringOffset + align - 1) / align * align
-        check(offset + size <= ring.size) { "Uniform ring exhausted" }
-        val dst = MemoryUtil.memByteBuffer(ring.address + offset, size.toInt())
-        dst.clear()
-        MemoryUtil.memSet(ring.address + offset, 0, size)
-        if (src != null) {
-            val n = minOf(size.toInt(), src.capacity() - from).coerceAtLeast(0)
-            for (i in 0 until n) dst.put(i, src.get(from + i))
-        }
-        ringOffset = offset + size
-        return offset
     }
 
     /**
@@ -333,7 +235,6 @@ internal class VkCommandList(
     override fun blit(src: RhiRenderTarget, dst: RhiRenderTarget?, srcRect: IntRect?, dstRect: IntRect?, filter: Filter) {
         check(!inPass) { "blit inside a pass" }
         val cmd = frames.commandBuffer()
-        slot = frames.slot
         this.cmd = cmd
         val from = (src as VkRhiRenderTarget).colors[0]
         val to = (dst as VkRhiRenderTarget?)?.colors?.get(0)
@@ -379,25 +280,8 @@ internal class VkCommandList(
     override fun beginTimer(timer: RhiTimer) {}
     override fun endTimer(timer: RhiTimer) {}
 
-    private fun createDescriptorPool(): Long = stackPush().use { s ->
-        val sizes = VkDescriptorPoolSize.calloc(2, s)
-        sizes[0].type(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER).descriptorCount(MAX_SETS * 4)
-        sizes[1].type(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER).descriptorCount(MAX_SETS * 16)
-        val info = VkDescriptorPoolCreateInfo.calloc(s).`sType$Default`().maxSets(MAX_SETS).pPoolSizes(sizes)
-        val p = s.mallocLong(1)
-        vk(vkCreateDescriptorPool(core.device, info, null, p), "vkCreateDescriptorPool")
-        p[0]
-    }
-
     fun destroy() {
-        descriptorPools.forEach { pools -> pools.forEach { vkDestroyDescriptorPool(core.device, it, null) } }
-        rings.forEach { it.close() }
-    }
-
-    private companion object {
-        /** Per frame in flight; VK-02 replaces the ring with one that grows. */
-        const val RING_SIZE = 32L shl 20
-        const val MAX_SETS = 4096
+        // Command buffers belong to the frame loop; rings and pools to the resource factory (VK-02)
     }
 }
 
