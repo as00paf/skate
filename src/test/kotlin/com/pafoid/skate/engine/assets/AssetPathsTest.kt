@@ -20,9 +20,7 @@ import com.pafoid.skate.engine.getComponent
 import com.pafoid.skate.engine.render.material.MaterialAsset
 import com.pafoid.skate.engine.render.material.MaterialSchema
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
@@ -171,6 +169,6 @@ class AssetPathsTest {
         assertEquals("Assets/Models/board.obj", loaded.children.single().getComponent<RenderComponent>()!!.model?.path,
             "an exported game keeps references relative and reads them from the pack")
         val element = Json.parseToJsonElement(saved)
-        assertTrue(element is JsonObject && element !is JsonArray && element !is JsonPrimitive)
+        assertTrue(element is JsonObject)
     }
 }
