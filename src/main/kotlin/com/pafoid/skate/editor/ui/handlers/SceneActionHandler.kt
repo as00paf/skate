@@ -13,7 +13,9 @@ import com.pafoid.skate.editor.commands.project.SaveSceneAsCommand
 import com.pafoid.skate.editor.commands.project.SaveSceneCommand
 import com.pafoid.skate.editor.commands.scene.SwitchSceneCommand
 import com.pafoid.skate.editor.events.ViewportAction.TabSelected
+import com.pafoid.skate.editor.events.ProjectEvent
 import com.pafoid.skate.editor.gizmos.EditorCamera
+import com.pafoid.skate.editor.gizmos.EditorCameraMemory
 import com.pafoid.skate.editor.systems.PlayModeGuards
 import com.pafoid.skate.editor.systems.ProjectManager
 import com.pafoid.skate.editor.systems.UndoRedoManager
@@ -45,6 +47,14 @@ class SceneActionHandler(
     private val eventSystem = engine.eventSystem
     private val sceneManager = engine.sceneManager
     private val serializer = engine.serializer
+
+    /** Each scene's editor camera, kept in the project's editor-only data (EDT-58). */
+    val cameraMemory = EditorCameraMemory(
+        camera = { editorCamera.camera },
+        transform = { editorCamera.transform },
+        projectDir = { projectManager.getProjectDirectory() },
+        warn = { logger.logEditor(it, LogLevel.WARN) },
+    )
 
     init {
         eventSystem.subscribe<RenameRequested> { event ->
@@ -97,6 +107,14 @@ class SceneActionHandler(
                 engine.cameraManager.camera = editorCamera.camera
                 engine.cameraManager.transform = editorCamera.transform
             }
+            // Play's reset publishes Changed for a copy of the same scene: same name, so the camera stays put.
+            cameraMemory.switchTo(event.scene.name)
+        }
+        eventSystem.subscribe<SceneAction.Closing> { event ->
+            cameraMemory.onClosing(event.scene.name)
+        }
+        eventSystem.subscribe<ProjectEvent.Closed> {
+            cameraMemory.reset()
         }
     }
 
@@ -185,6 +203,8 @@ class SceneActionHandler(
 
     private fun handleOpenSucceeded(scene: Scene) {
         editorCamera.init(scene)
+        // init copies the scene camera's projection; a remembered editor camera wins (EDT-58).
+        cameraMemory.restore(scene.name)
         logger.logEditor("Scene opened from file: ${scene.name}")
     }
 

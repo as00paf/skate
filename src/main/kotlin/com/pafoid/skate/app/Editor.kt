@@ -87,6 +87,8 @@ class Editor(
 
     fun update(dt: Float) {
         editorInputHandler.updateAlways()
+        // Play/Stop/Reset run here, before any window draws (EDT-45 review N5).
+        playModeHandler.update()
         if (engine.sceneManager.currentScene?.isRunning == false) {
             editorInputHandler.update()
             editorCamera.update(dt)
@@ -97,6 +99,8 @@ class Editor(
 
     fun destroy() {
         playModeHandler.shutdown()
+        // Keep the current scene's editor camera for the next session (EDT-58).
+        editorActionHandler.sceneActionHandler.cameraMemory.flush()
         imGuiLayer.destroy()
     }
 }
