@@ -7,6 +7,7 @@ import com.pafoid.skate.editor.data.EditorShortcut
 import com.pafoid.skate.editor.data.EditorShortcuts
 import com.pafoid.skate.editor.events.EditorEvent
 import com.pafoid.skate.editor.events.ProjectEvent
+import com.pafoid.skate.editor.events.PlayModeAction
 import com.pafoid.skate.editor.events.ViewportAction
 import com.pafoid.skate.editor.systems.ClipboardService
 import com.pafoid.skate.editor.systems.EditorSettingsManager
@@ -15,7 +16,6 @@ import com.pafoid.skate.editor.systems.UndoRedoManager
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.systems.InputSystem
-import com.pafoid.skate.engine.events.EngineAction
 import com.pafoid.skate.engine.events.SceneAction
 import com.pafoid.skate.engine.input.ActionBinding
 import com.pafoid.skate.engine.input.DefaultActions
@@ -54,12 +54,7 @@ class EditorInputHandler(
     /** Shortcuts that also work while the game runs (Play/Stop). Called every frame. */
     fun updateAlways() {
         if (engine.sceneManager.currentScene == null || !pressed(EditorShortcuts.PLAY_TOGGLE)) return
-        if (engine.runtimePlaying) {
-            eventSystem.publish(EngineAction.SetRuntimePlaying(false))
-            eventSystem.publish(ViewportAction.StopSimulation)
-        } else {
-            eventSystem.publish(EngineAction.SetRuntimePlaying(true))
-        }
+        eventSystem.publish(PlayModeAction.TogglePlay)
     }
 
     /** Edit-mode shortcuts and camera input; not called while the game runs. */
@@ -151,7 +146,7 @@ class EditorInputHandler(
             pressed(EditorShortcuts.COPY) -> selected?.let { clipboardService.copy(it) }
             pressed(EditorShortcuts.CUT) -> selected?.let {
                 clipboardService.copy(it)
-                eventSystem.publish(ViewportAction.Delete(it, scene))
+                eventSystem.publish(ViewportAction.Delete(it, scene, confirm = false))
             }
             pressed(EditorShortcuts.PASTE) -> eventSystem.publish(ViewportAction.PasteClipboard())
             pressed(EditorShortcuts.UNDO) -> undoRedoManager.undo()

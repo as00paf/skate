@@ -13,7 +13,10 @@ import com.pafoid.skate.editor.commands.project.SaveSceneAsCommand
 import com.pafoid.skate.editor.commands.project.SaveSceneCommand
 import com.pafoid.skate.editor.commands.scene.SwitchSceneCommand
 import com.pafoid.skate.editor.events.ViewportAction.TabSelected
+import com.pafoid.skate.editor.events.PlayModeAction
+import com.pafoid.skate.editor.events.ProjectEvent
 import com.pafoid.skate.editor.gizmos.EditorCamera
+import com.pafoid.skate.editor.gizmos.EditorCameraMemory
 import com.pafoid.skate.editor.systems.PlayModeGuards
 import com.pafoid.skate.editor.systems.ProjectManager
 import com.pafoid.skate.editor.systems.UndoRedoManager
@@ -45,6 +48,14 @@ class SceneActionHandler(
     private val sceneManager = engine.sceneManager
     private val serializer = engine.serializer
 
+    /** Each scene's editor camera, kept in the project's editor-only data (EDT-58). */
+    val cameraMemory = EditorCameraMemory(
+        camera = { editorCamera.camera },
+        transform = { editorCamera.transform },
+        projectDir = { projectManager.getProjectDirectory() },
+        warn = { logger.logEditor(it, LogLevel.WARN) },
+    )
+
     init {
         eventSystem.subscribe<RenameRequested> { event ->
             handleRenameRequested(event.scene, event.newName)
@@ -68,19 +79,19 @@ class SceneActionHandler(
             handleReopenAllRequested(event.scenes)
         }
         eventSystem.subscribe<CreateRequested> {
-            handleCreateRequested()
+            userSceneChange { handleCreateRequested() }
         }
         eventSystem.subscribe<Created> { event ->
             handleSceneCreated(event.scene)
         }
         eventSystem.subscribe<TabSelected> { event ->
-            handleTabSelected(event.scene)
+            userSceneChange(event.scene) { target -> handleTabSelected(target) }
         }
         eventSystem.subscribe<DeleteRequested> { event ->
             handleDeleteRequested(event.scene)
         }
         eventSystem.subscribe<SceneAction.OpenSceneFile> { event ->
-            handleOpenSceneFile(event.sceneFile)
+            userSceneChange { handleOpenSceneFile(event.sceneFile) }
         }
         eventSystem.subscribe<SceneAction.Opened> { event ->
             handleOpenSucceeded(event.scene)
@@ -96,7 +107,34 @@ class SceneActionHandler(
                 engine.cameraManager.camera = editorCamera.camera
                 engine.cameraManager.transform = editorCamera.transform
             }
+            // Play's reset publishes Changed for a copy of the same scene: same name, so the camera stays put.
+            cameraMemory.switchTo(event.scene.name)
         }
+        eventSystem.subscribe<SceneAction.Closing> { event ->
+            cameraMemory.onClosing(event.scene.name)
+        }
+        eventSystem.subscribe<ProjectEvent.Closed> {
+            cameraMemory.reset()
+        }
+    }
+
+    /**
+     * A scene change the user asked for (tab, Open Scene, Project double-click, New Scene). During Play it stops Play
+     * first, restoring every scene (EDT-63); scene switches made by game scripts do not come through here and keep
+     * playing.
+     */
+    private fun userSceneChange(change: () -> Unit) {
+        if (engine.runtimePlaying) eventSystem.publish(PlayModeAction.StopThen(change)) else change()
+    }
+
+    /**
+     * Same for switching to the open [scene]. Stopping replaces every open scene with its restored copy, so the target
+     * is found again afterwards: the same object if it survived, else the open scene with its name.
+     */
+    private fun userSceneChange(scene: Scene, switch: (Scene) -> Unit) = userSceneChange {
+        val target = sceneManager.openScenes.firstOrNull { it === scene }
+            ?: sceneManager.openScenes.firstOrNull { it.name == scene.name }
+        if (target != null && target !== sceneManager.currentScene) switch(target)
     }
 
     private fun handleOpenSceneFile(sceneFile: File) {
@@ -129,7 +167,11 @@ class SceneActionHandler(
             logger.logEditor("Scene save-as skipped: stop Play first", LogLevel.WARN)
             return
         }
-        val command = SaveSceneAsCommand(scene, serializer, logger)
+        val command = SaveSceneAsCommand(
+            scene, serializer, logger,
+            dialogTitle = engine.stringManager.getString("dialog.scene.save_as_title"),
+            filterDescription = engine.stringManager.getString("dialog.scene.filter"),
+        )
         undoRedoManager.executeCommand(command)
         logger.logEditor("Scene save-as requested: ${scene.name}")
     }
@@ -180,6 +222,8 @@ class SceneActionHandler(
 
     private fun handleOpenSucceeded(scene: Scene) {
         editorCamera.init(scene)
+        // init copies the scene camera's projection; a remembered editor camera wins (EDT-58).
+        cameraMemory.restore(scene.name)
         logger.logEditor("Scene opened from file: ${scene.name}")
     }
 

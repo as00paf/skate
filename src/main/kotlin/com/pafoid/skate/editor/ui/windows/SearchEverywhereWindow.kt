@@ -22,11 +22,12 @@ import kotlinx.coroutines.Job
 
 class SearchEverywhereWindow(
     private val engine: Engine,
+    projectDirectory: () -> java.io.File? = { null },
 ) : EditorWindow("window.search") {
     private val stringManager = engine.stringManager
 
     private val searchHistory: SearchHistory = SearchHistory(engine.serializer, engine.logger)
-    private val searchEngine: SearchEngine = SearchEngine(engine, stringManager)
+    private val searchEngine: SearchEngine = SearchEngine(engine, stringManager, projectDirectory)
 
     private val searchQuery = ImString(256)
     private var selectedResultIndex = 0
@@ -43,10 +44,13 @@ class SearchEverywhereWindow(
 
     private var flattenedResults: List<SearchResultWithCategory> = emptyList()
 
+    private val focusRequest = SearchFocusRequest()
+
     fun open() {
         searchQuery.set("")
         selectedResultIndex = 0
         currentResults = emptyMap()
+        flattenedResults = emptyList()
         lastQueriedText = ""
         activeFilter = SearchFilter.ALL
         engine.jobSystem.runOnMain {
@@ -59,11 +63,23 @@ class SearchEverywhereWindow(
         searchJob?.cancel()
     }
 
+    override fun onClosed() {
+        searchJob?.cancel()
+        focusRequest.onClosed()
+    }
+
     private suspend fun loadRecentSearches() {
         recentSearches = searchHistory.getRecent(limit = 5)
     }
 
     override fun imgui() {
+        val justOpened = focusRequest.beginFrame()
+        if (justOpened) {
+            open()
+            // Bring the window to the front so the focused input receives keystrokes.
+            ImGui.setNextWindowFocus()
+        }
+
         val viewport = ImGui.getMainViewport()
         val centerX = viewport.workCenterX
         val centerY = viewport.workCenterY
@@ -102,11 +118,6 @@ class SearchEverywhereWindow(
         renderFooter()
 
         ImGui.end()
-
-        // Auto-focus search input when opened
-        if (searchQuery.get().isEmpty() && lastQueriedText.isEmpty()) {
-            ImGui.setKeyboardFocusHere(0)
-        }
     }
 
     private fun handleKeyboardInput(pOpen: ImBoolean?) {
@@ -143,6 +154,8 @@ class SearchEverywhereWindow(
         val inputWidth = ImGui.getContentRegionAvailX() - buttonSize - spacing
         ImGui.pushItemWidth(inputWidth)
         val flags = ImGuiInputTextFlags.AutoSelectAll
+        // EDT-48: focus once when opened, right before the input it targets (not every frame, not after end()).
+        if (focusRequest.consume()) ImGui.setKeyboardFocusHere()
         ImGui.inputTextWithHint(
             "##SearchEverywhere",
             stringManager.getString("search.everywhere.placeholder"),
@@ -159,6 +172,7 @@ class SearchEverywhereWindow(
             flattenedResults = emptyList()
             selectedResultIndex = 0
             lastQueriedText = ""
+            focusRequest.request()
         }
         if (ImGui.isItemHovered()) {
             ImGui.setTooltip(stringManager.getString("lbl.clear"))
@@ -220,6 +234,7 @@ class SearchEverywhereWindow(
                     SearchCategory.ASSET_ANIMATION,
                     SearchCategory.ASSET_SOUND,
                     SearchCategory.ASSET_PREFAB,
+                    SearchCategory.ASSET_SCRIPT,
                     SearchCategory.COMPONENT
                 )
             }
@@ -364,6 +379,7 @@ class SearchEverywhereWindow(
             SearchCategory.ASSET_ANIMATION -> Icons.ARROW_ROTATE
             SearchCategory.ASSET_SOUND -> Icons.MUSIC
             SearchCategory.ASSET_PREFAB -> Icons.COPY
+            SearchCategory.ASSET_SCRIPT -> Icons.FILE_CODE
             SearchCategory.COMPONENT -> Icons.GEAR
             SearchCategory.ACTION -> Icons.ATOM
         }
@@ -377,6 +393,7 @@ class SearchEverywhereWindow(
             SearchCategory.ASSET_ANIMATION -> ImVec4(0.8f, 0.4f, 0.8f, 1f)
             SearchCategory.ASSET_SOUND -> ImVec4(0.9f, 0.4f, 0.4f, 1f)
             SearchCategory.ASSET_PREFAB -> ImVec4(0.4f, 0.7f, 0.9f, 1f)
+            SearchCategory.ASSET_SCRIPT -> ImVec4(0.5f, 0.8f, 0.7f, 1f)
             SearchCategory.COMPONENT -> ImVec4(0.7f, 0.7f, 0.3f, 1f)
             SearchCategory.ACTION -> ImVec4(0.6f, 0.6f, 0.6f, 1f)
         }

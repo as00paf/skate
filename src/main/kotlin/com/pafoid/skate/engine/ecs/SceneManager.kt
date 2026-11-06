@@ -99,6 +99,25 @@ class SceneManager(
         currentScene?.let { eventSystem.publish(SceneAction.Changed(it)) }
     }
 
+    /**
+     * Puts [new] in [old]'s tab, at the same position, and destroys [old] (Play's Stop/Reset, EDT-45). Systems are
+     * loaded once, and only when [old] was the active scene. The tab stays, so the only event is one
+     * [SceneAction.Changed], published for the active scene. Returns false when [old] is not open.
+     */
+    fun replaceScene(old: Scene, new: Scene): Boolean {
+        val index = openScenes.indexOf(old)
+        if (index < 0) return false
+        resolveSceneReferences(new)
+        openScenes[index] = new
+        old.destroyScene()
+        if (index == activeSceneIndex) {
+            systemManager.loadScene(new)
+            eventSystem.publish(SceneAction.Changed(new))
+        }
+        logger.log("Replaced scene: ${new.name}", LogLevel.INFO)
+        return true
+    }
+
     fun closeScene(scene: Scene) {
         val index = openScenes.indexOf(scene)
         if (index < 0) return

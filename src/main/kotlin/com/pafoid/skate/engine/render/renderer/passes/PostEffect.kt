@@ -16,6 +16,9 @@ enum class PostEffect(
     FXAA("FXAA", "Applies fast approximate anti-aliasing"),
     SSAO("SSAO", "Applies screen-space ambient occlusion");
 
+    /** Translation key of the effect's label in the editor (`lbl.post_process.<effect>`), e.g. `lbl.post_process.fxaa`. */
+    val labelKey: String get() = "lbl.post_process.${name.lowercase()}"
+
     companion object {
 
         /**
