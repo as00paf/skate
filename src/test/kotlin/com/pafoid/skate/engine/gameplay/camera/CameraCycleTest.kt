@@ -2,7 +2,8 @@ package com.pafoid.skate.engine.gameplay.camera
 
 import com.pafoid.skate.engine.input.ActionBinding
 import com.pafoid.skate.engine.input.ActionMap
-import com.pafoid.skate.engine.input.DefaultActions
+import com.pafoid.skate.engine.gameplay.CharacterActions
+import com.pafoid.skate.engine.input.UiNavigationActions
 import com.pafoid.skate.engine.input.InputContext
 import com.pafoid.skate.engine.input.listeners.GamepadConstants
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -26,7 +27,7 @@ class CameraCycleTest {
 
     @Test
     fun bindDefaults_AddsAGameplayCameraActionOnCAndBackWithoutConflicts() {
-        val map = DefaultActions.register(ActionMap())
+        val map = CharacterActions.register(UiNavigationActions.register(ActionMap()))
         CameraCycle.bindDefaults(map)
 
         val def = map.definition(CameraCycle.ACTION)!!
@@ -38,7 +39,7 @@ class CameraCycleTest {
 
     @Test
     fun bindDefaults_IsIdempotentAndKeepsUserBindings() {
-        val map = DefaultActions.register(ActionMap())
+        val map = CharacterActions.register(UiNavigationActions.register(ActionMap()))
         CameraCycle.bindDefaults(map)
         map.rebind(CameraCycle.ACTION, 0, ActionBinding.Key('V'.code))
         val revision = map.revision
