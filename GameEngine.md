@@ -211,7 +211,7 @@ Round 27+ goals: a Jolt backend selectable per project, a terrain heightfield co
   - Do: Buoyancy and drag in water volumes, following the approved REN-29 design.
   - Done when: Showcase objects float and settle realistically; tests.
   - Deps: REN-29
-- [x] **PHY-17** `P2` REWRITE Jolt physics backend — design approved by the lead (2026-11-06, `docs/design/PHY-17.md`)
+- [~] @skate-physics **PHY-17** `P2` REWRITE Jolt physics backend — slices a–e done; slice f (per-project selection) waits for EDT-59
   - Do: Implement the approved slices in order: a) preparation (`BodyDescription`, per-spec native loader, `ShapeWireframe` move, test helper), b) Jolt core (bodies, shapes, layers, queries, factory + fallback), c) contacts and triggers, d) joints/ragdoll/vehicle parity, e) debug draw, stats, leak/determinism tests, benchmark, f) per-project selection plumbing with EDT/AST/TLG. Decisions: physical centre of mass, ship both natives now (AST-15 strips the unused one), Bullet stays the default.
   - Done when: The physics test suite passes on Jolt as well as Bullet; the showcase runs on Jolt.
 
@@ -373,7 +373,7 @@ Round 27+ goals (human, 2026-11-06): fix editor bugs, make every window, dialog 
 - [x] **EDT-58** `P1` Remember the editor camera per scene
   - Do: Save the editor camera position/rotation/mode per scene (editor-only data, not in the exported game) and restore it when the scene opens.
   - Done when: Switching scenes and restarting restores each scene's camera; tests.
-- [ ] **EDT-59** `P1` REWRITE New Project wizard and templates
+- [~] @skate-tooling **EDT-59** `P1` REWRITE New Project wizard and templates
   - Do: Design note first. Templates (Empty, Skate game, Feature Showcase, Tetris, Marble Run, later demos), which separates the skate game from the showcase. Settings: target FPS/uncapped, physics backend (Bullet, Simple, Jolt once PHY-17 lands), graphics backend (exists), include AI agent/skill files, splash screen image. Templates come from skate-tooling.
   - Done when: The human approves the design; each template creates a project that opens and runs; tests for the template registry and settings.
   - Deps: EDT-56, AST-14
@@ -402,7 +402,7 @@ Round 27+ goals (human, 2026-11-06): fix editor bugs, make every window, dialog 
   - Do: From EDT-57: convert the 14 files listed in `TooltipToggleGuardTest`'s allow-list (chunks C, D, G, H, I and EDT-54) to `Tooltips.text` (control help) or `Tooltips.always` (explanations, data), and empty the list.
   - Done when: The allow-list is empty; tests.
   - Deps: EDT-52, EDT-57
-- [ ] **EDT-66** `P2` Blender import settings in the inspector and Editor Settings
+- [~] @skate-assets **EDT-66** `P2` Blender import settings in the inspector and Editor Settings
   - Do: From AST-19: an inspector panel for `.blend` import settings (`blender.*` meta keys) with a Re-import button (`BlenderSync.reimport`), a "Needs Blender" badge, and a Blender section in Editor Settings (path, timeout, import on open, a Test button using `BlenderLocator`).
   - Done when: Settings edit and persist; Re-import works; tests.
   - Deps: AST-19
