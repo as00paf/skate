@@ -85,6 +85,8 @@ class Scene(@SerialName("sceneName") override var name: String = "MainScene") : 
         selection.clear()
     }
 
+    /** In Play (set by the engine each frame). Runtime state: never saved to scene files or snapshots. */
+    @Transient
     var isRunning: Boolean = false
 
     /** In Play but paused (pause menu); set by [com.pafoid.skate.engine.ecs.systems.SystemManager.paused]. */

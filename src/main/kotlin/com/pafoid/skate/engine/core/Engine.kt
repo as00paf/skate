@@ -186,19 +186,25 @@ class Engine {
         systemManager.start()
     }
 
+    /**
+     * The pause menu every host gets: editor Play and the exported game differ only in [pauseActions] (GUI-09, GUI-12).
+     * [defer] defaults to the end of the frame; tests run the work at once.
+     */
+    fun createPauseMenu(defer: (() -> Unit) -> Unit = { afterFrame.addLast(it) }) = PauseMenuSystem(
+        setFrozen = ::setPaused,
+        actions = pauseActions,
+        toggleLanguage = { gameLocale.toggle() },
+        volume = { systemManager.getSystem<AudioSystem>()?.masterVolume ?: 1f },
+        setVolume = { v -> systemManager.getSystem<AudioSystem>()?.masterVolume = v },
+        defer = defer,
+    )
+
     private fun uiSystems(inputSystem: InputSystem): List<System> {
         val framebuffer = renderer.frameBuffer
         val geometry = renderer.renderResources.renderPasses.geometry
         (inputSystem.reader as? ActionInputReader)?.let { UiActions.bindDefaults(it.actions) }
         var font: UiFont? = null
-        val pauseMenu = PauseMenuSystem(
-            setFrozen = ::setPaused,
-            actions = pauseActions,
-            toggleLanguage = { gameLocale.toggle() },
-            volume = { systemManager.getSystem<AudioSystem>()?.masterVolume ?: 1f },
-            setVolume = { v -> systemManager.getSystem<AudioSystem>()?.masterVolume = v },
-            defer = { afterFrame.addLast(it) },
-        )
+        val pauseMenu = createPauseMenu()
         return listOf(
             pauseMenu,
             UiLayoutSystem(screen = { UiScreenSize(framebuffer.width, framebuffer.height) }),
