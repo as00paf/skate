@@ -21,6 +21,8 @@ data class GameSettings(
      * player and support. Cleared when the chosen backend starts. Informational only; the choice itself is kept.
      */
     val graphicsNote: String? = null,
+    /** Game-defined pause menu options ([GameOption]) by id, e.g. the control scheme (GPL-21). */
+    val options: Map<String, String> = emptyMap(),
 ) {
     companion object {
         const val DEFAULT_LOCALE = "en"

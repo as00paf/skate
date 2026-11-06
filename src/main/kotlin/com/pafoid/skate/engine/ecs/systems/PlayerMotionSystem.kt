@@ -56,6 +56,7 @@ class PlayerMotionSystem(
             return
         }
         inputSampler?.let { sampler ->
+            sampler.applyPresetsIfChanged()
             inputs.forEach { go ->
                 val state = go.getComponent<InputStateComponent>() ?: return@forEach
                 // Each character's own look tuning (its config); objects without a controller get the defaults.

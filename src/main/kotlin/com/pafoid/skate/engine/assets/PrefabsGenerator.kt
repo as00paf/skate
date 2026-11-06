@@ -301,7 +301,10 @@ class PrefabsGenerator(
         return listOf(camera, firstPerson, fixed, skate, skater, floor, ledge, quarterPipe, funbox, spawnHud())
     }
 
-    /** In-game (non-ImGui) HUD: a score line top-left and a Camera button top-right (restart is in the Esc menu). */
+    /**
+     * In-game (non-ImGui) HUD: a score line top-left, a Camera button top-right (restart is in the Esc menu) and the
+     * trick name bottom-centre, which the trick HUD fills while riding (GPL-21).
+     */
     fun spawnHud(): GameObject {
         val canvas = GameObject("HUD").addComponent(UICanvasComponent())
         canvas.addChild(
@@ -314,6 +317,11 @@ class PrefabsGenerator(
                 .addComponent(UIElementComponent().placed(1f, 0f, -40f, 30f, 260f, 70f))
                 .addComponent(UIButtonComponent("hud.camera"))
         )
+        canvas.addChild(
+            GameObject(TRICK_TEXT)
+                .addComponent(UIElementComponent().placed(0.5f, 1f, 0f, -120f, 1000f, 96f))
+                .addComponent(UITextComponent("", fontSize = 72f))
+        )
         return canvas
     }
 
@@ -325,6 +333,8 @@ class PrefabsGenerator(
         const val CAMERA_FIRST_PERSON = "FirstPersonCamera"
         const val CAMERA_FIXED = "FixedCamera"
         const val CAMERA_BUTTON = "CameraButton"
+        /** HUD text showing the current / last landed trick (empty key: hidden). */
+        const val TRICK_TEXT = "TrickText"
 
         /** [GameObject.tag] of rails, ledges and boxes that trucks can lock onto (docs/obstacles.md). */
         const val GRINDABLE_TAG = "GRINDABLE"

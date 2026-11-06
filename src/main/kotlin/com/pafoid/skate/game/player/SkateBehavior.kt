@@ -9,7 +9,12 @@ import com.pafoid.skate.engine.gameplay.ActionPresets
 import com.pafoid.skate.engine.gameplay.CameraPreset
 import com.pafoid.skate.game.input.SkateActions
 import com.pafoid.skate.game.input.SkateInputContext
+import com.pafoid.skate.engine.core.Engine
+import com.pafoid.skate.game.input.SkateControls
+import com.pafoid.skate.game.ui.SkateHudSystem
 import com.pafoid.skate.game.input.SkateIntent
+import com.pafoid.skate.game.input.SkateTrickInput
+import org.joml.Quaternionf
 import com.pafoid.skate.engine.gameplay.CharacterBehavior
 import com.pafoid.skate.engine.gameplay.CharacterBehaviors
 import com.pafoid.skate.engine.gameplay.CharacterConfigs
@@ -44,6 +49,16 @@ class SkateContext(var config: SkateControllerConfig) {
     /** Signed manual balance in degrees; 0 = perfectly balanced. */
     var manualAngle = 0f
     var ollie = false
+    /** Steering / lean stick this frame (see [SkateIntent.move]). */
+    val move = org.joml.Vector2f()
+    /** Trick the control scheme asks for this frame. */
+    var requestedTrick: TrickType? = null
+    /** Trick in the air (null: none, e.g. rolled off a ledge) and how long it has been going. */
+    var trick: TrickType? = null
+    var trickTime = 0f
+
+    /** The board has not finished [trick] yet: touching down now is a bail. */
+    val trickUnfinished: Boolean get() = trick?.let { trickTime < config.tricks.duration(it) } ?: false
 }
 
 /**
@@ -51,12 +66,29 @@ class SkateContext(var config: SkateControllerConfig) {
  * mounted, it runs the skate state machine driven by [SkateControllerConfig].
  */
 class SkateBehavior(
-    private val config: SkateControllerConfig,
+    val config: SkateControllerConfig,
     private val onFoot: LocomotionBehavior = LocomotionBehavior(config.onFoot),
 ) : CharacterBehavior, Mountable {
 
     private val context = SkateContext(config)
+    private val trickInput = SkateTrickInput()
     val machine = buildMachine()
+
+    /** Trick being done in the air, null when none. */
+    val trick: TrickType? get() = context.trick?.takeIf { mounted && machine.current == SkateState.AIR }
+
+    /** Tricks landed cleanly so far and the last one (for the HUD and scoring). */
+    var landedTricks = 0
+        private set
+    var lastLandedTrick: TrickType? = null
+        private set
+
+    /** Board rotation of the trick in progress, in the board's frame ([Mountable.mountSpin]). */
+    override val mountSpin: Quaternionf?
+        get() = trick?.let { t ->
+            val duration = config.tricks.duration(t)
+            TrickSpin.of(t, if (duration > 0f) context.trickTime / duration else 1f)
+        }
 
     override var mounted: Boolean = config.startMounted
         set(value) {
@@ -92,7 +124,7 @@ class SkateBehavior(
         parameters.setFloat("airTime", airborneTime)
         parameters.setFloat("landImpact", landingImpact)
         parameters.setFloat("manualBalance", (manualAngle / config.manual.bailAngleDeg).coerceIn(-1f, 1f))
-        parameters.setFloat("turn", input.move.x.takeIf { it.isFinite() } ?: 0f)
+        parameters.setFloat("turn", move.x.takeIf { it.isFinite() } ?: 0f)
     }
 
     override fun update(input: CharacterInput, dt: Float): CharacterMotion {
@@ -104,7 +136,9 @@ class SkateBehavior(
         }
         // On the board the skate context sits above gameplay: the same keys push/manual/ollie (INP-10).
         SkateInputContext.sync(input.actions, mounted)
-        val intent = SkateIntent.read(input, config.input)
+        // The selected control scheme turns the skate actions into tricks and, for the feet schemes, steering (GPL-21).
+        val tricks = trickInput.update(input.actions, input.move, SkateControls.scheme, dt)
+        val intent = SkateIntent.read(input, config.input, if (mounted) tricks else SkateTrickInput.Frame())
         return step(input, intent, dt).copy(mount = request)
     }
 
@@ -115,8 +149,12 @@ class SkateBehavior(
         context.ollie = false
         val wasAir = machine.current == SkateState.AIR
         machine.update(context, dt)
-        if (wasAir && machine.current != SkateState.AIR) context.landingImpact = context.fallSpeed
-        if (machine.current == SkateState.MANUAL) updateManualBalance(input, dt)
+        if (wasAir && machine.current != SkateState.AIR) {
+            context.landingImpact = context.fallSpeed
+            land()
+        }
+        if (wasAir && machine.current == SkateState.AIR) airTrick(dt)
+        if (machine.current == SkateState.MANUAL) updateManualBalance(dt)
         return solve(input, dt)
     }
 
@@ -134,15 +172,40 @@ class SkateBehavior(
         }
         pushHeld = intent.pushHeld
         manualHeld = intent.manualHeld
-        jumpPressed = intent.olliePressed
+        // A trick from the scheme pops like an ollie; the AIR state then knows which trick it is.
+        jumpPressed = intent.olliePressed || intent.trick != null
+        requestedTrick = intent.trick
+        move.set(intent.move)
         nearGrindable = input.groundTag == PrefabsGenerator.GRINDABLE_TAG
         landingErrorDeg = if (input.velocityYaw.isNaN()) 0f
         else Math.toDegrees(abs(MotionMath.wrapAngle(input.velocityYaw - input.yaw)).toDouble()).toFloat()
     }
 
-    private fun updateManualBalance(input: CharacterInput, dt: Float) {
+    /** In the air: the trick goes on; a flip asked after the pop (THPS, or off a ledge) replaces a plain ollie. */
+    private fun airTrick(dt: Float) = with(context) {
+        trickTime += dt
+        val asked = requestedTrick ?: return@with
+        if (asked != TrickType.OLLIE && (trick == null || trick == TrickType.OLLIE)) {
+            trick = asked
+            trickTime = 0f
+        }
+    }
+
+    /** Touchdown: a trick that was finished counts (a bail does not); the board is caught either way. */
+    private fun land() = with(context) {
+        val done = trick
+        if (done != null && machine.current != SkateState.BAIL) {
+            landedTricks++
+            lastLandedTrick = done
+        }
+        trick = null
+        trickTime = 0f
+    }
+
+    private fun updateManualBalance(dt: Float) {
         val m = config.manual
-        val correction = if (abs(input.move.y) > config.input.moveDeadZone) input.move.y * m.balanceGain else 0f
+        val lean = context.move.y
+        val correction = if (abs(lean) > config.input.moveDeadZone) lean * m.balanceGain else 0f
         val drift = if (context.manualAngle == 0f) 1f else context.manualAngle
         context.manualAngle += (drift * m.instability - correction) * dt
     }
@@ -152,7 +215,7 @@ class SkateBehavior(
         val ride = config.ride
         val speed = input.horizontalSpeed
         val turnRate = MotionMath.lerpClamped(speed, ride.slowSpeed, ride.fastSpeed, ride.turnRateSlow, ride.turnRateFast)
-        val steered = input.yaw - input.move.x * turnRate * dt
+        val steered = input.yaw - context.move.x * turnRate * dt
         val impulse = if (context.ollie) Vector3f(0f, config.air.ollieImpulse, 0f) else null
         val clip = config.animations[state.name]
 
@@ -168,14 +231,14 @@ class SkateBehavior(
             SkateState.IDLE -> CharacterMotion(state.name, animation = clip, impulse = impulse)
             SkateState.PUSH -> rolling(MotionMath.approach(speed, config.push.maxSpeed, config.push.acceleration * dt), steered)
             SkateState.RIDE, SkateState.MANUAL -> {
-                val braking = input.move.y < -config.input.pushStickThreshold
+                val braking = context.move.y < -config.input.pushStickThreshold
                 val decel = if (braking) ride.brakeDecel else ride.rollingDrag
                 rolling(MotionMath.approach(speed, 0f, decel * dt), steered)
             }
             SkateState.GRIND -> rolling(speed, input.yaw)
             SkateState.AIR -> CharacterMotion(
                 state.name,
-                targetYaw = input.yaw - input.move.x * config.air.airTurnRate * dt,
+                targetYaw = input.yaw - context.move.x * config.air.airTurnRate * dt,
                 snapYaw = true,
                 impulse = impulse,
                 animation = clip,
@@ -190,6 +253,8 @@ class SkateBehavior(
         return StateMachine<SkateState, SkateContext>(SkateState.IDLE).apply {
             onEnter(SkateState.AIR) { c ->
                 c.ollie = c.jumpPressed && (c.grounded || previous == SkateState.GRIND)
+                c.trick = if (c.ollie) c.requestedTrick ?: TrickType.OLLIE else null
+                c.trickTime = 0f
             }
             onEnter(SkateState.MANUAL) { it.manualAngle = 0f }
 
@@ -211,7 +276,8 @@ class SkateBehavior(
             // Landing
             val landed = { c: SkateContext -> c.grounded && timeInState >= c.config.air.minAirTime }
             transition(SkateState.AIR, SkateState.BAIL, 20) {
-                landed(it) && (it.landingErrorDeg > it.config.air.landingToleranceDeg || it.fallSpeed >= it.config.air.bailImpactSpeed)
+                landed(it) && (it.landingErrorDeg > it.config.air.landingToleranceDeg ||
+                    it.fallSpeed >= it.config.air.bailImpactSpeed || it.trickUnfinished)
             }
             transition(SkateState.AIR, SkateState.RIDE, 10) { landed(it) && it.speed >= it.config.ride.idleSpeed }
             transition(SkateState.AIR, SkateState.IDLE, 5) { landed(it) }
@@ -241,6 +307,15 @@ class SkateBehavior(
 
 /** Registers the game-specific behaviors with the engine. Safe to call more than once. */
 object SkateGameplay {
+    /**
+     * Per-engine setup, called by each host (editor and exported game) once the engine has started: the control
+     * scheme option in the pause menu and the trick HUD (GPL-21). Call [register] first.
+     */
+    fun install(engine: Engine) {
+        engine.gameOptions.register(SkateControls.option())
+        engine.systemManager.addSystem(SkateHudSystem(engine.eventSystem))
+    }
+
     fun register() {
         ActionPresets.register(SkateActions.CATEGORY, SkateActions::register)
         CharacterBehaviors.register(SkateBehavior.ID) { path ->

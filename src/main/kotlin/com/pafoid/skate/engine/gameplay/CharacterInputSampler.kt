@@ -23,9 +23,17 @@ class CharacterInputSampler(
     /** [owner]'s view of this frame's actions; its context wishes become leases on the stack. */
     fun actionsFor(owner: Any): ActionQuery = ActionQuery.of(reader, leases?.let { l -> { wanted -> l.hold(owner, wanted) } })
 
-    /** Defines the registered presets' actions that are still missing (no change, no revision bump otherwise). */
+    private var appliedPresets = -1
+
+    /** Applies the registered presets to the map (they only define what is missing or changed). */
     fun applyPresets() {
         actionMap?.let(ActionPresets::applyTo)
+        appliedPresets = ActionPresets.revision
+    }
+
+    /** [applyPresets] when a preset changed since the last time (a scheme switch from the pause menu); cheap otherwise. */
+    fun applyPresetsIfChanged() {
+        if (actionMap != null && appliedPresets != ActionPresets.revision) applyPresets()
     }
 
     /** Fills [state]; [look] is the character's look tuning ([CharacterBehavior.look], from its config). */
