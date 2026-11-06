@@ -16,5 +16,6 @@ class TogglePhysicsDebugCommand(private val systemManager: SystemManager) : Exec
 
     override fun getDisplayName(): String = "Toggle Physics Debug"
 
-    override fun getTargetName(): String = "Game Viewport"
+    /** String key, translated by [com.pafoid.skate.editor.commands.CommandNames.targetName]. */
+    override fun getTargetName(): String = "window.game_viewport"
 }

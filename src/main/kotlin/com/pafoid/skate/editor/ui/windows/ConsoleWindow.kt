@@ -28,7 +28,8 @@ class ConsoleWindow(engine: Engine) : EditorWindow("window.console", true) {
 
     private var logLevelFilter: LogLevel? = null
 
-    private val autoScroll = ImBoolean(true)
+    private val autoScroll = ConsoleAutoScroll()
+    private val autoScrollCheckbox = ImBoolean(true)
 
     override fun imgui() {
         if (!ImGui.begin(stringManager.label("window.console"), isOpen)) {
@@ -95,7 +96,10 @@ class ConsoleWindow(engine: Engine) : EditorWindow("window.console", true) {
         }
 
         ImGui.sameLine()
-        ImGui.checkbox(autoScrollLabel, autoScroll)
+        autoScrollCheckbox.set(autoScroll.enabled)
+        if (ImGui.checkbox(autoScrollLabel, autoScrollCheckbox)) {
+            autoScroll.setEnabled(autoScrollCheckbox.get())
+        }
         if (ImGui.isItemHovered()) {
             ImGui.setTooltip(stringManager.getString("tooltip.console.auto_scroll"))
         }
@@ -239,8 +243,9 @@ class ConsoleWindow(engine: Engine) : EditorWindow("window.console", true) {
             ImGui.endPopup()
         }
 
-        // Auto-scroll: keep pinned to latest entry when no selection is active
-        if (autoScroll.get() && selectedLogs.isEmpty()) {
+        // Auto-scroll (EDT-47): scrolling up turns it off, scrolling back to the bottom turns it on.
+        // Pinning pauses while lines are selected so the selection does not move away.
+        if (autoScroll.update(label, ImGui.getScrollY(), ImGui.getScrollMaxY(), hold = selectedLogs.isNotEmpty())) {
             ImGui.setScrollHereY(1.0f)
         }
 
