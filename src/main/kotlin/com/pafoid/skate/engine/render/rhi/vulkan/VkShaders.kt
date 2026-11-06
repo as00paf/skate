@@ -8,8 +8,6 @@ import com.pafoid.skate.engine.render.rhi.ShaderStage
 import org.lwjgl.system.MemoryStack.stackPush
 import org.lwjgl.util.shaderc.Shaderc.*
 import org.lwjgl.vulkan.VK10.*
-import org.lwjgl.vulkan.VkDescriptorSetLayoutBinding
-import org.lwjgl.vulkan.VkDescriptorSetLayoutCreateInfo
 import org.lwjgl.vulkan.VkPipelineLayoutCreateInfo
 import org.lwjgl.vulkan.VkShaderModuleCreateInfo
 import java.nio.ByteOrder
@@ -47,7 +45,11 @@ internal object ShadercCompiler {
  * A program on Vulkan: the GL shader sources rewritten by [GlslToVulkan], compiled with shaderc on first use (so
  * shaders a run never draws with are never compiled) and reflected to build one descriptor set layout.
  */
-internal class VkRhiShader(private val core: VkCore, override val desc: ShaderDesc) : RhiShader {
+internal class VkRhiShader(
+    private val core: VkCore,
+    private val layouts: DescriptorLayoutCache,
+    override val desc: ShaderDesc,
+) : RhiShader {
 
     /** Everything derived from the compiled program. */
     inner class Compiled {
@@ -55,16 +57,17 @@ internal class VkRhiShader(private val core: VkCore, override val desc: ShaderDe
         private val vertexWords = ShadercCompiler.compile(converted.vertex, vertex = true, desc.name)
         private val fragmentWords = ShadercCompiler.compile(converted.fragment, vertex = false, desc.name)
         val vertexReflection = SpirvReflection.of(vertexWords)
-        val descriptors: List<SpirvReflection.Descriptor> =
-            (vertexReflection.descriptors + SpirvReflection.of(fragmentWords).descriptors)
-                .groupBy { it.binding }.values.map { group -> group.maxBy { it.size } }
-                .sortedBy { it.binding }
+        /** Both stages' descriptors, each visible to the stages that use it ([DescriptorLayouts.merge]). */
+        val bindings: List<LayoutBinding> =
+            DescriptorLayouts.merge(vertexReflection.descriptors, SpirvReflection.of(fragmentWords).descriptors)
+        val descriptors: List<SpirvReflection.Descriptor> = bindings.map { it.descriptor }
         val paramsDescriptor = descriptors.firstOrNull {
             it.binding == GlslToVulkan.PARAMS_BINDING && it.kind == SpirvReflection.DescriptorKind.UNIFORM_BUFFER
         }
         val vertexModule = module(vertexWords)
         val fragmentModule = module(fragmentWords)
-        val setLayout: Long = createSetLayout()
+        /** Shared with every program that has the same bindings ([DescriptorLayoutCache]). */
+        val setLayout: Long = layouts.layout(bindings)
         val pipelineLayout: Long = createPipelineLayout()
 
         private fun module(words: IntArray): Long = stackPush().use { s ->
@@ -77,18 +80,6 @@ internal class VkRhiShader(private val core: VkCore, override val desc: ShaderDe
             p[0]
         }
 
-        private fun createSetLayout(): Long = stackPush().use { s ->
-            val bindings = VkDescriptorSetLayoutBinding.calloc(descriptors.size, s)
-            descriptors.forEachIndexed { i, d ->
-                bindings[i].binding(d.binding).descriptorType(descriptorType(d)).descriptorCount(d.count)
-                    .stageFlags(VK_SHADER_STAGE_VERTEX_BIT or VK_SHADER_STAGE_FRAGMENT_BIT)
-            }
-            val info = VkDescriptorSetLayoutCreateInfo.calloc(s).`sType$Default`().pBindings(bindings)
-            val p = s.mallocLong(1)
-            vk(vkCreateDescriptorSetLayout(core.device, info, null, p), "vkCreateDescriptorSetLayout")
-            p[0]
-        }
-
         private fun createPipelineLayout(): Long = stackPush().use { s ->
             val info = VkPipelineLayoutCreateInfo.calloc(s).`sType$Default`().pSetLayouts(s.longs(setLayout))
             val p = s.mallocLong(1)
@@ -98,7 +89,6 @@ internal class VkRhiShader(private val core: VkCore, override val desc: ShaderDe
 
         fun destroy() {
             vkDestroyPipelineLayout(core.device, pipelineLayout, null)
-            vkDestroyDescriptorSetLayout(core.device, setLayout, null)
             vkDestroyShaderModule(core.device, vertexModule, null)
             vkDestroyShaderModule(core.device, fragmentModule, null)
         }

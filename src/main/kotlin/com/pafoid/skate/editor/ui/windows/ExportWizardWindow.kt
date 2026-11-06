@@ -83,6 +83,7 @@ class ExportWizardWindow(
             }
         }
         if (wizard.target == ExportTarget.WINDOWS) gameJarSection()
+        backendLine(project)
 
         MImGui.labeledSeparator(strings.getString("lbl.export.scenes", wizard.includedSceneCount, wizard.scenes.size))
         sceneList(project)
@@ -114,6 +115,14 @@ class ExportWizardWindow(
             eventSystem.publish(ProjectEvent.ExportRequested(wizard.options(project)))
         }
         ImGui.endDisabled()
+    }
+
+    /** The project's graphics backend the exported game starts with (AST-12; chosen in the project settings, EDT-43). */
+    private fun backendLine(project: Project) {
+        val backend = project.graphicsBackend
+        MImGui.textDisabled(strings.getString("lbl.export.backend", strings.getString(backend.labelKey)))
+        if (ImGui.isItemHovered()) ImGui.setTooltip(strings.getString("lbl.export.backend.tooltip"))
+        if (backend.experimental) MImGui.warningText(strings.getString("lbl.export.backend_experimental"))
     }
 
     /** Where the game jar was found (or every place searched), a stale-jar warning and the optional override (AST-11). */

@@ -241,4 +241,59 @@ class ProjectExporterTest {
             ExportFailure.entries.forEach { assertTrue(table.containsKey("lbl.export.failure.${it.name.lowercase()}"), "$it ($locale)") }
         }
     }
+
+    @Test
+    fun Project_GraphicsBackendRoundTripsThroughTheProjectFile() {
+        val p = project().apply { graphicsBackend = com.pafoid.skate.engine.render.rhi.GraphicsBackend.VULKAN }
+        val serializer = Serializer()
+        val text = serializer.encodeFile(com.pafoid.skate.engine.assets.serialization.FileKind.PROJECT, p)
+        assertTrue(text.contains("\"graphicsBackend\": \"VULKAN\""), text)
+        val loaded = serializer.decodeFile<Project>(com.pafoid.skate.engine.assets.serialization.FileKind.PROJECT, text)
+        assertEquals(com.pafoid.skate.engine.render.rhi.GraphicsBackend.VULKAN, loaded.graphicsBackend)
+
+        val json = serializer.json.parseToJsonElement(text) as kotlinx.serialization.json.JsonObject
+        val old = kotlinx.serialization.json.JsonObject(json - "graphicsBackend").toString()
+        assertEquals(com.pafoid.skate.engine.render.rhi.GraphicsBackend.OPENGL,
+            serializer.decodeFile<Project>(com.pafoid.skate.engine.assets.serialization.FileKind.PROJECT, old).graphicsBackend,
+            "project files without the field open with OpenGL")
+    }
+
+    @Test
+    fun Export_CarriesTheGraphicsBackendIntoSettingsManifestAndPackedProject() {
+        val vulkan = com.pafoid.skate.engine.render.rhi.GraphicsBackend.VULKAN
+        val p = project().apply { graphicsBackend = vulkan }
+        File(p.projectPath).writeText(Serializer().encodeFile(com.pafoid.skate.engine.assets.serialization.FileKind.PROJECT, p))
+        val builds = File(dir, "builds").also { it.mkdirs() }
+        // A player's earlier choice in this build folder is kept.
+        File(builds, "game.settings.json").writeText("""{"locale":"fr"}""")
+
+        val result = ProjectExporter(mockk<LoggerService>(relaxed = true)).export(p, ExportOptions(target = ExportTarget.PACK_ONLY))
+        assertTrue(result.success)
+
+        val settings = com.pafoid.skate.engine.ui.GameSettingsStore(File(builds, "game.settings.json"), mockk(relaxed = true)).settings
+        assertEquals(vulkan, settings.graphicsBackend)
+        assertEquals("fr", settings.locale)
+
+        val manifest = Serializer().json.decodeFromString(PackManifest.serializer(), File(builds, "manifest.json").readText())
+        assertEquals(vulkan, manifest.graphicsBackend)
+        assertEquals(PackManifest.SCHEMA, manifest.schema)
+
+        // The game reads the project from the pack before creating its window.
+        val bin = File(builds, "game.bin").readBytes()
+        val header = ByteBuffer.wrap(bin, 0, 4).int + 4
+        val atlas = Serializer().decode<Atlas>(bin.copyOfRange(4, header).toString(Charsets.UTF_8))
+        val resolver = AssetsResolver(Serializer(), mockk(relaxed = true)).also { it.initialize(atlas, bin, header) }
+        val packed = Serializer().decodeFile<Project>(com.pafoid.skate.engine.assets.serialization.FileKind.PROJECT,
+            resolver.resolveBytes("Game.skateproject")!!.toString(Charsets.UTF_8))
+        assertEquals(vulkan, packed.graphicsBackend)
+        assertEquals(vulkan, com.pafoid.skate.engine.render.rhi.GraphicsBackend.resolve(packed.graphicsBackend, settings.graphicsBackend, property = null))
+    }
+
+    @Test
+    fun Export_DefaultProjectExportsOpenGl() {
+        assertTrue(ProjectExporter(mockk<LoggerService>(relaxed = true)).export(project(), ExportOptions(target = ExportTarget.PACK_ONLY)).success)
+        val settings = com.pafoid.skate.engine.ui.GameSettingsStore(File(dir, "builds/game.settings.json"), mockk(relaxed = true)).settings
+        assertEquals(com.pafoid.skate.engine.render.rhi.GraphicsBackend.OPENGL, settings.graphicsBackend)
+        assertEquals("en", settings.locale)
+    }
 }
