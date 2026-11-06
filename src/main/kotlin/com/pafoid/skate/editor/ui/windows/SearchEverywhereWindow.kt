@@ -43,10 +43,13 @@ class SearchEverywhereWindow(
 
     private var flattenedResults: List<SearchResultWithCategory> = emptyList()
 
+    private val focusRequest = SearchFocusRequest()
+
     fun open() {
         searchQuery.set("")
         selectedResultIndex = 0
         currentResults = emptyMap()
+        flattenedResults = emptyList()
         lastQueriedText = ""
         activeFilter = SearchFilter.ALL
         engine.jobSystem.runOnMain {
@@ -59,11 +62,23 @@ class SearchEverywhereWindow(
         searchJob?.cancel()
     }
 
+    override fun onClosed() {
+        searchJob?.cancel()
+        focusRequest.onClosed()
+    }
+
     private suspend fun loadRecentSearches() {
         recentSearches = searchHistory.getRecent(limit = 5)
     }
 
     override fun imgui() {
+        val justOpened = focusRequest.beginFrame()
+        if (justOpened) {
+            open()
+            // Bring the window to the front so the focused input receives keystrokes.
+            ImGui.setNextWindowFocus()
+        }
+
         val viewport = ImGui.getMainViewport()
         val centerX = viewport.workCenterX
         val centerY = viewport.workCenterY
@@ -102,11 +117,6 @@ class SearchEverywhereWindow(
         renderFooter()
 
         ImGui.end()
-
-        // Auto-focus search input when opened
-        if (searchQuery.get().isEmpty() && lastQueriedText.isEmpty()) {
-            ImGui.setKeyboardFocusHere(0)
-        }
     }
 
     private fun handleKeyboardInput(pOpen: ImBoolean?) {
@@ -143,6 +153,8 @@ class SearchEverywhereWindow(
         val inputWidth = ImGui.getContentRegionAvailX() - buttonSize - spacing
         ImGui.pushItemWidth(inputWidth)
         val flags = ImGuiInputTextFlags.AutoSelectAll
+        // EDT-48: focus once when opened, right before the input it targets (not every frame, not after end()).
+        if (focusRequest.consume()) ImGui.setKeyboardFocusHere()
         ImGui.inputTextWithHint(
             "##SearchEverywhere",
             stringManager.getString("search.everywhere.placeholder"),
@@ -159,6 +171,7 @@ class SearchEverywhereWindow(
             flattenedResults = emptyList()
             selectedResultIndex = 0
             lastQueriedText = ""
+            focusRequest.request()
         }
         if (ImGui.isItemHovered()) {
             ImGui.setTooltip(stringManager.getString("lbl.clear"))

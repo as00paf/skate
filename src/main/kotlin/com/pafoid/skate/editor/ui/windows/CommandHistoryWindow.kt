@@ -123,7 +123,7 @@ class CommandHistoryWindow(
         // Rendered reversed: most recent command first
         for (i in undoStack.indices.reversed()) {
             val command = undoStack[i]
-            val targetName = command.getTargetName() ?: stringManager.getString("lbl.unknown")
+            val targetName = CommandNames.targetName(command, stringManager) ?: stringManager.getString("lbl.unknown")
             val label = "${Icons.CHECK} ${i + 1}. ${CommandNames.displayName(command, stringManager)} ($targetName)"
 
             // Executed commands are rendered in white (default) — can be undone
@@ -155,7 +155,7 @@ class CommandHistoryWindow(
 
         for (i in redoStack.indices) {
             val command = redoStack[i]
-            val targetName = command.getTargetName() ?: stringManager.getString("lbl.unknown")
+            val targetName = CommandNames.targetName(command, stringManager) ?: stringManager.getString("lbl.unknown")
             val label = "${Icons.REDO} ${i + 1}. ${CommandNames.displayName(command, stringManager)} ($targetName)"
 
             // Undone commands are rendered in gray — visually distinct from executed commands

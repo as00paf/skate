@@ -12,11 +12,13 @@ object DefaultDockLayout {
         "window.hierarchy" to Zone.LEFT,
         "window.project" to Zone.LEFT,
         "window.game_viewport" to Zone.CENTER,
-        "window.script_editor" to Zone.CENTER,
         "window.properties" to Zone.RIGHT,
         "window.environment" to Zone.RIGHT,
         "window.audio_inspector" to Zone.RIGHT,
         "window.asset_browser" to Zone.BOTTOM,
+        // EDT-55: open by default as a bottom tab; the centre node has no tab bar, so a window docked there hides
+        // behind the viewport.
+        "window.script_editor" to Zone.BOTTOM,
         "window.console" to Zone.BOTTOM,
         "window.profiler" to Zone.BOTTOM,
         "window.command_history" to Zone.BOTTOM,

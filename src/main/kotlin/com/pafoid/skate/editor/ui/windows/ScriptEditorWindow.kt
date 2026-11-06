@@ -3,6 +3,7 @@ package com.pafoid.skate.editor.ui.windows
 import com.pafoid.skate.editor.data.EditorShortcuts
 import com.pafoid.skate.editor.data.EditorFocus
 import com.pafoid.skate.editor.imgui.tipped
+import com.pafoid.skate.editor.imgui.label
 import com.pafoid.skate.editor.events.ScriptEditorAction
 import com.pafoid.skate.editor.scripting.DiagnosticSource
 import com.pafoid.skate.editor.scripting.ScriptDiagnostic
@@ -16,6 +17,11 @@ import com.pafoid.skate.editor.scripting.BracketAutoClose
 import com.pafoid.skate.editor.scripting.CompletionSession
 import com.pafoid.skate.editor.scripting.ParameterHints
 import com.pafoid.skate.editor.scripting.TextEdit
+import com.pafoid.skate.editor.scripting.GoToLine
+import com.pafoid.skate.editor.scripting.ScriptTabs
+import com.pafoid.skate.editor.scripting.TextSearch
+import com.pafoid.skate.editor.scripting.gutterMarkers
+import com.pafoid.skate.editor.data.KeyCombo
 import com.pafoid.skate.engine.scripting.completion.CompletionHandle
 import com.pafoid.skate.engine.scripting.completion.CompletionKind
 import com.pafoid.skate.engine.scripting.completion.CompletionRequest
@@ -35,26 +41,41 @@ import imgui.flag.ImGuiInputTextFlags
 import imgui.flag.ImGuiKey
 import imgui.flag.ImGuiMouseButton
 import imgui.flag.ImGuiWindowFlags
+import imgui.type.ImBoolean
 import imgui.type.ImString
+import org.lwjgl.glfw.GLFW
 import java.io.File
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.Executors
 
 /**
  * Text editor for `.kts` scripts: line numbers, syntax highlighting, Ctrl+S (which hot-reloads a running script),
- * compile diagnostics (off the UI thread) and runtime errors, shown inline and in a list that jumps to the line.
+ * compile diagnostics (off the UI thread) and runtime errors, shown inline, as gutter markers and in a list that jumps
+ * to the line. Tabs mark unsaved changes and ask before closing one; Ctrl+F / Ctrl+H find and replace, Ctrl+G goes to
+ * a line (EDT-55). Docked with the bottom panels by default.
  */
 class ScriptEditorWindow(
     private val engine: Engine,
     private val projectManager: ProjectManager,
     private val settingsManager: EditorSettingsManager,
-) : EditorWindow("window.script_editor") {
+) : EditorWindow("window.script_editor", true) {
     private val strings = engine.stringManager
     private val events = engine.eventSystem
 
-    private val documents = ArrayList<ScriptDocument>()
-    private var active: ScriptDocument? = null
-    private var activeIndexRequest: ScriptDocument? = null
+    private val tabs = ScriptTabs()
+    private val active: ScriptDocument? get() = tabs.active
+
+    private var findOpen = false
+    private var replaceOpen = false
+    private var focusFind = false
+    private val findText = ImString(256)
+    private val replaceText = ImString(256)
+    private val matchCase = ImBoolean(false)
+    /** Start offset of the highlighted match, or -1. */
+    private var currentMatch = -1
+    private var openGoTo = false
+    private var openCloseConfirm = false
+    private val goToText = ImString(32)
     private val buffer = ImString(BUFFER_SIZE)
     private var bufferOwner: ScriptDocument? = null
     private val newName = ImString(64)
@@ -162,7 +183,7 @@ class ScriptEditorWindow(
         events.subscribe<ScriptEditorAction.Open> { pendingOpen.add(it.file) }
         // Marked saved only once the write succeeded; a failure opens the error dialog instead (EDT-10).
         events.subscribe<ScriptEditorAction.Saved> { saved ->
-            documents.filter { it.file.absoluteFile == saved.file.absoluteFile && it.text == saved.text }.forEach { it.markSaved() }
+            tabs.documents.filter { it.file.absoluteFile == saved.file.absoluteFile && it.text == saved.text }.forEach { it.markSaved() }
         }
         events.subscribe<ScriptErrorEvent> {
             pendingRuntime.add(
@@ -177,14 +198,18 @@ class ScriptEditorWindow(
         ImGui.setNextWindowSize(760f, 520f, imgui.flag.ImGuiCond.FirstUseEver)
         if (ImGui.begin(title(strings), isOpen, ImGuiWindowFlags.MenuBar)) {
             toolbar()
-            tabs()
+            tabBar()
             val doc = active
             if (doc == null) {
                 ImGui.textDisabled(strings.getString("lbl.script_editor.empty"))
             } else {
+                shortcuts(doc)
+                findBar(doc)
                 editor(doc)
                 diagnosticsList(doc)
+                goToLinePopup(doc)
             }
+            closeConfirmPopup()
         }
         ImGui.end()
     }
@@ -196,7 +221,7 @@ class ScriptEditorWindow(
         }
         while (true) {
             val update = pendingRuntime.poll() ?: break
-            documents.filter { it.matchesPath(update.path) }.forEach {
+            tabs.documents.filter { it.matchesPath(update.path) }.forEach {
                 it.setDiagnostics(update.source, update.errors)
             }
         }
@@ -205,10 +230,10 @@ class ScriptEditorWindow(
     private fun open(requested: File) {
         val file = if (requested.isFile) requested else ScriptDocument.resolve(requested.path, projectManager.getProjectDirectory())
         if (!file.isFile) return
-        val existing = documents.find { it.file.absoluteFile == file.absoluteFile }
-        val doc = existing ?: ScriptDocument.load(file).also { documents.add(it) }
-        active = doc
-        activeIndexRequest = doc
+        val existing = tabs.find(file)
+        val doc = tabs.open(existing ?: ScriptDocument.load(file))
+        // Fill the error gutter right away, not only after the first save.
+        if (existing == null) check(doc)
         isOpen.set(true)
     }
 
@@ -235,24 +260,169 @@ class ScriptEditorWindow(
     private fun scriptsDirectory(): File? =
         projectManager.getProjectDirectory()?.let { File(it, ScriptTemplates.SCRIPTS_DIRECTORY) }
 
-    private fun tabs() {
-        if (documents.isEmpty()) return
-        if (ImGui.beginTabBar("##script_tabs")) {
-            val closed = ArrayList<ScriptDocument>()
-            for (doc in documents.toList()) {
-                val flags = if (doc === activeIndexRequest) imgui.flag.ImGuiTabItemFlags.SetSelected else 0
-                val keepOpen = imgui.type.ImBoolean(true)
-                val label = (if (doc.isDirty) "* " else "") + doc.name + "###" + doc.file.absolutePath
-                if (ImGui.beginTabItem(label, keepOpen, flags)) {
-                    if (active !== doc) active = doc
+    private fun tabBar() {
+        if (tabs.documents.isEmpty()) return
+        active?.let { syncBuffer(it) }
+        if (ImGui.beginTabBar("##script_tabs", imgui.flag.ImGuiTabBarFlags.Reorderable)) {
+            // A requested tab may take a frame to become selected; until then the old one must not win.
+            val request = tabs.selectRequest?.takeIf { it in tabs.documents }
+            if (request == null) tabs.selectRequest = null
+            for (doc in tabs.documents.toList()) {
+                val flags = if (doc === request) imgui.flag.ImGuiTabItemFlags.SetSelected else 0
+                val keepOpen = ImBoolean(true)
+                if (ImGui.beginTabItem(tabs.label(doc), keepOpen, flags)) {
+                    if (request == null || request === doc) {
+                        tabs.select(doc)
+                        if (doc === request) tabs.selectRequest = null
+                    }
                     ImGui.endTabItem()
                 }
-                if (!keepOpen.get()) closed.add(doc)
+                if (ImGui.isItemHovered()) ImGui.setTooltip(doc.file.path)
+                if (!keepOpen.get() && !tabs.requestClose(doc)) openCloseConfirm = true
             }
-            activeIndexRequest = null
             ImGui.endTabBar()
-            closed.forEach { documents.remove(it); if (active === it) active = documents.lastOrNull() }
         }
+    }
+
+    /** Asks before dropping a tab's unsaved changes. */
+    private fun closeConfirmPopup() {
+        val id = strings.label("lbl.script_editor.unsaved_title")
+        if (openCloseConfirm) {
+            openCloseConfirm = false
+            ImGui.openPopup(id)
+        }
+        if (!ImGui.beginPopupModal(id, null, ImGuiWindowFlags.AlwaysAutoResize)) return
+        val doc = tabs.pendingClose
+        if (doc == null) {
+            ImGui.closeCurrentPopup()
+        } else {
+            ImGui.text(strings.getString("lbl.script_editor.unsaved_message", doc.name))
+            if (strings.tipped(ImGui.button(strings.getString("btn.script_editor.discard")), "btn.script_editor.discard")) {
+                if (bufferOwner === doc) bufferOwner = null
+                tabs.discardPending()
+                ImGui.closeCurrentPopup()
+            }
+            ImGui.sameLine()
+            if (ImGui.button(strings.getString("btn.cancel"))) {
+                tabs.cancelPending()
+                ImGui.closeCurrentPopup()
+            }
+        }
+        ImGui.endPopup()
+    }
+
+    /** Ctrl+F, Ctrl+H, Ctrl+G, F3 / Shift+F3 and Escape while the editor window is focused. */
+    private fun shortcuts(doc: ScriptDocument) {
+        if (!ImGui.isWindowFocused(imgui.flag.ImGuiFocusedFlags.RootAndChildWindows)) return
+        EditorFocus.claim(*CLAIMED)
+        val ctrl = ImGui.getIO().keyCtrl
+        if (ctrl && ImGui.isKeyPressed(ImGuiKey.F, false)) openFind(doc, replace = false)
+        if (ctrl && ImGui.isKeyPressed(ImGuiKey.H, false)) openFind(doc, replace = true)
+        if (ctrl && ImGui.isKeyPressed(ImGuiKey.G, false)) openGoTo = true
+        if (findOpen && ImGui.isKeyPressed(ImGuiKey.F3, false)) findNext(doc, backwards = ImGui.getIO().keyShift)
+        if (findOpen && session == null && ImGui.isKeyPressed(ImGuiKey.Escape, false)) findOpen = false
+    }
+
+    private fun openFind(doc: ScriptDocument, replace: Boolean) {
+        findOpen = true
+        replaceOpen = replace
+        focusFind = true
+        currentMatch = -1
+        selectedText(doc)?.takeIf { '\n' !in it }?.let { findText.set(it) }
+    }
+
+    /** Text the caret is on: the selection is not exposed by ImGui, so the word under the caret. */
+    private fun selectedText(doc: ScriptDocument): String? {
+        val caret = cursorPos.coerceIn(0, doc.text.length)
+        val start = CompletionSession.wordStart(doc.text, caret)
+        var end = caret
+        while (end < doc.text.length && (doc.text[end].isLetterOrDigit() || doc.text[end] == '_')) end++
+        return doc.text.substring(start, end).ifEmpty { null }
+    }
+
+    private fun findNext(doc: ScriptDocument, backwards: Boolean = false) {
+        syncBuffer(doc)
+        val from = when {
+            currentMatch < 0 -> cursorPos
+            backwards -> currentMatch
+            else -> currentMatch + 1
+        }
+        currentMatch = TextSearch.next(doc.text, findText.get(), from, matchCase.get(), backwards) ?: -1
+        if (currentMatch >= 0) jumpToLine = doc.lineOfOffset(currentMatch)
+    }
+
+    private fun setText(doc: ScriptDocument, text: String) {
+        doc.edit(text)
+        buffer.set(text)
+        bufferOwner = doc
+    }
+
+    private fun findBar(doc: ScriptDocument) {
+        if (!findOpen) return
+        val query = findText.get()
+        val matches = TextSearch.findAll(doc.text, query, matchCase.get())
+        if (currentMatch >= 0 && currentMatch !in matches) currentMatch = -1
+
+        if (focusFind) { ImGui.setKeyboardFocusHere(); focusFind = false }
+        ImGui.setNextItemWidth(200f)
+        if (ImGui.inputTextWithHint("##find", strings.getString("hint.script_editor.find"), findText, ImGuiInputTextFlags.EnterReturnsTrue)) {
+            findNext(doc, backwards = ImGui.getIO().keyShift)
+            focusFind = true
+        }
+        ImGui.sameLine()
+        if (strings.tipped(ImGui.button(strings.getString("btn.script_editor.find_previous")), "btn.script_editor.find_previous")) findNext(doc, backwards = true)
+        ImGui.sameLine()
+        if (strings.tipped(ImGui.button(strings.getString("btn.script_editor.find_next")), "btn.script_editor.find_next")) findNext(doc)
+        ImGui.sameLine()
+        ImGui.checkbox(strings.label("lbl.script_editor.match_case"), matchCase)
+        ImGui.sameLine()
+        val index = matches.indexOf(currentMatch)
+        val count = if (index >= 0) strings.getString("lbl.script_editor.match_index", index + 1, matches.size)
+        else strings.getString("lbl.script_editor.match_count", matches.size)
+        if (query.isNotEmpty()) ImGui.textDisabled(count)
+        ImGui.sameLine()
+        if (strings.tipped(ImGui.button(strings.getString("btn.script_editor.close_find")), "btn.script_editor.close_find")) findOpen = false
+
+        if (!replaceOpen) return
+        ImGui.setNextItemWidth(200f)
+        ImGui.inputTextWithHint("##replace", strings.getString("hint.script_editor.replace"), replaceText)
+        ImGui.sameLine()
+        if (strings.tipped(ImGui.button(strings.getString("btn.script_editor.replace")), "btn.script_editor.replace")) {
+            if (currentMatch < 0) findNext(doc)
+            TextSearch.replaceAt(doc.text, query, replaceText.get(), currentMatch, matchCase.get())?.let { edit ->
+                setText(doc, edit.apply(doc.text))
+                currentMatch = TextSearch.next(doc.text, query, edit.caretAfter, matchCase.get()) ?: -1
+                if (currentMatch >= 0) jumpToLine = doc.lineOfOffset(currentMatch)
+            }
+        }
+        ImGui.sameLine()
+        if (strings.tipped(ImGui.button(strings.getString("btn.script_editor.replace_all")), "btn.script_editor.replace_all")) {
+            val (text, replaced) = TextSearch.replaceAll(doc.text, query, replaceText.get(), matchCase.get())
+            if (replaced > 0) setText(doc, text)
+            currentMatch = -1
+        }
+    }
+
+    private fun goToLinePopup(doc: ScriptDocument) {
+        val id = strings.label("lbl.script_editor.go_to_line")
+        if (openGoTo) {
+            openGoTo = false
+            goToText.set((doc.lineOfOffset(cursorPos)).toString())
+            ImGui.openPopup(id)
+        }
+        if (!ImGui.beginPopup(id)) return
+        ImGui.text(strings.getString("lbl.script_editor.go_to_line_range", doc.lineCount))
+        if (ImGui.isWindowAppearing()) ImGui.setKeyboardFocusHere()
+        ImGui.setNextItemWidth(120f)
+        if (ImGui.inputText("##goto", goToText, ImGuiInputTextFlags.EnterReturnsTrue or ImGuiInputTextFlags.AutoSelectAll)) {
+            GoToLine.parse(goToText.get(), doc.lineCount)?.let { target ->
+                jumpToLine = target.line
+                pendingCaret = GoToLine.offset(doc.text, target)
+                refocus = true
+            }
+            ImGui.closeCurrentPopup()
+        }
+        ImGui.endPopup()
     }
 
     private fun save() {
@@ -329,16 +499,31 @@ class ScriptEditorWindow(
         val lines = doc.text.split('\n')
         val tokens = ScriptSyntax.tokenize(doc.text)
         val colors = SyntaxColors
+        val markers = doc.gutterMarkers()
+        val query = if (findOpen) findText.get() else ""
+        val matches = TextSearch.findAll(doc.text, query, matchCase.get())
+        var lineStart = doc.offsetOfLine(first + 1)
         for (i in first until last) {
             val y = textY + i * lineHeight
-            val diagnostics = doc.diagnosticsAt(i + 1)
-            if (diagnostics.isNotEmpty()) {
+            val line = lines.getOrElse(i) { "" }.removeSuffix("\r")
+            val marker = markers[i + 1]
+            if (marker != null) {
                 dl.addRectFilled(origin.x, y, origin.x + gutter + width, y + lineHeight, colors.errorLine)
+                val color = if (marker.source == DiagnosticSource.COMPILE) colors.errorText else colors.runtimeMarker
+                dl.addCircleFilled(origin.x + 6f, y + lineHeight / 2f, lineHeight / 4f, color)
+                if (ImGui.isMouseHoveringRect(origin.x, y, origin.x + gutter, y + lineHeight)) ImGui.setTooltip(marker.tooltip)
             }
             val number = (i + 1).toString()
             val nx = origin.x + gutter - 8f - ImGui.calcTextSize(number).x
-            dl.addText(nx, y, if (diagnostics.isNotEmpty()) colors.errorText else colors.lineNumber, number)
-            val line = lines.getOrElse(i) { "" }.removeSuffix("\r")
+            dl.addText(nx, y, if (marker != null) colors.errorText else colors.lineNumber, number)
+            for (m in matches) {
+                val col = m - lineStart
+                if (col < 0 || col + query.length > line.length) continue
+                val x0 = textX + ImGui.calcTextSize(line.substring(0, col)).x
+                val x1 = textX + ImGui.calcTextSize(line.substring(0, col + query.length)).x
+                dl.addRectFilled(x0, y, x1, y + lineHeight, if (m == currentMatch) colors.currentMatch else colors.match)
+            }
+            lineStart += lines.getOrElse(i) { "" }.length + 1
             var pos = 0
             var x = textX
             for (t in tokens.getOrElse(i) { emptyList() }) {
@@ -347,8 +532,8 @@ class ScriptEditorWindow(
                 pos = t.end
             }
             if (pos < line.length) x = drawText(dl, x, y, line.substring(pos), colors.plain)
-            if (diagnostics.isNotEmpty()) {
-                dl.addText(x + 24f, y, colors.errorText, diagnostics.first().message.lineSequence().first())
+            if (marker != null) {
+                dl.addText(x + 24f, y, colors.errorText, marker.diagnostics.first().message.lineSequence().first())
             }
         }
 
@@ -496,6 +681,9 @@ class ScriptEditorWindow(
         val errorText = ImGui.colorConvertFloat4ToU32(1f, 0.35f, 0.35f, 1f)
         val errorLine = ImGui.colorConvertFloat4ToU32(0.8f, 0.1f, 0.1f, 0.18f)
         val caret = ImGui.colorConvertFloat4ToU32(1f, 1f, 1f, 1f)
+        val runtimeMarker = ImGui.colorConvertFloat4ToU32(1f, 0.6f, 0.2f, 1f)
+        val match = ImGui.colorConvertFloat4ToU32(0.9f, 0.8f, 0.2f, 0.25f)
+        val currentMatch = ImGui.colorConvertFloat4ToU32(0.9f, 0.6f, 0.1f, 0.55f)
 
         fun of(kind: TokenKind) = when (kind) {
             TokenKind.KEYWORD -> keyword
@@ -510,5 +698,9 @@ class ScriptEditorWindow(
     companion object {
         private const val BUFFER_SIZE = 1 shl 20
         private const val MAX_ROWS = 10
+        private val CLAIMED = arrayOf(
+            KeyCombo(GLFW.GLFW_KEY_F, ctrl = true), KeyCombo(GLFW.GLFW_KEY_H, ctrl = true), KeyCombo(GLFW.GLFW_KEY_G, ctrl = true),
+            KeyCombo(GLFW.GLFW_KEY_F3), KeyCombo(GLFW.GLFW_KEY_F3, shift = true),
+        )
     }
 }

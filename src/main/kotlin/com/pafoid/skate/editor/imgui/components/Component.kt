@@ -127,7 +127,7 @@ fun Component.reflectedImgui(engine: Engine, skip: Set<String> = emptySet()) {
 
                 else -> {
                     if (type.isEnum && !isFinal) {
-                        val enumValues = getEnumValues(type as Class<out Enum<*>>)
+                        val enumValues = getEnumValues(type)
                         val enumType = (value as Enum<*>).name
                         val index = ImInt(indexOf(enumType, enumValues))
                         if (ImGui.combo("$localizedName###component.${this.javaClass.simpleName}.$name", index, enumValues, enumValues.size)) {
@@ -147,15 +147,7 @@ fun Component.reflectedImgui(engine: Engine, skip: Set<String> = emptySet()) {
     }
 }
 
-fun <T : Enum<T>> getEnumValues(type: Class<T>): Array<String> {
-    val enumValues = arrayOfNulls<String>(type.enumConstants.size)
-    var i = 0
-    for (enumIntegerValue in type.enumConstants) {
-        enumValues[i] = enumIntegerValue.name
-        i++
-    }
-    return enumValues.filterNotNull().toTypedArray()
-}
+fun getEnumValues(type: Class<*>): Array<String> = type.enumConstants.map { (it as Enum<*>).name }.toTypedArray()
 
 fun indexOf(str: String, arr: Array<String>): Int {
     for (i in arr.indices) {

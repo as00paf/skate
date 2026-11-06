@@ -17,6 +17,11 @@ class PauseMenuActions(
     var quit: () -> Unit = {},
 )
 
+/** One row of the pause menu panel, see [PauseMenu.definition]. */
+data class PauseMenuEntry(val name: String, val kind: Kind, val textKey: String, val height: Float) {
+    enum class Kind { TEXT, BUTTON, SLIDER, OTHER }
+}
+
 /** The runtime pause menu: a modal canvas with Resume, Restart, Language, Quit and a volume slider. */
 object PauseMenu {
     const val NAME = "PauseMenu"
@@ -55,6 +60,26 @@ object PauseMenu {
                 addComponent(UISliderComponent(0f, 1f, 1f, 0.05f))
             })
         })
+    }
+
+    /**
+     * What [menu] shows, in panel order: each entry's name, widget kind, text key and height. Editor Play and the
+     * exported game must produce the same list (GUI-12).
+     */
+    fun definition(menu: GameObject): List<PauseMenuEntry> {
+        val panel = find(menu, "Panel") ?: return emptyList()
+        return panel.children.map { go ->
+            val height = go.getComponent<UIElementComponent>()?.height ?: 0f
+            val button = go.getComponent<UIButtonComponent>()
+            val text = go.getComponent<UITextComponent>()
+            val slider = go.getComponent<UISliderComponent>()
+            when {
+                button != null -> PauseMenuEntry(go.name, PauseMenuEntry.Kind.BUTTON, button.labelKey, height)
+                slider != null -> PauseMenuEntry(go.name, PauseMenuEntry.Kind.SLIDER, "", height)
+                text != null -> PauseMenuEntry(go.name, PauseMenuEntry.Kind.TEXT, text.key, height)
+                else -> PauseMenuEntry(go.name, PauseMenuEntry.Kind.OTHER, "", height)
+            }
+        }
     }
 
     fun find(root: GameObject, name: String): GameObject? {

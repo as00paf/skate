@@ -150,9 +150,12 @@ object SkateparkShapes {
     private fun rail(points: List<Vector3f>, radius: Float): ObstacleShape {
         val mesh = MeshBuilder()
         points.zipWithNext().forEach { (a, b) -> mesh.tube(a, b, radius) }
-        // Posts under the ends and every bend, a little thinner than the bar.
-        points.forEach { p -> mesh.tube(Vector3f(p.x, 0f, p.z), Vector3f(p.x, p.y - radius, p.z), radius * 0.8f) }
-        val hulls = points.zipWithNext().map { (a, b) -> ConvexPieces.segment(a, b, radius) }
+        // Posts under the ends and every bend, a little thinner than the bar. They collide too, so nothing passes
+        // through them; the board only grinds the bar on top.
+        val posts = points.map { p -> Vector3f(p.x, 0f, p.z) to Vector3f(p.x, p.y - radius, p.z) }
+        posts.forEach { (foot, top) -> mesh.tube(foot, top, radius * 0.8f) }
+        val hulls = points.zipWithNext().map { (a, b) -> ConvexPieces.segment(a, b, radius) } +
+            posts.map { (foot, top) -> ConvexPieces.segment(foot, top, radius * 0.8f) }
         return ObstacleShape(mesh, hulls)
     }
 }
