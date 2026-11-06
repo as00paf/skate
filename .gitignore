@@ -58,3 +58,5 @@ project_settings.json
 /shell_history.txt
 imgui.ini
 imgui.windows
+# Jolt native extracted at runtime by the snaploader (PHY-17)
+/joltjni.dll

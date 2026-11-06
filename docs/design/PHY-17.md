@@ -1,7 +1,7 @@
 # PHY-17 – Jolt physics backend (design note)
 
 Status: **approved** (skate-lead and the human, 2026-11-06). Slices a and b are implemented; see
-[Decisions](#decisions-after-review) for the review answers.
+[Decisions](#decisions-after-review) and [Implementation notes](#implementation-notes-slices-a-and-b).
 
 ## Goal
 
@@ -331,6 +331,26 @@ Rough effort: about 8–10 agent days in total. Slices b and d are the largest.
 3. **Default backend:** Bullet stays the default.
 4. **Follow-ups:** Jolt-native ragdoll, vehicle and character controller are filed as PHY-19 (P3, design note later).
 5. **Extraction folder:** filed as PHY-18.
+
+## Implementation notes (slices a and b)
+
+- **Slice a:** `BodyDescription` (shared body mapping, used by Bullet), `NativeLibrarySpec` (per-library loader,
+  `loadNativeLibrary()` returns success), `ShapeWireframe` moved to `physics3d/`, and the `PhysicsBackends` test helper.
+  No behaviour change.
+- **Slice b:** `physics3d/jolt/` (`JoltRuntime`, `JoltPhysics3D`, `JoltRigidBodyHandle`, `JoltShapes`, `JoltLayers`,
+  `JoltConversions`) behind `PhysicsBackend.JOLT`. Found while testing:
+  - Jolt mesh triangles only collide on their front face during simulation. Each `TriangleMesh` is built as a static
+    compound of the mesh and its reversed copy (two meshes, so each keeps its internal-edge detection), which matches
+    Bullet's two-sided meshes.
+  - Changing a body's layer, mask or trigger flag wakes it, otherwise a sleeping body ignores the new filter.
+  - jolt-jni exposes `CombineFunction.product`, so friction and restitution combine like Bullet without a contact
+    callback.
+  - Standalone bodies (`createRigidBody`, anchors) use Bullet's defaults: layer 1, mask 1.
+  - Not implemented yet: contact and trigger events (17c), joints (`addConstraint` throws, 17d), debug draw (17e).
+  - Fallback: `Physics3DFactory.create(..., onFallback)` returns Bullet when Jolt cannot load; `PhysicsSystem`
+    publishes `PhysicsBackendFellBack`.
+- Tests: `PhysicsFeaturesTest` (core cases), `PhysicsCalibrationTest` and `FrictionPropagationTest` run on Bullet and
+  Jolt; `JoltPhysics3DTest`, `JoltConversionsTest`, `LayerSlotsTest` and `JoltBackendGuardTest` cover Jolt only.
 
 ## Open questions (answered above)
 

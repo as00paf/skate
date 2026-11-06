@@ -55,6 +55,10 @@ dependencies {
     implementation(libs.libbulletjme)
     runtimeOnly(libs.libbulletjme) { artifact { classifier = "SpDebug" } }
 
+    // Jolt Physics (PHY-17): classes plus the single-precision release native
+    implementation(libs.joltjni)
+    runtimeOnly(libs.joltjni) { artifact { classifier = "ReleaseSp" } }
+
     //Jsnap loader for loading native libraries
     implementation(libs.snaploader)
 
