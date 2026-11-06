@@ -72,7 +72,7 @@ class ActionBindingsPanel(
         tip("tip.keybindings.search")
         ImGui.sameLine()
         if (ImGui.button(s("btn.keybindings.reset_all") + "##kb_reset_all")) {
-            send(BindingOperation.Reset(map.names.toList(), s("cmd.keybindings.reset_all")))
+            send(BindingOperation.Reset(map.names.toList(), "cmd.keybindings.reset_all"))
         }
         tip("tip.keybindings.reset_all")
 
@@ -143,6 +143,7 @@ class ActionBindingsPanel(
             map, search.get(),
             nameOf = { translated(it.displayKey) ?: it.id },
             categoryOf = { categoryLabel(it.category) },
+            bindingLabel = { ActionBindingsModel.label(it, strings) },
         )
         if (groups.isEmpty()) ImGui.textDisabled(s("lbl.keybindings.no_match"))
         for (group in groups) {
@@ -150,7 +151,7 @@ class ActionBindingsPanel(
             val open = ImGui.collapsingHeader(title, imgui.flag.ImGuiTreeNodeFlags.DefaultOpen)
             ImGui.sameLine()
             if (ImGui.smallButton(s("btn.keybindings.reset_category") + "##kb_reset_${group.context}_${group.category}")) {
-                send(BindingOperation.Reset(group.rows.map { it.definition.id }, "Reset ${group.category} bindings"))
+                send(BindingOperation.Reset(group.rows.map { it.definition.id }, "command.bindings.reset_category", listOf(group.categoryLabel)))
             }
             tip("tip.keybindings.reset_category")
             if (!open) continue
@@ -165,7 +166,7 @@ class ActionBindingsPanel(
         ImGui.sameLine(220f)
         row.bindings.forEachIndexed { i, binding ->
             val active = capturing?.let { it.actionId == id && it.index == i } == true
-            val text = if (active) s("lbl.keybindings.press_input") else ActionBindingsModel.label(binding)
+            val text = if (active) s("lbl.keybindings.press_input") else ActionBindingsModel.label(binding, strings)
             if (ImGui.button("$text##kb_${id}_$i")) startCapture(id, i, binding)
             tip("tip.keybindings.rebind")
             ImGui.sameLine()
@@ -187,7 +188,7 @@ class ActionBindingsPanel(
         tip("tip.keybindings.clear")
         if (row.customized) {
             ImGui.sameLine()
-            if (ImGui.smallButton(s("btn.keybindings.reset") + "##kb_${id}_reset")) send(BindingOperation.Reset(listOf(id), "Reset $id bindings"))
+            if (ImGui.smallButton(s("btn.keybindings.reset") + "##kb_${id}_reset")) send(BindingOperation.Reset(listOf(id), "command.bindings.reset_action", listOf(id)))
             tip("tip.keybindings.reset")
         }
     }
@@ -264,7 +265,7 @@ class ActionBindingsPanel(
         ImGui.text(s("lbl.keybindings.conflict_intro"))
         pending.conflicts.map { it.actionId }.distinct().forEach { other ->
             val name = map?.definition(other)?.let { translated(it.displayKey) } ?: other
-            ImGui.bulletText("$name (${ActionBindingsModel.label(pending.operation.binding)})")
+            ImGui.bulletText("$name (${ActionBindingsModel.label(pending.operation.binding, strings)})")
         }
         if (pending.operation.index != null && ImGui.button(s("btn.keybindings.conflict_swap") + "##kb_swap")) {
             resolve(pending, ConflictResolution.SWAP)
@@ -295,10 +296,7 @@ class ActionBindingsPanel(
     private companion object {
         const val MOUSE_POPUP = "##kb_mouse_popup"
         /** Menu labels of mouse buttons 0..4 (GLFW order). */
-        val MOUSE_BUTTON_KEYS = listOf(
-            "lbl.keybindings.mouse_left", "lbl.keybindings.mouse_right", "lbl.keybindings.mouse_middle",
-            "lbl.keybindings.mouse_button4", "lbl.keybindings.mouse_button5",
-        )
+        val MOUSE_BUTTON_KEYS = ActionBindingsModel.MOUSE_BUTTON_KEYS
         const val CONFLICT_POPUP = "kb_conflict_dialog"
     }
 }

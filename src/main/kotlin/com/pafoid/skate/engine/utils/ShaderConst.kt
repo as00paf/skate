@@ -133,6 +133,8 @@ object ShaderConst {
          */
         const val FXAA_TEXEL_SIZE = "uTexelSize"
         const val FXAA_STRENGTH = "uFxaaStrength"
+        const val FXAA_EDGE_THRESHOLD = "uFxaaEdgeThreshold"
+        const val FXAA_EDGE_THRESHOLD_MIN = "uFxaaEdgeThresholdMin"
 
         /**
          * SSAO effect uniforms (radius in UV units, strength, depth sampler).

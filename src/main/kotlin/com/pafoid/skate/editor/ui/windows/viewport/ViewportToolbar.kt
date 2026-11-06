@@ -1,8 +1,8 @@
 package com.pafoid.skate.editor.ui.windows.viewport
 
-import com.pafoid.skate.editor.imgui.Tooltips
+import com.pafoid.skate.editor.data.EditorShortcut
 import com.pafoid.skate.editor.data.EditorShortcuts
-import com.pafoid.skate.editor.imgui.tippedWith
+import com.pafoid.skate.editor.events.PlayModeAction
 import com.pafoid.skate.editor.events.ViewportAction.ScreenshotRequested
 import com.pafoid.skate.editor.events.ViewportAction.ToggleGizmo
 import com.pafoid.skate.editor.events.ViewportAction.TogglePhysicsDebug
@@ -12,229 +12,142 @@ import com.pafoid.skate.editor.imgui.data.UiConstants.SEPARATOR_WIDTH
 import com.pafoid.skate.editor.imgui.data.UiConstants.TOOLBAR_BUTTON_HEIGHT
 import com.pafoid.skate.editor.imgui.data.UiConstants.TOOLBAR_BUTTON_SPACING
 import com.pafoid.skate.editor.imgui.data.UiConstants.TOOLBAR_HEIGHT
+import com.pafoid.skate.editor.imgui.tippedWith
 import com.pafoid.skate.editor.systems.GizmoSystem
+import com.pafoid.skate.editor.systems.PlayMode
+import com.pafoid.skate.editor.systems.PlayModeController
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.core.StringManager
 import com.pafoid.skate.engine.ecs.Scene
-import com.pafoid.skate.engine.ecs.components.DayNightCycleComponent
 import com.pafoid.skate.engine.ecs.components.ScenePhysicsComponent
-import com.pafoid.skate.engine.events.EngineAction
-import com.pafoid.skate.engine.events.SceneAction
 import com.pafoid.skate.engine.getComponent
 import imgui.ImGui
 import imgui.ImVec2
 import imgui.flag.ImGuiCol
 import imgui.flag.ImGuiWindowFlags
 
+/** The viewport's toolbar: gizmos, Play/Pause/Stop, Reset and utilities, laid out by [ViewportToolbarLayout]. */
 class ViewportToolbar(
     private val engine: Engine,
     private val stringManager: StringManager,
     private val gizmoSystem: GizmoSystem,
+    private val playMode: PlayModeController,
 ) {
     private val eventSystem = engine.eventSystem
     private val logger = engine.logger
 
     fun render(windowPos: ImVec2) {
-        val isPlaying = engine.runtimePlaying
+        val mode = playMode.mode
+        val canReset = playMode.canReset
         val scene = engine.sceneManager.currentScene
         val toolbarPosY = windowPos.y + TOOLBAR_BUTTON_SPACING / 2f + ImGui.getStyle().framePaddingY
 
-        val groups = buildButtonGroups(scene, isPlaying)
+        val groups = ViewportToolbarLayout.GROUPS.map { group ->
+            group.map { button -> { renderSlot(button, ViewportToolbarLayout.isEnabled(button, mode, canReset), mode, scene) } }
+        }
         renderButtonGroups(toolbarPosY, groups)
     }
 
-    private fun buildButtonGroups(scene: Scene?, isPlaying: Boolean): List<List<() -> Unit>> {
-        val groups = mutableListOf<List<() -> Unit>>()
-
-        if (!isPlaying) {
-            val gizmoButtons = mutableListOf<() -> Unit>()
-            addGizmoButtons(gizmoButtons)
-            groups.add(gizmoButtons)
-        }
-
-        val playbackButtons = mutableListOf<() -> Unit>()
-        addPlaybackButtons(playbackButtons, scene, isPlaying)
-        groups.add(playbackButtons)
-
-        val utilityButtons = mutableListOf<() -> Unit>()
-        addUtilityButtons(utilityButtons, scene)
-        groups.add(utilityButtons)
-
-        return groups
+    private fun renderSlot(button: ToolbarButton, enabled: Boolean, mode: PlayMode, scene: Scene?) {
+        ImGui.beginDisabled(!enabled)
+        renderButton(button, mode, scene)
+        ImGui.endDisabled()
     }
 
-    private fun addGizmoButtons(buttons: MutableList<() -> Unit>) {
-        // Select Tool
-        buttons.add {
-            val isActive = gizmoSystem.usingGizmo == GizmoSystem.SELECTION_GIZMO
-            if (isActive) ImGui.pushStyleColor(ImGuiCol.Button, 0.2f, 0.6f, 0.2f, 1f)
-            if (ImGui.button(Icons.MOUSE_POINTER, TOOLBAR_BUTTON_HEIGHT, TOOLBAR_BUTTON_HEIGHT)) {
-                eventSystem.publish(ToggleGizmo(GizmoSystem.SELECTION_GIZMO))
-            }
-            if (isActive) ImGui.popStyleColor()
-            if (ImGui.isItemHovered()) ImGui.setTooltip(Tooltips.withShortcut(stringManager, stringManager.getString("tooltip.viewport_toolbar.select_tool"), EditorShortcuts.GIZMO_SELECT))
-        }
-
-        // Translate Tool
-        buttons.add {
-            val isActive = gizmoSystem.usingGizmo == GizmoSystem.TRANSLATE_GIZMO
-            if (isActive) ImGui.pushStyleColor(ImGuiCol.Button, 0.2f, 0.6f, 0.2f, 1f)
-            if (ImGui.button(Icons.MOVE, TOOLBAR_BUTTON_HEIGHT, TOOLBAR_BUTTON_HEIGHT)) {
-                eventSystem.publish(ToggleGizmo(GizmoSystem.TRANSLATE_GIZMO))
-            }
-            if (isActive) ImGui.popStyleColor()
-            if (ImGui.isItemHovered()) ImGui.setTooltip(Tooltips.withShortcut(stringManager, stringManager.getString("tooltip.viewport_toolbar.translate_tool"), EditorShortcuts.GIZMO_TRANSLATE))
-        }
-
-        // Rotate Tool
-        buttons.add {
-            val isActive = gizmoSystem.usingGizmo == GizmoSystem.ROTATION_GIZMO
-            if (isActive) ImGui.pushStyleColor(ImGuiCol.Button, 0.2f, 0.6f, 0.2f, 1f)
-            if (ImGui.button(Icons.ROTATE, TOOLBAR_BUTTON_HEIGHT, TOOLBAR_BUTTON_HEIGHT)) {
-                eventSystem.publish(ToggleGizmo(GizmoSystem.ROTATION_GIZMO))
-            }
-            if (isActive) ImGui.popStyleColor()
-            if (ImGui.isItemHovered()) ImGui.setTooltip(Tooltips.withShortcut(stringManager, stringManager.getString("tooltip.viewport_toolbar.rotate_tool"), EditorShortcuts.GIZMO_ROTATE))
-        }
-
-        // Scale Tool
-        buttons.add {
-            val isActive = gizmoSystem.usingGizmo == GizmoSystem.SCALE_GIZMO
-            if (isActive) ImGui.pushStyleColor(ImGuiCol.Button, 0.2f, 0.6f, 0.2f, 1f)
-            if (ImGui.button(Icons.SCALE, TOOLBAR_BUTTON_HEIGHT, TOOLBAR_BUTTON_HEIGHT)) {
-                eventSystem.publish(ToggleGizmo(GizmoSystem.SCALE_GIZMO))
-            }
-            if (isActive) ImGui.popStyleColor()
-            if (ImGui.isItemHovered()) ImGui.setTooltip(Tooltips.withShortcut(stringManager, stringManager.getString("tooltip.viewport_toolbar.scale_tool"), EditorShortcuts.GIZMO_SCALE))
-        }
-
-        // Local/world space toggle
-        buttons.add {
-            val key = if (gizmoSystem.localSpace) "lbl.viewport_toolbar.space_local" else "lbl.viewport_toolbar.space_world"
-            if (ImGui.button(stringManager.getString(key) + "##gizmoSpace")) gizmoSystem.toggleSpace()
-            if (ImGui.isItemHovered()) ImGui.setTooltip(stringManager.getString("tooltip.viewport_toolbar.gizmo_space"))
-        }
-
-        // Snapping toggle
-        buttons.add {
-            val on = gizmoSystem.snapEnabled
-            if (on) ImGui.pushStyleColor(ImGuiCol.Button, 0.2f, 0.6f, 0.2f, 1f)
-            if (ImGui.button(stringManager.getString("lbl.viewport_toolbar.snap") + "##gizmoSnap")) gizmoSystem.toggleSnap()
-            if (on) ImGui.popStyleColor()
-            if (ImGui.isItemHovered()) ImGui.setTooltip(stringManager.getString("tooltip.viewport_toolbar.snap"))
-        }
-
-        // Measure Tool
-        buttons.add {
-            val isActive = gizmoSystem.usingGizmo == GizmoSystem.MEASURE_GIZMO
-            if (isActive) ImGui.pushStyleColor(ImGuiCol.Button, 0.2f, 0.6f, 0.2f, 1f)
-            if (stringManager.tippedWith(ImGui.button(Icons.RULER, TOOLBAR_BUTTON_HEIGHT, TOOLBAR_BUTTON_HEIGHT), "tooltip.viewport_toolbar.measure_tool", EditorShortcuts.MEASURE)) {
-                eventSystem.publish(ToggleGizmo(GizmoSystem.MEASURE_GIZMO))
-            }
-            if (isActive) {
-                ImGui.popStyleColor()
-                gizmoSystem.measureGizmo.let { tool ->
-                    tool.measurementText?.let { text ->
-                        tool.measurementPos?.let { pos ->
-                            ImGui.setNextWindowPos(pos.x, pos.y)
-                            ImGui.beginTooltip()
-                            ImGui.text(text)
-                            ImGui.endTooltip()
-                        }
-                    }
+    private fun renderButton(button: ToolbarButton, mode: PlayMode, scene: Scene?) {
+        when (button) {
+            ToolbarButton.SELECT -> gizmoButton(GizmoSystem.SELECTION_GIZMO, Icons.MOUSE_POINTER, "tooltip.viewport_toolbar.select_tool", EditorShortcuts.GIZMO_SELECT)
+            ToolbarButton.TRANSLATE -> gizmoButton(GizmoSystem.TRANSLATE_GIZMO, Icons.MOVE, "tooltip.viewport_toolbar.translate_tool", EditorShortcuts.GIZMO_TRANSLATE)
+            ToolbarButton.ROTATE -> gizmoButton(GizmoSystem.ROTATION_GIZMO, Icons.ROTATE, "tooltip.viewport_toolbar.rotate_tool", EditorShortcuts.GIZMO_ROTATE)
+            ToolbarButton.SCALE -> gizmoButton(GizmoSystem.SCALE_GIZMO, Icons.SCALE, "tooltip.viewport_toolbar.scale_tool", EditorShortcuts.GIZMO_SCALE)
+            ToolbarButton.GIZMO_SPACE -> {
+                val key = if (gizmoSystem.localSpace) "lbl.viewport_toolbar.space_local" else "lbl.viewport_toolbar.space_world"
+                if (stringManager.tippedWith(ImGui.button(stringManager.getString(key) + "##gizmoSpace"), "tooltip.viewport_toolbar.gizmo_space")) {
+                    gizmoSystem.toggleSpace()
                 }
             }
-            if (ImGui.isItemHovered()) ImGui.setTooltip(Tooltips.withShortcut(stringManager, stringManager.getString("tooltip.viewport_toolbar.measure_tool"), EditorShortcuts.MEASURE))
-        }
-    }
-
-    private fun addPlaybackButtons(
-        buttons: MutableList<() -> Unit>,
-        scene: Scene?,
-        isPlaying: Boolean
-    ) {
-        if (isPlaying) {
-            // Pause/Resume button — visual state reflects time scale
-            buttons.add {
-                val timeScale = scene?.getComponent<DayNightCycleComponent>()?.playTimeScale ?: 1.0f
-                if (timeScale == 1.0f) {
-                    // Currently running — show Pause
-                    ImGui.pushStyleColor(ImGuiCol.Button, 0.6f, 0.4f, 0.1f, 1f)
-                    if (ImGui.button(Icons.PAUSE, TOOLBAR_BUTTON_HEIGHT, TOOLBAR_BUTTON_HEIGHT)) {
-                        eventSystem.publish(EngineAction.SetRuntimePlaying(false))
-                        logger.logEditor("Simulation paused")
-                    }
-                    ImGui.popStyleColor()
-                    if (ImGui.isItemHovered()) ImGui.setTooltip(stringManager.getString("tooltip.viewport_toolbar.pause_simulation"))
-                } else {
-                    // Paused — show Resume
-                    if (ImGui.button(Icons.PLAY, TOOLBAR_BUTTON_HEIGHT, TOOLBAR_BUTTON_HEIGHT)) {
-                        eventSystem.publish(EngineAction.SetRuntimePlaying(true))
-                        logger.logEditor("Simulation resumed")
-                    }
-                    if (ImGui.isItemHovered()) ImGui.setTooltip(stringManager.getString("tooltip.viewport_toolbar.resume_simulation"))
+            ToolbarButton.SNAP -> {
+                val on = gizmoSystem.snapEnabled
+                if (on) ImGui.pushStyleColor(ImGuiCol.Button, 0.2f, 0.6f, 0.2f, 1f)
+                if (stringManager.tippedWith(ImGui.button(stringManager.getString("lbl.viewport_toolbar.snap") + "##gizmoSnap"), "tooltip.viewport_toolbar.snap")) {
+                    gizmoSystem.toggleSnap()
                 }
+                if (on) ImGui.popStyleColor()
             }
-            // Stop button — highlighted to indicate active play state
-            buttons.add {
-                ImGui.pushStyleColor(ImGuiCol.Button, 0.6f, 0.1f, 0.1f, 1f)
-                ImGui.pushStyleColor(ImGuiCol.ButtonHovered, 0.8f, 0.2f, 0.2f, 1f)
-                if (ImGui.button(Icons.STOP, TOOLBAR_BUTTON_HEIGHT, TOOLBAR_BUTTON_HEIGHT)) {
-                    eventSystem.publish(EngineAction.SetRuntimePlaying(false))
-                    eventSystem.publish(com.pafoid.skate.editor.events.ViewportAction.StopSimulation)
+            ToolbarButton.MEASURE -> {
+                gizmoButton(GizmoSystem.MEASURE_GIZMO, Icons.RULER, "tooltip.viewport_toolbar.measure_tool", EditorShortcuts.MEASURE)
+                if (gizmoSystem.usingGizmo == GizmoSystem.MEASURE_GIZMO && mode == PlayMode.EDIT) renderMeasurement()
+            }
+            ToolbarButton.PLAY_PAUSE -> renderPlayPause(mode)
+            ToolbarButton.STOP -> {
+                val active = mode != PlayMode.EDIT
+                if (active) {
+                    ImGui.pushStyleColor(ImGuiCol.Button, 0.6f, 0.1f, 0.1f, 1f)
+                    ImGui.pushStyleColor(ImGuiCol.ButtonHovered, 0.8f, 0.2f, 0.2f, 1f)
+                }
+                if (stringManager.tippedWith(ImGui.button(Icons.STOP, TOOLBAR_BUTTON_HEIGHT, TOOLBAR_BUTTON_HEIGHT), "tooltip.viewport_toolbar.stop_simulation", EditorShortcuts.PLAY_TOGGLE)) {
+                    eventSystem.publish(PlayModeAction.Stop)
                     logger.logEditor("Simulation stopped")
                 }
-                ImGui.popStyleColor(2)
-                if (ImGui.isItemHovered()) ImGui.setTooltip(Tooltips.withShortcut(stringManager, stringManager.getString("tooltip.viewport_toolbar.stop_simulation"), EditorShortcuts.PLAY_TOGGLE))
+                if (active) ImGui.popStyleColor(2)
             }
-        } else {
-            // Play button
-            buttons.add {
-                if (ImGui.button(Icons.PLAY, TOOLBAR_BUTTON_HEIGHT, TOOLBAR_BUTTON_HEIGHT)) {
-                    eventSystem.publish(EngineAction.SetRuntimePlaying(true))
-                    logger.logEditor("Simulation started")
+            ToolbarButton.RESET -> {
+                if (stringManager.tippedWith(ImGui.button(Icons.UNDO, TOOLBAR_BUTTON_HEIGHT, TOOLBAR_BUTTON_HEIGHT), "tooltip.viewport_toolbar.reset_scene")) {
+                    eventSystem.publish(PlayModeAction.Reset)
+                    logger.logEditor("Scene reset")
                 }
-                if (ImGui.isItemHovered()) ImGui.setTooltip(Tooltips.withShortcut(stringManager, stringManager.getString("tooltip.viewport_toolbar.play_simulation"), EditorShortcuts.PLAY_TOGGLE))
+            }
+            ToolbarButton.PHYSICS_DEBUG -> {
+                val on = scene?.getComponent<ScenePhysicsComponent>()?.debugEnabled ?: false
+                if (on) ImGui.pushStyleColor(ImGuiCol.Button, 0.2f, 0.6f, 0.2f, 1f)
+                if (stringManager.tippedWith(ImGui.button(Icons.ATOM, TOOLBAR_BUTTON_HEIGHT, TOOLBAR_BUTTON_HEIGHT), "tooltip.viewport_toolbar.physics_debug")) {
+                    eventSystem.publish(TogglePhysicsDebug)
+                    logger.logEditor("Physics debug toggled")
+                }
+                if (on) ImGui.popStyleColor()
+            }
+            ToolbarButton.SCREENSHOT -> {
+                if (stringManager.tippedWith(ImGui.button(Icons.CAMERA, TOOLBAR_BUTTON_HEIGHT, TOOLBAR_BUTTON_HEIGHT), "tooltip.viewport_toolbar.screenshot")) {
+                    eventSystem.publish(ScreenshotRequested)
+                    logger.logEditor("Screenshot requested")
+                }
             }
         }
     }
 
-    private fun addUtilityButtons(
-        buttons: MutableList<() -> Unit>,
-        scene: Scene?
-    ) {
-        // Reset Scene button
-        buttons.add {
-            if (ImGui.button(Icons.GEAR, TOOLBAR_BUTTON_HEIGHT, TOOLBAR_BUTTON_HEIGHT)) {
-                eventSystem.publish(SceneAction.ResetScene)
-                logger.logEditor("Scene reset")
-            }
-            if (ImGui.isItemHovered()) ImGui.setTooltip(stringManager.getString("tooltip.viewport_toolbar.reset_scene"))
+    private fun gizmoButton(gizmoId: Int, icon: String, tooltipKey: String, shortcut: EditorShortcut) {
+        val isActive = gizmoSystem.usingGizmo == gizmoId
+        if (isActive) ImGui.pushStyleColor(ImGuiCol.Button, 0.2f, 0.6f, 0.2f, 1f)
+        if (stringManager.tippedWith(ImGui.button(icon, TOOLBAR_BUTTON_HEIGHT, TOOLBAR_BUTTON_HEIGHT), tooltipKey, shortcut)) {
+            eventSystem.publish(ToggleGizmo(gizmoId))
         }
+        if (isActive) ImGui.popStyleColor()
+    }
 
-        // Physics Debug button
-        buttons.add {
-            val physicsDebugEnabled = scene?.getComponent<ScenePhysicsComponent>()?.debugEnabled ?: false
-            if (physicsDebugEnabled) {
-                ImGui.pushStyleColor(ImGuiCol.Button, 0.2f, 0.6f, 0.2f, 1f)
+    private fun renderMeasurement() {
+        val tool = gizmoSystem.measureGizmo
+        val text = tool.measurementText ?: return
+        val pos = tool.measurementPos ?: return
+        ImGui.setNextWindowPos(pos.x, pos.y)
+        ImGui.beginTooltip()
+        ImGui.text(text)
+        ImGui.endTooltip()
+    }
+
+    private fun renderPlayPause(mode: PlayMode) {
+        if (ViewportToolbarLayout.showsPause(mode)) {
+            ImGui.pushStyleColor(ImGuiCol.Button, 0.6f, 0.4f, 0.1f, 1f)
+            if (stringManager.tippedWith(ImGui.button(Icons.PAUSE, TOOLBAR_BUTTON_HEIGHT, TOOLBAR_BUTTON_HEIGHT), "tooltip.viewport_toolbar.pause_simulation")) {
+                eventSystem.publish(PlayModeAction.Pause)
+                logger.logEditor("Simulation paused")
             }
-            if (ImGui.button(Icons.ATOM, TOOLBAR_BUTTON_HEIGHT, TOOLBAR_BUTTON_HEIGHT)) {
-                eventSystem.publish(TogglePhysicsDebug)
-                logger.logEditor("Physics debug toggled")
-            }
-            if (physicsDebugEnabled) {
-                ImGui.popStyleColor()
-            }
-            if (ImGui.isItemHovered()) ImGui.setTooltip(stringManager.getString("tooltip.viewport_toolbar.physics_debug"))
+            ImGui.popStyleColor()
+            return
         }
-
-        // Screenshot button
-        buttons.add {
-            if (ImGui.button(Icons.CAMERA, TOOLBAR_BUTTON_HEIGHT, TOOLBAR_BUTTON_HEIGHT)) {
-                eventSystem.publish(ScreenshotRequested)
-                logger.logEditor("Screenshot requested")
-            }
-            if (ImGui.isItemHovered()) ImGui.setTooltip(stringManager.getString("tooltip.viewport_toolbar.screenshot"))
+        val tooltipKey = if (mode == PlayMode.PAUSED) "tooltip.viewport_toolbar.resume_simulation" else "tooltip.viewport_toolbar.play_simulation"
+        if (stringManager.tippedWith(ImGui.button(Icons.PLAY, TOOLBAR_BUTTON_HEIGHT, TOOLBAR_BUTTON_HEIGHT), tooltipKey, EditorShortcuts.PLAY_TOGGLE)) {
+            eventSystem.publish(PlayModeAction.Play)
+            logger.logEditor("Simulation started")
         }
     }
 

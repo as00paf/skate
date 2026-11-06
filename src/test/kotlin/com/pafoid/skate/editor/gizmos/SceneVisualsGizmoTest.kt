@@ -116,8 +116,9 @@ class SceneVisualsGizmoTest {
 
         scene.selectedGameObject = lightGo
         gizmo.draw(scene, camera, Vector3f(), { _ -> 10f })
-        // Selected point light also draws its attenuation range sphere: 3 circles x 32 segments = 96. Cumulative: 24 + 120.
-        verify(exactly = 144) { debugRenderer.addLine3D(any(), any(), any()) }
+        // Selected point light adds a selection ring (24) and its attenuation range sphere: 3 circles x 32 = 96.
+        // Cumulative: 24 + 144.
+        verify(exactly = 168) { debugRenderer.addLine3D(any(), any(), any()) }
     }
 
     @Test
@@ -131,8 +132,8 @@ class SceneVisualsGizmoTest {
 
         scene.selectedGameObject = lightGo
         gizmo.draw(scene, camera, Vector3f(), { _ -> 10f })
-        // Selected spot light also draws the cone: circle (24) + rim (4) = 28. Cumulative: 29 + 57.
-        verify(exactly = 86) { debugRenderer.addLine3D(any(), any(), any()) }
+        // Selected spot light adds a selection ring (24) and the cone: circle (24) + rim (4) = 28. Cumulative: 29 + 81.
+        verify(exactly = 110) { debugRenderer.addLine3D(any(), any(), any()) }
     }
 
     @Test
@@ -185,5 +186,61 @@ class SceneVisualsGizmoTest {
         gizmo.draw(scene, camera, Vector3f(), { _ -> 10f })
         verify(exactly = 0) { debugRenderer.addLine3D(any(), any(), any()) }
         assertNull(gizmo.pick(scene, Ray(Vector3f(0f, 5f, 21f), Vector3f(0f, 0f, -1f)), { _ -> 10f }))
+    }
+
+    @Test
+    fun SceneVisuals_LightIconFollowsLightColorLive() {
+        val scene = Scene("MainScene")
+        val light = PointLightComponent()
+        light.color.set(0.2f, 0.4f, 1f)
+        lightGo(scene, "Point", Vector3f(0f, 5f, 0f), light)
+
+        gizmo.draw(scene, camera, Vector3f(), { _ -> 10f })
+        verify(exactly = 24) { debugRenderer.addLine3D(any(), any(), Vector3f(0.2f, 0.4f, 1f)) }
+
+        // Editing the color shows on the next frame, no cache.
+        light.color.set(1f, 0f, 0f)
+        gizmo.draw(scene, camera, Vector3f(), { _ -> 10f })
+        verify(exactly = 24) { debugRenderer.addLine3D(any(), any(), Vector3f(1f, 0f, 0f)) }
+    }
+
+    @Test
+    fun SceneVisuals_SelectedLightKeepsItsTintAndArrowUsesIt() {
+        val scene = Scene("MainScene")
+        val light = SpotLightComponent()
+        light.color.set(0f, 1f, 0f)
+        scene.selectedGameObject = lightGo(scene, "Spot", Vector3f(0f, 5f, 0f), light)
+
+        gizmo.draw(scene, camera, Vector3f(), { _ -> 10f })
+
+        // Bulb (24) + arrow (5) in the light color even while selected; the selection shows as an extra ring.
+        verify(exactly = 29) { debugRenderer.addLine3D(any(), any(), Vector3f(0f, 1f, 0f)) }
+    }
+
+    @Test
+    fun SceneVisuals_DirectionalLightIconUsesHdrColorScaledIntoRange() {
+        val scene = Scene("MainScene")
+        scene.addComponent(DirectionalLightComponent().apply { color.set(2f, 1f, 0f) })
+
+        gizmo.draw(scene, camera, Vector3f(), { _ -> 10f })
+
+        verify(exactly = 29) { debugRenderer.addLine3D(any(), any(), Vector3f(1f, 0.5f, 0f)) }
+    }
+
+    @Test
+    fun SceneVisuals_IconsLieInTheGivenViewPlane() {
+        val scene = Scene("MainScene")
+        lightGo(scene, "Point", Vector3f(0f, 5f, 0f), PointLightComponent())
+        val basis = EditorVisuals.viewBasis(Vector3f(25f, 60f, 0f))
+        val starts = mutableListOf<Vector3f>()
+        val ends = mutableListOf<Vector3f>()
+        io.mockk.every { debugRenderer.addLine3D(capture(starts), capture(ends), any(), any()) } returns Unit
+
+        gizmo.draw(scene, camera, Vector3f(), { _ -> 1f }, basis)
+
+        // Every icon vertex is in the plane through the light facing the camera (no depth offset along forward).
+        (starts + ends).forEach { p ->
+            assertEquals(0f, Vector3f(p).sub(0f, 5f, 0f).dot(basis.forward), 1e-5f)
+        }
     }
 }

@@ -6,6 +6,8 @@ import com.pafoid.skate.engine.assets.AssetsManager
 import com.pafoid.skate.engine.assets.data.Texture
 import imgui.ImGui
 import imgui.flag.ImGuiCol
+import imgui.flag.ImGuiCond
+import imgui.flag.ImGuiKey
 import imgui.flag.ImGuiStyleVar
 import imgui.flag.ImGuiWindowFlags
 import imgui.type.ImInt
@@ -16,6 +18,9 @@ import java.io.File
 import kotlin.math.max
 
 object MImGui {
+    /** Confirmation message wrap width, in font heights (keeps the dialog readable at any DPI). */
+    private const val CONFIRMATION_WRAP_EMS = 28f
+
     /** Editor strings for the few helpers that show their own text; set by [ImGuiLayer] at startup. */
     var strings: com.pafoid.skate.engine.core.StringManager? = null
 
@@ -32,8 +37,8 @@ object MImGui {
         ImGui.pushID(label)
 
         if (ImGui.beginTable("##${label}_table", 2, 0, 2f)) {
-            ImGui.tableSetupColumn("Label", 0, columnWidth)
-            ImGui.tableSetupColumn("Control")
+            ImGui.tableSetupColumn("##Label", 0, columnWidth)
+            ImGui.tableSetupColumn("##Control")
             ImGui.tableNextRow()
             ImGui.tableSetColumnIndex(0)
             ImGui.text(label)
@@ -437,8 +442,8 @@ object MImGui {
         ImGui.pushID(label)
 
         if (ImGui.beginTable("##${label}_table", 2, 0, 2f)) {
-            ImGui.tableSetupColumn("Label", 0)
-            ImGui.tableSetupColumn("Control")
+            ImGui.tableSetupColumn("##Label", 0)
+            ImGui.tableSetupColumn("##Control")
             ImGui.tableNextRow()
             ImGui.tableSetColumnIndex(0)
             ImGui.text(label)
@@ -462,8 +467,8 @@ object MImGui {
         ImGui.pushID(label)
 
         if (ImGui.beginTable("##${label}_table", 2, 0, 2f)) {
-            ImGui.tableSetupColumn("Label", 0, DEFAULT_COLUMN_WIDTH)
-            ImGui.tableSetupColumn("Control")
+            ImGui.tableSetupColumn("##Label", 0, DEFAULT_COLUMN_WIDTH)
+            ImGui.tableSetupColumn("##Control")
             ImGui.tableNextRow()
             ImGui.tableSetColumnIndex(0)
             ImGui.text(label)
@@ -603,8 +608,8 @@ object MImGui {
         var changed = false
         ImGui.pushID(label)
         if (ImGui.beginTable("##${label}_table", 2, 0, 2f)) {
-            ImGui.tableSetupColumn("Label", 0)
-            ImGui.tableSetupColumn("Control")
+            ImGui.tableSetupColumn("##Label", 0)
+            ImGui.tableSetupColumn("##Control")
             ImGui.tableNextRow()
             ImGui.tableSetColumnIndex(0)
             ImGui.text(label)
@@ -623,8 +628,8 @@ object MImGui {
         ImGui.pushID(label)
         var changed = false
         if (ImGui.beginTable("##${label}_table", 2, 0, 2f)) {
-            ImGui.tableSetupColumn("Label", 0)
-            ImGui.tableSetupColumn("Control")
+            ImGui.tableSetupColumn("##Label", 0)
+            ImGui.tableSetupColumn("##Control")
             ImGui.tableNextRow()
             ImGui.tableSetColumnIndex(0)
             ImGui.text(label)
@@ -767,8 +772,8 @@ object MImGui {
     ) {
         ImGui.pushID(label)
         if (ImGui.beginTable("##${label}_prop", 2)) {
-            ImGui.tableSetupColumn("Label")
-            ImGui.tableSetupColumn("Control")
+            ImGui.tableSetupColumn("##Label")
+            ImGui.tableSetupColumn("##Control")
             ImGui.tableNextRow()
             ImGui.tableSetColumnIndex(0)
             ImGui.text(label)
@@ -796,8 +801,8 @@ object MImGui {
     fun propertyRowReadOnly(label: String, value: String, helpTooltip: String? = null) {
         ImGui.pushID(label)
         if (ImGui.beginTable("##${label}_prop", 2)) {
-            ImGui.tableSetupColumn("Label")
-            ImGui.tableSetupColumn("Control")
+            ImGui.tableSetupColumn("##Label")
+            ImGui.tableSetupColumn("##Control")
             ImGui.tableNextRow()
             ImGui.tableSetColumnIndex(0)
             ImGui.text(label)
@@ -819,8 +824,13 @@ object MImGui {
         onConfirm: () -> Unit,
         onCancel: (() -> Unit)? = null
     ) {
+        // Centre on the editor and wrap long messages so the dialog keeps a readable layout (EDT-49).
+        val viewport = ImGui.getMainViewport()
+        ImGui.setNextWindowPos(viewport.workCenterX, viewport.workCenterY, ImGuiCond.Appearing, 0.5f, 0.5f)
         if (ImGui.beginPopupModal(title, null, ImGuiWindowFlags.AlwaysAutoResize)) {
-            ImGui.text(message)
+            ImGui.pushTextWrapPos(ImGui.getFontSize() * CONFIRMATION_WRAP_EMS)
+            ImGui.textUnformatted(message)
+            ImGui.popTextWrapPos()
             ImGui.spacing()
             ImGui.spacing()
             ImGui.separator()
@@ -838,7 +848,7 @@ object MImGui {
             ImGui.sameLine()
 
             // Cancel Button
-            if (ImGui.button(cancelText, 120f, 0f)) {
+            if (ImGui.button(cancelText, 120f, 0f) || ImGui.isKeyPressed(ImGuiKey.Escape)) {
                 onCancel?.invoke()
                 ImGui.closeCurrentPopup()
             }
