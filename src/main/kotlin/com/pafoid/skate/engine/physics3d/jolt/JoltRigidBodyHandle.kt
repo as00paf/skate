@@ -10,6 +10,7 @@ import com.github.stephengold.joltjni.enumerate.EMotionType
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.physics3d.BodyType
 import com.pafoid.skate.engine.physics3d.IRigidBodyHandle
+import com.pafoid.skate.engine.physics3d.ShapePart
 import org.joml.Quaternionf
 import org.joml.Vector3f
 
@@ -31,7 +32,14 @@ internal class JoltRigidBodyHandle(
     angularDamping: Float,
     /** Owning GameObject, or null for standalone bodies (ragdoll bones, joint anchors). */
     val gameObject: GameObject?,
+    /** The collider shapes the body was built from, for debug drawing (empty means the default unit box). */
+    val parts: List<ShapePart>,
+    /** Transform scale baked into the body's shape. */
+    val scale: Vector3f,
 ) : IRigidBodyHandle {
+    /** Debug wireframe edges per part index, built on first draw. */
+    internal val debugEdges = HashMap<Int, FloatArray>()
+
     val id: Int = body.id
 
     private val tempR = RVec3()

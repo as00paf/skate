@@ -362,6 +362,21 @@ class PhysicsFeaturesTest {
         assertTrue(recorder.exited.isEmpty())
     }
 
+    @ParameterizedTest
+    @MethodSource(CORE)
+    fun stats_ActiveBodyCount_CountsAwakeMovingBodiesOnly(backend: PhysicsBackend) {
+        use(backend)
+        ground()
+        body("Box", Vector3f(0f, 2f, 0f), Vector3f(0.5f, 0.5f, 0.5f), 1f)
+        assertEquals(2, physics.rigidBodyCount)
+        steps(1)
+        assertEquals(1, physics.activeBodyCount)
+
+        steps(300) // both engines put a resting box to sleep well within 5 s
+
+        assertEquals(0, physics.activeBodyCount)
+    }
+
     private fun thinWallScenario(useCCD: Boolean): Float {
         physics.setGravity(Vector3f())
         body("Wall", Vector3f(20f, 0f, 0f), Vector3f(0.05f, 5f, 5f), 0f)

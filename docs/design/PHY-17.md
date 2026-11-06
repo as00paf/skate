@@ -1,7 +1,7 @@
 # PHY-17 – Jolt physics backend (design note)
 
-Status: **approved** (skate-lead and the human, 2026-11-06). Slices a to d are implemented; see
-[Decisions](#decisions-after-review) and [Implementation notes](#implementation-notes-slices-a-to-d).
+Status: **approved** (skate-lead and the human, 2026-11-06). Slices a to e are implemented (f waits for EDT-59); see
+[Decisions](#decisions-after-review) and [Implementation notes](#implementation-notes-slices-a-to-e).
 
 ## Goal
 
@@ -332,7 +332,7 @@ Rough effort: about 8–10 agent days in total. Slices b and d are the largest.
 4. **Follow-ups:** Jolt-native ragdoll, vehicle and character controller are filed as PHY-19 (P3, design note later).
 5. **Extraction folder:** filed as PHY-18.
 
-## Implementation notes (slices a to d)
+## Implementation notes (slices a to e)
 
 - **Slice a:** `BodyDescription` (shared body mapping, used by Bullet), `NativeLibrarySpec` (per-library loader,
   `loadNativeLibrary()` returns success), `ShapeWireframe` moved to `physics3d/`, and the `PhysicsBackends` test helper.
@@ -378,11 +378,53 @@ Rough effort: about 8–10 agent days in total. Slices b and d are the largest.
   - Removing a body first removes the joints that use it (Jolt would keep a dangling body); a removed descriptor can
     be added again. Joints wake their bodies when added or removed.
   - Ragdolls (`RagdollBuilder`, `RagdollSystem`) and the raycast vehicle needed no Jolt-specific code.
+- **Slice e (debug draw, stats, leaks, determinism, benchmark):**
+  - `JoltDebugDraw` draws every body from its `ShapePart`s, so the result looks like the Bullet view: boxes and
+    cylinders through the renderer's primitives (a capsule as a cylinder spanning its caps), hulls and meshes as
+    feature edges from the shared `ShapeWireframe`, cached per body. Hulls above `ShapeWireframe.MAX_HULL_POINTS` use
+    Jolt's debug mesh, aligned to the input points' bounds.
+  - `IPhysics3D.activeBodyCount` (awake, non-static bodies) is implemented by Bullet and Jolt; it defaults to the body
+    count. `EngineStats.physicsStepTime` still times the native step only (event dispatch excluded) on both.
+  - Leaks: `JoltLifecycleTest` creates, fills (67 bodies, a joint, a contact listener), steps and destroys 50 worlds.
+    Every native object a world owns is freed, and committed memory and thread count stay flat after warm-up. Each
+    world holds a 16 MB temp allocator and a thread pool, so a leak would show as hundreds of MB and 100+ threads.
+  - Determinism: two single-thread runs of the same 300-step scene give bit-identical poses.
+
+### Benchmark (manual, 2026-11-06)
+
+`PhysicsBenchmarkTest`, skipped unless `SKATE_BENCHMARK=1`:
+`cmd.exe /c "set SKATE_BENCHMARK=1&& gradlew.bat :test --tests com.pafoid.skate.engine.physics3d.PhysicsBenchmarkTest --rerun"`.
+It writes build/reports/physics-benchmark.md. The table shows `EngineStats.physicsStepTime` per fixed step (60 Hz)
+over 600 measured steps after a 60-step warm-up, on a 16-core Windows machine; Jolt used 4 solver threads.
+The vehicle solver's own time is excluded on both backends.
+
+| Scene | Backend | Mean ms | p50 ms | p95 ms | Max ms | Active / bodies at end |
+|---|---|---|---|---|---|---|
+| 1000-box pile | Bullet | 3.80 | 1.61 | 18.94 | 22.30 | 0 / 1001 |
+| 1000-box pile | Jolt | 1.21 | 1.16 | 2.06 | 5.27 | 800 / 1001 |
+| 50 ragdolls (650 bones, 600 joints) | Bullet | 12.53 | 12.19 | 15.46 | 27.28 | 650 / 651 |
+| 50 ragdolls (650 bones, 600 joints) | Jolt | 1.57 | 1.42 | 2.96 | 5.99 | 247 / 651 |
+| 20 raycast vehicles | Bullet | 0.10 | 0.10 | 0.15 | 0.29 | 20 / 21 |
+| 20 raycast vehicles | Jolt | 0.05 | 0.04 | 0.07 | 0.15 | 20 / 21 |
+
+A second run was within about 20% of these numbers (Bullet 4.98 / 14.89 / 0.12 ms mean, Jolt 1.38 / 1.39 / 0.05 ms).
+
+Caveats:
+- **Not like-for-like:** the build runs Bullet with libbulletjme's **SpDebug** native (`runtimeOnly ...
+  classifier = "SpDebug"` in build.gradle.kts), Jolt with the ReleaseSp native. The table compares what the engine
+  ships today, not the two engines at equal optimisation. Switching Bullet to a release classifier is a separate
+  question (it would lose libbulletjme's debug checks).
+- Jolt runs its solver on 4 threads, Bullet on one.
+- Jolt's pile was still mostly awake after 11 s (one large island has to be still as a whole before it sleeps), while
+  Bullet's had fallen asleep, so the Jolt pile figures include more simulation work, not less.
+- Ragdoll bones start stacked along a line and are pulled into shape by their joints. This is a load test, not a
+  realistic ragdoll.
+
 - Tests on Bullet and Jolt: `PhysicsFeaturesTest` (core and contact cases), `PhysicsCalibrationTest`,
-  `FrictionPropagationTest`, `JointConstraintsTest`, `RagdollBuilderTest`, `PhysicsSystemRagdollTest` and
-  `RaycastVehicleTest`. Jolt only: `JoltPhysics3DTest`, `JoltContactsTest`, `JoltJointsTest`, `JoltConversionsTest`,
-  `LayerSlotsTest` and `JoltBackendGuardTest`. `tools/scripts/verify-game-jar.sh` checks that both natives ship in
-  the game jar.
+  `FrictionPropagationTest`, `JointConstraintsTest`, `RagdollBuilderTest`, `PhysicsSystemRagdollTest`,
+  `RaycastVehicleTest` and `PhysicsDebugDrawTest` (backend cases). Jolt only: `JoltPhysics3DTest`, `JoltContactsTest`,
+  `JoltJointsTest`, `JoltDebugDrawTest`, `JoltLifecycleTest`, `JoltConversionsTest`, `LayerSlotsTest` and
+  `JoltBackendGuardTest`. `tools/scripts/verify-game-jar.sh` checks that both natives ship in the game jar.
 
 ## Open questions (answered above)
 

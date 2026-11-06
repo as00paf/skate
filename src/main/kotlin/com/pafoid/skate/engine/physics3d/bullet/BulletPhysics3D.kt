@@ -67,6 +67,8 @@ class BulletPhysics3D(
 
     override val rigidBodyCount: Int get() = physicsSpace.countRigidBodies()
 
+    override val activeBodyCount: Int get() = physicsSpace.rigidBodyList.count { it.isActive && !it.isStatic }
+
     init {
         this.physicsSpace.setGravity(JmeVector3f(0f, -9.81f, 0f))
     }

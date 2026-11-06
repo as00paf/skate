@@ -9,6 +9,7 @@ import com.github.stephengold.joltjni.BroadPhaseLayerFilter
 import com.github.stephengold.joltjni.CombineFunction
 import com.github.stephengold.joltjni.JobSystemThreadPool
 import com.github.stephengold.joltjni.Jolt
+import com.github.stephengold.joltjni.JoltPhysicsObject
 import com.github.stephengold.joltjni.ObjectLayerFilter
 import com.github.stephengold.joltjni.PhysicsSystem
 import com.github.stephengold.joltjni.Quat
@@ -24,6 +25,7 @@ import com.github.stephengold.joltjni.TempAllocatorImpl
 import com.github.stephengold.joltjni.Vec3
 import com.github.stephengold.joltjni.enumerate.EActivation
 import com.github.stephengold.joltjni.enumerate.EBackFaceMode
+import com.github.stephengold.joltjni.enumerate.EBodyType
 import com.github.stephengold.joltjni.enumerate.EMotionQuality
 import com.github.stephengold.joltjni.enumerate.EMotionType
 import com.github.stephengold.joltjni.enumerate.EOverrideMassProperties
@@ -40,6 +42,7 @@ import com.pafoid.skate.engine.physics3d.IPhysicsBody3D
 import com.pafoid.skate.engine.physics3d.IRigidBodyHandle
 import com.pafoid.skate.engine.physics3d.PhysicsContactListener
 import com.pafoid.skate.engine.physics3d.PhysicsHit
+import com.pafoid.skate.engine.physics3d.ShapePart
 import com.pafoid.skate.engine.physics3d.constraints.IPhysicsConstraint
 import com.pafoid.skate.engine.render.EngineStats
 import com.pafoid.skate.engine.render.renderer.DebugRenderer
@@ -51,8 +54,8 @@ import org.joml.Vector3f
  *
  * Implemented: bodies from [BodyDescription], shapes, layer/mask filtering, triggers as sensors, CCD, stepping,
  * teleport, standalone bodies and anchors, ray and shape queries (slice b), collision and trigger events through
- * [JoltContacts] (slice c), joints through [JoltJoints] (slice d). Debug draw (PHY-17e) comes later. Not thread-safe:
- * call it from the thread that steps it.
+ * [JoltContacts] (slice c), joints through [JoltJoints] (slice d), debug draw through [JoltDebugDraw] (slice e).
+ * Not thread-safe: call it from the thread that steps it.
  */
 class JoltPhysics3D internal constructor(
     private val debugRenderer: DebugRenderer,
@@ -99,6 +102,8 @@ class JoltPhysics3D internal constructor(
     override var contactListener: PhysicsContactListener? = null
 
     override val rigidBodyCount: Int get() = system.numBodies
+
+    override val activeBodyCount: Int get() = system.getNumActiveBodies(EBodyType.RigidBody)
 
     init {
         system.setGravity(0f, -9.81f, 0f)
@@ -154,7 +159,7 @@ class JoltPhysics3D internal constructor(
         if (moving) dynamicCapable(settings, desc.mass)
         if (desc.ccdRadius != null) settings.setMotionQuality(EMotionQuality.LinearCast)
         return addBody(settings, shape, desc.motionType, desc.mass, desc.collisionLayer, desc.collisionMask,
-            desc.isTrigger, desc.linearDamping, desc.angularDamping, go)
+            desc.isTrigger, desc.linearDamping, desc.angularDamping, go, desc.parts, desc.scale)
     }
 
     /**
@@ -179,12 +184,14 @@ class JoltPhysics3D internal constructor(
         linearDamping: Float,
         angularDamping: Float,
         go: GameObject?,
+        parts: List<ShapePart>,
+        scale: Vector3f = Vector3f(1f),
     ): JoltRigidBodyHandle {
         try {
             val body = bodies.createBody(settings)
             bodies.addBody(body.id, EActivation.Activate)
             val handle = JoltRigidBodyHandle(
-                bodies, layers, body, motionType, mass, layer, mask, trigger, linearDamping, angularDamping, go,
+                bodies, layers, body, motionType, mass, layer, mask, trigger, linearDamping, angularDamping, go, parts, scale,
             )
             handles[handle.id] = handle
             return handle
@@ -223,12 +230,16 @@ class JoltPhysics3D internal constructor(
             layers.objectLayer(STANDALONE_LAYER, STANDALONE_LAYER, type != BodyType.Static),
         )
         if (type != BodyType.Static) dynamicCapable(settings, mass)
-        return addBody(settings, joltShape, type, mass, STANDALONE_LAYER, STANDALONE_LAYER, false, 0f, 0f, null)
+        return addBody(
+            settings, joltShape, type, mass, STANDALONE_LAYER, STANDALONE_LAYER, false, 0f, 0f, null,
+            listOf(ShapePart(shape, Vector3f())),
+        )
     }
 
     /** A pivot, not an obstacle: a tiny static sensor, so it never pushes the body jointed to it. */
     override fun createStaticAnchor(location: Vector3f): IRigidBodyHandle {
-        val joltShape = JoltShapes.create(ColliderShape.Box(Vector3f(ANCHOR_HALF_EXTENT), 0f))
+        val anchorShape = ColliderShape.Box(Vector3f(ANCHOR_HALF_EXTENT), 0f)
+        val joltShape = JoltShapes.create(anchorShape)
         val settings = BodyCreationSettings(
             joltShape,
             RVec3(location.x.toDouble(), location.y.toDouble(), location.z.toDouble()),
@@ -236,7 +247,10 @@ class JoltPhysics3D internal constructor(
             layers.objectLayer(STANDALONE_LAYER, STANDALONE_LAYER, false),
         )
         settings.setIsSensor(true)
-        return addBody(settings, joltShape, BodyType.Static, 0f, STANDALONE_LAYER, STANDALONE_LAYER, true, 0f, 0f, null)
+        return addBody(
+            settings, joltShape, BodyType.Static, 0f, STANDALONE_LAYER, STANDALONE_LAYER, true, 0f, 0f, null,
+            listOf(ShapePart(anchorShape, Vector3f())),
+        )
     }
 
     override fun removeRigidBody(handle: IRigidBodyHandle) {
@@ -306,8 +320,11 @@ class JoltPhysics3D internal constructor(
         contacts.afterStep(contactListener)
     }
 
-    /** Debug shapes arrive with PHY-17e. */
-    override fun debugDraw(dt: Float) {}
+    /** Draws every body's collider wireframe (see [JoltDebugDraw]) when [debugEnabled]. */
+    override fun debugDraw(dt: Float) {
+        if (!debugEnabled || destroyed) return
+        for (handle in handles.values) JoltDebugDraw.draw(debugRenderer, handle)
+    }
 
     // --- queries ---
 
@@ -430,6 +447,14 @@ class JoltPhysics3D internal constructor(
             broadPhaseFilter, objectLayerFilter, bodyFilter, shapeFilter,
         ).forEach { it.close() }
     }
+
+    /** Native objects this world owns and must free in [destroy] (leak tests check each one was released). */
+    internal fun ownedNativeObjects(): List<JoltPhysicsObject> = listOf(
+        system, jobSystem, tempAllocator, contacts.listener,
+        layers.pairFilter, layers.broadPhaseLayers, layers.objectVsBroadPhase,
+        rayCollector, shapeCollector, raySettings, shapeCastSettings,
+        broadPhaseFilter, objectLayerFilter, bodyFilter, shapeFilter,
+    ) + joints.map { it.ref }
 
     private fun motionTypeOf(type: BodyType) = when (type) {
         BodyType.Static -> EMotionType.Static
