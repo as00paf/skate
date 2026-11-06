@@ -1,10 +1,9 @@
 package com.pafoid.skate.game.ui
 
-import com.pafoid.skate.editor.events.ViewportAction
+import com.pafoid.skate.editor.events.PlayModeAction
 import com.pafoid.skate.editor.systems.EditorPauseActions
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.ecs.Scene
-import com.pafoid.skate.engine.events.SceneAction
 import com.pafoid.skate.engine.getComponent
 import com.pafoid.skate.engine.ui.PauseMenu
 import com.pafoid.skate.engine.ui.PauseMenuEntry
@@ -75,8 +74,9 @@ class PauseMenuParityTest {
 
     private fun editorPlay(screen: UiScreenSize = UiScreenSize(1920, 1080)) = Host(screen) {
         EditorPauseActions.install(engine.pauseActions, engine.eventSystem)
-        engine.eventSystem.subscribe(SceneAction.ResetScene::class) { hostActions += "restart" }
-        engine.eventSystem.subscribe(ViewportAction.StopSimulation::class) { hostActions += "quit" }
+        // EDT-45: Restart = Reset then Play, Quit = Stop.
+        engine.eventSystem.subscribe(PlayModeAction.Reset::class) { hostActions += "restart" }
+        engine.eventSystem.subscribe(PlayModeAction.Stop::class) { hostActions += "quit" }
     }
 
     /** As GameMain.installGameUi: the HUD system, Restart = reload the launch state, Quit = close the window. */

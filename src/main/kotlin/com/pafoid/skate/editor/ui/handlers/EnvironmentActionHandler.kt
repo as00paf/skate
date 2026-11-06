@@ -15,7 +15,7 @@ class EnvironmentActionHandler(
         eventSystem.subscribe<EnvironmentAction.SetTimeOfDayRequested> { event ->
             undoRedoManager.executeCommand(
                 EnvironmentPropertyCommand(
-                    displayName = "Set Time of Day",
+                    displayNameKey = "command.environment.set_time_of_day",
                     targetName = null,
                     setter = { t ->
                         event.dayNightCycle?.timeOfDay = t
@@ -29,7 +29,7 @@ class EnvironmentActionHandler(
         eventSystem.subscribe<EnvironmentAction.SetAutoAmbientRequested> { event ->
             undoRedoManager.executeCommand(
                 EnvironmentToggleCommand(
-                    displayName = "Toggle Auto Ambient",
+                    displayNameKey = "command.environment.toggle_auto_ambient",
                     setter = { enabled -> event.dayNightCycle.autoAmbient = enabled },
                     oldValue = event.oldValue,
                     newValue = event.newValue,
@@ -40,7 +40,7 @@ class EnvironmentActionHandler(
         eventSystem.subscribe<EnvironmentAction.SetSunDirectionRequested> { event ->
             undoRedoManager.executeCommand(
                 EnvironmentPropertyCommand(
-                    displayName = "Set Sun Direction",
+                    displayNameKey = "command.environment.set_sun_direction",
                     targetName = null,
                     setter = { direction: Vector3f ->
                         event.lightConfig.direction.set(direction).normalize()
@@ -54,7 +54,7 @@ class EnvironmentActionHandler(
         eventSystem.subscribe<EnvironmentAction.SetSunColorRequested> { event ->
             undoRedoManager.executeCommand(
                 EnvironmentPropertyCommand(
-                    displayName = "Set Sun Color",
+                    displayNameKey = "command.environment.set_sun_color",
                     targetName = null,
                     setter = { color: Vector3f ->
                         event.lightConfig.color.set(color)
@@ -68,7 +68,7 @@ class EnvironmentActionHandler(
         eventSystem.subscribe<EnvironmentAction.SetSunIntensityRequested> { event ->
             undoRedoManager.executeCommand(
                 EnvironmentPropertyCommand(
-                    displayName = "Set Sun Intensity",
+                    displayNameKey = "command.environment.set_sun_intensity",
                     targetName = null,
                     setter = { intensity: Float ->
                         event.lightConfig.intensity = intensity
@@ -82,7 +82,7 @@ class EnvironmentActionHandler(
         eventSystem.subscribe<EnvironmentAction.SetShadowDistanceRequested> { event ->
             undoRedoManager.executeCommand(
                 EnvironmentPropertyCommand(
-                    displayName = "Set Shadow Distance",
+                    displayNameKey = "command.environment.set_shadow_distance",
                     targetName = null,
                     setter = { distance: Float ->
                         event.lightConfig.shadowDistance = distance
@@ -96,7 +96,7 @@ class EnvironmentActionHandler(
         eventSystem.subscribe<EnvironmentAction.SetAutoCalculateBoundsRequested> { event ->
             undoRedoManager.executeCommand(
                 EnvironmentToggleCommand(
-                    displayName = "Toggle Auto Calculate Bounds",
+                    displayNameKey = "command.environment.toggle_auto_calculate_bounds",
                     setter = { enabled -> event.lightConfig.autoCalculateBounds = enabled },
                     oldValue = event.oldValue,
                     newValue = event.newValue,
@@ -107,7 +107,7 @@ class EnvironmentActionHandler(
         eventSystem.subscribe<EnvironmentAction.SetStabilizeProjectionRequested> { event ->
             undoRedoManager.executeCommand(
                 EnvironmentToggleCommand(
-                    displayName = "Toggle Stabilize Projection",
+                    displayNameKey = "command.environment.toggle_stabilize_projection",
                     setter = { enabled -> event.lightConfig.stabilizeProjection = enabled },
                     oldValue = event.oldValue,
                     newValue = event.newValue,
@@ -118,7 +118,7 @@ class EnvironmentActionHandler(
         eventSystem.subscribe<EnvironmentAction.SetDepthBiasRequested> { event ->
             undoRedoManager.executeCommand(
                 EnvironmentPropertyCommand(
-                    displayName = "Set Depth Bias",
+                    displayNameKey = "command.environment.set_depth_bias",
                     targetName = null,
                     setter = { depthBias: Float ->
                         event.lightConfig.depthBias = depthBias
@@ -132,7 +132,7 @@ class EnvironmentActionHandler(
         eventSystem.subscribe<EnvironmentAction.SetSlopeScaledBiasRequested> { event ->
             undoRedoManager.executeCommand(
                 EnvironmentPropertyCommand(
-                    displayName = "Set Slope Scaled Bias",
+                    displayNameKey = "command.environment.set_slope_scaled_bias",
                     targetName = null,
                     setter = { slopeBias: Float ->
                         event.lightConfig.slopeScaledBias = slopeBias
@@ -146,7 +146,7 @@ class EnvironmentActionHandler(
         eventSystem.subscribe<EnvironmentAction.SetAmbientLightRequested> { event ->
             undoRedoManager.executeCommand(
                 EnvironmentPropertyCommand(
-                    displayName = "Set Ambient Light",
+                    displayNameKey = "command.environment.set_ambient_light",
                     targetName = null,
                     setter = { ambient: Vector3f ->
                         event.ambientLightComponent.lightColor.set(ambient)
@@ -160,7 +160,7 @@ class EnvironmentActionHandler(
         eventSystem.subscribe<EnvironmentAction.SetAmbientIntensityRequested> { event ->
             undoRedoManager.executeCommand(
                 EnvironmentPropertyCommand(
-                    displayName = "Set Ambient Intensity",
+                    displayNameKey = "command.environment.set_ambient_intensity",
                     targetName = null,
                     setter = { intensity: Float ->
                         event.ambientLightComponent.intensity = intensity

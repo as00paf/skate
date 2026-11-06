@@ -147,7 +147,11 @@ class SceneActionHandler(
             logger.logEditor("Scene save-as skipped: stop Play first", LogLevel.WARN)
             return
         }
-        val command = SaveSceneAsCommand(scene, serializer, logger)
+        val command = SaveSceneAsCommand(
+            scene, serializer, logger,
+            dialogTitle = engine.stringManager.getString("dialog.scene.save_as_title"),
+            filterDescription = engine.stringManager.getString("dialog.scene.filter"),
+        )
         undoRedoManager.executeCommand(command)
         logger.logEditor("Scene save-as requested: ${scene.name}")
     }

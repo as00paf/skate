@@ -14,6 +14,7 @@ import com.pafoid.skate.editor.systems.UndoRedoManager
 import com.pafoid.skate.editor.ui.handlers.EditorActionHandler
 import com.pafoid.skate.editor.ui.handlers.EditorEventHandler
 import com.pafoid.skate.editor.ui.handlers.EditorInputHandler
+import com.pafoid.skate.editor.ui.handlers.PlayModeHandler
 import com.pafoid.skate.engine.assets.Assets.Strings.EDITOR_STRINGS
 import com.pafoid.skate.engine.assets.Assets.Strings.GAME_STRINGS
 import com.pafoid.skate.engine.core.Engine
@@ -43,6 +44,9 @@ class Editor(
     }
 
     val undoRedoManager = UndoRedoManager(engine.eventSystem, engine.logger)
+
+    /** Play/Pause/Stop/Reset (EDT-45); subscribed before any window so project close always stops Play first. */
+    val playModeHandler = PlayModeHandler(engine, undoRedoManager).also { it.init() }
 
     val editorInputHandler =
         EditorInputHandler(clipboardService, undoRedoManager, editorInputState, engine, settingsManager)
@@ -92,6 +96,7 @@ class Editor(
     }
 
     fun destroy() {
+        playModeHandler.shutdown()
         // Keep the current scene's editor camera for the next session (EDT-58).
         editorActionHandler.sceneActionHandler.cameraMemory.flush()
         imGuiLayer.destroy()

@@ -45,17 +45,10 @@ class RagdollSystemTest {
         val pose = SkeletonPose(skeleton)
         val skeletonComponent = SkeletonComponent(pose)
 
-        val mockBody = mockk<IRigidBodyHandle>(relaxed = true)
-
-        every { mockBody.getLocation(any()) } answers {
-            val out = arg<Vector3f>(0)
-            out.set(1f, 2f, 3f)
-            out
-        }
-        every { mockBody.getRotation(any()) } answers {
-            val out = arg<Quaternionf>(0)
-            out.set(0f, 0f, 0f, 1f)
-            out
+        // Overrides, not every{}: stubbing a JOML return type makes mockk retransform JOML, which fails verification
+        val mockBody = object : IRigidBodyHandle by mockk(relaxed = true) {
+            override fun getLocation(out: Vector3f): Vector3f = out.set(1f, 2f, 3f)
+            override fun getRotation(out: Quaternionf): Quaternionf = out.set(0f, 0f, 0f, 1f)
         }
 
         ragdollComponent.boneBodies["Root"] = mockBody

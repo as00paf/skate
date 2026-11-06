@@ -130,10 +130,18 @@ kotlin {
     jvmToolchain(17)
 }
 
+// QA-17: the build stays warning-free (root and tools/*). Fix new warnings; suppress only with a comment saying why.
+allprojects {
+    tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompilationTask<*>>().configureEach {
+        compilerOptions.allWarningsAsErrors.set(true)
+    }
+}
+
 tasks.withType<Test> {
     // TLG-10 end-to-end check (tools/scripts/verify-game-jar.sh): token of the probe class built into the game jar
     providers.gradleProperty("skate.gameJarToken").orNull?.let { systemProperty("skate.gameJarToken", it) }
-    jvmArgs("-Xverify:none")
+    // QA-17: CDS off, else the JVM warns once mockk's agent appends to the boot classpath
+    jvmArgs("-Xshare:off")
 }
 
 // Standalone game jar (build/libs/skate-game.jar), copied by the editor's export (ProjectExporter).
