@@ -19,6 +19,10 @@ object PhysicsBackends {
     @JvmStatic
     fun contacts(): List<PhysicsBackend> = listOf(PhysicsBackend.BULLET, PhysicsBackend.JOLT)
 
+    /** Joints, ragdolls and the raycast vehicle. */
+    @JvmStatic
+    fun joints(): List<PhysicsBackend> = listOf(PhysicsBackend.BULLET, PhysicsBackend.JOLT)
+
     /** Creates a world on [backend] through [Physics3DFactory], loading natives first. */
     fun create(backend: PhysicsBackend, debugRenderer: DebugRenderer = mockk(relaxed = true)): IPhysics3D {
         if (backend == PhysicsBackend.BULLET) NativeLibraryLoader().loadNativeLibrary()

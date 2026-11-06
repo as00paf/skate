@@ -51,8 +51,8 @@ import org.joml.Vector3f
  *
  * Implemented: bodies from [BodyDescription], shapes, layer/mask filtering, triggers as sensors, CCD, stepping,
  * teleport, standalone bodies and anchors, ray and shape queries (slice b), collision and trigger events through
- * [JoltContacts] (slice c). Joints (PHY-17d) and debug draw (PHY-17e) come later. Not thread-safe: call it from the
- * thread that steps it.
+ * [JoltContacts] (slice c), joints through [JoltJoints] (slice d). Debug draw (PHY-17e) comes later. Not thread-safe:
+ * call it from the thread that steps it.
  */
 class JoltPhysics3D internal constructor(
     private val debugRenderer: DebugRenderer,
@@ -68,6 +68,7 @@ class JoltPhysics3D internal constructor(
     private val bodies: BodyInterface = system.bodyInterfaceNoLock
     private val handles = HashMap<Int, JoltRigidBodyHandle>()
     private val contacts = JoltContacts { handles[it] }
+    private val joints = LinkedHashSet<JoltJoint>()
 
     // Bullet combines friction and restitution as a product; match it so material values mean the same
     private val combineFriction = CombineFunction.product(true)
@@ -245,18 +246,55 @@ class JoltPhysics3D internal constructor(
     /** With [report], a body leaving a trigger makes it report an exit (as Bullet does on removal). */
     private fun destroyBody(handle: JoltRigidBodyHandle, report: Boolean = true) {
         if (!handles.containsKey(handle.id)) return
+        // Jolt would keep a dangling body in its joints: drop them first (the descriptor can be re-added later)
+        joints.filter { it.bodyA === handle || it.bodyB === handle }.forEach { detach(it) }
         contacts.forget(handle, if (report) contactListener else null)
         handles.remove(handle.id)
         bodies.removeBody(handle.id)
         bodies.destroyBody(handle.id)
     }
 
-    // --- joints (PHY-17d) ---
+    // --- joints ---
 
-    override fun addConstraint(constraint: IPhysicsConstraint) =
-        throw UnsupportedOperationException("Jolt joints are not implemented yet (PHY-17d)")
+    /** Adds the joint; a descriptor added before (and removed) is re-added, rebuilt if one of its bodies was rebuilt. */
+    override fun addConstraint(constraint: IPhysicsConstraint) {
+        val existing = constraint.rawJoint as? JoltJoint
+        val joint = if (existing != null && existing in joints && isLive(existing)) existing
+        else {
+            existing?.let { detach(it) }
+            JoltJoints.create(constraint, ::bodyOf).also { joints += it }
+        }
+        constraint.rawJoint = joint
+        if (joint.added) return
+        system.addConstraint(joint.ref)
+        joint.added = true
+        bodies.activateConstraint(joint.constraint)
+    }
 
-    override fun removeConstraint(constraint: IPhysicsConstraint) {}
+    override fun removeConstraint(constraint: IPhysicsConstraint) {
+        val joint = constraint.rawJoint as? JoltJoint ?: return
+        if (joint !in joints) return
+        if (joint.added) {
+            // Wake the bodies so a body held at rest starts falling
+            bodies.activateConstraint(joint.constraint)
+            system.removeConstraint(joint.constraint)
+            joint.added = false
+        }
+    }
+
+    private fun isLive(joint: JoltJoint) = handles[joint.bodyA.id] === joint.bodyA && handles[joint.bodyB.id] === joint.bodyB
+
+    /** Removes the joint from the system and frees it. */
+    private fun detach(joint: JoltJoint) {
+        if (!joints.remove(joint)) return
+        if (joint.added) system.removeConstraint(joint.constraint)
+        joint.added = false
+        joint.ref.close()
+    }
+
+    private fun bodyOf(handle: IRigidBodyHandle): JoltRigidBodyHandle =
+        (handle as? JoltRigidBodyHandle)?.takeIf { handles[it.id] === it }
+            ?: throw IllegalArgumentException("Rigid body was not created by this Jolt world")
 
     // --- simulation ---
 
@@ -380,6 +418,7 @@ class JoltPhysics3D internal constructor(
     override fun destroy() {
         if (destroyed) return
         destroyed = true
+        joints.toList().forEach { detach(it) }
         handles.values.toList().forEach { destroyBody(it, report = false) }
         system.close()
         jobSystem.close()

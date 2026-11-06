@@ -364,8 +364,25 @@ Rough effort: about 8–10 agent days in total. Slices b and d are the largest.
     triggers detecting statics behave the same.
   - A mass-change rebuild carries the body's contact pairs over (Bullet keys pairs by GameObject).
   - `LongSet` moved to `physics3d/` so both backends share it.
-- Tests: `PhysicsFeaturesTest` (core cases), `PhysicsCalibrationTest` and `FrictionPropagationTest` run on Bullet and
-  Jolt; `JoltPhysics3DTest`, `JoltConversionsTest`, `LayerSlotsTest` and `JoltBackendGuardTest` cover Jolt only.
+- **Slice d (joints, ragdoll, vehicle):** `JoltJoints`. Descriptor pivots and axes (local to each body's origin)
+  are converted to world space through the bodies' poses when the joint is created and given to Jolt in
+  `EConstraintSpace.WorldSpace`, so the physical-COM decision needs no pivot correction. Bullet conventions kept:
+  - Fixed: identity frames on both bodies (the bodies keep the same orientation), like Bullet's 6-DOF fixed joint.
+  - Hinge: zero angle from Bullet's `btPlaneSpace1` normal, rotated onto axis B. Jolt needs min ≤ 0 ≤ max within
+    [-π, π], so limits are clamped; lower > upper means free.
+  - Slider: limits negated and swapped (Jolt measures B relative to A); clamped to contain 0; the frame's Y axis
+    locks rotation, as Bullet's slider frame does.
+  - Cone twist → swing-twist: twist axis = frame X, `swingSpan1` about Z (normal half-cone), `swingSpan2` about Y
+    (plane half-cone), twist ±`twistSpan`.
+  - 6-DOF: Bullet's per-axis rule (equal = fixed, lower > upper = free, else limited), pyramid swing limits.
+  - Removing a body first removes the joints that use it (Jolt would keep a dangling body); a removed descriptor can
+    be added again. Joints wake their bodies when added or removed.
+  - Ragdolls (`RagdollBuilder`, `RagdollSystem`) and the raycast vehicle needed no Jolt-specific code.
+- Tests on Bullet and Jolt: `PhysicsFeaturesTest` (core and contact cases), `PhysicsCalibrationTest`,
+  `FrictionPropagationTest`, `JointConstraintsTest`, `RagdollBuilderTest`, `PhysicsSystemRagdollTest` and
+  `RaycastVehicleTest`. Jolt only: `JoltPhysics3DTest`, `JoltContactsTest`, `JoltJointsTest`, `JoltConversionsTest`,
+  `LayerSlotsTest` and `JoltBackendGuardTest`. `tools/scripts/verify-game-jar.sh` checks that both natives ship in
+  the game jar.
 
 ## Open questions (answered above)
 

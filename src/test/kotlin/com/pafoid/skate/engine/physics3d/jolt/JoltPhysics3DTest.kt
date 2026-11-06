@@ -295,12 +295,29 @@ class JoltPhysics3DTest {
     }
 
     @Test
-    fun JoltBodies_Joints_AreNotSupportedYet() {
+    fun JoltJoints_RemovingAJointedBody_DropsItsJoint() {
         val w = world()
+        val anchor = w.createStaticAnchor(Vector3f(0f, 5f, 0f))
+        val body = w.createRigidBody(ColliderShape.Box(Vector3f(0.25f)), 1f).also { it.setLocation(Vector3f(0f, 4f, 0f)) }
+        val joint = FixedConstraint3D(anchor, body, Vector3f(0f, -1f, 0f), Vector3f())
+        w.addConstraint(joint)
+        w.steps(5)
+
+        w.removeRigidBody(body)
+        w.steps(5)
+        w.removeConstraint(joint)
+
+        assertEquals(1, w.rigidBodyCount)
+    }
+
+    @Test
+    fun JoltJoints_BodyFromAnotherWorld_IsRejected() {
+        val w = world()
+        val other = world()
         val a = w.createRigidBody(ColliderShape.Box(Vector3f(0.5f)), 1f)
-        val b = w.createRigidBody(ColliderShape.Box(Vector3f(0.5f)), 1f)
-        assertThrows(UnsupportedOperationException::class.java) {
-            w.addConstraint(FixedConstraint3D(a, b, Vector3f(), Vector3f()))
+        val foreign = other.createRigidBody(ColliderShape.Box(Vector3f(0.5f)), 1f)
+        assertThrows(IllegalArgumentException::class.java) {
+            w.addConstraint(FixedConstraint3D(a, foreign, Vector3f(), Vector3f()))
         }
     }
 
