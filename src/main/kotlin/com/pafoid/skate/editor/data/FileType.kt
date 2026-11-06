@@ -11,7 +11,7 @@ enum class FileType(val extensions: List<String>) {
     SCRIPT_JAVA(listOf("java")),
     TEXTURE(listOf("jpeg", "png", "tga", "bmp", "psd", "gif", "hdr", "pic", "pnm")),
     MODEL_3D(listOf("obj", "glb", "dae", "gltf")),
-    ANIMATION(listOf("fbx")),
+    ANIMATION(listOf("fbx", "skanim")),
     SOUND(listOf("wav", "ogg", "mp3")),
     PREFAB(listOf("prefab")),
     JSON(listOf("json")),
