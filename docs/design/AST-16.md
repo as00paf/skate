@@ -1,6 +1,6 @@
 # AST-16 — Asset store window
 
-Status: **awaiting approval** (rev 2: `skate-assets` review addressed in §6.2, §7, §7.1, §8, §10). No code yet. Author: `skate-online` (lead-assigned; `skate-assets` reviews).
+Status: **approved** 2026-11-06 (human). Slice order: a → b → d → f → e → c (no-login libraries first; Sketchfab last and optional; no Mixamo, no Poly Pizza). ND licenses: warn and record the conversion. Slice a implemented (`editor/assetstore/**`). Author: `skate-online` (lead-assigned; `skate-assets` reviews).
 Paths are relative to `src/main/kotlin/com/pafoid/skate/`.
 
 Marker: **⚠ UNVERIFIED** = an API detail I could not confirm from the provider's public docs on 2026-11-06. Each one needs a spike before its provider ships.

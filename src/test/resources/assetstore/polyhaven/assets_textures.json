@@ -1,0 +1,163 @@
+{
+ "rock_wall_08": {
+  "name": "Rock Wall 08",
+  "categories": [
+   "outdoor",
+   "man made",
+   "wall",
+   "rock"
+  ],
+  "type": 1,
+  "tags": [
+   "uneven",
+   "rock",
+   "rocks",
+   "wall",
+   "weathered",
+   "stone",
+   "timeworn",
+   "worn",
+   "stonework",
+   "gray",
+   "grey"
+  ],
+  "authors": {
+   "Amal Kumar": "All"
+  },
+  "info": null,
+  "dimensions": [
+   1799.9999523162842,
+   1799.9999523162842
+  ],
+  "date_published": 1686355200,
+  "sponsors": [
+   "92963232"
+  ],
+  "max_resolution": [
+   16384,
+   16384
+  ],
+  "files_hash": "4896fd050be3cb15beb283cf9d7bce33732e56e4",
+  "description": "Free 16K texture of a weathered grey stone wall: uneven, timeworn blocks with rough, chiseled faces, deep joints and subtle dirt and moss.",
+  "category_id": "7b0fe897-0a1b-5b8b-9d28-7c5928b4b614",
+  "category": "Stone/Walls & Rubble/Fortress & Castle Walls",
+  "attributes": {
+   "surface_use": "wall",
+   "condition": [
+    "weathered",
+    "worn",
+    "mossy"
+   ],
+   "origin": "man_made",
+   "setting": "outdoor"
+  },
+  "img_version": "c2a63431",
+  "download_count": 45612,
+  "thumbnail_url": "https://cdn.polyhaven.com/asset_img/thumbs/rock_wall_08.png?width=256&height=256&format=webp&v=c2a63431"
+ },
+ "rocky_terrain_02": {
+  "name": "Rocky Terrain 02",
+  "type": 1,
+  "tags": [
+   "rocky",
+   "terrain",
+   "uneven terrain",
+   "grass",
+   "drone",
+   "landscape",
+   "nature",
+   "nature",
+   "boulders",
+   "wilderness",
+   "scenic",
+   "mountain",
+   "landform",
+   "natural landscape"
+  ],
+  "authors": {
+   "Amal Kumar": "All"
+  },
+  "max_resolution": [
+   8192,
+   8192
+  ],
+  "dimensions": [
+   90000,
+   90000
+  ],
+  "date_published": 1726704000,
+  "categories": [
+   "outdoor",
+   "terrain",
+   "natural",
+   "aerial"
+  ],
+  "files_hash": "a4c0d422c59c4234227eb04c1fa9d28694c60fbe",
+  "description": "Free, 8K terrain texture of uneven grassy ground with scattered rocks and boulder clusters, subtle height variation and soil patches",
+  "category_id": "ad8bbc58-82b8-5734-a99b-3fbdb7f0163c",
+  "category": "Ground & Terrain/Rocky Ground/Rocky Landscape",
+  "attributes": {
+   "surface_use": "ground",
+   "origin": "natural",
+   "setting": "outdoor",
+   "aerial": true,
+   "condition": [
+    "clean"
+   ]
+  },
+  "img_version": "6c54f222",
+  "download_count": 286308,
+  "thumbnail_url": "https://cdn.polyhaven.com/asset_img/thumbs/rocky_terrain_02.png?width=256&height=256&format=webp&v=6c54f222"
+ },
+ "asphalt_03": {
+  "name": "Asphalt 03",
+  "categories": [
+   "outdoor",
+   "man made",
+   "dirty",
+   "road",
+   "asphalt"
+  ],
+  "type": 1,
+  "tags": [
+   "rough",
+   "worn",
+   "dirty",
+   "floor",
+   "road",
+   "asphalt",
+   "city",
+   "urban"
+  ],
+  "info": null,
+  "dimensions": [
+   2049.999713897705,
+   2049.999713897705
+  ],
+  "date_published": 1675900800,
+  "max_resolution": [
+   8192,
+   8192
+  ],
+  "files_hash": "43fb4f1e6c03b6cff2ae0783f403d5b9e52268be",
+  "description": "Free 8K worn asphalt texture with rough, matte surface, fine granular grit and subtle dirt staining across a dark brown-black urban road material.",
+  "authors": {
+   "Dario Barresi": "processing",
+   "Charlotte Baglioni": "photography"
+  },
+  "category_id": "8871debe-40cf-5e4d-a5e5-1ddfe979f14f",
+  "category": "Asphalt & Bitumen/Asphalt/Worn Road Surface",
+  "attributes": {
+   "surface_use": "floor",
+   "condition": [
+    "weathered",
+    "worn"
+   ],
+   "origin": "man_made",
+   "setting": "outdoor"
+  },
+  "img_version": "277de809",
+  "download_count": 14693,
+  "thumbnail_url": "https://cdn.polyhaven.com/asset_img/thumbs/asphalt_03.png?width=256&height=256&format=webp&v=277de809"
+ }
+}
