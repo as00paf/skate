@@ -5,29 +5,29 @@ import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.components.BoxCollider3D
 import com.pafoid.skate.engine.ecs.components.RigidBody3D
 import com.pafoid.skate.engine.ecs.components.Transform
-import com.pafoid.skate.engine.physics3d.bullet.BulletPhysics3D
-import com.pafoid.skate.engine.physics3d.native.NativeLibraryLoader
-import io.mockk.mockk
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
-import org.junit.jupiter.api.BeforeAll
-import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.MethodSource
 
 class FrictionPropagationTest {
 
-    companion object {
-        private lateinit var physics: BulletPhysics3D
+    private lateinit var physics: IPhysics3D
 
-        @JvmStatic
-        @BeforeAll
-        fun beforeAll() {
-            NativeLibraryLoader().loadNativeLibrary()
-            physics = BulletPhysics3D(mockk())
-        }
+    private fun use(backend: PhysicsBackend) {
+        physics = PhysicsBackends.create(backend)
     }
 
-    @Test
-    fun `friction should propagate to rawBody on initialization`() {
+    @AfterEach
+    fun tearDown() {
+        if (::physics.isInitialized) physics.destroy()
+    }
+
+    @ParameterizedTest
+    @MethodSource("com.pafoid.skate.engine.physics3d.PhysicsBackends#core")
+    fun `friction should propagate to rawBody on initialization`(backend: PhysicsBackend) {
+        use(backend)
         val go = GameObject("TestObject1")
         val rb = RigidBody3D()
         go.addComponent(rb)
@@ -53,8 +53,10 @@ class FrictionPropagationTest {
         assertEquals(0.75f, rb.rawBody?.friction ?: 0f, 0.001f)
     }
 
-    @Test
-    fun `friction should propagate to rawBody on runtime update`() {
+    @ParameterizedTest
+    @MethodSource("com.pafoid.skate.engine.physics3d.PhysicsBackends#core")
+    fun `friction should propagate to rawBody on runtime update`(backend: PhysicsBackend) {
+        use(backend)
         val go = GameObject("TestObject2")
         val rb = RigidBody3D()
         go.addComponent(rb)
@@ -69,8 +71,10 @@ class FrictionPropagationTest {
         assertEquals(0.88f, rb.rawBody?.friction)
     }
 
-    @Test
-    fun `damping should propagate to rawBody on initialization`() {
+    @ParameterizedTest
+    @MethodSource("com.pafoid.skate.engine.physics3d.PhysicsBackends#core")
+    fun `damping should propagate to rawBody on initialization`(backend: PhysicsBackend) {
+        use(backend)
         val go = GameObject("TestObject3")
         val rb = RigidBody3D()
         go.addComponent(rb)
