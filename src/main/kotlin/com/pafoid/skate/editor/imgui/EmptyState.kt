@@ -50,6 +50,23 @@ object EmptyState {
         ),
     )
 
+    /** The "no scene open" state (EDT-51 §2.5); [hintKey] says where to get one in this window. */
+    fun noScene(strings: StringManager, hintKey: String = "empty.no_scene.hint", actions: List<Action> = emptyList()) =
+        render(strings, Icons.CUBE, "empty.no_scene", hintKey, actions)
+
+    /** "Nothing selected" (EDT-51 §2.5): [messageKey] says what selecting shows here. */
+    fun nothingSelected(strings: StringManager, messageKey: String) = render(strings, Icons.MOUSE_POINTER, messageKey)
+
+    /** "No results" for a search, with a Clear search button when [onClear] is given (EDT-51 §2.5). */
+    fun noResults(strings: StringManager, onClear: (() -> Unit)? = null) = render(
+        strings, Icons.SEARCH, "empty.search", "empty.search.hint",
+        onClear?.let { listOf(Action("empty.search.clear", Icons.WINDOW_CLOSE, it)) } ?: emptyList(),
+    )
+
+    /** An empty list (EDT-51 §2.5): [messageKey] says what is missing ("No commands yet"). */
+    fun nothingYet(strings: StringManager, icon: String, messageKey: String, hintKey: String? = null) =
+        render(strings, icon, messageKey, hintKey)
+
     private fun centredDisabled(text: String) {
         val width = ImGui.calcTextSize(text).x
         ImGui.setCursorPosX(ImGui.getCursorPosX() + ((ImGui.getContentRegionAvailX() - width) / 2f).coerceAtLeast(0f))

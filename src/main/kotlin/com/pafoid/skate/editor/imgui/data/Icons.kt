@@ -67,4 +67,13 @@ object Icons {
     const val CLONE = "\uf24d"
     const val SIGN_OUT = "\uf2f5"
     const val KEYBOARD = "\uf11c"
+
+    // Window header icons and the help button (EDT-51 §2.2); Font Awesome 7 solid.
+    const val SITEMAP = "\uf0e8"
+    const val SLIDERS = "\uf1de"
+    const val HISTORY = "\uf1da"
+    const val PROJECT_DIAGRAM = "\uf542"
+    const val LIST = "\uf03a"
+    const val TERMINAL = "\uf120"
+    const val QUESTION_CIRCLE = "\uf059"
 }
