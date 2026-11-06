@@ -111,8 +111,6 @@ class WindowStandardGuardTest {
             "EditorSettingsWindow", "ProjectSettingsWindow", "KeyBindingsWindow", "ExportWizardWindow",
             // F: modals & palette
             "ProjectSwitcherDialog", "SearchEverywhereWindow", "ProjectWizardWindow",
-            // H: domain windows
-            "AudioInspectorWindow", "ScriptEditorWindow",
             // I: input testing move (the window is deleted)
             "InputTestingWindow",
             // EDT-54: the Render Graph rewrite adopts the standard
