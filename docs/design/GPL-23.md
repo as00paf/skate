@@ -1,6 +1,6 @@
 # GPL-23: a fuller skate demo (design note)
 
-Status: **proposed**, waiting for approval. No code until it is approved.
+Status: **approved with changes** (2026-11-06, see §9). Built as described below; §4–§7 show what was cut or changed.
 
 ## In short
 
@@ -8,12 +8,12 @@ Turn the MainScene from "a board, a ledge and a ramp" into a small skatepark you
 
 - **A 40 × 40 m park** with four zones (street, flat-ground, transition, bowl) around a central start plaza.
 - **More tricks:** the five board tricks we have, plus grinds, manuals and 180/360 body spins.
-- **Combos:** chain tricks without touching flat ground, link them with manuals, bank the points on a clean landing, lose them on a bail.
-- **Sessions:** a 2-minute run with six goals and a best score, or free skate with no timer.
-- **One HUD** showing score, combo, timer, goals and a balance meter.
-- **Spot cameras per zone** for the fixed camera mode, and **control hints** for whichever control scheme is selected.
+- **Combos:** chain tricks without touching flat ground and link them with manuals; a bail loses the combo. The HUD shows the trick chain. **No points or score yet.**
+- **Free skate only:** no timer, no goals, no session mode yet.
+- **One HUD** for editor Play and the exported game: the combo chain, the trick name and control hints.
+- **Spot cameras per zone that follow the skater** replace the fixed camera, and **control hints** for the selected control scheme can be switched off in the pause menu.
 
-The decisions I need from you are in §9. Everything else follows from those.
+Your decisions are in §9.
 
 ## 1. What exists today
 
@@ -77,7 +77,9 @@ All placement lives in `PrefabsGenerator.spawnDefaultsSync`. As with every defau
 
 Spins combine with board tricks and are named together, e.g. "FS 180 Kickflip".
 
-## 4. Combos and score
+## 4. Combos
+
+**Approved without points (D3).** The combo chain and its rules below are built; the score rows are kept here for later and are not implemented.
 
 A **combo** is every trick done between two touchdowns on flat ground. Grinds and manuals keep it alive.
 
@@ -96,7 +98,11 @@ Example: kickflip (500) into a 50-50 for 2 s (200 + 200) into a manual for 1 s (
 
 This logic is pure (no ECS or GL) and fully unit-tested, like the trick state machine.
 
+As built: the combo chain (tricks, grinds, manuals, the 0.3 s link window, the bail) with no points. The HUD shows the chain and the trick count ("Kickflip + 50-50 + Manual (3)"). The GPL-21 per-trick points and the score text are removed until a score system is designed.
+
 ## 5. Sessions and goals
+
+**Not built (D4, D5): free skate only for now.** Kept for a later task.
 
 Two modes, picked in the pause menu like the control scheme:
 
@@ -137,14 +143,14 @@ One HUD, built by `PrefabsGenerator` in the MainScene, used by both editor Play 
 
 | Element | Where | Shown when |
 |---|---|---|
-| Score and best | Top left | Always |
-| Timer | Top centre | Session mode |
+| Score and best | Top left | **Not built** (no score yet) |
+| Timer | Top centre | **Not built** (free skate only) |
 | Camera button | Top right | Always (as today) |
-| Combo line (trick list + multiplier) | Under the timer | During a combo; it flashes green on bank and red on bail |
-| Goals checklist | Left | Session mode; can be hidden from the pause menu |
+| Combo line (trick chain + count) | Top centre | During a combo; it stays briefly after it lands, and shows "Bail!" when it is lost |
+| Goals checklist | Left | **Not built** (no goals yet) |
 | Balance meter | Bottom centre | During a grind or manual |
 | Trick name | Bottom centre | As today |
-| Control hint | Under the trick name | For the next unfinished goal, in the selected scheme's terms, e.g. "Back, flick up-left" (EA Skate) or "X + Left" (THPS). Can be turned off. |
+| Control hint | Under the trick name | What you can do now, in the selected scheme's terms, e.g. "Back, flick up-left: kickflip" (EA Skate) or "X + Left: kickflip" (THPS). On by default; the pause menu switches it off. |
 
 The widgets (text, list, meter) need the runtime UI from skate-gameui. The balance meter is the only new widget type (a progress bar exists, so it may be enough).
 
@@ -152,7 +158,7 @@ The widgets (text, list, meter) need the runtime UI from skate-gameui. The balan
 
 - **Third person** stays the default.
 - **First person** works as today. It suits the street line.
-- **Fixed cameras become spot cameras.** Instead of one `FixedCamera`, each zone gets a camera placed like a filmer's angle. In fixed mode the view switches to the camera of the zone the skater is in, and it turns to follow the skater (position fixed, aim follows). The Camera button still cycles the three modes.
+- **The fixed camera becomes a spot camera that follows (D7).** Each zone has a spot, a filmer's angle. The third camera mode takes the spot of the zone the skater is in, then **follows** the skater from that side: it moves to stay within a set distance and keeps aiming at the skater. No camera stays static. The Camera button still cycles the three modes.
 - **Control schemes** need no change. The control hints (§6) and the goal texts read the selected scheme, so every goal is explained in the scheme the player picked.
 
 ## 8. Plan
@@ -162,24 +168,24 @@ Each step builds, keeps the demo playable and ships with unit tests. The order a
 | Step | Content | Size | Needs |
 |---|---|---|---|
 | 1 | Park layout: 40 m floor, zones, new Euro-gap deck prefab | M | none |
-| 2 | Combo and score system (pure logic and tests), HUD combo line | M | none |
+| 2 | Combo chain (pure logic and tests), HUD combo line; GPL-21 points removed | M | none |
 | 3 | Named grinds, nose manual, body spins | M | none |
-| 4 | Session mode, goals, summary, best score | M | GUI (summary panel, checklist) |
-| 5 | Unified HUD (timer, balance meter, hints); `GameUi` HUD removed | S–M | GUI review |
-| 6 | Spot cameras per zone | S | none |
+| 4 | ~~Session mode, goals, summary, best score~~ (not approved yet) | | |
+| 5 | Unified HUD (combo line, balance meter, hints with a pause menu switch); `GameUi` HUD removed | S–M | GUI review |
+| 6 | Spot cameras per zone that follow the skater | S | none |
 | Later | Trick and grab animation clips | | ANI (clips), then grabs |
 
 Out of scope: grabs (no clips), multiplayer sessions, online leaderboards, new sounds (a separate AUD request: board pop, grind, landing).
 
-## 9. Decisions for you
+## 9. Decisions
 
-| # | Question | My recommendation |
-|---|---|---|
-| D1 | Park size: 40 × 40 m with four zones, or keep it small (30 × 30 m, street and transition only)? | **40 × 40 m**: room for flow and for the goals |
-| D2 | Add the new Euro-gap deck prefab so the stair sets can be skated from the top? | **Yes**; otherwise the 5-stair goal is not doable |
-| D3 | Combo rules: link window and manual-linking as in §4 (Tony Hawk-like), or simpler (each landed trick scores on its own, no combos)? | **Combos as in §4**; it is what makes a session fun |
-| D4 | Session length: 2 minutes, and free skate as the default mode? | **2 min, free skate by default** (the demo opens without pressure) |
-| D5 | Are these six goals right? Add or drop any? | As listed |
-| D6 | Control hints on screen by default? | **On**, with a pause menu switch to turn them off |
-| D7 | Spot cameras that follow the skater per zone, replacing the single fixed camera? | **Yes** |
-| D8 | Drop the exported game's separate HUD in favour of the one MainScene HUD? | **Yes**; one HUD in both hosts, no overlap |
+| # | Question | My recommendation | **Decision (human, 2026-11-06)** |
+|---|---|---|---|
+| D1 | Park size: 40 × 40 m with four zones, or keep it small? | 40 × 40 m | **Yes**: 40 × 40 m, four zones |
+| D2 | New Euro-gap deck prefab so the stairs can be skated from the top? | Yes | **Yes** |
+| D3 | Combos with link window and manual-linking, lost on a bail? | Combos as in §4 | **Yes, but no points or score yet**: show the combo / trick chain only |
+| D4 | Session length and default mode? | 2 min, free skate by default | **Free skate only**: no session mode, no timer |
+| D5 | The six goals? | As listed | **No goals yet** |
+| D6 | Control hints on screen, with a pause menu switch? | On, with a switch | **Yes** |
+| D7 | Spot cameras per zone? | Yes, aim follows | **Yes, and they must follow the skater** (no static camera) |
+| D8 | One HUD for editor Play and the exported game? | Yes | **Yes** |
