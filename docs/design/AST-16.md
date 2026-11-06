@@ -1,6 +1,6 @@
 # AST-16 — Asset store window
 
-Status: **awaiting approval**. No code yet. Author: `skate-online` (lead-assigned; `skate-assets` reviews).
+Status: **awaiting approval** (rev 2: `skate-assets` review addressed in §6.2, §7, §7.1, §8, §10). No code yet. Author: `skate-online` (lead-assigned; `skate-assets` reviews).
 Paths are relative to `src/main/kotlin/com/pafoid/skate/`.
 
 Marker: **⚠ UNVERIFIED** = an API detail I could not confirm from the provider's public docs on 2026-11-06. Each one needs a spike before its provider ships.
@@ -40,7 +40,7 @@ interface StoreHttp {
 }
 ```
 
-`JdkStoreHttp` is the only implementation that touches the network. It sends `User-Agent: SkateEngine/<version> (asset-store)` on every request, because Poly Haven requires a unique UA. It honours `429` + `Retry-After` and applies a per-provider concurrency limit (default 2) plus a response cache (§7.1).
+`JdkStoreHttp` is the only implementation that touches the network. It sends `User-Agent: SkateEngine/<version> (asset-store)` on every request, because Poly Haven requires a unique UA. It honours `429` + `Retry-After` and applies a per-provider concurrency limit (default 2) plus a response cache (§7.2).
 
 ## 3. Provider plugin interface
 
@@ -120,12 +120,12 @@ Flow for OAuth2: the window shows "Log in to Sketchfab", which opens the system 
 
 ### 5.4 Kenney (packs) — no API
 - Facts: all game assets are CC0 and attribution is optional (kenney.nl/support). No API or programmatic download is documented. The Kenney logo must not be used.
-- v1 design: a **curated catalog** `assets/assetstore/kenney.catalog.json` ships with the editor: pack name, page URL, preview image (bundled, our own render or none), tags, license `CC0-1.0`. "Get" opens the pack page in the browser, and the user downloads the zip. **"Import downloaded pack…"** takes the zip, matches it to the catalog entry by filename, and imports the selected models (FBX/OBJ/glTF inside the pack) with the license recorded.
+- v1 design: a **curated catalog** `assets/assetstore/kenney.catalog.json` ships with the editor: pack name, page URL, preview image (bundled, our own render or none), tags, license `CC0-1.0`. "Get" opens the pack page in the browser, and the user downloads the zip. **"Import downloaded pack…"** takes the zip, matches it to the catalog entry by filename, and imports the selected models with the license recorded. v1 imports only the **glTF/GLB** files inside the pack (§7.1). Packs that ship only FBX/OBJ are listed as "not importable yet" until the follow-up task in §7.1 lands.
 - ⚠ UNVERIFIED: whether stable direct zip URLs exist that Kenney allows hot-linking to. Ask before automating.
 
 ### 5.5 Quaternius (packs) — no API
 - Facts: "All models are under the CC0 License", with no attribution required (quaternius.com/faq). Formats mentioned: `.blend` and FBX. The "All in one" bundle is on Patreon.
-- Same design as Kenney: curated catalog plus manual download plus "Import downloaded pack…". ⚠ UNVERIFIED: where individual pack downloads are hosted, and whether glTF is available. FBX goes through Assimp, `.blend` through AST-19.
+- Same design as Kenney: curated catalog plus manual download plus "Import downloaded pack…". ⚠ UNVERIFIED: where individual pack downloads are hosted, and whether glTF is available. If a pack has only FBX or `.blend`, v1 cannot import it (§7.1). Later routes: the FBX model importer task in §7.1, or `.blend` via AST-19.
 - Optional later provider: **Poly Pizza** API (`https://api.poly.pizza/v1/`, `X-Auth-Token` API key, GLB). It hosts many CC0/CC-BY low-poly models and could cover individual Kenney/Quaternius models. ⚠ UNVERIFIED: the official docs page returned 404, and the endpoints are known only from third-party code. Not in v1.
 
 ### 5.6 NVIDIA SimReady via Hugging Face (USD models) — partly verified
@@ -151,7 +151,9 @@ data class LicenseInfo(val spdx: String,            // "CC0-1.0", "CC-BY-4.0", "
 - **ND licenses:** converting a format (USD to glTF) may count as a derivative. Show a warning on import of ND assets and record "format-converted" in the ledger. Legal reading open (Q3).
 
 ### 6.2 Attribution ledger
-- Per project: `<project>/attribution.json`. It is human-readable and diffable, committed with the project, and lives under the project root (not in the assets folder, so the Asset Browser does not list it).
+- Per project: `<project>/.skate/attribution.json`. `AssetRegistry` is rooted at the project folder, and `scan()` registers every non-hidden file. `scan()` already skips dot-directories (`onEnter { !it.name.startsWith(".") }`), so putting the ledger under `.skate/` keeps it out of the registry and the Asset Browser with **no registry change**. A unit test asserts that `scan()` of a project containing `.skate/attribution.json` does not register it.
+- The ledger is human-readable and diffable, and it is **committed** with the project. The project `.gitignore` template ignores only `.skate/cache/`, not the whole `.skate/` folder.
+- Format versioning follows `AssetMeta`: a top-level `schema` (`CURRENT_SCHEMA = 1`), and a decoder with `ignoreUnknownKeys = true` and `encodeDefaults = true`. A migration hook `AttributionLedger.migrate(schema, json)` mirrors `SchemaMigrations` and is empty in v1 (rule 8: no upgrade code until there is a v2).
 ```json
 { "schema": 1, "entries": [ {
   "assetIds": ["<guid of each imported file>"],
@@ -162,9 +164,9 @@ data class LicenseInfo(val spdx: String,            // "CC0-1.0", "CC-BY-4.0", "
   "modifications": ["converted USD -> glTF", "scaled cm -> m"],
   "retrievedAt": "2026-11-06T12:00:00Z" } ] }
 ```
-- Each imported file's `.meta` sidecar (`AssetMeta.settings`) gets `store.provider`, `store.sourceId` and `store.license`. The Asset Browser and inspector can then show the license for any file, and the ledger can be rebuilt from metas if it is lost.
+- Each imported file's `.meta` sidecar (`AssetMeta.settings`) gets `store.provider`, `store.sourceId` and `store.license`. These are new keys in the existing free-form `settings: Map<String, String>`, so they need **no `AssetMeta` schema bump**. Older readers ignore them. The Asset Browser and inspector can then show the license for any file, and the ledger can be rebuilt from metas if it is lost.
 - Deleting an asset through the editor removes its GUID from the entry and drops the entry when it is empty. A consistency check (Tools menu) lists metas with no ledger entry, and the reverse.
-- **Export** (with AST-15): generates `CREDITS.txt` (plus `credits.json`) from the ledger entries whose GUIDs are in the packed set (`ReferenceCollector`). CC0 entries are listed as courtesy credits. Export **warns** if a packed asset is NC or has an unknown license. The "Attribution" panel in the store window shows the ledger.
+- **Export** (with AST-15): generates `CREDITS.txt` (plus `credits.json`). `ReferenceCollector.collect()` returns `Set<File>`, not GUIDs, so each packed file is mapped to its GUID with `registry.idOf(<project-relative path>)`. Files with no id are skipped. The ledger entries whose `assetIds` intersect that GUID set are emitted. CC0 entries are listed as courtesy credits. Export **warns** if a packed asset is NC or has an unknown license. The "Attribution" panel in the store window shows the ledger.
 
 ## 7. Download and import pipeline
 
@@ -172,17 +174,25 @@ data class LicenseInfo(val spdx: String,            // "CC0-1.0", "CC-BY-4.0", "
 search/details (provider) → user picks variant → resolveDownload (fresh URLs)
 → download to staging  (<project>/.skate/cache/store/<provider>/<sourceId>/<variant>/, gitignored)
 → verify (size, md5 when given) → unzip (zip-slip + size/entry-count limits)
-→ optional conversion (USD → glTF, §8)
-→ importPlan → copy into <assets>/store/<provider>/<slug>/  → write .meta (+ store.* settings)
-→ AssetRegistry.scan of the new folder → ledger entry → thumbnail
+→ optional conversion (USD → glTF, §8) → path check on converter output (same zip-slip rules)
+→ importPlan → copy into ProjectLayout.assetsDir(projectDir)/Store/<provider>/<slug>/
+→ registry.register(file) per imported file → add store.* settings to each .meta
+→ ledger entry → thumbnail
 ```
-- Runs on `JobSystem.runIO`. Registry and ledger updates happen in `runOnMain`. There is a progress bar and cancel button per download in a "Downloads" strip of the window. Cancel or failure deletes staging and leaves no partial files in `assets/`.
-- The mutation is `ImportStoreAssetCommand` (an `AsyncCommand`, executed through the service layer). Undo deletes the imported folder and removes the ledger entry. Re-import of the same `(provider, sourceId, revision, variant)` is detected and offers "open existing" or "reimport (keeps GUIDs)".
-- The target folder follows AST-14's single assets folder. The command takes the root from `AssetPaths`, so AST-14 does not change this design.
-- Imported files keep their native format (glTF/GLB, FBX, textures). Loading uses the existing `AssimpLoader` and texture paths. No new runtime format.
-- Units and axes: importers already convert to metres, Y-up and right-handed (conventions.md). For USD, see §8.
+- **Target folder:** built only through AST-14's `ProjectLayout.assetsDir(projectDir)` / `assetPath(...)`, giving `Assets/Store/<provider>/<slug>/` (capitalised, matching the single assets folder). No hard-coded `assets/` string. `<slug>` is sanitised to `[a-z0-9_-]`, and a numeric suffix is added on collision with a different `sourceId`.
+- **Registration:** there is no scoped `AssetRegistry.scan`. The pipeline calls `registry.register(file)` for **each imported file**. That creates the sidecar, and we then add the `store.*` settings and write the sidecar back. No full rescan, and no new registry API. (If a scoped `scan(dir)` is wanted later, that is a separate `NEEDS AST` request, not part of this design.)
+- **Staging is never exported:** the exporter and `PackBuilder` must ignore `.skate/cache/store/`. `.skate/` is already skipped by registry scans, and AST-15/export adds an explicit exclusion plus a test so that staging never enters a pack even if the export walker changes.
+- **Threading:** downloads run on `JobSystem.runIO`. Registry, sidecar and ledger updates happen in `runOnMain`. There is a progress bar and cancel button per download in a "Downloads" strip of the window. Cancel or failure deletes staging and leaves no partial files under the assets folder.
+- **Command and undo:** the mutation is `ImportStoreAssetCommand` (an `AsyncCommand`, executed through the service layer). **Undo removes every imported file through `AssetRegistry.delete(file)`**, which drops the registry entry and the sidecar together. The empty `<slug>/` folder is deleted afterwards, and the ledger entry is removed. Raw file deletion is not used.
+- **Re-import keeping GUIDs:** re-importing the same `(provider, sourceId, revision, variant)` offers "open existing" or "reimport". Reimport **overwrites the files in place and leaves their `.meta` sidecars untouched**, then calls `register(file)`. `register` reads the existing sidecar and keeps its GUID, because the path is unchanged. Files that no longer exist in the new version are removed with `AssetRegistry.delete`. New files get new sidecars. The ledger entry's `assetIds`, `revision` and `retrievedAt` are updated. Undo of a reimport restores the previous files from a backup copy in staging.
+- **Units and axes:** importers already convert to metres, Y-up and right-handed (conventions.md). For USD, see §8.
 
-### 7.1 Caching (window)
+### 7.1 Importable formats (v1)
+- Imported files must match an existing importer. Today `AssetMeta.importerFor` treats `fbx` as `model`, but the editor's `FileType.ANIMATION` (`editor/data/FileType.kt`) and the Asset Browser's `AssetDiscovery` classify **every `.fbx` as an animation**. An FBX model from the store would land in the Animations tab.
+- **v1 imports only glTF/GLB models plus textures** (PNG/JPG/HDR, which `TextureLoader` handles). Poly Haven (`gltf`), Sketchfab (glTF zip), ambientCG (texture sets) and converted USD (GLB) are all covered. Kenney/Quaternius packs import their glTF/GLB files only (§5.4, §5.5).
+- Follow-up (AST, to be filed by the lead): classify `.fbx` as model vs animation by content (meshes vs animations only) so FBX packs become importable.
+
+### 7.2 Caching (window)
 - Search and details JSON: memory LRU plus a 24 h disk cache in `%LOCALAPPDATA%/Skate/assetstore-cache/`. Thumbnails: disk cache keyed by URL hash, max 200 MB with LRU eviction. Download URLs are never cached.
 
 ## 8. USD → glTF conversion (SimReady, optional for Poly Haven `usd`)
@@ -198,13 +208,14 @@ interface UsdConverter {
 }
 ```
 Candidates, in recommended order:
-1. **Headless Blender** (recommended): `blender -b --factory-startup --python <bundled script> -- in.usd out.glb`. The script calls Blender's USD importer, then its glTF exporter (Y-up, metres). It reuses the Blender locator and process runner from **AST-19**, which makes this a shared dependency. Blender converts `UsdPreviewSurface` materials. ⚠ UNVERIFIED: how Blender handles MDL/OmniPBR. Expect a fallback to defaults.
+1. **Headless Blender** (recommended): `blender -b --factory-startup --python <bundled script> -- in.usd out.glb`. The script calls Blender's USD importer, then its glTF exporter (Y-up, metres). It reuses the Blender locator and process runner from **AST-19**. `skate-assets` owns that locator, and the store only consumes it. Blender converts `UsdPreviewSurface` materials. ⚠ UNVERIFIED: how Blender handles MDL/OmniPBR. Expect a fallback to defaults.
 2. **`usd2gltf`** (Python, needs `usd-core` from pip): used when the user has Python configured. ⚠ UNVERIFIED: maintenance state and material coverage.
 3. **Assimp USD importer** (no external tool): Assimp 5.4 added an experimental USD importer (via tinyusdz). ⚠ UNVERIFIED: whether LWJGL 3.3.6's Assimp natives are built with it enabled (it is off by default upstream). Spike: try `aiImportFile` on a sample `.usda`.
 
 If no converter is available, the store marks SimReady items as "needs Blender" and links to the Blender path setting.
 
 Post-processing after conversion:
+- The converter writes only into a fresh output directory inside staging. Every produced path (the `.glb`, plus any sidecar textures or `.bin`) goes through the same sanitiser as zip entries (no `..`, no absolute or drive paths, no symlinks that resolve outside staging) before `importPlan` sees it.
 - Validate the output loads in `AssimpLoader`. Apply `metersPerUnit`/`upAxis` scaling if the converter did not.
 - Materials: map OmniPBR/`UsdPreviewSurface` inputs (diffuse, roughness, metallic, normal) to our material keys. Unmapped MDL goes to the default material with a warning in the import report.
 - UsdPhysics (colliders, mass) is kept in the import report only. Mapping to Skate collider components is a follow-up for PHY (not v1).
@@ -225,10 +236,15 @@ Post-processing after conversion:
 
 - Parser tests per provider against recorded JSON fixtures (search, details, files/downloads).
 - `LicenseCatalog` mapping (every slug from each provider, unknown leads to blocked).
-- `DownloadPlan` path sanitisation, zip-slip and zip-bomb limits, md5 verification (temp dirs).
+- `DownloadPlan` path sanitisation, zip-slip and zip-bomb limits, md5 verification (temp dirs). The same sanitiser runs on converter output (a fake converter that emits `../x.glb` is rejected).
 - `ImportPlan` for glTF + includes, a texture set to material slots, and a Kenney zip matched to its catalog entry.
-- Ledger encode/decode, rebuild from metas, removal on delete, credits generation for a packed set.
-- `ImportStoreAssetCommand` execute/undo with a fake pipeline. `CredentialStore` path outside the project, plus header redaction.
+- Ledger encode/decode (unknown keys ignored, `schema` round-trip), rebuild from metas, removal on delete.
+- `AssetRegistry.scan()` of a project with `.skate/attribution.json` and `.skate/cache/store/**` registers neither.
+- Credits: a packed `Set<File>` is mapped to GUIDs via `registry.idOf(relativePath)`, and only the matching ledger entries are emitted.
+- Import target is `ProjectLayout.assetsDir(projectDir)/Store/<provider>/<slug>/`. Each file is registered via `register(file)`, and its sidecar carries the `store.*` settings.
+- Reimport in place keeps every surviving file's GUID. Removed files go through `AssetRegistry.delete`.
+- Format gate: `.fbx`/`.obj`/`.blend` entries are rejected in v1, and `.gltf`/`.glb` plus textures are accepted.
+- `ImportStoreAssetCommand` execute/undo with a fake pipeline. Undo calls `AssetRegistry.delete` for every imported file (no sidecar left behind). `CredentialStore` path outside the project, plus header redaction.
 - `UsdConverter.command(...)` argument building. The process runner is behind an interface (no Blender in tests).
 - `StoreHttp` fake: 429 + `Retry-After` handling, cancellation.
 
@@ -236,7 +252,7 @@ Post-processing after conversion:
 
 | Task | Scope | Deps |
 |---|---|---|
-| AST-16a | SPI, registry, `StoreHttp`, pipeline, ledger, window skeleton, **Poly Haven** | AST-14 |
+| AST-16a | SPI, registry, `StoreHttp`, pipeline, ledger, window skeleton, **Poly Haven** | AST-14 (`ProjectLayout`) |
 | AST-16b | ambientCG + texture-set → material import | 16a |
 | AST-16c | Sketchfab OAuth2 + `CredentialStore` + download | 16a, Q1 |
 | AST-16d | Kenney/Quaternius catalogs + "Import downloaded pack" | 16a |
