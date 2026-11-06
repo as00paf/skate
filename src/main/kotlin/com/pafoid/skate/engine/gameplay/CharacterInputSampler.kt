@@ -14,7 +14,6 @@ import com.pafoid.skate.engine.input.InputReader
  */
 class CharacterInputSampler(
     private val reader: InputReader,
-    var settings: Settings = Settings(),
     contexts: InputContextStack? = null,
     private val actionMap: ActionMap? = null,
 ) {
@@ -29,23 +28,17 @@ class CharacterInputSampler(
         actionMap?.let(ActionPresets::applyTo)
     }
 
-    data class Settings(
-        /** Multiplier on the look actions (stick, -1..1). */
-        val stickLookSensitivity: Float = 2.0f,
-        /** Multiplier on mouse motion (cursor units) while the cursor is captured. */
-        val mouseLookSensitivity: Float = 0.1f,
-    )
-
-    fun sample(state: InputStateComponent) {
+    /** Fills [state]; [look] is the character's look tuning ([CharacterBehavior.look], from its config). */
+    fun sample(state: InputStateComponent, look: LookTuning = LookTuning()) {
         state.reset()
         state.moveDirection.set(reader.actionValue(CharacterActions.MOVE_X), reader.actionValue(CharacterActions.MOVE_Y))
         state.cameraLook.set(
-            reader.actionValue(CharacterActions.LOOK_X) * settings.stickLookSensitivity,
-            reader.actionValue(CharacterActions.LOOK_Y) * settings.stickLookSensitivity,
+            reader.actionValue(CharacterActions.LOOK_X) * look.stickSensitivity,
+            reader.actionValue(CharacterActions.LOOK_Y) * look.stickSensitivity,
         )
         if (reader.isCursorCaptured()) {
-            state.cameraLook.x += reader.mouseDeltaX() * settings.mouseLookSensitivity
-            state.cameraLook.y += reader.mouseDeltaY() * settings.mouseLookSensitivity
+            state.cameraLook.x += reader.mouseDeltaX() * look.mouseSensitivity
+            state.cameraLook.y += reader.mouseDeltaY() * look.mouseSensitivity
         }
         state.jumpHeld = reader.isActionDown(CharacterActions.JUMP)
         state.jumpPressed = reader.wasActionPressed(CharacterActions.JUMP)

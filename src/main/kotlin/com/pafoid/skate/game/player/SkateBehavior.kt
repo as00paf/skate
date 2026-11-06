@@ -69,6 +69,7 @@ class SkateBehavior(
     val manualAngle: Float get() = context.manualAngle
 
     override val ground get() = config.onFoot.ground
+    override val look get() = config.onFoot.look
 
     override val state: String get() = if (mounted) machine.current.name else onFoot.state
 
