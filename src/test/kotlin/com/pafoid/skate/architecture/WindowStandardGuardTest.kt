@@ -108,7 +108,7 @@ class WindowStandardGuardTest {
             // D: debug
             "ConsoleWindow", "ProfilerWindow", "CommandHistoryWindow", "ShellWindow",
             // F: modals & palette
-            "ProjectSwitcherDialog", "SearchEverywhereWindow", "ProjectWizardWindow",
+            "ProjectSwitcherDialog", "ProjectWizardWindow",
             // H: domain windows
             "AudioInspectorWindow", "ScriptEditorWindow",
             // I: input testing move (the window is deleted)
