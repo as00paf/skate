@@ -1,5 +1,6 @@
 package com.pafoid.skate.engine.render.renderer.passes
 
+import com.pafoid.skate.engine.render.graph.RenderResourceIds
 import com.pafoid.skate.engine.render.rhi.BufferUpdate
 import com.pafoid.skate.engine.render.rhi.BufferUsage
 import com.pafoid.skate.engine.render.rhi.RhiBuffer
@@ -40,9 +41,9 @@ class ParticlePass(
 ) : BaseRenderPass() {
 
     override val name: String = "ParticlePass"
+    override val inputs: Set<String> = setOf(RenderResourceIds.SCENE_COLOR, RenderResourceIds.SCENE_DEPTH)
+    override val outputs: Set<String> = setOf(RenderResourceIds.SCENE_COLOR)
     override val description: String = "Renders particle emitters as instanced billboards"
-    override val inputs: Set<String> = setOf("SceneColor")
-    override val outputs: Set<String> = setOf("SceneColor")
 
     private var input: RhiVertexInput? = null
     private var quadVbo: RhiBuffer? = null

@@ -1,5 +1,6 @@
 package com.pafoid.skate.engine.render.renderer.passes
 
+import com.pafoid.skate.engine.render.graph.RenderResourceIds
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.components.DirectionalLightComponent
 import com.pafoid.skate.engine.ecs.systems.CameraManager
@@ -43,8 +44,8 @@ class ShadowPass(
 ) : BaseRenderPass() {
 
     override val name: String = "ShadowPass"
+    override val outputs: Set<String> = setOf(RenderResourceIds.SHADOW_MAP, RenderResourceIds.LOCAL_SHADOW_MAP)
     override val description: String = "Renders cascaded sun shadows and spot/point light shadow maps"
-    override val outputs: Set<String> = setOf("ShadowMap")
     override val canDisable: Boolean = true
 
     private val fitter = CascadeFitter()
