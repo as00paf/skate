@@ -4,6 +4,7 @@ import com.pafoid.skate.editor.events.ViewportAction
 import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.core.StringManager
+import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.events.SceneAction.CloseAllRequested
 import com.pafoid.skate.engine.events.SceneAction.CloseOthersRequested
@@ -22,7 +23,8 @@ class EditorScenesTabBar(
     private val eventSystem: EventSystem,
     private val stringManager: StringManager
 ) {
-    private var toRemove = -1
+    /** Closing a scene with unsaved changes asks first (EDT-52B: the standard modal). */
+    private val closeModal = CloseSceneModal()
     fun render(sceneManager: SceneManager) {
         if (ImGui.beginTabBar("##EditorScenesTabBar", ImGuiTabBarFlags.Reorderable or ImGuiTabBarFlags.AutoSelectNewTabs)) {
             val openScenes = sceneManager.openScenes.toList()
@@ -57,10 +59,7 @@ class EditorScenesTabBar(
                         ImGui.separator()
                         val canClose = sceneManager.openScenes.isNotEmpty()
                         if (stringManager.tipped(ImGui.menuItem("${Icons.WINDOW_CLOSE} ${stringManager.getString("context.scene_tab.close")}", null, false, canClose), "context.scene_tab.close")) {
-                            if (scene.isDirty) {
-                                toRemove = index
-                                ImGui.openPopup(stringManager.label("context.scene_tab.close_confirmation_title"))
-                            } else eventSystem.publish(CloseRequested(scene))
+                            if (scene.isDirty) closeModal.ask(scene) else eventSystem.publish(CloseRequested(scene))
                         }
                         if (stringManager.tipped(ImGui.menuItem("${Icons.WINDOW_CLOSE} ${stringManager.getString("context.scene_tab.close_others")}", null, false, canClose), "context.scene_tab.close_others")) {
                             eventSystem.publish(CloseOthersRequested(scene))
@@ -79,25 +78,11 @@ class EditorScenesTabBar(
                 }
 
                 if (!open.get()) {
-                    if (scene.isDirty) {
-                        toRemove = index
-                        ImGui.openPopup(stringManager.label("context.scene_tab.close_confirmation_title"))
-                    } else eventSystem.publish(CloseRequested(scene))
+                    if (scene.isDirty) closeModal.ask(scene) else eventSystem.publish(CloseRequested(scene))
                 }
             }
 
-            MImGui.showConfirmationModal(
-                title = stringManager.label("context.scene_tab.close_confirmation_title"),
-                message = stringManager.getString("context.scene_tab.close_confirmation_message"),
-                confirmText = stringManager.getString("lbl.input_system.yes"),
-                cancelText = stringManager.getString("lbl.input_system.no"),
-                onConfirm = {
-                    if (toRemove >= 0) {
-                        eventSystem.publish(CloseRequested(openScenes[toRemove]))
-                    }
-                    toRemove = -1
-                }
-            )
+            closeModal.render()
 
             val addTabFlags =
                 ImGuiTabItemFlags.Trailing or ImGuiTabItemFlags.NoCloseWithMiddleMouseButton or ImGuiTabItemFlags.NoReorder
@@ -108,5 +93,30 @@ class EditorScenesTabBar(
 
             ImGui.endTabBar()
         }
+    }
+
+    private inner class CloseSceneModal : EditorModal(stringManager, Icons.WINDOW_CLOSE) {
+        private var scene: Scene? = null
+
+        override val titleKey = "context.scene_tab.close_confirmation_title"
+
+        fun ask(target: Scene) {
+            scene = target
+            open()
+        }
+
+        override fun content() {
+            ImGui.pushTextWrapPos(ImGui.getFontSize() * 28f)
+            ImGui.textWrapped(stringManager.getString("context.scene_tab.close_confirmation_message"))
+            ImGui.popTextWrapPos()
+        }
+
+        override fun buttons() = listOf(
+            FooterButton("btn.cancel", FooterButton.Role.CANCEL) { scene = null },
+            FooterButton("context.scene_tab.close_discard", FooterButton.Role.DANGER) {
+                scene?.let { eventSystem.publish(CloseRequested(it)) }
+                scene = null
+            },
+        )
     }
 }

@@ -101,8 +101,6 @@ class WindowStandardGuardTest {
     companion object {
         /** Windows not converted to the standard yet, by EDT-52 chunk. Remove entries; never add any. */
         val ALLOW_LIST = setOf(
-            // B: scene
-            "SceneHierarchyWindow", "PropertiesWindow", "GameViewWindow",
             // C: project & assets
             "ProjectWindow", "AssetBrowserWindow",
             // D: debug
