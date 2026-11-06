@@ -177,15 +177,15 @@ Goal (human, after REN-13): full Vulkan support for **exported games**, chosen p
   - Do: Port the geometry pass with materials (PBR inputs, alpha modes), UBO lights and culling, skinning, sky dome/skybox and fog to Vulkan.
   - Done when: MainScene's lit, textured, skinned frame matches OpenGL within a documented tolerance (GpuTest); zero validation errors.
   - Deps: VK-01, VK-02
-- [~] @skate-render **VK-04** `P2` Shadows on Vulkan
+- [~] @skate-render **VK-04** `P2` Shadows on Vulkan — code merged (round 25); validation run pending the SDK
   - Do: Cascaded sun shadows and spot/point shadow maps (depth arrays, compare samplers, depth bias/clamp) with the backend depth-range fix-up; REN-22 caching behaviour preserved.
   - Done when: Showcase shadow area matches OpenGL within tolerance at each quality level (GpuTest).
   - Deps: VK-03
-- [~] @skate-vulkan **VK-05** `P2` Post-processing on Vulkan
+- [~] @skate-vulkan **VK-05** `P2` Post-processing on Vulkan — code merged (round 25); validation run pending the SDK
   - Do: PostChain ping-pong, blits, bloom/FXAA/tonemap/gamma with a documented texture-orientation (Y-flip) convention.
   - Done when: Showcase post-effects area matches OpenGL within tolerance (GpuTest).
   - Deps: VK-03
-- [~] @skate-gameui **VK-06** `P2` Runtime UI, particles and debug lines on Vulkan
+- [~] @skate-gameui **VK-06** `P2` Runtime UI, particles and debug lines on Vulkan — code merged (round 25); validation run pending the SDK
   - Do: UiPass (batches, SDF text, scissor, blending), instanced particles and debug lines on Vulkan.
   - Done when: Showcase UI/particles areas match OpenGL within tolerance (GpuTest).
   - Deps: VK-03
@@ -915,7 +915,7 @@ A lot of features are broken. Many unit tests are missing (**no integration test
   - Do: The GitHub Actions `build` workflow (windows-latest) has failed on every run since at least 2026-10-29, including master, while the local `gradlew test` passes. Latest failures (PR #21): `ShaderValidationTest` initializationError (IllegalStateException), five `ProjectExporterTest`/`ExportedReferencesTest` failures (probably no game jar on CI after AST-11), plus whatever failed earlier. Find each root cause from the run logs (`gh run view --log-failed`), fix tests that depend on the developer machine (GL context, built jars, user data, fonts, paths) with proper skips/fakes or CI setup (e.g. run `gameJar` before `test` in the workflow), and fix real bugs (report other domains' bugs as NEEDS).
   - Done when: CI is green on a branch from current master and stays green on the next PR; tests that need a GPU are explicitly tagged and skipped on CI with a reason.
   - Deps: QA-06
-- [ ] **QA-16** `P2` Vulkan parity suite and exported Vulkan game end-to-end
+- [~] @skate-qa **QA-16** `P2` Vulkan parity suite and exported Vulkan game end-to-end
   - Do: GpuTest suite comparing Vulkan and OpenGL frames per FeatureShowcase area within documented tolerances, plus an end-to-end test that exports a Vulkan-backend project and runs it (offscreen/headless where possible), extending QA-14.
   - Done when: The suite runs locally with Vulkan, is skipped on CI, and fails on any area regression.
   - Deps: VK-03, VK-04, VK-05, VK-06, GPL-19

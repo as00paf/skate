@@ -13,6 +13,8 @@ import com.pafoid.skate.engine.assets.data.Shader
 import com.pafoid.skate.engine.utils.RenderConsts2D.VERTEX_SIZE
 import com.pafoid.skate.engine.utils.ShaderConst.Uniforms
 import org.joml.Matrix4f
+import org.lwjgl.system.MemoryUtil
+import java.nio.FloatBuffer
 
 /** Draws a [UiDrawList] with the 2D batch shader and a top-left-origin pixel ortho projection. */
 class UiBatchRenderer {
@@ -20,6 +22,10 @@ class UiBatchRenderer {
     private var ebo: RhiBuffer? = null
     private var input: RhiVertexInput? = null
     private var indexCapacityQuads = 0
+
+    /** Reused CPU staging copy of the frame's vertices, and the vertex buffer size in bytes; both only grow. */
+    private var staging: FloatBuffer? = null
+    private var vertexBytes = 0L
     private val projection = Matrix4f()
     private val view = Matrix4f()
 
@@ -34,8 +40,7 @@ class UiBatchRenderer {
         shader.uploadMat4f(Uniforms.VIEW, view.identity())
         shader.uploadIntArray(Uniforms.TEXTURES, SAMPLERS)
 
-        val floats = list.quadCount * 4 * VERTEX_SIZE
-        vbo!!.replace(list.vertexData.copyOf(floats))
+        upload(list)
 
         val cmd = RhiContext.require().commandList()
         val pipeline = pipelines.get(shader, vertexInput.layout) ?: return
@@ -63,6 +68,23 @@ class UiBatchRenderer {
         return IntRect(x, y, w, h).also { lastScissor = it }
     }
 
+    /** Uploads the recorded vertices without allocating once the buffers are big enough (VK-06). */
+    private fun upload(list: UiDrawList) {
+        val floats = list.quadCount * 4 * VERTEX_SIZE
+        val bytes = floats.toLong() * Float.SIZE_BYTES
+        val buffer = staging?.takeIf { it.capacity() >= floats } ?: run {
+            staging?.let { MemoryUtil.memFree(it) }
+            MemoryUtil.memAllocFloat(maxOf(floats, (staging?.capacity() ?: 0) * 2)).also { staging = it }
+        }
+        if (bytes > vertexBytes) {
+            vertexBytes = buffer.capacity().toLong() * Float.SIZE_BYTES
+            vbo!!.resize(vertexBytes)
+        }
+        buffer.clear()
+        buffer.put(list.vertexData, 0, floats).flip()
+        vbo!!.update(0, buffer)
+    }
+
     private fun ensureBuffers(quads: Int) {
         val current = input
         if (current == null) {
@@ -84,6 +106,9 @@ class UiBatchRenderer {
         vbo?.close()
         ebo?.close()
         input = null; vbo = null; ebo = null; indexCapacityQuads = 0
+        staging?.let { MemoryUtil.memFree(it) }
+        staging = null
+        vertexBytes = 0
         pipelines.close()
     }
 
