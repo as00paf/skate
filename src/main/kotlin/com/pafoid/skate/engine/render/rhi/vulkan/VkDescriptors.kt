@@ -369,14 +369,23 @@ internal class VkFrameResources(
     override fun close() = slots.forEach { it.close() }
 
     companion object {
-        /** Whether [t] can be read through sampler [d] (same image dimension, depth-compare matching depth). */
-        fun compatible(t: VkRhiTexture, d: SpirvReflection.Descriptor): Boolean {
-            val dim = when (t.desc.type) {
+        /** Whether [t] can be read through sampler [d]; see the pure overload. */
+        fun compatible(t: VkRhiTexture, d: SpirvReflection.Descriptor): Boolean =
+            compatible(t.desc.type, t.isDepth, t.sampler.compare != null, d)
+
+        /**
+         * Same image dimension, and: a shadow sampler ([SpirvReflection.Descriptor.depth]) reads a depth texture; a
+         * plain sampler reads a colour texture or a depth texture without depth compare (GL and Vulkan both allow
+         * sampling depth values directly, as SSAO does with the scene depth; VK-05).
+         */
+        fun compatible(type: TextureType, isDepth: Boolean, compares: Boolean, d: SpirvReflection.Descriptor): Boolean {
+            val dim = when (type) {
                 TextureType.TEXTURE_2D -> SpirvReflection.ImageDim.D2
                 TextureType.TEXTURE_2D_ARRAY -> SpirvReflection.ImageDim.D2_ARRAY
                 TextureType.CUBE -> SpirvReflection.ImageDim.CUBE
             }
-            return dim == d.dim && t.isDepth == d.depth
+            if (dim != d.dim) return false
+            return if (d.depth) isDepth else !compares
         }
     }
 }
