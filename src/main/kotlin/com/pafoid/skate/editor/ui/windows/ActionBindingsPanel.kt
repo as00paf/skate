@@ -173,6 +173,7 @@ class ActionBindingsPanel(
             if (ImGui.smallButton("x##kb_${id}_rm_$i")) send(BindingOperation.Remove(id, i))
             tip("tip.keybindings.remove")
             ImGui.sameLine()
+            renderSharedHint(id, binding)
         }
         val addActive = capturing?.let { it.actionId == id && it.index == null } == true
         if (addActive) {
@@ -191,6 +192,23 @@ class ActionBindingsPanel(
             if (ImGui.smallButton(s("btn.keybindings.reset") + "##kb_${id}_reset")) send(BindingOperation.Reset(listOf(id), "command.bindings.reset_action", listOf(id)))
             tip("tip.keybindings.reset")
         }
+    }
+
+    /** INP-10: the same input is bound in another context; the higher-priority one takes it while active. */
+    private fun renderSharedHint(id: String, binding: ActionBinding) {
+        val map = actionMap() ?: return
+        val shared = ActionBindingsModel.sharedWith(map, id, binding)
+        if (shared.isEmpty()) return
+        ImGui.textDisabled("(!)")
+        if (ImGui.isItemHovered()) {
+            val names = shared.map { it.actionId }.distinct().joinToString(", ") { other ->
+                val def = map.definition(other)
+                val name = def?.let { translated(it.displayKey) } ?: other
+                def?.let { "$name (${contextLabel(it.context)})" } ?: name
+            }
+            ImGui.setTooltip(strings.getString("tip.keybindings.shared", names))
+        }
+        ImGui.sameLine()
     }
 
     private fun contextPopupName(id: String) = "##kb_add_$id"
@@ -287,7 +305,7 @@ class ActionBindingsPanel(
         ImGui.closeCurrentPopup()
     }
 
-    private fun contextLabel(context: InputContext) = s("lbl.keybindings.context.${context.id}")
+    private fun contextLabel(context: InputContext) = ActionBindingsModel.contextLabel(context, ::translated)
 
     private fun categoryLabel(category: String): String {
         return translated("lbl.keybindings.category.${category.lowercase()}") ?: category

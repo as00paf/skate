@@ -9,6 +9,10 @@ import com.pafoid.skate.editor.imgui.EditorDialog
 import com.pafoid.skate.editor.imgui.MImGui
 import com.pafoid.skate.editor.systems.ProjectManager
 import com.pafoid.skate.engine.core.Engine
+import com.pafoid.skate.engine.ecs.systems.InputSystem
+import com.pafoid.skate.engine.input.ContextBlocking
+import com.pafoid.skate.engine.input.InputContext
+import com.pafoid.skate.engine.input.InputContextStack
 import com.pafoid.skate.engine.input.DeadZoneMode
 import com.pafoid.skate.engine.input.DeadZoneSettings
 import com.pafoid.skate.engine.input.StickDeadZone
@@ -53,7 +57,24 @@ class InputTestingWindow(
 
         if (ImGui.collapsingHeader(ImGuiIds.stable(s("lbl.input_testing.devices"), "lbl.input_testing.devices"))) renderDevices(pads)
         if (ImGui.collapsingHeader(ImGuiIds.stable(s("lbl.input_testing.gamepad_tuning"), "lbl.input_testing.gamepad_tuning"))) renderGamepad(pads, zones)
+        if (ImGui.collapsingHeader(ImGuiIds.stable(s("lbl.input_testing.contexts"), "lbl.input_testing.contexts"))) renderContexts()
         if (ImGui.collapsingHeader(ImGuiIds.stable(s("lbl.input_testing.event_log"), "lbl.input_testing.event_log"))) renderLog()
+    }
+
+    /** INP-10: the live input context stack, top first; entries under a modal (blocking "all") one are greyed out. */
+    private fun renderContexts() {
+        val stack = engine.systemManager.getSystem<InputSystem>()?.contexts
+        if (stack == null) {
+            ImGui.textDisabled(s("lbl.input_testing.no_input_system"))
+            return
+        }
+        for (row in InputContextRows.of(stack)) {
+            val label = ActionBindingsModel.contextLabel(row.context) { key -> s(key).takeUnless { it.startsWith("!!") } }
+            val text = s("lbl.input_testing.context_row").format(
+                label, row.priority, s("lbl.input_testing.blocking.${row.blocking.name.lowercase()}"), row.owner.ifEmpty { "-" },
+            )
+            if (row.silenced) ImGui.textDisabled(text) else ImGui.text(text)
+        }
     }
 
     private fun pollEvents() {
@@ -248,5 +269,27 @@ class InputTestingWindow(
         log.lines.asReversed().forEach { ImGui.textUnformatted(it) }
         ImGui.endChild()
         ImGui.unindent()
+    }
+}
+
+/** One line of the Input Testing context list (INP-10). */
+data class InputContextRow(
+    val context: InputContext,
+    val priority: Int,
+    val blocking: ContextBlocking,
+    val owner: String,
+    /** Below a [ContextBlocking.ALL] entry, so it reads nothing right now. */
+    val silenced: Boolean,
+)
+
+object InputContextRows {
+    /** [stack]'s entries, top first. */
+    fun of(stack: InputContextStack): List<InputContextRow> {
+        var silenced = false
+        return stack.entries().map { e ->
+            InputContextRow(e.context, e.priority, e.blocking, e.owner, silenced).also {
+                if (e.blocking == ContextBlocking.ALL) silenced = true
+            }
+        }
     }
 }
