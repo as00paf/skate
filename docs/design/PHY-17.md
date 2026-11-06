@@ -77,7 +77,7 @@ thread that calls `step`. Only the contact listener runs on Jolt workers, and it
 ## 2. Native packaging for editor and exported games
 
 Today `NativeLibraryLoader` hard-codes `bulletjme` and the libbulletjme jar paths. Bullet runs from the `SpDebug`
-runtime classifier.
+runtime classifier (since PHY-20: `SpRelease`).
 
 Plan:
 
@@ -390,35 +390,37 @@ Rough effort: about 8–10 agent days in total. Slices b and d are the largest.
     world holds a 16 MB temp allocator and a thread pool, so a leak would show as hundreds of MB and 100+ threads.
   - Determinism: two single-thread runs of the same 300-step scene give bit-identical poses.
 
-### Benchmark (manual, 2026-11-06)
+### Benchmark (manual, 2026-11-06; Bullet release native since PHY-20)
 
 `PhysicsBenchmarkTest`, skipped unless `SKATE_BENCHMARK=1`:
 `cmd.exe /c "set SKATE_BENCHMARK=1&& gradlew.bat :test --tests com.pafoid.skate.engine.physics3d.PhysicsBenchmarkTest --rerun"`.
 It writes build/reports/physics-benchmark.md. The table shows `EngineStats.physicsStepTime` per fixed step (60 Hz)
-over 600 measured steps after a 60-step warm-up, on a 16-core Windows machine; Jolt used 4 solver threads.
-The vehicle solver's own time is excluded on both backends.
+over 600 measured steps after a 60-step warm-up, on a 16-core Windows machine. Both backends use release natives
+(Bullet `SpRelease`, Jolt `ReleaseSp`); Jolt used 4 solver threads, Bullet one. The vehicle solver's own time is
+excluded on both.
 
 | Scene | Backend | Mean ms | p50 ms | p95 ms | Max ms | Active / bodies at end |
 |---|---|---|---|---|---|---|
-| 1000-box pile | Bullet | 3.80 | 1.61 | 18.94 | 22.30 | 0 / 1001 |
-| 1000-box pile | Jolt | 1.21 | 1.16 | 2.06 | 5.27 | 800 / 1001 |
-| 50 ragdolls (650 bones, 600 joints) | Bullet | 12.53 | 12.19 | 15.46 | 27.28 | 650 / 651 |
-| 50 ragdolls (650 bones, 600 joints) | Jolt | 1.57 | 1.42 | 2.96 | 5.99 | 247 / 651 |
-| 20 raycast vehicles | Bullet | 0.10 | 0.10 | 0.15 | 0.29 | 20 / 21 |
-| 20 raycast vehicles | Jolt | 0.05 | 0.04 | 0.07 | 0.15 | 20 / 21 |
+| 1000-box pile | Bullet | 0.97 | 0.32 | 5.43 | 17.23 | 0 / 1001 |
+| 1000-box pile | Jolt | 1.24 | 1.14 | 2.15 | 6.63 | 800 / 1001 |
+| 50 ragdolls (650 bones, 600 joints) | Bullet | 2.84 | 2.71 | 3.99 | 5.81 | 650 / 651 |
+| 50 ragdolls (650 bones, 600 joints) | Jolt | 1.39 | 1.24 | 2.73 | 6.91 | 247 / 651 |
+| 20 raycast vehicles | Bullet | 0.03 | 0.02 | 0.05 | 0.28 | 20 / 21 |
+| 20 raycast vehicles | Jolt | 0.05 | 0.05 | 0.07 | 0.11 | 20 / 21 |
 
-A second run was within about 20% of these numbers (Bullet 4.98 / 14.89 / 0.12 ms mean, Jolt 1.38 / 1.39 / 0.05 ms).
+A second run gave the same picture (mean Bullet 0.71 / 2.46 / 0.02 ms, Jolt 1.18 / 1.35 / 0.04 ms).
 
-Caveats:
-- **Not like-for-like:** the build runs Bullet with libbulletjme's **SpDebug** native (`runtimeOnly ...
-  classifier = "SpDebug"` in build.gradle.kts), Jolt with the ReleaseSp native. The table compares what the engine
-  ships today, not the two engines at equal optimisation. Switching Bullet to a release classifier is a separate
-  question (it would lose libbulletjme's debug checks).
-- Jolt runs its solver on 4 threads, Bullet on one.
-- Jolt's pile was still mostly awake after 11 s (one large island has to be still as a whole before it sleeps), while
-  Bullet's had fallen asleep, so the Jolt pile figures include more simulation work, not less.
+Reading:
+- **Box pile:** Bullet's mean and median are lower because its pile falls asleep (0 active at the end) while Jolt's
+  stays mostly awake (one large island has to be still as a whole before it sleeps). During the collapse, Bullet's
+  spikes are 2–3× Jolt's (p95 5.4 vs 2.2 ms, max 17 vs 7 ms), which matters more for frame pacing.
+- **Ragdolls:** Jolt is about 2× faster, and lets most bones sleep where Bullet keeps all 650 awake.
+- **Vehicles:** both are negligible; Bullet's single-threaded step has less fixed overhead on tiny scenes.
 - Ragdoll bones start stacked along a line and are pulled into shape by their joints. This is a load test, not a
   realistic ragdoll.
+
+Before PHY-20, the build shipped libbulletjme's **SpDebug** native. The same benchmark then gave Bullet mean
+3.80 ms (box pile), 12.53 ms (ragdolls) and 0.10 ms (vehicles), 4–5× slower than the release build.
 
 - Tests on Bullet and Jolt: `PhysicsFeaturesTest` (core and contact cases), `PhysicsCalibrationTest`,
   `FrictionPropagationTest`, `JointConstraintsTest`, `RagdollBuilderTest`, `PhysicsSystemRagdollTest`,

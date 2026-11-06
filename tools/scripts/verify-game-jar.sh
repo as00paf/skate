@@ -31,7 +31,12 @@ entries=$(list_jar "$jar")
 for native in native/windows/x86_64/bulletjme.dll windows/x86-64/com/github/stephengold/joltjni.dll; do
   grep -qx "$native" <<<"$entries" || { echo "FAIL: $jar is missing $native"; exit 1; }
 done
-echo "3/4 game jar ships the Bullet and Jolt physics natives"
+# PHY-20: Bullet must be the release build; its debug build carries a "Debug_" build-type marker and a .pdb path
+jar_entry() { if command -v unzip >/dev/null 2>&1; then unzip -p "$1" "$2"; else python3 -c 'import sys,zipfile; sys.stdout.buffer.write(zipfile.ZipFile(sys.argv[1]).read(sys.argv[2]))' "$1" "$2"; fi; }
+if jar_entry "$jar" native/windows/x86_64/bulletjme.dll | grep -a -q 'Debug_'; then
+  echo "FAIL: $jar ships the debug Bullet native (use the SpRelease classifier)"; exit 1
+fi
+echo "3/4 game jar ships the Bullet (release) and Jolt physics natives"
 
 # A real ProjectExporter export must ship the jar containing the new token
 gradle -q :test --tests "com.pafoid.skate.build.GameJarBuildTest" "-Pskate.gameJarToken=$token"
