@@ -79,11 +79,11 @@ Round 27+ goals (human, 2026-11-06): post-processing quality, render-graph clari
   - Do: Replace the thick grid with a thin, anti-aliased infinite grid as in Blender/Godot/Unity: minor/major lines that adapt to camera distance, distance fade, X axis red and Z axis blue, and no line thickening at grazing angles.
   - Done when: The grid looks like a standard editor grid at every distance and angle; the line-spacing/fade math has unit tests.
   - Deps: REN-24
-- [~] @skate-render **REN-26** `P1` Ambient light becomes an environment setting; default directional Sun
+- [x] **REN-26** `P1` Ambient light becomes an environment setting; default directional Sun
   - Do: Approved by the human: ambient light has no position. Move ambient color/intensity (or sky-based ambient) into the scene's Environment settings, remove the positional ambient component and its gizmo, and add a default "Sun" directional light, linked to day/night, to the default scenes. The editor draws the sun's direction arrow at the entity. Update the default projects and the showcase.
   - Done when: New scenes have Environment ambient + a Sun. No ambient gizmo at 0,0,0. Day/night drives the sun. Tests cover the environment settings and serialization.
   - Deps: REN-25
-- [ ] **REN-27** `P1` Environment reflections and a shiny metallic showcase object
+- [~] @skate-render **REN-27** `P1` Environment reflections and a shiny metallic showcase object
   - Do: Add image-based lighting (prefiltered environment map + irradiance from the skybox, BRDF LUT) and/or reflection probes so metallic/smooth materials reflect their surroundings. Add a very shiny, reflective metallic object to the Feature Showcase Materials section.
   - Done when: The showcase metallic object clearly reflects the sky/scene; the IBL math/setup has unit tests; Vulkan parity follows in a VK task.
   - Deps: REN-26
@@ -146,9 +146,9 @@ Round 27+ goals: the Asset Browser shows every asset type, one assets folder, ex
   - Do: Write `docs/design/AST-15.md`: refined export wizard flow plus settings (splash image, icon, target platform, graphics backend, compression/packing, debug vs release, target FPS).
   - Done when: The human approves the note.
   - Deps: EDT-59
-- [~] @skate-online **AST-16** `P2` Asset store window: design note
-  - Do: Write `docs/design/AST-16.md`: a provider plugin interface (search, preview, license, download, import), license display and attribution tracking. Providers: NVIDIA SimReady via Hugging Face (https://huggingface.co/spaces/nvidia/simready-central, USD assets, so it needs USD→glTF conversion), Poly Haven, ambientCG, Kenney, Quaternius, Sketchfab (CC licenses, login). No Mixamo (no public API; human decision 2026-11-06: no scraping).
-  - Done when: The human approves the note.
+- [~] @skate-online **AST-16** `P2` Asset store window — design approved 2026-11-06 (`docs/design/AST-16.md`, revised after the skate-assets review)
+  - Do: Human priority: **free libraries that need no login first.** Slices in order: a) SPI, registry, HTTP seam, pipeline, ledger, window skeleton + Poly Haven, b) ambientCG + texture sets, d) Kenney/Quaternius catalogs + "Import downloaded pack", f) credits on export (with AST-15), e) SimReady via Hugging Face + USD→glTF through Blender (needs AST-19), c) Sketchfab login (last, optional). No Mixamo, no Poly Pizza for now. ND licenses: warn and record the conversion.
+  - Done when: Each slice imports a real asset with its license recorded; tests on fixtures, no sockets.
 - [ ] **AST-17** `P2` City generation from OpenStreetMap: design note
   - Do: Write `docs/design/AST-17.md` evaluating OSM2World (Java, open source, glTF export) as the open-source alternative to commercial OSM city tools: area picker, import to a scene with colliders and materials, licensing (ODbL attribution).
   - Done when: The human approves the note.
@@ -162,6 +162,11 @@ Round 27+ goals: the Asset Browser shows every asset type, one assets folder, ex
 - [ ] **AST-20** `P2` Classify FBX files as model or animation by content
   - Do: From AST-16: `.fbx` is always classed as `FileType.ANIMATION`, so FBX models show up in the Animations tab and store packs with FBX models cannot be imported as models. Inspect the file (meshes vs. animations only) and classify it accordingly; a file with both counts as a model with clips.
   - Done when: FBX models appear as models, animation-only FBX as animations; tests with fixture files.
+
+- [~] @skate-animation **AST-21** `P2` Recognise `.skanim` clips in the editor and exports
+  - Do: From ANI-13 (lead-assigned to skate-animation, AST/EDT review): add `skanim` to `FileType.ANIMATION` (Asset Browser, search), register it in `AssetMeta`/`AssetPaths` and in export packing.
+  - Done when: A `.skanim` shows in the Animations tab, can be assigned, and is packed in an export; tests.
+  - Deps: ANI-13
 
 ### ECS — `ECS` (`skate-ecs`)
 
@@ -203,9 +208,26 @@ Round 27+ goals: a Jolt backend selectable per project, a terrain heightfield co
 
 Round 27+ goals: an animation authoring tool and animation from video.
 
-- [~] @skate-animation **ANI-12** `P2` Animation tool and video-to-animation: design note
-  - Do: Write `docs/design/ANI-12.md`: an animation editor window (timeline, keyframes, curve editor, preview, events) and a video→animation pipeline from **local video files only** (human decision 2026-11-06). Run an existing pose-estimation tool as an external process (evaluate MediaPipe, GVHMR/WHAM, FreeMoCap, and NVIDIA's offering the human mentioned, "motion bricks") on license, quality, hardware needs and install story, then output BVH/glTF and use the existing retargeting.
-  - Done when: The human approves the note.
+- [x] **ANI-12** `P2` Animation tool and video-to-animation: design note — approved 2026-11-06 (`docs/design/ANI-12.md`). Human: drop MotionBricks and the GEM-X backend for now (revisit later); the goal is a tool that makes creating and editing animations from video **easy**.
+- [x] **ANI-13** `P2` `.skanim` clip format, loader and pure editing core
+  - Do: ANI-12 §2.2 and §5.1: JSON `*.skanim` format (versioned), loader to the existing `Animation` types, and the pure editing core under `engine/animation/edit/` (keys, tangents, Euler↔quat curves, keyframe reduction, filters, loop seam, foot-lock).
+  - Done when: A `.skanim` round-trips and plays on the skater; the core is unit-tested.
+  - Deps: ANI-12
+- [ ] **ANI-14** `P2` Animation editor window: timeline, dope sheet, events, preview
+  - Do: ANI-12 §2.1. Written by skate-animation, reviewed by skate-editor (lead decision); edits go through `Command`s; offscreen preview with REN help.
+  - Done when: A clip can be scrubbed, keyed, retimed and saved, with undo; window logic tested.
+  - Deps: ANI-13, EDT-52
+- [ ] **ANI-15** `P2` Curve editor and cleanup tools
+  - Do: ANI-12 §2.1: curve editor (tangent modes) and cleanup tools (resample, reduction, smoothing, foot-lock, mirror, trim, loop seam).
+  - Done when: The tools work on a mocap clip in the editor; core logic tested.
+  - Deps: ANI-14
+- [~] @skate-animation **ANI-16** `P2` Retargeter rest-pose compensation
+  - Do: ANI-12 §3.4: compensate rest-pose differences (T-pose vs A-pose) per bone in `Retargeter`.
+  - Done when: A T-pose source retargets cleanly onto the skater rig; tests.
+- [ ] **ANI-17** `P2` Video to animation with MediaPipe (local files)
+  - Do: ANI-12 §3: process runner, BVH writer, MediaPipe adapter script and position→rotation solver with filtering, foot contacts and optional root motion; "Import mocap file…" for BVH/FBX/glTF from any tool; "Check setup" in Editor Settings and a setup doc. Make the flow **easy**: pick a video, preview, one click to a clip that opens in the animation editor.
+  - Done when: A local sample video produces a clip on the skater rig that opens in the animation editor; solver tested on synthetic landmarks.
+  - Deps: ANI-13, ANI-16
 
 ### Audio — `AUD` (`skate-audio`)
 
@@ -216,7 +238,7 @@ Audio needs a more complete implementation.
 
 Round 27+ goals: input is too tightly coupled with skateboarding; it needs a game-agnostic abstraction.
 
-- [~] @skate-gameplay **INP-10** `P1` REWRITE Decouple input from skateboarding
+- [~] @skate-input **INP-10** `P1` REWRITE Decouple input from skateboarding
   - Do: Design note `docs/design/INP-10.md` first. Generic action maps and input contexts (gameplay/UI/vehicle/...) with push/pop priority in the engine; skate-specific actions, bindings and gesture/flick logic move to the game layer (`game/**`, owned by gameplay). Scripts and in-game UI use the generic API.
   - Done when: The design is approved and implemented, `engine/input/**` has no skateboarding concepts (architecture-guard test), and the skate game plays as before.
 
@@ -227,7 +249,7 @@ Round 27+ goals: a fuller skate demo with camera modes and standard control sche
 - [x] **GPL-20** `P0` Prefab library barrel rolls and clips halfway into the ground
   - Do: Reproduce on master first. Fix the barrel's collider/pivot/mesh offset and its rest state in the prefab library showcase.
   - Done when: The barrel rests on the ground without rolling or clipping; a test checks that the collider bounds match the mesh bounds for library prefabs.
-- [ ] **GPL-21** `P1` Skateboarding control schemes
+- [~] @skate-gameplay **GPL-21** `P1` Skateboarding control schemes
   - Do: Ship four default schemes on the INP-10 API: **EA Skate (default)** (flick-it right-stick tricks), Session (each stick a foot), Skater XL (sticks = feet, triggers turn), THPS (face buttons + direction combos). Selectable in the pause menu settings and persisted.
   - Done when: Each scheme can perform the core trick set; scheme definitions have tests.
   - Deps: INP-10
@@ -288,20 +310,17 @@ Round 27+ goals (human, 2026-11-06): fix editor bugs, make every window, dialog 
 - [x] **EDT-50** `P0` Missing editor strings
   - Do: Find hardcoded UI text and keys missing from `assets/strings/**` (all locales) and fix them. Extend the key test so any missing key or hardcoded label fails.
   - Done when: No raw keys or missing strings in the editor; the test enforces it.
-- [~] @skate-editor **EDT-51** `P1` Editor consistency audit: design note
-  - Do: Write `docs/design/EDT-51.md`: an inventory of every window, dialog and menu (hamburger and settings menus included) and one standard for header icons, right-click menus, a `?` help button, empty states, and window vs. modal. List the windows that become dialogs and the dialogs that become windows, plus the missing settings (feeds EDT-57).
-  - Done when: The human approves the note.
-  - Deps: EDT-45
-- [ ] **EDT-52** `P1` Apply the editor consistency standard
-  - Do: Apply EDT-51 to every window, dialog and menu (may be split across agents).
+- [x] **EDT-51** `P1` Editor consistency audit: design note — approved 2026-11-06 (human decisions + lead approval of the chunk plan, `docs/design/EDT-51.md`)
+- [~] @skate-editor **EDT-52** `P1` Apply the editor consistency standard
+  - Do: Apply EDT-51 in the chunks of `docs/design/EDT-51.md` §5: A (foundation, alone, first), then B scene, C project & assets, D debug, E settings dialogs, F modals & palette, G menus, H domain windows (AUD, SCR) in parallel, then I input-testing move (INP, after E). Chunk A: skate-editor.
   - Done when: Every item in the EDT-51 inventory meets the standard; a test checks windows register header icon, help and context menu.
   - Deps: EDT-51
 - [ ] **EDT-53** `P1` Beginner help in every window
   - Do: The `?` in each window opens a plain-language explanation (what it is, how to use it, related windows), written for someone who never used a 3D program. Strings are localized.
   - Done when: Every window has help; a test checks that every registered window has help strings.
   - Deps: EDT-51
-- [~] @skate-vulkan **EDT-54** `P1` REWRITE Render Graph window overhaul
-  - Do: Design note first. Readable node layout, real pass names, inputs/outputs, per-pass GPU timings, enable/disable a pass, docked and shown by default.
+- [~] @skate-vulkan **EDT-54** `P1` REWRITE Render Graph window overhaul — design approved by the lead 2026-11-06 (`docs/design/EDT-54.md` rev 2, reviewed by skate-render)
+  - Do: Step 2a (engine API: `RenderGraphInfo`, `PassTimings`, signature-based version, all post effects as stages, `lbl.render_pass.*` keys; skate-vulkan, skate-render reviews), then step 2b (the window, after EDT-52 chunk A so it follows the new window standard). Step 2c (per-effect GPU timers) deferred. The window opens docked by default as a background tab next to Console.
   - Done when: The human approves the design and the window is usable on MainScene and the showcase; layout logic tested.
   - Deps: REN-24
 - [x] **EDT-55** `P1` Script editor shown by default and refined
