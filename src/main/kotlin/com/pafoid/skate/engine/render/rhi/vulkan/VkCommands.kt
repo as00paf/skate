@@ -19,17 +19,18 @@ import org.lwjgl.system.MemoryStack
 import org.lwjgl.system.MemoryStack.stackPush
 import org.lwjgl.system.MemoryUtil
 import org.lwjgl.vulkan.VK10.*
+import org.lwjgl.vulkan.VK11.VK_ERROR_OUT_OF_POOL_MEMORY
 import org.lwjgl.vulkan.VkAttachmentDescription
 import org.lwjgl.vulkan.VkAttachmentReference
 import org.lwjgl.vulkan.VkClearValue
 import org.lwjgl.vulkan.VkCommandBuffer
-import org.lwjgl.vulkan.VkCommandBufferBeginInfo
 import org.lwjgl.vulkan.VkDescriptorBufferInfo
 import org.lwjgl.vulkan.VkDescriptorImageInfo
 import org.lwjgl.vulkan.VkDescriptorPoolCreateInfo
 import org.lwjgl.vulkan.VkDescriptorPoolSize
 import org.lwjgl.vulkan.VkDescriptorSetAllocateInfo
 import org.lwjgl.vulkan.VkGraphicsPipelineCreateInfo
+import org.lwjgl.vulkan.VkImageBlit
 import org.lwjgl.vulkan.VkPipelineColorBlendAttachmentState
 import org.lwjgl.vulkan.VkPipelineColorBlendStateCreateInfo
 import org.lwjgl.vulkan.VkPipelineDepthStencilStateCreateInfo
@@ -63,20 +64,53 @@ internal class VkRhiPipeline(override val desc: PipelineDesc) : RhiPipeline {
 }
 
 /**
- * Recorded command list of the offscreen spike (REN-13). Each `beginPass`/`endPass` pair records one command buffer
- * that is submitted and waited for at `endPass`: no frames in flight, so buffer writes between passes are safe.
- * GL-style immediate state (textures per unit, uniform buffers per slot, named parameters) is resolved into one
- * descriptor set per draw, with the parameters and uniform blocks copied into a per-pass uniform ring.
+ * Recorded command list (REN-13, VK-01). Passes record into the current frame's command buffer ([VkFrameLoop]),
+ * submitted once per frame; a null target is the swapchain's back buffer. GL-style immediate state (textures per
+ * unit, uniform buffers per slot, named parameters) is resolved into one descriptor set per draw, with the
+ * parameters and uniform blocks copied into the frame slot's uniform ring.
  */
-internal class VkCommandList(private val core: VkCore, private val device: VulkanDevice) : RhiCommandList {
-    private val cmd: VkCommandBuffer = core.allocateCommandBuffer()
-    private val ring = core.hostBuffer(RING_SIZE, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT)
-    private var ringOffset = 0L
-    private val descriptorPool = createDescriptorPool()
+internal class VkCommandList(
+    private val core: VkCore,
+    private val device: VulkanDevice,
+    framesInFlight: Int,
+) : RhiCommandList {
+    private lateinit var frames: VkFrameLoop
+    private var cmd: VkCommandBuffer? = null
+
+    // Interim per-slot transient memory (VK-01). VK-02 replaces this block with VkFrameResources/bindDraw.
+    private val rings = Array(framesInFlight) { core.hostBuffer(RING_SIZE, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT) }
+    private val ringOffsets = LongArray(framesInFlight)
+    private val descriptorPools = Array(framesInFlight) { arrayListOf(createDescriptorPool()) }
+    private val poolInUse = IntArray(framesInFlight)
+    private var slot = 0
+    private val ring get() = rings[slot]
+    private var ringOffset: Long
+        get() = ringOffsets[slot]
+        set(value) { ringOffsets[slot] = value }
+
+    /** Called by the frame loop once the GPU is done with [slot]: its ring and descriptor pools are reused. */
+    fun resetSlot(slot: Int) {
+        ringOffsets[slot] = 0
+        descriptorPools[slot].forEach { vkResetDescriptorPool(core.device, it, 0) }
+        poolInUse[slot] = 0
+    }
+
+    fun attach(frames: VkFrameLoop) {
+        this.frames = frames
+    }
 
     private var target: VkRhiRenderTarget? = null
     private var renderPass = VK_NULL_HANDLE
     private var inPass = false
+
+    /** Size and colour attachment count of the current pass (a render target or the back buffer). */
+    private var passWidth = 0
+    private var passHeight = 0
+    private var passColors = 0
+    private var passBackbuffer = false
+
+    /** The back buffer pass has no image (minimized window, offscreen device): its draws are dropped. */
+    private var discarding = false
     private var pipeline: VkRhiPipeline? = null
     private var boundPipeline = VK_NULL_HANDLE
     private var input: VkRhiVertexInput? = null
@@ -86,42 +120,64 @@ internal class VkCommandList(private val core: VkCore, private val device: Vulka
     private var scissor: IntRect? = null
 
     override fun beginPass(target: RhiRenderTarget?, layer: Int, clear: ClearValues?, viewport: IntRect?) {
-        val t = requireNotNull(target as VkRhiRenderTarget?) { "The Vulkan spike renders offscreen only (no back buffer)" }
         check(!inPass) { "beginPass inside a pass" }
+        val cmd = frames.commandBuffer()
+        slot = frames.slot
+        this.cmd = cmd
+        val t = target as VkRhiRenderTarget?
         this.target = t
-        renderPass = device.renderPass(t, clear?.color != null, clear?.depth != null)
-        ringOffset = 0
-        vkResetDescriptorPool(core.device, descriptorPool, 0)
+        inPass = true
+        boundPipeline = VK_NULL_HANDLE
+        passBackbuffer = t == null
+        val framebuffer: Long
+        if (t == null) {
+            val image = frames.acquireBackbuffer()
+            discarding = image < 0
+            if (discarding) return
+            val sc = frames.swapchain!!
+            passWidth = sc.width
+            passHeight = sc.height
+            passColors = 1
+            renderPass = device.backbufferRenderPass(sc.format, clear?.color != null, frames.backbufferLayout)
+            framebuffer = sc.framebuffer(renderPass, image)
+        } else {
+            discarding = false
+            passWidth = t.width
+            passHeight = t.height
+            passColors = t.colors.size
+            renderPass = device.renderPass(t, clear?.color != null, clear?.depth != null)
+            framebuffer = t.framebuffer(renderPass, layer)
+        }
         stackPush().use { s ->
-            vk(vkResetCommandBuffer(cmd, 0), "vkResetCommandBuffer")
-            vk(vkBeginCommandBuffer(cmd, VkCommandBufferBeginInfo.calloc(s).`sType$Default`()
-                .flags(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT)), "vkBeginCommandBuffer")
-            val clears = VkClearValue.calloc(t.colors.size + (if (t.depth != null) 1 else 0), s)
+            val hasDepth = t?.depth != null
+            val clears = VkClearValue.calloc(passColors + (if (hasDepth) 1 else 0), s)
             val color = clear?.color
-            for (i in t.colors.indices) if (color != null) clears[i].color().float32(0, color[0]).float32(1, color[1]).float32(2, color[2]).float32(3, color[3])
-            if (t.depth != null) clears[t.colors.size].depthStencil().depth(clear?.depth ?: 1f).stencil(0)
+            for (i in 0 until passColors) if (color != null) clears[i].color().float32(0, color[0]).float32(1, color[1]).float32(2, color[2]).float32(3, color[3])
+            if (hasDepth) clears[passColors].depthStencil().depth(clear?.depth ?: 1f).stencil(0)
             val begin = VkRenderPassBeginInfo.calloc(s).`sType$Default`()
-                .renderPass(renderPass).framebuffer(t.framebuffer(renderPass, layer))
-                .renderArea { it.offset().set(0, 0); it.extent().set(t.width, t.height) }
+                .renderPass(renderPass).framebuffer(framebuffer)
+                .renderArea { it.offset().set(0, 0); it.extent().set(passWidth, passHeight) }
                 .pClearValues(clears)
             vkCmdBeginRenderPass(cmd, begin, VK_SUBPASS_CONTENTS_INLINE)
-            val vp = viewport ?: IntRect(0, 0, t.width, t.height)
-            val f = ClipSpace.flippedViewport(vp.x, vp.y, vp.width, vp.height, t.height)
+            val vp = viewport ?: IntRect(0, 0, passWidth, passHeight)
+            val f = ClipSpace.flippedViewport(vp.x, vp.y, vp.width, vp.height, passHeight)
             val viewports = VkViewport.calloc(1, s)
             viewports[0].x(f[0]).y(f[1]).width(f[2]).height(f[3]).minDepth(0f).maxDepth(1f)
             vkCmdSetViewport(cmd, 0, viewports)
         }
-        inPass = true
-        boundPipeline = VK_NULL_HANDLE
         applyScissor()
     }
 
     override fun endPass() {
         if (!inPass) return
-        vkCmdEndRenderPass(cmd)
-        core.submitAndWait(cmd)
         inPass = false
         target = null
+        if (discarding) {
+            discarding = false
+            return
+        }
+        vkCmdEndRenderPass(cmd!!)
+        if (passBackbuffer) frames.backbufferLayout = VkSwapchain.PRESENT_LAYOUT
     }
 
     override fun setPipeline(pipeline: RhiPipeline) {
@@ -151,38 +207,39 @@ internal class VkCommandList(private val core: VkCore, private val device: Vulka
     }
 
     private fun applyScissor() = stackPush().use { s ->
-        val t = target ?: return@use
+        if (!inPass || discarding) return@use
         val r = scissor
         val rects = VkRect2D.calloc(1, s)
         if (r == null) rects[0].offset().set(0, 0) else {
-            val c = ClipSpace.scissor(r.x, r.y, r.width, r.height, t.height)
+            val c = ClipSpace.scissor(r.x, r.y, r.width, r.height, passHeight)
             rects[0].offset().set(maxOf(0, c[0]), maxOf(0, c[1]))
         }
-        if (r == null) rects[0].extent().set(t.width, t.height) else rects[0].extent().set(r.width, r.height)
-        vkCmdSetScissor(cmd, 0, rects)
+        if (r == null) rects[0].extent().set(passWidth, passHeight) else rects[0].extent().set(r.width, r.height)
+        vkCmdSetScissor(cmd!!, 0, rects)
     }
 
     override fun draw(vertexCount: Int, firstVertex: Int, instances: Int) {
         if (!prepareDraw(indexed = false)) return
-        vkCmdDraw(cmd, vertexCount, instances, firstVertex, 0)
+        vkCmdDraw(cmd!!, vertexCount, instances, firstVertex, 0)
         EngineStats.drawCalls.incrementAndGet()
     }
 
     override fun drawIndexed(indexCount: Int, firstIndex: Int, instances: Int) {
         if (!prepareDraw(indexed = true)) return
-        vkCmdDrawIndexed(cmd, indexCount, instances, firstIndex, 0, 0)
+        vkCmdDrawIndexed(cmd!!, indexCount, instances, firstIndex, 0, 0)
         EngineStats.drawCalls.incrementAndGet()
     }
 
     /** Binds pipeline, buffers and this draw's descriptor set; false when there is nothing to draw with. */
     private fun prepareDraw(indexed: Boolean): Boolean {
         check(inPass) { "Draw outside a pass" }
+        if (discarding) return false
+        val cmd = cmd!!
         val p = pipeline ?: return false
         val vi = input ?: return false
-        val t = target!!
         val shader = p.desc.shader as VkRhiShader
         val compiled = shader.compiled
-        val built = p.built.getOrPut(renderPass) { device.buildPipeline(p, compiled, vi, renderPass, t.colors.size) }
+        val built = p.built.getOrPut(renderPass) { device.buildPipeline(p, compiled, vi, renderPass, passColors) }
         if (built.handle != boundPipeline) {
             vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, built.handle)
             boundPipeline = built.handle
@@ -198,11 +255,7 @@ internal class VkCommandList(private val core: VkCore, private val device: Vulka
     }
 
     private fun descriptorSet(s: MemoryStack, shader: VkRhiShader, compiled: VkRhiShader.Compiled): Long {
-        val alloc = VkDescriptorSetAllocateInfo.calloc(s).`sType$Default`()
-            .descriptorPool(descriptorPool).pSetLayouts(s.longs(compiled.setLayout))
-        val p = s.mallocLong(1)
-        vk(vkAllocateDescriptorSets(core.device, alloc, p), "vkAllocateDescriptorSets")
-        val set = p[0]
+        val set = allocateSet(s, compiled.setLayout)
         val params = shader.parameters() as VkShaderParams
         val writes = VkWriteDescriptorSet.calloc(compiled.descriptors.size, s)
         compiled.descriptors.forEachIndexed { i, d ->
@@ -232,6 +285,21 @@ internal class VkCommandList(private val core: VkCore, private val device: Vulka
         return set
     }
 
+    /** A set from the slot's pools, adding a pool when they are full. */
+    private fun allocateSet(s: MemoryStack, layout: Long): Long {
+        val pools = descriptorPools[slot]
+        val p = s.mallocLong(1)
+        while (true) {
+            val alloc = VkDescriptorSetAllocateInfo.calloc(s).`sType$Default`()
+                .descriptorPool(pools[poolInUse[slot]]).pSetLayouts(s.longs(layout))
+            val r = vkAllocateDescriptorSets(core.device, alloc, p)
+            if (r == VK_SUCCESS) return p[0]
+            check(r == VK_ERROR_OUT_OF_POOL_MEMORY || r == VK_ERROR_FRAGMENTED_POOL) { "Vulkan vkAllocateDescriptorSets failed: $r" }
+            poolInUse[slot]++
+            if (poolInUse[slot] == pools.size) pools += createDescriptorPool()
+        }
+    }
+
     private fun compatible(t: VkRhiTexture, d: SpirvReflection.Descriptor): Boolean {
         val dim = when (t.desc.type) {
             TextureType.TEXTURE_2D -> SpirvReflection.ImageDim.D2
@@ -257,8 +325,56 @@ internal class VkCommandList(private val core: VkCore, private val device: Vulka
         return offset
     }
 
-    override fun blit(src: RhiRenderTarget, dst: RhiRenderTarget?, srcRect: IntRect?, dstRect: IntRect?, filter: Filter) =
-        throw UnsupportedOperationException("blit is not part of the Vulkan spike (REN-13)")
+    /**
+     * Copies colour attachment 0 of [src] into [dst] or the back buffer with vkCmdBlitImage, outside a pass. Rects
+     * are bottom-left based (GL); both images are stored top row first (the backend's Y flip), so only the rects
+     * convert and the copy is not mirrored.
+     */
+    override fun blit(src: RhiRenderTarget, dst: RhiRenderTarget?, srcRect: IntRect?, dstRect: IntRect?, filter: Filter) {
+        check(!inPass) { "blit inside a pass" }
+        val cmd = frames.commandBuffer()
+        slot = frames.slot
+        this.cmd = cmd
+        val from = (src as VkRhiRenderTarget).colors[0]
+        val to = (dst as VkRhiRenderTarget?)?.colors?.get(0)
+        val image: Int
+        val dstWidth: Int
+        val dstHeight: Int
+        if (to == null) {
+            image = frames.acquireBackbuffer()
+            if (image < 0) return
+            val sc = frames.swapchain!!
+            dstWidth = sc.width
+            dstHeight = sc.height
+        } else {
+            image = -1
+            dstWidth = dst!!.width
+            dstHeight = dst.height
+        }
+        val sr = srcRect ?: IntRect(0, 0, src.width, src.height)
+        val dr = dstRect ?: IntRect(0, 0, dstWidth, dstHeight)
+        from.transition(cmd, from.sampledLayout, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, 0, 1)
+        if (to != null) to.transition(cmd, to.sampledLayout, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 0, 1)
+        else frames.swapchain!!.transition(cmd, image, frames.backbufferLayout, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
+        stackPush().use { s ->
+            val region = VkImageBlit.calloc(1, s)
+            region[0].srcSubresource { it.aspectMask(VK_IMAGE_ASPECT_COLOR_BIT).mipLevel(0).baseArrayLayer(0).layerCount(1) }
+            region[0].srcOffsets(0).set(sr.x, src.height - (sr.y + sr.height), 0)
+            region[0].srcOffsets(1).set(sr.x + sr.width, src.height - sr.y, 1)
+            region[0].dstSubresource { it.aspectMask(VK_IMAGE_ASPECT_COLOR_BIT).mipLevel(0).baseArrayLayer(0).layerCount(1) }
+            region[0].dstOffsets(0).set(dr.x, dstHeight - (dr.y + dr.height), 0)
+            region[0].dstOffsets(1).set(dr.x + dr.width, dstHeight - dr.y, 1)
+            val dstImage = to?.image ?: frames.swapchain!!.images[image]
+            vkCmdBlitImage(cmd, from.image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, dstImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                region, if (filter == Filter.LINEAR) VK_FILTER_LINEAR else VK_FILTER_NEAREST)
+        }
+        from.transition(cmd, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, from.sampledLayout, 0, 1)
+        if (to != null) to.transition(cmd, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, to.sampledLayout, 0, 1)
+        else {
+            frames.swapchain!!.transition(cmd, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VkSwapchain.PRESENT_LAYOUT)
+            frames.backbufferLayout = VkSwapchain.PRESENT_LAYOUT
+        }
+    }
 
     override fun beginTimer(timer: RhiTimer) {}
     override fun endTimer(timer: RhiTimer) {}
@@ -274,12 +390,12 @@ internal class VkCommandList(private val core: VkCore, private val device: Vulka
     }
 
     fun destroy() {
-        vkDestroyDescriptorPool(core.device, descriptorPool, null)
-        ring.close()
-        vkFreeCommandBuffers(core.device, core.commandPool, cmd)
+        descriptorPools.forEach { pools -> pools.forEach { vkDestroyDescriptorPool(core.device, it, null) } }
+        rings.forEach { it.close() }
     }
 
     private companion object {
+        /** Per frame in flight; VK-02 replaces the ring with one that grows. */
         const val RING_SIZE = 32L shl 20
         const val MAX_SETS = 4096
     }
@@ -287,6 +403,35 @@ internal class VkCommandList(private val core: VkCore, private val device: Vulka
 
 /** Builds render passes and graphics pipelines for [VulkanDevice] (state translation in [VkTranslate]). */
 internal object VkPipelineBuilder {
+    /**
+     * A render pass over a swapchain image: cleared (from undefined) or loaded from [initialLayout], ending ready to
+     * present ([VkSwapchain.PRESENT_LAYOUT]). Colour only: the back buffer has no depth.
+     */
+    fun backbufferPass(core: VkCore, format: Int, clear: Boolean, initialLayout: Int): Long = stackPush().use { s ->
+        val attachments = VkAttachmentDescription.calloc(1, s)
+        attachments[0].format(format).samples(VK_SAMPLE_COUNT_1_BIT)
+            .loadOp(if (clear) VK_ATTACHMENT_LOAD_OP_CLEAR else VK_ATTACHMENT_LOAD_OP_LOAD).storeOp(VK_ATTACHMENT_STORE_OP_STORE)
+            .stencilLoadOp(VK_ATTACHMENT_LOAD_OP_DONT_CARE).stencilStoreOp(VK_ATTACHMENT_STORE_OP_DONT_CARE)
+            .initialLayout(if (clear) VK_IMAGE_LAYOUT_UNDEFINED else initialLayout)
+            .finalLayout(VkSwapchain.PRESENT_LAYOUT)
+        val colorRefs = VkAttachmentReference.calloc(1, s)
+        colorRefs[0].attachment(0).layout(VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL)
+        val subpass = VkSubpassDescription.calloc(1, s)
+        subpass[0].pipelineBindPoint(VK_PIPELINE_BIND_POINT_GRAPHICS).colorAttachmentCount(1).pColorAttachments(colorRefs)
+        val deps = VkSubpassDependency.calloc(2, s)
+        // The acquire semaphore is waited at COLOR_ATTACHMENT_OUTPUT: the layout transition must come after it
+        deps[0].srcSubpass(VK_SUBPASS_EXTERNAL).dstSubpass(0)
+            .srcStageMask(VK_PIPELINE_STAGE_ALL_COMMANDS_BIT).dstStageMask(VK_PIPELINE_STAGE_ALL_COMMANDS_BIT)
+            .srcAccessMask(VK_ACCESS_MEMORY_WRITE_BIT).dstAccessMask(VK_ACCESS_MEMORY_READ_BIT or VK_ACCESS_MEMORY_WRITE_BIT)
+        deps[1].srcSubpass(0).dstSubpass(VK_SUBPASS_EXTERNAL)
+            .srcStageMask(VK_PIPELINE_STAGE_ALL_COMMANDS_BIT).dstStageMask(VK_PIPELINE_STAGE_ALL_COMMANDS_BIT)
+            .srcAccessMask(VK_ACCESS_MEMORY_WRITE_BIT).dstAccessMask(VK_ACCESS_MEMORY_READ_BIT or VK_ACCESS_MEMORY_WRITE_BIT)
+        val info = VkRenderPassCreateInfo.calloc(s).`sType$Default`().pAttachments(attachments).pSubpasses(subpass).pDependencies(deps)
+        val p = s.mallocLong(1)
+        vk(vkCreateRenderPass(core.device, info, null, p), "vkCreateRenderPass")
+        p[0]
+    }
+
     /**
      * A render pass whose attachments rest in their sampled layouts between passes: cleared attachments start
      * undefined, loaded ones from the resting layout.
