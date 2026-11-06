@@ -1,6 +1,6 @@
 # EDT-51: Editor consistency audit
 
-Status: **proposal, awaiting approval** · Owner: skate-editor · Feeds: EDT-52 (apply), EDT-53 (help text), EDT-57 (settings)
+Status: **human decisions applied (§6); awaiting lead approval of the EDT-52 plan (§5)** · Owner: skate-editor · Feeds: EDT-52 (apply), EDT-53 (help text), EDT-57 (settings)
 
 ## In short
 
@@ -27,7 +27,7 @@ built on its own, so they look and behave differently:
 
 This note lists the current state of everything (§1), proposes **one standard** (§2), says which windows change kind
 (§3), lists the missing settings (§4), and splits EDT-52 into chunks that can run in parallel (§5).
-**§6 lists the decisions I need from you.**
+**§6 records the human's decisions; §5 is the EDT-52 chunk plan.**
 
 ---
 
@@ -54,7 +54,7 @@ Legend: ✅ has it · ◐ partly · ❌ missing · — not applicable.
 | 8 | Command History (`window.command_history`) | Window | ✅ | ❌ | ❌ | ❌ | ◐ plain grey line |
 | 9 | Render Graph (`window.render_graph`) | Window | ❌ | ❌ | ❌ | ◐ one inline hint line | ◐ plain grey line *(EDT-54 is rewriting it)* |
 | 10 | Shell (`window.shell`) | Window | ❌ | ✅ code file | ✅ on the output, plus a Presets popup | ❌ | ❌ |
-| 11 | Script Editor (`window.script_editor`) | Window with its own menu bar | ❌ *(EDT-55 makes it default)* | ❌ | ❌ | ❌ | ◐ plain grey line |
+| 11 | Script Editor (`window.script_editor`) | Window with its own menu bar | ✅ (since EDT-55) | ❌ | ❌ | ❌ | ◐ plain grey line |
 | 12 | Audio Inspector (`window.audio_inspector`), includes the mixer | Window | ❌ | ❌ | ❌ | ❌ | ◐ plain grey lines (no object / no audio component) |
 | 13 | Key Bindings (`window.keybindings`) | Window | ❌ | ❌ | ◐ "+" and mouse popups per binding, plus a conflict modal | ❌ | ❌ |
 | 14 | Editor Settings (`window.editor_settings`) | Floating, but listed in View > Windows | ❌ | ❌ | ❌ | ◐ a tooltip on each setting | — |
@@ -112,22 +112,22 @@ focus or on Esc, and stays as it is (EDT-48 fixes its focus bug).
 
 - **Icon:** every window and dialog title starts with one icon. It comes from a new `open val icon: String` on
   `EditorWindow`, and `title()` adds it with a stable ID.
-- **`?` button:** every window and dialog has a `?` button at the right end of a one-line header strip, drawn by a
-  shared `WindowHeader`. The window's own tools (search box, filters, toggles) go on the left of the same strip. This
+- **`?` button (decided):** every window and dialog has a `?` button at the right end of a one-line header strip,
+  drawn by a shared `WindowHeader`. The window's own tools (search box, filters, toggles) go on the left of the same strip. This
   replaces the ad-hoc toolbars at the top of the Console, Project, Asset Browser and Profiler.
 - **Viewport:** the Game Viewport keeps no title bar. Its `?` goes at the right end of the viewport toolbar.
 
-Proposed icons (★ = a new glyph to add to `Icons`, all from Font Awesome, which the editor already uses):
+Icons (decided; ★ = a new glyph to add to `Icons`, all from Font Awesome, which the editor already uses):
 
 | Window | Icon | Window | Icon |
 |---|---|---|---|
-| Scene Hierarchy | ★ `SITEMAP` | Console | ★ `TERMINAL` |
+| Scene Hierarchy | ★ `SITEMAP` | Console | ★ `LIST` (a log list) |
 | Properties | ★ `SLIDERS` | Profiler | `CHART_LINE` |
 | Game Viewport | — (none) | Command History | ★ `HISTORY` |
 | Project | `FOLDER` | Render Graph | ★ `PROJECT_DIAGRAM` |
-| Asset Browser | `FILE_IMAGE` | Shell | `FILE_CODE` → ★ `TERMINAL`? (see §6) |
+| Asset Browser | `FILE_IMAGE` | Shell | ★ `TERMINAL` |
 | Script Editor | `EDIT` | Audio Inspector | `MUSIC` |
-| Key Bindings | `KEYBOARD` | Input Testing | ★ `GAMEPAD` |
+| Key Bindings | `KEYBOARD` | *(Input Testing is removed, §3.1)* | — |
 | Editor Settings | `GEAR` | Project Settings | `CUBE` |
 | Export Project | `EXPORT` | New / Switch Project | `PLUS` / `FOLDER_OPEN` |
 
@@ -176,7 +176,7 @@ Layout of every menu, following the scene tab menu:
   | Empty list or no results | Says what is missing, e.g. "No commands yet", "No results for …" | Clear search, when a search is active |
 
 - These windows switch from plain lines to the shared component: Console, Profiler, Command History, Render Graph,
-  Script Editor, Audio Inspector, Project Settings, Input Testing, Export, Switch Project, Search Anywhere, and the
+  Script Editor, Audio Inspector, Project Settings, Export, Switch Project, Search Anywhere, and the
   Asset Browser's Animations, Prefabs, Sounds and Textures tabs. Shell gets one too (it has none today).
 
 ### 2.6 Footer buttons (dialogs and modals)
@@ -187,25 +187,37 @@ Layout of every menu, following the scene tab menu:
 - Today the settings windows use OK / Cancel / Apply, `EditorDialog` has a lone **Close** button, and the wizards
   each have their own layout.
 
-### 2.7 Menus (hamburger and settings)
+### 2.7 Menus (hamburger and settings), decided
 
-Proposed hamburger menu (every item keeps its icon, shortcut and tooltip):
+The new menus are approved. The Settings submenu stays, with its content reviewed. Every item keeps its icon,
+shortcut and tooltip.
 
 ```
 File      New Project…  Open Project…  Recent ▸  Save Project  Save Project As…  Close Project
           ─  New Scene  Save Scene  Save Scene As…  Import Scene…
           ─  Export…    ─  Quit
 Edit      Undo  Redo  ─  Cut  Copy  Paste  Duplicate  Delete  ─  Search Anywhere…
-View      Windows ▸ (by category)  Open all  Close all  Reset layout  ─  Show gamepad overlay
+View      Windows ▸ (by category)  Open all  Close all  Reset layout
 Play      Play / Pause  Stop  Reset
-Tools     Input Testing…  Key Bindings…  Shell
+Settings  Language ▸ (English • Français)  Units ▸ (Metric • Imperial)
+          ☑ Show tooltips  ☑ Show gamepad overlay
+          ─  Editor Settings…  Project Settings…  Key Bindings…
+Tools     Test Input…  Shell
 Help      Getting started  Keyboard shortcuts  About Skate
 ```
 
-- **Settings submenu removed.** Its inline controls (overlay size, units, language) already exist in Editor Settings.
-  Settings open from **one place: the gear** in the title bar, which lists Editor Settings…, Project Settings… and
-  Key Bindings…, each with its own icon.
-- **Input submenu** merges into **Tools**.
+**Settings submenu review**, as the quick place for things you flip often:
+
+| Today | Decision | Why |
+|---|---|---|
+| Gamepad overlay size (slider) | **Moves to Editor Settings › Interface only** | Dragging a slider inside a menu is fiddly, and you rarely change it. |
+| Show gamepad overlay (checkbox) | **Stays** (moved here from View) | A quick toggle. |
+| Unit system (combo) | **Stays, as a Units ▸ submenu with radio items** | A combo inside a menu closes the menu when it opens; radio items do not. |
+| Language (combo) | **Stays, as a Language ▸ submenu with radio items** | Same reason. |
+| — | **New: Show tooltips (checkbox)** | The EDT-57 toggle, one click away. |
+| Key Bindings…, Settings… | **Stay**, renamed Editor Settings… and joined by Project Settings… | The same three dialogs as the gear popup, which stays as a shortcut. |
+
+- **Input** submenu: removed; Test Input… moves to **Tools** (§3.1).
 - **"Getting started"** opens the Game Viewport's help popover. **"About"** is a small modal that shows the version.
 
 ---
@@ -216,14 +228,31 @@ Help      Getting started  Keyboard shortcuts  About Skate
 |---|---|---|---|
 | Editor Settings | Floating window, listed in View > Windows | **Dialog** | You open, change and close it. It should not be in the layout. |
 | Project Settings | Floating window, listed in View > Windows | **Dialog** | Same reason. |
-| Key Bindings | Dockable window | **Dialog** | Same reason. Opened from the gear menu and from Editor Settings. |
-| Input Testing | Dialog | **Window** (Debug category, docks at the bottom) | A live monitor you watch while playing, next to the viewport. |
+| Key Bindings | Dockable window | **Dialog** (decided), with a new **Test** tab (§3.1) | Same reason. Opened from the gear, Settings ▸ Key Bindings… and Tools ▸ Test Input…. |
+| Input Testing | Dialog | **Removed**; its content moves to Key Bindings and Project Settings (§3.1) | Decided by the human: no separate window. |
 | New Project wizard | Pseudo-modal | **Modal** | It must be answered and should block the editor. Coordinate with the EDT-59 rewrite. |
 | Switch Project | Pseudo-modal | **Modal** | Same reason. |
 | Search Anywhere | Pseudo-modal | **Palette popup** (§2.1) | It is transient, not a question. It closes when it loses focus. |
 | Export Project | Dialog | stays a **Dialog**; its progress becomes a **Modal** (EDT-56) | You can still read the options; only a running export blocks the editor. |
 | Remove-component confirmation, Scene-tab close confirmation, Error | Modal popups | stay **Modals**, rebuilt on `EditorModal` | One shared look (EDT-49 fixes the remove-component layout). |
 | Audio Inspector (with mixer) | Window | stays a **Window** | A live inspector. |
+
+### 3.1 Where Input Testing's content goes (proposal)
+
+Today Input Testing has three parts. Each moves to where you already are when you need it:
+
+| Part today | Moves to | How it works there |
+|---|---|---|
+| **Devices**: keys held, mouse position, delta and buttons, connected gamepads | **Key Bindings dialog › Test tab** | You are binding keys, so you want to see right away what the editor receives. Press something, and it lights up. |
+| **Event log** (press/release history, with pause) | **Key Bindings dialog › Test tab**, under the devices | Adds an **Action** column: which bound action each event fired. That is the question you are asking when testing bindings. |
+| **Gamepad tuning**: stick and trigger visuals, raw vs. processed values, dead-zone mode, sizes, press threshold (saved to the project) | **Project Settings › Input** (a new section) | Dead zones are a per-project game setting, so they belong with the project. The live stick and trigger drawings stay beside the sliders, so you still tune while you watch. |
+| Live gamepad view while playing | the existing **Gamepad overlay** on the viewport | Already there; toggled from Settings ▸ Show gamepad overlay. |
+
+- **Tools ▸ Test Input…** and a Search Anywhere action open Key Bindings on its Test tab.
+- `InputTestingWindow` is deleted. Its drawing code (`InputTestingModel`, the stick and trigger drawing) is moved,
+  not rewritten. Keys keep the `lbl.input_testing.*` and `lbl.deadzone.*` names in `editor/input`, so translations
+  carry over.
+- Input owns this content (INP), so the move is chunk **I** in §5, done with INP.
 
 ---
 
@@ -237,8 +266,9 @@ Help      Getting started  Keyboard shortcuts  About Skate
 
 | Section | Setting | State | Priority |
 |---|---|---|---|
-| Interface | **Show tooltips** (on/off; every `Tooltips.show` honours it, but property tooltips in the inspectors could stay on, see §6) | New | **P1** |
+| Interface | **Show tooltips** (on/off, also in Settings ▸). Off hides button and menu tooltips (`Tooltips.show` / `tipped`). **Inspector field explanations stay** (`Tooltips.showIfPresent`, the `component.*` and `ui.inspector.*` `.tooltip` keys), as decided. | New | **P1** |
 | Interface | UI scale / font size | Exists (`fontSize`) | **P1** |
+| Interface | Gamepad overlay size (moved out of the Settings submenu) | Exists (`gamepadOverlaySize`) and is already shown | done |
 | General | Open the last project on startup | Exists (`loadLastProjectOnStartup`) | **P1** |
 | General | Clear the recent projects list (button) | New | P2 |
 | General | Ask before deleting objects or components | New | P2 |
@@ -263,41 +293,62 @@ Help      Getting started  Keyboard shortcuts  About Skate
 | Physics | Default gravity for new scenes | New (gravity is per scene today) | P2 |
 | Audio | Default bus volumes (master / music / SFX / UI) | Exists (`AudioSettings`); shown only in the Audio Inspector mixer | P2 |
 | Graphics | Graphics backend | Exists and is shown (EDT-43) | done |
+| Input | Gamepad dead zones and trigger threshold, with live stick/trigger view | Exists in Input Testing; moves here (§3.1) | **P1** (chunk I) |
 
 ---
 
-## 5. How to split EDT-52
+## 5. EDT-52 plan: chunks
 
-**Chunk A goes first, alone.** It builds the shared pieces. After it is merged, chunks B–H only touch their own files,
-so they can run in parallel. To avoid string-file conflicts, chunk A creates one labelled block per chunk at the end of
-`assets/strings/editor/core.properties` and `core_fr.properties`, and each chunk adds its keys inside its own block.
+### 5.1 Rules for every chunk
 
-| Chunk | Owner | Files | Work |
+- **Order:** chunk **A** goes first and alone. B–I then run in parallel. Their files do not overlap; each chunk lists
+  the only files it may edit.
+- **Strings:** chunk A adds one labelled block per chunk at the end of `assets/strings/editor/core.properties` and
+  `core_fr.properties` (`# --- EDT-52 B: scene ---` …). A chunk adds keys only inside its own block, so merges do not
+  conflict. Domain strings stay in their area files (`editor/input`, `editor/audio`, `editor/scripting`).
+- **Help text:** each chunk adds `help.<window>.what/how/related` with a one-line placeholder in EN and FR. EDT-53
+  writes the real text later.
+- **Guard:** chunk A adds `WindowStandardGuardTest` with an allow-list of the windows not yet converted. Each chunk
+  removes its windows from that list; it must not add any. EDT-52 is done when the list is empty.
+- **Tests per chunk:** the guard, plus a unit test for any new pure logic (menu model, empty-state choice, footer
+  order). No ImGui rendering tests.
+- **Each chunk ends with** `DONE EDT-52<letter>` and its human test steps in `docs/testing/EDT-52<letter>.md`.
+
+### 5.2 Chunks
+
+| Chunk | Owner | Only these files | Delivers | Size | Waits for |
+|---|---|---|---|---|---|
+| **A: foundation** | EDT | `editor/imgui/EditorWindow.kt`, `EditorDialog.kt`, `EmptyState.kt`, `ErrorDialog.kt`, `WindowRegistry.kt`, `WindowCategory.kt`, `DefaultDockLayout.kt`, `Tooltips.kt`, `imgui/data/Icons.kt`; new `EditorModal.kt`, `WindowHeader.kt`, `HelpPopover.kt`; new `architecture/WindowStandardGuardTest.kt`; strings | Each window declares its `icon`; base classes draw the header strip with `?`, the tab menu (Help / Close / Reset position) and the help popover; `EditorModal` and the standard footer; new glyphs (`SITEMAP`, `SLIDERS`, `HISTORY`, `PROJECT_DIAGRAM`, `LIST`, `TERMINAL`, `QUESTION_CIRCLE`); stale `window.environment` / `window.physics_tuner` / `window.settings` removed; the per-chunk string blocks; the guard with its allow-list | M | — |
+| **B: scene** | EDT | `SceneHierarchyWindow.kt`, `PropertiesWindow.kt`, `GameViewWindow.kt`, `viewport/*`, `ui/menus/ViewportContextMenu.kt`, `imgui/EditorScenesTabBar.kt`, `MImGui.showConfirmationModal` | Headers, empty-space right-click menus (Hierarchy: Create ▸; Viewport adds Create UI ▸), `?` at the end of the viewport toolbar, confirmations on `EditorModal` | M | A, EDT-49 |
+| **C: project & assets** | EDT | `ProjectWindow.kt`, `AssetBrowserWindow.kt`, `assetBrowser/*` | The header strip replaces the ad-hoc toolbars; empty-space menus; empty states in every Asset Browser tab | M | A |
+| **D: debug** | EDT | `ConsoleWindow.kt`, `ProfilerWindow.kt`, `CommandHistoryWindow.kt`, `ShellWindow.kt` | Headers (Console = list, Shell = terminal), shared empty states, Command History right-click (Undo to here) | S | A, EDT-47 (Console) |
+| **E: settings dialogs** | EDT | `EditorSettingsWindow.kt`, `ProjectSettingsWindow.kt`, `KeyBindingsWindow.kt`, `ActionBindingsPanel.kt`, `ExportWizardWindow.kt` | Settings and Key Bindings become `EditorDialog`s with the standard footer; they leave View > Windows; an empty **Test** tab in Key Bindings and an empty **Input** section in Project Settings, for chunk I to fill | M | A |
+| **F: modals & palette** | EDT | `ProjectSwitcherDialog.kt`, `SearchEverywhereWindow.kt`, `ProjectWizardWindow.kt` | Switch Project and New Project become real modals; Search Anywhere becomes the palette popup; a Test Input action in Search Anywhere | S | A, EDT-48; skip `ProjectWizardWindow.kt` if EDT-59 has rewritten it |
+| **G: menus** | EDT | `imgui/EditorMenuBar.kt`, `ui/menus/FileMenuBuilder.kt`, `EditMenuBuilder.kt`, `ViewMenuBuilder.kt`, `SettingsMenuBuilder.kt`, `InputMenuBuilder.kt` (deleted), `WindowControlsRenderer.kt`; new `PlayMenuBuilder.kt`, `ToolsMenuBuilder.kt`, `HelpMenuBuilder.kt`, `AboutModal.kt` | The §2.7 menu tree; the Settings submenu as reviewed (radio submenus, Show tooltips checkbox bound to the EDT-57 setting once it exists); a tooltip on Maximize/Restore; About modal; a pure `HamburgerMenuModel` with a test of the item order | M | A |
+| **H: domain windows** | AUD, SCR | `AudioInspectorWindow.kt`, `AudioMixerPanel.kt` (AUD); `ScriptEditorWindow.kt` (SCR) | Headers, `?`, shared empty states | S | A |
+| **I: input testing move** | INP (+ EDT review) | `InputTestingWindow.kt` (deleted), `InputTestingModel.kt`; new `ui/windows/input/InputTestPanel.kt` and `DeadZonePanel.kt`; the Test tab and Input section hooks added by E; `assets/strings/editor/input*.properties` | §3.1: devices and event log (with the new Action column) in Key Bindings › Test; dead-zone tuning in Project Settings › Input; window and menu entries removed; tests for the event-to-action column and dead-zone save | M | A, E |
+
+**Parallelism:** after A, there are up to 7 agents at once (B, C, D, E, F, G, H), and I follows E. The critical path
+is **A → E → I**.
+
+**Out of EDT-52:** the help text (EDT-53), the new settings themselves (EDT-57; G only adds the menu checkbox), the
+Render Graph window (EDT-54) and the loading modal (EDT-56).
+
+---
+
+## 6. Decisions (from the human)
+
+| # | Question | Decision | Where applied |
 |---|---|---|---|
-| **A: foundation** | EDT | `editor/imgui/EditorWindow.kt`, `EditorDialog.kt`, new `EditorModal.kt`, new `WindowHeader.kt`, new `HelpPopover.kt`, `EmptyState.kt`, `WindowRegistry.kt`, `WindowCategory.kt`, `DefaultDockLayout.kt`, `ErrorDialog.kt`, `imgui/data/Icons.kt`, strings, and a new `architecture/WindowStandardGuardTest.kt` | Add `icon`, the tab menu, `?` and the help popover in the base classes. Add `EditorModal` and the standard footer. Add the new icons. Remove the stale layout entries. Add the guard test, with an allow-list that the later chunks empty. |
-| **B: scene** | EDT | `SceneHierarchyWindow.kt`, `PropertiesWindow.kt`, `GameViewWindow.kt`, `viewport/*`, `ui/menus/ViewportContextMenu.kt`, `imgui/EditorScenesTabBar.kt`, `MImGui.showConfirmationModal` | Header, empty-space menus, `?` on the viewport toolbar, confirmations on `EditorModal` (after EDT-49). |
-| **C: project & assets** | EDT | `ProjectWindow.kt`, `AssetBrowserWindow.kt`, `assetBrowser/*` | Header strip replaces the ad-hoc toolbars; empty-space menus; empty states in every tab. |
-| **D: debug** | EDT (QA can help) | `ConsoleWindow.kt`, `ProfilerWindow.kt`, `CommandHistoryWindow.kt`, `ShellWindow.kt`, `InputTestingWindow.kt`, `InputTestingModel.kt` | Header and empty states. Input Testing becomes a window. *Render Graph is left to EDT-54.* |
-| **E: settings dialogs** | EDT | `EditorSettingsWindow.kt`, `ProjectSettingsWindow.kt`, `KeyBindingsWindow.kt`, `ActionBindingsPanel.kt`, `ExportWizardWindow.kt` | Become dialogs, standard footer, header. *The new settings themselves are EDT-57.* |
-| **F: modals** | EDT | `ProjectSwitcherDialog.kt`, `SearchEverywhereWindow.kt` (after EDT-48), `ProjectWizardWindow.kt` (only if EDT-59 has not rewritten it) | Real modals or the palette popup. |
-| **G: menus** | EDT | `imgui/EditorMenuBar.kt`, `ui/menus/*MenuBuilder.kt`, `WindowControlsRenderer.kt` | The §2.7 menu layout, one settings entry point, Help menu, About modal. |
-| **H: domain windows** | AUD, SCR | `AudioInspectorWindow.kt` + `AudioMixerPanel.kt` (AUD); `ScriptEditorWindow.kt` (SCR, together with EDT-55) | Header, `?`, empty states. |
+| 1 | Where `?` goes | **Header strip** at the top of each window | §2.2 |
+| 2 | Key Bindings | **Dialog** | §3 |
+| 3 | Input Testing | **Not a window; its content moves elsewhere** (where to: proposed in §3.1) | §3.1, chunk I |
+| 4 | Settings submenu | **Keep it, review its content** | §2.7 |
+| 5 | Show tooltips off | **Inspector field explanations stay visible** | §4.1 |
+| 6 | Icons | **Console = list/log icon, Shell = terminal** | §2.2 |
+| 7 | New Play, Tools and Help menus | **Approved**, in the hamburger menu | §2.7 |
 
-**Order:** A → (B, C, D, E, F, G, H in parallel) → EDT-53 (help text) and EDT-57 (settings).
-**Done when:** `WindowStandardGuardTest` passes with an empty allow-list.
-
----
-
-## 6. Decisions I need from you
-
-1. **Help placement.** Is a `?` at the right end of a one-line header strip inside each window OK? The other option is
-   to put Help only in the tab's right-click menu, which keeps the window tidier but is harder to find.
-2. **Key Bindings as a dialog** (no longer dockable): OK?
-3. **Input Testing as a dockable window**: OK?
-4. **Settings entry point.** Remove the Settings submenu and its inline sliders, so settings open only from the gear
-   (plus Search Anywhere): OK?
-5. **Show tooltips = off.** Should it also hide the property tooltips in the inspectors (what a field does), or only
-   button and menu tooltips? I suggest **only buttons and menus**, so beginners keep the field explanations.
-6. **Shell icon.** Keep the code-file icon, or use a terminal (which the Console would then share)? I suggest Console =
-   terminal and Shell = code file, as it is today.
-7. **New Play, Tools and Help menus** in the hamburger menu (§2.7): OK?
+**For the lead to confirm:**
+1. The §3.1 destinations for Input Testing's content.
+2. The chunk owners: I goes to INP, H is split between AUD and SCR.
+3. Whether G should wait for EDT-57 for the Show tooltips checkbox, or add it bound to a placeholder setting.
