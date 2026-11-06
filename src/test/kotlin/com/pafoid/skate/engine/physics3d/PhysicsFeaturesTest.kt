@@ -28,12 +28,16 @@ class PhysicsFeaturesTest {
     private class Recorder : PhysicsContactListener {
         val collisions = mutableListOf<Pair<GameObject, GameObject>>()
         val normals = mutableListOf<Vector3f>()
+        val points = mutableListOf<Vector3f>()
+        val impulses = mutableListOf<Float>()
         val entered = mutableListOf<Pair<GameObject, GameObject>>()
         val exited = mutableListOf<Pair<GameObject, GameObject>>()
 
         override fun onCollisionStarted(a: GameObject, b: GameObject, point: Vector3f, normal: Vector3f, impulse: Float) {
             collisions.add(a to b)
-            normals.add(normal)
+            normals.add(Vector3f(normal))
+            points.add(Vector3f(point))
+            impulses.add(impulse)
         }
 
         override fun onTriggerEnter(trigger: GameObject, other: GameObject) { entered.add(trigger to other) }
@@ -254,6 +258,108 @@ class PhysicsFeaturesTest {
         physics.remove(box)
 
         assertEquals(listOf(trigger to box), recorder.exited)
+    }
+
+    @ParameterizedTest
+    @MethodSource(CONTACTS)
+    fun contactEvents_Landing_ReportsPointOnTheGround(backend: PhysicsBackend) {
+        use(backend)
+        val recorder = Recorder().also { physics.contactListener = it }
+        ground()
+        body("Box", Vector3f(0f, 3f, 0f), Vector3f(0.5f, 0.5f, 0.5f), 2f)
+
+        steps(120)
+
+        assertEquals(0f, recorder.points.single().y, 0.1f)
+        // Bullet reports 0 (its impulse is solved after the event); Jolt an estimate, see JoltPhysics3DTest
+        assertTrue(recorder.impulses.single() >= 0f, "impulse ${recorder.impulses.single()}")
+    }
+
+    @ParameterizedTest
+    @MethodSource(CONTACTS)
+    fun contactEvents_RestingBodySleepsAndWakes_DoesNotReportASecondStart(backend: PhysicsBackend) {
+        use(backend)
+        val recorder = Recorder().also { physics.contactListener = it }
+        ground()
+        val box = body("Box", Vector3f(0f, 0.5f, 0f), Vector3f(0.5f, 0.5f, 0.5f), 1f)
+        steps(300) // long enough for both engines to put the box to sleep
+
+        box.getComponent(RigidBody3D::class.java).linearVelocity = Vector3f(0.5f, 0f, 0f)
+        steps(30)
+
+        assertEquals(1, recorder.collisions.size)
+    }
+
+    @ParameterizedTest
+    @MethodSource(CONTACTS)
+    fun contactEvents_KinematicBodyOnStaticGround_ReportsCollision(backend: PhysicsBackend) {
+        use(backend)
+        val recorder = Recorder().also { physics.contactListener = it }
+        val ground = ground()
+        val platform = body("Platform", Vector3f(0f, 0.45f, 0f), Vector3f(0.5f, 0.5f, 0.5f), 1f) { bodyType = BodyType.Kinematic }
+
+        steps(5)
+
+        assertEquals(listOf(platform to ground), recorder.collisions)
+    }
+
+    @ParameterizedTest
+    @MethodSource(CONTACTS)
+    fun contactEvents_MassChangeRebuild_KeepsTheContact(backend: PhysicsBackend) {
+        use(backend)
+        val recorder = Recorder().also { physics.contactListener = it }
+        ground()
+        val box = body("Box", Vector3f(0f, 0.5f, 0f), Vector3f(0.5f, 0.5f, 0.5f), 1f)
+        steps(30)
+
+        box.getComponent(RigidBody3D::class.java).mass = 3f
+        physics.add(box)
+        steps(30)
+
+        assertEquals(1, recorder.collisions.size)
+    }
+
+    @ParameterizedTest
+    @MethodSource(CONTACTS)
+    fun triggers_BodySleepingInsideTrigger_DoesNotExit(backend: PhysicsBackend) {
+        use(backend)
+        val recorder = Recorder().also { physics.contactListener = it }
+        ground()
+        val zone = body("Zone", Vector3f(0f, 1f, 0f), Vector3f(3f, 1f, 3f), 0f) { isTrigger = true }
+        val box = body("Box", Vector3f(0f, 0.5f, 0f), Vector3f(0.5f, 0.5f, 0.5f), 1f)
+
+        steps(300)
+
+        assertEquals(listOf(zone to box), recorder.entered)
+        assertTrue(recorder.exited.isEmpty(), "exits ${recorder.exited}")
+    }
+
+    @ParameterizedTest
+    @MethodSource(CONTACTS)
+    fun triggers_DynamicTrigger_IsHeldInPlace(backend: PhysicsBackend) {
+        use(backend)
+        val zone = body("Zone", Vector3f(0f, 5f, 0f), Vector3f(1f, 1f, 1f), 1f) { isTrigger = true }
+
+        steps(60)
+
+        assertEquals(5f, y(zone), 1e-3f)
+    }
+
+    @ParameterizedTest
+    @MethodSource(CONTACTS)
+    fun triggers_RemovedTrigger_ReportsNoExit(backend: PhysicsBackend) {
+        use(backend)
+        val recorder = Recorder().also { physics.contactListener = it }
+        physics.setGravity(Vector3f())
+        val zone = body("Zone", Vector3f(), Vector3f(5f, 5f, 5f), 0f) { isTrigger = true }
+        val box = body("Box", Vector3f(), Vector3f(0.5f, 0.5f, 0.5f), 1f)
+        steps(2)
+        assertEquals(listOf(zone to box), recorder.entered)
+
+        physics.remove(zone)
+        steps(2)
+
+        assertTrue(recorder.exited.isEmpty())
     }
 
     private fun thinWallScenario(useCCD: Boolean): Float {

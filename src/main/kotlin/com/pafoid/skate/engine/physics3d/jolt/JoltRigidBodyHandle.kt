@@ -63,11 +63,19 @@ internal class JoltRigidBodyHandle(
             updateObjectLayer()
         }
 
-    /** Triggers are Jolt sensors: they report overlaps (PHY-17c) and never push other bodies. */
+    /** Whether the body was kinematic before it became a trigger (triggers are held kinematic, as in Bullet). */
+    private var kinematicBeforeTrigger = motionType == BodyType.Kinematic
+
+    /** Triggers are Jolt sensors: they report overlaps and never push other bodies. A moving trigger is held kinematic. */
     override var isTrigger: Boolean = trigger
         set(value) {
+            if (value == field) return
             field = value
             bodies.setIsSensor(id, value)
+            if (!body.isStatic) {
+                if (value) kinematicBeforeTrigger = body.isKinematic
+                isKinematic = value || kinematicBeforeTrigger
+            }
             wake()
         }
 

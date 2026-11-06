@@ -49,9 +49,10 @@ import org.joml.Vector3f
 /**
  * Jolt Physics backend (PHY-17), created only by `Physics3DFactory` after [JoltRuntime.ensureLoaded].
  *
- * Implemented (slice b): bodies from [BodyDescription], shapes, layer/mask filtering, triggers as sensors, CCD,
- * stepping, teleport, standalone bodies and anchors, ray and shape queries. Contact and trigger events (PHY-17c),
- * joints (PHY-17d) and debug draw (PHY-17e) come later. Not thread-safe: call it from the thread that steps it.
+ * Implemented: bodies from [BodyDescription], shapes, layer/mask filtering, triggers as sensors, CCD, stepping,
+ * teleport, standalone bodies and anchors, ray and shape queries (slice b), collision and trigger events through
+ * [JoltContacts] (slice c). Joints (PHY-17d) and debug draw (PHY-17e) come later. Not thread-safe: call it from the
+ * thread that steps it.
  */
 class JoltPhysics3D internal constructor(
     private val debugRenderer: DebugRenderer,
@@ -66,6 +67,7 @@ class JoltPhysics3D internal constructor(
     )
     private val bodies: BodyInterface = system.bodyInterfaceNoLock
     private val handles = HashMap<Int, JoltRigidBodyHandle>()
+    private val contacts = JoltContacts { handles[it] }
 
     // Bullet combines friction and restitution as a product; match it so material values mean the same
     private val combineFriction = CombineFunction.product(true)
@@ -93,7 +95,6 @@ class JoltPhysics3D internal constructor(
 
     override var debugEnabled = false
 
-    /** Stored for PHY-17c; this slice reports no contact or trigger events yet. */
     override var contactListener: PhysicsContactListener? = null
 
     override val rigidBodyCount: Int get() = system.numBodies
@@ -102,6 +103,7 @@ class JoltPhysics3D internal constructor(
         system.setGravity(0f, -9.81f, 0f)
         system.setCombineFriction(combineFriction)
         system.setCombineRestitution(combineRestitution)
+        system.setContactListener(contacts.listener)
     }
 
     override fun getGravity(): Vector3f = system.gravity.let { Vector3f(it.x, it.y, it.z) }
@@ -121,8 +123,12 @@ class JoltPhysics3D internal constructor(
                 syncMaterial(existing, rb)
                 return
             }
-            destroyBody(existing)
-            rb.rawBody = null
+            // Build the replacement first so its contact pairs carry over before the old body goes
+            val rebuilt = createBody(desc, go)
+            contacts.rebind(existing.id, rebuilt.id)
+            destroyBody(existing, report = false)
+            rb.rawBody = rebuilt
+            return
         }
         rb.rawBody = createBody(desc, go)
     }
@@ -130,11 +136,13 @@ class JoltPhysics3D internal constructor(
     private fun createBody(desc: BodyDescription, go: GameObject): JoltRigidBodyHandle {
         val shape = JoltShapes.body(desc.parts, desc.scale)
         val moving = desc.motionType != BodyType.Static
+        // Like Bullet, a dynamic trigger is held kinematic: triggers detect, they are never pushed
+        val nativeType = if (desc.isTrigger && desc.motionType == BodyType.Dynamic) BodyType.Kinematic else desc.motionType
         val settings = BodyCreationSettings(
             shape,
             RVec3(desc.position.x.toDouble(), desc.position.y.toDouble(), desc.position.z.toDouble()),
             Quat(desc.rotation.x, desc.rotation.y, desc.rotation.z, desc.rotation.w),
-            motionTypeOf(desc.motionType),
+            motionTypeOf(nativeType),
             layers.objectLayer(desc.collisionLayer, desc.collisionMask, moving),
         )
         settings.setFriction(desc.friction)
@@ -148,9 +156,13 @@ class JoltPhysics3D internal constructor(
             desc.isTrigger, desc.linearDamping, desc.angularDamping, go)
     }
 
-    /** Lets a moving body switch between kinematic and dynamic, with its mass set and inertia computed from the shape. */
+    /**
+     * Lets a moving body switch between kinematic and dynamic, with its mass set and inertia computed from the shape.
+     * Kinematic bodies also touch static and kinematic ones, so contacts and triggers report them like Bullet does.
+     */
     private fun dynamicCapable(settings: BodyCreationSettings, mass: Float) {
         settings.setAllowDynamicOrKinematic(true)
+        settings.setCollideKinematicVsNonDynamic(true)
         settings.setOverrideMassProperties(EOverrideMassProperties.CalculateInertia)
         settings.massPropertiesOverride.setMass(if (mass > 0f) mass else 1f)
     }
@@ -230,8 +242,11 @@ class JoltPhysics3D internal constructor(
         (handle as? JoltRigidBodyHandle)?.let { destroyBody(it) }
     }
 
-    private fun destroyBody(handle: JoltRigidBodyHandle) {
-        if (handles.remove(handle.id) == null) return
+    /** With [report], a body leaving a trigger makes it report an exit (as Bullet does on removal). */
+    private fun destroyBody(handle: JoltRigidBodyHandle, report: Boolean = true) {
+        if (!handles.containsKey(handle.id)) return
+        contacts.forget(handle, if (report) contactListener else null)
+        handles.remove(handle.id)
         bodies.removeBody(handle.id)
         bodies.destroyBody(handle.id)
     }
@@ -250,6 +265,7 @@ class JoltPhysics3D internal constructor(
         val start = System.nanoTime()
         system.update(fixedDt, 1, tempAllocator, jobSystem)
         EngineStats.physicsStepTime.set(System.nanoTime() - start)
+        contacts.afterStep(contactListener)
     }
 
     /** Debug shapes arrive with PHY-17e. */
@@ -364,11 +380,12 @@ class JoltPhysics3D internal constructor(
     override fun destroy() {
         if (destroyed) return
         destroyed = true
-        handles.values.toList().forEach { destroyBody(it) }
+        handles.values.toList().forEach { destroyBody(it, report = false) }
         system.close()
         jobSystem.close()
         tempAllocator.close()
         layers.close()
+        contacts.close()
         listOf(
             rayCollector, shapeCollector, raySettings, shapeCastSettings,
             broadPhaseFilter, objectLayerFilter, bodyFilter, shapeFilter,

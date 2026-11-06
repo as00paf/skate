@@ -304,6 +304,39 @@ class JoltPhysics3DTest {
         }
     }
 
+    // --- contacts ---
+
+    @Test
+    fun JoltContacts_LandingImpulse_IsAboutMassTimesImpactSpeed() {
+        val w = world()
+        val impulses = mutableListOf<Float>()
+        w.contactListener = object : com.pafoid.skate.engine.physics3d.PhysicsContactListener {
+            override fun onCollisionStarted(a: GameObject, b: GameObject, point: Vector3f, normal: Vector3f, impulse: Float) {
+                impulses += impulse
+            }
+            override fun onTriggerEnter(trigger: GameObject, other: GameObject) {}
+            override fun onTriggerExit(trigger: GameObject, other: GameObject) {}
+        }
+        w.ground()
+        // Falls 2.5 m: about 7 m/s at impact, so about 14 N·s for 2 kg
+        w.body(Vector3f(0f, 3f, 0f), BoxCollider3D(Vector3f(0.5f)), mass = 2f)
+        w.steps(120)
+        assertTrue(impulses.single() in 10f..18f, "impulse ${impulses.single()}")
+    }
+
+    @Test
+    fun JoltContacts_RuntimeTriggerToggle_HoldsAndReleasesTheBody() {
+        val w = world()
+        val go = w.body(Vector3f(0f, 5f, 0f), BoxCollider3D())
+        go.rb().isTrigger = true
+        w.steps(30)
+        assertEquals(5f, go.y(), 1e-3f)
+
+        go.rb().isTrigger = false
+        w.steps(30)
+        assertTrue(go.y() < 4.5f)
+    }
+
     // --- queries ---
 
     @Test

@@ -17,7 +17,7 @@ object PhysicsBackends {
 
     /** Collision and trigger events. */
     @JvmStatic
-    fun contacts(): List<PhysicsBackend> = listOf(PhysicsBackend.BULLET)
+    fun contacts(): List<PhysicsBackend> = listOf(PhysicsBackend.BULLET, PhysicsBackend.JOLT)
 
     /** Creates a world on [backend] through [Physics3DFactory], loading natives first. */
     fun create(backend: PhysicsBackend, debugRenderer: DebugRenderer = mockk(relaxed = true)): IPhysics3D {

@@ -33,6 +33,7 @@ import com.pafoid.skate.engine.getComponent
 import com.pafoid.skate.engine.physics3d.BodyDescription
 import com.pafoid.skate.engine.physics3d.BodyType
 import com.pafoid.skate.engine.physics3d.ShapePart
+import com.pafoid.skate.engine.physics3d.LongSet
 import com.pafoid.skate.engine.physics3d.ShapeWireframe
 import com.pafoid.skate.engine.physics3d.ColliderShape
 import com.pafoid.skate.engine.physics3d.IPhysics3D

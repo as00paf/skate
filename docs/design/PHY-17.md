@@ -1,7 +1,7 @@
 # PHY-17 – Jolt physics backend (design note)
 
-Status: **approved** (skate-lead and the human, 2026-11-06). Slices a and b are implemented; see
-[Decisions](#decisions-after-review) and [Implementation notes](#implementation-notes-slices-a-and-b).
+Status: **approved** (skate-lead and the human, 2026-11-06). Slices a to d are implemented; see
+[Decisions](#decisions-after-review) and [Implementation notes](#implementation-notes-slices-a-to-d).
 
 ## Goal
 
@@ -332,7 +332,7 @@ Rough effort: about 8–10 agent days in total. Slices b and d are the largest.
 4. **Follow-ups:** Jolt-native ragdoll, vehicle and character controller are filed as PHY-19 (P3, design note later).
 5. **Extraction folder:** filed as PHY-18.
 
-## Implementation notes (slices a and b)
+## Implementation notes (slices a to d)
 
 - **Slice a:** `BodyDescription` (shared body mapping, used by Bullet), `NativeLibrarySpec` (per-library loader,
   `loadNativeLibrary()` returns success), `ShapeWireframe` moved to `physics3d/`, and the `PhysicsBackends` test helper.
@@ -346,9 +346,24 @@ Rough effort: about 8–10 agent days in total. Slices b and d are the largest.
   - jolt-jni exposes `CombineFunction.product`, so friction and restitution combine like Bullet without a contact
     callback.
   - Standalone bodies (`createRigidBody`, anchors) use Bullet's defaults: layer 1, mask 1.
-  - Not implemented yet: contact and trigger events (17c), joints (`addConstraint` throws, 17d), debug draw (17e).
+  - Not implemented in slice b: contact and trigger events (done in 17c), joints (17d), debug draw (17e).
   - Fallback: `Physics3DFactory.create(..., onFallback)` returns Bullet when Jolt cannot load; `PhysicsSystem`
     publishes `PhysicsBackendFellBack`.
+- **Slice c (contacts and triggers):** `JoltContacts`. Callbacks on Jolt worker threads only append records to a
+  locked buffer; the stepping thread works out starts and ends after each step and dispatches last. Found while
+  testing:
+  - Jolt reports a contact as removed when its bodies fall asleep; Bullet keeps reporting it. The touching set is
+    rebuilt each step from the added and persisted callbacks, and a pair whose two bodies are both asleep stays
+    touching. A body sleeping in a trigger does not exit, and a resting body that wakes does not start again.
+  - The manifold has no contact points, so the point comes from the validate callback (point on body b). Without
+    one (a woken pair) it falls back to the midpoint of the two bodies.
+  - The impulse is an estimate (approach speed × effective mass). Bullet reports 0 at contact start because its
+    impulse is solved after the event, so the contract only requires impulse ≥ 0.
+  - As in Bullet, a dynamic trigger is held kinematic (also when toggled at runtime), and kinematic bodies collide
+    with static ones (`collideKinematicVsNonDynamic` on every moving body), so kinematic-vs-ground contacts and
+    triggers detecting statics behave the same.
+  - A mass-change rebuild carries the body's contact pairs over (Bullet keys pairs by GameObject).
+  - `LongSet` moved to `physics3d/` so both backends share it.
 - Tests: `PhysicsFeaturesTest` (core cases), `PhysicsCalibrationTest` and `FrictionPropagationTest` run on Bullet and
   Jolt; `JoltPhysics3DTest`, `JoltConversionsTest`, `LayerSlotsTest` and `JoltBackendGuardTest` cover Jolt only.
 
