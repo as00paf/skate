@@ -32,6 +32,8 @@ data class CharacterInput(
     val yaw: Float = 0f,
     val cameraForward: Vector3f = Vector3f(0f, 0f, -1f),
     val cameraRight: Vector3f = Vector3f(1f, 0f, 0f),
+    /** This frame's actions for behaviors with their own (a ride or vehicle), and their input contexts (INP-10). */
+    val actions: ActionQuery = ActionQuery.NONE,
 )
 
 /** What a behavior asks the motion system to apply this frame. */

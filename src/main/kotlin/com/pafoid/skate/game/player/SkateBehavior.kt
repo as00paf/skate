@@ -5,7 +5,11 @@ import com.pafoid.skate.engine.net.PredictionModels
 import com.pafoid.skate.game.net.SkaterPredictionModel
 import com.pafoid.skate.engine.animation.graph.AnimParameters
 import com.pafoid.skate.engine.assets.PrefabsGenerator
+import com.pafoid.skate.engine.gameplay.ActionPresets
 import com.pafoid.skate.engine.gameplay.CameraPreset
+import com.pafoid.skate.game.input.SkateActions
+import com.pafoid.skate.game.input.SkateInputContext
+import com.pafoid.skate.game.input.SkateIntent
 import com.pafoid.skate.engine.gameplay.CharacterBehavior
 import com.pafoid.skate.engine.gameplay.CharacterBehaviors
 import com.pafoid.skate.engine.gameplay.CharacterConfigs
@@ -97,13 +101,16 @@ class SkateBehavior(
             MountRequest.DISMOUNT -> mounted = false
             MountRequest.NONE -> {}
         }
-        return step(input, dt).copy(mount = request)
+        // On the board the skate context sits above gameplay: the same keys push/manual/ollie (INP-10).
+        SkateInputContext.sync(input.actions, mounted)
+        val intent = SkateIntent.read(input, config.input)
+        return step(input, intent, dt).copy(mount = request)
     }
 
-    private fun step(input: CharacterInput, dt: Float): CharacterMotion {
+    private fun step(input: CharacterInput, intent: SkateIntent, dt: Float): CharacterMotion {
         if (!mounted) return onFoot.update(input, dt)
 
-        fill(input, dt)
+        fill(input, intent, dt)
         context.ollie = false
         val wasAir = machine.current == SkateState.AIR
         machine.update(context, dt)
@@ -112,7 +119,7 @@ class SkateBehavior(
         return solve(input, dt)
     }
 
-    private fun fill(input: CharacterInput, dt: Float) = with(context) {
+    private fun fill(input: CharacterInput, intent: SkateIntent, dt: Float) = with(context) {
         this.input = input
         speed = input.horizontalSpeed
         verticalSpeed = input.verticalSpeed
@@ -124,10 +131,9 @@ class SkateBehavior(
             machine.current == SkateState.AIR -> maxOf(fallSpeed, -input.verticalSpeed)
             else -> 0f
         }
-        val stick = input.move.length().let { if (it.isNaN()) 0f else it }
-        pushHeld = input.sprint || (stick > config.input.moveDeadZone && input.move.y > config.input.pushStickThreshold)
-        manualHeld = input.crouch
-        jumpPressed = input.jumpPressed
+        pushHeld = intent.pushHeld
+        manualHeld = intent.manualHeld
+        jumpPressed = intent.olliePressed
         nearGrindable = input.groundTag == PrefabsGenerator.GRINDABLE_TAG
         landingErrorDeg = if (input.velocityYaw.isNaN()) 0f
         else Math.toDegrees(abs(MotionMath.wrapAngle(input.velocityYaw - input.yaw)).toDouble()).toFloat()
@@ -235,6 +241,7 @@ class SkateBehavior(
 /** Registers the game-specific behaviors with the engine. Safe to call more than once. */
 object SkateGameplay {
     fun register() {
+        ActionPresets.register(SkateActions.CATEGORY, SkateActions::register)
         CharacterBehaviors.register(SkateBehavior.ID) { path ->
             SkateBehavior(CharacterConfigs.load(path) { SkateControllerConfig() })
         }
