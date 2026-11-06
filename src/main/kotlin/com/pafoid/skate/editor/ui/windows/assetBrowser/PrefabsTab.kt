@@ -8,6 +8,7 @@ import com.pafoid.skate.editor.imgui.contextPopupId
 import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.editor.imgui.data.UiConstants.ASSET_BROWSER_ITEM_WIDTH
 import com.pafoid.skate.editor.systems.ThumbnailCache
+import com.pafoid.skate.engine.assets.data.models.`3dModel`
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.core.StringManager
 import com.pafoid.skate.game.prefabs.MaterialType
@@ -35,6 +36,7 @@ class PrefabsTab(
     private val thumbnailCache: ThumbnailCache by lazy { ThumbnailCache(engine.renderer.renderResources.renderers.thumbnail) }
     private val surfaces = MaterialType.entries
     private val surfaceIndex = ImInt(0)
+    private val thumbnailModels = mutableMapOf<String, `3dModel`>()
 
     override fun imgui(label: String, searchText: ImString) {
         renderHeader(label, searchText)
@@ -85,7 +87,7 @@ class PrefabsTab(
         val data = PrefabData(entry.type, PrefabCatalog.materialFor(entry.type, surfaces[surfaceIndex.get()]))
         ImGui.beginGroup()
 
-        val texId = thumbnailCache.getThumbnail(entry.modelPath, assetsManager.loadModel(entry.modelPath))
+        val texId = thumbnailTexId(entry, data.material)
 
         ImGui.pushID(entry.type.name)
         if (ImGui.imageButton("PrefabItem", texId.toLong(), size, size, 0f, 1f, 1f, 0f)) {
@@ -121,6 +123,18 @@ class PrefabsTab(
 
         ImGui.textWrapped(name)
         ImGui.endGroup()
+    }
+
+    /** Thumbnail of [entry] drawn with [surface], the texture the spawned prefab gets (AST-13). */
+    private fun thumbnailTexId(entry: PrefabEntry, surface: MaterialType?): Int {
+        val key = PrefabThumbnailMaterial.cacheKey(entry, surface)
+        val model = thumbnailModels.getOrPut(key) {
+            val texture = surface
+                ?.let { PrefabThumbnailMaterial.texturePath(it, assetsManager.paths.projectRoot) }
+                ?.let { assetsManager.getTexture(it) }
+            PrefabThumbnailMaterial.applyTexture(assetsManager.loadModel(entry.modelPath), texture)
+        }
+        return thumbnailCache.getThumbnail(key, model)
     }
 
     private fun spawnPrefab(data: PrefabData) {

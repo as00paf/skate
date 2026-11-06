@@ -2,9 +2,7 @@ package com.pafoid.skate.editor.ui.windows.assetBrowser
 
 import com.pafoid.skate.editor.imgui.tipped
 import com.pafoid.skate.editor.imgui.contextPopupId
-import com.pafoid.skate.editor.data.FileType
 import com.pafoid.skate.editor.imgui.data.Icons
-import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.core.StringManager
 import imgui.ImGui
@@ -16,10 +14,6 @@ class AnimationsTab(
     stringManager: StringManager,
 ) : AssetBrowserTab(engine.assetsManager, stringManager) {
 
-    init {
-        refreshAssets()
-    }
-
     override fun renderFileItem(file: File) {
         val size = 80f
         val padding = 5f
@@ -28,7 +22,7 @@ class AnimationsTab(
 
         ImGui.pushID(file.absolutePath)
 
-        if (ImGui.button(Icons.PLAY, size, size)) {
+        if (ImGui.button(Icons.FILM, size, size)) {
             previewAnimation(file)
         }
         if (ImGui.isItemHovered()) {
@@ -57,8 +51,8 @@ class AnimationsTab(
         ImGui.popID()
 
         if (ImGui.beginDragDropSource()) {
-            ImGui.setDragDropPayload("ANIMATION", assetsManager.getAnimation(file.path))
-            ImGui.text("${Icons.PLAY} ${file.name}")
+            ImGui.setDragDropPayload("ANIMATION", animationOf(file))
+            ImGui.text("${Icons.FILM} ${file.name}")
             ImGui.textColored(0.5f, 0.5f, 0.5f, 1f, stringManager.getString("lbl.asset_browser.drop_animation_hint"))
             ImGui.endDragDropSource()
         }
@@ -68,6 +62,10 @@ class AnimationsTab(
         ImGui.endGroup()
     }
     
+    /** The clip in [file], loaded on first use (the browser lists files that are not loaded yet). */
+    private fun animationOf(file: File) = assetsManager.getAnimation(file.path)
+        ?: runCatching { assetsManager.loadAnimationSync(file.path) }.getOrNull()
+
     private fun previewAnimation(file: File) {
         engine.logger.logEditor("Preview animation: ${file.name} (not yet implemented)")
     }
@@ -77,18 +75,5 @@ class AnimationsTab(
         engine.logger.logEditor("Apply animation to selected not yet implemented: $animationPath")
     }
 
-    override fun refreshAssets() {
-        engine.jobSystem.runIO {
-            items.clear()
-            val animationsDir = File(Assets.Folders.ANIMATIONS)
-            if (animationsDir.exists()) {
-                items.addAll(
-                    animationsDir.walkTopDown().filter {
-                        it.isFile && FileType.ANIMATION.extensions.contains(it.extension) && assetsManager.hasAnimation(
-                            it.absolutePath
-                        )
-                    })
-            }
-        }
-    }
+    override fun refreshAssets() = scan(BrowserAssetType.ANIMATION) { job -> engine.jobSystem.runIO { job() } }
 }

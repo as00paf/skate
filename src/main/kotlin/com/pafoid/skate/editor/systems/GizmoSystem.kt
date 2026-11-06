@@ -1,6 +1,7 @@
 package com.pafoid.skate.editor.systems
 
 import com.pafoid.skate.editor.gizmos.EditorCamera
+import com.pafoid.skate.editor.gizmos.EditorVisuals
 import com.pafoid.skate.editor.gizmos.GizmoMath
 import com.pafoid.skate.editor.gizmos.MeasureTool
 import com.pafoid.skate.editor.gizmos.SceneVisualsGizmo
@@ -52,12 +53,14 @@ class GizmoSystem(
     private val selectionGizmo by lazy { SelectionGizmo(undoRedoManager, engine) }
     val sceneVisuals by lazy { SceneVisualsGizmo(debugRenderer) }
 
+    /** Editor camera axes for this frame, taken from its transform (EDT-44: `camera.view` is one frame behind). */
+    private var viewBasis = EditorVisuals.viewBasis(editorCamera.transform.rotation)
+
+    /** Icon size for a constant screen size: perspective scales with view depth, not straight-line distance (EDT-44). */
     private fun iconSizeAt(position: org.joml.Vector3f): Float {
         val cam = editorCamera.camera
-        return GizmoMath.gizmoSize(
-            cam.isOrthographic, editorCamera.transform.translation.distance(position), cam.fov, cam.zoom,
-            cam.viewportHeight, ICON_SCREEN_FRACTION,
-        )
+        val depth = EditorVisuals.viewDepth(editorCamera.transform.translation, viewBasis.forward, position, cam.nearPlane)
+        return GizmoMath.gizmoSize(cam.isOrthographic, depth, cam.fov, cam.zoom, cam.viewportHeight, ICON_SCREEN_FRACTION)
     }
 
     val measureGizmo by lazy { MeasureTool(engine, undoRedoManager, debugRenderer, settingsManager) }
@@ -76,7 +79,8 @@ class GizmoSystem(
         }
 
         val scene0 = scene
-        sceneVisuals.draw(scene0, editorCamera.camera, editorCamera.transform.translation, ::iconSizeAt)
+        viewBasis = EditorVisuals.viewBasis(editorCamera.transform.rotation)
+        sceneVisuals.draw(scene0, editorCamera.camera, editorCamera.transform.translation, ::iconSizeAt, viewBasis)
         selectionGizmo.fallbackPick = {
             sceneVisuals.pick(scene0, engine.inputProvider.screenToRay(editorCamera.camera), ::iconSizeAt)
         }

@@ -181,7 +181,7 @@ class RenderGraphWindow(
                     ImGui.newLine()
                     pass.getSettings().pipelineOrder.forEach { effect ->
                         val effectEnabled = ImBoolean(pass.isEffectEnabled(effect))
-                        if (ImGui.checkbox("${stringManager.getString("lbl.post_process.effect")}##${pass.name}.${effect.name}", effectEnabled)) {
+                        if (ImGui.checkbox("${stringManager.getString(effect.labelKey)}##${pass.name}.${effect.name}", effectEnabled)) {
                             pass.toggleEffect(effect)
                             clicked = true
                         }
