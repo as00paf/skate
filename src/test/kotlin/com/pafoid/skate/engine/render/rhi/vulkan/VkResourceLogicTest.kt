@@ -71,7 +71,10 @@ class VkResourceLogicTest {
         val v = BufferVersions()
         var next = 0L
         val pushedSizes = ArrayList<Long>()
-        fun bind(serial: Long) = v.binding(serial) { size -> pushedSizes += size; 7L to (next++ * 64) }
+        fun bind(serial: Long): Pair<Long, Long> {
+            v.resolve(serial) { size -> pushedSizes += size; v.record(serial, 7L, next++ * 64) }
+            return v.buffer to v.offset
+        }
 
         v.written(0, 40)
         assertEquals(7L to 0L, bind(1))

@@ -89,7 +89,9 @@ class Window(
 
         if (backend == GraphicsBackend.VULKAN) {
             if (!glfwVulkanSupported()) {
+                // Leave GLFW as the fallback OpenGL window expects it: terminated, without our error callback
                 glfwTerminate()
+                glfwSetErrorCallback(null)?.free()
                 throw IllegalStateException("No Vulkan loader or driver (glfwVulkanSupported is false)")
             }
             glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API)

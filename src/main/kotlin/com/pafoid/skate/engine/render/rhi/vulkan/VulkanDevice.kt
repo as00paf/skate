@@ -141,12 +141,13 @@ class VulkanDevice private constructor(
             VkPipelineBuilder.backbufferPass(core, format, clear, initialLayout)
         }
 
-    internal fun buildPipeline(p: VkRhiPipeline, compiled: VkRhiShader.Compiled, input: VkRhiVertexInput, renderPass: Long, colors: Int) =
-        VkPipelineBuilder.build(core, p, compiled, input, renderPass, colors)
+    internal fun buildPipeline(p: VkRhiPipeline, compiled: VkRhiShader.Compiled, input: VkRhiVertexInput, renderPass: Long, colors: Int, topFirst: Boolean) =
+        VkPipelineBuilder.build(core, p, compiled, input, renderPass, colors, topFirst)
 
     /**
      * Copies [rect] of colour attachment [attachment] (or of this frame's back buffer when [target] is null) in GL
-     * order (bottom row first), undoing the backend's Y flip, so readback matches the OpenGL backend byte for byte.
+     * order (bottom row first): targets are already stored that way, the back buffer's rows are reversed
+     * ([VkOrientation]), so readback matches the OpenGL backend byte for byte.
      * Commands recorded so far in the frame are submitted and waited for first.
      */
     override fun readPixels(target: RhiRenderTarget?, attachment: Int, rect: IntRect, format: PixelFormat, out: ByteBuffer) {
@@ -158,6 +159,7 @@ class VulkanDevice private constructor(
         val height: Int
         val restLayout: Int
         var swapRedBlue = false
+        val topFirst = t == null // targets are stored in GL row order, the back buffer top row first ([VkOrientation])
         if (t != null) {
             val tex = t.colors[attachment]
             image = tex.image
@@ -186,7 +188,7 @@ class VulkanDevice private constructor(
                     imageBarrier(cmd, image, aspect, restLayout, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL)
                     val region = VkBufferImageCopy.calloc(1, s)
                     region[0].imageSubresource { it.aspectMask(aspect).mipLevel(0).baseArrayLayer(0).layerCount(1) }
-                        .imageOffset { it.set(rect.x, height - (rect.y + rect.height), 0) }
+                        .imageOffset { val o = VkOrientation.rectOffset(rect.x, rect.y, rect.height, height, topFirst); it.set(o[0], o[1], 0) }
                         .imageExtent { it.set(rect.width, rect.height, 1) }
                     vkCmdCopyImageToBuffer(cmd, image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, staging.buffer, region)
                     imageBarrier(cmd, image, aspect, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, restLayout)
@@ -196,7 +198,7 @@ class VulkanDevice private constructor(
             val outTexel = format.bytesPerPixel
             val base = out.position()
             for (row in 0 until rect.height) {
-                val srcRow = rect.height - 1 - row // Vulkan memory is top row first
+                val srcRow = VkOrientation.readRow(row, rect.height, topFirst)
                 for (x in 0 until rect.width) for (b in 0 until outTexel) {
                     val from = if (swapRedBlue && b < 3) 2 - b else b
                     out.put(base + (row * rect.width + x) * outTexel + b, src.get(srcRow * rowBytes + x * texel + from))

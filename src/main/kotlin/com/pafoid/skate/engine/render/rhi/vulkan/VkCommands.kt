@@ -44,7 +44,10 @@ import org.lwjgl.vulkan.VkViewport
 
 /** A pipeline description; its Vulkan pipelines are built per render pass on first draw (formats come from the pass). */
 internal class VkRhiPipeline(override val desc: PipelineDesc) : RhiPipeline {
-    class Built(val handle: Long, val dummyInputs: BooleanArray)
+    class Built(val handle: Long, val dummyInputs: BooleanArray) {
+        /** Buffers bound for [dummyInputs], resolved on first draw (no per-draw allocation). */
+        var dummyBuffers: LongArray? = null
+    }
     val built = HashMap<Long, Built>()
     var destroy: (Built) -> Unit = {}
 
@@ -74,6 +77,9 @@ internal class VkCommandList(
     fun attach(frames: VkFrameLoop) {
         this.frames = frames
     }
+
+    /** Fallback texture per sampler descriptor; one function object for every draw. */
+    private val dummyFor: (SpirvReflection.Descriptor) -> VkRhiTexture by lazy { device.resources::dummyFor }
 
     private var target: VkRhiRenderTarget? = null
     private var renderPass = VK_NULL_HANDLE
@@ -135,7 +141,7 @@ internal class VkCommandList(
                 .pClearValues(clears)
             vkCmdBeginRenderPass(cmd, begin, VK_SUBPASS_CONTENTS_INLINE)
             val vp = viewport ?: IntRect(0, 0, passWidth, passHeight)
-            val f = ClipSpace.flippedViewport(vp.x, vp.y, vp.width, vp.height, passHeight)
+            val f = VkOrientation.viewport(vp.x, vp.y, vp.width, vp.height, passHeight, topFirst = passBackbuffer)
             val viewports = VkViewport.calloc(1, s)
             viewports[0].x(f[0]).y(f[1]).width(f[2]).height(f[3]).minDepth(0f).maxDepth(1f)
             vkCmdSetViewport(cmd, 0, viewports)
@@ -186,7 +192,7 @@ internal class VkCommandList(
         val r = scissor
         val rects = VkRect2D.calloc(1, s)
         if (r == null) rects[0].offset().set(0, 0) else {
-            val c = ClipSpace.scissor(r.x, r.y, r.width, r.height, passHeight)
+            val c = VkOrientation.rectOffset(r.x, r.y, r.height, passHeight, topFirst = passBackbuffer)
             rects[0].offset().set(maxOf(0, c[0]), maxOf(0, c[1]))
         }
         if (r == null) rects[0].extent().set(passWidth, passHeight) else rects[0].extent().set(r.width, r.height)
@@ -214,23 +220,23 @@ internal class VkCommandList(
         val vi = input ?: return false
         val shader = p.desc.shader as VkRhiShader
         val compiled = shader.compiled
-        val built = p.built.getOrPut(renderPass) { device.buildPipeline(p, compiled, vi, renderPass, passColors) }
+        val built = p.built.getOrPut(renderPass) { device.buildPipeline(p, compiled, vi, renderPass, passColors, topFirst = passBackbuffer) }
         if (built.handle != boundPipeline) {
             vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, built.handle)
             boundPipeline = built.handle
         }
-        val dummies = LongArray(built.dummyInputs.size) {
+        val dummies = built.dummyBuffers ?: LongArray(built.dummyInputs.size) {
             if (built.dummyInputs[it]) device.resources.dummyIntVertex.buffer else device.resources.dummyFloatVertex.buffer
-        }
+        }.also { built.dummyBuffers = it }
         frameResources.bindVertexInput(cmd, vi, dummies, indexed)
-        frameResources.bindDraw(cmd, shader, textures, uniformBuffers, uniformOffsets, device.resources::dummyFor)
+        frameResources.bindDraw(cmd, shader, textures, uniformBuffers, uniformOffsets, dummyFor)
         return true
     }
 
     /**
      * Copies colour attachment 0 of [src] into [dst] or the back buffer with vkCmdBlitImage, outside a pass. Rects
-     * are bottom-left based (GL); both images are stored top row first (the backend's Y flip), so only the rects
-     * convert and the copy is not mirrored.
+     * are bottom-left based (GL). Targets are stored in GL row order and the back buffer top row first
+     * ([VkOrientation]), so a blit to the back buffer mirrors rows and a target-to-target blit copies them as they are.
      */
     override fun blit(src: RhiRenderTarget, dst: RhiRenderTarget?, srcRect: IntRect?, dstRect: IntRect?, filter: Filter) {
         check(!inPass) { "blit inside a pass" }
@@ -260,11 +266,15 @@ internal class VkCommandList(
         stackPush().use { s ->
             val region = VkImageBlit.calloc(1, s)
             region[0].srcSubresource { it.aspectMask(VK_IMAGE_ASPECT_COLOR_BIT).mipLevel(0).baseArrayLayer(0).layerCount(1) }
-            region[0].srcOffsets(0).set(sr.x, src.height - (sr.y + sr.height), 0)
-            region[0].srcOffsets(1).set(sr.x + sr.width, src.height - sr.y, 1)
+            val o = VkOrientation.blitOffsets(
+                sr.x, sr.y, sr.width, sr.height, src.height, srcTopFirst = false,
+                dr.x, dr.y, dr.width, dr.height, dstHeight, dstTopFirst = to == null,
+            )
+            region[0].srcOffsets(0).set(o[0], o[1], 0)
+            region[0].srcOffsets(1).set(o[2], o[3], 1)
             region[0].dstSubresource { it.aspectMask(VK_IMAGE_ASPECT_COLOR_BIT).mipLevel(0).baseArrayLayer(0).layerCount(1) }
-            region[0].dstOffsets(0).set(dr.x, dstHeight - (dr.y + dr.height), 0)
-            region[0].dstOffsets(1).set(dr.x + dr.width, dstHeight - dr.y, 1)
+            region[0].dstOffsets(0).set(o[4], o[5], 0)
+            region[0].dstOffsets(1).set(o[6], o[7], 1)
             val dstImage = to?.image ?: frames.swapchain!!.images[image]
             vkCmdBlitImage(cmd, from.image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, dstImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                 region, if (filter == Filter.LINEAR) VK_FILTER_LINEAR else VK_FILTER_NEAREST)
@@ -370,6 +380,8 @@ internal object VkPipelineBuilder {
         input: VkRhiVertexInput,
         renderPass: Long,
         colorCount: Int,
+        /** The pass draws to the back buffer (flipped viewport) rather than a GL-ordered target. */
+        topFirst: Boolean,
     ): VkRhiPipeline.Built = stackPush().use { s ->
         val state = pipeline.desc.state
         val stages = VkPipelineShaderStageCreateInfo.calloc(2, s)
@@ -408,9 +420,9 @@ internal object VkPipelineBuilder {
         val raster = VkPipelineRasterizationStateCreateInfo.calloc(s).`sType$Default`()
             .depthClampEnable(state.depth.clamp && core.depthClamp)
             .polygonMode(VK_POLYGON_MODE_FILL).cullMode(VkTranslate.cullMode(state.cull))
-            // The negative viewport height flips Y, which also flips winding: GL's counter-clockwise front faces
-            // stay counter-clockwise in framebuffer space.
-            .frontFace(VK_FRONT_FACE_COUNTER_CLOCKWISE)
+            // GL's counter-clockwise front faces: they stay counter-clockwise in framebuffer space under the back
+            // buffer's flipped viewport, and become clockwise in GL-ordered targets ([VkOrientation])
+            .frontFace(if (VkOrientation.frontFaceCounterClockwise(topFirst)) VK_FRONT_FACE_COUNTER_CLOCKWISE else VK_FRONT_FACE_CLOCKWISE)
             .depthBiasEnable(offset != null).depthBiasSlopeFactor(offset?.factor ?: 0f).depthBiasConstantFactor(offset?.units ?: 0f)
             .lineWidth(if (state.topology == Topology.LINES && core.wideLines) state.lineWidth else 1f)
         val multisample = VkPipelineMultisampleStateCreateInfo.calloc(s).`sType$Default`().rasterizationSamples(VK_SAMPLE_COUNT_1_BIT)

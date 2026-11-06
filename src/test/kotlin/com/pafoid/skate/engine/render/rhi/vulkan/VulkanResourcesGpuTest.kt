@@ -136,13 +136,14 @@ class VulkanResourcesGpuTest {
 
         resources.frames.beginFrame(0)
         dynamic.update(0, FloatArray(8) { 1f })
-        val first = dynamic.binding(resources.frames)
-        assertEquals(first, dynamic.binding(resources.frames), "same frame, no write: same version")
+        fun bound(): Pair<Long, Long> { dynamic.resolve(resources.frames); return dynamic.boundBuffer to dynamic.boundOffset }
+        val first = bound()
+        assertEquals(first, bound(), "same frame, no write: same version")
         dynamic.update(0, FloatArray(8) { 2f })
-        assertNotEquals(first, dynamic.binding(resources.frames), "written between draws: new version")
+        assertNotEquals(first, bound(), "written between draws: new version")
         val pushes = dynamic.versionPushes
         resources.frames.beginFrame(1)
-        dynamic.binding(resources.frames)
+        bound()
         assertEquals(pushes + 1, dynamic.versionPushes, "a new frame pushes again (its slot's ring may be reused)")
 
         val layout = device.createVertexLayout(VertexLayouts.mesh(listOf(0 to com.pafoid.skate.engine.render.rhi.AttributeType.VEC3)))

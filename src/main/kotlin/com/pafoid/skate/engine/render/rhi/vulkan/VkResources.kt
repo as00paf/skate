@@ -52,7 +52,8 @@ internal class VkResourceFactory(val core: VkCore, framesInFlight: Int = 1) : Au
     val dummyIntVertex: VkAllocBuffer = allocator.buffer(16, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, MemoryKind.HOST).also {
         MemoryUtil.memSet(it.address, 0, 16)
     }
-    private val dummies = HashMap<Pair<SpirvReflection.ImageDim, Boolean>, VkRhiTexture>()
+    /** Indexed by `dim.ordinal * 2 + depth` (no key allocation per lookup). */
+    private val dummies = arrayOfNulls<VkRhiTexture>(SpirvReflection.ImageDim.entries.size * 2)
 
     fun createBuffer(desc: BufferDesc): RhiBuffer = VkRhiBuffer(this, desc.usage, desc.update, desc.size)
 
@@ -74,8 +75,13 @@ internal class VkResourceFactory(val core: VkCore, framesInFlight: Int = 1) : Au
     fun createShader(desc: ShaderDesc) = VkRhiShader(core, layouts, desc)
 
     /** Texture bound where a sampler's unit holds nothing usable: opaque black (GL's unbound result), or far depth. */
-    fun dummyFor(d: SpirvReflection.Descriptor): VkRhiTexture = dummies.getOrPut(d.dim!! to d.depth) {
-        val type = when (d.dim) {
+    fun dummyFor(d: SpirvReflection.Descriptor): VkRhiTexture {
+        val index = d.dim!!.ordinal * 2 + if (d.depth) 1 else 0
+        return dummies[index] ?: createDummy(d).also { dummies[index] = it }
+    }
+
+    private fun createDummy(d: SpirvReflection.Descriptor): VkRhiTexture {
+        val type = when (d.dim!!) {
             SpirvReflection.ImageDim.D2 -> TextureType.TEXTURE_2D
             SpirvReflection.ImageDim.D2_ARRAY -> TextureType.TEXTURE_2D_ARRAY
             SpirvReflection.ImageDim.CUBE -> TextureType.CUBE
@@ -83,7 +89,7 @@ internal class VkResourceFactory(val core: VkCore, framesInFlight: Int = 1) : Au
         val layers = if (type == TextureType.CUBE) 6 else 1
         val format = if (d.depth) PixelFormat.DEPTH32F else PixelFormat.RGBA8
         val sampler = SamplerDesc(Filter.NEAREST, Filter.NEAREST, Wrap.CLAMP_TO_EDGE, compare = if (d.depth) CompareFunc.LESS_EQUAL else null)
-        VkRhiTexture(this, TextureDesc(type, format, 1, 1, layers, sampler = sampler), attachment = d.depth).also { t ->
+        return VkRhiTexture(this, TextureDesc(type, format, 1, 1, layers, sampler = sampler), attachment = d.depth).also { t ->
             val texel = ByteBuffer.allocateDirect(4).order(ByteOrder.LITTLE_ENDIAN)
             if (d.depth) texel.putFloat(1f) else texel.put(0).put(0).put(0).put(-1)
             texel.flip()
@@ -113,8 +119,8 @@ internal class VkResourceFactory(val core: VkCore, framesInFlight: Int = 1) : Au
     }
 
     override fun close() {
-        dummies.values.forEach { it.close() }
-        dummies.clear()
+        dummies.forEach { it?.close() }
+        dummies.fill(null)
         dummyFloatVertex.close()
         dummyIntVertex.close()
         frames.close()
@@ -165,11 +171,20 @@ internal class VkRhiBuffer(
         MemoryKind.DEVICE,
     )
 
-    /** (VkBuffer, offset) to bind for a draw recorded now. */
-    fun binding(frames: VkFrameResources): Pair<Long, Long> = when (mode) {
-        Mode.DEVICE -> device!!.buffer to 0L
-        Mode.VERSIONED -> versions.binding(frames.serial) { size -> frames.pushVertexData(shadow!!, size) }
-        Mode.UNIFORM -> error("Uniform buffers are bound through descriptors")
+    /** VkBuffer and offset to bind for a draw recorded now, set by [resolve] (no allocation per draw). */
+    val boundBuffer: Long get() = if (mode == Mode.DEVICE) device!!.buffer else versions.buffer
+    val boundOffset: Long get() = if (mode == Mode.DEVICE) 0L else versions.offset
+
+    /** Makes [boundBuffer]/[boundOffset] valid for a draw recorded now: a dynamic buffer pushes its current version. */
+    fun resolve(frames: VkFrameResources) {
+        when (mode) {
+            Mode.DEVICE -> {}
+            Mode.VERSIONED -> versions.resolve(frames.serial) { size ->
+                val offset = frames.pushVertexData(shadow!!, size)
+                versions.record(frames.serial, frames.lastVertexBuffer, offset)
+            }
+            Mode.UNIFORM -> error("Uniform buffers are bound through descriptors")
+        }
     }
 
     private fun write(offset: Long, src: ByteBuffer) {
@@ -269,7 +284,12 @@ class BufferVersions {
     var extent = 0L
         private set
     private var pushedSerial = -1L
-    private var pushed = 0L to 0L
+
+    /** The pushed copy's VkBuffer and offset. */
+    var buffer = 0L
+        private set
+    var offset = 0L
+        private set
 
     /** Pushes counted so far (tests and stats). */
     var pushes = 0
@@ -285,21 +305,22 @@ class BufferVersions {
         pushedSerial = -1
     }
 
-    /** The binding for a draw in frame [serial]; [push] copies the first n bytes and returns (buffer, offset). */
-    inline fun binding(serial: Long, push: (Long) -> Pair<Long, Long>): Pair<Long, Long> {
-        if (!isCurrent(serial)) record(serial, push(maxOf(extent, 4L)))
-        return current()
+    /**
+     * Makes [buffer]/[offset] valid for a draw in frame [serial]: when the copy is stale, [push] copies the first n
+     * bytes and calls [record].
+     */
+    inline fun resolve(serial: Long, push: (Long) -> Unit) {
+        if (!isCurrent(serial)) push(maxOf(extent, 4L))
     }
 
     fun isCurrent(serial: Long) = pushedSerial == serial
 
-    fun record(serial: Long, binding: Pair<Long, Long>) {
-        pushed = binding
+    fun record(serial: Long, buffer: Long, offset: Long) {
+        this.buffer = buffer
+        this.offset = offset
         pushedSerial = serial
         pushes++
     }
-
-    fun current() = pushed
 }
 
 internal class VkRhiVertexLayout(override val desc: VertexLayoutDesc) : RhiVertexLayout {

@@ -96,6 +96,15 @@ class GlslToVulkanTest {
     }
 
     @Test
+    fun ClipSpace_ShadowDepthStoredByVulkanEqualsGlWindowDepth() {
+        // VK-04: shadow maps hold the same depth on both backends, so GL-style receiver math compares alike
+        for (w in listOf(1f, 3.5f)) for (ndc in listOf(-1f, -0.4f, 0f, 0.73f, 1f)) {
+            val glWindowDepth = ndc * 0.5f + 0.5f
+            assertEquals(glWindowDepth, ClipSpace.vulkanZ(ndc * w, w) / w, 1e-6f, "ndc $ndc, w $w")
+        }
+    }
+
+    @Test
     fun Backend_IsOpenGlUnlessVulkanIsAskedFor() {
         assertEquals(RhiBackend.OPENGL, RhiBackend.selected(null, null))
         assertEquals(RhiBackend.OPENGL, RhiBackend.selected("metal", null))

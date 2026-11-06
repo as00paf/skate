@@ -19,9 +19,23 @@ data class UiRect(val x: Int, val y: Int, val w: Int, val h: Int) {
 /** Source-texture border sizes (texels) for a 9-slice. */
 data class NineSliceInsets(val left: Int, val top: Int, val right: Int, val bottom: Int)
 
-/** One draw: a run of quads sharing a texture and scissor. */
-class UiBatch(val texture: Texture?, val scissor: UiRect?, val firstQuad: Int) {
+/** One draw: a run of quads sharing a texture and scissor. Pooled by [UiDrawList]: valid until its next [UiDrawList.clear]. */
+class UiBatch internal constructor() {
+    var texture: Texture? = null
+        private set
+    var scissor: UiRect? = null
+        private set
+    var firstQuad = 0
+        private set
     var quadCount = 0
+
+    internal fun reset(texture: Texture?, scissor: UiRect?, firstQuad: Int): UiBatch {
+        this.texture = texture
+        this.scissor = scissor
+        this.firstQuad = firstQuad
+        quadCount = 0
+        return this
+    }
 }
 
 /**
@@ -29,11 +43,23 @@ class UiBatch(val texture: Texture?, val scissor: UiRect?, val firstQuad: Int) {
  * Vertices use the 2D batch layout (pos2, color4, uv2, texId, entityId); texId is 0 with a texture, -1 without;
  * entityId is [SDF_MODE] for SDF glyphs and 0 otherwise.
  * Consecutive quads with the same texture and scissor share a batch; quads fully outside the scissor are culled.
+ *
+ * Recording a frame like the previous one allocates nothing (VK-06): batches are pooled, the scissor rect of each
+ * push is reused while its value is unchanged, and the vertex array only grows.
  */
 class UiDrawList {
     private var vertices = FloatArray(256 * 4 * VERTEX_SIZE)
     private val scissors = ArrayList<UiRect>()
     private val batchList = ArrayList<UiBatch>()
+    private val batchPool = ArrayList<UiBatch>()
+
+    /** The rects pushed this frame, by push order: the next frame reuses a rect when its push matches (VK-06). */
+    private val scissorCache = ArrayList<UiRect>()
+    private var pushes = 0
+    private val xs = FloatArray(4)
+    private val ys = FloatArray(4)
+    private val us = FloatArray(4)
+    private val vs = FloatArray(4)
 
     var quadCount = 0
         private set
@@ -45,8 +71,21 @@ class UiDrawList {
 
     /** Pushes a clip rect, intersected with the current one. */
     fun pushScissor(x: Int, y: Int, w: Int, h: Int) {
-        val r = UiRect(x, y, w, h)
-        scissors.add(scissors.lastOrNull()?.intersect(r) ?: r)
+        var x0 = x
+        var y0 = y
+        var x1 = x + w
+        var y1 = y + h
+        scissors.lastOrNull()?.let { p ->
+            x0 = maxOf(x0, p.x); y0 = maxOf(y0, p.y); x1 = minOf(x1, p.x + p.w); y1 = minOf(y1, p.y + p.h)
+        }
+        val rw = maxOf(0, x1 - x0)
+        val rh = maxOf(0, y1 - y0)
+        val index = pushes++
+        val cached = scissorCache.getOrNull(index)
+        val rect = if (cached != null && cached.x == x0 && cached.y == y0 && cached.w == rw && cached.h == rh) cached
+            else UiRect(x0, y0, rw, rh)
+        if (index < scissorCache.size) scissorCache[index] = rect else scissorCache.add(rect)
+        scissors.add(rect)
     }
 
     fun popScissor() {
@@ -68,7 +107,7 @@ class UiDrawList {
             if (x >= clip.x + clip.w || x + w <= clip.x || y >= clip.y + clip.h || y + h <= clip.y) return
         }
         val batch = batchList.lastOrNull()?.takeIf { it.texture === texture && it.scissor == clip }
-            ?: UiBatch(texture, clip, quadCount).also { batchList.add(it) }
+            ?: nextBatch().reset(texture, clip, quadCount).also { batchList.add(it) }
         ensureCapacity(quadCount + 1)
         var o = quadCount * 4 * VERTEX_SIZE
         val texId = if (texture != null) 0f else -1f
@@ -108,10 +147,10 @@ class UiDrawList {
         val tw = texture.width.toFloat()
         val th = texture.height.toFloat()
         if (w <= 0f || h <= 0f || tw <= 0f || th <= 0f) return
-        val xs = nineSliceAxis(w, insets.left * scale, insets.right * scale)
-        val ys = nineSliceAxis(h, insets.top * scale, insets.bottom * scale)
-        val us = floatArrayOf(0f, insets.left / tw, 1f - insets.right / tw, 1f)
-        val vs = floatArrayOf(0f, insets.top / th, 1f - insets.bottom / th, 1f)
+        nineSliceAxis(w, insets.left * scale, insets.right * scale, xs)
+        nineSliceAxis(h, insets.top * scale, insets.bottom * scale, ys)
+        us[0] = 0f; us[1] = insets.left / tw; us[2] = 1f - insets.right / tw; us[3] = 1f
+        vs[0] = 0f; vs[1] = insets.top / th; vs[2] = 1f - insets.bottom / th; vs[3] = 1f
         for (row in 0..2) for (col in 0..2) {
             drawQuad(
                 x + xs[col], y + ys[row], xs[col + 1] - xs[col], ys[row + 1] - ys[row],
@@ -120,10 +159,18 @@ class UiDrawList {
         }
     }
 
+    /** The pooled batch after those in use this frame. */
+    private fun nextBatch(): UiBatch {
+        val i = batchList.size
+        if (i == batchPool.size) batchPool.add(UiBatch())
+        return batchPool[i]
+    }
+
     fun clear() {
         quadCount = 0
         batchList.clear()
         scissors.clear()
+        pushes = 0
     }
 
     private fun ensureCapacity(quads: Int) {
@@ -148,10 +195,14 @@ class UiDrawList {
         const val SDF_MODE = -2f
 
         /** Offsets of the 4 cut points along one axis; borders shrink proportionally when they do not fit. */
-        fun nineSliceAxis(total: Float, start: Float, end: Float): FloatArray {
+        fun nineSliceAxis(total: Float, start: Float, end: Float): FloatArray = nineSliceAxis(total, start, end, FloatArray(4))
+
+        /** Writes the four slice positions along one axis into [out] (borders shrink uniformly if they do not fit). */
+        fun nineSliceAxis(total: Float, start: Float, end: Float, out: FloatArray): FloatArray {
             val border = start + end
             val k = if (border > total && border > 0f) total / border else 1f
-            return floatArrayOf(0f, start * k, total - end * k, total)
+            out[0] = 0f; out[1] = start * k; out[2] = total - end * k; out[3] = total
+            return out
         }
     }
 }

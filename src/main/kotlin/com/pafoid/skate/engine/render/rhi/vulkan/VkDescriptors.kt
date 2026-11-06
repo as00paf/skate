@@ -132,8 +132,15 @@ internal class HostRing(
     private val ring = RingAllocator(alignment, CHUNK_SIZE)
     private val buffers = ArrayList<VkAllocBuffer>()
 
-    /** Copies [size] bytes of [src] from [from] (zero-filled past its end, all zeros when null); returns (buffer, offset). */
-    fun push(src: ByteBuffer?, from: Int, size: Long): Pair<Long, Long> {
+    /** VkBuffer of the last [push] (read right after it; no allocation per draw). */
+    var lastBuffer = 0L
+        private set
+
+    /**
+     * Copies [size] bytes of [src] from [from] (zero-filled past its end, all zeros when null); returns the offset in
+     * [lastBuffer].
+     */
+    fun push(src: ByteBuffer?, from: Int, size: Long): Long {
         val (chunk, offset) = ring.allocate(size)
         while (buffers.size < ring.chunks.size) {
             val index = buffers.size
@@ -150,7 +157,8 @@ internal class HostRing(
                 dst.put(view)
             }
         }
-        return b.buffer to offset
+        lastBuffer = b.buffer
+        return offset
     }
 
     fun reset() = ring.reset()
@@ -289,8 +297,11 @@ internal class VkFrameResources(
         serial++
     }
 
-    /** Copies the first [size] bytes of [data] into this frame's vertex ring; returns (buffer, offset). */
-    fun pushVertexData(data: ByteBuffer, size: Long): Pair<Long, Long> = slot.vertexRing.push(data, 0, size)
+    /** Copies the first [size] bytes of [data] into this frame's vertex ring; returns the offset in [lastVertexBuffer]. */
+    fun pushVertexData(data: ByteBuffer, size: Long): Long = slot.vertexRing.push(data, 0, size)
+
+    /** VkBuffer of the last [pushVertexData]. */
+    val lastVertexBuffer: Long get() = slot.vertexRing.lastBuffer
 
     /**
      * Binds [input]'s vertex buffers (then [extraBuffers], at offset 0) and its index buffer on [cmd]; dynamic buffers
@@ -301,15 +312,16 @@ internal class VkFrameResources(
         val buffers = s.mallocLong(count)
         val offsets = s.mallocLong(count)
         for (b in input.vertexBuffers) {
-            val (buffer, offset) = b.binding(this)
-            buffers.put(buffer); offsets.put(offset)
+            b.resolve(this)
+            buffers.put(b.boundBuffer); offsets.put(b.boundOffset)
         }
         for (extra in extraBuffers) { buffers.put(extra); offsets.put(0L) }
         buffers.flip(); offsets.flip()
         if (count > 0) vkCmdBindVertexBuffers(cmd, 0, buffers, offsets)
         if (indexed) {
-            val (buffer, offset) = input.indexBuffer!!.binding(this)
-            vkCmdBindIndexBuffer(cmd, buffer, offset, VK_INDEX_TYPE_UINT32)
+            val index = input.indexBuffer!!
+            index.resolve(this)
+            vkCmdBindIndexBuffer(cmd, index.boundBuffer, index.boundOffset, VK_INDEX_TYPE_UINT32)
         }
     }
 
@@ -343,7 +355,7 @@ internal class VkFrameResources(
                 .descriptorType(DescriptorLayoutCache.descriptorType(b.kind)).descriptorCount(b.count)
             if (b.kind == SpirvReflection.DescriptorKind.UNIFORM_BUFFER) {
                 val size = maxOf(d.size, 16).toLong()
-                val (buffer, offset) = if (b.binding == GlslToVulkan.PARAMS_BINDING) {
+                val offset = if (b.binding == GlslToVulkan.PARAMS_BINDING) {
                     slot.ring.push(params.block.data, 0, size)
                 } else {
                     val engineSlot = shader.blockSlots[b.binding]
@@ -351,7 +363,7 @@ internal class VkFrameResources(
                     if (source == null) slot.ring.push(null, 0, size)
                     else slot.ring.push(source.contents, uniformOffsets[engineSlot].toInt(), size)
                 }
-                w.pBufferInfo(VkDescriptorBufferInfo.calloc(1, s).also { it[0].buffer(buffer).offset(offset).range(size) })
+                w.pBufferInfo(VkDescriptorBufferInfo.calloc(1, s).also { it[0].buffer(slot.ring.lastBuffer).offset(offset).range(size) })
             } else {
                 val units = params.units.of(b.binding)
                 val infos = VkDescriptorImageInfo.calloc(b.count, s)
@@ -369,14 +381,23 @@ internal class VkFrameResources(
     override fun close() = slots.forEach { it.close() }
 
     companion object {
-        /** Whether [t] can be read through sampler [d] (same image dimension, depth-compare matching depth). */
-        fun compatible(t: VkRhiTexture, d: SpirvReflection.Descriptor): Boolean {
-            val dim = when (t.desc.type) {
+        /** Whether [t] can be read through sampler [d]; see the pure overload. */
+        fun compatible(t: VkRhiTexture, d: SpirvReflection.Descriptor): Boolean =
+            compatible(t.desc.type, t.isDepth, t.sampler.compare != null, d)
+
+        /**
+         * Same image dimension, and: a shadow sampler ([SpirvReflection.Descriptor.depth]) reads a depth texture; a
+         * plain sampler reads a colour texture or a depth texture without depth compare (GL and Vulkan both allow
+         * sampling depth values directly, as SSAO does with the scene depth; VK-05).
+         */
+        fun compatible(type: TextureType, isDepth: Boolean, compares: Boolean, d: SpirvReflection.Descriptor): Boolean {
+            val dim = when (type) {
                 TextureType.TEXTURE_2D -> SpirvReflection.ImageDim.D2
                 TextureType.TEXTURE_2D_ARRAY -> SpirvReflection.ImageDim.D2_ARRAY
                 TextureType.CUBE -> SpirvReflection.ImageDim.CUBE
             }
-            return dim == d.dim && t.isDepth == d.depth
+            if (dim != d.dim) return false
+            return if (d.depth) isDepth else !compares
         }
     }
 }
