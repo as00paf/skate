@@ -92,6 +92,8 @@ class Editor(
     }
 
     fun destroy() {
+        // Keep the current scene's editor camera for the next session (EDT-58).
+        editorActionHandler.sceneActionHandler.cameraMemory.flush()
         imGuiLayer.destroy()
     }
 }
