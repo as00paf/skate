@@ -1,5 +1,6 @@
 package com.pafoid.skate.engine.assets.pack
 
+import com.pafoid.skate.engine.render.rhi.GraphicsBackend
 import kotlinx.serialization.Serializable
 import java.io.ByteArrayOutputStream
 import java.security.MessageDigest
@@ -20,14 +21,23 @@ data class ManifestEntry(
     val sha256: String,
 )
 
+/**
+ * `manifest.json` next to an exported `game.bin`. Schema 2 (AST-12) adds [graphicsBackend], the project's backend
+ * at export time; it is build metadata (startup reads the packed project and `game.settings.json`).
+ */
 @Serializable
 data class PackManifest(
-    val schema: Int = 1,
+    val schema: Int = SCHEMA,
     val project: String = "",
     val binSize: Int = 0,
     val binSha256: String = "",
     val entries: List<ManifestEntry> = emptyList(),
-)
+    val graphicsBackend: GraphicsBackend = GraphicsBackend.DEFAULT,
+) {
+    companion object {
+        const val SCHEMA = 2
+    }
+}
 
 class PackResult(val data: ByteArray, val manifest: PackManifest)
 
@@ -35,7 +45,12 @@ object PackBuilder {
     private val alreadyCompressed = setOf("png", "jpg", "jpeg", "gif", "ogg", "mp3", "glb")
 
     /** Lays [inputs] out back to back. Entries are gzipped when that makes them clearly smaller. */
-    fun build(project: String, inputs: List<PackInput>, compress: Boolean = true): PackResult {
+    fun build(
+        project: String,
+        inputs: List<PackInput>,
+        compress: Boolean = true,
+        graphicsBackend: GraphicsBackend = GraphicsBackend.DEFAULT,
+    ): PackResult {
         val out = ByteArrayOutputStream()
         val entries = inputs.map { input ->
             val gz = if (compress && input.relativePath.substringAfterLast('.', "").lowercase() !in alreadyCompressed)
@@ -48,7 +63,7 @@ object PackBuilder {
             entry
         }
         val data = out.toByteArray()
-        return PackResult(data, PackManifest(1, project, data.size, sha256(data), entries))
+        return PackResult(data, PackManifest(PackManifest.SCHEMA, project, data.size, sha256(data), entries, graphicsBackend))
     }
 
     /** Returns the original bytes of an entry stored at [position] of [data]. */
