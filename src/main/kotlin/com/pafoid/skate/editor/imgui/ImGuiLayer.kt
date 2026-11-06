@@ -61,6 +61,7 @@ class ImGuiLayer(
     private val logger = engine.logger
     private val eventSystem = engine.eventSystem
     private val renderer = engine.renderer
+    private val inputProvider = engine.inputProvider
 
     private val imGuiGlfw = ImGuiImplGlfw()
     private val imGuiGl3 = ImGuiImplGl3()
@@ -82,6 +83,9 @@ class ImGuiLayer(
 
     fun init(windowController: WindowController) {
         createContext()
+        // Only the editor has an ImGui context; engine input asks through these hooks (GUI-14).
+        inputProvider.keyListener.captureKeyboard = { getIO().wantCaptureKeyboard }
+        inputProvider.mouseListener.captureMouse = { getIO().wantCaptureMouse }
 
         with(getIO()) {
             iniFilename = layoutStore.iniFile.path

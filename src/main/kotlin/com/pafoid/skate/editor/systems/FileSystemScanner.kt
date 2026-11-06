@@ -101,7 +101,8 @@ class FileSystemScanner(
     }
 
     companion object {
-        private val SKIP_NAMES = setOf(
+        /** Folders the Project window and the asset search skip (VCS, IDE and build output). */
+        val SKIP_NAMES = setOf(
             ".git", ".idea", "build", "gradle", ".kotlin", ".gradle",
             "out", ".vscode", ".settings", "target"
         )

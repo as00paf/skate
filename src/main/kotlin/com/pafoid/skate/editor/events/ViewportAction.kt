@@ -23,7 +23,13 @@ sealed class ViewportAction(eventName: String) : Event(eventName) {
     data class RemoveComponent(val component: Component) :
         ViewportAction("viewport.remove_component")
     data class Duplicate(val gameObject: GameObject) : ViewportAction("viewport.duplicate")
-    data class Delete(val gameObject: GameObject, val scene: Scene) : ViewportAction("viewport.delete")
+    /**
+     * Delete [gameObject] and its children. With [confirm] (every user path) the editor asks first
+     * (EDT-62, `DeleteObjectsDialog`); Cut passes false, since the object goes to the clipboard.
+     */
+    data class Delete(val gameObject: GameObject, val scene: Scene, val confirm: Boolean = true) : ViewportAction("viewport.delete")
+    /** The user confirmed deleting [gameObject]: run the undoable delete. */
+    data class DeleteConfirmed(val gameObject: GameObject, val scene: Scene) : ViewportAction("viewport.delete_confirmed")
     data class RenameGameObject(val gameObject: GameObject, val newName: String) : ViewportAction("viewport.rename_gameobject")
     data class Reparent(val child: GameObject, val newParent: GameObject) : ViewportAction("viewport.reparent")
     data class SetGameObjectEnabled(val gameObject: GameObject, val enabled: Boolean) : ViewportAction("viewport.set_gameobject_enabled")
