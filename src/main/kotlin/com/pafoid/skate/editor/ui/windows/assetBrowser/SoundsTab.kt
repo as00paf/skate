@@ -3,7 +3,6 @@ package com.pafoid.skate.editor.ui.windows.assetBrowser
 import com.pafoid.skate.editor.imgui.tipped
 import com.pafoid.skate.editor.imgui.contextPopupId
 import com.pafoid.skate.editor.imgui.data.Icons
-import com.pafoid.skate.engine.assets.data.SoundBuffer
 import com.pafoid.skate.engine.assets.data.SoundSource
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.core.LoggerService.LogLevel
@@ -25,6 +24,7 @@ class SoundsTab(
 
     override fun imgui(label: String, searchText: ImString) {
         refreshOnProjectChange()
+        durations.pump()
         content(label) { renderTable(label, searchText) }
     }
 
@@ -56,8 +56,9 @@ class SoundsTab(
     private fun renderSoundRow(file: File) {
         ImGui.pushID(file.absolutePath)
 
-        val buffer = assetsManager.getSound(file.absolutePath)
-        val duration = buffer.durationInSeconds
+        // Length comes from a worker; the sound itself loads only when played (AST-23)
+        val duration = durations.get(file)
+        val durationText = duration?.let { "%.2fs".format(it) } ?: "..."
         val isPlaying = currentPlayingFile == file && playingSource?.isPlaying() == true
 
         ImGui.tableNextColumn()
@@ -73,7 +74,7 @@ class SoundsTab(
                 "${Icons.PLAY} ${stringManager.getString("context.asset_browser.play_stop")}"
             
             if (ImGui.menuItem(playStopLabel)) {
-                handlePlayback(file, buffer)
+                handlePlayback(file)
             }
             ImGui.separator()
             if (stringManager.tipped(ImGui.menuItem("${Icons.PLUS} ${stringManager.getString("context.asset_browser.add_to_gameobject")}"), "context.asset_browser.add_to_gameobject")) {
@@ -88,7 +89,7 @@ class SoundsTab(
             }
             ImGui.separator()
             if (stringManager.tipped(ImGui.menuItem("${Icons.INFO} ${stringManager.getString("context.asset_browser.properties")}"), "context.asset_browser.properties")) {
-                engine.logger.logEditor("Sound: ${file.name}, Duration: ${duration}s, Path: ${file.absolutePath}")
+                engine.logger.logEditor("Sound: ${file.name}, Duration: $durationText, Path: ${file.absolutePath}")
             }
             ImGui.endPopup()
         }
@@ -96,20 +97,20 @@ class SoundsTab(
         if (ImGui.beginDragDropSource()) {
             ImGui.setDragDropPayload("SOUND", file.path)
             ImGui.text("${Icons.MUSIC} ${file.name}")
-            ImGui.textColored(0.7f, 0.7f, 0.7f, 1f, stringManager.getString("lbl.sounds.drag_duration", duration))
+            ImGui.textColored(0.7f, 0.7f, 0.7f, 1f, stringManager.getString("lbl.sounds.drag_duration", duration ?: 0f))
             ImGui.textColored(0.5f, 0.5f, 0.5f, 1f, stringManager.getString("lbl.sounds.drop_hint"))
             ImGui.endDragDropSource()
         }
 
         ImGui.tableNextColumn()
-        ImGui.text("%.2fs".format(duration))
+        ImGui.text(durationText)
 
         ImGui.tableNextColumn()
         val buttonIcon = if (isPlaying) Icons.STOP else Icons.PLAY
         val tooltipKey = if (isPlaying) "tooltip.stop_sound" else "tooltip.play_sound"
         
         if (ImGui.button(buttonIcon, -1f, 0f)) {
-            handlePlayback(file, buffer)
+            handlePlayback(file)
         }
         if (ImGui.isItemHovered()) {
             ImGui.setTooltip(stringManager.getString(tooltipKey))
@@ -123,7 +124,7 @@ class SoundsTab(
         engine.logger.logEditor("Add sound to object not yet implemented: $soundPath")
     }
 
-    private fun handlePlayback(file: File, buffer: SoundBuffer) {
+    private fun handlePlayback(file: File) {
         val isPlaying = currentPlayingFile == file && playingSource?.isPlaying() == true
         
         if (isPlaying) {
@@ -136,6 +137,7 @@ class SoundsTab(
 
             currentPlayingFile = file
             try {
+                val buffer = assetsManager.getSound(file.absolutePath)
                 if (buffer.bufferId != -1) {
                     playingSource = SoundSource(isLooping = false, isRelative = true)
                     playingSource?.setBuffer(buffer.bufferId)
@@ -149,6 +151,15 @@ class SoundsTab(
             }
         }
     }
+
+    private val durations = AsyncAssetCache<File, Float, Float>(
+        io = { job -> engine.jobSystem.runIO { job() } },
+        decode = SoundDurations::of,
+        upload = { _, seconds -> seconds },
+        uploadsPerFrame = 64,
+    )
+
+    override fun onProjectChanged() = durations.clear()
 
     override fun refreshAssets() = scan(BrowserAssetType.SOUND) { job -> engine.jobSystem.runIO { job() } }
 

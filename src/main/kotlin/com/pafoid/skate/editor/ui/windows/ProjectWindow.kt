@@ -80,6 +80,11 @@ class ProjectWindow(
         eventSystem.subscribe<FileSystemEvent.FileSystemChangedEvent> {
             lastOperationError = null
         }
+        // Search Anywhere and other tools reveal a file here (EDT-61); rescan in case it is new.
+        eventSystem.subscribe<FileSystemEvent.RevealInProject> { event ->
+            reveal.request(event.path)
+            needsRefresh = true
+        }
     }
 
     // Cached status bar counts — only recalculate when treeCache changes
@@ -92,6 +97,8 @@ class ProjectWindow(
     private var renamingItemPath: String? = null
     private val renameInput = ImString("", 128)
     private var renameFinished = false
+
+    private val reveal = ProjectReveal()
 
     // Expanded state: absolute path -> isExpanded
     private val expandedPaths = mutableSetOf<String>()
@@ -114,6 +121,11 @@ class ProjectWindow(
     override fun imgui() {
         if (!isOpen.get()) return
 
+        // Before begin: a docked tab hidden behind another one has to be brought to the front to draw at all.
+        if (reveal.wantsFocus) {
+            ImGui.setNextWindowFocus()
+            reveal.focusTaken()
+        }
         if (beginWindow(stringManager)) {
             if (needsRefresh) {
                 treeCache = fileSystemScanner.scanProject()
@@ -127,6 +139,8 @@ class ProjectWindow(
                 MImGui.errorText("${Icons.WINDOW_CLOSE} $errorMsg")
                 separator()
             }
+
+            if (reveal.filterHidesTarget(searchText.get())) searchText.set("")
 
             if (!projectManager.hasProject()) {
                 EmptyState.noProject(stringManager, eventSystem)
@@ -146,6 +160,7 @@ class ProjectWindow(
                 separator()
                 renderStatusBar()
             }
+            reveal.done()
         }
         end()
     }
@@ -211,6 +226,7 @@ class ProjectWindow(
         val starIcon = if (item.isFavorite) "${Icons.STAR} " else ""
         val headerLabel = "${starIcon}${Icons.FOLDER} ${item.name}"
 
+        if (reveal.shouldOpen(item.path)) ImGui.setNextItemOpen(true)
         val opened = treeNodeEx(item.path, 0, headerLabel)
 
         if (ImGui.beginDragDropTarget()) {
@@ -245,10 +261,11 @@ class ProjectWindow(
         val starPrefix = if (item.isFavorite) "${Icons.STAR} " else ""
         val label = "$starPrefix$icon ${item.name}"
 
-        val isSelected = false
+        val isSelected = reveal.isSelected(item.path)
         val selectableFlags = ImGuiSelectableFlags.SpanAllColumns
 
-        selectable(label, isSelected, selectableFlags)
+        if (selectable(label, isSelected, selectableFlags)) reveal.select(item.path)
+        if (reveal.isTarget(item.path)) ImGui.setScrollHereY(0.5f)
 
         if (isItemClicked(1)) {
             contextTargetItem = item

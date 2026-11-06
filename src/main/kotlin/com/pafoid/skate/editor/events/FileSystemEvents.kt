@@ -5,4 +5,7 @@ import com.pafoid.skate.engine.events.Event
 sealed class FileSystemEvent(eventName: String) : Event(eventName){
     data class FileSystemChangedEvent(val affectedPath: String?) : FileSystemEvent("filesystem.changed")
     data class FileSystemOperationFailed(val path: String, val operation: String, val reason: String) : FileSystemEvent("filesystem.operation_failed")
+
+    /** Shows [path] in the Project window: opens its folders, selects it and scrolls to it (EDT-61). */
+    data class RevealInProject(val path: String) : FileSystemEvent("filesystem.reveal")
 }

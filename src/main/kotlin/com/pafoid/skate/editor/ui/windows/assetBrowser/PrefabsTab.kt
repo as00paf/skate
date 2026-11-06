@@ -8,6 +8,9 @@ import com.pafoid.skate.editor.imgui.contextPopupId
 import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.editor.imgui.data.UiConstants.ASSET_BROWSER_ITEM_WIDTH
 import com.pafoid.skate.editor.systems.ThumbnailCache
+import com.pafoid.skate.engine.assets.AssetState
+import com.pafoid.skate.engine.assets.AssetTicket
+import com.pafoid.skate.engine.assets.data.Texture
 import com.pafoid.skate.engine.assets.data.models.`3dModel`
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.core.StringManager
@@ -36,12 +39,15 @@ class PrefabsTab(
     private val thumbnailCache: ThumbnailCache by lazy { ThumbnailCache(engine.renderer.renderResources.renderers.thumbnail) }
     private val surfaces = MaterialType.entries
     private val surfaceIndex = ImInt(0)
-    private val thumbnailModels = mutableMapOf<String, `3dModel`>()
+    private val thumbnails = BudgetedThumbnails<Int>(perFrame = 1)
+    private val modelTickets = HashMap<String, AssetTicket<`3dModel`>>()
+    private val textureTickets = HashMap<String, AssetTicket<Texture>>()
 
     /** The prefab catalog is built in, not a folder on disk: no Show folder, and no empty-space menu. */
     override val folder: File? get() = null
 
     override fun imgui(label: String, searchText: ImString) {
+        thumbnails.beginFrame()
         content(label) { renderCatalog(searchText) }
     }
 
@@ -95,7 +101,12 @@ class PrefabsTab(
         val texId = thumbnailTexId(entry, data.material)
 
         ImGui.pushID(entry.type.name)
-        if (ImGui.imageButton("PrefabItem", texId.toLong(), size, size, 0f, 1f, 1f, 0f)) {
+        val clicked = if (texId != null) {
+            ImGui.imageButton("PrefabItem", texId.toLong(), size, size, 0f, 1f, 1f, 0f)
+        } else {
+            ImGui.button(iconOf(entry.category), size, size) // placeholder while the model loads (AST-23)
+        }
+        if (clicked) {
             spawnPrefab(data)
         }
 
@@ -116,7 +127,7 @@ class PrefabsTab(
 
         if (ImGui.beginDragDropSource()) {
             ImGui.setDragDropPayload(PrefabData.PAYLOAD, data)
-            ImGui.image(texId.toLong(), size * 1.2f, size * 1.2f, 0f, 1f, 1f, 0f)
+            texId?.let { ImGui.image(it.toLong(), size * 1.2f, size * 1.2f, 0f, 1f, 1f, 0f) }
             ImGui.text(name)
             data.material?.let {
                 ImGui.textColored(0.7f, 0.7f, 0.7f, 1f, "${stringManager.getString("lbl.material")}: ${it.displayName}")
@@ -130,16 +141,24 @@ class PrefabsTab(
         ImGui.endGroup()
     }
 
-    /** Thumbnail of [entry] drawn with [surface], the texture the spawned prefab gets (AST-13). */
-    private fun thumbnailTexId(entry: PrefabEntry, surface: MaterialType?): Int {
+    /**
+     * Thumbnail of [entry] drawn with [surface], the texture the spawned prefab gets (AST-13). The model and texture
+     * load asynchronously (worker decode, main-thread upload); the render waits for both and runs once per frame at
+     * most (AST-23). Null until then.
+     */
+    private fun thumbnailTexId(entry: PrefabEntry, surface: MaterialType?): Int? {
         val key = PrefabThumbnailMaterial.cacheKey(entry, surface)
-        val model = thumbnailModels.getOrPut(key) {
-            val texture = surface
-                ?.let { PrefabThumbnailMaterial.texturePath(it, assetsManager.paths.projectRoot) }
-                ?.let { assetsManager.getTexture(it) }
-            PrefabThumbnailMaterial.applyTexture(assetsManager.loadModel(entry.modelPath), texture)
-        }
-        return thumbnailCache.getThumbnail(key, model)
+        val model = modelTickets.getOrPut(entry.modelPath) { assetsManager.requestModel(entry.modelPath) }
+        val texturePath = surface?.let { PrefabThumbnailMaterial.texturePath(it, assetsManager.paths.projectRoot) }
+        val texture = texturePath?.let { path -> textureTickets.getOrPut(path) { assetsManager.requestTexture(path) } }
+        return thumbnails.get(
+            key,
+            ready = { model.state !== AssetState.Loading && texture?.state !== AssetState.Loading },
+            render = {
+                val textured = PrefabThumbnailMaterial.applyTexture(model.get() ?: `3dModel`(entry.modelPath), texture?.takeIf { it.isReady }?.get())
+                thumbnailCache.getThumbnail(key, textured)
+            },
+        )
     }
 
     private fun spawnPrefab(data: PrefabData) {
