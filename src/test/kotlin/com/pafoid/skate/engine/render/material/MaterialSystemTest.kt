@@ -45,6 +45,18 @@ class MaterialSystemTest {
     }
 
     @Test
+    fun MaterialBinder_TextureWithAGpuTexture_IsPresentWhateverItsNativeHandle() {
+        // REN-13: a Vulkan image handle truncated to an Int can be negative; presence must not depend on it
+        val sink = RecordingSink()
+        val texture = tex(-123).also { it.rhi = com.pafoid.skate.engine.render.rhi.FakeRhiDevice().createTexture(
+            com.pafoid.skate.engine.render.rhi.TextureDesc(com.pafoid.skate.engine.render.rhi.TextureType.TEXTURE_2D,
+                com.pafoid.skate.engine.render.rhi.PixelFormat.RGBA8, 1, 1)) }
+        binder().bind(Material(baseColorTexture = texture), sink)
+        assertTrue("${Uniforms.HAS_BASE_COLOR_TEXTURE}=true" in sink.calls)
+        assertEquals(listOf(0 to -123), binds)
+    }
+
+    @Test
     fun MaterialBinder_SameMaterialSameShaderSkipsUploads() {
         val sink = RecordingSink()
         val b = binder()
