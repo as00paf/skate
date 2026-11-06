@@ -1,8 +1,10 @@
 package com.pafoid.skate.editor.assetstore
 
+import java.io.File
+
 /**
- * One asset source (AST-16 §3). Providers are stateless apart from response caches, never write files and never touch
- * the project: staging and import belong to [StagingDownloader] and [StoreImporter]. Methods block and run on an IO
+ * One asset source (AST-16 §3). Providers are stateless apart from response caches and never touch the project: they
+ * write only inside a staging folder ([postProcess]); download and import belong to [StagingDownloader] and [StoreImporter]. Methods block and run on an IO
  * worker; every network call goes through the [StoreHttp] they were built with.
  */
 interface AssetStoreProvider {
@@ -19,6 +21,12 @@ interface AssetStoreProvider {
 
     /** Fresh URLs for [variant]; called right before each download and never cached. */
     fun resolveDownload(details: StoreAssetDetails, variant: StoreVariant): DownloadPlan
+
+    /**
+     * Runs on the IO worker after the download, inside [stagingDir] only (unzip, texture packing). Returns the staged
+     * relative paths [importPlan] works on. Default: the downloaded files as they are.
+     */
+    fun postProcess(details: StoreAssetDetails, variant: StoreVariant, stagingDir: File, staged: List<String>): List<String> = staged
 
     /** Pure: maps the staged files of [variant] to the import folder. */
     fun importPlan(details: StoreAssetDetails, variant: StoreVariant, staged: List<String>): ImportPlan

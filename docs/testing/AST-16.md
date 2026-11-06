@@ -16,5 +16,14 @@ Needs an internet connection. Poly Haven is CC0 and needs no login.
 12. Start an import and click **Cancel download**: nothing is added under `Assets\Store`.
 13. Switch the editor to French: every label in the window is translated.
 
-Automated (recorded Poly Haven fixtures in `src/test/resources/assetstore/polyhaven/`, no sockets):
+## Slice b: ambientCG
+
+14. In the Asset Store, set Source to **ambientCG**. Type switches to **Textures**, the credit line reads "Materials from ambientCG.com (CC0)…", and popular materials fill the grid with thumbnails.
+15. Search `brick`, open **Bricks 059**. The license is CC0, the author is ambientCG, **Open on website** opens ambientcg.com/view?id=Bricks059, and the Variant list starts `1K (… MB)` with JPG before PNG at each size.
+16. Import **1K-JPG**. `Assets\Store\ambientcg\bricks059\` holds `Bricks059_1K-JPG_Color.jpg`, `Bricks059_1K-JPG_NormalGL.jpg`, `Bricks059_1K-JPG_ORM.png` and `bricks059.skmat`, each with a `.meta`. No `.usdc`, `.blend` or displacement map is imported.
+17. Open `Bricks059_1K-JPG_ORM.png`: it is reddish/greenish (R = AO, G = roughness, B = 0 for a non-metal). Assign `bricks059.skmat` to a cube: red bricks with visible normal detail, not shiny. Import a metal (search `metal`, e.g. **Metal 032**): its ORM has a strong blue channel and the cube looks metallic.
+18. The Attribution tab lists Bricks 059 / ambientcg / CC0-1.0 / ambientCG. Undo removes the folder and the entry.
+19. Disconnect the network and search ambientCG: a red "Search failed" line appears in the grid, and switching back to Poly Haven still works once the network is back.
+
+Automated (recorded Poly Haven and ambientCG fixtures in `src/test/resources/assetstore/`, generated zips, no sockets):
 `.\gradlew.bat :test --tests "com.pafoid.skate.editor.assetstore.*"`.

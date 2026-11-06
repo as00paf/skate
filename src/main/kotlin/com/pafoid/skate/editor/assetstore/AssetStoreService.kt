@@ -152,7 +152,9 @@ class AssetStoreService(
                     job.done = done
                     job.total = total
                 }
-                StoreImportRequest(target, variant, staging, p.importPlan(target, variant, staged))
+                if (job.cancel.isCancelled) throw StoreCancelledException()
+                val prepared = p.postProcess(target, variant, staging, staged)
+                StoreImportRequest(target, variant, staging, p.importPlan(target, variant, prepared))
             }
             jobs.main {
                 download = null

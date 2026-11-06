@@ -9,6 +9,7 @@ import com.pafoid.skate.editor.assetstore.StoreAssetDetails
 import com.pafoid.skate.editor.assetstore.StoreAssetKind
 import com.pafoid.skate.editor.assetstore.StoreAssetSummary
 import com.pafoid.skate.editor.assetstore.StoreJobs
+import com.pafoid.skate.editor.assetstore.providers.ambientcg.AmbientCgProvider
 import com.pafoid.skate.editor.assetstore.providers.polyhaven.PolyHavenProvider
 import com.pafoid.skate.editor.events.AssetStoreEvent
 import com.pafoid.skate.editor.imgui.EditorWindow
@@ -49,7 +50,7 @@ class AssetStoreWindow(
             }
         }
         AssetStoreService(
-            AssetStoreRegistry(listOf(PolyHavenProvider(http))),
+            AssetStoreRegistry(listOf(PolyHavenProvider(http), AmbientCgProvider(http))),
             http, jobs, engine.eventSystem::publish,
             projectDir = { projectManager.getProjectDirectory()?.absoluteFile },
         ).also { it.refreshLedger() }

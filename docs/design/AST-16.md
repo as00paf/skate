@@ -1,6 +1,6 @@
 # AST-16 — Asset store window
 
-Status: **approved** 2026-11-06 (human). Slice order: a → b → d → f → e → c (no-login libraries first; Sketchfab last and optional; no Mixamo, no Poly Pizza). ND licenses: warn and record the conversion. Slice a implemented (`editor/assetstore/**`). Author: `skate-online` (lead-assigned; `skate-assets` reviews).
+Status: **approved** 2026-11-06 (human). Slice order: a → b → d → f → e → c (no-login libraries first; Sketchfab last and optional; no Mixamo, no Poly Pizza). ND licenses: warn and record the conversion. Slices a (Poly Haven) and b (ambientCG) implemented (`editor/assetstore/**`). Author: `skate-online` (lead-assigned; `skate-assets` reviews).
 Paths are relative to `src/main/kotlin/com/pafoid/skate/`.
 
 Marker: **⚠ UNVERIFIED** = an API detail I could not confirm from the provider's public docs on 2026-11-06. Each one needs a spike before its provider ships.
@@ -107,11 +107,13 @@ Flow for OAuth2: the window shows "Log in to Sketchfab", which opens the system 
 - Textures: the `$map`-style per-map entries (name → resolution → format) become a `TEXTURE_SET`, imported as a material (REN material keys). HDRIs are imported as environment maps (REN).
 - License: assets are CC0. The API condition (not an asset condition) is that users must be told assets come from Poly Haven, so the provider tab shows "Powered by Poly Haven". ⚠ UNVERIFIED: exact `/search` response field names (the docs say "ranked list of slugs with scores"); confirm with a fixture.
 
-### 5.2 ambientCG (materials, HDRIs, some models) — partly verified
-- `GET https://ambientCG.com/api/v3/assets` with `q`, `type` (`material`, `hdri`, `3d-model`, …), `sort`, `id`, `limit` (≤500), `offset`, `include=downloads,previews,thumbnails,maps,tags`.
-- ⚠ UNVERIFIED: the JSON schema of `downloads` (attribute/resolution naming, zip vs per-file). The v3 page does not document it. Fallback: v2 `full_json` (documented earlier, also unverified here).
-- Downloads are zips of a texture set (e.g. `1K-JPG`), extracted in staging and mapped to material slots by filename suffix (`_Color`, `_NormalGL`, `_Roughness`, `_AmbientOcclusion`, `_Displacement`, `_Metalness`). ⚠ UNVERIFIED: the exact suffix set. Use `NormalGL` (OpenGL convention), which matches our renderer.
-- License: CC0. The docs warn the API is "not as reliable or stable as needed for enterprise", so the provider must fail soft.
+### 5.2 ambientCG (materials) — verified, implemented in slice b
+- `GET https://ambientCG.com/api/v3/assets` with `type=material`, `sort=popular`, `limit`, `offset`, `q`, `id`, `include=title,downloads,thumbnails,tags,maps,shortDescription`. The response is `{totalResults, nextPageHttp, currentPageHttp, previousPageHttp, assets: [...]}`. Each asset carries only `id` plus the included fields: `title`, `thumbnails` (`"256-PNG"` → URL, …), `downloads` (`[{attributes: "1K-JPG", extension: "zip", url, size}]`) and `maps` (`color`, `normal`, `roughness`, `metalness`, `ambient-occlusion`, …). There is no license field: everything on ambientCG is CC0. (Verified against the live API on 2026-11-06; fixtures are in `src/test/resources/assetstore/ambientcg/`.)
+- Download URLs (`https://ambientcg.com/get?file=<id>_<attr>.zip`) redirect to a CDN, and `JdkStoreHttp` follows the redirect. No MD5 is given, so only the size is checked.
+- The zip holds `<id>_<attr>_Color`, `_NormalGL`, `_NormalDX`, `_Roughness`, `_AmbientOcclusion`, `_Displacement` (and `_Metalness` for metals; ⚠ that file name is inferred from the `metalness` map name, not seen in a downloaded zip), plus `.usdc`, `.blend`, `.mtlx`, `.tres` and a preview `.png`.
+- `postProcess` unzips in staging (zip-slip and size limits) and packs **Roughness → G, Metalness → B, AO → R** into `<id>_<attr>_ORM.png`. The shader reads metal from B and roughness from G of `metallicRoughness`, and AO from R, so a grayscale roughness map cannot be used directly. Missing maps get neutral values (AO 1, metal 0).
+- Import: Color, NormalGL and ORM, plus `<id>.skmat` (baseColor, normal, metallicRoughness, and ao when an AO map exists). Displacement and DirectX normals are not imported. Only `<n>K-JPG/PNG` texture sets are offered; ambientCG 3D models and HDRIs are not in v1.
+- Fail soft: malformed assets or downloads are skipped, and a non-JSON or error response surfaces as an inline error for this provider only.
 
 ### 5.3 Sketchfab (models) — partly verified
 - Search: Data API v3 `GET https://api.sketchfab.com/v3/search?type=models&q=…&downloadable=true` plus a license filter. ⚠ UNVERIFIED: search parameter names (`downloadable`, `license`, `cursor`) and the license slugs in responses.
