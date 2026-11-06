@@ -25,5 +25,14 @@ Needs an internet connection. Poly Haven is CC0 and needs no login.
 18. The Attribution tab lists Bricks 059 / ambientcg / CC0-1.0 / ambientCG. Undo removes the folder and the entry.
 19. Disconnect the network and search ambientCG: a red "Search failed" line appears in the grid, and switching back to Poly Haven still works once the network is back.
 
+## Review fixes (slice a)
+
+20. During a 4k import the editor stays responsive (the copy runs in the background). Command History shows "Import from Asset Store" (translated in French).
+21. `<project>\.skate\.gitignore` contains `cache/`. In git, `attribution.json` shows as new and nothing under `.skate\cache` does.
+22. After **Undo** and **Redo** of an import, the Project window and the Attribution tab update without a manual refresh. (The Asset Browser refresh is AST-22, skate-assets.)
+23. Import the same model five or more times: `.skate\cache\store\polyhaven\woodentable_01\` keeps at most 5 `backup-*` folders. Close the project: all `backup-*` folders are gone, and the variant folders stay.
+24. Start an import, and switch project before it finishes: nothing is written to either project, and an error says the project changed.
+25. Scroll through several pages of results, then close the window: the console shows no texture errors (thumbnails are freed; at most 96 are kept on the GPU).
+
 Automated (recorded Poly Haven and ambientCG fixtures in `src/test/resources/assetstore/`, generated zips, no sockets):
 `.\gradlew.bat :test --tests "com.pafoid.skate.editor.assetstore.*"`.

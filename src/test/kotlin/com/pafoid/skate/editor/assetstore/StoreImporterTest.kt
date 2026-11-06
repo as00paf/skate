@@ -1,13 +1,11 @@
 package com.pafoid.skate.editor.assetstore
 
-import com.pafoid.skate.editor.commands.assetstore.ImportStoreAssetCommand
 import com.pafoid.skate.engine.assets.AssetMeta
 import com.pafoid.skate.engine.assets.AssetRegistry
 import com.pafoid.skate.engine.render.material.MaterialAsset
 import com.pafoid.skate.engine.render.material.MaterialSchema
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
-import org.junit.jupiter.api.Assertions.assertNotEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -164,28 +162,68 @@ class StoreImporterTest {
     }
 
     @Test
-    fun Command_ExecuteUndoRedo() {
-        val command = ImportStoreAssetCommand(importer, request())
-        command.execute()
-        assertTrue(command.wasSuccessful())
-        assertEquals(File(project, folder), command.importedFolder)
-        val id = registry.idOf("$folder/a.gltf")
-        command.undo()
+    fun Reimport_LedgerFolderOutsideStore_IsNotTrusted() {
+        val outside = File(project, "Scenes/keep.png").apply { parentFile.mkdirs(); writeText("keep") }
+        val evil = File(project.parentFile, "evil-${project.name}/x.png").apply { parentFile.mkdirs(); writeText("x") }
+        listOf("../evil-${project.name}", "Scenes", "Assets", "Assets/Store/../../Scenes").forEach { folder ->
+            AttributionLedger.save(project, AttributionLedger().upsert(LedgerEntry(listOf("1"), "polyhaven", "WoodenTable_01",
+                title = "t", sourceUrl = "u", license = LedgerLicense("CC0-1.0"), retrievedAt = "r", folder = folder)))
+            val outcome = importer.import(request())
+            assertEquals(File(project, folder("woodentable_01")).canonicalFile, outcome.targetDir.canonicalFile, folder)
+            importer.revert(outcome, cc0Details().summary.ref)
+        }
+        assertTrue(outside.isFile)
+        assertTrue(evil.isFile)
+        evil.parentFile.deleteRecursively()
+    }
+
+    private fun folder(slug: String) = "Assets/Store/polyhaven/$slug"
+
+    @Test
+    fun Import_StagingOutsideProject_IsRejected() {
+        val req = request()
+        val foreign = File(project.parentFile, "other-${project.name}/.skate/cache/store/polyhaven/x/gltf-1k").apply { mkdirs() }
+        assertThrows<IOException> { importer.import(req.copy(stagingDir = foreign)) }
         assertFalse(File(project, folder).exists())
-        assertTrue(AttributionLedger.load(project).entries.isEmpty())
-        command.execute()
-        assertTrue(File(project, "$folder/a.gltf").isFile)
-        assertNotEquals(null, registry.idOf("$folder/a.gltf"))
-        assertEquals("Wooden Table 01", command.getTargetName())
+        foreign.parentFile.parentFile.parentFile.parentFile.parentFile.parentFile.deleteRecursively()
     }
 
     @Test
-    fun Command_FailureIsReported() {
-        val command = ImportStoreAssetCommand(importer, request(details = cc0Details(license = LicenseCatalog.UNKNOWN)))
-        command.execute()
-        assertFalse(command.wasSuccessful())
-        assertTrue(command.getFailureReason()!!.contains("license", ignoreCase = true))
-        command.undo()
-        assertEquals("assetstore.error.import", command.errorTitleKey)
+    fun Import_WritesGitignoreForCache() {
+        importer.import(request())
+        assertEquals("cache/\n", File(project, ".skate/.gitignore").readText())
+    }
+
+    @Test
+    fun Reimport_KeepsOnlyRecentBackupsAndPrunesAllOnClose() {
+        var now = Instant.parse("2026-11-06T12:00:00Z")
+        val clocked = StoreImporter(project, registry) { now.also { now = now.plusSeconds(1) } }
+        repeat(8) { clocked.import(request(files = mapOf("a.gltf" to "v$it"))) }
+        val itemDir = File(project, ".skate/cache/store/polyhaven/woodentable_01")
+        val backups = itemDir.listFiles { f -> f.name.startsWith(StoreImporter.BACKUP_PREFIX) }!!
+        assertEquals(StoreImporter.KEEP_BACKUPS, backups.size)
+        StoreImporter.pruneAllBackups(project)
+        assertTrue(itemDir.listFiles { f -> f.name.startsWith(StoreImporter.BACKUP_PREFIX) }!!.isEmpty())
+        assertTrue(File(itemDir, "gltf-1k/a.gltf").isFile, "staging is kept for redo")
+    }
+
+    @Test
+    fun RevertReimport_RestoresOverwrittenSidecars() {
+        importer.import(request())
+        val gltf = File(project, "$folder/a.gltf")
+        val second = importer.import(request(details = cc0Details(license = LicenseCatalog.CC_BY_4)))
+        assertEquals("CC-BY-4.0", AssetMeta.read(gltf)!!.settings[StoreImporter.SETTING_LICENSE])
+        importer.revert(second, cc0Details().summary.ref)
+        assertEquals("CC0-1.0", AssetMeta.read(gltf)!!.settings[StoreImporter.SETTING_LICENSE])
+    }
+
+    @Test
+    fun Stage_DoesNotRegisterOrWriteLedger_AndDiscardCleansUp() {
+        val staged = importer.stage(request())
+        assertTrue(File(project, "$folder/a.gltf").isFile)
+        assertNull(registry.idOf("$folder/a.gltf"))
+        assertFalse(AttributionLedger.file(project).exists())
+        importer.discard(staged)
+        assertFalse(File(project, folder).exists())
     }
 }

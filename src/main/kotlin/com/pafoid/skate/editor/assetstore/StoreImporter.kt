@@ -8,7 +8,7 @@ import java.io.File
 import java.io.IOException
 import java.time.Instant
 
-/** Everything needed to import one staged store item (built on an IO worker, executed on the main thread). */
+/** Everything needed to import one staged store item (built on an IO worker, executed by a command). */
 data class StoreImportRequest(
     val details: StoreAssetDetails,
     val variant: StoreVariant,
@@ -17,7 +17,24 @@ data class StoreImportRequest(
     val modifications: List<String> = emptyList(),
 ) {
     val title: String get() = details.summary.title
+    val ref: StoreAssetRef get() = details.summary.ref
 }
+
+/**
+ * Result of [StoreImporter.stage]: files are copied and backed up, nothing is registered yet.
+ * [backups] maps a project file to its previous content; the sidecar backup sits next to it (`AssetMeta.sidecarOf`).
+ */
+class StagedImport internal constructor(
+    val request: StoreImportRequest,
+    val targetDir: File,
+    val files: List<File>,
+    val created: List<File>,
+    val backups: Map<File, File>,
+    /** Files of the previous version that the new version no longer has (backed up, still on disk). */
+    val toRemove: List<File>,
+    val previousEntry: LedgerEntry?,
+    val backupDir: File,
+)
 
 /** What an import changed, so [StoreImporter.revert] can undo it exactly. */
 class ImportOutcome(
@@ -33,24 +50,32 @@ class ImportOutcome(
 )
 
 /**
- * Copies staged files into `Assets/Store/<provider>/<slug>/` (AST-16 §7): one `registry.register(file)` per file, the
- * `store.*` sidecar settings, an optional `.skmat`, and the ledger entry. A re-import of the same item overwrites in
- * place and leaves sidecars alone, so GUIDs survive; [revert] goes through `AssetRegistry.delete`.
+ * Copies staged files into `Assets/Store/<provider>/<slug>/` (AST-16 §7) in two phases:
+ * - [stage] (IO worker): checks, target folder, backups (files and sidecars), copies, `.skmat`. No registry or ledger.
+ * - [commit] (main thread): removes dropped files via `AssetRegistry.delete`, one `registry.register(file)` per file,
+ *   `store.*` sidecar settings, ledger entry.
+ *
+ * A re-import of the same item overwrites in place and keeps sidecars, so GUIDs survive; [revert] goes through
+ * `AssetRegistry.delete` and restores backed-up files and sidecars.
  */
 class StoreImporter(
     private val projectDir: File,
     private val registry: AssetRegistry,
     private val clock: () -> Instant = Instant::now,
 ) {
-    fun import(request: StoreImportRequest): ImportOutcome {
-        val details = request.details
-        val ref = details.summary.ref
-        if (!details.license.isKnown) throw IOException("Unknown license for ${ref.sourceId}; import blocked")
+    /** Both phases on the calling thread. */
+    fun import(request: StoreImportRequest): ImportOutcome = commit(stage(request))
 
-        val ledger = AttributionLedger.load(projectDir)
-        val previous = ledger.find(ref.providerId, ref.sourceId)
-        val targetDir = previous?.folder?.takeIf { it.isNotBlank() }?.let { File(projectDir, it) } ?: freshTargetDir(ref)
-        val backupDir = File(request.stagingDir.parentFile, "backup-${clock().toEpochMilli()}")
+    fun stage(request: StoreImportRequest): StagedImport {
+        val details = request.details
+        val ref = request.ref
+        if (!details.license.isKnown) throw IOException("Unknown license for ${ref.sourceId}; import blocked")
+        requireStagingInProject(request.stagingDir)
+
+        val previous = AttributionLedger.load(projectDir).find(ref.providerId, ref.sourceId)
+        val previousDir = previous?.folder?.let(::ledgerFolder)
+        val targetDir = previousDir ?: freshTargetDir(ref)
+        val backupDir = File(request.stagingDir.parentFile, "$BACKUP_PREFIX${clock().toEpochMilli()}")
 
         val sources = request.plan.entries.map { entry ->
             val target = StorePaths.safeRelative(entry.targetPath)?.takeIf { StoreFormats.isImportable(it) }
@@ -60,12 +85,11 @@ class StoreImporter(
             staged to target
         }
 
-        val oldFiles = if (previous != null && targetDir.isDirectory) projectFilesIn(targetDir) else emptyList()
+        val oldFiles = if (previousDir != null && targetDir.isDirectory) projectFilesIn(targetDir) else emptyList()
         val created = ArrayList<File>()
         val backups = LinkedHashMap<File, File>()
-        val removed = ArrayList<File>()
         val files = ArrayList<File>()
-        val progress = ImportOutcome(targetDir, files, created, backups, removed, previous)
+        val toRemove = ArrayList<File>()
         try {
             for ((staged, target) in sources) {
                 val dst = StorePaths.resolveInside(targetDir, target) ?: throw IOException("Path escapes import folder: $target")
@@ -80,11 +104,29 @@ class StoreImporter(
             }
             for (old in oldFiles) {
                 if (files.any { it.absoluteFile == old.absoluteFile }) continue
-                backups[old] = backup(old, backupDir, withSidecar = true)
+                backups[old] = backup(old, backupDir)
+                toRemove += old
+            }
+        } catch (e: Exception) {
+            rollbackStage(created, backups)
+            backupDir.deleteRecursively()
+            throw e
+        }
+        return StagedImport(request, targetDir, files, created, backups, toRemove, previous, backupDir)
+    }
+
+    fun commit(staged: StagedImport): ImportOutcome {
+        val request = staged.request
+        val ref = request.ref
+        val details = request.details
+        val removed = ArrayList<File>()
+        val outcome = ImportOutcome(staged.targetDir, staged.files, staged.created, staged.backups, removed, staged.previousEntry)
+        try {
+            for (old in staged.toRemove) {
                 registry.delete(old)
                 removed += old
             }
-            val ids = files.map { file -> tag(file, ref, details.license) }
+            val ids = staged.files.map { file -> tag(file, ref, details.license) }
             val entry = LedgerEntry(
                 assetIds = ids,
                 provider = ref.providerId,
@@ -97,14 +139,21 @@ class StoreImporter(
                 license = LedgerLicense(details.license.spdx, details.license.url),
                 modifications = request.modifications + ndWarning(details.license, request.modifications),
                 retrievedAt = clock().toString(),
-                folder = targetDir.relativeTo(projectDir).invariantSeparatorsPath,
+                folder = staged.targetDir.relativeTo(projectDir).invariantSeparatorsPath,
             )
-            AttributionLedger.save(projectDir, ledger.upsert(entry))
+            AttributionLedger.save(projectDir, AttributionLedger.load(projectDir).upsert(entry))
         } catch (e: Exception) {
-            revert(progress, ref)
+            revert(outcome, ref)
             throw e
         }
-        return progress
+        pruneBackups(request.stagingDir.parentFile)
+        return outcome
+    }
+
+    /** Undoes a staged-but-not-committed import (IO failure or a rejected request): raw file operations only. */
+    fun discard(staged: StagedImport) {
+        rollbackStage(staged.created, staged.backups)
+        deleteEmptyDirs(staged.targetDir)
     }
 
     /** Undoes [outcome]: created files via `AssetRegistry.delete`, overwritten/removed files restored from backups. */
@@ -112,16 +161,27 @@ class StoreImporter(
         outcome.created.forEach { registry.delete(it) }
         for ((file, backup) in outcome.backups) {
             if (!backup.isFile) continue
-            file.parentFile?.mkdirs()
-            backup.copyTo(file, overwrite = true)
-            val sidecarBackup = AssetMeta.sidecarOf(backup)
-            if (sidecarBackup.isFile) sidecarBackup.copyTo(AssetMeta.sidecarOf(file), overwrite = true)
+            restore(file, backup)
             registry.register(file)
         }
         deleteEmptyDirs(outcome.targetDir)
         val ledger = AttributionLedger.load(projectDir)
         val reverted = outcome.previousEntry?.let { ledger.upsert(it) } ?: ledger.remove(ref.providerId, ref.sourceId)
         AttributionLedger.save(projectDir, reverted)
+    }
+
+    /** The ledger's `folder` if it resolves inside `Assets/Store/` of this project; a shared ledger is not trusted. */
+    internal fun ledgerFolder(folder: String): File? {
+        if (folder.isBlank()) return null
+        val dir = StorePaths.resolveInside(projectDir, folder) ?: return null
+        val store = StorePaths.storeDir(projectDir).canonicalFile
+        return dir.takeIf { it.path.startsWith(store.path + File.separator) }
+    }
+
+    private fun requireStagingInProject(stagingDir: File) {
+        if (!StorePaths.isProjectStaging(projectDir, stagingDir)) {
+            throw IOException("Staging folder is not in the open project: ${stagingDir.path}")
+        }
     }
 
     private fun freshTargetDir(ref: StoreAssetRef): File {
@@ -134,7 +194,7 @@ class StoreImporter(
 
     private inline fun write(dst: File, created: MutableList<File>, backups: MutableMap<File, File>, backupDir: File, copy: () -> Unit) {
         if (dst.isFile) {
-            if (dst !in backups) backups[dst] = backup(dst, backupDir, withSidecar = false)
+            if (dst !in backups) backups[dst] = backup(dst, backupDir)
         } else {
             created += dst
         }
@@ -142,13 +202,32 @@ class StoreImporter(
         copy()
     }
 
-    private fun backup(file: File, backupDir: File, withSidecar: Boolean): File {
+    /** Copies [file] and its sidecar (when present) under [backupDir], keeping the project-relative layout. */
+    private fun backup(file: File, backupDir: File): File {
         val rel = file.relativeTo(projectDir).invariantSeparatorsPath
         val copy = File(backupDir, rel)
         copy.parentFile.mkdirs()
         file.copyTo(copy, overwrite = true)
-        if (withSidecar) AssetMeta.sidecarOf(file).takeIf { it.isFile }?.copyTo(AssetMeta.sidecarOf(copy), overwrite = true)
+        AssetMeta.sidecarOf(file).takeIf { it.isFile }?.copyTo(AssetMeta.sidecarOf(copy), overwrite = true)
         return copy
+    }
+
+    private fun restore(file: File, backup: File) {
+        file.parentFile?.mkdirs()
+        backup.copyTo(file, overwrite = true)
+        val sidecarBackup = AssetMeta.sidecarOf(backup)
+        if (sidecarBackup.isFile) sidecarBackup.copyTo(AssetMeta.sidecarOf(file), overwrite = true)
+    }
+
+    private fun rollbackStage(created: List<File>, backups: Map<File, File>) {
+        created.forEach { it.delete() }
+        backups.forEach { (file, backup) -> if (backup.isFile) restore(file, backup) }
+    }
+
+    /** Keeps the newest [KEEP_BACKUPS] backup folders of one item (older undo steps can no longer restore). */
+    private fun pruneBackups(itemDir: File?) {
+        val dirs = itemDir?.listFiles { f -> f.isDirectory && f.name.startsWith(BACKUP_PREFIX) }.orEmpty()
+        dirs.sortedByDescending { it.name.removePrefix(BACKUP_PREFIX).toLongOrNull() ?: 0L }.drop(KEEP_BACKUPS).forEach { it.deleteRecursively() }
     }
 
     /** Registers [file] (keeping an existing sidecar's GUID) and adds the `store.*` settings; no `AssetMeta` schema bump. */
@@ -180,5 +259,14 @@ class StoreImporter(
         const val SETTING_SOURCE_ID = "store.sourceId"
         const val SETTING_LICENSE = "store.license"
         const val ND_NOTE = "no-derivatives license: format conversion recorded"
+        const val BACKUP_PREFIX = "backup-"
+        const val KEEP_BACKUPS = 5
+
+        /** Deletes every re-import backup of the project (on project close, when the undo history goes away). */
+        fun pruneAllBackups(projectDir: File) {
+            val root = File(projectDir, "${StorePaths.PROJECT_HIDDEN_DIR}/${StorePaths.STAGING_DIR}")
+            if (!root.isDirectory) return
+            root.walkTopDown().filter { it.isDirectory && it.name.startsWith(BACKUP_PREFIX) }.toList().forEach { it.deleteRecursively() }
+        }
     }
 }

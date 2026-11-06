@@ -32,8 +32,8 @@ class HttpResult(val status: Int, val body: ByteArray, val headers: Map<String, 
 interface StoreHttp {
     fun get(url: String, headers: Map<String, String> = emptyMap()): HttpResult
 
-    /** Streams [url] into [target]; [progress] gets (bytes so far, total or null). */
-    fun download(url: String, headers: Map<String, String>, target: File, cancel: CancelToken, progress: (Long, Long?) -> Unit = { _, _ -> })
+    /** Streams [url] into [target]; [progress] gets (bytes so far, total or null). Returns the response content type. */
+    fun download(url: String, headers: Map<String, String>, target: File, cancel: CancelToken, progress: (Long, Long?) -> Unit = { _, _ -> }): String?
 
     companion object {
         const val USER_AGENT = "SkateEngine/0.1 (asset-store)"
@@ -42,6 +42,16 @@ interface StoreHttp {
         /** [headers] safe to log: credentials replaced with `***`. */
         fun redact(headers: Map<String, String>): Map<String, String> =
             headers.mapValues { (k, v) -> if (k.lowercase() in SECRET_HEADERS) "***" else v }
+
+        /** File extension for an image content type (`image/jpeg; charset=…` → `jpg`), or null. */
+        fun imageExtension(contentType: String?): String? = when (contentType?.substringBefore(';')?.trim()?.lowercase()) {
+            "image/png" -> "png"
+            "image/jpeg", "image/jpg" -> "jpg"
+            "image/webp" -> "webp"
+            "image/gif" -> "gif"
+            "image/bmp" -> "bmp"
+            else -> null
+        }
 
         /** Seconds to wait from a `Retry-After` header (delta-seconds form only), capped at [maxSeconds]. */
         fun retryAfterSeconds(headers: Map<String, List<String>>, maxSeconds: Long = 10): Long? =
@@ -68,7 +78,7 @@ class JdkStoreHttp(
         return HttpResult(response.statusCode(), response.body(), response.headers().map())
     }
 
-    override fun download(url: String, headers: Map<String, String>, target: File, cancel: CancelToken, progress: (Long, Long?) -> Unit) {
+    override fun download(url: String, headers: Map<String, String>, target: File, cancel: CancelToken, progress: (Long, Long?) -> Unit): String? {
         val response = client.send(request(url, headers), HttpResponse.BodyHandlers.ofInputStream())
         if (response.statusCode() !in 200..299) {
             response.body().close()
@@ -90,6 +100,7 @@ class JdkStoreHttp(
                 }
             }
         }
+        return response.headers().firstValue("content-type").orElse(null)
     }
 
     private fun request(url: String, headers: Map<String, String>): HttpRequest {

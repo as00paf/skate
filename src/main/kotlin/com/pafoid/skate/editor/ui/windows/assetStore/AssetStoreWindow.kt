@@ -12,6 +12,7 @@ import com.pafoid.skate.editor.assetstore.StoreJobs
 import com.pafoid.skate.editor.assetstore.providers.ambientcg.AmbientCgProvider
 import com.pafoid.skate.editor.assetstore.providers.polyhaven.PolyHavenProvider
 import com.pafoid.skate.editor.events.AssetStoreEvent
+import com.pafoid.skate.editor.events.ProjectEvent
 import com.pafoid.skate.editor.imgui.EditorWindow
 import com.pafoid.skate.editor.imgui.EmptyState
 import com.pafoid.skate.editor.imgui.ImGuiIds
@@ -60,8 +61,29 @@ class AssetStoreWindow(
     private var variantIndex = 0
     private var started = false
 
+    /** Thumbnails on the GPU: at most [THUMBNAIL_TEXTURES], freed on eviction, window close and project change. */
+    private val textures = ThumbnailTextures(
+        THUMBNAIL_TEXTURES,
+        load = { path -> engine.assetsManager.getTexture(path).texId.toLong() },
+        unload = { path -> engine.assetsManager.unloadTexture(path) },
+    )
+
     init {
-        engine.eventSystem.subscribe<AssetStoreEvent.ImportFinished> { event -> if (started) service.onImportFinished(event) }
+        val events = engine.eventSystem
+        events.subscribe<AssetStoreEvent.ImportFinished> { event -> if (started) service.onImportFinished(event) }
+        // Undo/redo of an import, and project switches, change the ledger the Attribution tab shows.
+        events.subscribe<AssetStoreEvent.LedgerChanged> { if (started) service.refreshLedger() }
+        events.subscribe<ProjectEvent.Opened> { if (started) projectChanged() }
+        events.subscribe<ProjectEvent.Closed> { if (started) projectChanged() }
+    }
+
+    private fun projectChanged() {
+        service.refreshLedger()
+        textures.clear()
+    }
+
+    override fun onClosed() {
+        textures.clear()
     }
 
     override fun imgui() {
@@ -183,7 +205,7 @@ class AssetStoreWindow(
         val thumb = service.thumbnail(item.thumbnailUrl)
         // Data label (the item title) as tooltip; a placeholder icon until the thumbnail is cached.
         val clicked = if (thumb != null) {
-            ImGui.imageButton("##thumb", engine.assetsManager.getTexture(thumb.path).texId.toLong(), size, size, 0f, 0f, 1f, 1f)
+            ImGui.imageButton("##thumb", textures.texId(thumb.path), size, size, 0f, 0f, 1f, 1f)
         } else {
             ImGui.button("##thumb", size, size)
         }
@@ -216,7 +238,7 @@ class AssetStoreWindow(
         val details = service.details ?: return
         service.thumbnail(selected.thumbnailUrl)?.let { thumb ->
             val w = ImGui.getContentRegionAvailX()
-            ImGui.image(engine.assetsManager.getTexture(thumb.path).texId.toLong(), w, w, 0f, 0f, 1f, 1f)
+            ImGui.image(textures.texId(thumb.path), w, w, 0f, 0f, 1f, 1f)
         }
         if (details.authors.isNotEmpty()) ImGui.textWrapped(strings.getString("assetstore.details.authors", details.authors.joinToString { it.name }))
         licenseBlock(details)
@@ -310,5 +332,6 @@ class AssetStoreWindow(
     companion object {
         const val NAME = "window.asset_store"
         private const val TILE = 128f
+        private const val THUMBNAIL_TEXTURES = 96
     }
 }

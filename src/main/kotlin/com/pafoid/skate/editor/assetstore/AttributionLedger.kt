@@ -80,9 +80,8 @@ data class AttributionLedger(val schema: Int = CURRENT_SCHEMA, val entries: List
         }
 
         fun save(projectDir: File, ledger: AttributionLedger) {
-            val f = file(projectDir)
-            f.parentFile.mkdirs()
-            f.writeText(encode(ledger))
+            StorePaths.ensureHiddenDir(projectDir)
+            file(projectDir).writeText(encode(ledger))
         }
     }
 }

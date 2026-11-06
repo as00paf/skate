@@ -23,6 +23,24 @@ object StorePaths {
     fun stagingDir(projectDir: File, providerId: String, sourceId: String, variantId: String): File =
         File(projectDir, "$PROJECT_HIDDEN_DIR/$STAGING_DIR/${requireSegment(providerId)}/${slug(sourceId)}/${slug(variantId)}")
 
+    /** True when [stagingDir] lies under this project's `.skate/cache/store/` (rejects a download for another project). */
+    fun isProjectStaging(projectDir: File, stagingDir: File): Boolean {
+        val root = File(projectDir, "$PROJECT_HIDDEN_DIR/$STAGING_DIR").canonicalFile
+        return stagingDir.canonicalFile.path.startsWith(root.path + File.separator)
+    }
+
+    /**
+     * `<project>/.skate/`, created with a `.gitignore` holding `cache/` on first use: the ledger next to it is
+     * committed, staging and backups are not.
+     */
+    fun ensureHiddenDir(projectDir: File): File {
+        val dir = File(projectDir, PROJECT_HIDDEN_DIR)
+        dir.mkdirs()
+        val ignore = File(dir, ".gitignore")
+        if (!ignore.exists()) ignore.writeText("cache/\n")
+        return dir
+    }
+
     /** Per-user cache for search results and thumbnails (never inside a project). */
     fun userCacheDir(): File = File(EditorPaths.dir, CACHE_DIR)
 

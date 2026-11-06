@@ -8,6 +8,7 @@ class FakeStoreHttp(private val routes: MutableMap<String, ByteArray> = mutableM
     val gets = mutableListOf<String>()
     val downloads = mutableListOf<String>()
     var failDownloads = false
+    var contentType: String? = null
 
     fun route(url: String, body: String) = apply { routes[url] = body.toByteArray() }
     fun route(url: String, body: ByteArray) = apply { routes[url] = body }
@@ -17,7 +18,7 @@ class FakeStoreHttp(private val routes: MutableMap<String, ByteArray> = mutableM
         return routes[url]?.let { HttpResult(200, it) } ?: HttpResult(404, "not found".toByteArray())
     }
 
-    override fun download(url: String, headers: Map<String, String>, target: File, cancel: CancelToken, progress: (Long, Long?) -> Unit) {
+    override fun download(url: String, headers: Map<String, String>, target: File, cancel: CancelToken, progress: (Long, Long?) -> Unit): String? {
         downloads += url
         if (cancel.isCancelled) throw StoreCancelledException()
         if (failDownloads) throw StoreHttpException(500, "boom")
@@ -25,6 +26,7 @@ class FakeStoreHttp(private val routes: MutableMap<String, ByteArray> = mutableM
         target.parentFile?.mkdirs()
         target.writeBytes(body)
         progress(body.size.toLong(), body.size.toLong())
+        return contentType
     }
 }
 

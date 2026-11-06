@@ -1,6 +1,6 @@
 # AST-16 — Asset store window
 
-Status: **approved** 2026-11-06 (human). Slice order: a → b → d → f → e → c (no-login libraries first; Sketchfab last and optional; no Mixamo, no Poly Pizza). ND licenses: warn and record the conversion. Slices a (Poly Haven) and b (ambientCG) implemented (`editor/assetstore/**`). Author: `skate-online` (lead-assigned; `skate-assets` reviews).
+Status: **approved** 2026-11-06 (human). Slice order: a → b → d → f → e → c (no-login libraries first; Sketchfab last and optional; no Mixamo, no Poly Pizza). ND licenses: warn and record the conversion. Slices a (Poly Haven) and b (ambientCG) implemented (`editor/assetstore/**`), with the skate-assets review fixes for slice a (items 3–10, 11, 13–15). Items 1–2 (glTF `textures/` URIs at load and pack) are AST-22 for skate-assets: store models keep the provider's `textures/` layout. Author: `skate-online` (lead-assigned; `skate-assets` reviews).
 Paths are relative to `src/main/kotlin/com/pafoid/skate/`.
 
 Marker: **⚠ UNVERIFIED** = an API detail I could not confirm from the provider's public docs on 2026-11-06. Each one needs a spike before its provider ships.
@@ -167,7 +167,7 @@ data class LicenseInfo(val spdx: String,            // "CC0-1.0", "CC-BY-4.0", "
   "retrievedAt": "2026-11-06T12:00:00Z" } ] }
 ```
 - Each imported file's `.meta` sidecar (`AssetMeta.settings`) gets `store.provider`, `store.sourceId` and `store.license`. These are new keys in the existing free-form `settings: Map<String, String>`, so they need **no `AssetMeta` schema bump**. Older readers ignore them. The Asset Browser and inspector can then show the license for any file, and the ledger can be rebuilt from metas if it is lost.
-- Deleting an asset through the editor removes its GUID from the entry and drops the entry when it is empty. A consistency check (Tools menu) lists metas with no ledger entry, and the reverse.
+- Deleting an asset through the editor removes its GUID from the entry and drops the entry when it is empty. **Follow-up (not in slices a/b):** `AttributionLedger.removeAssetIds` exists and is tested, but `DeleteFileCommand` does not call it yet. That needs a small hook in `editor/commands/project` (EDT/AST), proposed as a separate AST task. A consistency check (Tools menu) lists metas with no ledger entry, and the reverse.
 - **Export** (with AST-15): generates `CREDITS.txt` (plus `credits.json`). `ReferenceCollector.collect()` returns `Set<File>`, not GUIDs, so each packed file is mapped to its GUID with `registry.idOf(<project-relative path>)`. Files with no id are skipped. The ledger entries whose `assetIds` intersect that GUID set are emitted. CC0 entries are listed as courtesy credits. Export **warns** if a packed asset is NC or has an unknown license. The "Attribution" panel in the store window shows the ledger.
 
 ## 7. Download and import pipeline

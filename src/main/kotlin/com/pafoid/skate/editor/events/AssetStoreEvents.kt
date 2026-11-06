@@ -8,5 +8,8 @@ sealed class AssetStoreEvent(eventName: String) : Event(eventName) {
     /** A staged download is ready to be copied into the project (main thread). */
     data class ImportRequested(val request: StoreImportRequest) : AssetStoreEvent("assetstore.import_requested")
 
+    /** The attribution ledger or the imported files changed (import, undo, redo). */
+    object LedgerChanged : AssetStoreEvent("assetstore.ledger_changed")
+
     data class ImportFinished(val title: String, val success: Boolean, val reason: String?) : AssetStoreEvent("assetstore.import_finished")
 }

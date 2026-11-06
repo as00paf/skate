@@ -146,6 +146,7 @@ class AssetStoreService(
         downloadError = null
         jobs.io {
             val result = runCatching {
+                StorePaths.ensureHiddenDir(project)
                 val staging = StorePaths.stagingDir(project, ref.providerId, ref.sourceId, variant.id)
                 val plan = p.resolveDownload(target, variant)
                 val staged = downloader.download(plan, staging, job.cancel) { done, total ->
@@ -179,31 +180,36 @@ class AssetStoreService(
         ledger = dir?.let { runCatching { AttributionLedger.load(it) }.getOrNull() } ?: AttributionLedger()
     }
 
-    /** Cached thumbnail file for [url], or null while it downloads (started on first call) or after it failed. */
+    /**
+     * Cached thumbnail file for [url], or null while it downloads (started on first call) or after it failed. The file
+     * is named `<sha1(url)>.<ext>` with the extension from the response content type (`png` when unknown).
+     */
     fun thumbnail(url: String?): File? {
         if (url == null) return null
         thumbnails[url]?.let { return it }
         if (url in thumbnailsFailed) return null
-        val file = File(File(cacheDir, "thumbs"), sha1(url) + ".png")
-        if (file.isFile) {
-            thumbnails[url] = file
-            return file
+        val dir = File(cacheDir, "thumbs")
+        val key = sha1(url)
+        dir.listFiles { f -> f.isFile && f.name.startsWith("$key.") && !f.name.endsWith(".part") }?.firstOrNull()?.let {
+            thumbnails[url] = it
+            return it
         }
         if (!thumbnailsPending.add(url)) return null
         jobs.io {
             thumbnailSlots.acquire()
-            val ok = try {
-                val part = File(file.parentFile, file.name + ".part")
+            val file = try {
+                val part = File(dir, "$key.part")
                 runCatching {
-                    http.download(url, emptyMap(), part, CancelToken())
-                    part.renameTo(file)
-                }.getOrDefault(false).also { if (!it) part.delete() }
+                    val type = http.download(url, emptyMap(), part, CancelToken())
+                    val target = File(dir, "$key.${StoreHttp.imageExtension(type) ?: "png"}")
+                    target.takeIf { part.renameTo(it) }
+                }.getOrNull().also { if (it == null) part.delete() }
             } finally {
                 thumbnailSlots.release()
             }
             jobs.main {
                 thumbnailsPending.remove(url)
-                if (ok) thumbnails[url] = file else thumbnailsFailed += url
+                if (file != null) thumbnails[url] = file else thumbnailsFailed += url
             }
         }
         return null
