@@ -25,6 +25,10 @@
             "snapToGround": true,
             "stepUp": true
         },
+        "look": {
+            "stickSensitivity": 2.0,
+            "mouseSensitivity": 0.1
+        },
         "animations": {
             "IDLE": "idle",
             "WALK": "walking",

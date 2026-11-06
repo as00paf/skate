@@ -26,6 +26,8 @@ data class LocomotionConfig(
     val airControl: Float = 0.2f,
     /** Ground detection, slopes, steps and snapping. Also used by behaviors that wrap this config. */
     val ground: GroundConfig = GroundConfig(),
+    /** Camera look sensitivities of this character's input (INP-10; were constants in the input system). */
+    val look: LookTuning = LookTuning(),
     /** Animation clip per [LocomotionState] name. */
     val animations: Map<String, String> = mapOf(
         "IDLE" to "idle",
@@ -50,6 +52,7 @@ class LocomotionContext {
 open class LocomotionBehavior(private val config: LocomotionConfig) : CharacterBehavior {
 
     override val ground: GroundConfig get() = config.ground
+    override val look: LookTuning get() = config.look
 
     private val context = LocomotionContext().also { it.config = config }
     private val direction = Vector3f()
