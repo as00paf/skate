@@ -34,6 +34,11 @@ import org.lwjgl.glfw.GLFW.glfwSwapBuffers
 import org.lwjgl.glfw.GLFW.glfwSwapInterval
 import org.lwjgl.glfw.GLFW.glfwTerminate
 import org.lwjgl.glfw.GLFW.glfwWindowHint
+import org.lwjgl.glfw.GLFW.GLFW_CLIENT_API
+import org.lwjgl.glfw.GLFW.GLFW_NO_API
+import org.lwjgl.glfw.GLFWVulkan.glfwVulkanSupported
+import com.pafoid.skate.engine.render.rhi.GraphicsBackend
+import com.pafoid.skate.engine.render.rhi.vulkan.VulkanDevice
 import org.lwjgl.glfw.GLFW.glfwWindowShouldClose
 import org.lwjgl.glfw.GLFWErrorCallback
 import org.lwjgl.glfw.GLFWImage
@@ -48,7 +53,13 @@ class Window(
     initialHeight: Int = 1080,
     val title: String,
     val iconPath: String? = null,
-    val icon: ByteArray? = null
+    val icon: ByteArray? = null,
+    /**
+     * Graphics API of the window (GPL-19). [GraphicsBackend.VULKAN] creates a window without a GL context and a
+     * [VulkanDevice] presenting to it, and throws (after destroying the window) when Vulkan cannot start, so the caller
+     * can fall back to OpenGL. The editor always uses OpenGL.
+     */
+    val backend: GraphicsBackend = GraphicsBackend.OPENGL,
 ) {
     var glfwWindow: Long = -1L
     var width: Int = 1920
@@ -60,7 +71,8 @@ class Window(
     private val openGLDebug = GLFW_FALSE
 
     /** The RHI device of this window's context, created once the context is current. */
-    val device: RhiDevice
+    lateinit var device: RhiDevice
+        private set
 
     init {
         // Error callback
@@ -75,12 +87,20 @@ class Window(
 
         glfwWindowHint(GLFW_DECORATED, GLFW_FALSE)
 
-        // MSAA Support
-        glfwWindowHint(GLFW_SAMPLES, 4)
+        if (backend == GraphicsBackend.VULKAN) {
+            if (!glfwVulkanSupported()) {
+                glfwTerminate()
+                throw IllegalStateException("No Vulkan loader or driver (glfwVulkanSupported is false)")
+            }
+            glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API)
+        } else {
+            // MSAA Support
+            glfwWindowHint(GLFW_SAMPLES, 4)
 
-        glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, openGLDebug)
-        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3)
-        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3)
+            glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, openGLDebug)
+            glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3)
+            glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3)
+        }
 
         // Monitor and Video Mode discovery
         val monitors = glfwGetMonitors() ?: throw IllegalStateException("No monitors found")
@@ -115,14 +135,24 @@ class Window(
         iconPath?.let { setWindowIcon(it) }
         icon?.let { setWindowIcon(it) }
 
-        // Make OpenGL context current
-        glfwMakeContextCurrent(glfwWindow)
+        device = if (backend == GraphicsBackend.VULKAN) {
+            // Surface and swapchain on this no-API window (VK-01); presents in endFrame.
+            try {
+                VulkanDevice.create(glfwWindow)
+            } catch (e: Throwable) {
+                destroy()
+                throw e
+            }
+        } else {
+            // Make OpenGL context current
+            glfwMakeContextCurrent(glfwWindow)
 
-        // Disable v-sync
-        glfwSwapInterval(0)
+            // Disable v-sync
+            glfwSwapInterval(0)
 
-        // Graphics device of this context (REN-12): loads GL and sets the initial blend, cube map and MSAA state
-        device = OpenGlDevice.create(debugOutput = if (openGLDebug == GLFW_TRUE) System.err else null)
+            // Graphics device of this context (REN-12): loads GL and sets the initial blend, cube map and MSAA state
+            OpenGlDevice.create(debugOutput = if (openGLDebug == GLFW_TRUE) System.err else null)
+        }
 
         GLFW.glfwSetWindowMaximizeCallback(glfwWindow) { _, maximized ->
             if (windowController.isFixingMaximize) return@glfwSetWindowMaximizeCallback
@@ -200,7 +230,7 @@ class Window(
         }
     }
 
-    private fun loop(updateCallback: (Float) -> Unit) {
+    private fun loop(updateCallback: (Float) -> Unit, onClose: () -> Unit) {
         var beginTime = Time.getTime()
         var endTime: Float
         var dt = 0.0f
@@ -214,24 +244,31 @@ class Window(
             }
 
             updateCallback(dt)
-            glfwSwapBuffers(glfwWindow)
+            // Vulkan submits and presents the frame here; OpenGL's endFrame is a no-op and the swap presents.
+            device.endFrame()
+            if (backend == GraphicsBackend.OPENGL) glfwSwapBuffers(glfwWindow)
 
             endTime = Time.getTime()
             dt = endTime - beginTime
             beginTime = endTime
         }
 
+        // Release what uses the device (the engine) before the device and its window go away.
+        onClose()
         destroy()
     }
 
-    fun show(updateCallback: (Float) -> Unit) {
+    /** Runs [updateCallback] every frame until the window closes; [onClose] runs while the device is still alive. */
+    fun show(onClose: () -> Unit = {}, updateCallback: (Float) -> Unit) {
         glfwShowWindow(glfwWindow)
         glfwFocusWindow(glfwWindow)
         glfwRequestWindowAttention(glfwWindow)
-        loop(updateCallback)
+        loop(updateCallback, onClose)
     }
 
     private fun destroy() {
+        // The Vulkan surface belongs to the window: release the device first.
+        if (backend == GraphicsBackend.VULKAN && this::device.isInitialized) runCatching { device.close() }
         glfwFreeCallbacks(glfwWindow)
         glfwDestroyWindow(glfwWindow)
 

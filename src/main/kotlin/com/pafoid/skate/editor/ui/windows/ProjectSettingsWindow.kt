@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.ui.windows
 
+import com.pafoid.skate.editor.imgui.GraphicsBackendField
 import com.pafoid.skate.editor.imgui.tipped
 import com.pafoid.skate.editor.imgui.label
 import com.pafoid.skate.editor.events.ProjectEvent
@@ -56,6 +57,7 @@ class ProjectSettingsWindow(
     private val categories: List<Category> by lazy {
         listOf(
             Category("general", "settings.project.metadata", arrayOf("general", "metadata", "project", "name", "version", "engine", "path", "description", "recent")) { renderGeneral() },
+            Category("graphics", "settings.project.graphics", arrayOf("graphics", "backend", "vulkan", "opengl", "render", "export")) { renderGraphics() },
         )
     }
 
@@ -127,6 +129,16 @@ class ProjectSettingsWindow(
             }
         }
         end()
+    }
+
+    /** The backend exported games start with (EDT-43); each change is an undoable command, saved with OK/Apply. */
+    private fun renderGraphics() {
+        val project = projectManager.currentProject ?: return
+        MImGui.textDisabled(stringManager.getString("settings.project.graphics.description"))
+        ImGui.spacing()
+        GraphicsBackendField.render(stringManager, project.graphicsBackend)?.let {
+            eventSystem.publish(ProjectEvent.SetGraphicsBackendRequested(it))
+        }
     }
 
     private fun renderGeneral() {

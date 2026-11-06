@@ -17,7 +17,7 @@ class CreateProjectCommand(
     private var failureReason: String? = null
 
     override fun execute() {
-        val result = projectManager.createProject(event.name, File(event.folderPath))
+        val result = projectManager.createProject(event.name, File(event.folderPath), event.graphicsBackend)
             executeSucceeded = result.isSuccess
             failureReason = result.exceptionOrNull()?.message
     }

@@ -16,6 +16,11 @@ data class GameSettings(
      * it (e.g. back to `OPENGL`). Null: use the project's. See [GraphicsBackend.resolve].
      */
     val graphicsBackend: GraphicsBackend? = null,
+    /**
+     * Written by the game (GPL-19) when [graphicsBackend] could not start and it fell back to OpenGL: why, for the
+     * player and support. Cleared when the chosen backend starts. Informational only; the choice itself is kept.
+     */
+    val graphicsNote: String? = null,
 ) {
     companion object {
         const val DEFAULT_LOCALE = "en"
