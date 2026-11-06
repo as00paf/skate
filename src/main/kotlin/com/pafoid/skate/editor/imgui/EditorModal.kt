@@ -40,6 +40,15 @@ object DialogFooter {
 
     fun order(buttons: List<FooterButton>): List<FooterButton> = buttons.sortedBy { it.role.ordinal }
 
+    /**
+     * The height [render] takes below the content: spacing, separator, spacing and one row of buttons, plus one item
+     * spacing of slack so content sized to end above it never scrolls. Two-pane dialogs size their panes with it.
+     */
+    fun height(frameHeightWithSpacing: Float, itemSpacingY: Float): Float = frameHeightWithSpacing + itemSpacingY * 4f + 1f
+
+    /** [height] with the current ImGui style. */
+    fun height(): Float = height(ImGui.getFrameHeightWithSpacing(), ImGui.getStyle().itemSpacingY)
+
     /** The button Esc runs: Cancel, or else the only button that closes (a lone Close / OK). */
     fun escapeTarget(buttons: List<FooterButton>): FooterButton? =
         buttons.firstOrNull { it.role == FooterButton.Role.CANCEL } ?: buttons.singleOrNull { it.closes }

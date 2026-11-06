@@ -14,7 +14,9 @@ import kotlin.io.path.readText
  * EDT-52 (standard in docs/design/EDT-51.md §2): every editor window and dialog declares a header icon, opens with
  * `beginWindow` (title with icon, tab menu with Help / Close / Reset position, help popover), draws the header strip
  * with `?` (`header(...)`, or `WindowHeader.helpButton` in its own toolbar), and has `help.<id>.what` / `.how` strings
- * in English and French. `EditorDialog` subclasses get beginWindow and the header from their base class.
+ * in English and French. `EditorDialog` subclasses get beginWindow and the header from their base class. A modal host
+ * (a window whose `imgui()` only renders an `EditorModal`: New Project, Switch Project) needs neither: a modal has no
+ * tab or header strip (EDT-51 §2.1, EDT-64), but it still declares an icon and has help strings.
  *
  * [ALLOW_LIST] holds the windows not converted yet. Each EDT-52 chunk removes its windows; nobody adds any. EDT-52 is
  * done when it is empty.
@@ -96,6 +98,26 @@ class WindowStandardGuardTest {
         assertEquals(listOf("missing help.popup.how in fr"), violations(found[2], keys))
     }
 
+    @Test
+    fun Guard_AcceptsModalHostsWithoutHeader() {
+        val src = """
+            class Switcher(s: StringManager) : EditorWindow("window.switcher") {
+                override val icon = Icons.FOLDER_OPEN
+                override fun imgui() = modal.render()
+                private val modal = object : EditorModal(s, Icons.FOLDER_OPEN) { }
+            }
+            class NotAHost(s: StringManager) : EditorWindow("window.not_a_host") {
+                override val icon = Icons.FOLDER_OPEN
+                override fun imgui() { modal.render(); other() }
+                private val modal = object : EditorModal(s) { }
+            }
+        """.trimIndent()
+        val (host, notHost) = findWindows(src)
+        val keys = listOf("en", "fr").associateWith { setOf("help.switcher.what", "help.switcher.how", "help.not_a_host.what", "help.not_a_host.how") }
+        assertEquals(emptyList<String>(), violations(host, keys))
+        assertEquals(2, violations(notHost, keys).size, violations(notHost, keys).toString())
+    }
+
     class WindowClass(val className: String, val isDialog: Boolean, val windowName: String?, val source: String)
 
     companion object {
@@ -105,8 +127,6 @@ class WindowStandardGuardTest {
             "ProjectWindow", "AssetBrowserWindow",
             // D: debug
             "ConsoleWindow", "ProfilerWindow", "CommandHistoryWindow", "ShellWindow",
-            // F: modals & palette
-            "ProjectSwitcherDialog", "ProjectWizardWindow",
             // H: domain windows
             "AudioInspectorWindow", "ScriptEditorWindow",
             // I: input testing move (the window is deleted)
@@ -137,7 +157,7 @@ class WindowStandardGuardTest {
         fun violations(window: WindowClass, helpKeys: Map<String, Set<String>>): List<String> {
             val out = mutableListOf<String>()
             if (!Regex("""override\s+val\s+icon\b""").containsMatchIn(window.source)) out += "no header icon (override val icon)"
-            if (!window.isDialog) {
+            if (!window.isDialog && !isModalHost(window.source)) {
                 if (!Regex("""\bbeginWindow\s*\(""").containsMatchIn(window.source)) out += "does not open with beginWindow (tab menu, help)"
                 if (!Regex("""\bheader\s*\(|\bhelpButton\s*\(""").containsMatchIn(window.source)) out += "no header strip with ? (header(...))"
             }
@@ -153,6 +173,11 @@ class WindowStandardGuardTest {
             }
             return out
         }
+
+        /** The window only renders an [EditorModal][com.pafoid.skate.editor.imgui.EditorModal] it owns. */
+        fun isModalHost(source: String): Boolean =
+            Regex(""":\s*EditorModal\s*\(""").containsMatchIn(source) &&
+                Regex("""override\s+fun\s+imgui\s*\(\s*\)\s*(=\s*\w+\.render\(\)|\{\s*\w+\.render\(\)\s*})""").containsMatchIn(source)
 
         private fun keysOf(text: String): List<String> = text.lines()
             .map { it.trim() }

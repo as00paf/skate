@@ -5,6 +5,7 @@ import com.pafoid.skate.engine.core.StringManager
 import com.pafoid.skate.editor.events.ProjectEvent
 import com.pafoid.skate.editor.imgui.EditorDialog
 import com.pafoid.skate.editor.imgui.EmptyState
+import com.pafoid.skate.editor.imgui.DialogFooter
 import com.pafoid.skate.editor.imgui.FooterButton
 import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.editor.imgui.MImGui
@@ -86,7 +87,7 @@ class ExportWizardWindow(
     override fun content() {
         val project = projectManager.currentProject
         if (project == null) {
-            ImGui.beginChild("##export_no_project", 0f, ImGui.getContentRegionAvailY() - dialogFooterHeight())
+            ImGui.beginChild("##export_no_project", 0f, ImGui.getContentRegionAvailY() - DialogFooter.height())
             EmptyState.noProject(strings, eventSystem)
             ImGui.endChild()
             return

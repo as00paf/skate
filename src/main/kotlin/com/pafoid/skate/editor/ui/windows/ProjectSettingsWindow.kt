@@ -4,6 +4,7 @@ import com.pafoid.skate.editor.imgui.GraphicsBackendField
 import com.pafoid.skate.editor.events.ProjectEvent
 import com.pafoid.skate.editor.imgui.EditorDialog
 import com.pafoid.skate.editor.imgui.EmptyState
+import com.pafoid.skate.editor.imgui.DialogFooter
 import com.pafoid.skate.editor.imgui.FooterButton
 import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.editor.imgui.MImGui
@@ -75,7 +76,7 @@ class ProjectSettingsWindow(
     override fun content() {
         if (!projectManager.hasProject()) {
             // The shared empty state (EDT-51 §2.5), sized to end above the footer.
-            ImGui.beginChild("##no_project", 0f, ImGui.getContentRegionAvailY() - dialogFooterHeight())
+            ImGui.beginChild("##no_project", 0f, ImGui.getContentRegionAvailY() - DialogFooter.height())
             EmptyState.noProject(stringManager, eventSystem)
             ImGui.endChild()
             return
@@ -85,7 +86,7 @@ class ProjectSettingsWindow(
         val windowW = avail.x
         val leftW = windowW * 0.3f
         val rightW = (windowW - leftW) - ImGui.getStyle().itemSpacingX
-        val contentH = avail.y - dialogFooterHeight()
+        val contentH = avail.y - DialogFooter.height()
 
         beginChild("leftPane", leftW, contentH)
         ImGui.pushItemWidth(-1f)

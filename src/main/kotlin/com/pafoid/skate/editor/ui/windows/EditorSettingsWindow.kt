@@ -4,6 +4,7 @@ import com.pafoid.skate.editor.imgui.tipped
 import com.pafoid.skate.editor.imgui.label
 import com.pafoid.skate.editor.data.EditorInputMappings
 import com.pafoid.skate.editor.imgui.EditorDialog
+import com.pafoid.skate.editor.imgui.DialogFooter
 import com.pafoid.skate.editor.imgui.FooterButton
 import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.editor.imgui.ImGuiStyleManager
@@ -99,7 +100,7 @@ class EditorSettingsWindow(
         val windowW = avail.x
         val leftW = windowW * 0.3f
         val rightW = (windowW - leftW) - ImGui.getStyle().itemSpacingX
-        val contentH = avail.y - dialogFooterHeight()
+        val contentH = avail.y - DialogFooter.height()
 
         beginChild("leftPane", leftW, contentH)
         ImGui.pushItemWidth(-1f)
@@ -332,13 +333,4 @@ class EditorSettingsWindow(
             return terms.any { it.contains(query, ignoreCase = true) }
         }
     }
-}
-
-/**
- * Height the standard dialog footer (spacing, separator, spacing, one row of buttons; `DialogFooter`) takes below the
- * content, so two-pane dialogs can size their panes to end right above it.
- */
-internal fun dialogFooterHeight(): Float {
-    val style = ImGui.getStyle()
-    return ImGui.getFrameHeightWithSpacing() + style.itemSpacingY * 4f + 1f
 }
