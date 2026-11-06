@@ -26,6 +26,7 @@ import com.pafoid.skate.engine.ecs.systems.FollowCameraSystem
 import com.pafoid.skate.engine.ecs.systems.GameObjectManager
 import com.pafoid.skate.engine.ecs.systems.ReaderFlyInputSource
 import com.pafoid.skate.engine.ecs.systems.InputSystem
+import com.pafoid.skate.engine.gameplay.ActionPresets
 import com.pafoid.skate.engine.gameplay.CharacterActions
 import com.pafoid.skate.engine.gameplay.CharacterInputSampler
 import com.pafoid.skate.engine.ecs.systems.PhysicsFrameSystem
@@ -153,8 +154,10 @@ class Engine {
         val debugRenderer = renderer.renderResources.renderers.debug
         val physicsSystem = PhysicsSystem(debugRenderer, eventSystem)
         val inputSystem = InputSystem(inputProvider, eventSystem)
-        // Generic character preset (INP-10); registered before any project loads its binding profile.
+        // Generic character preset and the game's presets (INP-10); registered before any project loads its binding
+        // profile. PlayerMotionSystem applies the presets again on scene load, for presets registered later.
         CharacterActions.register(inputSystem.actionMap)
+        ActionPresets.applyTo(inputSystem.actionMap)
         val engineSystems = listOf(
             gameObjectManager, // Core
             TransformSystem(),
@@ -166,7 +169,10 @@ class Engine {
             PhysicsFrameSystem(physicsSystem),
             DayNightCycleSystem(),
             DirectionalLightSystem(cameraManager),
-            PlayerMotionSystem(cameraManager, CharacterInputSampler(inputSystem.reader)),
+            PlayerMotionSystem(
+                cameraManager,
+                CharacterInputSampler(inputSystem.reader, contexts = inputSystem.contexts, actionMap = inputSystem.actionMap),
+            ),
             MountFollowSystem(),
             FollowCameraSystem(
                 CameraProbe { from, to, radius, exclude -> physicsSystem.sphereCast(from, to, radius, exclude.getComponent<RigidBody3D>()) },
