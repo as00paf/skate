@@ -224,8 +224,9 @@ class PrefabsGenerator(
             .addComponent(Transform(position, Vector3f(0.3f)))
             .addComponent(RenderComponent(model, mat))
             .addComponent(RigidBody3D(15f))
-            // Non-box colliders are not scaled with the transform: give the scaled size (cylinder.obj is r 1, h 2.85).
-            .addComponent(CylinderCollider3D(radius = 0.3f, height = 0.855f, axis = 1))
+            // In model units like the mesh (cylinder.obj is r 1, h 2.85, centred): Bullet applies the 0.3 transform
+            // scale to every collider shape, so pre-scaled sizes ended up 0.3x too small and sank into the ground.
+            .addComponent(CylinderCollider3D(radius = 1f, height = 2.85f, axis = 1))
     }
 
     /** 2 m invisible box that reports overlaps (trigger events) and never blocks. */

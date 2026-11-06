@@ -18,6 +18,14 @@ class DefaultDockLayoutTest {
     }
 
     @Test
+    fun DockLayout_ScriptEditor_IsADefaultBottomTab() {
+        // EDT-55: the centre node has no tab bar, so the script editor must not dock there.
+        assertEquals(Zone.BOTTOM, DefaultDockLayout.zoneOf("window.script_editor"))
+        val src = File("src/main/kotlin/com/pafoid/skate/editor/ui/windows/ScriptEditorWindow.kt").readText()
+        assertTrue(src.contains("EditorWindow(\"window.script_editor\", true)"))
+    }
+
+    @Test
     fun DockLayout_DialogsStayFloating() {
         assertNull(DefaultDockLayout.zoneOf("window.project_wizard"))
         assertNull(DefaultDockLayout.zoneOf("window.editor_settings"))

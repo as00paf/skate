@@ -75,11 +75,11 @@ Round 27+ goals (human, 2026-11-06): post-processing quality, render-graph clari
 - [x] **REN-24** `P0` Post-processing blurs the frame; render-graph passes all named "Effect"
   - Do: Reproduce on master first. Find why enabling post-processing blurs everything (effect defaults, FXAA/bloom/DoF settings, intermediate target resolution or filtering, mip/sampling) and fix it. Give every pass/effect its real name in the render graph and the Render Graph window.
   - Done when: With post-processing on, a still frame is as sharp as with it off (apart from the intended effects, e.g. a GpuTest/edge-sharpness check). Every pass shows a distinct real name. Tests cover the naming and the cause of the blur.
-- [~] @skate-render **REN-25** `P1` Industry-standard editor grid
+- [x] **REN-25** `P1` Industry-standard editor grid
   - Do: Replace the thick grid with a thin, anti-aliased infinite grid as in Blender/Godot/Unity: minor/major lines that adapt to camera distance, distance fade, X axis red and Z axis blue, and no line thickening at grazing angles.
   - Done when: The grid looks like a standard editor grid at every distance and angle; the line-spacing/fade math has unit tests.
   - Deps: REN-24
-- [ ] **REN-26** `P1` Ambient light becomes an environment setting; default directional Sun
+- [~] @skate-render **REN-26** `P1` Ambient light becomes an environment setting; default directional Sun
   - Do: Approved by the human: ambient light has no position. Move ambient color/intensity (or sky-based ambient) into the scene's Environment settings, remove the positional ambient component and its gizmo, and add a default "Sun" directional light, linked to day/night, to the default scenes. The editor draws the sun's direction arrow at the entity. Update the default projects and the showcase.
   - Done when: New scenes have Environment ambient + a Sun. No ambient gizmo at 0,0,0. Day/night drives the sun. Tests cover the environment settings and serialization.
   - Deps: REN-25
@@ -138,7 +138,7 @@ Round 27+ goals: the Asset Browser shows every asset type, one assets folder, ex
 - [x] **AST-13** `P0` Asset Browser misses animations, textures and sounds; prefab thumbnails lack materials
   - Do: Reproduce on master first. The Asset Browser (`editor/ui/windows/assetBrowser/**`, lead-assigned to assets) lists animations, textures and sounds with suitable thumbnails/icons. Obstacle and generic prefab thumbnails render with their default materials instead of untextured.
   - Done when: All asset types appear in a new project; prefab thumbnails show materials; tests cover the type discovery and the thumbnail material resolution.
-- [~] @skate-assets **AST-14** `P1` One assets folder in the default project
+- [x] **AST-14** `P1` One assets folder in the default project
   - Do: Also (from AST-13, lead-assigned editor change): add `jpg` to `FileType.TEXTURE` in `editor/data/FileType.kt` and drop the Asset Browser workaround. The default project hierarchy has two assets folders. Keep one, update project creation, export, path resolution and the default projects/CLI samples.
   - Done when: A new project has a single assets folder, everything still loads and exports; tests cover the layout.
   - Deps: AST-13
@@ -155,17 +155,25 @@ Round 27+ goals: the Asset Browser shows every asset type, one assets folder, ex
 - [ ] **AST-18** `P3` Protocol Buffers: design note
   - Do: Write `docs/design/AST-18.md`. Proposed: protobuf only for runtime data (packed exports, network messages). Scenes, prefabs and settings stay JSON so git diffs/merges (EDT-60) stay readable. Measure load time/size gains first.
   - Done when: The human approves the note.
-- [ ] **AST-19** `P2` Full Blender support: design note
+- [~] @skate-assets **AST-19** `P2` Full Blender support: design note
   - Do: Write `docs/design/AST-19.md`: `.blend` import via headless Blender → glTF, re-import when the `.blend` is saved, materials/actions mapping, and an optional "Send to Skate" Blender add-on.
   - Done when: The human approves the note.
+
+- [ ] **AST-20** `P2` Classify FBX files as model or animation by content
+  - Do: From AST-16: `.fbx` is always classed as `FileType.ANIMATION`, so FBX models show up in the Animations tab and store packs with FBX models cannot be imported as models. Inspect the file (meshes vs. animations only) and classify it accordingly; a file with both counts as a model with clips.
+  - Done when: FBX models appear as models, animation-only FBX as animations; tests with fixture files.
 
 ### ECS — `ECS` (`skate-ecs`)
 
 Round 27+ goals: deterministic seeds for games and procedural generation.
 
-- [~] @skate-scripting **ECS-14** `P1` Seeded deterministic RNG service
+- [x] **ECS-14** `P1` Seeded deterministic RNG service
   - Do: Engine RNG service with a project/game seed (project setting, runtime override), independent named streams per system so adding one system does not shift others, exposed to scripts. Show the seed in the Feature Showcase.
   - Done when: The same seed reproduces identical sequences per stream across runs; tests cover determinism and stream independence.
+
+- [ ] **ECS-15** `P3` Remove unused GridLines fields
+  - Do: From REN-25: `lodCloseDistance`, `lodFarDistance`, `edgeFadeEnabled` and `edgeFadeStart` on `GridLines` are unused now that the shader handles LOD and fade. Remove them and update the default scenes.
+  - Done when: The fields are gone and scenes load; tests updated.
 
 ### Physics — `PHY` (`skate-physics`)
 
@@ -208,7 +216,7 @@ Audio needs a more complete implementation.
 
 Round 27+ goals: input is too tightly coupled with skateboarding; it needs a game-agnostic abstraction.
 
-- [~] @skate-input **INP-10** `P1` REWRITE Decouple input from skateboarding
+- [~] @skate-gameplay **INP-10** `P1` REWRITE Decouple input from skateboarding
   - Do: Design note `docs/design/INP-10.md` first. Generic action maps and input contexts (gameplay/UI/vehicle/...) with push/pop priority in the engine; skate-specific actions, bindings and gesture/flick logic move to the game layer (`game/**`, owned by gameplay). Scripts and in-game UI use the generic API.
   - Done when: The design is approved and implemented, `engine/input/**` has no skateboarding concepts (architecture-guard test), and the skate game plays as before.
 
@@ -223,7 +231,7 @@ Round 27+ goals: a fuller skate demo with camera modes and standard control sche
   - Do: Ship four default schemes on the INP-10 API: **EA Skate (default)** (flick-it right-stick tricks), Session (each stick a foot), Skater XL (sticks = feet, triggers turn), THPS (face buttons + direction combos). Selectable in the pause menu settings and persisted.
   - Done when: Each scheme can perform the core trick set; scheme definitions have tests.
   - Deps: INP-10
-- [~] @skate-gameplay **GPL-22** `P1` MainScene Camera button cycles FPV, third person and fixed cameras
+- [x] **GPL-22** `P1` MainScene Camera button cycles FPV, third person and fixed cameras
   - Do: Replace the Restart button in the MainScene HUD with a Camera button that cycles first-person, third-person and fixed cameras (also bound to an input action).
   - Done when: The button and the action cycle the three cameras in editor Play and the exported game; tests cover the cycle.
   - Deps: GPL-20
@@ -274,10 +282,10 @@ Round 27+ goals (human, 2026-11-06): fix editor bugs, make every window, dialog 
 - [x] **EDT-48** `P0` Search Anywhere input cannot be focused
   - Do: Reproduce on master first. The text field gets keyboard focus when Search Anywhere opens and can be clicked into; Esc closes it.
   - Done when: You can type immediately after opening it; tests where feasible.
-- [~] @skate-ecs **EDT-49** `P0` Delete-component confirmation dialog shows twice or has a broken layout
+- [x] **EDT-49** `P0` Delete-component confirmation dialog shows twice or has a broken layout
   - Do: Reproduce on master first. One modal with a proper layout when deleting a component; Cancel and Confirm both behave correctly.
   - Done when: Exactly one well-laid-out dialog appears; tests cover the popup state.
-- [~] @skate-tooling **EDT-50** `P0` Missing editor strings
+- [x] **EDT-50** `P0` Missing editor strings
   - Do: Find hardcoded UI text and keys missing from `assets/strings/**` (all locales) and fix them. Extend the key test so any missing key or hardcoded label fails.
   - Done when: No raw keys or missing strings in the editor; the test enforces it.
 - [~] @skate-editor **EDT-51** `P1` Editor consistency audit: design note
@@ -307,14 +315,14 @@ Round 27+ goals (human, 2026-11-06): fix editor bugs, make every window, dialog 
   - Do: Add the settings listed in EDT-51 to the project and editor settings windows, including "Show tooltips" (persisted, honored by every tooltip).
   - Done when: All listed settings exist and persist; the tooltip toggle works everywhere; tests.
   - Deps: EDT-51
-- [~] @skate-gameui **EDT-58** `P1` Remember the editor camera per scene
+- [x] **EDT-58** `P1` Remember the editor camera per scene
   - Do: Save the editor camera position/rotation/mode per scene (editor-only data, not in the exported game) and restore it when the scene opens.
   - Done when: Switching scenes and restarting restores each scene's camera; tests.
 - [ ] **EDT-59** `P1` REWRITE New Project wizard and templates
   - Do: Design note first. Templates (Empty, Skate game, Feature Showcase, Tetris, Marble Run, later demos), which separates the skate game from the showcase. Settings: target FPS/uncapped, physics backend (Bullet, Simple, Jolt once PHY-17 lands), graphics backend (exists), include AI agent/skill files, splash screen image. Templates come from skate-tooling.
   - Done when: The human approves the design; each template creates a project that opens and runs; tests for the template registry and settings.
   - Deps: EDT-56, AST-14
-- [ ] **EDT-60** `P2` Git version control: design note
+- [~] @skate-editor **EDT-60** `P2` Git version control: design note
   - Do: Write `docs/design/EDT-60.md`: a JGit-based panel (init, status, diff, commit, branch, pull/push), a project `.gitignore`, and authentication dialogs (GitHub device flow, OS credential manager, SSH keys). The editor never stores raw tokens in project files.
   - Done when: The human approves the note.
 
@@ -326,7 +334,7 @@ Round 27+ goals (human, 2026-11-06): fix editor bugs, make every window, dialog 
 
 Round 27+ goals: tooling fixes, an Android feasibility study and new demo projects.
 
-- [ ] **TLG-11** `P1` `discord-dm.sh` reads attachments
+- [x] **TLG-11** `P1` `discord-dm.sh` reads attachments
   - Do: Add a `files <message-id> [dir]` subcommand that lists and downloads a DM's attachments (owner messages only), and show attachment names in `read`. Never print the token.
   - Done when: The lead can fetch a DM attachment with the script; shellcheck clean.
 - [ ] **TLG-12** `P3` Android export feasibility spike
