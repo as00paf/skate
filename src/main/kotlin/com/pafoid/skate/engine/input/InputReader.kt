@@ -22,6 +22,8 @@ interface RawInput {
     fun gamepadAxis(axis: Int, pad: Int = 0): Float
     fun isGamepadButtonDown(button: Int, pad: Int = 0): Boolean
     fun wasGamepadButtonPressed(button: Int, pad: Int = 0): Boolean
+    /** True while the cursor is captured (hidden and locked) for mouse look; then only deltas are meaningful. */
+    fun isCursorCaptured(): Boolean = false
 }
 
 /** Read-only input API for scripts and runtime code: raw keys plus named actions. */
@@ -31,6 +33,8 @@ interface InputReader : RawInput {
     fun isActionDown(name: String): Boolean
     /** True only on the first frame the action is down (see [ActionInputReader.update]). */
     fun wasActionPressed(name: String): Boolean
+    /** True when [context] is on the context stack and not silenced by a modal entry above it. */
+    fun isContextActive(context: InputContext): Boolean
 }
 
 /** GLFW key codes, exposed so callers need no LWJGL import. */
@@ -55,32 +59,63 @@ class ActionInputReader(
     private val raw: RawInput,
     val actions: ActionMap = ActionMap(),
     private val pressThreshold: Float = 0.5f,
-    private val deadZones: () -> DeadZoneSettings = { DeadZoneSettings() }
+    private val deadZones: () -> DeadZoneSettings = { DeadZoneSettings() },
+    /** Which contexts are read and which sources each one sees (INP-10). */
+    val contexts: InputContextStack = InputContextStack.withDefaults(),
 ) : InputReader, RawInput by raw {
 
-    /** Contexts whose actions are read; the others report 0. */
-    val activeContexts: MutableSet<InputContext> = mutableSetOf(InputContext.GAMEPLAY, InputContext.UI)
+    /** Readable contexts (read-only view of [contexts]). */
+    @Deprecated("Push/pop on contexts instead", ReplaceWith("contexts"))
+    val activeContexts: Set<InputContext> get() = resolution().keys
 
     private val wasDown = HashMap<String, Boolean>()
     private val downNow = HashMap<String, Boolean>()
     private val watched = HashSet<String>()
     private val stick = org.joml.Vector2f()
 
+    private var resolved: Map<InputContext, Set<String>> = emptyMap()
+    private var resolvedStack = -1
+    private var resolvedMap = -1
+    private var lastUpdateKey = 0L
+
     /**
      * Call once per frame, before readers run, to advance action edge detection.
      * Only actions already queried through [wasActionPressed] are sampled, so unused actions cost nothing.
+     * When the context stack or the bindings changed since the last call, an action that is already held does not
+     * report a press: a press that carries over stays held, but a new press is needed for [wasActionPressed].
      */
     fun update() {
+        val key = (contexts.revision.toLong() shl 32) or (actions.revision.toLong() and 0xffffffffL)
+        val changed = key != lastUpdateKey
+        lastUpdateKey = key
         wasDown.clear(); wasDown.putAll(downNow)
         downNow.clear()
-        for (name in watched) downNow[name] = isActionDown(name)
+        for (name in watched) {
+            val down = isActionDown(name)
+            downNow[name] = down
+            if (changed && down) wasDown[name] = true
+        }
+    }
+
+    override fun isContextActive(context: InputContext): Boolean = context in resolution()
+
+    private fun resolution(): Map<InputContext, Set<String>> {
+        if (resolvedStack != contexts.revision || resolvedMap != actions.revision) {
+            resolved = contexts.resolve { ctx ->
+                actions.definitions(ctx).flatMapTo(HashSet()) { d -> actions.bindings(d.id).map { it.physicalSourceId() } }
+            }
+            resolvedStack = contexts.revision
+            resolvedMap = actions.revision
+        }
+        return resolved
     }
 
     private fun bindingsOf(name: String): List<ActionBinding> {
         val def = actions.definition(name) ?: return emptyList()
-        return if (def.context in activeContexts) actions.bindings(name) else emptyList()
+        val hidden = resolution()[def.context] ?: return emptyList()
+        val all = actions.bindings(name)
+        return if (hidden.isEmpty()) all else all.filter { it.physicalSourceId() !in hidden }
     }
-
     override fun actionValue(name: String): Float {
         var best = 0f
         for (b in bindingsOf(name)) {

@@ -14,6 +14,8 @@ import com.pafoid.skate.engine.getComponent
 import com.pafoid.skate.engine.input.ActionInputReader
 import com.pafoid.skate.engine.input.ActionMap
 import com.pafoid.skate.engine.input.DefaultActions
+import com.pafoid.skate.engine.input.InputContext
+import com.pafoid.skate.engine.input.InputContextStack
 import com.pafoid.skate.engine.input.InputMappings
 import com.pafoid.skate.engine.input.InputProvider
 import com.pafoid.skate.engine.input.InputReader
@@ -33,13 +35,17 @@ class InputSystem(
     /** Action definitions and live bindings. Rebind here, then call `mappings.storeBindings(actionMap)` to persist. */
     val actionMap: ActionMap = DefaultActions.register(ActionMap())
 
-    private val actionReader = ActionInputReader(ProviderRawInput(inputProvider), actionMap) { mappings.deadZones }
+    private val actionReader = ActionInputReader(ProviderRawInput(inputProvider), actionMap, deadZones = { mappings.deadZones })
 
     /** Editor-independent key/action read API for scripts and runtime code. */
     val reader: InputReader get() = actionReader
 
-    /** Active contexts (GAMEPLAY and UI by default); only their actions are read. */
-    val activeContexts: MutableSet<com.pafoid.skate.engine.input.InputContext> get() = actionReader.activeContexts
+    /** Prioritized input contexts (INP-10); the base stack is `gameplay` with `ui` above it. Push/pop to change. */
+    val contexts: InputContextStack get() = actionReader.contexts
+
+    /** Readable contexts. */
+    @Deprecated("Push/pop on contexts instead", ReplaceWith("contexts"))
+    val activeContexts: Set<InputContext> get() = contexts.resolve { emptySet() }.keys
 
     /** Controller rumble. Unsupported (no-op) until a backend is assigned: GLFW has no haptics API. */
     val rumble = RumbleManager()

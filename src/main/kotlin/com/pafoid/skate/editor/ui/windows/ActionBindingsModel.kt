@@ -45,7 +45,7 @@ object ActionBindingsModel {
             .map { (key, list) ->
                 ActionGroup(key.first, key.second, categoryOf(list.first().definition), list)
             }
-            .sortedWith(compareBy({ it.context.ordinal }, { it.category }))
+            .sortedWith(compareBy({ it.context.displayOrder }, { it.context.id }, { it.category }))
     }
 }
 
