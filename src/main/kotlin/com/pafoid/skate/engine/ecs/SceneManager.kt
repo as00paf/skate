@@ -151,7 +151,8 @@ class SceneManager(
     }
 
     fun createNewScene(name: String, dirPath: String): Scene {
-        val newScene = Scene(name)
+        // Every new scene starts lit: environment ambient, day/night cycle and a "Sun" entity (REN-26)
+        val newScene = SceneSun.addDefaults(Scene(name))
         val dir = File(dirPath)
         if (!dir.exists()) dir.mkdirs()
         val file = File(dir, "$name.scene")

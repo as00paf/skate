@@ -9,7 +9,7 @@ import kotlinx.serialization.json.jsonPrimitive
 
 /** Kinds of versioned data files. Files without a `schema` field are version 0. */
 enum class FileKind(val currentSchema: Int) {
-    SCENE(1),
+    SCENE(2),
     PREFAB(1),
     PROJECT(1)
 }
@@ -49,8 +49,10 @@ class SchemaMigrations(
         const val SCHEMA_KEY = "schema"
 
         // v0 -> v1 only introduces the schema field; the layout is unchanged.
-        val DEFAULT: Map<FileKind, Map<Int, Migration>> = FileKind.values().associateWith {
-            mapOf(0 to Migration { root -> root })
+        // Scenes v1 -> v2: ambient light in the environment, the sun as an entity (REN-26).
+        val DEFAULT: Map<FileKind, Map<Int, Migration>> = FileKind.values().associateWith { kind ->
+            val stamp = Migration { root -> root }
+            if (kind == FileKind.SCENE) mapOf(0 to stamp, 1 to SceneLightingMigration) else mapOf(0 to stamp)
         }
     }
 }

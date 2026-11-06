@@ -1,5 +1,6 @@
 package com.pafoid.skate.engine.render.renderer
 
+import com.pafoid.skate.engine.ecs.SceneSun
 import com.pafoid.skate.engine.assets.data.Shader
 import com.pafoid.skate.engine.assets.data.models.MeshPart
 import com.pafoid.skate.engine.ecs.Scene
@@ -96,7 +97,7 @@ class SkyDomeRenderer(private val shader: Shader, private val loader: VAOLoader)
         // Get time component for time of day
         val dayNightComponent = scene.getComponent<DayNightCycleComponent>()?.takeIf { it.enabled }
         val timeOfDay = dayNightComponent?.timeOfDay ?: 12.0f
-        val sun = scene.getComponent<DirectionalLightComponent>().takeIf { it?.enabled == true }
+        val sun = SceneSun.of(scene)
 
         // Center on camera
         modelMatrix.identity().translation(cameraPosition)
