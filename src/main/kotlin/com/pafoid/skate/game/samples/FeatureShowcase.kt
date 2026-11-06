@@ -244,6 +244,9 @@ class FeatureShowcase(private val prefabs: PrefabsGenerator) {
             Material(baseColorTexture = Texture(filePath = assets + Assets.Bundled.ASPHALT))))
         add(mesh("[Materials] Transparent", Assets.Bundled.CUBE, at("materials", 3f, 0.7f, -2f), Vector3f(0.7f),
             Material(baseColor = Vector4f(0.2f, 0.6f, 1f, 0.4f), alphaMode = AlphaMode.BLEND)))
+        // REN-27: a polished chrome sphere mirrors the sky and its surroundings (image-based lighting)
+        add(mesh("[Materials] Mirror", Assets.Bundled.SPHERE, at("materials", -5f, 0.95f, -2f), Vector3f(1.35f),
+            Material(baseColor = Vector4f(0.95f, 0.95f, 0.95f, 1f), metallicFactor = 1f, roughnessFactor = 0.02f)))
         // EDT-17: material saved as a .skmat asset and linked; loading the scene reads it back from the file
         val asset = ASSET_MATERIAL
         val file = File(File(assets, ASSET_MATERIAL_DIR), "$ASSET_MATERIAL_NAME.${MaterialAsset.EXTENSION}")

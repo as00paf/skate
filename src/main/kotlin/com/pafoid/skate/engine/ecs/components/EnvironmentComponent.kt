@@ -40,6 +40,10 @@ data class EnvironmentComponent(
     @Contextual
     val ambientColor: Vector3f = Vector3f(1f, 1f, 1f),
     var ambientIntensity: Float = DEFAULT_AMBIENT_INTENSITY,
+    /** Strength of sky reflections on surfaces (image-based specular, REN-27); 0 turns reflections off. */
+    var reflectionIntensity: Float = 1f,
+    /** Strength of the light the sky casts on surfaces (image-based diffuse, REN-27), on top of the ambient light. */
+    var skyLightIntensity: Float = DEFAULT_SKY_LIGHT_INTENSITY,
     /** Name of a runtime UI button that cycles the fog demo steps ([FogCycle]) when clicked in Play; empty = none. */
     @GameObjectRef var fogCycleButton: String = "",
 ) : SceneComponent() {
@@ -60,6 +64,8 @@ data class EnvironmentComponent(
         renderFog = true
         ambientColor.set(1f, 1f, 1f)
         ambientIntensity = DEFAULT_AMBIENT_INTENSITY
+        reflectionIntensity = 1f
+        skyLightIntensity = DEFAULT_SKY_LIGHT_INTENSITY
     }
 
     /** Ambient light reaching surfaces: [ambientColor] scaled by [ambientIntensity], written into [out]. */
@@ -67,6 +73,7 @@ data class EnvironmentComponent(
 
     companion object {
         const val DEFAULT_AMBIENT_INTENSITY = 0.25f
+        const val DEFAULT_SKY_LIGHT_INTENSITY = 0.35f
     }
 
     fun applyPreset(preset: EnvironmentPreset) {
