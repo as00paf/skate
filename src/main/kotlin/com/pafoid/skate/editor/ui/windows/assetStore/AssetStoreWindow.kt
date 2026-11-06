@@ -13,6 +13,7 @@ import com.pafoid.skate.editor.assetstore.providers.ambientcg.AmbientCgProvider
 import com.pafoid.skate.editor.assetstore.providers.catalog.CatalogPackProvider
 import com.pafoid.skate.editor.assetstore.providers.polyhaven.PolyHavenProvider
 import com.pafoid.skate.editor.events.AssetStoreEvent
+import com.pafoid.skate.editor.events.FileSystemEvent
 import com.pafoid.skate.editor.events.ProjectEvent
 import com.pafoid.skate.editor.imgui.EditorWindow
 import com.pafoid.skate.editor.imgui.EmptyState
@@ -67,6 +68,7 @@ class AssetStoreWindow(
     private val searchText = ImString(128)
     private var variantIndex = 0
     private var started = false
+    private var attributionShown = false
 
     /** Thumbnails on the GPU: at most [THUMBNAIL_TEXTURES], freed on eviction, window close and project change. */
     private val textures = ThumbnailTextures(
@@ -80,6 +82,7 @@ class AssetStoreWindow(
         events.subscribe<AssetStoreEvent.ImportFinished> { event -> if (started) service.onImportFinished(event) }
         // Undo/redo of an import, and project switches, change the ledger the Attribution tab shows.
         events.subscribe<AssetStoreEvent.LedgerChanged> { if (started) service.refreshLedger() }
+        events.subscribe<FileSystemEvent.FileSystemChangedEvent> { if (started) service.refreshLedger() }
         events.subscribe<ProjectEvent.Opened> { if (started) projectChanged() }
         events.subscribe<ProjectEvent.Closed> { if (started) projectChanged() }
     }
@@ -121,8 +124,13 @@ class AssetStoreWindow(
                 ImGui.endTabItem()
             }
             if (ImGui.beginTabItem(strings.label("assetstore.tab.attribution"))) {
+                // Reload on opening the tab: deletes and their undo (AST-25) change the ledger without an event.
+                if (!attributionShown) service.refreshLedger()
+                attributionShown = true
                 attribution()
                 ImGui.endTabItem()
+            } else {
+                attributionShown = false
             }
             ImGui.endTabBar()
         }

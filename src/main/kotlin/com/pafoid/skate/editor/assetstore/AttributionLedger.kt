@@ -74,6 +74,25 @@ data class AttributionLedger(val schema: Int = CURRENT_SCHEMA, val entries: List
             return element
         }
 
+        /**
+         * AST-25: drops [ids] (GUIDs of deleted files) from the project's ledger, removing entries left without files.
+         * Returns the original versions of the entries it changed, for [restoreEntries]; the file is untouched (and an
+         * empty list returned) when no entry refers to [ids] or the project has no ledger.
+         */
+        fun forgetAssets(projectDir: File, ids: Set<String>): List<LedgerEntry> {
+            if (ids.isEmpty() || !file(projectDir).isFile) return emptyList()
+            val ledger = load(projectDir)
+            val touched = ledger.entriesFor(ids)
+            if (touched.isNotEmpty()) save(projectDir, ledger.removeAssetIds(ids))
+            return touched
+        }
+
+        /** Undo of [forgetAssets]: puts the original [entries] back (replacing their trimmed versions). */
+        fun restoreEntries(projectDir: File, entries: List<LedgerEntry>) {
+            if (entries.isEmpty()) return
+            save(projectDir, entries.fold(load(projectDir)) { ledger, entry -> ledger.upsert(entry) })
+        }
+
         fun load(projectDir: File): AttributionLedger {
             val f = file(projectDir)
             return if (f.isFile) decode(f.readText()) else AttributionLedger()
