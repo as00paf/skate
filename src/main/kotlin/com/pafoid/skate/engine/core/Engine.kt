@@ -214,6 +214,7 @@ class Engine {
         volume = { systemManager.getSystem<AudioSystem>()?.masterVolume ?: 1f },
         setVolume = { v -> systemManager.getSystem<AudioSystem>()?.masterVolume = v },
         defer = defer,
+        inputContexts = { systemManager.getSystem<InputSystem>()?.contexts },
     )
 
     private fun uiSystems(inputSystem: InputSystem): List<System> {
