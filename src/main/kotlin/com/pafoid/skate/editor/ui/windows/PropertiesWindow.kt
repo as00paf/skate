@@ -36,6 +36,8 @@ class PropertiesWindow(
 
     private val searchString = ImString(128)
 
+    private val removal = ComponentRemovalConfirmation()
+
     override fun imgui() {
         val go = sceneManager.currentScene?.selectedGameObject ?: sceneManager.currentScene
 
@@ -73,6 +75,7 @@ class PropertiesWindow(
 
             contextualMenu(go)
         }
+        removeComponentModal(go)
 
         ImGui.spacing()
         ImGui.end()
@@ -177,14 +180,32 @@ class PropertiesWindow(
         ImGui.sameLine()
         val buttonSize = ImGui.getFrameHeight()
         if (stringManager.tippedWith(ImGui.button(Icons.TRASH, buttonSize, buttonSize), "tooltip.properties.remove_component")) {
-            ImGui.openPopup(stringManager.label("lbl.hierarchy.remove_component_title"))
+            removal.request(cmp)
+        }
+    }
+
+    /**
+     * The one Remove-component confirmation (EDT-49). It used to be submitted inside every expanded component with
+     * a shared ID, so it was drawn once per component (duplicated content) and could confirm the wrong component.
+     */
+    private fun removeComponentModal(inspected: GameObject?) {
+        val popupId = stringManager.label("lbl.hierarchy.remove_component_title")
+        if (removal.consumeOpenRequest()) ImGui.openPopup(popupId)
+        removal.sync(inspected, ImGui.isPopupOpen(popupId))
+
+        val target = removal.pending
+        val message = if (target != null && inspected != null) {
+            stringManager.getString("lbl.hierarchy.remove_component_named", target.name, inspected.name)
+        } else {
+            stringManager.getString("lbl.hierarchy.remove_component")
         }
         MImGui.showConfirmationModal(
-            title = stringManager.label("lbl.hierarchy.remove_component_title"),
-            message = stringManager.getString("lbl.hierarchy.remove_component"),
+            title = popupId,
+            message = message,
             confirmText = stringManager.getString("lbl.input_system.yes"),
             cancelText = stringManager.getString("lbl.input_system.no"),
-            onConfirm = { eventSystem.publish(RemoveComponent(cmp)) }
+            onConfirm = { removal.confirm(inspected)?.let { eventSystem.publish(RemoveComponent(it)) } },
+            onCancel = { removal.cancel() },
         )
     }
 
