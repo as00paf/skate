@@ -10,7 +10,12 @@ enum class BrowserAssetType(val extensions: Set<String>) {
     ANIMATION(FileType.ANIMATION.extensions.toSet()),
     SOUND(FileType.SOUND.extensions.toSet());
 
-    fun matches(file: File): Boolean = file.extension.lowercase() in extensions
+    fun matches(file: File): Boolean {
+        val ext = file.extension.lowercase()
+        // `Board@Ollie.glb`: one action exported from a .blend (AST-19) is an animation, not a model
+        if (this == ANIMATION && ext == "glb" && '@' in file.nameWithoutExtension) return true
+        return ext in extensions
+    }
 }
 
 /**

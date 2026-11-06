@@ -103,4 +103,16 @@ class AssetRegistryTest {
         assertFalse(AssetMeta.sidecarOf(f).exists())
         assertEquals(0, reg.size)
     }
+
+    @Test
+    fun AssetRegistry_ScanSkipsBlenderSideFiles() {
+        listOf("cap.blend", "cap.blend1", "cap.blend@", "cap.glb.part").forEach { File(dir, it).writeText("x") }
+        val reg = AssetRegistry(dir).also { it.scan() }
+
+        assertNotNull(reg.idOf("cap.blend"))
+        listOf("cap.blend1", "cap.blend@", "cap.glb.part").forEach {
+            assertNull(reg.idOf(it), it)
+            assertFalse(AssetMeta.sidecarOf(File(dir, it)).exists(), "no sidecar for $it")
+        }
+    }
 }

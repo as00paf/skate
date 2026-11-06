@@ -17,6 +17,7 @@ import com.pafoid.skate.editor.ui.handlers.EditorInputHandler
 import com.pafoid.skate.editor.ui.handlers.PlayModeHandler
 import com.pafoid.skate.engine.assets.Assets.Strings.EDITOR_STRINGS
 import com.pafoid.skate.engine.assets.Assets.Strings.GAME_STRINGS
+import com.pafoid.skate.editor.assetimport.blender.BlenderSync
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.core.Window
 import com.pafoid.skate.engine.input.PointerSource
@@ -64,6 +65,9 @@ class Editor(
 
     val gizmoSystem = GizmoSystem(engine, settingsManager, undoRedoManager, editorCamera)
 
+    /** Imports `.blend` files under the project's Assets and re-imports them when saved (AST-19). */
+    val blenderSync = BlenderSync(engine, projectManager, { settingsManager.editorSettings })
+
     val imGuiLayer = ImGuiLayer(engine, this, projectManager)
     val editorEventHandler = EditorEventHandler(engine.eventSystem, imGuiLayer, undoRedoManager)
 
@@ -94,6 +98,7 @@ class Editor(
             editorCamera.update(dt)
             gizmoSystem.update(dt)
         }
+        blenderSync.update()
         imGuiLayer.update(dt)
     }
 

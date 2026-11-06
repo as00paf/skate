@@ -1,10 +1,36 @@
 # AST-19 — Full Blender support
 
-Status: **awaiting approval**. No code yet. Author: `skate-assets`.
+Status: **approved** (human, 2026-11-07) and implemented for steps 19a–19d (FILES mode). Author: `skate-assets`.
 Paths are relative to `src/main/kotlin/com/pafoid/skate/`.
 
 Marker: **⚠ UNVERIFIED** = a Blender behaviour or API detail I could not check against a running Blender or its docs on
 2026-11-07 (no Blender is installed on the agent machine). Each one gets a spike before the step that depends on it.
+
+## 0. Decisions and spike results (2026-11-07)
+
+Human decisions: generated GLBs are **committed**; minimum Blender **4.2 LTS**; an output no longer produced (action
+deleted in Blender) is **kept with a warning**; the "Send to Skate" add-on comes **later**; action mode default
+**FILES** (lead).
+
+Spikes run on Blender **5.2.3 LTS** with `baseball-cap.blend` (human's file) and a generated two-action rig. They
+resolve the ⚠ UNVERIFIED markers below:
+
+| Item | Result |
+|---|---|
+| `--factory-startup` and auto-run | `bpy.app.autoexec_fail` false and `use_scripts_auto_execute` **false** with `--factory-startup`: embedded Python does not run. |
+| `--python-exit-code 1` | A Python exception and a missing `.blend` both exit with 1. |
+| Registry | `HKCR\.blend` default = ProgID (`blender.5.2`); `HKCR\<ProgID>\shell\open\command` names `blender-launcher.exe`; `blender.exe` sits next to it. The `blendfile` key in §3 does not exist. |
+| Save files | A save writes `x.blend@` then renames it; `x.blend1` is the backup. Both are ignored by the watch and by `AssetRegistry`. |
+| glTF options | `export_animation_mode` has `ACTIONS`, `ACTIVE_ACTIONS`, `BROADCAST`, `NLA_TRACKS`, `SCENE`; `export_image_format` has `AUTO`, `JPEG`, `WEBP`, `NONE`. The script passes only options the running Blender has. |
+| Per-action files | Assigning the action (and, in Blender 5, its first slot) then exporting with `ACTIVE_ACTIONS` gives one clip per file; each file holds only its action's keys. |
+| Units / axes | The cap exports in metres, Y-up (a +1 m Z move in Blender is +1 m Y in the GLB). |
+| Materials | Principled BSDF with packed base color, normal, and metal/rough (through Separate Color) loads with all three textures in `AssimpLoader`. |
+| Windows arguments | JSON passed as a command-line argument is mangled (quotes are not escaped by `ProcessBuilder`); the script reads its arguments from `args.json` in the staging folder instead. |
+
+Implementation notes vs. the text below: the importer lives in `editor/assetimport/blender/**` and the shared
+locator/runner in `editor/tools/external/**`; dropping a `.blend` (or any model) from the Project window on the viewport
+spawns its GLB (`ViewportAction.DropModel`). Inspector settings UI, the "Needs Blender" badge and the settings page are
+not done yet (EDT follow-up); results and warnings go to the console.
 
 ## 1. Goals / non-goals
 
