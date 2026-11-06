@@ -15,6 +15,9 @@ import com.pafoid.skate.engine.ecs.systems.ParticleSystem
 import com.pafoid.skate.engine.ecs.systems.DirectionalLightSystem
 import com.pafoid.skate.engine.ecs.systems.EnvironmentSystem
 import com.pafoid.skate.engine.ecs.systems.CameraControlSystem
+import com.pafoid.skate.engine.ecs.systems.CameraCycleSystem
+import com.pafoid.skate.engine.events.CameraAction
+import com.pafoid.skate.engine.gameplay.camera.CameraCycle
 import com.pafoid.skate.engine.net.LoopbackPredictionSystem
 import com.pafoid.skate.engine.ecs.components.RigidBody3D
 import com.pafoid.skate.engine.ecs.systems.CameraProbe
@@ -23,6 +26,7 @@ import com.pafoid.skate.engine.ecs.systems.FollowCameraSystem
 import com.pafoid.skate.engine.ecs.systems.GameObjectManager
 import com.pafoid.skate.engine.ecs.systems.ReaderFlyInputSource
 import com.pafoid.skate.engine.ecs.systems.InputSystem
+import com.pafoid.skate.engine.gameplay.ActionPresets
 import com.pafoid.skate.engine.gameplay.CharacterActions
 import com.pafoid.skate.engine.gameplay.CharacterInputSampler
 import com.pafoid.skate.engine.ecs.systems.PhysicsFrameSystem
@@ -149,8 +153,10 @@ class Engine {
         val debugRenderer = renderer.renderResources.renderers.debug
         val physicsSystem = PhysicsSystem(debugRenderer, eventSystem)
         val inputSystem = InputSystem(inputProvider, eventSystem)
-        // Generic character preset (INP-10); registered before any project loads its binding profile.
+        // Generic character preset and the game's presets (INP-10); registered before any project loads its binding
+        // profile. PlayerMotionSystem applies the presets again on scene load, for presets registered later.
         CharacterActions.register(inputSystem.actionMap)
+        ActionPresets.applyTo(inputSystem.actionMap)
         val engineSystems = listOf(
             gameObjectManager, // Core
             TransformSystem(),
@@ -162,7 +168,10 @@ class Engine {
             PhysicsFrameSystem(physicsSystem),
             DayNightCycleSystem(),
             DirectionalLightSystem(cameraManager),
-            PlayerMotionSystem(cameraManager, CharacterInputSampler(inputSystem.reader)),
+            PlayerMotionSystem(
+                cameraManager,
+                CharacterInputSampler(inputSystem.reader, contexts = inputSystem.contexts, actionMap = inputSystem.actionMap),
+            ),
             MountFollowSystem(),
             FollowCameraSystem(
                 CameraProbe { from, to, radius, exclude -> physicsSystem.sphereCast(from, to, radius, exclude.getComponent<RigidBody3D>()) },
@@ -177,6 +186,10 @@ class Engine {
             LoopbackPredictionSystem(),
             // Look while a right-button press that started in the game view is held (INP-09 button rule).
             CameraControlSystem(ReaderFlyInputSource(inputSystem.reader)),
+            // GPL-22: HUD Camera button / camera.cycle action, and first-person cameras.
+            CameraCycleSystem(inputSystem.reader, { cameraManager.camera }) { camera, transform ->
+                eventSystem.publish(CameraAction.SetCamera(camera, transform))
+            },
             ScriptingSystem(
                 logger, eventSystem,
                 ScriptServices(input = ReaderScriptInput(inputSystem.reader)),
@@ -206,7 +219,10 @@ class Engine {
     private fun uiSystems(inputSystem: InputSystem): List<System> {
         val framebuffer = renderer.frameBuffer
         val geometry = renderer.renderResources.renderPasses.geometry
-        (inputSystem.reader as? ActionInputReader)?.let { UiActions.bindDefaults(it.actions) }
+        (inputSystem.reader as? ActionInputReader)?.let {
+            UiActions.bindDefaults(it.actions)
+            CameraCycle.bindDefaults(it.actions)
+        }
         var font: UiFont? = null
         val pauseMenu = createPauseMenu()
         return listOf(
