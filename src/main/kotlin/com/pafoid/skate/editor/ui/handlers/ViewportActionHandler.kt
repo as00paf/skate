@@ -304,8 +304,8 @@ class ViewportActionHandler(
     /** Camera and play speed follow Play; the pre-play snapshot is [PlayModeHandler]'s (EDT-45). */
     private fun handleSetRuntimePlaying(playing: Boolean) {
         if (!playing) {
-            // Only the play-mode speed resets; the scene's saved timeScale is left alone (REN-23)
-            sceneManager.currentScene?.getComponent<DayNightCycleComponent>()?.playTimeScale = 1.0f
+            // Only the play-mode speed resets, on every scene that may have played; the saved timeScale stays (REN-23)
+            sceneManager.openScenes.forEach { it.getComponent<DayNightCycleComponent>()?.playTimeScale = 1.0f }
             eventSystem.publish(CameraAction.SetCamera(editorCamera.camera, editorCamera.transform))
         } else {
             val sceneCameras = sceneManager.currentScene?.getAllComponents<CameraComponent>().orEmpty()
