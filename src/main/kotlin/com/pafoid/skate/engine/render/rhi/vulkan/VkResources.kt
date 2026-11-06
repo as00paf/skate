@@ -1,8 +1,10 @@
 package com.pafoid.skate.engine.render.rhi.vulkan
 
+import com.pafoid.skate.engine.render.rhi.BufferDesc
 import com.pafoid.skate.engine.render.rhi.BufferUpdate
 import com.pafoid.skate.engine.render.rhi.BufferUsage
 import com.pafoid.skate.engine.render.rhi.CompareFunc
+import com.pafoid.skate.engine.render.rhi.Filter
 import com.pafoid.skate.engine.render.rhi.PixelFormat
 import com.pafoid.skate.engine.render.rhi.RenderTargetDesc
 import com.pafoid.skate.engine.render.rhi.RhiBuffer
@@ -11,30 +13,126 @@ import com.pafoid.skate.engine.render.rhi.RhiTexture
 import com.pafoid.skate.engine.render.rhi.RhiVertexInput
 import com.pafoid.skate.engine.render.rhi.RhiVertexLayout
 import com.pafoid.skate.engine.render.rhi.SamplerDesc
+import com.pafoid.skate.engine.render.rhi.ShaderDesc
 import com.pafoid.skate.engine.render.rhi.TextureDesc
 import com.pafoid.skate.engine.render.rhi.TextureType
 import com.pafoid.skate.engine.render.rhi.VertexLayoutDesc
+import com.pafoid.skate.engine.render.rhi.Wrap
 import org.lwjgl.system.MemoryStack.stackPush
 import org.lwjgl.system.MemoryUtil
 import org.lwjgl.vulkan.VK10.*
+import org.lwjgl.vulkan.VkBufferCopy
 import org.lwjgl.vulkan.VkBufferImageCopy
 import org.lwjgl.vulkan.VkCommandBuffer
+import org.lwjgl.vulkan.VkFormatProperties
 import org.lwjgl.vulkan.VkImageBlit
 import org.lwjgl.vulkan.VkImageCreateInfo
 import org.lwjgl.vulkan.VkImageMemoryBarrier
 import org.lwjgl.vulkan.VkImageViewCreateInfo
-import org.lwjgl.vulkan.VkSamplerCreateInfo
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.nio.FloatBuffer
 
 /**
- * An RHI buffer on Vulkan. Vertex, index and instance buffers live in mapped host-visible memory (writes land at once;
- * the spike waits for the GPU after every pass, so there is no hazard between frames). Uniform buffers are only a CPU
- * copy: each draw snapshots them into the uniform ring, which gives GL's "value at draw time" semantics.
+ * Everything the Vulkan backend allocates (VK-02): the VMA allocator ([VkAllocator]), shared samplers and descriptor
+ * set layouts, per-frame-in-flight transient resources ([frames]), the dummies standing in for unbound inputs, and the
+ * `create*` bodies of [VulkanDevice]. Uploads go through host staging buffers and one-shot copies, so they belong at
+ * load time or between frames (a one-shot runs before the commands already recorded in an open frame).
+ */
+internal class VkResourceFactory(val core: VkCore, framesInFlight: Int = 1) : AutoCloseable {
+    val allocator = VkAllocator(core)
+    val samplers = VkSamplerCache(core)
+    val layouts = DescriptorLayoutCache(core)
+    val frames = VkFrameResources(core, allocator, framesInFlight)
+    private val blitFilters = HashMap<Int, Int>()
+
+    val dummyFloatVertex: VkAllocBuffer = allocator.buffer(16, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, MemoryKind.HOST).also {
+        MemoryUtil.memByteBuffer(it.address, 16).order(ByteOrder.nativeOrder()).putFloat(0f).putFloat(0f).putFloat(0f).putFloat(1f)
+    }
+    val dummyIntVertex: VkAllocBuffer = allocator.buffer(16, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, MemoryKind.HOST).also {
+        MemoryUtil.memSet(it.address, 0, 16)
+    }
+    private val dummies = HashMap<Pair<SpirvReflection.ImageDim, Boolean>, VkRhiTexture>()
+
+    fun createBuffer(desc: BufferDesc): RhiBuffer = VkRhiBuffer(this, desc.usage, desc.update, desc.size)
+
+    fun createBuffer(usage: BufferUsage, update: BufferUpdate, data: FloatArray): RhiBuffer =
+        VkRhiBuffer(this, usage, update, maxOf(data.size * 4L, 4L)).also { if (data.isNotEmpty()) it.update(0, data) }
+
+    fun createBuffer(usage: BufferUsage, update: BufferUpdate, data: IntArray): RhiBuffer =
+        VkRhiBuffer(this, usage, update, maxOf(data.size * 4L, 4L)).also { it.replace(data) }
+
+    fun createVertexLayout(desc: VertexLayoutDesc): RhiVertexLayout = VkRhiVertexLayout(desc)
+
+    fun createVertexInput(layout: RhiVertexLayout, vertexBuffers: List<RhiBuffer>, indexBuffer: RhiBuffer?): RhiVertexInput =
+        VkRhiVertexInput(layout as VkRhiVertexLayout, vertexBuffers.map { it as VkRhiBuffer }, indexBuffer as VkRhiBuffer?)
+
+    fun createTexture(desc: TextureDesc): RhiTexture = VkRhiTexture(this, desc)
+
+    fun createRenderTarget(desc: RenderTargetDesc): RhiRenderTarget = VkRhiRenderTarget(this, desc)
+
+    fun createShader(desc: ShaderDesc) = VkRhiShader(core, layouts, desc)
+
+    /** Texture bound where a sampler's unit holds nothing usable: opaque black (GL's unbound result), or far depth. */
+    fun dummyFor(d: SpirvReflection.Descriptor): VkRhiTexture = dummies.getOrPut(d.dim!! to d.depth) {
+        val type = when (d.dim) {
+            SpirvReflection.ImageDim.D2 -> TextureType.TEXTURE_2D
+            SpirvReflection.ImageDim.D2_ARRAY -> TextureType.TEXTURE_2D_ARRAY
+            SpirvReflection.ImageDim.CUBE -> TextureType.CUBE
+        }
+        val layers = if (type == TextureType.CUBE) 6 else 1
+        val format = if (d.depth) PixelFormat.DEPTH32F else PixelFormat.RGBA8
+        val sampler = SamplerDesc(Filter.NEAREST, Filter.NEAREST, Wrap.CLAMP_TO_EDGE, compare = if (d.depth) CompareFunc.LESS_EQUAL else null)
+        VkRhiTexture(this, TextureDesc(type, format, 1, 1, layers, sampler = sampler), attachment = d.depth).also { t ->
+            val texel = ByteBuffer.allocateDirect(4).order(ByteOrder.LITTLE_ENDIAN)
+            if (d.depth) texel.putFloat(1f) else texel.put(0).put(0).put(0).put(-1)
+            texel.flip()
+            for (layer in 0 until layers) t.upload(0, layer, texel.duplicate())
+        }
+    }
+
+    /** Filter for mip-generation blits of [format]: linear when the format supports it, else nearest. */
+    fun blitFilter(format: Int): Int = blitFilters.getOrPut(format) {
+        stackPush().use { s ->
+            val props = VkFormatProperties.malloc(s)
+            vkGetPhysicalDeviceFormatProperties(core.physical, format, props)
+            val features = props.optimalTilingFeatures()
+            check(features and VK_FORMAT_FEATURE_BLIT_SRC_BIT != 0 && features and VK_FORMAT_FEATURE_BLIT_DST_BIT != 0) {
+                "Format $format cannot be blitted: no mip generation"
+            }
+            if (features and VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT != 0) VK_FILTER_LINEAR else VK_FILTER_NEAREST
+        }
+    }
+
+    /** A mapped host buffer holding [bytes], for one upload; closed by the caller after the copy. */
+    fun staging(bytes: ByteBuffer): VkAllocBuffer {
+        val n = bytes.remaining()
+        val b = allocator.buffer(n.toLong(), VK_BUFFER_USAGE_TRANSFER_SRC_BIT, MemoryKind.HOST)
+        MemoryUtil.memCopy(MemoryUtil.memAddress(bytes), b.address, n.toLong())
+        return b
+    }
+
+    override fun close() {
+        dummies.values.forEach { it.close() }
+        dummies.clear()
+        dummyFloatVertex.close()
+        dummyIntVertex.close()
+        frames.close()
+        layouts.close()
+        samplers.close()
+        allocator.close()
+    }
+}
+
+/**
+ * An RHI buffer on Vulkan, by [usage] and [update]:
+ * - uniform: a CPU copy only; each draw snapshots it into the frame's uniform ring.
+ * - static vertex/index: device-local memory, filled through staging copies.
+ * - dynamic/stream vertex/index/instance: a CPU shadow, versioned per write. The first draw after a write pushes it into
+ *   the current frame's vertex ring ([binding]), so writes between draws and frames in flight never race the GPU.
  */
 internal class VkRhiBuffer(
-    private val core: VkCore,
+    private val factory: VkResourceFactory,
     override val usage: BufferUsage,
     override val update: BufferUpdate,
     size: Long,
@@ -42,60 +140,103 @@ internal class VkRhiBuffer(
     override var size: Long = size
         private set
 
+    private val mode = when {
+        usage == BufferUsage.UNIFORM -> Mode.UNIFORM
+        update == BufferUpdate.STATIC -> Mode.DEVICE
+        else -> Mode.VERSIONED
+    }
+
+    private enum class Mode { UNIFORM, DEVICE, VERSIONED }
+
     /** CPU contents of a uniform buffer. */
-    var contents: ByteBuffer = ByteBuffer.allocate(if (usage == BufferUsage.UNIFORM) size.toInt().coerceAtLeast(16) else 0).order(ByteOrder.LITTLE_ENDIAN)
+    var contents: ByteBuffer = ByteBuffer.allocate(if (mode == Mode.UNIFORM) size.toInt().coerceAtLeast(16) else 0).order(ByteOrder.LITTLE_ENDIAN)
         private set
 
-    var gpu: HostBuffer? = if (usage == BufferUsage.UNIFORM) null else core.hostBuffer(size, usageFlags(usage))
-        private set
+    private var device: VkAllocBuffer? = if (mode == Mode.DEVICE) deviceBuffer(size) else null
+    private var shadow: ByteBuffer? = if (mode == Mode.VERSIONED) MemoryUtil.memCalloc(size.toInt().coerceAtLeast(16)) else null
+    private val versions = BufferVersions()
 
-    private fun usageFlags(usage: BufferUsage): Int = when (usage) {
-        BufferUsage.VERTEX, BufferUsage.INSTANCE -> VK_BUFFER_USAGE_VERTEX_BUFFER_BIT
-        BufferUsage.INDEX -> VK_BUFFER_USAGE_INDEX_BUFFER_BIT
-        BufferUsage.UNIFORM -> VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT
+    /** GPU copies pushed so far (a dynamic buffer's versions; tests and stats). */
+    val versionPushes: Int get() = versions.pushes
+
+    private fun deviceBuffer(size: Long) = factory.allocator.buffer(
+        size,
+        VK_BUFFER_USAGE_TRANSFER_DST_BIT or if (usage == BufferUsage.INDEX) VK_BUFFER_USAGE_INDEX_BUFFER_BIT else VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+        MemoryKind.DEVICE,
+    )
+
+    /** (VkBuffer, offset) to bind for a draw recorded now. */
+    fun binding(frames: VkFrameResources): Pair<Long, Long> = when (mode) {
+        Mode.DEVICE -> device!!.buffer to 0L
+        Mode.VERSIONED -> versions.binding(frames.serial) { size -> frames.pushVertexData(shadow!!, size) }
+        Mode.UNIFORM -> error("Uniform buffers are bound through descriptors")
     }
 
     private fun write(offset: Long, src: ByteBuffer) {
         val n = src.remaining()
         require(offset + n <= size) { "Write of $n bytes at $offset overflows a $size-byte buffer" }
-        val g = gpu
-        if (g != null) MemoryUtil.memCopy(MemoryUtil.memAddress(src), g.address + offset, n.toLong())
-        else contents.duplicate().order(ByteOrder.LITTLE_ENDIAN).position(offset.toInt()).let { (it as ByteBuffer).put(src.duplicate()) }
+        when (mode) {
+            Mode.UNIFORM -> contents.duplicate().order(ByteOrder.LITTLE_ENDIAN).position(offset.toInt()).let { (it as ByteBuffer).put(src.duplicate()) }
+            Mode.VERSIONED -> {
+                MemoryUtil.memCopy(MemoryUtil.memAddress(src), MemoryUtil.memAddress(shadow!!) + offset, n.toLong())
+                versions.written(offset, n.toLong())
+            }
+            Mode.DEVICE -> {
+                val staging = factory.staging(src)
+                try {
+                    factory.core.oneShot { cmd ->
+                        stackPush().use { s ->
+                            val region = VkBufferCopy.calloc(1, s)
+                            region[0].srcOffset(0).dstOffset(offset).size(n.toLong())
+                            vkCmdCopyBuffer(cmd, staging.buffer, device!!.buffer, region)
+                        }
+                    }
+                } finally {
+                    staging.close()
+                }
+            }
+        }
     }
 
-    private fun direct(n: Int, fill: (ByteBuffer) -> Unit): ByteBuffer =
-        MemoryUtil.memAlloc(n).order(ByteOrder.nativeOrder()).also(fill).also { it.flip() }
-
-    override fun update(offset: Long, data: FloatArray) {
-        val b = direct(data.size * 4) { it.asFloatBuffer().put(data); it.position(data.size * 4) }
-        try { write(offset, b) } finally { MemoryUtil.memFree(b) }
+    /** Fills a temporary native buffer of [n] bytes with [fill] and writes it at [offset]. */
+    private inline fun writeVia(offset: Long, n: Int, fill: (ByteBuffer) -> Unit) {
+        val b = MemoryUtil.memAlloc(maxOf(n, 1)).order(ByteOrder.nativeOrder())
+        try {
+            fill(b)
+            b.flip()
+            write(offset, b)
+        } finally {
+            MemoryUtil.memFree(b)
+        }
     }
+
+    override fun update(offset: Long, data: FloatArray) =
+        writeVia(offset, data.size * 4) { it.asFloatBuffer().put(data); it.position(data.size * 4) }
 
     override fun update(offset: Long, data: FloatBuffer) {
         val n = data.remaining() * 4
-        if (data.isDirect) {
-            write(offset, MemoryUtil.memByteBuffer(MemoryUtil.memAddress(data), n))
-        } else {
-            val b = direct(n) { it.asFloatBuffer().put(data.duplicate()); it.position(n) }
-            try { write(offset, b) } finally { MemoryUtil.memFree(b) }
-        }
+        if (data.isDirect) write(offset, MemoryUtil.memByteBuffer(MemoryUtil.memAddress(data), n))
+        else writeVia(offset, n) { it.asFloatBuffer().put(data.duplicate()); it.position(n) }
     }
 
     override fun update(offset: Long, data: ByteBuffer) {
-        if (data.isDirect) write(offset, data)
-        else {
-            val b = direct(data.remaining()) { it.put(data.duplicate()) }
-            try { write(offset, b) } finally { MemoryUtil.memFree(b) }
-        }
+        if (data.isDirect) write(offset, data) else writeVia(offset, data.remaining()) { it.put(data.duplicate()) }
     }
 
     override fun resize(size: Long) {
         this.size = size
-        if (usage == BufferUsage.UNIFORM) {
-            contents = ByteBuffer.allocate(size.toInt().coerceAtLeast(16)).order(ByteOrder.LITTLE_ENDIAN)
-        } else {
-            gpu?.close()
-            gpu = core.hostBuffer(size, usageFlags(usage))
+        when (mode) {
+            Mode.UNIFORM -> contents = ByteBuffer.allocate(size.toInt().coerceAtLeast(16)).order(ByteOrder.LITTLE_ENDIAN)
+            Mode.DEVICE -> {
+                val old = device
+                device = deviceBuffer(size)
+                old?.let { factory.core.destroyLaterOrNow { it.close() } }
+            }
+            Mode.VERSIONED -> {
+                shadow?.let { MemoryUtil.memFree(it) }
+                shadow = MemoryUtil.memCalloc(size.toInt().coerceAtLeast(16))
+                versions.resized()
+            }
         }
     }
 
@@ -107,14 +248,58 @@ internal class VkRhiBuffer(
     override fun replace(data: IntArray) {
         resize(maxOf(data.size * 4L, 4L))
         if (data.isEmpty()) return
-        val b = direct(data.size * 4) { it.asIntBuffer().put(data); it.position(data.size * 4) }
-        try { write(0, b) } finally { MemoryUtil.memFree(b) }
+        writeVia(0, data.size * 4) { it.asIntBuffer().put(data); it.position(data.size * 4) }
     }
 
     override fun close() {
-        gpu?.close()
-        gpu = null
+        device?.let { d -> factory.core.destroyLaterOrNow { d.close() } }
+        device = null
+        shadow?.let { MemoryUtil.memFree(it) }
+        shadow = null
     }
+}
+
+/**
+ * Version bookkeeping of a dynamic buffer (pure, unit-tested): the GPU copy pushed for the current frame stays valid
+ * until the buffer is written again or a new frame starts (its ring slot may be reused), and only the bytes written
+ * since the last resize are pushed.
+ */
+class BufferVersions {
+    /** Bytes written since the last resize. */
+    var extent = 0L
+        private set
+    private var pushedSerial = -1L
+    private var pushed = 0L to 0L
+
+    /** Pushes counted so far (tests and stats). */
+    var pushes = 0
+        private set
+
+    fun written(offset: Long, length: Long) {
+        extent = maxOf(extent, offset + length)
+        pushedSerial = -1
+    }
+
+    fun resized() {
+        extent = 0
+        pushedSerial = -1
+    }
+
+    /** The binding for a draw in frame [serial]; [push] copies the first n bytes and returns (buffer, offset). */
+    inline fun binding(serial: Long, push: (Long) -> Pair<Long, Long>): Pair<Long, Long> {
+        if (!isCurrent(serial)) record(serial, push(maxOf(extent, 4L)))
+        return current()
+    }
+
+    fun isCurrent(serial: Long) = pushedSerial == serial
+
+    fun record(serial: Long, binding: Pair<Long, Long>) {
+        pushed = binding
+        pushedSerial = serial
+        pushes++
+    }
+
+    fun current() = pushed
 }
 
 internal class VkRhiVertexLayout(override val desc: VertexLayoutDesc) : RhiVertexLayout {
@@ -130,33 +315,37 @@ internal class VkRhiVertexInput(
 }
 
 /**
- * A sampled image: 2D, 2D array or cube, colour or depth. Rests in the layout shaders read it in
- * ([sampledLayout]); uploads, mip generation and render passes transition away and back.
+ * A sampled image: 2D, 2D array or cube, colour or depth (depth-compare samplers for shadow maps). Rests in the layout
+ * shaders read it in ([sampledLayout]); uploads, mip generation, render passes and readback transition away and back.
+ * Its sampler comes from the shared [VkSamplerCache].
  */
 internal class VkRhiTexture(
-    private val core: VkCore,
+    private val factory: VkResourceFactory,
     override val desc: TextureDesc,
     attachment: Boolean = false,
 ) : RhiTexture {
+    private val core = factory.core
     val format = VkTranslate.imageFormat(desc.format)
     val isDepth = desc.format.isDepth
     val aspect = if (isDepth) VK_IMAGE_ASPECT_DEPTH_BIT else VK_IMAGE_ASPECT_COLOR_BIT
     val sampledLayout = if (isDepth) VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL else VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+    private val allocation: VkAllocImage
     val image: Long
-    private val memory: Long
     val view: Long
-    var vkSampler: Long = VK_NULL_HANDLE
-        private set
     private val layerViews = HashMap<Int, Long>()
     private var closed = false
 
     override var sampler: SamplerDesc = desc.sampler
         private set
 
+    /** The shared `VkSampler` for [sampler]. */
+    var vkSampler: Long = factory.samplers.sampler(desc.sampler)
+        private set
+
     override val nativeHandle: Long get() = image
 
     init {
-        image = stackPush().use { s ->
+        allocation = stackPush().use { s ->
             var usage = VK_IMAGE_USAGE_SAMPLED_BIT or VK_IMAGE_USAGE_TRANSFER_DST_BIT or VK_IMAGE_USAGE_TRANSFER_SRC_BIT
             if (attachment) usage = usage or if (isDepth) VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT else VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT
             val info = VkImageCreateInfo.calloc(s).`sType$Default`()
@@ -166,20 +355,10 @@ internal class VkRhiTexture(
                 .samples(VK_SAMPLE_COUNT_1_BIT).tiling(VK_IMAGE_TILING_OPTIMAL)
                 .usage(usage).sharingMode(VK_SHARING_MODE_EXCLUSIVE).initialLayout(VK_IMAGE_LAYOUT_UNDEFINED)
             if (desc.type == TextureType.CUBE) info.flags(VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT)
-            val p = s.mallocLong(1)
-            vk(vkCreateImage(core.device, info, null, p), "vkCreateImage")
-            p[0]
+            factory.allocator.image(info)
         }
-        memory = core.imageMemory(image, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT)
-        view = createView(
-            when (desc.type) {
-                TextureType.TEXTURE_2D -> VK_IMAGE_VIEW_TYPE_2D
-                TextureType.TEXTURE_2D_ARRAY -> VK_IMAGE_VIEW_TYPE_2D_ARRAY
-                TextureType.CUBE -> VK_IMAGE_VIEW_TYPE_CUBE
-            },
-            0, desc.layers, desc.mipLevels,
-        )
-        applySampler(desc.sampler)
+        image = allocation.image
+        view = createView(viewType(desc.type), 0, desc.layers, desc.mipLevels)
         // Start in the sampled layout so a texture never uploaded still reads (as zeros) without a validation error
         core.oneShot { cmd -> transition(cmd, VK_IMAGE_LAYOUT_UNDEFINED, sampledLayout) }
     }
@@ -192,32 +371,14 @@ internal class VkRhiTexture(
         p[0]
     }
 
-    /** Single-layer 2D view for rendering into [layer] of a layered target. */
-    fun layerView(layer: Int): Long = if (desc.layers == 1 && desc.type == TextureType.TEXTURE_2D) view
+    /** Single-layer, single-level 2D view for rendering into [layer] of a layered target. */
+    fun layerView(layer: Int): Long = if (desc.layers == 1 && desc.type == TextureType.TEXTURE_2D && desc.mipLevels == 1) view
         else layerViews.getOrPut(layer) { createView(VK_IMAGE_VIEW_TYPE_2D, layer, 1, 1) }
 
-    private fun applySampler(s: SamplerDesc) {
-        if (vkSampler != VK_NULL_HANDLE) vkDestroySampler(core.device, vkSampler, null)
-        vkSampler = stackPush().use { st ->
-            val aniso = core.anisotropy && s.anisotropy > 1f
-            val info = VkSamplerCreateInfo.calloc(st).`sType$Default`()
-                .magFilter(VkTranslate.filter(s.magFilter)).minFilter(VkTranslate.filter(s.minFilter))
-                .mipmapMode(VkTranslate.mipmapMode(s.minFilter))
-                .addressModeU(VkTranslate.addressMode(s.wrap)).addressModeV(VkTranslate.addressMode(s.wrapV))
-                .addressModeW(VkTranslate.addressMode(s.wrap))
-                .anisotropyEnable(aniso).maxAnisotropy(if (aniso) minOf(s.anisotropy, core.maxAnisotropy) else 1f)
-                .compareEnable(s.compare != null).compareOp(VkTranslate.compareOp(s.compare ?: CompareFunc.ALWAYS))
-                .minLod(0f).maxLod(if (VkTranslate.usesMips(s.minFilter)) desc.mipLevels.toFloat() else 0.25f)
-                .borderColor(VK_BORDER_COLOR_FLOAT_OPAQUE_BLACK)
-            val p = st.mallocLong(1)
-            vk(vkCreateSampler(core.device, info, null, p), "vkCreateSampler")
-            p[0]
-        }
-        sampler = s
-    }
-
     override fun setSampler(sampler: SamplerDesc) {
-        if (sampler != this.sampler) applySampler(sampler)
+        if (sampler == this.sampler) return
+        this.sampler = sampler
+        vkSampler = factory.samplers.sampler(sampler)
     }
 
     fun transition(cmd: VkCommandBuffer, from: Int, to: Int, baseLevel: Int = 0, levels: Int = desc.mipLevels) = stackPush().use { s ->
@@ -229,20 +390,27 @@ internal class VkRhiTexture(
         vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, null, null, barrier)
     }
 
+    /** Texel bytes of [level] of [layer] as the image stores them (three-channel formats widened to four). */
+    private fun imageBytes(data: ByteBuffer): ByteBuffer = when (desc.format) {
+        PixelFormat.RGB8, PixelFormat.RGB32F -> {
+            val bytes = ByteArray(data.remaining()).also { data.duplicate().get(it) }
+            val wide = if (desc.format == PixelFormat.RGB8) VkTranslate.widenToFour(bytes, 1, byteArrayOf(-1))
+                else VkTranslate.widenToFour(bytes, 4, ByteBuffer.allocate(4).order(ByteOrder.LITTLE_ENDIAN).putFloat(1f).array())
+            ByteBuffer.allocateDirect(wide.size).put(wide).flip()
+        }
+        else -> if (data.isDirect) data else ByteBuffer.allocateDirect(data.remaining()).put(data.duplicate()).flip()
+    }
+
     override fun upload(level: Int, layer: Int, data: ByteBuffer?) {
-        require(level in 0 until desc.mipLevels && layer in 0 until desc.layers)
+        require(level in 0 until desc.mipLevels && layer in 0 until desc.layers) { "Level $level / layer $layer outside $desc" }
         if (data == null) return // contents undefined: nothing to copy
         val w = maxOf(1, desc.width shr level)
         val h = maxOf(1, desc.height shr level)
-        val bytes = ByteArray(data.remaining()).also { data.duplicate().get(it) }
-        val texels = when (desc.format) {
-            PixelFormat.RGB8 -> VkTranslate.widenToFour(bytes, 1, byteArrayOf(-1))
-            PixelFormat.RGB32F -> VkTranslate.widenToFour(bytes, 4, ByteBuffer.allocate(4).order(ByteOrder.LITTLE_ENDIAN).putFloat(1f).array())
-            else -> bytes
-        }
-        val staging = core.hostBuffer(texels.size.toLong(), VK_BUFFER_USAGE_TRANSFER_SRC_BIT)
+        val bytes = imageBytes(data)
+        val expected = w * h * VkTranslate.imageTexelSize(desc.format)
+        require(bytes.remaining() >= expected) { "Upload of level $level needs $expected bytes, got ${bytes.remaining()}" }
+        val staging = factory.staging(bytes)
         try {
-            MemoryUtil.memByteBuffer(staging.address, texels.size).put(texels)
             core.oneShot { cmd ->
                 transition(cmd, sampledLayout, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
                 stackPush().use { s ->
@@ -259,8 +427,11 @@ internal class VkRhiTexture(
         }
     }
 
+    /** Builds levels 1.. from level 0 of every layer (2D arrays and cube faces included) with blits. */
     override fun generateMips() {
         if (desc.mipLevels <= 1) return
+        require(!isDepth) { "No mip generation for depth textures" }
+        val filter = factory.blitFilter(format)
         core.oneShot { cmd ->
             transition(cmd, sampledLayout, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
             stackPush().use { s ->
@@ -271,7 +442,7 @@ internal class VkRhiTexture(
                     blit[0].srcOffsets(1).set(maxOf(1, desc.width shr (level - 1)), maxOf(1, desc.height shr (level - 1)), 1)
                     blit[0].dstSubresource { it.aspectMask(aspect).mipLevel(level).baseArrayLayer(0).layerCount(desc.layers) }
                     blit[0].dstOffsets(1).set(maxOf(1, desc.width shr level), maxOf(1, desc.height shr level), 1)
-                    vkCmdBlitImage(cmd, image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, blit, VK_FILTER_LINEAR)
+                    vkCmdBlitImage(cmd, image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, blit, filter)
                 }
                 // Every level but the last is TRANSFER_SRC now
                 transition(cmd, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, sampledLayout, 0, desc.mipLevels - 1)
@@ -280,19 +451,52 @@ internal class VkRhiTexture(
         }
     }
 
+    /** Reads [level] of [layer] back as the image stores it, rows top-down (tests and diagnostics). */
+    fun read(level: Int, layer: Int): ByteArray {
+        val w = maxOf(1, desc.width shr level)
+        val h = maxOf(1, desc.height shr level)
+        val n = w * h * VkTranslate.imageTexelSize(desc.format)
+        val staging = factory.allocator.buffer(n.toLong(), VK_BUFFER_USAGE_TRANSFER_DST_BIT, MemoryKind.HOST)
+        try {
+            core.oneShot { cmd ->
+                transition(cmd, sampledLayout, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL)
+                stackPush().use { s ->
+                    val region = VkBufferImageCopy.calloc(1, s)
+                    region[0].imageSubresource { it.aspectMask(aspect).mipLevel(level).baseArrayLayer(layer).layerCount(1) }
+                        .imageExtent { it.set(w, h, 1) }
+                    vkCmdCopyImageToBuffer(cmd, image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, staging.buffer, region)
+                }
+                transition(cmd, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, sampledLayout)
+            }
+            return ByteArray(n).also { MemoryUtil.memByteBuffer(staging.address, n).get(it) }
+        } finally {
+            staging.close()
+        }
+    }
+
     override fun close() {
         if (closed) return
         closed = true
-        layerViews.values.forEach { vkDestroyImageView(core.device, it, null) }
-        vkDestroySampler(core.device, vkSampler, null)
-        vkDestroyImageView(core.device, view, null)
-        vkDestroyImage(core.device, image, null)
-        vkFreeMemory(core.device, memory, null)
+        val views = layerViews.values.toList() + view
+        layerViews.clear()
+        core.destroyLaterOrNow {
+            views.forEach { vkDestroyImageView(core.device, it, null) }
+            allocation.close()
+        }
+    }
+
+    companion object {
+        fun viewType(type: TextureType) = when (type) {
+            TextureType.TEXTURE_2D -> VK_IMAGE_VIEW_TYPE_2D
+            TextureType.TEXTURE_2D_ARRAY -> VK_IMAGE_VIEW_TYPE_2D_ARRAY
+            TextureType.CUBE -> VK_IMAGE_VIEW_TYPE_CUBE
+        }
     }
 }
 
 /** Colour attachments plus optional depth; framebuffers are created per render pass and layer on first use. */
-internal class VkRhiRenderTarget(private val core: VkCore, desc: RenderTargetDesc) : RhiRenderTarget {
+internal class VkRhiRenderTarget(private val factory: VkResourceFactory, desc: RenderTargetDesc) : RhiRenderTarget {
+    private val core = factory.core
     override var desc: RenderTargetDesc = desc
         private set
     override val width: Int get() = desc.width
@@ -309,8 +513,8 @@ internal class VkRhiRenderTarget(private val core: VkCore, desc: RenderTargetDes
     }
 
     private fun allocate() {
-        colors = desc.colors.indices.map { VkRhiTexture(core, desc.colorTexture(it), attachment = true) }
-        depth = desc.depthTexture()?.let { VkRhiTexture(core, it, attachment = true) }
+        colors = desc.colors.indices.map { VkRhiTexture(factory, desc.colorTexture(it), attachment = true) }
+        depth = desc.depthTexture()?.let { VkRhiTexture(factory, it, attachment = true) }
     }
 
     override fun colorTexture(index: Int): RhiTexture = colors[index]
@@ -330,15 +534,15 @@ internal class VkRhiRenderTarget(private val core: VkCore, desc: RenderTargetDes
     }
 
     private fun release() {
-        framebuffers.values.forEach { vkDestroyFramebuffer(core.device, it, null) }
+        val fbs = framebuffers.values.toList()
         framebuffers.clear()
+        core.destroyLaterOrNow { fbs.forEach { vkDestroyFramebuffer(core.device, it, null) } }
         colors.forEach { it.close() }
         depth?.close()
     }
 
     override fun resize(width: Int, height: Int) {
         if (width == desc.width && height == desc.height) return
-        vkDeviceWaitIdle(core.device)
         release()
         desc = desc.copy(width = width, height = height)
         allocate()

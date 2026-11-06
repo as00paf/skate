@@ -26,6 +26,8 @@ lwjgl-tinyfd = { group = "org.lwjgl", name = "lwjgl-tinyfd" }
 # REN-13 Vulkan spike (opt-in backend): LWJGL bindings (BSD-3-Clause) and shaderc (Apache-2.0, GLSL -> SPIR-V)
 lwjgl-vulkan = { group = "org.lwjgl", name = "lwjgl-vulkan" }
 lwjgl-shaderc = { group = "org.lwjgl", name = "lwjgl-shaderc" }
+# VK-02: Vulkan Memory Allocator (AMD, MIT) through LWJGL (BSD-3-Clause)
+lwjgl-vma = { group = "org.lwjgl", name = "lwjgl-vma" }
 
 libbulletjme = { group = "com.github.stephengold", name = "Libbulletjme-Windows64", version.ref = "libbulletjme" }
 

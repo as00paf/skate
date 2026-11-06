@@ -40,7 +40,13 @@ class VulkanGeometryPassGpuTest {
     private val height = 720
     private val out = File("build/ren13").apply { mkdirs() }
 
-    private fun render(createDevice: () -> RhiDevice, gl: Boolean): ByteArray {
+    private fun render(
+        createDevice: () -> RhiDevice,
+        gl: Boolean,
+        sceneName: String? = null,
+        passes: (String) -> Boolean = { it == "GeometryPass" },
+        afterFrames: (Engine) -> Unit = {},
+    ): ByteArray {
         glfwDefaultWindowHints()
         glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE)
         if (gl) {
@@ -60,13 +66,14 @@ class VulkanGeometryPassGpuTest {
             engine.resizeFrameBuffer(width, height)
             val dir = kotlin.io.path.createTempDirectory("skate-ren13").toFile()
             check(ProjectManager(engine).createProject("Ren13", dir).isSuccess)
-            val main = engine.sceneManager.openScenes.first { it.name != "FeatureShowcase" }
+            val main = engine.sceneManager.openScenes.first { if (sceneName == null) it.name != "FeatureShowcase" else it.name == sceneName }
             engine.sceneManager.switchScene(main)
             engine.cameraManager.transform.translation.set(6f, 4f, 8f)
             engine.cameraManager.transform.lookAt(Vector3f(0f, 0.8f, 0f))
             // Only the geometry pass: no shadows, post-processing, debug, UI or picking on either backend
-            engine.renderer.renderGraph.getAllPasses().forEach { it.isEnabled = it.name == "GeometryPass" }
+            engine.renderer.renderGraph.getAllPasses().forEach { it.isEnabled = passes(it.name) }
             repeat(5) { engine.update(1f / 60f) }
+            afterFrames(engine)
 
             val pixels = ByteBuffer.allocateDirect(width * height * 4)
             device.readPixels(engine.renderer.frameBuffer.target, 0, IntRect(0, 0, width, height), PixelFormat.RGBA8, pixels)
@@ -121,6 +128,37 @@ class VulkanGeometryPassGpuTest {
         val vkColours = (0 until pixels step 97).map { vk[it * 4].toInt() * 65536 + vk[it * 4 + 1] * 256 + vk[it * 4 + 2] }.distinct().size
         assertTrue(vkColours > 50, "the Vulkan frame has content (not one flat colour)")
         assertTrue(within8 > pixels * 0.9, "at least 90% of pixels within 8/255 of the OpenGL frame:\n$report")
+    }
+
+    /**
+     * VK-02: every resource the passes create works on Vulkan. All passes but post-processing (its blit is VK-05) run
+     * on both showcase scenes, including shadow maps (layered depth), picking (RGB32F readback), particles, debug lines
+     * and the runtime UI (dynamic buffers). Parity of those passes is VK-03..06: the difference is reported, not asserted.
+     */
+    @Test
+    fun AllPassesButPostProcessing_RunOnVulkan() {
+        assumeTrue(RhiBackend.selected() == RhiBackend.VULKAN, "Vulkan spike is opt-in: set SKATE_RHI=vulkan")
+        assumeTrue(glfwInit(), "no GLFW")
+        assumeTrue(runCatching { VulkanDevice.create().close() }.isSuccess, "no Vulkan driver")
+        val report = StringBuilder()
+        for (scene in listOf("MainScene", "FeatureShowcase")) {
+            var picked = -1
+            val passes = { name: String -> name != "PostProcessPass" }
+            val gl = render({ OpenGlDevice.create() }, gl = true, sceneName = scene.takeIf { it != "MainScene" }, passes = passes)
+            val vk = render({ VulkanDevice.create() }, gl = false, sceneName = scene.takeIf { it != "MainScene" }, passes = passes) { engine ->
+                picked = engine.renderer.readPixel(0.5f, 0.5f)
+            }
+            var within8 = 0
+            for (p in 0 until width * height) {
+                val m = (0 until 3).maxOf { c -> abs((gl[p * 4 + c].toInt() and 0xFF) - (vk[p * 4 + c].toInt() and 0xFF)) }
+                if (m <= 8) within8++
+            }
+            report.append("%s: %.2f%% of pixels within 8/255 of OpenGL, picking id at centre %d\n".format(scene, 100.0 * within8 / (width * height), picked))
+            val colours = (0 until width * height step 97).map { vk[it * 4].toInt() * 65536 + vk[it * 4 + 1] * 256 + vk[it * 4 + 2] }.distinct().size
+            assertTrue(colours > 50, "$scene: the Vulkan frame has content")
+        }
+        println(report)
+        File(out, "all-passes.txt").writeText(report.toString())
     }
 
     /** Saves GL-order rows (bottom first) as an upright PNG. */

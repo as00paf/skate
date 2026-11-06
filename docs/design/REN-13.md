@@ -78,13 +78,17 @@ covers it). Other code that still reads `texId` is editor ImGui, which is OpenGL
 
 ## 5. What is missing for a full backend
 
+Update (VK-02, round 23): memory (VMA), staging uploads, shared samplers, reflection-derived descriptor layouts with
+per-frame pools, and per-frame uniform and vertex rings (versioned dynamic buffers) are done; the rows below marked
+"done" are kept for the record.
+
 | Gap | Why it matters | Estimate |
 |---|---|---|
 | Swapchain, presentation, window integration | The editor and game need a surface, a swapchain, resize and vsync; `Window` creates only GL today. | 3-4 days |
 | Frames in flight | The spike waits for the GPU after every pass. A real backend needs per-frame fences, command buffers and uniform rings, deferred deletion (REN-12 §6) and versioned dynamic vertex buffers: sprite batches, debug lines, particles and UI rewrite buffers between draws in one pass. | 4-5 days |
 | ImGui on Vulkan | imgui-java ships no `ImGuiImplVulkan`. Either write an ImGui renderer on the RHI (portable, also removes the last GL exception) or bind a Vulkan backend natively. | 4-6 days |
-| Descriptor management for named uniforms | One set per draw plus a full `Params` copy works but scales poorly: use dynamic-offset UBOs, cache sets by bound resources, or move hot uniforms to push constants. | 3 days |
-| Memory allocator | One `vkAllocateMemory` per resource hits `maxMemoryAllocationCount` in big scenes; use VMA (`lwjgl-vma`) or a simple suballocator. | 2 days |
+| (done, VK-02) Descriptor management for named uniforms | One set per draw plus a full `Params` copy works but scales poorly: use dynamic-offset UBOs, cache sets by bound resources, or move hot uniforms to push constants. | 3 days |
+| (done, VK-02) Memory allocator | One `vkAllocateMemory` per resource hits `maxMemoryAllocationCount` in big scenes; use VMA (`lwjgl-vma`) or a simple suballocator. | 2 days |
 | Shadows | Layered depth targets, per-layer framebuffers, depth clamp and depth bias are implemented but untested; the shadow pass was disabled in the comparison. | 2 days |
 | Post-processing | Render targets sampled as textures are stored top row first because of the Y flip, so GL-convention UVs read them upside down. A convention is needed: flip UVs when sampling targets, or flip with the projection instead of the viewport. Also `blit`. | 3-4 days |
 | Remaining passes | Picking readback through RGBA32F, debug lines (wide lines are optional in Vulkan), UI scissors, particles, thumbnails. | 2-3 days |
