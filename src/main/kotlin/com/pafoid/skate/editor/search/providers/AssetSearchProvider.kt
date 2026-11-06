@@ -5,7 +5,7 @@ import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.editor.search.BaseSearchProvider
 import com.pafoid.skate.editor.search.data.SearchCategory
 import com.pafoid.skate.editor.search.data.SearchResult
-import com.pafoid.skate.engine.assets.Assets
+import com.pafoid.skate.editor.systems.FileSystemScanner
 import com.pafoid.skate.engine.core.LoggerService
 import com.pafoid.skate.game.prefabs.PrefabCatalog
 import com.pafoid.skate.game.prefabs.PrefabEntry
@@ -13,190 +13,95 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
 
-class AssetSearchProvider(private val logger: LoggerService) : BaseSearchProvider() {
+/**
+ * Finds asset files of the open project by file name (EDT-61): models, textures, animations, sounds, prefabs and
+ * scripts anywhere under [projectDirectory], skipping the folders the Project window skips. Also lists the built-in
+ * prefab catalog. Opening a file result asks [reveal] to show it in the Project window.
+ *
+ * @param projectDirectory Root of the open project; null when no project is open (only the catalog is searched).
+ * @param reveal Shows an absolute file path in the Project window.
+ */
+class AssetSearchProvider(
+    private val logger: LoggerService,
+    private val projectDirectory: () -> File? = { null },
+    private val reveal: (String) -> Unit = {},
+) : BaseSearchProvider() {
 
     override val category: SearchCategory = SearchCategory.ASSET_MODEL
 
-    private val textureExtensions = FileType.TEXTURE.extensions
-    private val modelExtensions = FileType.MODEL_3D.extensions
-    private val animationExtensions = FileType.ANIMATION.extensions
-    private val soundExtensions = FileType.SOUND.extensions
+    override val categories: Set<SearchCategory> = setOf(
+        SearchCategory.ASSET_MODEL, SearchCategory.ASSET_TEXTURE, SearchCategory.ASSET_ANIMATION,
+        SearchCategory.ASSET_SOUND, SearchCategory.ASSET_PREFAB, SearchCategory.ASSET_SCRIPT,
+    )
 
     override suspend fun search(query: String): List<SearchResult> {
         if (query.isBlank()) return emptyList()
-
-        return withContext(Dispatchers.Default) {
-            val results = mutableListOf<SearchResult>()
-
-            results.addAll(searchTextures(query))
-            results.addAll(searchModels(query))
-            results.addAll(searchAnimations(query))
-            results.addAll(searchSounds(query))
-            results.addAll(searchPrefabs(query))
-
-            results.sortedByDescending { it.relevanceScore }
-        }
+        val files = withContext(Dispatchers.IO) { searchProjectFiles(query) }
+        return (files + searchPrefabCatalog(query)).sortedByDescending { it.relevanceScore }
     }
 
     override fun navigate(result: SearchResult) {
-        val assetPath = result.metadata["path"] as? String ?: return
-        val assetType = result.metadata["type"] as? String ?: return
-
-        logger.logEditor("Asset selected: $assetPath ($assetType)")
-    }
-
-    private suspend fun searchTextures(query: String): List<SearchResult> = withContext(Dispatchers.IO) {
-        val results = mutableListOf<SearchResult>()
-        val texturesDir = File(Assets.Folders.TEXTURES)
-
-        if (texturesDir.exists()) {
-            texturesDir.walkTopDown()
-                .filter {
-                    it.isFile && textureExtensions.contains(it.extension.lowercase())
-                }
-                .forEach { file ->
-                    val score = calculateRelevance(file.name, query)
-                    if (score > 0.0f) {
-                        results.add(createTextureResult(file, score))
-                    }
-                }
+        val path = result.metadata["path"] as? String ?: return
+        if (result.metadata["inProject"] == true) {
+            reveal(path)
+        } else {
+            logger.logEditor("Asset selected: $path (${result.metadata["type"]})")
         }
-
-        results
     }
 
-    private suspend fun searchModels(query: String): List<SearchResult> = withContext(Dispatchers.IO) {
-        val results = mutableListOf<SearchResult>()
-        val modelsDir = File("assets/obj")
-
-        if (modelsDir.exists()) {
-            modelsDir.walkTopDown()
-                .filter { it.isFile && modelExtensions.contains(it.extension.lowercase()) }
-                .forEach { file ->
-                    val score = calculateRelevance(file.name, query)
-                    if (score > 0.0f) {
-                        results.add(createModelResult(file, score))
-                    }
-                }
-        }
-
-        results
-    }
-
-    private suspend fun searchAnimations(query: String): List<SearchResult> = withContext(Dispatchers.IO) {
-        val results = mutableListOf<SearchResult>()
-        val animationsDir = File(Assets.Folders.ANIMATIONS)
-
-        if (animationsDir.exists()) {
-            animationsDir.walkTopDown()
-                .filter { it.isFile && animationExtensions.contains(it.extension.lowercase()) }
-                .forEach { file ->
-                    val score = calculateRelevance(file.name, query)
-                    if (score > 0.0f) {
-                        results.add(createAnimationResult(file, score))
-                    }
-                }
-        }
-
-        results
-    }
-
-    private suspend fun searchSounds(query: String): List<SearchResult> = withContext(Dispatchers.IO) {
-        val results = mutableListOf<SearchResult>()
-        val soundsDir = File("assets/sounds")
-
-        if (soundsDir.exists()) {
-            soundsDir.walkTopDown()
-                .filter { it.isFile && soundExtensions.contains(it.extension.lowercase()) }
-                .forEach { file ->
-                    val score = calculateRelevance(file.name, query)
-                    if (score > 0.0f) {
-                        results.add(createSoundResult(file, score))
-                    }
-                }
-        }
-
-        results
-    }
-
-    private suspend fun searchPrefabs(query: String): List<SearchResult> = withContext(Dispatchers.Default) {
-        val results = mutableListOf<SearchResult>()
-
-        PrefabCatalog.entries.forEach { prefab ->
-            val score = calculateRelevance(prefabName(prefab), query)
-            if (score > 0.0f) {
-                results.add(createPrefabResult(prefab, score))
+    /** Matches on the file name with and without its extension, so "james" ranks james.glb as a prefix match. */
+    internal fun searchProjectFiles(query: String): List<SearchResult> {
+        val root = projectDirectory() ?: return emptyList()
+        if (!root.isDirectory) return emptyList()
+        val results = ArrayList<SearchResult>()
+        root.walkTopDown()
+            .onEnter { it == root || it.name !in FileSystemScanner.SKIP_NAMES }
+            .filter { it.isFile }
+            .forEach { file ->
+                val kind = kindOf(file) ?: return@forEach
+                val score = maxOf(calculateRelevance(file.name, query), calculateRelevance(file.nameWithoutExtension, query))
+                if (score > 0f) results += fileResult(file, kind, score)
             }
-        }
-
-        results
+        return results
     }
 
-    private fun createTextureResult(file: File, score: Float): SearchResult {
+    private fun searchPrefabCatalog(query: String): List<SearchResult> = PrefabCatalog.entries.mapNotNull { prefab ->
+        val score = calculateRelevance(prefabName(prefab), query)
+        if (score > 0f) createPrefabResult(prefab, score) else null
+    }
+
+    /** Asset kinds the search finds, by extension (as the Project window resolves them). */
+    internal enum class Kind(val type: String, val category: SearchCategory, val subcategory: String, val icon: String, val extensions: List<String>) {
+        MODEL("model", SearchCategory.ASSET_MODEL, "Model", Icons.CUBE, FileType.MODEL_3D.extensions),
+        TEXTURE("texture", SearchCategory.ASSET_TEXTURE, "Texture", Icons.CAMERA, FileType.TEXTURE.extensions),
+        ANIMATION("animation", SearchCategory.ASSET_ANIMATION, "Animation", Icons.PLAY, FileType.ANIMATION.extensions),
+        SOUND("sound", SearchCategory.ASSET_SOUND, "Sound", Icons.MUSIC, FileType.SOUND.extensions),
+        PREFAB("prefab", SearchCategory.ASSET_PREFAB, "Prefab", Icons.GEAR, FileType.PREFAB.extensions),
+        SCRIPT("script", SearchCategory.ASSET_SCRIPT, "Script", Icons.FILE_CODE, FileType.SCRIPT_KOTLIN.extensions + FileType.SCRIPT_JAVA.extensions),
+    }
+
+    private fun kindOf(file: File): Kind? {
+        val ext = file.extension.lowercase()
+        return Kind.entries.firstOrNull { ext in it.extensions }
+    }
+
+    private fun fileResult(file: File, kind: Kind, score: Float): SearchResult {
+        val root = projectDirectory()
+        val relative = root?.let { file.relativeTo(it).invariantSeparatorsPath } ?: file.path
         return SearchResult(
-            id = "asset_texture_${file.absolutePath}",
+            id = "asset_${kind.type}_${file.absolutePath}",
             displayName = file.name,
-            category = SearchCategory.ASSET_TEXTURE,
-            subcategory = "Texture",
-            description = file.absolutePath,
-            icon = Icons.CAMERA,
+            category = kind.category,
+            subcategory = kind.subcategory,
+            description = relative,
+            icon = kind.icon,
             relevanceScore = score,
             metadata = mapOf(
                 "path" to file.absolutePath,
-                "type" to "texture",
-                "extension" to file.extension
-            )
-        )
-    }
-
-    private fun createModelResult(file: File, score: Float): SearchResult {
-        return SearchResult(
-            id = "asset_model_${file.absolutePath}",
-            displayName = file.name,
-            category = SearchCategory.ASSET_MODEL,
-            subcategory = "Model",
-            description = file.absolutePath,
-            icon = Icons.CUBE,
-            relevanceScore = score,
-            metadata = mapOf(
-                "path" to file.absolutePath,
-                "type" to "model",
-                "extension" to file.extension
-            )
-        )
-    }
-
-    private fun createAnimationResult(file: File, score: Float): SearchResult {
-        return SearchResult(
-            id = "asset_animation_${file.absolutePath}",
-            displayName = file.name,
-            category = SearchCategory.ASSET_ANIMATION,
-            subcategory = "Animation",
-            description = file.absolutePath,
-            icon = Icons.PLAY,
-            relevanceScore = score,
-            metadata = mapOf(
-                "path" to file.absolutePath,
-                "type" to "animation",
-                "extension" to file.extension
-            )
-        )
-    }
-
-    private fun createSoundResult(file: File, score: Float): SearchResult {
-        return SearchResult(
-            id = "asset_sound_${file.absolutePath}",
-            displayName = file.name,
-            category = SearchCategory.ASSET_SOUND,
-            subcategory = "Sound",
-            description = file.absolutePath,
-            icon = Icons.MUSIC,
-            relevanceScore = score,
-            metadata = mapOf(
-                "path" to file.absolutePath,
-                "type" to "sound",
-                "extension" to file.extension
-            )
+                "type" to kind.type,
+                "extension" to file.extension,
+                "inProject" to true,
+            ),
         )
     }
 
@@ -220,6 +125,4 @@ class AssetSearchProvider(private val logger: LoggerService) : BaseSearchProvide
             )
         )
     }
-
 }
-
