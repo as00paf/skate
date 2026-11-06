@@ -15,9 +15,15 @@ abstract class AssetBrowserTab(
     protected val assetsManager: AssetsManager,
     protected val stringManager: StringManager
 ) {
-    protected val items = mutableListOf<File>()
+    /** Listed files; replaced whole by [refreshAssets] on an IO worker, so the UI never iterates a list being filled. */
+    @Volatile
+    protected var items: List<File> = emptyList()
+
+    private var scannedProject: File? = null
+    private var scanned = false
 
     open fun imgui(label:String, searchText: ImString) {
+        refreshOnProjectChange()
         renderHeader(label, searchText)
 
         val availableWidth = ImGui.getContentRegionAvailX()
@@ -33,6 +39,21 @@ abstract class AssetBrowserTab(
             }
             ImGui.endTable()
         }
+    }
+
+    /** Rescans when a project is opened, created or closed after the tab was built (the tabs exist before it). */
+    protected fun refreshOnProjectChange() {
+        val root = assetsManager.paths.projectRoot
+        if (scanned && root == scannedProject) return
+        scanned = true
+        scannedProject = root
+        refreshAssets()
+    }
+
+    /** Lists the [type] files of the open project (or the engine assets) on an IO worker. */
+    protected fun scan(type: BrowserAssetType, runIO: (() -> Unit) -> Unit) {
+        val root = AssetDiscovery.root(assetsManager.paths.projectRoot)
+        runIO { items = AssetDiscovery.discover(root, type) }
     }
 
     protected fun renderHeader(label: String, searchText: ImString) {

@@ -22,6 +22,7 @@ import org.graalvm.polyglot.HostAccess
 import org.graalvm.polyglot.PolyglotException
 import org.graalvm.polyglot.Source
 import org.graalvm.polyglot.Value
+import org.graalvm.polyglot.io.IOAccess
 import org.joml.Vector3f
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
@@ -97,7 +98,7 @@ class TypeScriptHost : ScriptHost {
         .engine(engine)
         .allowHostAccess(hostAccess)
         .allowHostClassLookup { false }
-        .allowIO(false)
+        .allowIO(IOAccess.NONE)
         .allowCreateThread(false)
         .allowNativeAccess(false)
         .allowEnvironmentAccess(org.graalvm.polyglot.EnvironmentAccess.NONE)
@@ -202,7 +203,7 @@ class TypeScriptTranspiler(engine: Engine, hostAccess: HostAccess) : AutoCloseab
         .engine(engine)
         .allowHostAccess(hostAccess)
         .allowHostClassLookup { false }
-        .allowIO(false)
+        .allowIO(IOAccess.NONE)
         .build()
 
     private val transpileFn: Value by lazy {

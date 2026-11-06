@@ -9,6 +9,8 @@ import com.pafoid.skate.engine.utils.ExportResult
 
 sealed class ProjectEvent(eventName: String) : Event(eventName) {
     data class Opened(val project: Project) : ProjectEvent("editor.project_opened")
+    /** Published (synchronously) before a project's scenes are saved and closed: Play stops here (EDT-45). */
+    data class Closing(val project: Project) : ProjectEvent("editor.project_closing")
     data class Closed(val project: Project) : ProjectEvent("editor.project_closed")
     data class Created(val project: Project) : ProjectEvent("editor.project_created")
     data class Saved(val project: Project) : ProjectEvent("editor.project_saved")

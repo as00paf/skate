@@ -21,7 +21,6 @@ class SceneVisualsGizmo(private val debugRenderer: DebugRenderer) {
     var visible = true
 
     private val cameraColor = Vector3f(0.85f, 0.85f, 0.9f)
-    private val lightColor = Vector3f(1f, 0.9f, 0.3f)
     private val selectedColor = Vector3f(1f, 0.55f, 0f)
 
     private fun hasCameraOrLight(go: GameObject): Boolean =
@@ -46,10 +45,21 @@ class SceneVisualsGizmo(private val debugRenderer: DebugRenderer) {
     /** Icon radius that stays the same on screen: a fraction of the gizmo size for the current camera distance. */
     fun pickRadius(iconSize: Float) = iconSize * 0.9f
 
-    fun draw(scene: Scene, camera: CameraComponent, cameraPosition: Vector3f, iconSizeAt: (Vector3f) -> Float) {
+    /**
+     * Draws all camera/light visuals. Icons lie in the plane of [basis] (the camera axes of the view they will be
+     * rendered with) and are [iconSizeAt] world units big, so they keep their shape and screen size under any camera
+     * motion. Light icons and direction arrows take the light's color; selection adds a ring around the icon.
+     */
+    fun draw(
+        scene: Scene,
+        camera: CameraComponent,
+        cameraPosition: Vector3f,
+        iconSizeAt: (Vector3f) -> Float,
+        basis: EditorVisuals.ViewBasis = EditorVisuals.viewBasis(camera.view),
+    ) {
         if (!visible) return
-        val right = Vector3f(camera.view.m00(), camera.view.m10(), camera.view.m20())
-        val up = Vector3f(camera.view.m01(), camera.view.m11(), camera.view.m21())
+        val right = basis.right
+        val up = basis.up
         val selected = scene.selectedGameObjects
         for (go in visuals(scene)) {
             val pos = position(go)
@@ -57,6 +67,12 @@ class SceneVisualsGizmo(private val debugRenderer: DebugRenderer) {
             val isSelected = go in selected
             val size = iconSizeAt(pos)
             fun color(base: Vector3f) = if (isSelected) selectedColor else base
+            fun lightIcon(lightColor: Vector3f): Vector3f {
+                val tint = EditorVisuals.lightTint(lightColor)
+                draw(EditorVisuals.lightIcon(pos, right, up, size), tint)
+                if (isSelected) draw(EditorVisuals.selectionRing(pos, right, up, size), selectedColor)
+                return tint
+            }
 
             go.getComponent<CameraComponent>()?.let { cam ->
                 val icon = EditorVisuals.cameraIcon(pos, right, up, size)
@@ -70,18 +86,18 @@ class SceneVisualsGizmo(private val debugRenderer: DebugRenderer) {
                 }
             }
             go.getComponent<PointLightComponent>()?.let { light ->
-                draw(EditorVisuals.lightIcon(pos, right, up, size), color(lightColor))
-                if (isSelected) draw(EditorVisuals.rangeSphere(pos, EditorVisuals.pointLightRange(light.constant, light.linear, light.quadratic)), color(lightColor))
+                lightIcon(light.color)
+                if (isSelected) draw(EditorVisuals.rangeSphere(pos, EditorVisuals.pointLightRange(light.constant, light.linear, light.quadratic)), selectedColor)
             }
             go.getComponent<SpotLightComponent>()?.let { light ->
-                draw(EditorVisuals.lightIcon(pos, right, up, size), color(lightColor))
+                val tint = lightIcon(light.color)
                 val range = EditorVisuals.pointLightRange(light.constant, light.linear, light.quadratic)
-                draw(EditorVisuals.arrow(pos, light.direction, size * 3f), color(lightColor))
-                if (isSelected) draw(EditorVisuals.spotCone(pos, light.direction, light.outerCutOff, range.coerceAtMost(size * 12f)), color(lightColor))
+                draw(EditorVisuals.arrow(pos, light.direction, size * 3f), tint)
+                if (isSelected) draw(EditorVisuals.spotCone(pos, light.direction, light.outerCutOff, range.coerceAtMost(size * 12f)), selectedColor)
             }
             go.getComponent<DirectionalLightComponent>()?.let { light ->
-                draw(EditorVisuals.lightIcon(pos, right, up, size), color(lightColor))
-                draw(EditorVisuals.arrow(pos, light.direction, size * 4f), color(lightColor))
+                val tint = lightIcon(light.color)
+                draw(EditorVisuals.arrow(pos, light.direction, size * 4f), tint)
             }
         }
     }

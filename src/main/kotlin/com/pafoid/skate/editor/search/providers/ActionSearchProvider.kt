@@ -14,7 +14,7 @@ import com.pafoid.skate.editor.search.data.EditorAction
 import com.pafoid.skate.editor.search.data.SearchCategory
 import com.pafoid.skate.editor.search.data.SearchResult
 import com.pafoid.skate.engine.core.Engine
-import com.pafoid.skate.engine.events.EngineAction
+import com.pafoid.skate.editor.events.PlayModeAction
 import com.pafoid.skate.engine.events.SceneAction
 import com.pafoid.skate.engine.render.data.LightType
 
@@ -236,13 +236,12 @@ class ActionSearchProvider(
     }
 
     private fun startSimulation() {
-        eventSystem.publish(EngineAction.SetRuntimePlaying(true))
+        eventSystem.publish(PlayModeAction.Play)
         logger.logEditor("Simulation start requested")
     }
 
     private fun stopSimulation() {
-        eventSystem.publish(EngineAction.SetRuntimePlaying(false))
-        eventSystem.publish(com.pafoid.skate.editor.events.ViewportAction.StopSimulation)
+        eventSystem.publish(PlayModeAction.Stop)
         logger.logEditor("Simulation stop requested")
     }
 
