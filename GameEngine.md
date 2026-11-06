@@ -276,10 +276,9 @@ Round 27+ goals: a fuller skate demo with camera modes and standard control sche
   - Do: Replace the Restart button in the MainScene HUD with a Camera button that cycles first-person, third-person and fixed cameras (also bound to an input action).
   - Done when: The button and the action cycle the three cameras in editor Play and the exported game; tests cover the cycle.
   - Deps: GPL-20
-- [~] @skate-gameplay **GPL-23** `P2` Fuller skate demo: design note
-  - Do: Write `docs/design/GPL-23.md`: skatepark layout, trick set, combo/score system, session goals and HUD for the MainScene demo.
-  - Done when: The human approves the note.
-  - Deps: GPL-21
+- [~] @skate-gameplay **GPL-23** `P2` Fuller skate demo — design approved with changes 2026-11-06 (`docs/design/GPL-23.md`)
+  - Do: Human decisions: 40 × 40 m park with the four zones and the new prefabs (Euro-gap deck); combo chaining (link window, manual linking, lose on bail) but **no points/score yet**; **Free skate only** (no Session mode, no timer, no goals yet); control hints on screen with a pause-menu switch; the third camera mode becomes spot cameras that **follow the skater** (no static fixed camera); one HUD for editor Play and the exported game.
+  - Done when: MainScene is the new park, skateable end to end in both hosts; combos chain and break correctly; tests.
 - [ ] **GPL-24** `P3` Game systems and character customization: design note
   - Do: Write `docs/design/GPL-24.md`: reusable inventory, combat, interaction/pickup systems, and character customization (clothes, tattoos, headwear, eyewear via attachment points, mesh swaps and material layers).
   - Done when: The human approves the note.
@@ -372,7 +371,7 @@ Round 27+ goals (human, 2026-11-06): fix editor bugs, make every window, dialog 
 - [x] **EDT-61** `P0` Search Anywhere does not find asset files (e.g. `james.glb`)
   - Do: Found by the human testing PR #29. Asset files (models, textures, sounds, animations, prefabs, scripts) must be searchable by file name; opening a result selects/reveals it in the Project window or Asset Browser.
   - Done when: Searching "james" finds `james.glb`; tests on the asset search provider.
-- [~] @skate-physics **EDT-63** `P0` Switching scenes during Play stops Play
+- [x] **EDT-63** `P0` Switching scenes during Play stops Play
   - Do: Human request (PR #29 testing): when the user changes the scene while Play runs (scene tab, Open Scene, Project/Asset double-click), stop Play first (restoring every scene, EDT-45) and then switch. Scene switches made by game scripts during Play keep playing.
   - Done when: A user scene switch during Play ends in Edit mode with all scenes restored; script switches still work; tests.
 - [x] **EDT-62** `P1` Delete confirmation for game objects and children
