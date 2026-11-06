@@ -155,18 +155,26 @@ Round 27+ goals: the Asset Browser shows every asset type, one assets folder, ex
 - [ ] **AST-18** `P3` Protocol Buffers: design note
   - Do: Write `docs/design/AST-18.md`. Proposed: protobuf only for runtime data (packed exports, network messages). Scenes, prefabs and settings stay JSON so git diffs/merges (EDT-60) stay readable. Measure load time/size gains first.
   - Done when: The human approves the note.
-- [~] @skate-assets **AST-19** `P2` Full Blender support: design note
-  - Do: Write `docs/design/AST-19.md`: `.blend` import via headless Blender → glTF, re-import when the `.blend` is saved, materials/actions mapping, and an optional "Send to Skate" Blender add-on.
-  - Done when: The human approves the note.
-
+- [ ] **AST-19** `P2` Full Blender support — design approved 2026-11-06 (`docs/design/AST-19.md`)
+  - Do: Implement the note. Human decisions: commit the generated GLBs; minimum Blender **4.2 LTS**; an action deleted in Blender keeps its generated clip and warns; "Send to Skate" add-on later. Lead: action mode default `FILES`. Blender is installed on the dev machine; test file `assets/obj/baseball-cap.blend`.
+  - Done when: Dropping `baseball-cap.blend` into a project's Assets gives a textured model that re-imports when the .blend is saved; GUIDs survive; tests.
 - [ ] **AST-20** `P2` Classify FBX files as model or animation by content
   - Do: From AST-16: `.fbx` is always classed as `FileType.ANIMATION`, so FBX models show up in the Animations tab and store packs with FBX models cannot be imported as models. Inspect the file (meshes vs. animations only) and classify it accordingly; a file with both counts as a model with clips.
   - Done when: FBX models appear as models, animation-only FBX as animations; tests with fixture files.
 
-- [~] @skate-animation **AST-21** `P2` Recognise `.skanim` clips in the editor and exports
+- [x] **AST-21** `P2` Recognise `.skanim` clips in the editor and exports
   - Do: From ANI-13 (lead-assigned to skate-animation, AST/EDT review): add `skanim` to `FileType.ANIMATION` (Asset Browser, search), register it in `AssetMeta`/`AssetPaths` and in export packing.
   - Done when: A `.skanim` shows in the Animations tab, can be assigned, and is packed in an export; tests.
   - Deps: ANI-13
+
+- [~] @skate-assets **AST-22** `P1` Model texture paths relative to the model file; packing follows glTF URIs
+  - Do: From the AST-16a review: `AssimpLoader` resolves texture URIs against the working directory, so a glTF with textures in a subfolder (e.g. Poly Haven `textures/`) loads untextured. Resolve URIs relative to the model file and through `AssetPaths`/the pack; make `ReferenceCollector` follow glTF `buffers[].uri`/`images[].uri`; have the Asset Browser rescan on `FileSystemChangedEvent`.
+  - Done when: An imported Poly Haven glTF renders textured in the editor and in an exported game; tests load and pack such a model.
+
+- [ ] **AST-23** `P0` Asset Browser tab switch blocks the UI: load assets off the main thread
+  - Do: Found by the human testing PR #29. Discovery and thumbnail loading in the Asset Browser tabs run on the UI thread. Move file discovery and image decoding to `JobSystem` IO with placeholders, upload textures on main in small batches, cache per tab.
+  - Done when: Switching tabs never stalls a frame noticeably on the default project; tests on the async discovery/cache logic.
+
 
 ### ECS — `ECS` (`skate-ecs`)
 
@@ -204,6 +212,10 @@ Round 27+ goals: a Jolt backend selectable per project, a terrain heightfield co
   - Done when: The human approves the note.
   - Deps: PHY-17
 
+- [ ] **PHY-20** `P1` Ship Bullet's release native instead of SpDebug
+  - Do: From the PHY-17 benchmark: `build.gradle.kts` uses libbulletjme's `SpDebug` classifier, so the editor and exported games run Bullet's debug build. Switch to the release single-precision classifier (keep debug only for tests if useful), update `verify-game-jar.sh`, re-run the benchmark.
+  - Done when: Exports ship the release native; physics suite green; benchmark numbers updated in `docs/design/PHY-17.md`.
+
 ### Animation — `ANI` (`skate-animation`)
 
 Round 27+ goals: an animation authoring tool and animation from video.
@@ -221,7 +233,7 @@ Round 27+ goals: an animation authoring tool and animation from video.
   - Do: ANI-12 §2.1: curve editor (tangent modes) and cleanup tools (resample, reduction, smoothing, foot-lock, mirror, trim, loop seam).
   - Done when: The tools work on a mocap clip in the editor; core logic tested.
   - Deps: ANI-14
-- [~] @skate-animation **ANI-16** `P2` Retargeter rest-pose compensation
+- [x] **ANI-16** `P2` Retargeter rest-pose compensation
   - Do: ANI-12 §3.4: compensate rest-pose differences (T-pose vs A-pose) per bone in `Retargeter`.
   - Done when: A T-pose source retargets cleanly onto the skater rig; tests.
 - [ ] **ANI-17** `P2` Video to animation with MediaPipe (local files)
@@ -276,6 +288,10 @@ Round 27+ goals: menu parity between the editor and the game, and a map view.
   - Do: Minimap widget and a full-screen map (top-down render or generated texture, player marker, POI markers), demoed in the showcase.
   - Done when: The map shows the player's live position; tests cover the world↔map transform.
 
+- [~] @skate-animation **GUI-14** `P0` Esc still closes the exported game instead of opening the pause menu
+  - Do: Found by the human testing PR #29 (GUI-12 did not fix it). Find what closes the window on Esc in the exported game (e.g. `engine/core/WindowController.kt` `glfwSetWindowShouldClose`, a GLFW key callback, or `ui.cancel` with no handler) and route Esc to the pause menu exactly as in editor Play. Lead-assigned; skate-gameui reviews.
+  - Done when: Esc in the exported game opens the pause menu and Esc again resumes; Quit is the only way to close from the menu; test on the key path.
+
 ### Scripting — `SCR` (`skate-scripting`)
 
 Scripting needs to be implemented. Kotlin Script is the primary language; TypeScript and maybe Lua come later.
@@ -311,7 +327,7 @@ Round 27+ goals (human, 2026-11-06): fix editor bugs, make every window, dialog 
   - Do: Find hardcoded UI text and keys missing from `assets/strings/**` (all locales) and fix them. Extend the key test so any missing key or hardcoded label fails.
   - Done when: No raw keys or missing strings in the editor; the test enforces it.
 - [x] **EDT-51** `P1` Editor consistency audit: design note — approved 2026-11-06 (human decisions + lead approval of the chunk plan, `docs/design/EDT-51.md`)
-- [~] @skate-editor **EDT-52** `P1` Apply the editor consistency standard
+- [~] @skate-editor @skate-tooling @skate-qa @skate-ecs @skate-gameui @skate-scripting @skate-audio **EDT-52** `P1` Apply the editor consistency standard (A done; B–H in progress)
   - Do: Apply EDT-51 in the chunks of `docs/design/EDT-51.md` §5: A (foundation, alone, first), then B scene, C project & assets, D debug, E settings dialogs, F modals & palette, G menus, H domain windows (AUD, SCR) in parallel, then I input-testing move (INP, after E). Chunk A: skate-editor.
   - Done when: Every item in the EDT-51 inventory meets the standard; a test checks windows register header icon, help and context menu.
   - Deps: EDT-51
@@ -341,13 +357,21 @@ Round 27+ goals (human, 2026-11-06): fix editor bugs, make every window, dialog 
   - Do: Design note first. Templates (Empty, Skate game, Feature Showcase, Tetris, Marble Run, later demos), which separates the skate game from the showcase. Settings: target FPS/uncapped, physics backend (Bullet, Simple, Jolt once PHY-17 lands), graphics backend (exists), include AI agent/skill files, splash screen image. Templates come from skate-tooling.
   - Done when: The human approves the design; each template creates a project that opens and runs; tests for the template registry and settings.
   - Deps: EDT-56, AST-14
-- [~] @skate-editor **EDT-60** `P2` Git version control: design note
-  - Do: Write `docs/design/EDT-60.md`: a JGit-based panel (init, status, diff, commit, branch, pull/push), a project `.gitignore`, and authentication dialogs (GitHub device flow, OS credential manager, SSH keys). The editor never stores raw tokens in project files.
-  - Done when: The human approves the note.
-
----
-
+- [ ] **EDT-60** `P2` Git version control — approved 2026-11-06 (`docs/design/EDT-60.md`)
+  - Do: Phase 0 (ECS/AST): persistent GameObject ids so an unchanged scene saves byte-identical; load→save→load→save test on MainScene and the Feature Showcase. Phase 1 (EDT): local repository panel with JGit (init, status, diff, commit, history, branches, discard, conflict-safe loading; no Git install needed). Conflicts: whole-file "Keep mine / Take theirs" for now (human). Human decisions for later phases: GitHub sign-in supports **both** browser sign-in (a registered "Skate" OAuth app, set up with the human when phase 2 starts) and pasting a personal access token; **Git LFS on by default** for new projects (models, textures, audio).
+  - Done when: Phase 1 commits and diffs a project locally; tests.
 ## Testing & tooling
+
+- [ ] **EDT-61** `P0` Search Anywhere does not find asset files (e.g. `james.glb`)
+  - Do: Found by the human testing PR #29. Asset files (models, textures, sounds, animations, prefabs, scripts) must be searchable by file name; opening a result selects/reveals it in the Project window or Asset Browser.
+  - Done when: Searching "james" finds `james.glb`; tests on the asset search provider.
+- [~] @skate-physics **EDT-63** `P0` Switching scenes during Play stops Play
+  - Do: Human request (PR #29 testing): when the user changes the scene while Play runs (scene tab, Open Scene, Project/Asset double-click), stop Play first (restoring every scene, EDT-45) and then switch. Scene switches made by game scripts during Play keep playing.
+  - Done when: A user scene switch during Play ends in Edit mode with all scenes restored; script switches still work; tests.
+- [ ] **EDT-62** `P1` Delete confirmation for game objects and children
+  - Do: Human request: deleting a GameObject (Hierarchy, Viewport, Delete key) shows the standard `EditorModal` confirmation naming the object and how many children it has; Esc = Cancel; a "Don't ask again" option tied to the EDT-51 §4.1 "Ask before deleting" setting.
+  - Done when: Every delete path confirms first; undo still restores; tests on the confirmation state.
+
 
 ### Tooling & samples — `TLG` (`skate-tooling`)
 
