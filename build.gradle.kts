@@ -44,6 +44,10 @@ dependencies {
     implementation(libs.lwjgl.opengl) { artifact { classifier = lwjglNatives } }
     implementation(libs.lwjgl.stb) { artifact { classifier = lwjglNatives } }
     implementation(libs.lwjgl.tinyfd) { artifact { classifier = lwjglNatives } }
+    // REN-13 Vulkan spike: Vulkan needs no native jar on Windows (it loads the system vulkan-1.dll)
+    implementation(libs.lwjgl.vulkan)
+    implementation(libs.lwjgl.shaderc)
+    implementation(libs.lwjgl.shaderc) { artifact { classifier = lwjglNatives } }
     
     // Bullet Physics
     implementation(libs.libbulletjme)
