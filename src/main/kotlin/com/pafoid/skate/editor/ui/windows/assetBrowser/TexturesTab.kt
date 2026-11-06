@@ -3,10 +3,8 @@ package com.pafoid.skate.editor.ui.windows.assetBrowser
 import com.pafoid.skate.editor.imgui.tipped
 import com.pafoid.skate.editor.imgui.contextPopupId
 import com.pafoid.skate.editor.events.ViewportAction
-import com.pafoid.skate.editor.data.FileType
 import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.editor.systems.UndoRedoManager
-import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.core.StringManager
 import com.pafoid.skate.engine.ecs.components.RenderComponent
@@ -20,10 +18,6 @@ class TexturesTab(
     private val engine: Engine,
     private val undoRedoManager: UndoRedoManager,
 ) : AssetBrowserTab(engine.assetsManager, stringManager) {
-
-    init {
-        refreshAssets()
-    }
 
     override fun renderFileItem(file: File) {
         val size = 80f
@@ -95,15 +89,5 @@ class TexturesTab(
         engine.logger.logEditor("Applied texture ${texturePath} to ${selectedObject.name}")
     }
 
-    override fun refreshAssets() {
-        engine.jobSystem.runIO {
-            items.clear()
-            val texturesDir = File(Assets.Folders.TEXTURES)
-            if (texturesDir.exists()) {
-                items.addAll(texturesDir.walkTopDown().filter {
-                    it.isFile && FileType.TEXTURE.extensions.contains(it.extension) && assetsManager.hasTexture(it.absolutePath)
-                })
-            }
-        }
-    }
+    override fun refreshAssets() = scan(BrowserAssetType.TEXTURE) { job -> engine.jobSystem.runIO { job() } }
 }

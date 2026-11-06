@@ -3,6 +3,7 @@ package com.pafoid.skate.editor.commands.objects
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.components.Component
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.serializer
 import org.joml.Quaternionf
 import org.joml.Vector2f
@@ -21,6 +22,7 @@ object ComponentValues {
     private val fieldsByClass = ConcurrentHashMap<Class<*>, List<Field>>()
 
     /** Serialized fields of [type] (by its kotlinx descriptor), else its non-transient, non-static fields. */
+    @OptIn(ExperimentalSerializationApi::class) // serializer(Class) is the only lookup for a runtime Class
     fun fields(type: Class<*>): List<Field> = fieldsByClass.getOrPut(type) {
         val names: Set<String>? = runCatching {
             val descriptor = serializer(type).descriptor

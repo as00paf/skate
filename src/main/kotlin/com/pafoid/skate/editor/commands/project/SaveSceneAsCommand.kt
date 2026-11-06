@@ -14,7 +14,10 @@ import java.io.File
 class SaveSceneAsCommand(
     private val scene: Scene,
     private val serializer: Serializer,
-    private val logger: LoggerService
+    private val logger: LoggerService,
+    /** Translated title and file-type description of the native save dialog. */
+    private val dialogTitle: String,
+    private val filterDescription: String,
 ) : ExecuteOnlyCommand, ReportsFailure {
     override val errorTitleKey = "error.save_scene.title"
     private var failure: String? = null
@@ -29,7 +32,7 @@ class SaveSceneAsCommand(
         filters.put(0, filter)
 
         val path = try {
-            TinyFileDialogs.tinyfd_saveFileDialog(scene.name, "Save Scene", filters, "Scene Files")
+            TinyFileDialogs.tinyfd_saveFileDialog(dialogTitle, "${scene.name}.scene", filters, filterDescription)
         } finally {
             MemoryUtil.memFree(filter)
             MemoryUtil.memFree(filters)
