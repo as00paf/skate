@@ -139,7 +139,11 @@ class ViewportActionHandler(
         eventSystem.subscribe<Duplicate> { event ->
             handleDuplicate(event.gameObject)
         }
+        // A user delete asks first (DeleteObjectsDialog, EDT-62); Cut deletes right away.
         eventSystem.subscribe<Delete> { event ->
+            if (!event.confirm) handleDelete(event.gameObject, event.scene)
+        }
+        eventSystem.subscribe<ViewportAction.DeleteConfirmed> { event ->
             handleDelete(event.gameObject, event.scene)
         }
         eventSystem.subscribe<RenameGameObject> { event ->
