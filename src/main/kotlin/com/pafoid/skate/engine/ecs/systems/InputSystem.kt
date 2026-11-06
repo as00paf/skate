@@ -10,7 +10,6 @@ import com.pafoid.skate.engine.events.GamepadConnected
 import com.pafoid.skate.engine.events.GamepadDisconnected
 import com.pafoid.skate.engine.input.ActionInputReader
 import com.pafoid.skate.engine.input.ActionMap
-import com.pafoid.skate.engine.input.InputContext
 import com.pafoid.skate.engine.input.InputContextStack
 import com.pafoid.skate.engine.input.InputHistory
 import com.pafoid.skate.engine.input.InputMappings
@@ -47,10 +46,6 @@ class InputSystem(
 
     /** Prioritized input contexts; the base stack is `gameplay` with `ui` above it. Push/pop to change. */
     val contexts: InputContextStack get() = actionReader.contexts
-
-    /** Readable contexts. */
-    @Deprecated("Push/pop on contexts instead", ReplaceWith("contexts"))
-    val activeContexts: Set<InputContext> get() = contexts.resolve { emptySet() }.keys
 
     /** Time history of tracked 2D sources (gestures); sampled once per update, nothing tracked by default. */
     val history = InputHistory()

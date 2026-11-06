@@ -64,10 +64,6 @@ class ActionInputReader(
     val contexts: InputContextStack = InputContextStack.withDefaults(),
 ) : InputReader, RawInput by raw {
 
-    /** Readable contexts (read-only view of [contexts]). */
-    @Deprecated("Push/pop on contexts instead", ReplaceWith("contexts"))
-    val activeContexts: Set<InputContext> get() = resolution().keys
-
     private val wasDown = HashMap<String, Boolean>()
     private val downNow = HashMap<String, Boolean>()
     private val watched = HashSet<String>()
