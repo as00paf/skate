@@ -22,7 +22,7 @@ class DayNightTimeScaleTest {
     private val events = EventSystem()
 
     private fun handlerFor(scene: Scene) {
-        val sceneManager = mockk<SceneManager>(relaxed = true) { every { currentScene } returns scene }
+        val sceneManager = mockk<SceneManager>(relaxed = true) { every { currentScene } returns scene; every { openScenes } returns mutableListOf(scene) }
         val engine = mockk<Engine>(relaxed = true) {
             every { eventSystem } returns events
             every { this@mockk.sceneManager } returns sceneManager

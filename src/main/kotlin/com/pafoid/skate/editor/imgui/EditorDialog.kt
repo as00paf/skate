@@ -3,14 +3,13 @@ package com.pafoid.skate.editor.imgui
 import com.pafoid.skate.engine.core.StringManager
 import imgui.ImGui
 import imgui.flag.ImGuiCond
-import imgui.flag.ImGuiKey
-import imgui.flag.ImGuiFocusedFlags
 import imgui.flag.ImGuiWindowFlags
 
 /**
- * Floating, non-dockable tool dialog. It closes with the title-bar X, its Close button or Esc, is not listed in
- * View > Windows and is not part of the docked layout (ImGui still remembers its size and position).
- * Subclasses implement [content].
+ * Floating, non-dockable tool dialog (EDT-51 §2.1). It closes with the title-bar X, Esc or its footer, is not listed
+ * in View > Windows and is not part of the docked layout (ImGui still remembers its size and position). The base
+ * draws the standard parts: icon title, tab menu (Help, Close), header strip with `?`, and the standard footer
+ * (a lone Close unless [footerButtons] says otherwise). Subclasses implement [content].
  */
 abstract class EditorDialog(
     name: String,
@@ -21,6 +20,11 @@ abstract class EditorDialog(
 
     protected abstract fun content()
 
+    /** The footer; Cancel-role and closing buttons close the dialog after their action. */
+    protected open fun footerButtons(): List<FooterButton> = listOf(FooterButton("btn.close", FooterButton.Role.CANCEL))
+
+    final override val isDialog: Boolean get() = true
+
     fun open() = isOpen.set(true)
 
     fun close() = isOpen.set(false)
@@ -29,14 +33,10 @@ abstract class EditorDialog(
 
     final override fun imgui() {
         ImGui.setNextWindowSize(defaultWidth, defaultHeight, ImGuiCond.FirstUseEver)
-        val visible = ImGui.begin(
-            title(stringManager), isOpen, ImGuiWindowFlags.NoDocking or ImGuiWindowFlags.NoCollapse,
-        )
-        if (visible) {
+        if (beginWindow(stringManager, ImGuiWindowFlags.NoDocking or ImGuiWindowFlags.NoCollapse)) {
+            header(stringManager)
             content()
-            ImGui.separator()
-            if (ImGui.button(stringManager.getString("btn.close"))) close()
-            if (ImGui.isWindowFocused(ImGuiFocusedFlags.RootAndChildWindows) && ImGui.isKeyPressed(ImGuiKey.Escape)) close()
+            if (DialogFooter.render(stringManager, footerButtons())?.closes == true) close()
         }
         ImGui.end()
     }
