@@ -87,6 +87,8 @@ class Serializer(val assetPaths: AssetPaths = AssetPaths()) {
             subclass(CameraFocusComponent::class)
             subclass(FreeFlyCameraComponent::class)
             subclass(FollowCameraComponent::class)
+            subclass(com.pafoid.skate.engine.ecs.components.FirstPersonCameraComponent::class)
+            subclass(com.pafoid.skate.engine.ecs.components.CameraCycleComponent::class)
 
             // Physics components
             subclass(RigidBody3D::class)

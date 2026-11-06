@@ -15,6 +15,9 @@ import com.pafoid.skate.engine.ecs.systems.ParticleSystem
 import com.pafoid.skate.engine.ecs.systems.DirectionalLightSystem
 import com.pafoid.skate.engine.ecs.systems.EnvironmentSystem
 import com.pafoid.skate.engine.ecs.systems.CameraControlSystem
+import com.pafoid.skate.engine.ecs.systems.CameraCycleSystem
+import com.pafoid.skate.engine.events.CameraAction
+import com.pafoid.skate.engine.gameplay.camera.CameraCycle
 import com.pafoid.skate.engine.net.LoopbackPredictionSystem
 import com.pafoid.skate.engine.ecs.components.RigidBody3D
 import com.pafoid.skate.engine.ecs.systems.CameraProbe
@@ -174,6 +177,10 @@ class Engine {
             LoopbackPredictionSystem(),
             // Look while a right-button press that started in the game view is held (INP-09 button rule).
             CameraControlSystem(ReaderFlyInputSource(inputSystem.reader)),
+            // GPL-22: HUD Camera button / camera.cycle action, and first-person cameras.
+            CameraCycleSystem(inputSystem.reader, { cameraManager.camera }) { camera, transform ->
+                eventSystem.publish(CameraAction.SetCamera(camera, transform))
+            },
             ScriptingSystem(
                 logger, eventSystem,
                 ScriptServices(input = ReaderScriptInput(inputSystem.reader)),
@@ -203,7 +210,10 @@ class Engine {
     private fun uiSystems(inputSystem: InputSystem): List<System> {
         val framebuffer = renderer.frameBuffer
         val geometry = renderer.renderResources.renderPasses.geometry
-        (inputSystem.reader as? ActionInputReader)?.let { UiActions.bindDefaults(it.actions) }
+        (inputSystem.reader as? ActionInputReader)?.let {
+            UiActions.bindDefaults(it.actions)
+            CameraCycle.bindDefaults(it.actions)
+        }
         var font: UiFont? = null
         val pauseMenu = createPauseMenu()
         return listOf(
