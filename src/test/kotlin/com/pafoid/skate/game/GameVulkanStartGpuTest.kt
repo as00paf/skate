@@ -9,6 +9,7 @@ import com.pafoid.skate.engine.render.rhi.GraphicsBackend
 import com.pafoid.skate.engine.render.rhi.IntRect
 import com.pafoid.skate.engine.render.rhi.vulkan.RhiBackend
 import com.pafoid.skate.engine.render.rhi.vulkan.VulkanDevice
+import com.pafoid.skate.testing.GpuTest
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Assumptions.assumeTrue
@@ -21,6 +22,7 @@ import org.lwjgl.glfw.GLFW.glfwInit
  * LunarG SDK is installed). The game's own start path: [GameGraphics] opens a Vulkan [Window], the engine starts on
  * its device and plays a new project's MainScene with every render pass, presenting each frame like GameMain.
  */
+@GpuTest
 class GameVulkanStartGpuTest {
 
     @Test
@@ -33,7 +35,7 @@ class GameVulkanStartGpuTest {
         assumeTrue(!started.fellBack, "no Vulkan driver: ${logger.logs.map { it.message }}")
         val window = started.window
         assertTrue(window.device is VulkanDevice)
-        assertTrue(logger.logs.single().message.contains("VK-04..06"))
+        assertTrue(logger.logs.single().message.contains("QA-16"))
 
         val engine = Engine()
         val dir = kotlin.io.path.createTempDirectory("gpl19").toFile()
@@ -48,8 +50,7 @@ class GameVulkanStartGpuTest {
                 window.device.commandList().blit(engine.renderer.frameBuffer.target, null, dstRect = IntRect(0, 0, window.width, window.height), filter = Filter.LINEAR)
                 window.device.endFrame()
             }
-            // The bar is "no ERROR logs", not pixels: with post-processing on, Vulkan may sample render targets upside
-            // down until VK-05 settles the Y-flip convention, so a pixel check would see a flipped or slightly different frame.
+            // The bar here is "no ERROR logs"; pixel parity of every pass is QA-16 (FeatureShowcaseVulkanParityGpuTest).
             assertEquals(emptyList<String>(), engine.logger.logs.filter { it.level == LoggerService.LogLevel.ERROR }.map { it.message }, "errors (disabled passes: $failed)")
         } finally {
             runCatching { engine.destroy() }

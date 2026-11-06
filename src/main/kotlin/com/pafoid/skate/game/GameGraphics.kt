@@ -18,9 +18,9 @@ object GameGraphics {
 
     /** What the Vulkan backend draws so far; logged when a game starts on Vulkan. */
     const val VULKAN_STATE =
-        "Vulkan backend is experimental: every render pass runs, but only the geometry pass is checked against OpenGL " +
-            "(VK-03); shadows, post-processing, runtime UI, particles and debug lines may look different until VK-04..06. " +
-            "Set \"graphicsBackend\": \"OPENGL\" in game.settings.json for the reference renderer."
+        "Vulkan backend is experimental: every render pass (shadows, geometry, post-processing, runtime UI, particles, " +
+            "debug lines) matches OpenGL within documented tolerances (QA-16 parity suite), but it has not been run under " +
+            "the Vulkan validation layer yet. Set \"graphicsBackend\": \"OPENGL\" in game.settings.json for the reference renderer."
 
     /** The backend to start with for [project]'s choice and the player's [store] (null when there is no settings file). */
     fun requested(project: GraphicsBackend, store: GameSettingsStore?, property: String? = System.getProperty(GraphicsBackend.SYSTEM_PROPERTY)) =

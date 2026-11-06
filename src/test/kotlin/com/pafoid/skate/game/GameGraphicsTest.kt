@@ -63,7 +63,7 @@ class GameGraphicsTest {
         assertEquals(GraphicsBackend.VULKAN, started.backend)
         val line = logger.logs.single()
         assertEquals(LoggerService.LogLevel.WARN, line.level)
-        assertTrue(line.message.contains("VULKAN") && line.message.contains("VK-04..06"), line.message)
+        assertTrue(line.message.contains("VULKAN") && line.message.contains("QA-16"), line.message)
         assertNull(settings.settings.graphicsNote, "a successful start clears the old fallback note")
     }
 
