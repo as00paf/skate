@@ -38,9 +38,14 @@ class PrefabsTab(
     private val surfaceIndex = ImInt(0)
     private val thumbnailModels = mutableMapOf<String, `3dModel`>()
 
-    override fun imgui(label: String, searchText: ImString) {
-        renderHeader(label, searchText)
+    /** The prefab catalog is built in, not a folder on disk: no Show folder, and no empty-space menu. */
+    override val folder: File? get() = null
 
+    override fun imgui(label: String, searchText: ImString) {
+        content(label) { renderCatalog(searchText) }
+    }
+
+    private fun renderCatalog(searchText: ImString) {
         val names = surfaces.map { it.displayName }.toTypedArray()
         ImGui.setNextItemWidth(180f)
         ImGui.combo(stringManager.label("lbl.material"), surfaceIndex, names, names.size)
