@@ -23,9 +23,12 @@ class EditorScenesTabBar(
     private val stringManager: StringManager
 ) {
     private var toRemove = -1
+    private val tabSync = SceneTabSync()
+
     fun render(sceneManager: SceneManager) {
         if (ImGui.beginTabBar("##EditorScenesTabBar", ImGuiTabBarFlags.Reorderable or ImGuiTabBarFlags.AutoSelectNewTabs)) {
             val openScenes = sceneManager.openScenes.toList()
+            tabSync.beginFrame(sceneManager.currentScene)
 
             openScenes.forEachIndexed { index, scene ->
                 val open = ImBoolean(true)
@@ -33,14 +36,16 @@ class EditorScenesTabBar(
                 if (scene.isDirty) {
                     flags = flags or ImGuiTabItemFlags.UnsavedDocument
                 }
+                // Follow switches made without a click (scripts, Stop's restore) so they never read as one
+                if (tabSync.forceSelect(scene)) {
+                    flags = flags or ImGuiTabItemFlags.SetSelected
+                }
 
                 val displayName = scene.name.replace(".scene", "", ignoreCase = true)
                     .replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() }
 
                 if (ImGui.beginTabItem("$displayName###sceneTab_${scene.uId}", open, flags)) {
-                    if (sceneManager.activeSceneIndex != index) {
-                        eventSystem.publish(ViewportAction.TabSelected(scene))
-                    }
+                    tabSync.onTabShown(scene)?.let { eventSystem.publish(ViewportAction.TabSelected(it)) }
 
                     // Scene tab context menu
                     if (ImGui.beginPopupContextItem(contextPopupId("sceneTab", scene.uId))) {
