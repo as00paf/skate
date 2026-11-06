@@ -1,6 +1,7 @@
 package com.pafoid.skate.engine.ui
 
 import com.pafoid.skate.engine.core.LoggerService
+import com.pafoid.skate.engine.render.rhi.GraphicsBackend
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import java.io.File
@@ -10,6 +11,11 @@ import java.io.File
 data class GameSettings(
     /** Locale of runtime UI text (pause menu, HUD, game widgets). */
     val locale: String = DEFAULT_LOCALE,
+    /**
+     * Backend the exported game starts with (AST-12). The export writes the project's choice here; a player may edit
+     * it (e.g. back to `OPENGL`). Null: use the project's. See [GraphicsBackend.resolve].
+     */
+    val graphicsBackend: GraphicsBackend? = null,
 ) {
     companion object {
         const val DEFAULT_LOCALE = "en"
