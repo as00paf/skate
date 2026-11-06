@@ -1,5 +1,6 @@
 package com.pafoid.skate.engine.assets
 
+import com.pafoid.skate.engine.assets.loaders.GltfReferences
 import com.pafoid.skate.engine.utils.AssetsResolver
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
@@ -64,6 +65,8 @@ class AssetPaths {
         val target = extract(path)
         // Model files load their companions (.mtl, .bin, textures) from the same folder.
         if (path.substringAfterLast('.').lowercase() in MODEL_EXTENSIONS) siblingsInPack(path).forEach(::extract)
+        // A .gltf may also reference files in subfolders (textures/...): extract exactly those (AST-22)
+        if (path.substringAfterLast('.').equals("gltf", ignoreCase = true)) gltfReferencesInPack(path, target).forEach(::extract)
         return target.path
     }
 
@@ -74,6 +77,12 @@ class AssetPaths {
         target.deleteOnExit()
         target
     }
+
+    /** Pack paths of the buffers and images [gltf] (already extracted to [extracted]) names, present in the pack. */
+    private fun gltfReferencesInPack(gltf: String, extracted: File): List<String> =
+        GltfReferences.uris(extracted.readText())
+            .mapNotNull { GltfReferences.resolve(gltf, it) }
+            .filter { packed(it) }
 
     private fun siblingsInPack(path: String): List<String> {
         val dir = path.replace('\\', '/').substringBeforeLast('/', "")
