@@ -16,6 +16,7 @@ import com.pafoid.skate.engine.input.ActionMap
 import com.pafoid.skate.engine.input.DefaultActions
 import com.pafoid.skate.engine.input.InputContext
 import com.pafoid.skate.engine.input.InputContextStack
+import com.pafoid.skate.engine.input.InputHistory
 import com.pafoid.skate.engine.input.InputMappings
 import com.pafoid.skate.engine.input.InputProvider
 import com.pafoid.skate.engine.input.InputReader
@@ -46,6 +47,10 @@ class InputSystem(
     /** Readable contexts. */
     @Deprecated("Push/pop on contexts instead", ReplaceWith("contexts"))
     val activeContexts: Set<InputContext> get() = contexts.resolve { emptySet() }.keys
+
+    /** Time history of tracked 2D sources (gestures); sampled once per update, nothing tracked by default. */
+    val history = InputHistory()
+    private var time = 0f
 
     /** Controller rumble. Unsupported (no-op) until a backend is assigned: GLFW has no haptics API. */
     val rumble = RumbleManager()
@@ -79,6 +84,8 @@ class InputSystem(
     override fun update(dt: Float) {
         inputProvider.refreshGamepadState()
         actionReader.update()
+        time += dt
+        history.sample(time)
         rumble.update(dt)
         val mountEdge = reader.wasActionPressed(DefaultActions.TOGGLE_MOUNT)
         if (!scene.isRunning || scene.isPaused) return

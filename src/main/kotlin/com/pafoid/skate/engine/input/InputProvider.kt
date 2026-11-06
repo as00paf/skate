@@ -1,7 +1,6 @@
 package com.pafoid.skate.engine.input
 
 import com.pafoid.skate.engine.core.LoggerService
-import com.pafoid.skate.engine.core.Time
 import com.pafoid.skate.engine.ecs.components.CameraComponent
 import com.pafoid.skate.engine.input.listeners.GamepadListener
 import com.pafoid.skate.engine.input.listeners.KeyListener
@@ -24,8 +23,6 @@ import org.lwjgl.glfw.GLFW.glfwSetInputMode
 class InputProvider(
     val logger: LoggerService
 ) {
-    private val inputBuffer: InputBuffer = InputBuffer()
-
     val gamepadListener: GamepadListener = GamepadListener(logger)
     val keyListener: KeyListener = KeyListener()
     val mouseListener: MouseListener = MouseListener()
@@ -39,11 +36,6 @@ class InputProvider(
     }
 
     fun endFrame() {
-        inputBuffer.push(
-            Time.getTime(),
-            getMouseTargetPos(),
-            getAxes(joystickForPad(0))
-        )
         keyListener.endFrame()
         mouseListener.endFrame()
     }
