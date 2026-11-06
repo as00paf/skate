@@ -8,6 +8,7 @@ import com.pafoid.skate.editor.ui.windows.CommandHistoryWindow
 import com.pafoid.skate.editor.ui.windows.ConsoleWindow
 import com.pafoid.skate.editor.ui.windows.EditorSettingsWindow
 import com.pafoid.skate.editor.ui.windows.ExportWizardWindow
+import com.pafoid.skate.editor.ui.windows.VideoToAnimationWindow
 import com.pafoid.skate.editor.ui.windows.GameViewWindow
 import com.pafoid.skate.editor.ui.windows.InputTestingWindow
 import com.pafoid.skate.editor.ui.windows.KeyBindingsWindow
@@ -50,6 +51,7 @@ class WindowRegistry(
         ScriptEditorWindow(engine, projectManager, editor.settingsManager),
         ShellWindow(engine, projectManager),
         ExportWizardWindow(engine, projectManager, editor.settingsManager),
+        VideoToAnimationWindow(engine, editor, projectManager),
     )
 
     /** Windows listed in View > Windows and stored in the layout; dialogs are excluded. */

@@ -133,4 +133,13 @@ class EditorSettingsManager(
         editorSettings = editorSettings.copy(gameJarPath = path?.trim()?.ifEmpty { null })
         saveSettings()
     }
+
+    /** Stores the mocap tool setup (ANI-17); a blank model path clears it. */
+    fun updateMocapSettings(settings: com.pafoid.skate.editor.settings.MocapSettings) {
+        editorSettings = editorSettings.copy(mocap = settings.copy(
+            pythonPath = settings.pythonPath.trim().ifEmpty { "python" },
+            modelPath = settings.modelPath?.trim()?.ifEmpty { null },
+        ))
+        saveSettings()
+    }
 }

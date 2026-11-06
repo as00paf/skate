@@ -26,6 +26,8 @@ data class EditorSettings(
     var graphics: GraphicsSettings = GraphicsSettings(),
     /** Game jar (or folder holding it) used for exports when none is found next to the editor (AST-11). */
     var gameJarPath: String? = null,
+    /** Video to animation (ANI-17): the Python and MediaPipe model used by the mocap adapter. Per machine. */
+    var mocap: MocapSettings = MocapSettings(),
 ) {
 
     fun addRecentProject(projectPath: String): EditorSettings {
@@ -35,3 +37,14 @@ data class EditorSettings(
         return copy(recentProjects = updatedList)
     }
 }
+
+/**
+ * Mocap tool setup (ANI-17, docs/mocap-setup.md). [pythonPath] is the Python executable (or a venv's) that has
+ * MediaPipe; [modelPath] an optional MediaPipe `pose_landmarker_*.task` file (without it the legacy pose solution is
+ * used, when the installed MediaPipe still has it).
+ */
+@Serializable
+data class MocapSettings(
+    val pythonPath: String = "python",
+    val modelPath: String? = null,
+)
