@@ -98,6 +98,7 @@ class SkateInputContextTest {
     @Test
     fun mounting_HoldsSkateAboveGameplay_AndTheSameKeysBecomeSkateActions() {
         val rig = Rig()
+        rig.frame() // the first query of an action is never a press
         rig.frame(Keys.E)
         assertTrue(rig.behavior.mounted)
 
@@ -117,6 +118,7 @@ class SkateInputContextTest {
     @Test
     fun dismounting_ReleasesSkate_AndShiftSprintsAgain() {
         val rig = Rig()
+        rig.frame() // the first query of an action is never a press
         rig.frame(Keys.E)
         rig.frame()
         rig.frame(Keys.E)
@@ -205,6 +207,7 @@ class SkateInputContextTest {
         val rig = Rig()
         val system = PlayerMotionSystem(CameraManager(EventSystem()), rig.sampler)
         val scene = Scene("Level")
+        rig.frame() // the first query of an action is never a press
         rig.frame(Keys.E)
         assertTrue(rig.skateActive)
 

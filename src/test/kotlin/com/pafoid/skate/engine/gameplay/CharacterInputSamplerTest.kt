@@ -76,6 +76,17 @@ class CharacterInputSamplerTest {
     }
 
     @Test
+    fun CharacterSampler_KeysHeldWhenPlayStartsDoNotMountOrJump() {
+        val s = InputStateComponent()
+        raw.keys += listOf(Keys.E, Keys.SPACE)
+        frame(s)
+        assertFalse(s.mountPressed || s.jumpPressed)
+        assertTrue(s.jumpHeld)
+        frame(s)
+        assertFalse(s.mountPressed || s.jumpPressed)
+    }
+
+    @Test
     fun CharacterSampler_MountEdge() {
         val s = InputStateComponent()
         frame(s)
