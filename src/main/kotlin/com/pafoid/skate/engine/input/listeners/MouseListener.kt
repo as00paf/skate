@@ -3,11 +3,13 @@ package com.pafoid.skate.engine.input.listeners
 import com.pafoid.skate.engine.input.PointerSource
 import com.pafoid.skate.engine.input.ViewRect
 import com.pafoid.skate.engine.input.ViewportPointerMapping
-import imgui.ImGui
 import org.lwjgl.glfw.GLFW.GLFW_PRESS
 import org.lwjgl.glfw.GLFW.GLFW_RELEASE
 
 class MouseListener {
+    /** True while an overlay UI owns the mouse (the editor installs ImGui's `wantCaptureMouse`); see KeyListener (GUI-14). */
+    var captureMouse: () -> Boolean = { false }
+
     private var scrollX: Double = 0.0
     private var scrollY: Double = 0.0
     private var xPos: Double = 0.0
@@ -176,7 +178,7 @@ class MouseListener {
     fun isDragging() = isDragging
     fun isMouseButtonDown(button: Int, ignoreImGui: Boolean = false): Boolean {
         val down = button in mouseButtonPressed.indices && mouseButtonPressed[button]
-        return if (ignoreImGui) down else down && !ImGui.getIO().wantCaptureMouse
+        return if (ignoreImGui) down else down && !captureMouse()
     }
 
     private companion object {
