@@ -4,7 +4,7 @@
 #   tools/herdr/herd.sh [options] [domain ...]
 #
 # Domains: render assets ecs physics animation audio input gameplay gameui
-#          scripting online editor tooling qa   (default: all)
+#          scripting online editor tooling qa vulkan   (default: all)
 #
 # Options:
 #   --kind copilot|opencode|claude  Agent CLI to run (default: copilot)
@@ -17,7 +17,7 @@
 #                            (e.g. -- --allow-all-tools)
 set -euo pipefail
 
-ALL_DOMAINS=(render assets ecs physics animation audio input gameplay gameui scripting online editor tooling qa)
+ALL_DOMAINS=(render assets ecs physics animation audio input gameplay gameui scripting online editor tooling qa vulkan)
 kind=copilot
 worktrees=0
 lead=1

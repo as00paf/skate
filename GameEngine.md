@@ -44,6 +44,7 @@ Each domain has a dedicated agent (see [Agents & herdr](#agents--herdr)).
 | Prefix | Domain | Agent | Primary paths |
 |--------|--------|-------|---------------|
 | `REN` | Rendering (renderer, RHI, materials, lighting, shadows, post-fx, particles, fog, textures) | `skate-render` | `engine/render/**`, `src/main/resources/shaders/**` |
+| `VK` | Vulkan RHI backend for exported games (swapchain, frames in flight, descriptors, SPIR-V, pass parity) | `skate-vulkan` | `engine/render/rhi/vulkan/**` |
 | `AST` | Asset management, serialization, export & packing | `skate-assets` | `engine/assets/**`, `engine/utils/Assets*.kt`, `engine/utils/ProjectExporter.kt` |
 | `ECS` | Entity-component-system core | `skate-ecs` | `engine/ecs/**` (except physics/animation/audio/input systems) |
 | `PHY` | Physics | `skate-physics` | `engine/physics3d/**`, `engine/ecs/systems/PhysicsSystem.kt`, `RagdollSystem.kt`, collider/rigid-body components |
@@ -117,7 +118,7 @@ The renderer works but needs cleaner APIs, caching, dynamic shaders, better mate
   - Done when: No GL call exists outside `render/rhi/opengl`. An architecture guard test enforces this.
   - Design: `docs/design/REN-12.md` approved by the lead (round 15) with the §7 proposals as written: ImGuiLayer is the one allowed GL user; named uniforms via `ShaderParams`; Vulkan semantics (pass begin/end, depth range, Y-flip) owned by the backend; sync picking readback; main-thread only. Migrate in the §5 steps, one or two per round. Steps 0-1 done (round 17), steps 2-3 done (round 18), steps 4-5 done (round 19), steps 6-7 done (round 21): migration complete.
   - Deps: REN-03, REN-04, REN-05
-- [~] @skate-render **REN-13** `P3` Vulkan backend spike
+- [x] **REN-13** `P3` Vulkan backend spike
   - Do: Build a minimal `VulkanRhi` that renders the sample scene's geometry pass.
   - Done when: A config flag switches backend, and the spike's findings are documented.
   - Deps: REN-12
@@ -159,6 +160,35 @@ The renderer works but needs cleaner APIs, caching, dynamic shaders, better mate
 - [x] **REN-23** `P2` Day/night time scale overwritten on Stop
   - Do: From EDT-10: stopping Play resets `DayNightCycleComponent.timeScale` to 1.0 (`ViewportActionHandler`), overwriting the scene's saved value. Keep the play-mode time scale separate from the saved field.
   - Done when: A saved timeScale survives Play/Stop and save/reload; test.
+
+### Vulkan — `VK` (`skate-vulkan`)
+
+Goal (human, after REN-13): full Vulkan support for **exported games**, chosen per project at creation (OpenGL stays the default; the editor always uses OpenGL). Builds on the REN-12 RHI and the REN-13 spike (`docs/design/REN-13.md`). `skate-render` helps with explicitly assigned VK tasks.
+
+- [~] @skate-vulkan **VK-01** `P1` Windowed Vulkan runtime: surface, swapchain, frames in flight
+  - Do: Turn the offscreen spike into a presenting backend for the game runtime: GLFW no-API window, surface, swapchain (create/recreate on resize and minimize, present modes for vsync), frames in flight (fences/semaphores, per-frame command buffers and transient resources, deferred destruction), backbuffer as the RHI default target, validation layers in debug/test runs.
+  - Done when: A test harness window presents frames with Vulkan, survives resize/minimize, zero validation errors; frame-in-flight bookkeeping unit-tested.
+  - Deps: REN-13
+- [~] @skate-render **VK-02** `P1` Vulkan resources: memory, uploads, descriptors, samplers
+  - Do: Memory allocator (e.g. lwjgl-vma), staging uploads for buffers/textures (mips, arrays, cube maps, depth/compare formats), sampler objects, descriptor set layouts/pools derived from SPIR-V reflection, and the `ShaderParams` named-uniform mapping to per-draw UBO data (ring buffer per frame in flight).
+  - Done when: Every `RhiDevice.create*` used by the passes works on Vulkan; reflection/layout/ring logic unit-tested; zero validation errors.
+  - Deps: REN-13
+- [ ] **VK-03** `P1` Geometry pass parity on Vulkan
+  - Do: Port the geometry pass with materials (PBR inputs, alpha modes), UBO lights and culling, skinning, sky dome/skybox and fog to Vulkan.
+  - Done when: MainScene's lit, textured, skinned frame matches OpenGL within a documented tolerance (GpuTest); zero validation errors.
+  - Deps: VK-01, VK-02
+- [ ] **VK-04** `P2` Shadows on Vulkan
+  - Do: Cascaded sun shadows and spot/point shadow maps (depth arrays, compare samplers, depth bias/clamp) with the backend depth-range fix-up; REN-22 caching behaviour preserved.
+  - Done when: Showcase shadow area matches OpenGL within tolerance at each quality level (GpuTest).
+  - Deps: VK-03
+- [ ] **VK-05** `P2` Post-processing on Vulkan
+  - Do: PostChain ping-pong, blits, bloom/FXAA/tonemap/gamma with a documented texture-orientation (Y-flip) convention.
+  - Done when: Showcase post-effects area matches OpenGL within tolerance (GpuTest).
+  - Deps: VK-03
+- [ ] **VK-06** `P2` Runtime UI, particles and debug lines on Vulkan
+  - Do: UiPass (batches, SDF text, scissor, blending), instanced particles and debug lines on Vulkan.
+  - Done when: Showcase UI/particles areas match OpenGL within tolerance (GpuTest).
+  - Deps: VK-03
 
 ### Asset management — `AST` (`skate-assets`)
 
@@ -218,6 +248,10 @@ Asset management works but needs a complete review.
   - Do: From GPL-18's audit: `ProjectExporter.findGameJar` searches `build/libs` relative to the working directory, so exporting fails or picks a stale jar when the editor starts from another folder. Resolve from the editor's install/jar location (or a configured path) and report clearly when no game jar exists.
   - Done when: Export finds the game jar regardless of the editor's working directory; test.
   - Deps: GPL-18
+- [~] @skate-assets **AST-12** `P1` Graphics backend setting in the project and the export
+  - Do: Add a `GraphicsBackend` setting (OPENGL default, VULKAN experimental) to the project model, saved in the project file, carried into the exported game's settings/manifest; the export wizard shows it. The editor ignores it (always OpenGL).
+  - Done when: Round-trip through save/load and export tested; exported settings contain the backend.
+  - Deps: REN-13
 
 ### ECS — `ECS` (`skate-ecs`)
 
@@ -513,6 +547,10 @@ The player controller was hardcoded at first and needs a big overhaul. Some skat
   - Do: Human-reported on PR #21: running an exported game fails with game.bin not found at a wrong path. `GameBin.file()` defaults to `game.bin` in the working directory, so any launch that isn't `run-game.bat` (double-clicked jar, IntelliJ run config, export wizard "run", shortcuts) looks in the wrong folder. Resolve in order: `-Dskate.bin`, next to the running jar (code source location), then the working directory; log the searched paths. Audit other working-directory-relative paths in `game/` and the launcher.
   - Done when: The exported game starts from `run-game.bat`, a double-clicked jar, `java -jar <abs path>` from another directory, and the IntelliJ/Gradle run path; QA-14's end-to-end test covers a launch from a different working directory.
   - Deps: GPL-08
+- [ ] **GPL-19** `P1` Exported game starts the chosen graphics backend
+  - Do: `GameMain` reads the exported backend setting, creates the matching window/RHI (no GL context for Vulkan), and falls back to OpenGL with a clear log line (and settings note) when Vulkan is unavailable or fails to initialize.
+  - Done when: An exported Vulkan game runs on Vulkan where supported and falls back to OpenGL otherwise; selection/fallback tested.
+  - Deps: AST-12, VK-01
 
 ### In-game UI — `GUI` (`skate-gameui`)
 
@@ -778,6 +816,10 @@ All editor mutations must go through `Command` classes and the service layer (se
   - Do: From GPL-18's audit: editor screenshots go to `screenshots/` in the working directory; store them under the project (or user data, EDT-18) instead.
   - Done when: Screenshots land in a predictable folder regardless of the working directory; test.
   - Deps: EDT-18
+- [ ] **EDT-43** `P1` Graphics backend option in New Project and project settings
+  - Do: Add the AST-12 backend choice to the New Project dialog and project settings (OpenGL default; Vulkan labelled experimental with a tooltip that only exported games use it), via commands, EN+FR.
+  - Done when: The choice is saved with the project and visible in the export wizard; tests.
+  - Deps: AST-12
 
 ## Testing & tooling
 
@@ -873,6 +915,10 @@ A lot of features are broken. Many unit tests are missing (**no integration test
   - Do: The GitHub Actions `build` workflow (windows-latest) has failed on every run since at least 2026-10-29, including master, while the local `gradlew test` passes. Latest failures (PR #21): `ShaderValidationTest` initializationError (IllegalStateException), five `ProjectExporterTest`/`ExportedReferencesTest` failures (probably no game jar on CI after AST-11), plus whatever failed earlier. Find each root cause from the run logs (`gh run view --log-failed`), fix tests that depend on the developer machine (GL context, built jars, user data, fonts, paths) with proper skips/fakes or CI setup (e.g. run `gameJar` before `test` in the workflow), and fix real bugs (report other domains' bugs as NEEDS).
   - Done when: CI is green on a branch from current master and stays green on the next PR; tests that need a GPU are explicitly tagged and skipped on CI with a reason.
   - Deps: QA-06
+- [ ] **QA-16** `P2` Vulkan parity suite and exported Vulkan game end-to-end
+  - Do: GpuTest suite comparing Vulkan and OpenGL frames per FeatureShowcase area within documented tolerances, plus an end-to-end test that exports a Vulkan-backend project and runs it (offscreen/headless where possible), extending QA-14.
+  - Done when: The suite runs locally with Vulkan, is skipped on CI, and fails on any area regression.
+  - Deps: VK-03, VK-04, VK-05, VK-06, GPL-19
 
 ## Agents & herdr
 

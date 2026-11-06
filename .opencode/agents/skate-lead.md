@@ -25,6 +25,7 @@ You coordinate a herd of domain agents working on the Skate engine (a Kotlin/JVM
 | `ANI` | `skate-animation` | `EDT` | `skate-editor` |
 | `AUD` | `skate-audio` | `TLG` | `skate-tooling` |
 | `INP` | `skate-input` | `QA` | `skate-qa` |
+| `VK` | `skate-vulkan` | | |
 
 They are started by `tools/herdr/herd.sh`. Each runs as a named herdr agent, in its own tab or its own git worktree (branch `agents/<domain>`).
 
