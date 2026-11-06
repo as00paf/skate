@@ -19,6 +19,7 @@ import com.pafoid.skate.editor.gizmos.EditorCameraMemory
 import com.pafoid.skate.editor.systems.PlayModeGuards
 import com.pafoid.skate.editor.systems.ProjectManager
 import com.pafoid.skate.editor.systems.UndoRedoManager
+import com.pafoid.skate.engine.assets.ProjectLayout
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.core.LoggerService.LogLevel
 import com.pafoid.skate.engine.ecs.Scene
@@ -217,7 +218,7 @@ class SceneActionHandler(
     }
 
     private fun generateUniqueScenePath(projectDir: File): String {
-        val scenesDir = File(projectDir, "Scenes")
+        val scenesDir = ProjectLayout.scenesDir(projectDir)
         scenesDir.mkdirs()
 
         var counter = 1

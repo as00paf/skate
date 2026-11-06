@@ -9,6 +9,7 @@ import com.pafoid.skate.editor.project.EngineAssetCopier
 import com.pafoid.skate.editor.project.Project
 import com.pafoid.skate.editor.project.ProjectFileReader
 import com.pafoid.skate.engine.assets.Assets
+import com.pafoid.skate.engine.assets.ProjectLayout
 import com.pafoid.skate.engine.assets.AssetRegistry
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.core.LoggerService.LogLevel
@@ -67,12 +68,11 @@ class ProjectManager(
             if (hasProject()) closeProject()
             assetPaths.projectRoot = projectDir.absoluteFile // default scenes are saved project-relative (AST-09)
 
-            val assetsDir = File(projectDir, "Assets").also { it.mkdirs() }
-            val scenesDir = File(projectDir, "Scenes").also { it.mkdirs() }
-            File(projectDir, "Builds").mkdirs()
+            val assetsDir = ProjectLayout.create(projectDir)
+            val scenesDir = ProjectLayout.scenesDir(projectDir)
 
             // Create default strings file
-            val stringsFile = File(assetsDir, "strings.properties")
+            val stringsFile = File(assetsDir, ProjectLayout.STRINGS_FILE)
             stringsFile.writeText("project.name=$name")
 
             // Copy assets
@@ -91,7 +91,7 @@ class ProjectManager(
             val project = Project(
                 name = name,
                 projectPath = projectFile.absolutePath,
-                iconPath = assetsDir.absolutePath + Assets.Textures.APP_ICON,
+                iconPath = File(assetsDir, Assets.Bundled.PROJECT_APP_ICON).absolutePath,
                 defaultScene = scenesDir.path + "\\MainScene.scene",
                 scenesPath = scenes.map { "${scenesDir.path}\\${it.name}.scene" },
                 resolution = Vector2i(1920, 1080),
