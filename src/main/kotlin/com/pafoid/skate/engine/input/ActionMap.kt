@@ -5,8 +5,25 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlin.math.sign
 
-/** Group of actions that are active together; only active contexts are read by [InputReader]. */
-enum class InputContext { GAMEPLAY, UI, EDITOR }
+/**
+ * Group of actions that are active together; only contexts on the reader's [InputContextStack] are read.
+ * Open set: the engine ships [GAMEPLAY], [UI] and [EDITOR]; games declare their own (`InputContext("vehicle")`).
+ */
+@Serializable
+@JvmInline
+value class InputContext(val id: String) {
+    /** Sort order for binding UIs: built-in contexts first in declaration order, then game contexts. */
+    val displayOrder: Int get() = BUILT_IN.indexOf(this).let { if (it < 0) BUILT_IN.size else it }
+
+    override fun toString(): String = id
+
+    companion object {
+        val GAMEPLAY = InputContext("gameplay")
+        val UI = InputContext("ui")
+        val EDITOR = InputContext("editor")
+        private val BUILT_IN = listOf(GAMEPLAY, UI, EDITOR)
+    }
+}
 
 @Serializable
 sealed class ActionBinding {
@@ -32,6 +49,12 @@ sealed class ActionBinding {
         is GamepadButton -> "pad:$button"
         is GamepadAxis -> "axis:$axis:${if (sign(scale) < 0f) "-" else "+"}"
     }
+
+    /**
+     * Physical source without axis direction: what a higher [ContextBlocking.CONSUME_BOUND] context takes away from
+     * lower ones (an analog binding reads both directions of its axis).
+     */
+    fun physicalSourceId(): String = if (this is GamepadAxis) "axis:$axis" else sourceId()
 
     fun withScale(newScale: Float): ActionBinding = when (this) {
         is Key -> copy(scale = newScale)

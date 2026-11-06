@@ -91,8 +91,70 @@ class InputReaderTest {
         val reader = reader(raw, def("gizmo", ActionBinding.Key(Keys.W), context = InputContext.EDITOR))
         raw.keys.add(Keys.W)
         assertFalse(reader.isActionDown("gizmo"))
-        reader.activeContexts.add(InputContext.EDITOR)
+        assertFalse(reader.isContextActive(InputContext.EDITOR))
+        reader.contexts.push(InputContext.EDITOR, priority = 50)
         assertTrue(reader.isActionDown("gizmo"))
+        assertTrue(reader.isContextActive(InputContext.EDITOR))
+    }
+
+    @Test
+    fun InputReader_HigherContextConsumesSharedSourceUntilPopped() {
+        val raw = FakeRaw()
+        val vehicle = InputContext("vehicle")
+        val reader = reader(raw,
+            def("jump", ActionBinding.Key(Keys.SPACE), ActionBinding.GamepadButton(0)),
+            def("horn", ActionBinding.GamepadButton(0), context = vehicle))
+        raw.pads.add(0)
+        val h = reader.contexts.push(vehicle, priority = 10)
+        assertTrue(reader.isActionDown("horn"))
+        assertFalse(reader.isActionDown("jump"), "pad A belongs to the vehicle")
+        raw.pads.clear(); raw.keys.add(Keys.SPACE)
+        assertTrue(reader.isActionDown("jump"), "unshared sources still reach gameplay")
+        reader.contexts.pop(h)
+        raw.keys.clear(); raw.pads.add(0)
+        assertTrue(reader.isActionDown("jump"))
+        assertFalse(reader.isActionDown("horn"))
+    }
+
+    @Test
+    fun InputReader_ConsumedAxisHidesBothDirections() {
+        val raw = FakeRaw()
+        val menu = InputContext("menu")
+        val reader = reader(raw,
+            def("moveX", ActionBinding.GamepadAxis(0)),
+            def("menu.left", ActionBinding.GamepadAxis(0, -1f), context = menu))
+        raw.axes[0] = 1f
+        reader.contexts.push(menu, priority = 10)
+        assertEquals(0f, reader.actionValue("moveX"))
+    }
+
+    @Test
+    fun InputReader_ModalContextSilencesGameplay() {
+        val raw = FakeRaw()
+        val reader = reader(raw, def("jump", ActionBinding.Key(Keys.SPACE)))
+        raw.keys.add(Keys.SPACE)
+        val h = reader.contexts.push(InputContext("pause"), priority = 100, blocking = ContextBlocking.ALL)
+        assertFalse(reader.isActionDown("jump"))
+        reader.contexts.pop(h)
+        assertTrue(reader.isActionDown("jump"))
+    }
+
+    @Test
+    fun InputReader_PressHeldAcrossContextChangeNeedsNewPress() {
+        val raw = FakeRaw()
+        val reader = reader(raw, def("jump", ActionBinding.Key(Keys.SPACE)))
+        reader.update(); reader.wasActionPressed("jump"); reader.update()
+        val h = reader.contexts.push(InputContext("pause"), priority = 100, blocking = ContextBlocking.ALL)
+        raw.keys.add(Keys.SPACE) // pressed while the modal context is up
+        reader.update()
+        assertFalse(reader.wasActionPressed("jump"))
+        reader.contexts.pop(h)
+        reader.update()
+        assertTrue(reader.isActionDown("jump"), "the held press carries over")
+        assertFalse(reader.wasActionPressed("jump"), "but is not a new press")
+        raw.keys.clear(); reader.update()
+        raw.keys.add(Keys.SPACE); reader.update()
+        assertTrue(reader.wasActionPressed("jump"))
     }
 
     @Test
