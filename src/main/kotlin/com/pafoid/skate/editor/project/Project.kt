@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.project
 
+import com.pafoid.skate.engine.ecs.random.RandomService
 import com.pafoid.skate.engine.render.rhi.GraphicsBackend
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
@@ -23,6 +24,8 @@ data class Project(
     var gameplaySettings: GameplaySettings = GameplaySettings(),
     /** Backend the exported game renders with (AST-12); the editor always uses OpenGL. */
     var graphicsBackend: GraphicsBackend = GraphicsBackend.DEFAULT,
+    /** Seed of the engine's random streams in Play and in the exported game (ECS-14); see `RandomService.resolve`. */
+    var randomSeed: Long = RandomService.DEFAULT_SEED,
 ) {
     fun getProjectDirectory(): File {
         return File(projectPath).parentFile

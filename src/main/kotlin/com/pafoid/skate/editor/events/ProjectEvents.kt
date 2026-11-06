@@ -27,6 +27,9 @@ sealed class ProjectEvent(eventName: String) : Event(eventName) {
 
     /** Change the open project's graphics backend (EDT-43), as an undoable command. */
     data class SetGraphicsBackendRequested(val backend: GraphicsBackend) : ProjectEvent("project.action.set_graphics_backend")
+
+    /** Change the open project's random seed (ECS-14), as an undoable command. */
+    data class SetRandomSeedRequested(val seed: Long) : ProjectEvent("project.action.set_random_seed")
     data class CreateProjectSucceeded(val name: String, val folderPath: String) : ProjectEvent("project.action.create_project_succeeded")
     data class CreateProjectFailed(val name: String, val folderPath: String, val reason: String) : ProjectEvent("project.action.create_project_failed")
     data class CreateFileRequested(val path: String, val isDirectory: Boolean) : ProjectEvent("project.action.create_file_requested")

@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.systems
 
+import com.pafoid.skate.engine.ecs.random.RandomService
 import com.pafoid.skate.engine.render.rhi.GraphicsBackend
 import com.pafoid.skate.engine.assets.serialization.FileKind
 import com.pafoid.skate.editor.data.FileType
@@ -96,8 +97,10 @@ class ProjectManager(
                 scenesPath = scenes.map { "${scenesDir.path}\\${it.name}.scene" },
                 resolution = Vector2i(1920, 1080),
                 graphicsBackend = graphicsBackend,
+                randomSeed = RandomService.newSeed(),
             )
             currentProject = project
+            engine.random.reseed(RandomService.resolve(project.randomSeed))
             eventSystem.publish(EngineAction.ApplyMappings(project.gameplaySettings.inputMappings))
 
             saveProject()
@@ -151,6 +154,8 @@ class ProjectManager(
         if (hasProject()) closeProject()
 
         currentProject = project
+        // ECS-14: Play and the exported game draw from the project's seed (unless -Dskate.seed overrides it).
+        engine.random.reseed(RandomService.resolve(project.randomSeed))
         // Editor: references resolve in the project folder. Exported game: they stay relative and come from the pack.
         assetPaths.projectRoot = if (binData == null) project.getProjectDirectory().absoluteFile else null
         engine.systemManager.getSystem<InputSystem>()?.mappings = project.gameplaySettings.inputMappings

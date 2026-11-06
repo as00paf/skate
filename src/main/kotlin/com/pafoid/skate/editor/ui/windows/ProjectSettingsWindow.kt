@@ -7,6 +7,8 @@ import com.pafoid.skate.editor.events.ProjectEvent
 import com.pafoid.skate.editor.events.WindowAction
 import com.pafoid.skate.editor.imgui.EditorWindow
 import com.pafoid.skate.editor.imgui.MImGui
+import com.pafoid.skate.editor.imgui.Tooltips
+import com.pafoid.skate.engine.ecs.random.RandomService
 import com.pafoid.skate.editor.systems.EditorSettingsManager
 import com.pafoid.skate.editor.systems.ProjectManager
 import com.pafoid.skate.engine.core.Engine
@@ -58,6 +60,7 @@ class ProjectSettingsWindow(
         listOf(
             Category("general", "settings.project.metadata", arrayOf("general", "metadata", "project", "name", "version", "engine", "path", "description", "recent")) { renderGeneral() },
             Category("graphics", "settings.project.graphics", arrayOf("graphics", "backend", "vulkan", "opengl", "render", "export")) { renderGraphics() },
+            Category("random", "settings.project.random", arrayOf("random", "seed", "rng", "deterministic", "procedural")) { renderRandom() },
         )
     }
 
@@ -138,6 +141,31 @@ class ProjectSettingsWindow(
         ImGui.spacing()
         GraphicsBackendField.render(stringManager, project.graphicsBackend)?.let {
             eventSystem.publish(ProjectEvent.SetGraphicsBackendRequested(it))
+        }
+    }
+
+    private val seedBuffer = ImString("", 32)
+
+    /** The project's random seed (ECS-14): typed (decimal or 0x hex) or randomized; each change is undoable. */
+    private fun renderRandom() {
+        val project = projectManager.currentProject ?: return
+        MImGui.textDisabled(stringManager.getString("settings.project.random.description"))
+        ImGui.spacing()
+        val shown = project.randomSeed.toString()
+        if (!ImGui.isAnyItemActive() && seedBuffer.get() != shown) seedBuffer.set(shown)
+        ImGui.setNextItemWidth(220f)
+        ImGui.inputText(stringManager.label("settings.project.random.seed"), seedBuffer)
+        Tooltips.show(stringManager, "settings.project.random.seed.tooltip")
+        if (ImGui.isItemDeactivatedAfterEdit()) {
+            val parsed = RandomService.parse(seedBuffer.get())
+            if (parsed != null) eventSystem.publish(ProjectEvent.SetRandomSeedRequested(parsed)) else seedBuffer.set(shown)
+        }
+        sameLine()
+        if (stringManager.tipped(button(stringManager.getString("settings.project.random.randomize")), "settings.project.random.randomize")) {
+            eventSystem.publish(ProjectEvent.SetRandomSeedRequested(RandomService.newSeed()))
+        }
+        RandomService.parse(System.getProperty(RandomService.SYSTEM_PROPERTY))?.let {
+            MImGui.warningText(stringManager.getString("settings.project.random.overridden", it.toString()))
         }
     }
 

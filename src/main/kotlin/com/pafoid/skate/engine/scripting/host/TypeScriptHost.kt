@@ -9,6 +9,8 @@ import com.pafoid.skate.engine.scripting.api.ScriptEntity
 import com.pafoid.skate.engine.scripting.api.ScriptEvents
 import com.pafoid.skate.engine.scripting.api.ScriptInput
 import com.pafoid.skate.engine.scripting.api.ScriptLog
+import com.pafoid.skate.engine.scripting.api.ScriptRandom
+import com.pafoid.skate.engine.scripting.api.ScriptRandomStream
 import com.pafoid.skate.engine.scripting.api.ScriptPhysics
 import com.pafoid.skate.engine.scripting.api.ScriptRigidBody
 import com.pafoid.skate.engine.scripting.api.ScriptScene
@@ -170,7 +172,7 @@ class TypeScriptHost : ScriptHost {
             listOf(
                 ScriptContext::class, ScriptEntity::class, ScriptTransform::class, ScriptRigidBody::class,
                 ScriptScene::class, ScriptInput::class, ScriptPhysics::class, ScriptEvents::class,
-                ScriptTime::class, ScriptLog::class, Vector3f::class,
+                ScriptTime::class, ScriptLog::class, ScriptRandom::class, ScriptRandomStream::class, Vector3f::class,
             ).forEach { type ->
                 type.java.methods.filter { it.declaringClass != Any::class.java }.forEach { builder.allowAccess(it) }
             }

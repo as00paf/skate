@@ -21,6 +21,11 @@ data class GameSettings(
      * player and support. Cleared when the chosen backend starts. Informational only; the choice itself is kept.
      */
     val graphicsNote: String? = null,
+    /**
+     * Random seed override (ECS-14): null uses the project's seed. A player or tester sets it to replay a run; the
+     * `-Dskate.seed` system property wins over it. See `RandomService.resolve`.
+     */
+    val randomSeed: Long? = null,
 ) {
     companion object {
         const val DEFAULT_LOCALE = "en"

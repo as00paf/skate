@@ -9,6 +9,8 @@ import com.pafoid.skate.engine.scripting.api.ScriptPhysics
 import com.pafoid.skate.engine.scripting.api.ScriptRigidBody
 import com.pafoid.skate.engine.scripting.api.ScriptScene
 import com.pafoid.skate.engine.scripting.api.ScriptTime
+import com.pafoid.skate.engine.scripting.api.ScriptRandom
+import com.pafoid.skate.engine.scripting.api.ScriptRandomStream
 import com.pafoid.skate.engine.scripting.api.ScriptTransform
 import kotlin.reflect.KClass
 import kotlin.reflect.KFunction
@@ -51,7 +53,7 @@ class ApiIndex(types: Collection<ApiType>, val roots: Map<String, String> = mapO
         private val API: List<KClass<*>> = listOf(
             ScriptContext::class, ScriptTransform::class, ScriptEntity::class, ScriptRigidBody::class,
             ScriptScene::class, ScriptInput::class, ScriptPhysics::class, ScriptEvents::class,
-            ScriptTime::class, ScriptLog::class,
+            ScriptTime::class, ScriptLog::class, ScriptRandom::class, ScriptRandomStream::class,
         )
 
         private val PACKAGE_PREFIX = Regex("\\b(?:[a-z_][a-z0-9_]*\\.)+(?=[A-Z])")
@@ -156,6 +158,18 @@ internal object Docs {
         "ScriptTime.deltaTime" to "Seconds since the previous frame.",
         "ScriptTime.fixedDeltaTime" to "Fixed step length in seconds.",
         "ScriptTime.elapsed" to "Seconds since the script started.",
+        "ScriptRandomStream.nextInt" to "Random integer in [0, until), or in [from, until) with two arguments.",
+        "ScriptRandomStream.nextFloat" to "Random float in [0, 1).",
+        "ScriptRandomStream.range" to "Random float in [min, max).",
+        "ScriptRandomStream.chance" to "True with probability p (0 never, 1 always).",
+        "ScriptRandom.nextInt" to "Random integer in [0, until), or in [from, until) with two arguments.",
+        "ScriptRandom.nextFloat" to "Random float in [0, 1).",
+        "ScriptRandom.range" to "Random float in [min, max).",
+        "ScriptRandom.chance" to "True with probability p (0 never, 1 always).",
+        "ScriptContext.random" to "Seeded random numbers: this script's own stream; same seed, same values every Play.",
+        "ScriptRandom.seed" to "The game's random seed (project setting unless overridden).",
+        "ScriptRandom.stream" to "The named stream shared by every script using that name.",
+        "ScriptRandom.reseed" to "Switches the game to a new seed and rewinds every stream.",
         "ScriptLog.info" to "Logs an informational message.",
         "ScriptLog.warn" to "Logs a warning.",
         "ScriptLog.error" to "Logs an error.",

@@ -80,6 +80,9 @@ class Engine {
     val systemManager = SystemManager()
     val sceneManager = SceneManager(assetsManager, eventSystem, serializer, systemManager, logger)
     val gameObjectManager = GameObjectManager()
+
+    /** Seeded random streams (ECS-14), shared by systems and scripts; the project sets the seed when it opens. */
+    val random get() = systemManager.random
     val prefabsGenerator = PrefabsGenerator(this)
 
     val engineState = AtomicReference(EngineState.BOOTING)
@@ -175,7 +178,7 @@ class Engine {
             CameraControlSystem(ReaderFlyInputSource(inputSystem.reader)),
             ScriptingSystem(
                 logger, eventSystem,
-                ScriptServices(input = ReaderScriptInput(inputSystem.reader)),
+                ScriptServices(input = ReaderScriptInput(inputSystem.reader), random = random),
                 sceneManager = sceneManager,
             ),
         ) + uiSystems(inputSystem)
