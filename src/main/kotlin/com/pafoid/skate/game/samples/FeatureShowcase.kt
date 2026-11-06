@@ -42,7 +42,10 @@ import com.pafoid.skate.engine.getComponent
 import com.pafoid.skate.engine.physics3d.BodyType
 import com.pafoid.skate.engine.render.material.MaterialAsset
 import com.pafoid.skate.engine.ui.UIButtonComponent
+import com.pafoid.skate.engine.ui.MapBounds
 import com.pafoid.skate.engine.ui.UICanvasComponent
+import com.pafoid.skate.engine.ui.UIMapComponent
+import com.pafoid.skate.engine.ui.UIMapMarkerComponent
 import com.pafoid.skate.engine.ui.UIElementComponent
 import com.pafoid.skate.engine.ui.UIImageComponent
 import com.pafoid.skate.engine.ui.UIProgressBarComponent
@@ -114,6 +117,18 @@ class FeatureShowcase(private val prefabs: PrefabsGenerator) {
         /** The views are boxes standing on the pad; the session's origin sits at their centre height. */
         private const val VIEW_HALF_HEIGHT = 0.7f
 
+        /** GUI-13: the minimap (bottom left), the button that opens the full map, and the full map's canvas. */
+        const val MINIMAP = "[UI] Minimap"
+        const val MAP_BUTTON = "MapButton"
+        const val MAP_CANVAS = "[UI] Map"
+        const val MAP_CLOSE = "MapClose"
+        /** The map follows the scene camera (the showcase has no player character; the camera is "you"). */
+        const val MAP_TARGET = "Camera"
+        /** The floor (60 x 40 m) with a 2 m margin: what the full map shows. */
+        val MAP_WORLD = MapBounds(-32f, -22f, 32f, 22f)
+        const val MINIMAP_VIEW = 36f
+        const val MINIMAP_SIZE = 240f
+
         /** Overlay button that cycles the scene fog (off, linear, exp, exp², height) in Play; see [FogCycle]. */
         const val FOG_TOGGLE_BUTTON = "FogToggle"
 
@@ -126,7 +141,9 @@ class FeatureShowcase(private val prefabs: PrefabsGenerator) {
 
         /** String keys the overlay uses; they live in the bundled game and editor string tables. */
         val STRING_KEYS = listOf("showcase.title", "showcase.hint", "showcase.areas", "showcase.text", "showcase.button", "showcase.overview", "showcase.fog_toggle") +
-            AREAS.map { "showcase.area.${it.key}" }
+            AREAS.map { "showcase.area.${it.key}" } +
+            listOf("showcase.map.open", "showcase.map.title", "showcase.map.close", "showcase.map.hint") +
+            AREAS.map { "showcase.map.${it.key}" }
 
         const val OVERVIEW = "overview"
         private val OVERVIEW_EYE = Vector3f(0f, 32f, 55f)
@@ -442,6 +459,60 @@ class FeatureShowcase(private val prefabs: PrefabsGenerator) {
             .addComponent(UIProgressBarComponent(value = 0.6f)))
         canvas.addChild(uiNode("Slider", 1f, 1f, -60f, -50f, 400f, 30f)
             .addComponent(UISliderComponent(0f, 1f, 0.3f)))
+        // GUI-13: minimap in the bottom-left corner (below the legend), following "you" (the camera).
+        canvas.addChild(map(MINIMAP, follow = true, labels = false)
+            .addComponent(UIElementComponent().placed(0f, 1f, 20f, -20f, MINIMAP_SIZE, MINIMAP_SIZE)))
+        canvas.addChild(uiNode(MAP_BUTTON, 0f, 1f, MINIMAP_SIZE + 36f, -20f, 220f, 60f)
+            .addComponent(UIButtonComponent("showcase.map.open", fontSize = 26f)))
         add(canvas)
+        add(fullMap())
     }
+
+    /** The full-screen map: a hidden modal canvas, opened by [MAP_BUTTON], closed by [MAP_CLOSE] or Esc. */
+    private fun fullMap(): GameObject {
+        val canvas = GameObject(MAP_CANVAS)
+            .addComponent(UICanvasComponent(sortOrder = 50, visible = false, modal = true))
+            .addComponent(UIElementComponent().stretched())
+        canvas.addChild(GameObject("Dim").addComponent(UIElementComponent().stretched())
+            .addComponent(UIImageComponent(tint = Vector4f(0f, 0f, 0f, 0.6f))))
+        canvas.addChild(uiNode("MapTitle", 0.5f, 0f, 0f, 30f, 1200f, 60f)
+            .addComponent(UITextComponent("showcase.map.title", fontSize = 48f, alignX = 0.5f)))
+        canvas.addChild(uiNode("MapHint", 0.5f, 0f, 0f, 92f, 1400f, 34f)
+            .addComponent(UITextComponent("showcase.map.hint", fontSize = 26f, alignX = 0.5f)))
+        canvas.addChild(map("FullMap", follow = false, labels = true)
+            .addComponent(UIElementComponent().placed(0.5f, 0.5f, 0f, 30f, 1500f, 820f)))
+        canvas.addChild(uiNode(MAP_CLOSE, 1f, 0f, -30f, 30f, 220f, 64f)
+            .addComponent(UIButtonComponent("showcase.map.close", fontSize = 28f)))
+        return canvas
+    }
+
+    /** A map widget: background, the floor, one pad per area (with its name when [labels]), and "you". */
+    private fun map(name: String, follow: Boolean, labels: Boolean): GameObject {
+        val map = GameObject(name)
+            .addComponent(UIImageComponent(tint = Vector4f(0.05f, 0.07f, 0.1f, 0.85f)))
+            .addComponent(UIMapComponent(
+                MAP_WORLD.minX, MAP_WORLD.minZ, MAP_WORLD.maxX, MAP_WORLD.maxZ,
+                follow = follow, viewSize = MINIMAP_VIEW, target = MAP_TARGET,
+                openButton = if (follow) "" else MAP_BUTTON, closeButton = if (follow) "" else MAP_CLOSE,
+            ))
+        map.addChild(marker("Floor", 0f, 0f, 60f, 40f, Vector4f(0.3f, 0.3f, 0.32f, 1f)))
+        AREAS.forEach { area ->
+            val pad = marker("Area_${area.key}", area.center.x, area.center.z, area.size.x * 2f, area.size.z * 2f,
+                Vector4f(area.color).also { it.w = 1f }.mul(1.4f, 1.4f, 1.4f, 1f))
+            if (labels) pad.addChild(GameObject("Label").addComponent(UIElementComponent().stretched())
+                .addComponent(UITextComponent("showcase.map.${area.key}", fontSize = 26f, alignX = 0.5f)))
+            map.addChild(pad)
+        }
+        val you = if (labels) 28f else 16f
+        map.addChild(GameObject("You")
+            .addComponent(UIElementComponent(width = you, height = you, zOrder = 1))
+            .addComponent(UIImageComponent(tint = Vector4f(1f, 0.85f, 0.1f, 1f)))
+            .addComponent(UIMapMarkerComponent(tracksTarget = true)))
+        return map
+    }
+
+    private fun marker(name: String, x: Float, z: Float, width: Float, depth: Float, color: Vector4f) = GameObject(name)
+        .addComponent(UIElementComponent())
+        .addComponent(UIImageComponent(tint = color))
+        .addComponent(UIMapMarkerComponent(x, z, width, depth))
 }
