@@ -48,6 +48,8 @@ class GameVulkanStartGpuTest {
                 window.device.commandList().blit(engine.renderer.frameBuffer.target, null, dstRect = IntRect(0, 0, window.width, window.height), filter = Filter.LINEAR)
                 window.device.endFrame()
             }
+            // The bar is "no ERROR logs", not pixels: with post-processing on, Vulkan may sample render targets upside
+            // down until VK-05 settles the Y-flip convention, so a pixel check would see a flipped or slightly different frame.
             assertEquals(emptyList<String>(), engine.logger.logs.filter { it.level == LoggerService.LogLevel.ERROR }.map { it.message }, "errors (disabled passes: $failed)")
         } finally {
             runCatching { engine.destroy() }
