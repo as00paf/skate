@@ -27,11 +27,13 @@ import com.jme3.math.Quaternion
 import java.util.WeakHashMap
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.components.BoxCollider3D
-import com.pafoid.skate.engine.ecs.components.Collider3D
 import com.pafoid.skate.engine.ecs.components.RigidBody3D
 import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.getComponent
+import com.pafoid.skate.engine.physics3d.BodyDescription
 import com.pafoid.skate.engine.physics3d.BodyType
+import com.pafoid.skate.engine.physics3d.ShapePart
+import com.pafoid.skate.engine.physics3d.ShapeWireframe
 import com.pafoid.skate.engine.physics3d.ColliderShape
 import com.pafoid.skate.engine.physics3d.IPhysics3D
 import com.pafoid.skate.engine.physics3d.IPhysicsBody3D
@@ -181,72 +183,56 @@ class BulletPhysics3D(
      * @param go The GameObject to add.
      */
     override fun add(go: GameObject) {
-        val rb = go.getComponent<RigidBody3D>()
-        if (rb != null) {
-            val colliders = go.components.filterIsInstance<Collider3D>()
-            // Triangle meshes only collide on static bodies (Bullet rejects them on dynamic ones)
-            val staticOnly = colliders.any { it.staticOnly }
-            val desiredMass = if (rb.bodyType == BodyType.Static || staticOnly) 0f else rb.mass
-            
-            // Check if we need to rebuild due to mass change
-            val rawBody = (rb.rawBody as? BulletRigidBodyHandle)?.body
+        val rb = go.getComponent<RigidBody3D>() ?: return
+        val desc = BodyDescription.of(go) ?: return
 
-            if (rawBody != null) {
-                if (rawBody.mass != desiredMass) {
-                    physicsSpace.remove(rawBody)
-                    contactBodies.remove(rawBody)
-                    rb.rawBody = null
-                } else {
-                    // Body exists and mass is correct, just sync properties
-                    syncBodyProperties(rawBody, rb, go)
-                    return
-                }
+        // Rebuild when the mass changed, otherwise just sync properties
+        val rawBody = (rb.rawBody as? BulletRigidBodyHandle)?.body
+        if (rawBody != null) {
+            if (rawBody.mass != desc.mass) {
+                physicsSpace.remove(rawBody)
+                contactBodies.remove(rawBody)
+                rb.rawBody = null
+            } else {
+                syncBodyProperties(rawBody, rb, go)
+                return
             }
-
-            val shapes = colliders.map { it to it.toShape() }
-            val shape = bodyShape(shapes)
-
-            // Scale before creating the body so its inertia matches the scaled shape
-            go.getComponent<Transform>()?.let { applyScale(shape, it.scale) }
-            val body = PhysicsRigidBody(shape, desiredMass)
-            rb.rawBody = BulletRigidBodyHandle(body)
-
-            if (rb.bodyType == BodyType.Kinematic && !staticOnly) {
-                body.isKinematic = true
-            }
-
-            val handle = rb.rawBody!!
-            handle.restitution = rb.restitution
-            handle.collisionLayer = rb.collisionLayer
-            handle.collisionMask = rb.collisionMask
-            handle.isTrigger = rb.isTrigger
-            if (rb.useCCD) {
-                val radius = ccdRadius(shapes.map { it.second }, go.getComponent<Transform>()?.scale ?: JomlVector3f(1f))
-                handle.setContinuousCollision(radius, radius)
-            }
-            body.userObject = go
-            // Pose first: the space computes the broadphase bounds on add, and queries see stale bounds until a step
-            syncBodyProperties(body, rb, go)
-            physicsSpace.add(body)
-            contactBodies.add(body)
         }
+
+        val shape = bodyShape(desc.parts)
+        // Scale before creating the body so its inertia matches the scaled shape
+        applyScale(shape, desc.scale)
+        val body = PhysicsRigidBody(shape, desc.mass)
+        val handle = BulletRigidBodyHandle(body)
+        rb.rawBody = handle
+        if (desc.motionType == BodyType.Kinematic) body.isKinematic = true
+
+        handle.restitution = desc.restitution
+        handle.collisionLayer = desc.collisionLayer
+        handle.collisionMask = desc.collisionMask
+        handle.isTrigger = desc.isTrigger
+        desc.ccdRadius?.let { handle.setContinuousCollision(it, it) }
+        body.userObject = go
+        // Pose first: the space computes the broadphase bounds on add, and queries see stale bounds until a step
+        syncBodyProperties(body, rb, go)
+        physicsSpace.add(body)
+        contactBodies.add(body)
     }
 
-
     /**
-     * Builds one body's shape from its colliders. A lone collider without offset keeps its own shape (Bullet only sweeps
-     * convex shapes for CCD); otherwise every collider becomes a compound child at its offset, with compound-hull
-     * colliders flattened into one child per hull since Bullet cannot nest compounds. No collider gives a unit box.
+     * Builds one body's shape from its collider [parts]. A lone part without offset keeps its own shape (Bullet only
+     * sweeps convex shapes for CCD); otherwise every part becomes a compound child at its offset, with compound hulls
+     * flattened into one child per hull since Bullet cannot nest compounds. No part gives a unit box.
      */
-    internal fun bodyShape(shapes: List<Pair<Collider3D, ColliderShape>>): CollisionShape {
-        if (shapes.size == 1 && shapes[0].first.offset.lengthSquared() == 0f) return createShape(shapes[0].second)
+    internal fun bodyShape(parts: List<ShapePart>): CollisionShape {
+        if (parts.size == 1 && parts[0].offset.lengthSquared() == 0f) return createShape(parts[0].shape)
         val compound = CompoundCollisionShape()
-        shapes.forEach { (collider, shape) ->
-            val offset = collider.offset.toJme()
-            if (shape is ColliderShape.CompoundHull) shape.hulls.forEach { compound.addChildShape(hullShape(it), offset) }
-            else compound.addChildShape(createShape(shape), offset)
+        parts.forEach { (shape, offset) ->
+            val jmeOffset = offset.toJme()
+            if (shape is ColliderShape.CompoundHull) shape.hulls.forEach { compound.addChildShape(hullShape(it), jmeOffset) }
+            else compound.addChildShape(createShape(shape), jmeOffset)
         }
-        if (shapes.isEmpty()) compound.addChildShape(BoxCollisionShape(1f).also { it.margin = 0.04f }, JmeVector3f(0f, 0f, 0f))
+        if (parts.isEmpty()) compound.addChildShape(BoxCollisionShape(1f).also { it.margin = 0.04f }, JmeVector3f(0f, 0f, 0f))
         return compound
     }
 
@@ -437,20 +423,6 @@ class BulletPhysics3D(
         physicsSpace.update(fixedDt, 0)
         EngineStats.physicsStepTime.set(System.nanoTime() - startTime)
         dispatchContacts()
-    }
-
-    /** Half of the thinnest collider dimension: a swept sphere this size cannot skip over geometry thinner than the body. */
-    private fun ccdRadius(shapes: List<ColliderShape>, scale: JomlVector3f): Float {
-        val smallest = shapes.minOfOrNull { shape ->
-            when (shape) {
-                is ColliderShape.Box ->
-                    minOf(shape.halfExtents.x * scale.x, shape.halfExtents.y * scale.y, shape.halfExtents.z * scale.z)
-                is ColliderShape.Capsule -> shape.radius * minOf(scale.x, scale.z)
-                is ColliderShape.Cylinder -> minOf(shape.radius * minOf(scale.x, scale.z), shape.height / 2f * scale.y)
-                is ColliderShape.ConvexHull, is ColliderShape.CompoundHull, is ColliderShape.TriangleMesh -> 0.1f
-            }
-        } ?: 0.1f
-        return (smallest * 0.5f).coerceAtLeast(0.01f)
     }
 
     private class PendingContact {

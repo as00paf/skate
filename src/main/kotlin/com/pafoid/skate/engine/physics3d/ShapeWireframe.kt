@@ -1,4 +1,4 @@
-package com.pafoid.skate.engine.physics3d.bullet
+package com.pafoid.skate.engine.physics3d
 
 import org.joml.Vector2f
 import org.joml.Vector3f

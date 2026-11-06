@@ -1,4 +1,4 @@
-package com.pafoid.skate.engine.physics3d.bullet
+package com.pafoid.skate.engine.physics3d
 
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test

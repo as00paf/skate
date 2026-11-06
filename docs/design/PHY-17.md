@@ -1,7 +1,7 @@
 # PHY-17 – Jolt physics backend (design note)
 
-Status: **awaiting approval**. This is phase 1 only; it adds no code. Once approved, the lead splits the slices in
-[Implementation slices](#implementation-slices) into tasks.
+Status: **approved** (skate-lead and the human, 2026-11-06). Slices a and b are implemented; see
+[Decisions](#decisions-after-review) for the review answers.
 
 ## Goal
 
@@ -13,7 +13,7 @@ queries.
 Done when (from the backlog): the physics test suite passes on Jolt as well as on Bullet, and the Feature Showcase
 runs on Jolt.
 
-Out of scope here (possible follow-ups, see [Open questions](#open-questions)): Jolt's own `Ragdoll`,
+Out of scope here (follow-ups filed as PHY-19): Jolt's own `Ragdoll`,
 `VehicleConstraint` and `CharacterVirtual`, the heightfield shape (PHY-15), buoyancy (PHY-16), and making Jolt the
 default backend.
 
@@ -42,13 +42,14 @@ default backend.
 | Our own JNI/LWJGL-style binding | Rejected. A large C++ build to maintain on every platform. |
 | Wait for an LWJGL Jolt module | None exists. |
 
-Licences: Jolt is MIT and jolt-jni is BSD-3-Clause (check again when we pin the version). Both go into the
-third-party notices that the export copies, next to libbulletjme's.
+Licences: Jolt and jolt-jni are both MIT (checked on the jolt-jni 6.2.0 POM). Both go into the third-party notices
+that the export copies, next to libbulletjme's.
 
 ### Version pinning
 
-Pin one exact jolt-jni release in `gradle/libs.versions.toml` (`joltjni = "x.y.z"`, at least two weeks old when
-pinned). jolt-jni is still pre-1.0, so its API can change between minor versions. Upgrades are explicit tasks that
+Pinned: **jolt-jni 6.2.0** (released 2026-10-14; 7.0.0 from 2026-10-26 was too new under the two-week rule), as
+`com.github.stephengold:jolt-jni-Windows64:6.2.0` for the classes plus its `ReleaseSp` classifier for
+`windows/x86-64/com/github/stephengold/joltjni.dll`. jolt-jni is still pre-1.0, so its API can change between minor versions. Upgrades are explicit tasks that
 re-run the parity suite.
 
 ### Process and world lifecycle
@@ -136,7 +137,7 @@ already enforce for Bullet.
 | `setAngularFactor` | per-axis factor | `EAllowedDofs`. Engine code only uses 0/1 per axis (`RigidBody3D` locks to Y). A factor of 0 locks the axis, anything else frees it. Fractional values log a one-time warning. |
 | CCD (`useCCD`) | swept sphere | `EMotionQuality.LinearCast`. The threshold and radius are ignored, since Jolt sizes the cast itself. |
 | Sleeping | `activate(true)` | Every setter that changes pose, velocity or forces activates the body. |
-| Centre of mass | body origin (compounds are **not** recentred) | Jolt puts the COM at the shape's true centre of mass. **Decision needed** (see Open questions): use the physical COM (recommended, more correct) or wrap shapes in `OffsetCenterOfMassShape` to pin the COM to the origin for exact parity. Either way, `getLocation` returns the body **origin** (`getPosition`, not `getCenterOfMassPosition`), so `Transform` sync does not change. |
+| Centre of mass | body origin (compounds are **not** recentred) | Jolt puts the COM at the shape's true centre of mass. **Decided:** use the physical COM. Either way, `getLocation` returns the body **origin** (`getPosition`, not `getCenterOfMassPosition`), so `Transform` sync does not change. |
 | User data | `userObject = go` | `body.userData = handleIndex`, an index into a Kotlin-side table of `GameObject`/handle entries. The index is resolved on the main thread. |
 | `rigidBodyCount` | `countRigidBodies()` | `PhysicsSystem.getNumBodies()` |
 
@@ -323,7 +324,16 @@ Rough effort: about 8–10 agent days in total. Slices b and d are the largest.
   values may need a second look when a project switches backend. That is why Bullet stays the default.
 - **Read-only install folders:** extraction to `USER_DIR` (both backends). Separate follow-up.
 
-## Open questions
+## Decisions after review
+
+1. **Centre of mass:** use Jolt's physical COM. `getLocation` still returns the body origin.
+2. **Exports:** ship both natives now; AST-15 strips the unused one.
+3. **Default backend:** Bullet stays the default.
+4. **Follow-ups:** Jolt-native ragdoll, vehicle and character controller are filed as PHY-19 (P3, design note later).
+5. **Extraction folder:** filed as PHY-18.
+
+## Open questions (answered above)
+
 
 For the human or the lead:
 
