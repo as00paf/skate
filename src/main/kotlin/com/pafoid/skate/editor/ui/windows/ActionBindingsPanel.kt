@@ -287,7 +287,7 @@ class ActionBindingsPanel(
         ImGui.closeCurrentPopup()
     }
 
-    private fun contextLabel(context: InputContext) = s("lbl.keybindings.context.${context.name.lowercase()}")
+    private fun contextLabel(context: InputContext) = s("lbl.keybindings.context.${context.id}")
 
     private fun categoryLabel(category: String): String {
         return translated("lbl.keybindings.category.${category.lowercase()}") ?: category

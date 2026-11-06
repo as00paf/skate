@@ -4,7 +4,7 @@ import kotlinx.serialization.Serializable
 
 /**
  * Per-project input configuration: dead zones plus the user's action bindings.
- * Defaults come from [DefaultActions]; [bindings] only stores customizations.
+ * Defaults come from the registered action definitions; [bindings] only stores customizations.
  */
 @Serializable
 class InputMappings(
