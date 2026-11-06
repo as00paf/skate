@@ -1,5 +1,6 @@
 package com.pafoid.skate.engine.input
 
+import com.pafoid.skate.engine.gameplay.CharacterActions
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -158,28 +159,28 @@ class InputReaderTest {
     }
 
     @Test
-    fun InputReader_DefaultActionsKeyboardAndTrigger() {
+    fun InputReader_CharacterPresetKeyboardAndTrigger() {
         val raw = FakeRaw()
-        val map = DefaultActions.register(ActionMap())
+        val map = CharacterActions.register(UiNavigationActions.register(ActionMap()))
         val reader = ActionInputReader(raw, map)
         raw.keys.add(Keys.A)
-        assertEquals(-1f, reader.actionValue(DefaultActions.MOVE_X))
+        assertEquals(-1f, reader.actionValue(CharacterActions.MOVE_X))
         raw.keys.clear(); raw.axes[1] = -1f // stick up
-        assertEquals(1f, reader.actionValue(DefaultActions.MOVE_Y), 0.01f)
+        assertEquals(1f, reader.actionValue(CharacterActions.MOVE_Y), 0.01f)
         raw.axes[1] = 0f; raw.axes[4] = 0.9f
-        assertTrue(reader.isActionDown(DefaultActions.SPRINT))
+        assertTrue(reader.isActionDown(CharacterActions.SPRINT))
     }
 
     @Test
     fun InputReader_RebindTakesEffectImmediately() {
         val raw = FakeRaw()
-        val map = DefaultActions.register(ActionMap())
+        val map = CharacterActions.register(UiNavigationActions.register(ActionMap()))
         val reader = ActionInputReader(raw, map)
-        map.rebind(DefaultActions.JUMP, 0, ActionBinding.Key(Keys.Q))
+        map.rebind(CharacterActions.JUMP, 0, ActionBinding.Key(Keys.Q))
         raw.keys.add(Keys.SPACE)
-        assertFalse(reader.isActionDown(DefaultActions.JUMP))
+        assertFalse(reader.isActionDown(CharacterActions.JUMP))
         raw.keys.clear(); raw.keys.add(Keys.Q)
-        assertTrue(reader.isActionDown(DefaultActions.JUMP))
+        assertTrue(reader.isActionDown(CharacterActions.JUMP))
     }
 
     @Test
