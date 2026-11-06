@@ -78,7 +78,7 @@ class UiRectGizmo(
         claimsMouse = handle != null || pickedElsewhere != null
 
         if (ImGui.isMouseClicked(0)) {
-            if (handle != null && element != null) {
+            if (handle != null) {
                 dragHandle = handle
                 dragStart = UiRectCommand.Rect.of(element)
             } else if (pickedElsewhere != null) {
