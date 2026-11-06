@@ -146,7 +146,7 @@ class EditorInputHandler(
             pressed(EditorShortcuts.COPY) -> selected?.let { clipboardService.copy(it) }
             pressed(EditorShortcuts.CUT) -> selected?.let {
                 clipboardService.copy(it)
-                eventSystem.publish(ViewportAction.Delete(it, scene))
+                eventSystem.publish(ViewportAction.Delete(it, scene, confirm = false))
             }
             pressed(EditorShortcuts.PASTE) -> eventSystem.publish(ViewportAction.PasteClipboard())
             pressed(EditorShortcuts.UNDO) -> undoRedoManager.undo()

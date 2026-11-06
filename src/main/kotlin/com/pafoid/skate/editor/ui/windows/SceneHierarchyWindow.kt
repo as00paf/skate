@@ -375,7 +375,7 @@ class SceneHierarchyWindow(
             if (stringManager.tipped(ImGui.menuItem("${Icons.CUT} ${stringManager.getString("context.hierarchy.cut")}", EditorShortcuts.CUT.display()), "context.hierarchy.cut", EditorShortcuts.CUT)) {
                 clipboardService.copy(obj)
                 sceneManager.currentScene?.let { scn ->
-                    eventSystem.publish(Delete(obj, scn))
+                    eventSystem.publish(Delete(obj, scn, confirm = false))
                 }
             }
             if (stringManager.tipped(ImGui.menuItem("${Icons.PASTE} ${stringManager.getString("context.hierarchy.paste_as_child")}"), "context.hierarchy.paste_as_child")) {
