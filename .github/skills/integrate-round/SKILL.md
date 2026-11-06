@@ -30,7 +30,7 @@ Used by `skate-lead` after domain agents report `DONE`. Never push to a remote o
 
 ## Discord DMs (two-way)
 
-Use `tools/herdr/discord-dm.sh` (`send`, `read`, `wait`) to talk to the human by DM. It needs `DISCORD_TOKEN` and `DISCORD_USER_ID`, taken from the environment or, when unset, from `~/.config/skate/discord.env` (override with `SKATE_DISCORD_ENV`); never write either into the repo, messages or logs. The `discord` MCP server can only post to channels, so DMs always go through this script.
+Use `tools/herdr/discord-dm.sh` (`send`, `read`, `wait`, `files`) to talk to the human by DM. `read` lists attachment names; `files <message-id> [dir]` downloads the attachments of one of the owner's messages (default `~/.cache/skate/discord/<id>`) and prints each saved path. It needs `DISCORD_TOKEN` and `DISCORD_USER_ID`, taken from the environment or, when unset, from `~/.config/skate/discord.env` (override with `SKATE_DISCORD_ENV`); never write either into the repo, messages or logs. The `discord` MCP server can only post to channels, so DMs always go through this script.
 
 - **Notify** by DM when a round is ready for testing (PR link, task IDs, test counts), when agents are blocked on a dialog you won't approve, and when a round is merged.
 - **Listen** for replies with `discord-dm.sh wait <seconds> [after-id]` while idle or waiting on agents. Pass the id of the last message you handled so you never act on the same message twice.
