@@ -26,21 +26,14 @@ class ScenePlaySnapshot private constructor(
     }
 
     /**
-     * Replaces [current] in [sceneManager] by a fresh copy of this snapshot at the same position and makes it active.
+     * Replaces [current] in [sceneManager] by a fresh copy of this snapshot, in the same tab. It stays active if
+     * [current] was. The copy keeps the captured `isDirty`: edits thrown away by the restore leave no unsaved marker.
      * Returns the new scene.
      */
     fun restore(sceneManager: SceneManager, serializer: Serializer, current: Scene): Scene {
-        val index = sceneManager.openScenes.indexOf(current)
         val fresh = decode(serializer)
-        sceneManager.closeScene(current)
-        sceneManager.openScene(fresh)
-        if (index in 0 until sceneManager.openScenes.size - 1) {
-            sceneManager.openScenes.remove(fresh)
-            sceneManager.openScenes.add(index, fresh)
-            sceneManager.switchScene(fresh)
-        }
+        sceneManager.replaceScene(current, fresh)
         fresh.setSelection(selectionIn(fresh))
-        fresh.isDirty = current.isDirty
         return fresh
     }
 

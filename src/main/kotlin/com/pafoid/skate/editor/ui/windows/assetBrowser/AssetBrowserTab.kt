@@ -24,6 +24,7 @@ abstract class AssetBrowserTab(
 
     open fun imgui(label:String, searchText: ImString) {
         refreshOnProjectChange()
+        pumpPreviews()
         renderHeader(label, searchText)
 
         val availableWidth = ImGui.getContentRegionAvailX()
@@ -47,8 +48,15 @@ abstract class AssetBrowserTab(
         if (scanned && root == scannedProject) return
         scanned = true
         scannedProject = root
+        onProjectChanged()
         refreshAssets()
     }
+
+    /** Uploads previews decoded since the last frame, a few per frame (AST-23). Main thread, once per frame. */
+    protected open fun pumpPreviews() {}
+
+    /** Drops cached previews of the previous project. */
+    protected open fun onProjectChanged() {}
 
     /** Lists the [type] files of the open project (or the engine assets) on an IO worker. */
     protected fun scan(type: BrowserAssetType, runIO: (() -> Unit) -> Unit) {

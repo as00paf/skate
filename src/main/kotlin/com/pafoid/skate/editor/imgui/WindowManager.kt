@@ -41,6 +41,9 @@ class WindowManager(
     /** Failed user actions (EDT-10); drawn last so it sits above every window. */
     private val errorDialog = ErrorDialog(eventSystem, stringManager)
 
+    /** Asks before deleting objects, from any path (EDT-62). */
+    private val deleteDialog = DeleteObjectsDialog(eventSystem, stringManager)
+
     fun update() {
         windowRegistry.windows.forEach { window ->
             if (!window.isOpen.get()) return@forEach
@@ -50,6 +53,7 @@ class WindowManager(
         InspectorDrafts.endFrame(eventSystem, ImGui.getFrameCount(), ImGui.isAnyItemActive())
         windowRegistry.menuBar.render()
         windowRegistry.statusBar.render()
+        deleteDialog.render()
         errorDialog.render()
         EditorFocus.endFrame()
     }
