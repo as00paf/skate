@@ -154,7 +154,7 @@ class VulkanPresentGpuTest {
     }
 
     @Test
-    fun Present_GeometryPass_BlittedToTheBackBuffer_MatchesTheOffscreenFrame() = withDevice(1280, 720) { window, device ->
+    fun Present_GeometryAndPost_BlittedToTheBackBuffer_MatchesTheOffscreenFrame() = withDevice(1280, 720) { window, device ->
         val engine = Engine()
         val dir = kotlin.io.path.createTempDirectory("skate-vk01").toFile()
         try {
@@ -166,7 +166,8 @@ class VulkanPresentGpuTest {
             engine.sceneManager.switchScene(main)
             engine.cameraManager.transform.translation.set(6f, 4f, 8f)
             engine.cameraManager.transform.lookAt(Vector3f(0f, 0.8f, 0f))
-            engine.renderer.renderGraph.getAllPasses().forEach { it.isEnabled = it.name == "GeometryPass" }
+            // Geometry plus post-processing (default bloom + FXAA: ping-pong targets and the blit back, VK-05)
+            engine.renderer.renderGraph.getAllPasses().forEach { it.isEnabled = it.name == "GeometryPass" || it.name == "PostProcessPass" }
 
             /** One game frame: update (renders the scene target), blit to the back buffer, present. */
             fun frame(compare: Boolean) {
@@ -190,6 +191,12 @@ class VulkanPresentGpuTest {
                     }
                     assertTrue(colours.size > 50, "the presented frame has content (${colours.size} colours)")
                     assertEquals(0, maxDiff, "the back buffer holds exactly the scene frame")
+                    // Upright (VK-05 orientation): in GL row order the top rows are sky (blue), the bottom rows floor
+                    fun rowBlueness(row: Int): Double = (0 until w step 7).sumOf { x ->
+                        val i = (row * w + x) * 4
+                        ((back.get(i + 2).toInt() and 0xFF) - (back.get(i).toInt() and 0xFF)).toDouble()
+                    } / (w / 7)
+                    assertTrue(rowBlueness(h - 2) > rowBlueness(1) + 20, "sky at the top, floor at the bottom: ${rowBlueness(h - 2)} vs ${rowBlueness(1)}")
                 }
                 device.endFrame()
             }
