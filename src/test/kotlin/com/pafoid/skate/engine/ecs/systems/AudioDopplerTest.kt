@@ -52,7 +52,8 @@ class AudioDopplerTest {
 
     /** A body moving at [velocity] (a stand-in for a live physics body). */
     private fun body(velocity: Vector3f) = RigidBody3D(1f).apply {
-        rawBody = mockk<IRigidBodyHandle>(relaxed = true).also { every { it.linearVelocity } returns Vector3f(velocity) }
+        // An override, not every{}: stubbing a JOML return type makes mockk retransform JOML, which fails verification
+        rawBody = object : IRigidBodyHandle by mockk(relaxed = true) { override var linearVelocity = Vector3f(velocity) }
     }
 
     private fun source(name: String, at: Vector3f, bus: BusId = BusId.SFX, body: RigidBody3D? = null): GameObject {

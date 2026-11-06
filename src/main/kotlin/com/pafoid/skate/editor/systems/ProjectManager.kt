@@ -195,6 +195,8 @@ class ProjectManager(
             return
         }
         logger.logEditor("Closing project: ${project.name}")
+        // Stops Play and restores the pre-play scene, so runtime state is not saved below (EDT-45).
+        eventSystem.publish(ProjectEvent.Closing(project))
 
         try {
             val scenesDir = File(project.getProjectDirectory(), "Scenes\\${project.defaultScene}")

@@ -1,6 +1,7 @@
 package com.pafoid.skate.editor.commands.input
 
 import com.pafoid.skate.editor.commands.Command
+import com.pafoid.skate.editor.commands.KeyedCommand
 import com.pafoid.skate.engine.input.DeadZoneSettings
 import com.pafoid.skate.engine.input.StickDeadZone
 import com.pafoid.skate.engine.input.TriggerDeadZone
@@ -28,8 +29,9 @@ class SetDeadZonesCommand(
     private val target: DeadZoneSettings,
     before: DeadZoneSettings,
     after: DeadZoneSettings,
-    private val label: String = "Dead Zones",
-) : Command {
+    /** Translated name of the edited zone (stick or trigger), or null for the whole dead-zone set. */
+    private val label: String? = null,
+) : Command, KeyedCommand {
     private val before = before.snapshot()
     private val after = after.snapshot().also { it.validate() }
 
@@ -37,9 +39,13 @@ class SetDeadZonesCommand(
 
     override fun undo() = target.copyFrom(before)
 
-    override fun getDisplayName(): String = "Edit $label"
+    override val displayNameKey: String get() = if (label == null) "command.dead_zones.edit_all" else "command.dead_zones.edit"
+    override val displayNameArgs: List<Any> get() = listOfNotNull(label)
 
-    override fun getTargetName(): String = "Input Settings"
+    override fun getDisplayName(): String = displayNameKey
+
+    /** String key, translated by [com.pafoid.skate.editor.commands.CommandNames.targetName]. */
+    override fun getTargetName(): String = "command.target.input_settings"
 
     /** True when the edit changes nothing, so callers can skip pushing it. */
     fun isNoOp(): Boolean = before == after

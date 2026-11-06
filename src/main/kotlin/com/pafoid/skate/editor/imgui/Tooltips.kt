@@ -3,6 +3,7 @@ package com.pafoid.skate.editor.imgui
 import com.pafoid.skate.editor.data.EditorShortcut
 import com.pafoid.skate.engine.core.StringManager
 import imgui.ImGui
+import imgui.flag.ImGuiHoveredFlags
 
 /**
  * Tooltips for buttons and menu items (EDT-05). A control's tooltip key is derived from its label key:
@@ -28,9 +29,12 @@ object Tooltips {
         if (ImGui.isItemHovered() && strings.hasString(tooltipKey)) ImGui.setTooltip(strings.getString(tooltipKey))
     }
 
-    /** Shows [tooltipKey]'s text while the last item is hovered, with [shortcut]'s live combo when given (EDT-10). */
+    /**
+     * Shows [tooltipKey]'s text while the last item is hovered, with [shortcut]'s live combo when given (EDT-10).
+     * Disabled items keep their tooltip, so a grayed-out button still says what it does (EDT-45).
+     */
     fun show(strings: StringManager, tooltipKey: String, shortcut: EditorShortcut? = null) {
-        if (ImGui.isItemHovered()) ImGui.setTooltip(withShortcut(strings, strings.getString(tooltipKey), shortcut))
+        if (ImGui.isItemHovered(ImGuiHoveredFlags.AllowWhenDisabled)) ImGui.setTooltip(withShortcut(strings, strings.getString(tooltipKey), shortcut))
     }
 
     /**
