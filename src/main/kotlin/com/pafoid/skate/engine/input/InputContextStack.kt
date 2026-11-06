@@ -89,10 +89,17 @@ class InputContextStack {
         existing.priority < new.priority || (existing.priority == new.priority && existing.sequence < new.sequence)
 
     companion object {
-        /** The engine's base stack: `gameplay` with `ui` above it passing everything through (today's default). */
+        /**
+         * Priority of the base `ui` entry: above any game context (a ride or vehicle context consumes sources from the
+         * contexts *below* it, and must not take the menu's confirm or navigation away). `ui` blocks nothing, so
+         * gameplay is unaffected; a modal menu pushes its own blocking entry higher still.
+         */
+        const val UI_PRIORITY = 1000
+
+        /** The engine's base stack: `gameplay` with `ui` on top passing everything through. */
         fun withDefaults(): InputContextStack = InputContextStack().apply {
             push(InputContext.GAMEPLAY, owner = "engine")
-            push(InputContext.UI, blocking = ContextBlocking.NONE, owner = "engine")
+            push(InputContext.UI, priority = UI_PRIORITY, blocking = ContextBlocking.NONE, owner = "engine")
         }
     }
 }
