@@ -1,5 +1,8 @@
 package com.pafoid.skate.editor.ui.handlers
 
+import com.pafoid.skate.editor.loading.LoadingOperation
+import com.pafoid.skate.editor.loading.LoadingRunner
+import com.pafoid.skate.editor.loading.StepExecutor
 import com.pafoid.skate.editor.events.EditorError
 import com.pafoid.skate.editor.commands.project.CloseAllScenesCommand
 import com.pafoid.skate.editor.commands.project.CloseOtherScenesCommand
@@ -40,7 +43,9 @@ class SceneActionHandler(
     private val engine: Engine,
     private val projectManager: ProjectManager,
     private val undoRedoManager: UndoRedoManager,
-    private val editorCamera: EditorCamera
+    private val editorCamera: EditorCamera,
+    /** Opens scene files with the loading screen (EDT-56); shared with the project handler. */
+    private val loading: LoadingRunner = LoadingRunner(engine.eventSystem, StepExecutor.Jobs(engine.jobSystem)),
     ) {
     private val logger = engine.logger
     private val eventSystem = engine.eventSystem
@@ -117,10 +122,17 @@ class SceneActionHandler(
         }
     }
 
+    /** The file is read and decoded in the background; the scene opens on the main thread (EDT-56). */
     private fun handleOpenSceneFile(sceneFile: File) {
-        val command = OpenSceneFileCommand(sceneFile, serializer, sceneManager, eventSystem)
-        undoRedoManager.executeCommand(command)
-        logger.logEditor("Scene file opened: ${sceneFile.name}")
+        var decoded: Result<Scene?>? = null
+        val operation = LoadingOperation.Builder("loading.open_scene.title", sceneFile.nameWithoutExtension)
+            .background("loading.step.read_scene", weight = 2f) { decoded = OpenSceneFileCommand.decode(sceneFile, serializer) }
+            .main("loading.step.open_scene") {
+                undoRedoManager.executeCommand(OpenSceneFileCommand(sceneFile, serializer, sceneManager, eventSystem, decoded))
+                logger.logEditor("Scene file opened: ${sceneFile.name}")
+            }
+            .build()
+        if (!loading.run(operation)) logger.logEditor("Busy loading; ignored opening ${sceneFile.name}", LogLevel.WARN)
     }
 
     private fun handleRenameRequested(scene: Scene, newName: String) {
