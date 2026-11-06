@@ -37,8 +37,8 @@ object MImGui {
         ImGui.pushID(label)
 
         if (ImGui.beginTable("##${label}_table", 2, 0, 2f)) {
-            ImGui.tableSetupColumn("Label", 0, columnWidth)
-            ImGui.tableSetupColumn("Control")
+            ImGui.tableSetupColumn("##Label", 0, columnWidth)
+            ImGui.tableSetupColumn("##Control")
             ImGui.tableNextRow()
             ImGui.tableSetColumnIndex(0)
             ImGui.text(label)
@@ -442,8 +442,8 @@ object MImGui {
         ImGui.pushID(label)
 
         if (ImGui.beginTable("##${label}_table", 2, 0, 2f)) {
-            ImGui.tableSetupColumn("Label", 0)
-            ImGui.tableSetupColumn("Control")
+            ImGui.tableSetupColumn("##Label", 0)
+            ImGui.tableSetupColumn("##Control")
             ImGui.tableNextRow()
             ImGui.tableSetColumnIndex(0)
             ImGui.text(label)
@@ -467,8 +467,8 @@ object MImGui {
         ImGui.pushID(label)
 
         if (ImGui.beginTable("##${label}_table", 2, 0, 2f)) {
-            ImGui.tableSetupColumn("Label", 0, DEFAULT_COLUMN_WIDTH)
-            ImGui.tableSetupColumn("Control")
+            ImGui.tableSetupColumn("##Label", 0, DEFAULT_COLUMN_WIDTH)
+            ImGui.tableSetupColumn("##Control")
             ImGui.tableNextRow()
             ImGui.tableSetColumnIndex(0)
             ImGui.text(label)
@@ -608,8 +608,8 @@ object MImGui {
         var changed = false
         ImGui.pushID(label)
         if (ImGui.beginTable("##${label}_table", 2, 0, 2f)) {
-            ImGui.tableSetupColumn("Label", 0)
-            ImGui.tableSetupColumn("Control")
+            ImGui.tableSetupColumn("##Label", 0)
+            ImGui.tableSetupColumn("##Control")
             ImGui.tableNextRow()
             ImGui.tableSetColumnIndex(0)
             ImGui.text(label)
@@ -628,8 +628,8 @@ object MImGui {
         ImGui.pushID(label)
         var changed = false
         if (ImGui.beginTable("##${label}_table", 2, 0, 2f)) {
-            ImGui.tableSetupColumn("Label", 0)
-            ImGui.tableSetupColumn("Control")
+            ImGui.tableSetupColumn("##Label", 0)
+            ImGui.tableSetupColumn("##Control")
             ImGui.tableNextRow()
             ImGui.tableSetColumnIndex(0)
             ImGui.text(label)
@@ -772,8 +772,8 @@ object MImGui {
     ) {
         ImGui.pushID(label)
         if (ImGui.beginTable("##${label}_prop", 2)) {
-            ImGui.tableSetupColumn("Label")
-            ImGui.tableSetupColumn("Control")
+            ImGui.tableSetupColumn("##Label")
+            ImGui.tableSetupColumn("##Control")
             ImGui.tableNextRow()
             ImGui.tableSetColumnIndex(0)
             ImGui.text(label)
@@ -801,8 +801,8 @@ object MImGui {
     fun propertyRowReadOnly(label: String, value: String, helpTooltip: String? = null) {
         ImGui.pushID(label)
         if (ImGui.beginTable("##${label}_prop", 2)) {
-            ImGui.tableSetupColumn("Label")
-            ImGui.tableSetupColumn("Control")
+            ImGui.tableSetupColumn("##Label")
+            ImGui.tableSetupColumn("##Control")
             ImGui.tableNextRow()
             ImGui.tableSetColumnIndex(0)
             ImGui.text(label)
