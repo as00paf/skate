@@ -192,7 +192,7 @@ class Engine {
             },
             ScriptingSystem(
                 logger, eventSystem,
-                ScriptServices(input = ReaderScriptInput(inputSystem.reader)),
+                ScriptServices(input = ReaderScriptInput(inputSystem.reader), inputContexts = inputSystem.contexts),
                 sceneManager = sceneManager,
             ),
         ) + uiSystems(inputSystem)
