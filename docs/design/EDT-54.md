@@ -245,3 +245,8 @@ Still open for the lead or the human:
   - R7: picking is shown as "on demand" and kept out of the share bars.
   - Nits applied: the frame GPU total is a sum (tooltip), -1 shows as "—", stages inactive without an FBO, the `toggleEnable`/harness note, the threading confirmation, 2c deferred.
 - **Step 2a implementation note:** an on-demand pass is still timed on its idle frames (about 0 ms), and GPU results arrive frames late. So `RenderPass.ranThisFrame` (from `PickingSchedule.fresh` for picking) limits `lastMeasuredNs` to frames where the pass really rendered, and for on-demand passes it holds that frame's CPU time. For per-frame passes it is GPU, else CPU, as designed. Geometry's shadow handoff is `GeometryPass.shadowsThisFrame()`, which is tested.
+- **Step 2b implementation notes:**
+  - The window lives in `editor/ui/windows/rendergraph/`.
+  - Toggles go through `RenderGraphAction` events. `RenderGraphActionHandler` runs them as `SetRenderPassEnabledCommand` (UI code never executes commands, per `UiMutationPipelineGuardTest`), and it also re-enables every pass on `ProjectEvent.Opened`.
+  - Layout caching is the pure `RenderGraphLayoutCache`.
+  - Console stays the front tab after a layout build through `DefaultDockLayout.ACTIVE_TABS`.

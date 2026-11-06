@@ -25,6 +25,12 @@ object DefaultDockLayout {
         "window.shell" to Zone.BOTTOM,
     )
 
+    /**
+     * The tab shown in front of its zone after the layout is built (first run, Reset Layout). Other default windows of
+     * the zone, such as the Render Graph (EDT-54), join as background tabs.
+     */
+    val ACTIVE_TABS = listOf("window.console")
+
     /** Dialogs, popups and settings windows have no zone and stay floating. */
     fun zoneOf(windowName: String): Zone? = zones[windowName]
 

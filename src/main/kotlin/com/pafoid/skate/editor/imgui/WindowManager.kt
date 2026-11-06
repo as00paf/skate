@@ -34,7 +34,11 @@ class WindowManager(
             }
             dockBuilderDockWindow(window.title(stringManager), dockId)
         }
+        activateDefaultTabs = true
     }
+
+    /** Set when the default layout was just built: bring [DefaultDockLayout.ACTIVE_TABS] to the front once. */
+    private var activateDefaultTabs = false
 
     private val closeTracker = WindowCloseTracker()
 
@@ -48,6 +52,12 @@ class WindowManager(
         windowRegistry.windows.forEach { window ->
             if (!window.isOpen.get()) return@forEach
             window.imgui()
+        }
+        if (activateDefaultTabs) {
+            // After the windows' first begin of the new layout, so they exist in their dock nodes.
+            activateDefaultTabs = false
+            DefaultDockLayout.ACTIVE_TABS.mapNotNull { windowRegistry.getWindow(it) }.filter { it.isOpen.get() }
+                .forEach { ImGui.setWindowFocus(it.title(stringManager)) }
         }
         closeTracker.update(windowRegistry.windows)
         InspectorDrafts.endFrame(eventSystem, ImGui.getFrameCount(), ImGui.isAnyItemActive())

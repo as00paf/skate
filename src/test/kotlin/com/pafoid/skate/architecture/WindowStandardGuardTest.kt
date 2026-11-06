@@ -115,8 +115,6 @@ class WindowStandardGuardTest {
             "AudioInspectorWindow", "ScriptEditorWindow",
             // I: input testing move (the window is deleted)
             "InputTestingWindow",
-            // EDT-54: the Render Graph rewrite adopts the standard
-            "RenderGraphWindow",
         )
 
         private val CLASS = Regex("""(?<![\w.])(abstract\s+|open\s+)?class\s+(\w+)""")

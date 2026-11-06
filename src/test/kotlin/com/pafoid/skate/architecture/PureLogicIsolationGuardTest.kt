@@ -45,6 +45,21 @@ class PureLogicIsolationGuardTest {
     }
 
     @Test
+    fun PureLogic_RenderGraphWindowLogicHasNoImGui() {
+        // EDT-54 §4: layout, view and timing stats are tested without ImGui; only RenderGraphWindow.kt draws.
+        val files = listOf(
+            "editor/ui/windows/rendergraph/RenderGraphLayout.kt",
+            "editor/ui/windows/rendergraph/RenderGraphView.kt",
+            "editor/ui/windows/rendergraph/PassTimingStats.kt",
+        )
+        val forbidden = listOf("import org.lwjgl.", "import imgui.", "import com.pafoid.skate.editor.imgui.")
+        val violations = files.flatMap { f ->
+            importsOf(f).filter { line -> forbidden.any { line.startsWith(it) } }.map { "$f -> $it" }
+        }
+        assertTrue(violations.isEmpty(), "Render Graph window logic must stay testable without ImGui: $violations")
+    }
+
+    @Test
     fun PureLogic_NetworkingAndShaderCoreStayPlatformFree() {
         val netFiles = sourceRoot.resolve("engine/net").let { dir ->
             Files.list(dir).use { it.filter { f -> f.fileName.toString().endsWith(".kt") }.toList() }
