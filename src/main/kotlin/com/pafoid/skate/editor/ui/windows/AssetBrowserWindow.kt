@@ -4,6 +4,7 @@ import com.pafoid.skate.editor.imgui.label
 import com.pafoid.skate.editor.imgui.EditorWindow
 import com.pafoid.skate.editor.systems.UndoRedoManager
 import com.pafoid.skate.editor.ui.windows.assetBrowser.AnimationsTab
+import com.pafoid.skate.editor.ui.windows.assetBrowser.AssetBrowserRefresh
 import com.pafoid.skate.editor.ui.windows.assetBrowser.PrefabsTab
 import com.pafoid.skate.editor.ui.windows.assetBrowser.SoundsTab
 import com.pafoid.skate.editor.ui.windows.assetBrowser.TexturesTab
@@ -26,12 +27,14 @@ class AssetBrowserWindow(
 
     init {
         refreshAssets()
+        AssetBrowserRefresh.subscribe(engine.eventSystem, ::refreshAssets)
     }
 
     fun refreshAssets() {
         prefabsTab.refreshAssets()
         animationsTab.refreshAssets()
         texturesTab.refreshAssets()
+        soundsTab.refreshAssets()
     }
 
     override fun imgui() {

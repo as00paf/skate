@@ -26,6 +26,12 @@ data class EditorSettings(
     var graphics: GraphicsSettings = GraphicsSettings(),
     /** Game jar (or folder holding it) used for exports when none is found next to the editor (AST-11). */
     var gameJarPath: String? = null,
+    /** `blender.exe` for `.blend` import (AST-19); null finds it on PATH, the file association or Program Files. */
+    var blenderPath: String? = null,
+    /** A `.blend` import is cancelled after this long. */
+    var blenderTimeoutSeconds: Int = 120,
+    /** Import `.blend` files that changed while the project was closed, when it opens. */
+    var blenderImportOnOpen: Boolean = true,
 ) {
 
     fun addRecentProject(projectPath: String): EditorSettings {
