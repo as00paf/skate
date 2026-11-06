@@ -13,7 +13,8 @@ import kotlin.io.path.readText
 /**
  * EDT-06: editor UI text comes from the StringManager. Fails when an ImGui call (or an MImGui text helper) gets a
  * string literal whose visible part (before `##`, without `${...}` templates and format specifiers) contains words.
- * Unit suffixes such as `ms` are allowed.
+ * Unit suffixes such as `ms` are allowed. EDT-50 adds table column names and input hints (the second argument of
+ * `inputTextWithHint`).
  */
 class EditorHardcodedLabelGuardTest {
 
@@ -43,8 +44,12 @@ class EditorHardcodedLabelGuardTest {
             ImGui.button("${'$'}{Icons.PLUS}##add")
             ImGui.text("${'$'}{strings.getString("a")} (${'$'}{strings.getString("b")})")
             ImGui.text("X: %.2f")
+            ImGui.tableSetupColumn("Name")
+            ImGui.inputTextWithHint("##search", "Search...", value)
+            ImGui.tableSetupColumn("##Label")
+            ImGui.inputTextWithHint("##search", "${'$'}{s("lbl.search")}...", value)
         """.trimIndent()
-        assertEquals(listOf(1, 2, 3), findViolations(src).map { it.first })
+        assertEquals(listOf(1, 2, 3, 10, 11), findViolations(src).map { it.first })
     }
 
     companion object {
@@ -54,8 +59,12 @@ class EditorHardcodedLabelGuardTest {
             "collapsingHeader", "combo", "beginCombo", "sliderFloat", "sliderInt", "dragFloat", "dragFloat2", "dragFloat3",
             "dragInt", "inputText", "inputInt", "inputFloat", "colorEdit3", "colorEdit4", "setTooltip", "begin",
             "beginPopupModal", "warningText", "coloredText", "errorText", "successText", "propertyRow", "separatorText",
+            "tableSetupColumn", "inputTextMultiline", "sliderFloat2", "sliderFloat3", "sliderFloat4", "dragFloat4", "dragInt2",
+            "inputFloat2", "inputFloat3", "colorPicker3", "colorPicker4",
         )
-        private val CALL = Regex("""(?<![\w.])(?:ImGui\.|MImGui\.)?(${CALLS.joinToString("|")})\s*\(\s*(?:label\s*=\s*)?"""")
+        private val CALL = Regex(
+            """(?<![\w.])(?:ImGui\.|MImGui\.)?(?:(?:${CALLS.joinToString("|")})\s*\(\s*(?:label\s*=\s*)?|inputTextWithHint\s*\(\s*"(?:[^"\\]|\\.)*"\s*,\s*)"""",
+        )
         private val ALLOWED_WORDS = setOf("ms", "px", "fps", "FPS")
 
         fun findViolations(source: String): List<Pair<Int, String>> {

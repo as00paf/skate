@@ -9,6 +9,7 @@ import com.pafoid.skate.engine.ecs.components.GameObjectRef
 import imgui.ImGui
 import imgui.flag.ImGuiInputTextFlags
 import imgui.type.ImString
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.serializerOrNull
 import java.lang.reflect.Field
 import java.util.IdentityHashMap
@@ -30,6 +31,7 @@ object StringFields {
      * True when [field] of [type] is a String the scene file saves. `kotlinx.serialization.Transient` runtime state
      * (e.g. `PlayerController.state`) is not JVM-transient, so the serializer's element names are the reference.
      */
+    @OptIn(ExperimentalSerializationApi::class) // serializerOrNull(Class) is the only lookup for a runtime Class
     fun isEditable(type: Class<*>, field: Field): Boolean {
         if (field.type != String::class.java) return false
         val names = savedNames.getOrPut(type) {

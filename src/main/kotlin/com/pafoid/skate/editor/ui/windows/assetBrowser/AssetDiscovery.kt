@@ -1,0 +1,37 @@
+package com.pafoid.skate.editor.ui.windows.assetBrowser
+
+import com.pafoid.skate.editor.data.FileType
+import java.io.File
+
+/** Asset kinds listed by the file-based Asset Browser tabs, matched by extension (any case). */
+enum class BrowserAssetType(val extensions: Set<String>) {
+    // stb_image decodes .jpg too; FileType.TEXTURE only lists .jpeg
+    TEXTURE((FileType.TEXTURE.extensions + "jpg").toSet()),
+    ANIMATION(FileType.ANIMATION.extensions.toSet()),
+    SOUND(FileType.SOUND.extensions.toSet());
+
+    fun matches(file: File): Boolean = file.extension.lowercase() in extensions
+}
+
+/**
+ * Finds the files the Asset Browser lists (AST-13). With a project open it scans the project's `Assets` folder (the
+ * bundled defaults land in `Assets/EngineDefaults`); without one it scans the engine's `assets` folder. Files are
+ * listed whether or not they are loaded yet: thumbnails and previews load them on demand.
+ */
+object AssetDiscovery {
+    const val PROJECT_ASSETS_DIR = "Assets"
+    const val ENGINE_ASSETS_DIR = "assets"
+
+    fun root(projectRoot: File?, engineRoot: File = File(System.getProperty("user.dir"))): File =
+        projectRoot?.let { File(it, PROJECT_ASSETS_DIR) } ?: File(engineRoot, ENGINE_ASSETS_DIR)
+
+    /** Every [type] file under [root] (hidden folders skipped), sorted by name. */
+    fun discover(root: File, type: BrowserAssetType): List<File> {
+        if (!root.isDirectory) return emptyList()
+        return root.walkTopDown()
+            .onEnter { it == root || !it.name.startsWith(".") }
+            .filter { it.isFile && type.matches(it) }
+            .sortedWith(compareBy({ it.name.lowercase() }, { it.path }))
+            .toList()
+    }
+}

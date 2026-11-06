@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.ui.windows
 
+import com.pafoid.skate.engine.core.StringManager
 import com.pafoid.skate.engine.input.ActionBinding
 import com.pafoid.skate.engine.input.ActionDefinition
 import com.pafoid.skate.engine.input.ActionMap
@@ -19,6 +20,22 @@ data class ActionGroup(val context: InputContext, val category: String, val cate
 /** Pure view model of the action list: grouping by context and category, plus search. */
 object ActionBindingsModel {
 
+    /** String keys of mouse buttons 0..4 (left, right, middle, 4, 5). */
+    val MOUSE_BUTTON_KEYS = listOf(
+        "lbl.keybindings.mouse_left", "lbl.keybindings.mouse_right", "lbl.keybindings.mouse_middle",
+        "lbl.keybindings.mouse_button4", "lbl.keybindings.mouse_button5",
+    )
+
+    /** Translated binding name shown in the editor. Key caps keep their printed (English) names, as on the keyboard. */
+    fun label(binding: ActionBinding, strings: StringManager): String = when (binding) {
+        is ActionBinding.Key -> Keys.nameOf(binding.key)
+        is ActionBinding.MouseButton -> MOUSE_BUTTON_KEYS.getOrNull(binding.button)?.let(strings::getString)
+            ?: strings.getString("lbl.keybindings.mouse_button_n", binding.button + 1)
+        is ActionBinding.GamepadButton -> GamepadLayout.buttonName(binding.button, strings)
+        is ActionBinding.GamepadAxis -> GamepadLayout.axisName(binding.axis, strings) + if (binding.scale < 0f) " (-)" else ""
+    }
+
+    /** Untranslated binding name, for logs and text exports. */
     fun label(binding: ActionBinding): String = when (binding) {
         is ActionBinding.Key -> Keys.nameOf(binding.key)
         is ActionBinding.MouseButton -> "Mouse " + (listOf("Left", "Right", "Middle").getOrNull(binding.button) ?: "Button ${binding.button + 1}")
@@ -32,6 +49,7 @@ object ActionBindingsModel {
         query: String,
         nameOf: (ActionDefinition) -> String,
         categoryOf: (ActionDefinition) -> String,
+        bindingLabel: (ActionBinding) -> String = ::label,
     ): List<ActionGroup> {
         val q = query.trim().lowercase()
         val rows = map.definitions().map { d ->
@@ -39,7 +57,7 @@ object ActionBindingsModel {
         }.filter { row ->
             q.isEmpty() || row.name.lowercase().contains(q) || row.definition.id.lowercase().contains(q) ||
                 categoryOf(row.definition).lowercase().contains(q) ||
-                row.bindings.any { label(it).lowercase().contains(q) }
+                row.bindings.any { bindingLabel(it).lowercase().contains(q) }
         }
         return rows.groupBy { it.definition.context to it.definition.category }
             .map { (key, list) ->

@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.gizmos
 
+import org.joml.Matrix4f
 import org.joml.Quaternionf
 import org.joml.Vector3f
 import kotlin.math.PI
@@ -11,6 +12,58 @@ import kotlin.math.tan
 /** Pure geometry for camera/light visuals in the scene view and for picking them. No rendering or ECS access. */
 object EditorVisuals {
     class Segment(val a: Vector3f, val b: Vector3f)
+
+    /** Camera axes in world space: icons lie in the plane of [right]/[up], [forward] points into the screen. */
+    class ViewBasis(val right: Vector3f, val up: Vector3f, val forward: Vector3f)
+
+    /**
+     * Axes of a camera with Euler [rotationDegrees], built the same way as the view matrix in `CameraManager`
+     * (rotate X, then Y, then Z). Taking the basis from the camera transform (not from `camera.view`, which is
+     * computed before the editor camera moves) keeps icons facing the view they are rendered with.
+     */
+    fun viewBasis(rotationDegrees: Vector3f): ViewBasis {
+        val m = Matrix4f()
+            .rotate(Math.toRadians(rotationDegrees.x.toDouble()).toFloat(), 1f, 0f, 0f)
+            .rotate(Math.toRadians(rotationDegrees.y.toDouble()).toFloat(), 0f, 1f, 0f)
+            .rotate(Math.toRadians(rotationDegrees.z.toDouble()).toFloat(), 0f, 0f, 1f)
+        return viewBasis(m)
+    }
+
+    /** Axes of a view matrix (rows of its rotation part). */
+    fun viewBasis(view: Matrix4f): ViewBasis = ViewBasis(
+        Vector3f(view.m00(), view.m10(), view.m20()).normalize(),
+        Vector3f(view.m01(), view.m11(), view.m21()).normalize(),
+        Vector3f(-view.m02(), -view.m12(), -view.m22()).normalize(),
+    )
+
+    /**
+     * View-space depth of [point]: what perspective divides by. Sizing icons by depth (not by straight-line distance)
+     * keeps their screen size constant anywhere on screen, also near the edges.
+     */
+    fun viewDepth(cameraPosition: Vector3f, forward: Vector3f, point: Vector3f, minDepth: Float = 0.001f): Float =
+        Vector3f(point).sub(cameraPosition).dot(forward).coerceAtLeast(minDepth)
+
+    /**
+     * Displayable tint for a light [color]: HDR colors are scaled into 0..1 keeping their hue, and very dark colors
+     * are lifted to [minBrightness] so the icon stays visible (black falls back to grey).
+     */
+    fun lightTint(color: Vector3f, minBrightness: Float = MIN_TINT_BRIGHTNESS, out: Vector3f = Vector3f()): Vector3f {
+        val r = color.x.coerceAtLeast(0f)
+        val g = color.y.coerceAtLeast(0f)
+        val b = color.z.coerceAtLeast(0f)
+        val max = maxOf(r, g, b)
+        if (max <= 1e-6f) return out.set(minBrightness)
+        val scale = when {
+            max > 1f -> 1f / max
+            max < minBrightness -> minBrightness / max
+            else -> 1f
+        }
+        return out.set(r * scale, g * scale, b * scale)
+    }
+
+    /** Ring drawn around a selected icon facing the viewer. */
+    fun selectionRing(center: Vector3f, right: Vector3f, up: Vector3f, size: Float): List<Segment> =
+        circle(center, right, up, size * SELECTION_RING_SCALE, SELECTION_RING_SEGMENTS)
 
     /** An object that can be clicked in the scene view through its icon. */
     class Target<T>(val value: T, val position: Vector3f)
@@ -141,5 +194,8 @@ object EditorVisuals {
     }
 
     const val DEFAULT_RANGE = 10f
+    const val MIN_TINT_BRIGHTNESS = 0.35f
+    const val SELECTION_RING_SCALE = 1.3f
+    const val SELECTION_RING_SEGMENTS = 24
     const val MAX_RANGE = 500f
 }

@@ -24,9 +24,10 @@ jobs:
 
       - uses: gradle/actions/setup-gradle@v4
 
+      # --warning-mode=fail: Gradle deprecations fail CI; Kotlin warnings are errors in build.gradle.kts (QA-17).
       # GitHub sets CI=true: tests annotated @GpuTest (need an OpenGL context) are skipped here, run them locally.
       - name: Build and test
-        run: .\gradlew.bat build test jacocoTestReport --console=plain
+        run: .\gradlew.bat build test jacocoTestReport --console=plain --warning-mode=fail
 
       - name: Upload test and coverage reports
         if: always()

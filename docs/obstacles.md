@@ -99,6 +99,9 @@ Conventions:
 - Rails, the hubba and the grind box are tagged `GRINDABLE`. Spawn points are tagged `SpawnPoint`; their transform
   gives the spawn position and the +Z heading.
 - A trigger volume is an invisible 2 m static box with `isTrigger` set.
+- Collider sizes use the model's own units, like the mesh. Bullet applies the transform scale to every collider shape,
+  so a scaled prop (crate 0.4, barrel 0.3) keeps its collider and mesh in step. `PrefabColliderBoundsTest` checks that
+  each library prop's collider bounds match its mesh bounds. This includes rail posts, which collide.
 
 Generated meshes:
 - `SkateparkShapes` (skate obstacles), `SkateboardShape` (the board) and the engine's `PropShapes` (bench, spawn
