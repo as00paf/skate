@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.project
 
+import com.pafoid.skate.engine.render.rhi.GraphicsBackend
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
 import org.joml.Vector2i
@@ -20,6 +21,8 @@ data class Project(
     @Contextual val resolution: Vector2i = Vector2i(1920, 1080),//TODO: Should be in gfx settings
     var useFbo: Boolean = true,
     var gameplaySettings: GameplaySettings = GameplaySettings(),
+    /** Backend the exported game renders with (AST-12); the editor always uses OpenGL. */
+    var graphicsBackend: GraphicsBackend = GraphicsBackend.DEFAULT,
 ) {
     fun getProjectDirectory(): File {
         return File(projectPath).parentFile

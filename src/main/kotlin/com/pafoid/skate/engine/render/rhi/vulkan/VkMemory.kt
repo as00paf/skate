@@ -110,8 +110,5 @@ internal class VkAllocImage(private val allocator: VkAllocator, val image: Long,
     }
 }
 
-/**
- * Releases GPU objects once the GPU no longer uses them. VK-01 adds `VkCore.destroyLater` (a submission-serial queue);
- * until it is merged here, the spike's every-pass wait makes running the block at once safe.
- */
-internal fun VkCore.destroyLaterOrNow(block: () -> Unit) = block()
+/** Releases GPU objects once every submission that may use them has completed ([VkCore.destroyLater], VK-01). */
+internal fun VkCore.destroyLaterOrNow(block: () -> Unit) = destroyLater(block)

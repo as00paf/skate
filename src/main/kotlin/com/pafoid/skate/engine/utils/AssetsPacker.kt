@@ -117,7 +117,7 @@ class AssetsPacker(
             PackInput(file.absolutePath, relative, FileTypeResolver.resolve(file).name, file.readBytes())
         }
         val inputs = projectInputs + gameStringInputs(projectInputs)
-        val result = PackBuilder.build(project.name, inputs, compress)
+        val result = PackBuilder.build(project.name, inputs, compress, project.graphicsBackend)
         inputs.zip(result.manifest.entries).forEach { (input, entry) ->
             val type = FileType.valueOf(input.type)
             // Entries are addressed by their project-relative path, like the references in saved scenes (AST-09).

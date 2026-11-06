@@ -4,6 +4,8 @@ import com.pafoid.skate.editor.project.Project
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.pack.PackBuilder
 import com.pafoid.skate.engine.core.LoggerService
+import com.pafoid.skate.engine.ui.GameSettings
+import com.pafoid.skate.engine.ui.GameSettingsStore
 import com.pafoid.skate.engine.core.LoggerService.LogLevel
 import java.io.File
 
@@ -94,8 +96,8 @@ data class ExportResult(
 
 /**
  * Exports a project to its output folder (`<project>/builds` by default): `game.bin` (referenced assets only,
- * compressed), `manifest.json` (checksums) and, for [ExportTarget.WINDOWS], the standalone game jar and
- * `run-game.bat`. The pack also carries the game string tables from [gameStringsDir] (see [AssetsPacker]).
+ * compressed), `manifest.json` (checksums), `game.settings.json` (graphics backend, AST-12) and, for
+ * [ExportTarget.WINDOWS], the standalone game jar and `run-game.bat`. The pack also carries the game string tables from [gameStringsDir] (see [AssetsPacker]).
  * [gameJarSearch] locates the jar produced by `gradlew gameJar` (see [GameJarLocator]).
  */
 class ProjectExporter(
@@ -127,6 +129,7 @@ class ProjectExporter(
             onProgress(ExportProgress(ExportStep.VERIFYING))
             val problems = verifyPack(outputDir)
             if (problems.isNotEmpty()) return fail(ExportFailure.VERIFY_FAILED, ExportDetail.PACK_MISMATCH, listOf(problems.joinToString("; ")))
+            writeGameSettings(project, outputDir)
 
             if (jar != null) {
                 onProgress(ExportProgress(ExportStep.COPYING_JAR))
@@ -145,6 +148,14 @@ class ProjectExporter(
     /** Scenes an export can include or leave out. */
     fun sceneFiles(project: Project, options: ExportOptions = ExportOptions()): List<File> =
         assetsPacker.sceneFiles(project, outputDir(project, options))
+
+    /**
+     * Writes the project's graphics backend into `game.settings.json` next to `game.bin` (AST-12), keeping anything
+     * else already saved there (the player's locale from an earlier run of this build).
+     */
+    private fun writeGameSettings(project: Project, outputDir: File) {
+        GameSettingsStore(GameSettings.fileIn(outputDir), logger).update { it.copy(graphicsBackend = project.graphicsBackend) }
+    }
 
     private fun verifyPack(outputDir: File): List<String> {
         val manifest = assetsPacker.lastManifest ?: return listOf("no manifest")
