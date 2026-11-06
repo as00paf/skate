@@ -14,7 +14,7 @@ package com.pafoid.skate.game
 /** Temporary marker written by tools/scripts/verify-game-jar.sh; never commit. */
 object GameJarProbe { const val TOKEN = "$token" }
 KT
-echo "1/3 game code changed (GameJarProbe.TOKEN = $token)"
+echo "1/4 game code changed (GameJarProbe.TOKEN = $token)"
 
 # gradlew run: the editor launch must schedule gameJar (dry run, so no editor window opens)
 plan=$(gradle run --dry-run)
@@ -22,8 +22,17 @@ grep -q ':gameJar' <<<"$plan" || { echo "FAIL: gradlew run does not build gameJa
 # IntelliJ (PAFSK8): Make = :classes, then the before-launch Gradle task gameJar
 gradle -q classes
 gradle -q gameJar
-echo "2/3 built like the editor launch (gradlew run schedules gameJar; IntelliJ: classes + gameJar)"
+echo "2/4 built like the editor launch (gradlew run schedules gameJar; IntelliJ: classes + gameJar)"
+
+# Both physics backends' natives must ship in the game jar (PHY-17: Bullet and Jolt)
+jar=build/libs/skate-game.jar
+list_jar() { if command -v unzip >/dev/null 2>&1; then unzip -Z1 "$1"; else python3 -c 'import sys,zipfile; print("\n".join(zipfile.ZipFile(sys.argv[1]).namelist()))' "$1"; fi; }
+entries=$(list_jar "$jar")
+for native in native/windows/x86_64/bulletjme.dll windows/x86-64/com/github/stephengold/joltjni.dll; do
+  grep -qx "$native" <<<"$entries" || { echo "FAIL: $jar is missing $native"; exit 1; }
+done
+echo "3/4 game jar ships the Bullet and Jolt physics natives"
 
 # A real ProjectExporter export must ship the jar containing the new token
 gradle -q :test --tests "com.pafoid.skate.build.GameJarBuildTest" "-Pskate.gameJarToken=$token"
-echo "3/3 export contains the change: OK"
+echo "4/4 export contains the change: OK"
