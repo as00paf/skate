@@ -31,7 +31,10 @@ class MaterialBinder(
         fun sameAs(o: Snapshot) = values.contentEquals(o.values) && textureIds.contentEquals(o.textureIds)
     }
 
-    /** Fills [target] from [material]; missing textures get id 0. Pure, no GL. */
+    /**
+     * Fills [target] from [material]; missing textures get id 0. A texture is present when it has a GPU texture: its
+     * native handle is not a usable flag (a Vulkan image handle truncated to an Int can be negative, REN-13). Pure.
+     */
     private fun fill(material: Material, target: Snapshot) {
         var offset = 0
         for (p in schema.params) {
@@ -39,8 +42,15 @@ class MaterialBinder(
             offset += p.type.components
         }
         for ((i, t) in schema.textures.withIndex()) {
-            target.textureIds[i] = material.textureFor(t.name)?.texId?.takeIf { it > 0 } ?: 0
+            target.textureIds[i] = material.textureFor(t.name)?.let(::textureKey) ?: 0
         }
+    }
+
+    /** Non-zero identity of an uploaded texture, 0 when it has none. */
+    private fun textureKey(texture: Texture): Int {
+        val rhi = texture.rhi
+        val key = if (rhi != null) System.identityHashCode(rhi) else texture.texId.takeIf { it > 0 } ?: return 0
+        return if (key == 0) 1 else key
     }
 
     fun bind(material: Material, sink: UniformSink) {
