@@ -189,6 +189,10 @@ Goal (human, after REN-13): full Vulkan support for **exported games**, chosen p
   - Do: UiPass (batches, SDF text, scissor, blending), instanced particles and debug lines on Vulkan.
   - Done when: Showcase UI/particles areas match OpenGL within tolerance (GpuTest).
   - Deps: VK-03
+- [!] **VK-07** `P1` Zero-validation-error proof for the Vulkan backend — blocked: the human must install the official LunarG Vulkan SDK (do not load downloaded nightly layers)
+  - Do: With the SDK's Khronos validation layer enabled, run every Vulkan GpuTest (VK-01..06 harnesses, QA-16 parity suite, exported Vulkan game) and fix every validation message; then close VK-01..06.
+  - Done when: All Vulkan GpuTests pass with validation on and zero messages; VK-01..06 marked done.
+  - Deps: QA-16
 
 ### Asset management — `AST` (`skate-assets`)
 
@@ -915,7 +919,7 @@ A lot of features are broken. Many unit tests are missing (**no integration test
   - Do: The GitHub Actions `build` workflow (windows-latest) has failed on every run since at least 2026-10-29, including master, while the local `gradlew test` passes. Latest failures (PR #21): `ShaderValidationTest` initializationError (IllegalStateException), five `ProjectExporterTest`/`ExportedReferencesTest` failures (probably no game jar on CI after AST-11), plus whatever failed earlier. Find each root cause from the run logs (`gh run view --log-failed`), fix tests that depend on the developer machine (GL context, built jars, user data, fonts, paths) with proper skips/fakes or CI setup (e.g. run `gameJar` before `test` in the workflow), and fix real bugs (report other domains' bugs as NEEDS).
   - Done when: CI is green on a branch from current master and stays green on the next PR; tests that need a GPU are explicitly tagged and skipped on CI with a reason.
   - Deps: QA-06
-- [~] @skate-qa **QA-16** `P2` Vulkan parity suite and exported Vulkan game end-to-end
+- [x] **QA-16** `P2` Vulkan parity suite and exported Vulkan game end-to-end
   - Do: GpuTest suite comparing Vulkan and OpenGL frames per FeatureShowcase area within documented tolerances, plus an end-to-end test that exports a Vulkan-backend project and runs it (offscreen/headless where possible), extending QA-14.
   - Done when: The suite runs locally with Vulkan, is skipped on CI, and fails on any area regression.
   - Deps: VK-03, VK-04, VK-05, VK-06, GPL-19

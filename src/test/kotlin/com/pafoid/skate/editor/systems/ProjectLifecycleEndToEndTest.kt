@@ -68,6 +68,22 @@ import org.junit.jupiter.api.Order
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 import org.junit.jupiter.api.TestMethodOrder
+import com.pafoid.skate.engine.core.Window
+import com.pafoid.skate.engine.render.rhi.Filter
+import com.pafoid.skate.engine.render.rhi.GraphicsBackend
+import com.pafoid.skate.engine.render.rhi.IntRect
+import com.pafoid.skate.engine.render.rhi.PixelFormat
+import com.pafoid.skate.engine.render.rhi.vulkan.FrameDiff
+import com.pafoid.skate.engine.render.rhi.vulkan.RhiBackend
+import com.pafoid.skate.engine.render.rhi.vulkan.VulkanDevice
+import com.pafoid.skate.engine.ui.GameSettings
+import com.pafoid.skate.engine.ui.GameSettingsStore
+import com.pafoid.skate.game.GameGraphics
+import com.pafoid.skate.testing.GpuTest
+import org.junit.jupiter.api.Assumptions.assumeTrue
+import org.lwjgl.glfw.GLFW.glfwDestroyWindow
+import org.lwjgl.glfw.GLFW.glfwInit
+import java.nio.ByteBuffer
 import java.io.File
 
 /**
@@ -85,7 +101,10 @@ import java.io.File
  * path that does not exist, so a broken reference fails here instead of in the human's editor.
  *
  * Steps share one editor session and run in order; every step also fails on any ERROR log. Known bugs are stepped
- * over only through [KNOWN_ISSUES] (remove the entry when fixed); step 8 is red until BUG-021 is fixed.
+ * over only through [KNOWN_ISSUES] (remove the entry when fixed).
+ *
+ * Steps 9-10 (QA-16) repeat create/save/reopen/export for a project whose exported game runs on Vulkan, then start
+ * that export the way GameMain does. Step 10 needs a GPU and `SKATE_RHI=vulkan` ([GpuTest], docs/testing/QA-16.md).
  *
  * **Extend this test when a workflow changes** (project/scene file format, paths, settings, export, game startup):
  * add the human's new step here, through the same managers, instead of a narrower test that skips the disk.
@@ -130,6 +149,8 @@ class ProjectLifecycleEndToEndTest {
     private val projectName = "Lifecycle"
     private lateinit var projectFile: File
     private lateinit var exportDir: File
+    private lateinit var vkProjectFile: File
+    private lateinit var vkExportDir: File
     private lateinit var gameSkater: GameObject
     private var gameErrors: List<String> = emptyList()
 
@@ -313,12 +334,17 @@ class ProjectLifecycleEndToEndTest {
     @Test
     @Order(6)
     fun Lifecycle_6_ExportThroughTheWizard() {
+        exportDir = exportWithWizard(File(dir, "Export"))
+        assertNoErrors("export")
+    }
+
+    /** File > Export: the wizard, Pack only, into [output]; waits for the background export like the editor's frames. */
+    private fun exportWithWizard(output: File): File {
         val project = projects.currentProject!!
         wizard.load(project, ProjectExporter(logger).sceneFiles(project, wizard.options(project)))
         assertEquals(2, wizard.includedSceneCount)
         wizard.target = ExportTarget.PACK_ONLY
-        exportDir = File(dir, "Export")
-        wizard.outputDir = exportDir.path
+        wizard.outputDir = output.path
         assertTrue(wizard.canStart(project, gameJar = null), "wizard issues: ${wizard.issues(project, null)}")
         wizard.start()
         events.publish(ProjectEvent.ExportRequested(wizard.options(project)))
@@ -330,8 +356,9 @@ class ProjectLifecycleEndToEndTest {
             Thread.sleep(10)
         }
         assertEquals(ExportWizard.Phase.SUCCEEDED, wizard.phase, "export failed: ${wizard.result}")
-        assertTrue(File(exportDir, "game.bin").isFile)
-        assertNoErrors("export")
+        assertTrue(File(output, "game.bin").isFile)
+        wizard.reset()
+        return output
     }
 
     @Test
@@ -403,6 +430,94 @@ class ProjectLifecycleEndToEndTest {
         assertEquals(emptyList<String>(), gameErrors, "ERROR logs in the exported game")
     }
 
+    @Test
+    @Order(9)
+    fun Lifecycle_9_VulkanProjectSavesReopensAndExportsWithItsBackend() {
+        // New Project wizard with "Graphics backend: Vulkan" (EDT-43), saved, closed and reopened from Recent Projects.
+        val created = projects.createProject(VK_PROJECT, workspace, GraphicsBackend.VULKAN)
+        assertTrue(created.isSuccess, created.exceptionOrNull()?.toString())
+        vkProjectFile = File(workspace, "$VK_PROJECT/$VK_PROJECT.skateproject").absoluteFile
+        assertTrue(projects.saveProject())
+        projects.closeProject()
+        val recent = restartedSettings().recentProjects.first()
+        assertEquals(vkProjectFile.absolutePath, recent.projectPath)
+        assertTrue(projects.openProjectFile(File(recent.projectPath)))
+        assertEquals(GraphicsBackend.VULKAN, projects.currentProject!!.graphicsBackend, "backend lost on reopen")
+        assertReferencesResolve("open Vulkan project")
+
+        vkExportDir = exportWithWizard(File(dir, "ExportVulkan"))
+        val bin = File(vkExportDir, "game.bin").readBytes()
+        val (atlas, headerSize) = readFileHeader(bin)
+        val (packed, _) = loadProjectAndIcon(bin, atlas!!, headerSize)
+        assertEquals(GraphicsBackend.VULKAN, packed!!.graphicsBackend, "packed project")
+        val store = GameSettingsStore(GameSettings.fileIn(vkExportDir), logger)
+        assertEquals(GraphicsBackend.VULKAN, store.settings.graphicsBackend, "game.settings.json")
+        // GameMain's choice: no -D override, the player's settings file, then the packed project.
+        assertEquals(GraphicsBackend.VULKAN, GameGraphics.requested(packed.graphicsBackend, store, property = null))
+        projects.closeProject()
+        assertNoErrors("Vulkan project export")
+    }
+
+    /**
+     * The Vulkan export started like GameMain: [GameGraphics.start] opens a (hidden until shown) Vulkan [Window], the
+     * engine starts on its device, opens the pack and plays MainScene with every pass, presenting each frame. Without a
+     * Vulkan driver the game must fall back to OpenGL with the documented log line, and still run.
+     */
+    @Test
+    @Order(10)
+    @GpuTest
+    fun Lifecycle_10_VulkanExportStartsOnVulkanOrFallsBackWithTheDocumentedLog() {
+        assumeTrue(RhiBackend.selected() == RhiBackend.VULKAN, "Vulkan is opt-in: set SKATE_RHI=vulkan")
+        assumeTrue(glfwInit(), "no GLFW")
+        val bin = File(vkExportDir, "game.bin").readBytes()
+        val (atlas, headerSize) = readFileHeader(bin)
+        val (packed, _) = loadProjectAndIcon(bin, atlas!!, headerSize)
+        val store = GameSettingsStore(GameSettings.fileIn(vkExportDir), logger)
+
+        val engine = Engine()
+        engine.logger.consoleSink = { _, _ -> }
+        val started = GameGraphics.start(GameGraphics.requested(packed!!.graphicsBackend, store, property = null), engine.logger, store) { backend ->
+            Window(1280, 720, packed.name, backend = backend)
+        }
+        val window = started.window
+        val startLog = engine.logger.logs.map { it.message }
+        if (started.fellBack) {
+            assertTrue(window.device !is VulkanDevice)
+            assertTrue(startLog.any { it.startsWith("Graphics backend VULKAN could not start") && it.endsWith("falling back to OPENGL.") }, "fallback log: $startLog")
+            assertTrue(store.settings.graphicsNote?.contains("The game ran on OPENGL") == true, "fallback note in game.settings.json")
+        } else {
+            assertEquals(GraphicsBackend.VULKAN, started.backend)
+            assertTrue(window.device is VulkanDevice, "the game runs on ${window.device::class.simpleName}")
+            assertTrue(startLog.any { it.startsWith("Graphics backend: VULKAN") }, "start log: $startLog")
+        }
+        println("QA-16: exported game requested ${started.requested}, runs on ${started.backend} (${window.device::class.simpleName})")
+        engine.logger.clearLogs()
+        try {
+            engine.start(window.glfwWindow, window.device)
+            assertTrue(ProjectManager(engine).openProject(packed, bin, atlas, headerSize), "the exported game could not open its project")
+            assertEquals("MainScene", engine.sceneManager.currentScene?.name)
+            engine.runtimePlaying = true
+            val disabled = engine.renderer.renderGraph.getAllPasses().filter { !it.isEnabled }.map { it.name }
+            repeat(120) {
+                engine.update(1f / 60f)
+                window.device.commandList().blit(engine.renderer.frameBuffer.target, null, dstRect = IntRect(0, 0, window.width, window.height), filter = Filter.LINEAR)
+                window.device.endFrame()
+            }
+            val pixels = ByteBuffer.allocateDirect(GAME_W * GAME_H * 4)
+            window.device.readPixels(engine.renderer.frameBuffer.target, 0, IntRect(0, 0, GAME_W, GAME_H), PixelFormat.RGBA8, pixels)
+            val frame = ByteArray(pixels.capacity()).also { pixels.get(it) }
+            assertTrue(FrameDiff.distinctColours(frame) > 20, "the game frame is flat (${FrameDiff.distinctColours(frame)} colours)")
+            val skater = engine.sceneManager.currentScene!!.children.flatMap { listOf(it) + it.children }
+                .first { it.getComponent<Animator>()?.controllerPath != null }.getComponent<Animator>()!!
+            assertNotNull(skater.stateMachine, "the exported skater's controller did not load")
+            assertEquals(emptyList<String>(), errorsIn(engine.logger), "ERROR logs while the game ran (disabled passes: $disabled)")
+        } finally {
+            runCatching { engine.destroy() }
+            runCatching { window.device.close() }
+            glfwDestroyWindow(window.glfwWindow)
+        }
+    }
+
     private fun assertExportedSettings(packed: Project) {
         assertEquals(EDITED_PHYSICS_FPS, packed.physicsFPS)
         assertEquals(EDITED_DESCRIPTION, packed.description)
@@ -410,6 +525,9 @@ class ProjectLifecycleEndToEndTest {
     }
 
     private companion object {
+        const val VK_PROJECT = "LifecycleVulkan"
+        const val GAME_W = 640
+        const val GAME_H = 360
         /**
          * Known bugs this test steps over so that it keeps guarding the rest of the lifecycle. Remove an entry when its
          * bug is fixed. Matched against `/`-normalized error messages and missed paths.
