@@ -2,18 +2,14 @@ package com.pafoid.skate.engine.ecs.systems
 
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.ecs.Scene
-import com.pafoid.skate.engine.ecs.components.InputStateComponent
 import com.pafoid.skate.engine.ecs.systems.SystemManager.ExecutionPriority
+import com.pafoid.skate.engine.events.ActionEvent
+import com.pafoid.skate.engine.events.ActionPhase
 import com.pafoid.skate.engine.events.EngineAction
 import com.pafoid.skate.engine.events.GamepadConnected
 import com.pafoid.skate.engine.events.GamepadDisconnected
-import com.pafoid.skate.engine.events.JumpPressed
-import com.pafoid.skate.engine.events.JumpReleased
-import com.pafoid.skate.engine.events.MovementInput
-import com.pafoid.skate.engine.getComponent
 import com.pafoid.skate.engine.input.ActionInputReader
 import com.pafoid.skate.engine.input.ActionMap
-import com.pafoid.skate.engine.input.DefaultActions
 import com.pafoid.skate.engine.input.InputContext
 import com.pafoid.skate.engine.input.InputContextStack
 import com.pafoid.skate.engine.input.InputHistory
@@ -22,26 +18,34 @@ import com.pafoid.skate.engine.input.InputProvider
 import com.pafoid.skate.engine.input.InputReader
 import com.pafoid.skate.engine.input.ProviderRawInput
 import com.pafoid.skate.engine.input.RumbleManager
-import org.lwjgl.glfw.GLFW
-import kotlin.math.sqrt
+import com.pafoid.skate.engine.input.UiNavigationActions
 
+/**
+ * Device and action plumbing (INP-10): refreshes gamepads (hot-plug events), advances action edges, samples the
+ * [history], publishes opt-in [ActionEvent]s and ticks rumble. It knows no game actions; gameplay code reads
+ * [reader] (e.g. `CharacterInputSampler`).
+ */
 class InputSystem(
     val inputProvider: InputProvider,
     private val eventSystem: EventSystem,
 ) : System(priority = ExecutionPriority.EARLY) {
 
-    /** Keeps reading actions while paused so the pause menu can be driven; gameplay input is not fed then. */
+    /** Keeps reading actions while paused so the pause menu can be driven. */
     override val runsWhilePaused get() = true
 
-    /** Action definitions and live bindings. Rebind here, then call `mappings.storeBindings(actionMap)` to persist. */
-    val actionMap: ActionMap = DefaultActions.register(ActionMap())
+    /**
+     * Action definitions and live bindings: the engine's UI navigation plus whatever presets and games register.
+     * Rebind here, then call `mappings.storeBindings(actionMap)` to persist.
+     */
+    val actionMap: ActionMap = UiNavigationActions.register(ActionMap())
 
-    private val actionReader = ActionInputReader(ProviderRawInput(inputProvider), actionMap, deadZones = { mappings.deadZones })
+    private val actionReader =
+        ActionInputReader(ProviderRawInput(inputProvider), actionMap, deadZones = { mappings.deadZones })
 
     /** Editor-independent key/action read API for scripts and runtime code. */
     val reader: InputReader get() = actionReader
 
-    /** Prioritized input contexts (INP-10); the base stack is `gameplay` with `ui` above it. Push/pop to change. */
+    /** Prioritized input contexts; the base stack is `gameplay` with `ui` above it. Push/pop to change. */
     val contexts: InputContextStack get() = actionReader.contexts
 
     /** Readable contexts. */
@@ -61,8 +65,9 @@ class InputSystem(
             actionMap.loadProfile(value.bindings)
         }
 
-    private var jumpButtonWasPressed = false
-    private var movementWasActive = false
+    private var eventActions: List<String> = emptyList()
+    private var eventActionsRevision = -1
+    private val eventDown = HashMap<String, Boolean>()
 
     override fun init(scene: Scene) {
         super.init(scene)
@@ -75,8 +80,7 @@ class InputSystem(
                 eventSystem.publish(GamepadDisconnected(e.jid))
             }
         }
-        jumpButtonWasPressed = false
-        movementWasActive = false
+        eventDown.clear()
 
         eventSystem.subscribe<EngineAction.ApplyMappings> { event -> mappings = event.mappings }
     }
@@ -87,76 +91,20 @@ class InputSystem(
         time += dt
         history.sample(time)
         rumble.update(dt)
-        val mountEdge = reader.wasActionPressed(DefaultActions.TOGGLE_MOUNT)
-        if (!scene.isRunning || scene.isPaused) return
+        publishActionEvents()
+    }
 
-        scene.children.forEach { go ->
-            val inputState = go.getComponent<InputStateComponent>() ?: return@forEach
-
-            inputState.reset()
-            inputState.jumpHeld = false
-            pollActions(inputState)
-            pollMouseInput(inputState)
-            updateJumpState(inputState)
-            inputState.mountPressed = mountEdge
+    private fun publishActionEvents() {
+        if (eventActionsRevision != actionMap.revision) {
+            eventActions = actionMap.definitions().filter { it.publishEvents }.map { it.id }
+            eventActionsRevision = actionMap.revision
         }
-
-        inputProvider.isJoystickPresent(GLFW.GLFW_JOYSTICK_1)
-    }
-
-    private fun pollActions(inputState: InputStateComponent) {
-        val moveX = reader.actionValue(DefaultActions.MOVE_X)
-        val moveY = reader.actionValue(DefaultActions.MOVE_Y)
-
-        if (moveX != 0f || moveY != 0f) {
-            inputState.moveDirection.set(moveX, moveY)
-            val magnitude = sqrt(moveX * moveX + moveY * moveY)
-            eventSystem.publish(MovementInput(inputState.moveDirection, magnitude))
-            movementWasActive = true
-        } else {
-            publishNeutralMovementIfNeeded(inputState)
+        for (id in eventActions) {
+            val down = reader.isActionDown(id)
+            val was = eventDown[id] ?: false
+            if (down && !was) eventSystem.publish(ActionEvent(id, ActionPhase.STARTED, reader.actionValue(id)))
+            else if (!down && was) eventSystem.publish(ActionEvent(id, ActionPhase.CANCELED, 0f))
+            eventDown[id] = down
         }
-
-        inputState.cameraLook.set(
-            reader.actionValue(DefaultActions.LOOK_X) * CONTROLLER_LOOK_SENSITIVITY,
-            reader.actionValue(DefaultActions.LOOK_Y) * CONTROLLER_LOOK_SENSITIVITY
-        )
-
-        inputState.jumpHeld = reader.isActionDown(DefaultActions.JUMP)
-        inputState.sprintPressed = reader.isActionDown(DefaultActions.SPRINT)
-        inputState.crouchPressed = reader.isActionDown(DefaultActions.CROUCH)
-    }
-
-    private fun pollMouseInput(inputState: InputStateComponent) {
-        if (!inputProvider.isCursorDisabled()) return
-
-        val dx = inputProvider.getMouseDx()
-        val dy = inputProvider.getMouseDy()
-        if (dx != 0f || dy != 0f) {
-            inputState.cameraLook.x += dx * 0.1f
-            inputState.cameraLook.y += dy * 0.1f
-        }
-    }
-
-    private fun updateJumpState(inputState: InputStateComponent) {
-        if (inputState.jumpHeld && !jumpButtonWasPressed) {
-            inputState.jumpPressed = true
-            eventSystem.publish(JumpPressed(1.0f))
-        } else if (!inputState.jumpHeld && jumpButtonWasPressed) {
-            eventSystem.publish(JumpReleased)
-        }
-
-        jumpButtonWasPressed = inputState.jumpHeld
-    }
-
-    private fun publishNeutralMovementIfNeeded(inputState: InputStateComponent) {
-        if (!movementWasActive) return
-        inputState.moveDirection.set(0f, 0f)
-        eventSystem.publish(MovementInput(inputState.moveDirection, 0f))
-        movementWasActive = false
-    }
-
-    private companion object {
-        const val CONTROLLER_LOOK_SENSITIVITY = 2.0f
     }
 }

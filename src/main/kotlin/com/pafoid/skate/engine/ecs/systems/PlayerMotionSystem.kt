@@ -6,6 +6,7 @@ import com.pafoid.skate.engine.ecs.components.PlayerController
 import com.pafoid.skate.engine.ecs.components.RigidBody3D
 import com.pafoid.skate.engine.ecs.systems.SystemManager.ExecutionPriority
 import com.pafoid.skate.engine.gameplay.CharacterInput
+import com.pafoid.skate.engine.gameplay.CharacterInputSampler
 import com.pafoid.skate.engine.gameplay.CharacterMotion
 import com.pafoid.skate.engine.gameplay.MotionMath
 import com.pafoid.skate.engine.gameplay.MountMath
@@ -20,17 +21,24 @@ import org.joml.Quaternionf
 import org.joml.Vector2f
 import org.joml.Vector3f
 
-/** Thin driver: feeds input to each player's behavior and applies the returned motion to its body. */
+/**
+ * Thin driver: feeds input to each player's behavior and applies the returned motion to its body.
+ * With an [inputSampler], every top-level [InputStateComponent] is filled from the character actions first;
+ * without one (tests), the components are used as they are.
+ */
 class PlayerMotionSystem(
     private val cameraManager: CameraManager,
+    private val inputSampler: CharacterInputSampler? = null,
 ) : System(priority = ExecutionPriority.DEFAULT) {
 
     private val footBinders = java.util.WeakHashMap<PlayerController, FootIkBinder>()
 
     private val players = query(PlayerController::class, IPhysicsBody3D::class, topLevelOnly = true)
+    private val inputs = query(InputStateComponent::class, topLevelOnly = true)
 
     override fun update(dt: Float) {
         if (!scene.isRunning) return
+        inputSampler?.let { sampler -> inputs.forEach { go -> go.getComponent<InputStateComponent>()?.let(sampler::sample) } }
 
         players.forEach { go ->
             val controller = go.getComponent<PlayerController>() ?: return@forEach
