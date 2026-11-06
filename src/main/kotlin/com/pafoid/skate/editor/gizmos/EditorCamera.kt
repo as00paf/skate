@@ -35,11 +35,13 @@ class EditorCamera(
     }
 
     fun update(dt: Float) {
-        engine.systemManager.getSystem<TransformSystem>()?.updateTransform(transform)
         handleFreeFlyMovement(dt)
         handleRotation()
         handleZoom()
         handleReset(dt)
+        // After moving (EDT-44): CameraManager builds the next view from worldMatrix, so it must hold this frame's
+        // position, or the view trails the camera by a frame while the editor visuals use the current one.
+        engine.systemManager.getSystem<TransformSystem>()?.updateTransform(transform)
     }
 
     private fun handleFreeFlyMovement(dt: Float) {
