@@ -11,7 +11,7 @@ enum class PrefabCategory { PLAYER, STREET, TRANSITION, GENERIC }
 /** Every prefab the editor can spawn (see docs/obstacles.md). Display names are `prefab.<lowercase name>` strings. */
 enum class PrefabType {
     SKATEBOARD, SKATER,
-    LEDGE, HUBBA, MANUAL_PAD, GRIND_BOX, FUNBOX, RAIL, HANDRAIL, KINKED_RAIL, STAIRS_3, STAIRS_5,
+    LEDGE, HUBBA, MANUAL_PAD, GRIND_BOX, FUNBOX, RAIL, HANDRAIL, KINKED_RAIL, STAIRS_3, STAIRS_5, EURO_GAP,
     KICKER, BANK, QUARTER_PIPE, HALF_PIPE, BOWL,
     POINT_LIGHT, SPOT_LIGHT, CRATE, BARREL, BENCH, TRIGGER_VOLUME, SPAWN_POINT;
 
@@ -56,6 +56,7 @@ object PrefabCatalog {
         park(PrefabType.KINKED_RAIL, PrefabCategory.STREET, Assets.Models.KINKED_RAIL, Assets.Bundled.KINKED_RAIL, metal),
         park(PrefabType.STAIRS_3, PrefabCategory.STREET, Assets.Models.STAIRS_3, Assets.Bundled.STAIRS_3, parkSurfaces),
         park(PrefabType.STAIRS_5, PrefabCategory.STREET, Assets.Models.STAIRS_5, Assets.Bundled.STAIRS_5, parkSurfaces),
+        park(PrefabType.EURO_GAP, PrefabCategory.STREET, Assets.Models.EURO_GAP, Assets.Bundled.EURO_GAP, parkSurfaces),
 
         park(PrefabType.KICKER, PrefabCategory.TRANSITION, Assets.Models.KICKER, Assets.Bundled.KICKER, parkSurfaces),
         park(PrefabType.BANK, PrefabCategory.TRANSITION, Assets.Models.BANK, Assets.Bundled.BANK, parkSurfaces),
@@ -91,6 +92,7 @@ object PrefabCatalog {
         PrefabType.KINKED_RAIL -> SkateparkShapes.kinkedRail()
         PrefabType.STAIRS_3 -> SkateparkShapes.stairs(3)
         PrefabType.STAIRS_5 -> SkateparkShapes.stairs(5)
+        PrefabType.EURO_GAP -> SkateparkShapes.euroGap()
         PrefabType.KICKER -> SkateparkShapes.kicker()
         PrefabType.BANK -> SkateparkShapes.bank()
         PrefabType.QUARTER_PIPE -> SkateparkShapes.quarterPipe()
