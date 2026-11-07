@@ -39,6 +39,15 @@ Done tasks live in [`docs/backlog-archive.md`](docs/backlog-archive.md). A `Deps
 7. Only `skate-lead` edits checkbox state in this file. Domain agents report status back to the lead.
 8. No backward compatibility while the engine is a work in progress: don't add migrations or upgrade-on-load code for old saved scenes/projects; the human recreates content. Instead, keep the **default projects** current: when a feature lands, update the default skate project (`PrefabsGenerator` default scenes) and the CLI samples to use it, and remove test-only content from them. The default editor project includes the **Feature Showcase** scene(s), which the human uses for manual testing: every new user-visible component or feature adds a small, labeled demo there in the same task.
 
+**PR size rules** (human, 2026-11-06/2026-11-07)
+
+1. Keep PRs under **50 changed files** (aim for at most ~60 and **3–6 tasks**). Round 27 was 190 files — too many.
+2. Anything larger is split across multiple tasks (one per task branch) or commits. The lead enforces this during integration: a branch over the limit is split before it is merged.
+3. When a task spans many files, create sub-tasks with clear boundaries (e.g. "core logic", "editor integration", "export support"), each independently testable and reviewable.
+4. Each agent's worktree branch contains only its domain's changes; cross-domain changes go to separate tasks.
+5. For rewrites (`REWRITE`), the design note must be approved before any code is written, and the rewrite is split into **testable slices of ≤50 files each**. No slice spans more than two domains (e.g. engine + editor).
+6. Integrate early and often: the lead opens a PR as soon as a coherent group of verified tasks is ready instead of batching a whole round, and splits a large round into **several PRs by area** (e.g. physics, editor windows, assets), **each based on the previous merged master**. Check the size with `git diff --stat origin/master...HEAD` before opening a PR.
+
 ---
 
 ## Ownership map
@@ -88,10 +97,10 @@ Round 27+ goals (human, 2026-11-06): post-processing quality, render-graph clari
   - Done when: The showcase metallic object clearly reflects the sky/scene; the IBL math/setup has unit tests; Vulkan parity follows in a VK task.
   - Deps: REN-26
 - [~] @skate-render **REN-28** `P2` Terrain and biomes: design note
-  - Do: Write `docs/design/REN-28.md`, reviewed by physics and assets: chunked heightmap terrain with LOD, splat materials, a noise library (e.g. FastNoiseLite, MIT), biome maps driving materials and scatter, procedural or hand-painted (editor sculpt/paint tools), seeded through ECS-14, heightfield collider (PHY-15). Split implementation tasks out after approval.
+  - Do: Write `docs/design/REN-28.md`, reviewed by physics and assets: chunked heightmap terrain with LOD, splat materials (16 layers), a noise library (e.g. FastNoiseLite, MIT), biome maps driving materials and scatter, procedural or hand-painted (editor sculpt/paint tools), seeded through ECS-14, heightfield collider (PHY-15). Terrain must support **larger worlds** than the current park scale. Erosion filters are worth including. Split implementation tasks out after approval.
   - Done when: The human approves the note.
   - Deps: ECS-14
-- [ ] **REN-29** `P2` Vegetation and water: design note
+- [~] @skate-render **REN-29** `P2` Vegetation and water: design note — draft written, awaiting the human's approval
   - Do: Write `docs/design/REN-29.md`: instanced trees/grass with LOD and wind, a water surface shader (reflection/refraction, foam), water volumes for buoyancy (PHY-16), and the Feature Showcase demo area.
   - Done when: The human approves the note.
   - Deps: REN-27
@@ -146,17 +155,17 @@ Round 27+ goals: the Asset Browser shows every asset type, one assets folder, ex
   - Do: Also (from AST-13, lead-assigned editor change): add `jpg` to `FileType.TEXTURE` in `editor/data/FileType.kt` and drop the Asset Browser workaround. The default project hierarchy has two assets folders. Keep one, update project creation, export, path resolution and the default projects/CLI samples.
   - Done when: A new project has a single assets folder, everything still loads and exports; tests cover the layout.
   - Deps: AST-13
-- [ ] **AST-15** `P2` Export UX and export settings: design note
+- [~] @skate-assets **AST-15** `P2` Export UX and export settings: design note — draft written, awaiting the human's approval
   - Do: Write `docs/design/AST-15.md`: refined export wizard flow plus settings (splash image, icon, target platform, graphics backend, compression/packing, debug vs release, target FPS).
   - Done when: The human approves the note.
   - Deps: EDT-59
 - [~] @skate-online **AST-16** `P2` Asset store window — design approved 2026-11-06 (`docs/design/AST-16.md`, revised after the skate-assets review)
-  - Do: Human priority: **free libraries that need no login first.** Slices in order: a) SPI, registry, HTTP seam, pipeline, ledger, window skeleton + Poly Haven, b) ambientCG + texture sets, d) Kenney/Quaternius catalogs + "Import downloaded pack", f) credits on export (with AST-15), e) SimReady via Hugging Face + USD→glTF through Blender (needs AST-19), c) Sketchfab login (last, optional). No Mixamo, no Poly Pizza for now. ND licenses: warn and record the conversion.
-  - Done when: Each slice imports a real asset with its license recorded; tests on fixtures, no sockets.
-- [ ] **AST-17** `P2` City generation from OpenStreetMap: design note
+  - Do: Human decisions: **no login, no credential management.** Slices in order: a) SPI, registry, HTTP seam, pipeline, window skeleton + Poly Haven, b) ambientCG + texture sets, c) Kenney/Quaternius catalogs + "Import downloaded pack" (manual download is fine), d) Poly Haven as the primary provider, e) SimReady via Hugging Face + USD→glTF through Blender (needs AST-19). **No Sketchfab** (requires login). **No license tracking** for now — skip attribution-ledger/credits work. If an asset is in an unsupported format, warn the user on import rather than blocking.
+  - Done when: Each slice imports a real asset; tests on fixtures, no sockets.
+- [~] @skate-assets **AST-17** `P2` City generation from OpenStreetMap: design note — draft written, awaiting the human's approval
   - Do: Write `docs/design/AST-17.md` evaluating OSM2World (Java, open source, glTF export) as the open-source alternative to commercial OSM city tools: area picker, import to a scene with colliders and materials, licensing (ODbL attribution).
   - Done when: The human approves the note.
-- [ ] **AST-18** `P3` Protocol Buffers: design note
+- [~] @skate-assets **AST-18** `P3` Protocol Buffers: design note — draft written, awaiting the human's approval
   - Do: Write `docs/design/AST-18.md`. Proposed: protobuf only for runtime data (packed exports, network messages). Scenes, prefabs and settings stay JSON so git diffs/merges (EDT-60) stay readable. Measure load time/size gains first.
   - Done when: The human approves the note.
 - [x] **AST-19** `P2` Full Blender support — design approved 2026-11-06 (`docs/design/AST-19.md`)
@@ -218,7 +227,7 @@ Round 27+ goals: a Jolt backend selectable per project, a terrain heightfield co
 - [ ] **PHY-18** `P2` Extract physics natives to a per-user folder
   - Do: From PHY-17: Bullet and Jolt natives extract to `USER_DIR`, which fails for games installed in read-only folders (Program Files). Extract to a per-user data folder instead.
   - Done when: An exported game in a read-only folder starts with physics; loader tests cover the path.
-- [ ] **PHY-19** `P3` Jolt-native ragdolls, vehicles and character controller
+- [~] @skate-physics **PHY-19** `P3` Jolt-native ragdolls, vehicles and character controller — design draft written, awaiting the human's approval
   - Do: From PHY-17: optional Jolt `Ragdoll` (pose motors), `VehicleConstraint` and `CharacterVirtual` modes (the last one with GPL). Design note first.
   - Done when: The human approves the note.
   - Deps: PHY-17
@@ -283,7 +292,7 @@ Round 27+ goals: a fuller skate demo with camera modes and standard control sche
 - [~] @skate-gameplay **GPL-23** `P2` Fuller skate demo — design approved with changes 2026-11-06 (`docs/design/GPL-23.md`)
   - Do: Human decisions: 40 × 40 m park with the four zones and the new prefabs (Euro-gap deck); combo chaining (link window, manual linking, lose on bail) but **no points/score yet**; **Free skate only** (no Session mode, no timer, no goals yet); control hints on screen with a pause-menu switch; the third camera mode becomes spot cameras that **follow the skater** (no static fixed camera); one HUD for editor Play and the exported game.
   - Done when: MainScene is the new park, skateable end to end in both hosts; combos chain and break correctly; tests.
-- [ ] **GPL-24** `P3` Game systems and character customization: design note
+- [~] @skate-gameplay **GPL-24** `P3` Game systems and character customization: design note — draft written, awaiting the human's approval
   - Do: Write `docs/design/GPL-24.md`: reusable inventory, combat, interaction/pickup systems, and character customization (clothes, tattoos, headwear, eyewear via attachment points, mesh swaps and material layers).
   - Done when: The human approves the note.
 
@@ -373,7 +382,7 @@ Round 27+ goals (human, 2026-11-06): fix editor bugs, make every window, dialog 
 - [x] **EDT-58** `P1` Remember the editor camera per scene
   - Do: Save the editor camera position/rotation/mode per scene (editor-only data, not in the exported game) and restore it when the scene opens.
   - Done when: Switching scenes and restarting restores each scene's camera; tests.
-- [~] @skate-tooling **EDT-59** `P1` REWRITE New Project wizard and templates
+- [~] @skate-tooling **EDT-59** `P1` REWRITE New Project wizard and templates — design draft written, awaiting the human's approval
   - Do: Design note first. Templates (Empty, Skate game, Feature Showcase, Tetris, Marble Run, later demos), which separates the skate game from the showcase. Settings: target FPS/uncapped, physics backend (Bullet, Simple, Jolt once PHY-17 lands), graphics backend (exists), include AI agent/skill files, splash screen image. Templates come from skate-tooling.
   - Done when: The human approves the design; each template creates a project that opens and runs; tests for the template registry and settings.
   - Deps: EDT-56, AST-14
