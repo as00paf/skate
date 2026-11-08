@@ -112,4 +112,25 @@ class NativeLibraryLoaderTest {
         Assertions.assertTrue(loader.loadNativeLibrary())
         Assertions.assertTrue(loader.loadNativeLibrary())
     }
+
+    @Test
+    fun NativeLoader_DirIsUserHomeBasedNotCwd() {
+        // PHY-18: natives must extract to a per-user data folder, not the app's
+        // working directory (which can be read-only, e.g. Program Files for
+        // an exported game).
+        val dirPath = NativeLibraryLoader.nativesDir().path
+        val home = System.getProperty("user.home").orEmpty()
+        val appData = System.getenv("APPDATA")
+
+        val os = System.getProperty("os.name").orEmpty().lowercase()
+        Assertions.assertTrue(
+            dirPath.startsWith(home) ||
+                dirPath.startsWith(appData ?: ""),
+            "nativesDir should resolve under user home or APPDATA, got: $dirPath",
+        )
+        Assertions.assertFalse(
+            dirPath.startsWith(System.getProperty("user.dir").orEmpty()),
+            "nativesDir must NOT be the working directory (read-only risk): $dirPath",
+        )
+    }
 }
