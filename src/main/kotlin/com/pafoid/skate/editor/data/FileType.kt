@@ -10,7 +10,7 @@ enum class FileType(val extensions: List<String>) {
     SCRIPT_KOTLIN(listOf("kt", "kts")),
     SCRIPT_JAVA(listOf("java")),
     TEXTURE(listOf("jpg", "jpeg", "png", "tga", "bmp", "psd", "gif", "hdr", "pic", "pnm")),
-    MODEL_3D(listOf("obj", "glb", "dae", "gltf")),
+    MODEL_3D(listOf("obj", "glb", "dae", "gltf", "fbx")),
     ANIMATION(listOf("fbx")),
     SOUND(listOf("wav", "ogg", "mp3")),
     PREFAB(listOf("prefab")),
