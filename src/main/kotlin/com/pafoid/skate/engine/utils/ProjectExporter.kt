@@ -151,13 +151,10 @@ class ProjectExporter(
 
     /**
      * Writes the project's graphics backend and quality settings into `game.settings.json` next to `game.bin` (AST-12,
-     * REN-30) only if it doesn't already exist — this avoids overwriting the player's choices (locale, etc.)
-     * on repeated exports.
+     * REN-30), merging into any existing player choices (locale, etc.) rather than overwriting them.
      */
     private fun writeGameSettings(project: Project, outputDir: File) {
-        val settingsFile = GameSettings.fileIn(outputDir)
-        if (settingsFile.exists()) return  // Preserve player's choices on re-export
-        GameSettingsStore(settingsFile, logger).update {
+        GameSettingsStore(GameSettings.fileIn(outputDir), logger).update {
             it.copy(
                 graphicsBackend = project.graphicsBackend,
                 graphicsQuality = project.graphicsQuality.name,
