@@ -3,6 +3,8 @@ package com.pafoid.skate.editor.ui.windows
 import com.pafoid.skate.editor.imgui.GraphicsBackendField
 import com.pafoid.skate.editor.imgui.tipped
 import com.pafoid.skate.editor.imgui.label
+import com.pafoid.skate.editor.settings.GraphicsQuality
+import com.pafoid.skate.editor.settings.TextureQuality
 import com.pafoid.skate.editor.events.ProjectEvent
 import com.pafoid.skate.editor.events.WindowAction
 import com.pafoid.skate.editor.imgui.EditorWindow
@@ -26,6 +28,7 @@ import imgui.internal.ImGui.inputText
 import imgui.internal.ImGui.sameLine
 import imgui.internal.ImGui.setNextWindowPos
 import imgui.internal.ImGui.setNextWindowSize
+import imgui.internal.ImGui.combo
 import imgui.type.ImString
 import java.io.File
 import java.time.Instant
@@ -138,6 +141,57 @@ class ProjectSettingsWindow(
         ImGui.spacing()
         GraphicsBackendField.render(stringManager, project.graphicsBackend)?.let {
             eventSystem.publish(ProjectEvent.SetGraphicsBackendRequested(it))
+        }
+
+        ImGui.spacing()
+        ImGui.separator()
+        ImGui.spacing()
+
+        // Overall quality preset
+        val presetLabels = GraphicsQuality.entries.map {
+            stringManager.getString("settings.graphics.quality.${it.name.lowercase()}")
+        }.toTypedArray()
+        val presetIdx = GraphicsQuality.entries.indexOf(project.graphicsQuality).coerceAtLeast(0)
+        val presetSel = ImInt(presetIdx)
+        MImGui.propertyRow(
+            label = stringManager.getString("settings.project.graphics.quality_preset"),
+            helpTooltip = stringManager.getString("settings.project.graphics.quality_preset.desc"),
+            onReset = { eventSystem.publish(ProjectEvent.SetGraphicsQualityRequested(GraphicsQuality.HIGH)) }
+        ) {
+            if (combo("##quality_preset", presetSel, presetLabels, presetLabels.size)) {
+                eventSystem.publish(ProjectEvent.SetGraphicsQualityRequested(GraphicsQuality.entries[presetSel.get()]))
+            }
+        }
+
+        // MSAA samples
+        val msaaOptions = intArrayOf(1, 2, 4, 8)
+        val msaaLabels = msaaOptions.map { if (it == 1) stringManager.getString("settings.graphics.msaa.off") else "$it×" }.toTypedArray()
+        val msaaIdx = msaaOptions.indexOf(project.msaaSamples).coerceAtLeast(0)
+        val msaaSel = ImInt(msaaIdx)
+        MImGui.propertyRow(
+            label = stringManager.getString("settings.project.graphics.msaa_samples"),
+            helpTooltip = stringManager.getString("settings.project.graphics.msaa_samples.desc"),
+            onReset = { eventSystem.publish(ProjectEvent.SetMsaaSamplesRequested(4)) }
+        ) {
+            if (combo("##msaa_samples", msaaSel, msaaLabels, msaaLabels.size)) {
+                eventSystem.publish(ProjectEvent.SetMsaaSamplesRequested(msaaOptions[msaaSel.get()]))
+            }
+        }
+
+        // Texture quality
+        val texLabels = TextureQuality.entries.map {
+            stringManager.getString("settings.graphics.texture_quality.${it.name.lowercase()}")
+        }.toTypedArray()
+        val texIdx = TextureQuality.entries.indexOf(project.textureQuality).coerceAtLeast(0)
+        val texSel = ImInt(texIdx)
+        MImGui.propertyRow(
+            label = stringManager.getString("settings.project.graphics.texture_quality"),
+            helpTooltip = stringManager.getString("settings.project.graphics.texture_quality.desc"),
+            onReset = { eventSystem.publish(ProjectEvent.SetTextureQualityRequested(TextureQuality.HIGH)) }
+        ) {
+            if (combo("##texture_quality", texSel, texLabels, texLabels.size)) {
+                eventSystem.publish(ProjectEvent.SetTextureQualityRequested(TextureQuality.entries[texSel.get()]))
+            }
         }
     }
 

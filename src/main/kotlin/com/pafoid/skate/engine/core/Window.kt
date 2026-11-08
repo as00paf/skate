@@ -20,7 +20,7 @@ import org.lwjgl.glfw.GLFW.glfwDefaultWindowHints
 import org.lwjgl.glfw.GLFW.glfwDestroyWindow
 import org.lwjgl.glfw.GLFW.glfwFocusWindow
 import org.lwjgl.glfw.GLFW.glfwGetMonitorPos
-import org.lwjgl.glfw.GLFW.glfwGetMonitors
+import org.lwjgl.glfw.GLFW.glfwGetPrimaryMonitor
 import org.lwjgl.glfw.GLFW.glfwGetVideoMode
 import org.lwjgl.glfw.GLFW.glfwInit
 import org.lwjgl.glfw.GLFW.glfwMakeContextCurrent
@@ -108,10 +108,9 @@ class Window(
             glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3)
         }
 
-        // Monitor and Video Mode discovery
-        val monitors = glfwGetMonitors() ?: throw IllegalStateException("No monitors found")
-        val monitor = monitors.get(0)
-        val videoMode = glfwGetVideoMode(monitor)
+        // Monitor and Video Mode discovery (use primary monitor only to avoid dual-monitor issues)
+        val primaryMonitor = GLFW.glfwGetPrimaryMonitor()
+        val videoMode = GLFW.glfwGetVideoMode(primaryMonitor)
 
         // Store window dimensions
         width = initialWidth
@@ -124,18 +123,20 @@ class Window(
         // Enforce Minimum Window Size Constraints
         GLFW.glfwSetWindowSizeLimits(glfwWindow, 1024, 768, GLFW_DONT_CARE, GLFW_DONT_CARE)
 
-        // Center on monitor
+        // Center on primary monitor
         val xPos = IntArray(1)
         val yPos = IntArray(1)
-        glfwGetMonitorPos(monitor, xPos, yPos)
+        GLFW.glfwGetMonitorPos(primaryMonitor, xPos, yPos)
         val monitorWidth = videoMode?.width() ?: 1920
         val monitorHeight = videoMode?.height() ?: 1080
         glfwSetWindowPos(glfwWindow, xPos[0] + (monitorWidth - width) / 2, yPos[0] + (monitorHeight - height) / 2)
 
         windowController = WindowController(glfwWindow)
 
-        // Maximize window on startup
-        windowController.maximize()
+        // Maximize window on startup (skip if going fullscreen — fullscreen overrides maximize)
+        if (!fullscreen) {
+            windowController.maximize()
+        }
 
         // Fullscreen (GUI-15)
         if (fullscreen) {

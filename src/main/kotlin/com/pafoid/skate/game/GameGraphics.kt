@@ -35,7 +35,7 @@ object GameGraphics {
         if (requested == GraphicsBackend.OPENGL) return Started(open(GraphicsBackend.OPENGL), GraphicsBackend.OPENGL, requested)
         val failure = try {
             val window = open(requested)
-            logger.logGame("Graphics backend: ${requested.name}. $VULKAN_STATE", LoggerService.LogLevel.WARN)
+            logger.logGame("Graphics backend: ${requested.name}. $VULKAN_STATE", LoggerService.LogLevel.INFO)
             if (store?.settings?.graphicsNote != null) store.update { it.copy(graphicsNote = null) }
             return Started(window, requested, requested)
         } catch (e: Throwable) {
