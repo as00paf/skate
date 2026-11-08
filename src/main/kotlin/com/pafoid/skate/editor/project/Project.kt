@@ -23,6 +23,14 @@ data class Project(
     var gameplaySettings: GameplaySettings = GameplaySettings(),
     /** Backend the exported game renders with (AST-12); the editor always uses OpenGL. */
     var graphicsBackend: GraphicsBackend = GraphicsBackend.DEFAULT,
+    /** Whether the exported game starts in fullscreen (EDT-57 / GUI-15). */
+    var fullscreen: Boolean = false,
+    /** Whether the exported game enables VSync (EDT-57 / GUI-15). */
+    var vsync: Boolean = true,
+    /** Supported UI locales for the exported game (EDT-57 / GUI-15); at least one is required. */
+    var supportedLanguages: List<String> = listOf("en"),
+    /** Startup locale for the exported game (EDT-57 / GUI-15); must be one of [supportedLanguages]. */
+    var startupLanguage: String = "en",
 ) {
     fun getProjectDirectory(): File {
         return File(projectPath).parentFile

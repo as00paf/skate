@@ -60,6 +60,10 @@ class Window(
      * can fall back to OpenGL. The editor always uses OpenGL.
      */
     val backend: GraphicsBackend = GraphicsBackend.OPENGL,
+    /** Whether the window should start fullscreen (GUI-15). */
+    val fullscreen: Boolean = false,
+    /** Whether the window should enable VSync (GUI-15). */
+    val vsync: Boolean = true,
 ) {
     var glfwWindow: Long = -1L
     var width: Int = 1920
@@ -133,6 +137,11 @@ class Window(
         // Maximize window on startup
         windowController.maximize()
 
+        // Fullscreen (GUI-15)
+        if (fullscreen) {
+            windowController.setFullscreen(true)
+        }
+
         // Set the window icon
         iconPath?.let { setWindowIcon(it) }
         icon?.let { setWindowIcon(it) }
@@ -149,8 +158,8 @@ class Window(
             // Make OpenGL context current
             glfwMakeContextCurrent(glfwWindow)
 
-            // Disable v-sync
-            glfwSwapInterval(0)
+            // VSync (GUI-15)
+            glfwSwapInterval(if (vsync) 1 else 0)
 
             // Graphics device of this context (REN-12): loads GL and sets the initial blend, cube map and MSAA state
             OpenGlDevice.create(debugOutput = if (openGLDebug == GLFW_TRUE) System.err else null)

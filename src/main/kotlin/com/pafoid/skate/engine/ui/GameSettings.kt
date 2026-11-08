@@ -23,6 +23,10 @@ data class GameSettings(
     val graphicsNote: String? = null,
     /** Game-defined pause menu options ([GameOption]) by id, e.g. the control scheme (GPL-21). */
     val options: Map<String, String> = emptyMap(),
+    /** Supported locales for the exported game (GUI-15); written from [Project.supportedLanguages]. */
+    val supportedLanguages: List<String> = emptyList(),
+    /** Startup locale for the exported game (GUI-15); written from [Project.startupLanguage]. */
+    val startupLanguage: String = DEFAULT_LOCALE,
 ) {
     companion object {
         const val DEFAULT_LOCALE = "en"
