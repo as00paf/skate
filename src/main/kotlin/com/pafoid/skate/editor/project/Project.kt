@@ -1,6 +1,7 @@
 package com.pafoid.skate.editor.project
 
 import com.pafoid.skate.editor.settings.GraphicsQuality
+import com.pafoid.skate.editor.settings.ShadowQuality
 import com.pafoid.skate.editor.settings.TextureQuality
 import com.pafoid.skate.engine.render.rhi.GraphicsBackend
 import kotlinx.serialization.Contextual
@@ -31,6 +32,8 @@ data class Project(
     var msaaSamples: Int = 4,
     /** Texture quality for the exported game (REN-30). */
     var textureQuality: TextureQuality = TextureQuality.HIGH,
+    /** Shadow quality for the exported game (REN-30). */
+    var shadowQuality: ShadowQuality = ShadowQuality.MEDIUM,
     /** Whether the exported game starts in fullscreen (EDT-57 / GUI-15). */
     var fullscreen: Boolean = false,
     /** Whether the exported game enables VSync (EDT-57 / GUI-15). */

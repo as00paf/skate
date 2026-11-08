@@ -4,6 +4,7 @@ import com.pafoid.skate.editor.imgui.GraphicsBackendField
 import com.pafoid.skate.editor.imgui.tipped
 import com.pafoid.skate.editor.imgui.label
 import com.pafoid.skate.editor.settings.GraphicsQuality
+import com.pafoid.skate.editor.settings.ShadowQuality
 import com.pafoid.skate.editor.settings.TextureQuality
 import com.pafoid.skate.editor.events.ProjectEvent
 import com.pafoid.skate.editor.events.WindowAction
@@ -194,6 +195,51 @@ class ProjectSettingsWindow(
                 eventSystem.publish(ProjectEvent.SetTextureQualityRequested(TextureQuality.entries[texSel.get()]))
             }
         }
+
+        // Shadow quality
+        val shadowLabels = ShadowQuality.entries.map { stringManager.getString("settings.graphics.shadow_quality.${it.name.lowercase()}") }.toTypedArray()
+        val shadowSel = ImInt(project.shadowQuality.ordinal)
+        MImGui.propertyRow(
+            label = stringManager.getString("settings.project.graphics.shadow_quality"),
+            helpTooltip = stringManager.getString("settings.project.graphics.shadow_quality.desc"),
+            onReset = { eventSystem.publish(ProjectEvent.SetShadowQualityRequested(ShadowQuality.MEDIUM)) }
+        ) {
+            if (combo("##shadow_quality", shadowSel, shadowLabels, shadowLabels.size)) {
+                eventSystem.publish(ProjectEvent.SetShadowQualityRequested(ShadowQuality.entries[shadowSel.get()]))
+            }
+        }
+
+        ImGui.spacing()
+        ImGui.separator()
+        ImGui.spacing()
+
+        // Fullscreen
+        val fullscreenLabels = arrayOf("Off", "On")
+        val fullscreenIdx = if (project.fullscreen) 1 else 0
+        val fullscreenSel = ImInt(fullscreenIdx)
+        if (combo("##fullscreen", fullscreenSel, fullscreenLabels, fullscreenLabels.size)) {
+            eventSystem.publish(ProjectEvent.SetFullscreenRequested(fullscreenSel.get() == 1))
+        }
+
+        ImGui.sameLine()
+        ImGui.text(stringManager.getString("settings.project.display.fullscreen"))
+        ImGui.sameLine()
+        MImGui.textDisabled(stringManager.getString("settings.project.display.fullscreen.desc"))
+
+        ImGui.spacing()
+
+        // VSync
+        val vsyncLabels = arrayOf("Off", "On")
+        val vsyncIdx = if (project.vsync) 1 else 0
+        val vsyncSel = ImInt(vsyncIdx)
+        if (combo("##vsync", vsyncSel, vsyncLabels, vsyncLabels.size)) {
+            eventSystem.publish(ProjectEvent.SetVsyncRequested(vsyncSel.get() == 1))
+        }
+
+        ImGui.sameLine()
+        ImGui.text(stringManager.getString("settings.project.display.vsync"))
+        ImGui.sameLine()
+        MImGui.textDisabled(stringManager.getString("settings.project.display.vsync.desc"))
     }
 
     private fun renderGeneral() {

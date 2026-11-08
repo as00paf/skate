@@ -65,7 +65,6 @@ class EditorSettingsWindow(
     private var tempAutoSaveInterval = 5
     private var tempCompletionAuto = true
     private var tempCompletionDelay = 200
-    private var tempShadowQuality = ShadowQuality.MEDIUM
 
     private val tempShowOverlayBool = ImBoolean(true)
 
@@ -174,7 +173,6 @@ class EditorSettingsWindow(
             tempAutoSaveInterval = editor.autorSaveIntervalMinutes
             tempCompletionAuto = editor.completionAutoPopup
             tempCompletionDelay = editor.completionDelayMs
-            tempShadowQuality = editor.graphics.shadowQuality
         }
     }
 
@@ -257,19 +255,8 @@ class EditorSettingsWindow(
     }
 
     private fun renderGraphics() {
-        // Shadow quality (editor-only, stays here)
-        val shadowLabels = ShadowQuality.entries.map { stringManager.getString(shadowQualityKey(it)) }.toTypedArray()
-        val shadowSel = ImInt(tempShadowQuality.ordinal)
-        MImGui.propertyRow(
-            label = stringManager.getString("settings.editor.graphics.shadow_quality"),
-            helpTooltip = stringManager.getString("settings.editor.graphics.shadow_quality.desc"),
-            onReset = { tempShadowQuality = ShadowQuality.MEDIUM; hasPendingChanges = true }
-        ) {
-            if (combo("##shadow_quality", shadowSel, shadowLabels, shadowLabels.size)) {
-                tempShadowQuality = ShadowQuality.entries[shadowSel.get()]
-                hasPendingChanges = true
-            }
-        }
+        // Shadow quality moved to Project Settings (REN-30).
+        // Editor-only shadow quality remains in EditorSettings via EditorSettingsManager.
     }
 
     private fun renderAutoSave() {
@@ -338,15 +325,11 @@ class EditorSettingsWindow(
         )
         settingsManager.updateAutoSaveSettings(tempAutoSaveEnabled, tempAutoSaveInterval)
         settingsManager.updateCompletionSettings(tempCompletionAuto, tempCompletionDelay)
-        settingsManager.updateShadowQuality(tempShadowQuality)
         ImGuiStyleManager.preview = null
         hasPendingChanges = false
     }
 
     companion object {
-        /** String key for a shadow quality option, shared with the Render Graph window. */
-        fun shadowQualityKey(quality: ShadowQuality): String = "settings.graphics.shadow_quality.${quality.name.lowercase()}"
-
         private fun matchesSearch(query: String, vararg terms: String): Boolean {
             if (query.isBlank()) return true
             return terms.any { it.contains(query, ignoreCase = true) }

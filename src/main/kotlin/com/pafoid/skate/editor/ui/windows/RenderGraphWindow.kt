@@ -204,7 +204,7 @@ class RenderGraphWindow(
 
     /** LOW/MEDIUM/HIGH selector; writes the editor graphics setting, which applies and persists it. */
     private fun renderShadowQuality(pass: ShadowPass) {
-        val labels = ShadowQuality.entries.map { stringManager.getString(EditorSettingsWindow.shadowQualityKey(it)) }.toTypedArray()
+        val labels = ShadowQuality.entries.map { stringManager.getString("settings.graphics.shadow_quality.${it.name.lowercase()}") }.toTypedArray()
         val selected = ImInt(settingsManager.editorSettings.graphics.shadowQuality.ordinal)
         ImGui.setNextItemWidth(140f)
         if (ImGui.combo("${stringManager.getString("lbl.render_graph.shadow_quality")}###${pass.name}.quality", selected, labels, labels.size)) {
