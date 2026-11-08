@@ -5,10 +5,6 @@ import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.components.BoxCollider3D
 import com.pafoid.skate.engine.ecs.components.RigidBody3D
 import com.pafoid.skate.engine.ecs.components.Transform
-import com.pafoid.skate.engine.physics3d.bullet.BulletPhysics3D
-import com.pafoid.skate.engine.physics3d.native.NativeLibraryLoader
-import com.pafoid.skate.engine.render.renderer.DebugRenderer
-import io.mockk.mockk
 import org.joml.Vector3f
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -16,37 +12,46 @@ import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
-import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.MethodSource
 
+/** Contract tests every backend in [PhysicsBackends] must pass (PHY-17). */
 class PhysicsFeaturesTest {
+    private companion object {
+        const val CORE = "com.pafoid.skate.engine.physics3d.PhysicsBackends#core"
+        const val CONTACTS = "com.pafoid.skate.engine.physics3d.PhysicsBackends#contacts"
+    }
 
-    private lateinit var physics: BulletPhysics3D
+    private lateinit var physics: IPhysics3D
     private val dt = 1f / 60f
 
     private class Recorder : PhysicsContactListener {
         val collisions = mutableListOf<Pair<GameObject, GameObject>>()
         val normals = mutableListOf<Vector3f>()
+        val points = mutableListOf<Vector3f>()
+        val impulses = mutableListOf<Float>()
         val entered = mutableListOf<Pair<GameObject, GameObject>>()
         val exited = mutableListOf<Pair<GameObject, GameObject>>()
 
         override fun onCollisionStarted(a: GameObject, b: GameObject, point: Vector3f, normal: Vector3f, impulse: Float) {
             collisions.add(a to b)
-            normals.add(normal)
+            normals.add(Vector3f(normal))
+            points.add(Vector3f(point))
+            impulses.add(impulse)
         }
 
         override fun onTriggerEnter(trigger: GameObject, other: GameObject) { entered.add(trigger to other) }
         override fun onTriggerExit(trigger: GameObject, other: GameObject) { exited.add(trigger to other) }
     }
 
-    @BeforeEach
-    fun setUp() {
-        NativeLibraryLoader().loadNativeLibrary()
-        physics = BulletPhysics3D(mockk<DebugRenderer>(relaxed = true))
+    private fun use(backend: PhysicsBackend) {
+        physics = PhysicsBackends.create(backend)
     }
 
     @AfterEach
-    fun tearDown() = physics.destroy()
+    fun tearDown() {
+        if (::physics.isInitialized) physics.destroy()
+    }
 
     private fun body(
         name: String,
@@ -72,8 +77,10 @@ class PhysicsFeaturesTest {
 
     private inline fun <reified T : Any> GameObject.getComponent(c: Class<T>): T = components.filterIsInstance<T>().first()
 
-    @Test
-    fun raycast_HitsClosestBody_ReportsPointNormalAndObject() {
+    @ParameterizedTest
+    @MethodSource(CORE)
+    fun raycast_HitsClosestBody_ReportsPointNormalAndObject(backend: PhysicsBackend) {
+        use(backend)
         val ground = ground()
 
         val hit = physics.raycast(Vector3f(0f, 10f, 0f), Vector3f(0f, -10f, 0f))
@@ -85,15 +92,19 @@ class PhysicsFeaturesTest {
         assertEquals(1f, hit.normal.y, 1e-3f)
     }
 
-    @Test
-    fun raycast_LayerMaskExcludesLayer_ReturnsNull() {
+    @ParameterizedTest
+    @MethodSource(CORE)
+    fun raycast_LayerMaskExcludesLayer_ReturnsNull(backend: PhysicsBackend) {
+        use(backend)
         ground()
 
         assertNull(physics.raycast(Vector3f(0f, 10f, 0f), Vector3f(0f, -10f, 0f), layerMask = 2))
     }
 
-    @Test
-    fun raycast_ExcludedBody_IsSkipped() {
+    @ParameterizedTest
+    @MethodSource(CORE)
+    fun raycast_ExcludedBody_IsSkipped(backend: PhysicsBackend) {
+        use(backend)
         val ground = ground()
         val box = body("Box", Vector3f(0f, 1f, 0f), Vector3f(0.5f, 0.5f, 0.5f), 1f)
         val from = Vector3f(0f, 10f, 0f)
@@ -103,8 +114,10 @@ class PhysicsFeaturesTest {
         assertEquals(ground, physics.raycast(from, to, excludeBody = box.getComponent(RigidBody3D::class.java))!!.gameObject)
     }
 
-    @Test
-    fun raycastAll_ReturnsHitsNearestFirst() {
+    @ParameterizedTest
+    @MethodSource(CORE)
+    fun raycastAll_ReturnsHitsNearestFirst(backend: PhysicsBackend) {
+        use(backend)
         val ground = ground()
         val box = body("Box", Vector3f(0f, 1f, 0f), Vector3f(0.5f, 0.5f, 0.5f), 0f)
 
@@ -113,8 +126,10 @@ class PhysicsFeaturesTest {
         assertEquals(listOf(box, ground), hits.map { it.gameObject })
     }
 
-    @Test
-    fun shapeCast_SphereLikeBoxHitsWall_ReportsImpactBeforeEnd() {
+    @ParameterizedTest
+    @MethodSource(CORE)
+    fun shapeCast_SphereLikeBoxHitsWall_ReportsImpactBeforeEnd(backend: PhysicsBackend) {
+        use(backend)
         val wall = body("Wall", Vector3f(10f, 0f, 0f), Vector3f(0.5f, 5f, 5f), 0f)
 
         val hit = physics.shapeCast(
@@ -126,8 +141,10 @@ class PhysicsFeaturesTest {
         assertTrue(hit.fraction in 0.4f..0.5f, "fraction was ${hit.fraction}")
     }
 
-    @Test
-    fun collisionLayers_MaskWithoutOtherLayer_BodiesPassThrough() {
+    @ParameterizedTest
+    @MethodSource(CORE)
+    fun collisionLayers_MaskWithoutOtherLayer_BodiesPassThrough(backend: PhysicsBackend) {
+        use(backend)
         ground().getComponent(RigidBody3D::class.java).collisionLayer = 1
         val ghost = body("Ghost", Vector3f(0f, 2f, 0f), Vector3f(0.5f, 0.5f, 0.5f), 1f) {
             collisionLayer = 2
@@ -139,8 +156,10 @@ class PhysicsFeaturesTest {
         assertTrue(y(ghost) < -2f, "ghost should fall through ground, y=${y(ghost)}")
     }
 
-    @Test
-    fun collisionLayers_MatchingMask_BodyRestsOnGround() {
+    @ParameterizedTest
+    @MethodSource(CORE)
+    fun collisionLayers_MatchingMask_BodyRestsOnGround(backend: PhysicsBackend) {
+        use(backend)
         ground()
         val box = body("Box", Vector3f(0f, 2f, 0f), Vector3f(0.5f, 0.5f, 0.5f), 1f) { collisionLayer = 2 }
 
@@ -149,8 +168,10 @@ class PhysicsFeaturesTest {
         assertEquals(0.5f, y(box), 0.1f)
     }
 
-    @Test
-    fun physicsMaterial_Restitution_MakesBodyBounce() {
+    @ParameterizedTest
+    @MethodSource(CORE)
+    fun physicsMaterial_Restitution_MakesBodyBounce(backend: PhysicsBackend) {
+        use(backend)
         body("Ground", Vector3f(0f, -0.5f, 0f), Vector3f(50f, 0.5f, 50f), 0f) { restitution = 1f }
         val bouncy = body("Bouncy", Vector3f(0f, 5f, 0f), Vector3f(0.5f, 0.5f, 0.5f), 1f) { restitution = 1f }
         val dead = body("Dead", Vector3f(20f, 5f, 0f), Vector3f(0.5f, 0.5f, 0.5f), 1f)
@@ -169,8 +190,10 @@ class PhysicsFeaturesTest {
         assertTrue(deadMax < 1f, "dead rebound height $deadMax")
     }
 
-    @Test
-    fun physicsMaterial_Friction_SlowsSlidingBody() {
+    @ParameterizedTest
+    @MethodSource(CORE)
+    fun physicsMaterial_Friction_SlowsSlidingBody(backend: PhysicsBackend) {
+        use(backend)
         body("Ground", Vector3f(0f, -0.5f, 0f), Vector3f(500f, 0.5f, 50f), 0f) { friction = 1f }
         val rough = body("Rough", Vector3f(0f, 0.5f, 0f), Vector3f(0.5f, 0.5f, 0.5f), 1f) { friction = 1f }
         val slick = body("Slick", Vector3f(0f, 0.5f, 10f), Vector3f(0.5f, 0.5f, 0.5f), 1f) { friction = 0f }
@@ -183,8 +206,10 @@ class PhysicsFeaturesTest {
             slick.getComponent(RigidBody3D::class.java).getWorldPosition().x - 1f)
     }
 
-    @Test
-    fun contactEvents_BodyLandsOnGround_ReportsSingleCollisionWithUpwardNormal() {
+    @ParameterizedTest
+    @MethodSource(CONTACTS)
+    fun contactEvents_BodyLandsOnGround_ReportsSingleCollisionWithUpwardNormal(backend: PhysicsBackend) {
+        use(backend)
         val recorder = Recorder().also { physics.contactListener = it }
         val ground = ground()
         val box = body("Box", Vector3f(0f, 1f, 0f), Vector3f(0.5f, 0.5f, 0.5f), 1f)
@@ -195,8 +220,10 @@ class PhysicsFeaturesTest {
         assertTrue(recorder.normals.single().y > 0.9f)
     }
 
-    @Test
-    fun triggers_BodyPassesThrough_ReportsEnterAndExitWithoutResponse() {
+    @ParameterizedTest
+    @MethodSource(CONTACTS)
+    fun triggers_BodyPassesThrough_ReportsEnterAndExitWithoutResponse(backend: PhysicsBackend) {
+        use(backend)
         val recorder = Recorder().also { physics.contactListener = it }
         val trigger = body("Zone", Vector3f(0f, 5f, 0f), Vector3f(2f, 1f, 2f), 0f) { isTrigger = true }
         val ball = body("Ball", Vector3f(0f, 9f, 0f), Vector3f(0.25f, 0.25f, 0.25f), 1f)
@@ -209,15 +236,19 @@ class PhysicsFeaturesTest {
         assertTrue(recorder.collisions.isEmpty())
     }
 
-    @Test
-    fun triggers_RaycastsIgnoreTriggerBodies() {
+    @ParameterizedTest
+    @MethodSource(CORE)
+    fun triggers_RaycastsIgnoreTriggerBodies(backend: PhysicsBackend) {
+        use(backend)
         body("Zone", Vector3f(0f, 5f, 0f), Vector3f(2f, 1f, 2f), 0f) { isTrigger = true }
 
         assertNull(physics.raycast(Vector3f(0f, 10f, 0f), Vector3f(0f, -10f, 0f)))
     }
 
-    @Test
-    fun triggers_RemovedObjectInsideTrigger_ReportsExit() {
+    @ParameterizedTest
+    @MethodSource(CONTACTS)
+    fun triggers_RemovedObjectInsideTrigger_ReportsExit(backend: PhysicsBackend) {
+        use(backend)
         val recorder = Recorder().also { physics.contactListener = it }
         val trigger = body("Zone", Vector3f(0f, 0f, 0f), Vector3f(5f, 5f, 5f), 0f) { isTrigger = true }
         physics.setGravity(Vector3f())
@@ -229,6 +260,123 @@ class PhysicsFeaturesTest {
         assertEquals(listOf(trigger to box), recorder.exited)
     }
 
+    @ParameterizedTest
+    @MethodSource(CONTACTS)
+    fun contactEvents_Landing_ReportsPointOnTheGround(backend: PhysicsBackend) {
+        use(backend)
+        val recorder = Recorder().also { physics.contactListener = it }
+        ground()
+        body("Box", Vector3f(0f, 3f, 0f), Vector3f(0.5f, 0.5f, 0.5f), 2f)
+
+        steps(120)
+
+        assertEquals(0f, recorder.points.single().y, 0.1f)
+        // Bullet reports 0 (its impulse is solved after the event); Jolt an estimate, see JoltPhysics3DTest
+        assertTrue(recorder.impulses.single() >= 0f, "impulse ${recorder.impulses.single()}")
+    }
+
+    @ParameterizedTest
+    @MethodSource(CONTACTS)
+    fun contactEvents_RestingBodySleepsAndWakes_DoesNotReportASecondStart(backend: PhysicsBackend) {
+        use(backend)
+        val recorder = Recorder().also { physics.contactListener = it }
+        ground()
+        val box = body("Box", Vector3f(0f, 0.5f, 0f), Vector3f(0.5f, 0.5f, 0.5f), 1f)
+        steps(300) // long enough for both engines to put the box to sleep
+
+        box.getComponent(RigidBody3D::class.java).linearVelocity = Vector3f(0.5f, 0f, 0f)
+        steps(30)
+
+        assertEquals(1, recorder.collisions.size)
+    }
+
+    @ParameterizedTest
+    @MethodSource(CONTACTS)
+    fun contactEvents_KinematicBodyOnStaticGround_ReportsCollision(backend: PhysicsBackend) {
+        use(backend)
+        val recorder = Recorder().also { physics.contactListener = it }
+        val ground = ground()
+        val platform = body("Platform", Vector3f(0f, 0.45f, 0f), Vector3f(0.5f, 0.5f, 0.5f), 1f) { bodyType = BodyType.Kinematic }
+
+        steps(5)
+
+        assertEquals(listOf(platform to ground), recorder.collisions)
+    }
+
+    @ParameterizedTest
+    @MethodSource(CONTACTS)
+    fun contactEvents_MassChangeRebuild_KeepsTheContact(backend: PhysicsBackend) {
+        use(backend)
+        val recorder = Recorder().also { physics.contactListener = it }
+        ground()
+        val box = body("Box", Vector3f(0f, 0.5f, 0f), Vector3f(0.5f, 0.5f, 0.5f), 1f)
+        steps(30)
+
+        box.getComponent(RigidBody3D::class.java).mass = 3f
+        physics.add(box)
+        steps(30)
+
+        assertEquals(1, recorder.collisions.size)
+    }
+
+    @ParameterizedTest
+    @MethodSource(CONTACTS)
+    fun triggers_BodySleepingInsideTrigger_DoesNotExit(backend: PhysicsBackend) {
+        use(backend)
+        val recorder = Recorder().also { physics.contactListener = it }
+        ground()
+        val zone = body("Zone", Vector3f(0f, 1f, 0f), Vector3f(3f, 1f, 3f), 0f) { isTrigger = true }
+        val box = body("Box", Vector3f(0f, 0.5f, 0f), Vector3f(0.5f, 0.5f, 0.5f), 1f)
+
+        steps(300)
+
+        assertEquals(listOf(zone to box), recorder.entered)
+        assertTrue(recorder.exited.isEmpty(), "exits ${recorder.exited}")
+    }
+
+    @ParameterizedTest
+    @MethodSource(CONTACTS)
+    fun triggers_DynamicTrigger_IsHeldInPlace(backend: PhysicsBackend) {
+        use(backend)
+        val zone = body("Zone", Vector3f(0f, 5f, 0f), Vector3f(1f, 1f, 1f), 1f) { isTrigger = true }
+
+        steps(60)
+
+        assertEquals(5f, y(zone), 1e-3f)
+    }
+
+    @ParameterizedTest
+    @MethodSource(CONTACTS)
+    fun triggers_RemovedTrigger_ReportsNoExit(backend: PhysicsBackend) {
+        use(backend)
+        val recorder = Recorder().also { physics.contactListener = it }
+        physics.setGravity(Vector3f())
+        val zone = body("Zone", Vector3f(), Vector3f(5f, 5f, 5f), 0f) { isTrigger = true }
+        val box = body("Box", Vector3f(), Vector3f(0.5f, 0.5f, 0.5f), 1f)
+        steps(2)
+        assertEquals(listOf(zone to box), recorder.entered)
+
+        physics.remove(zone)
+        steps(2)
+
+        assertTrue(recorder.exited.isEmpty())
+    }
+
+    @ParameterizedTest
+    @MethodSource(CORE)
+    fun stats_ActiveBodyCount_CountsAwakeMovingBodiesOnly(backend: PhysicsBackend) {
+        use(backend)
+        ground()
+        body("Box", Vector3f(0f, 2f, 0f), Vector3f(0.5f, 0.5f, 0.5f), 1f)
+        assertEquals(2, physics.rigidBodyCount)
+        steps(1)
+        assertEquals(1, physics.activeBodyCount)
+
+        steps(300) // both engines put a resting box to sleep well within 5 s
+
+        assertEquals(0, physics.activeBodyCount)
+    }
+
     private fun thinWallScenario(useCCD: Boolean): Float {
         physics.setGravity(Vector3f())
         body("Wall", Vector3f(20f, 0f, 0f), Vector3f(0.05f, 5f, 5f), 0f)
@@ -238,18 +386,24 @@ class PhysicsFeaturesTest {
         return board.getComponent(RigidBody3D::class.java).getWorldPosition().x
     }
 
-    @Test
-    fun ccd_FastBodyAgainstThinWall_DoesNotTunnel() {
+    @ParameterizedTest
+    @MethodSource(CORE)
+    fun ccd_FastBodyAgainstThinWall_DoesNotTunnel(backend: PhysicsBackend) {
+        use(backend)
         assertTrue(thinWallScenario(useCCD = true) < 20f)
     }
 
-    @Test
-    fun ccd_Disabled_FastBodyTunnelsThroughThinWall() {
+    @ParameterizedTest
+    @MethodSource(CORE)
+    fun ccd_Disabled_FastBodyTunnelsThroughThinWall(backend: PhysicsBackend) {
+        use(backend)
         assertFalse(thinWallScenario(useCCD = false) < 20f)
     }
 
-    @Test
-    fun ccd_SkateboardSizedBodyAtHighSpeed_StopsAtThinWall() {
+    @ParameterizedTest
+    @MethodSource(CORE)
+    fun ccd_SkateboardSizedBodyAtHighSpeed_StopsAtThinWall(backend: PhysicsBackend) {
+        use(backend)
         physics.setGravity(Vector3f())
         body("Wall", Vector3f(20f, 0f, 0f), Vector3f(0.05f, 5f, 5f), 0f)
         // Same proportions as the Skateboard prefab: a 0.0017 scale on a collider 500x larger than the real size
