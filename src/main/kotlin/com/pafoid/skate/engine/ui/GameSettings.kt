@@ -2,6 +2,7 @@ package com.pafoid.skate.engine.ui
 
 import com.pafoid.skate.engine.core.LoggerService
 import com.pafoid.skate.engine.render.rhi.GraphicsBackend
+import com.pafoid.skate.engine.render.shadow.ShadowQualityLevel
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import java.io.File
@@ -21,6 +22,12 @@ data class GameSettings(
      * player and support. Cleared when the chosen backend starts. Informational only; the choice itself is kept.
      */
     val graphicsNote: String? = null,
+    /** Overall graphics quality preset (LOW/MEDIUM/HIGH/ULTRA). Applies to shadows, post-processing and textures. */
+    val graphicsQuality: String? = null,
+    /** MSAA sample count for the window (1/2/4/8, 0 = use window default). */
+    val msaaSamples: Int? = null,
+    /** Texture quality (LOW/MEDIUM/HIGH). */
+    val textureQuality: String? = null,
 ) {
     companion object {
         const val DEFAULT_LOCALE = "en"

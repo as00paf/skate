@@ -104,4 +104,18 @@ class Renderer(
         cameraManager.camera.viewportWidth = renderResources.frameBuffer.width
         cameraManager.camera.viewportHeight = renderResources.frameBuffer.height
     }
+
+    /**
+     * Recreates the scene frame buffer with a new MSAA sample count.
+     * Returns true when the sample count actually changed (and the target was recreated).
+     */
+    fun resizeFrameBufferWithMsaa(width: Int, height: Int, msaaSamples: Int): Boolean {
+        val changed = renderResources.frameBuffer.setMsaaSamples(msaaSamples)
+        if (changed) renderResources.frameBuffer.initialize()
+        renderResources.pickingTexture.resize(width, height)
+        renderResources.renderPasses.picking.resize(width, height)
+        cameraManager.camera.viewportWidth = renderResources.frameBuffer.width
+        cameraManager.camera.viewportHeight = renderResources.frameBuffer.height
+        return changed
+    }
 }

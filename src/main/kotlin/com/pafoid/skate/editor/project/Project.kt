@@ -1,5 +1,7 @@
 package com.pafoid.skate.editor.project
 
+import com.pafoid.skate.editor.settings.GraphicsQuality
+import com.pafoid.skate.editor.settings.TextureQuality
 import com.pafoid.skate.engine.render.rhi.GraphicsBackend
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
@@ -23,6 +25,12 @@ data class Project(
     var gameplaySettings: GameplaySettings = GameplaySettings(),
     /** Backend the exported game renders with (AST-12); the editor always uses OpenGL. */
     var graphicsBackend: GraphicsBackend = GraphicsBackend.DEFAULT,
+    /** Graphics quality preset for the exported game (REN-30). */
+    var graphicsQuality: GraphicsQuality = GraphicsQuality.HIGH,
+    /** MSAA sample count for the exported game (REN-30). */
+    var msaaSamples: Int = 4,
+    /** Texture quality for the exported game (REN-30). */
+    var textureQuality: TextureQuality = TextureQuality.HIGH,
 ) {
     fun getProjectDirectory(): File {
         return File(projectPath).parentFile

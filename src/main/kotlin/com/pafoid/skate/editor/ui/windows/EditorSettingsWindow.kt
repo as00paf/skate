@@ -66,6 +66,9 @@ class EditorSettingsWindow(
     private var tempCompletionAuto = true
     private var tempCompletionDelay = 200
     private var tempShadowQuality = ShadowQuality.MEDIUM
+    private var tempQualityPreset = com.pafoid.skate.editor.settings.GraphicsQuality.HIGH
+    private var tempMsaaSamples = 4
+    private var tempTextureQuality = com.pafoid.skate.editor.settings.TextureQuality.HIGH
 
     private val tempShowOverlayBool = ImBoolean(true)
 
@@ -175,6 +178,9 @@ class EditorSettingsWindow(
             tempCompletionAuto = editor.completionAutoPopup
             tempCompletionDelay = editor.completionDelayMs
             tempShadowQuality = editor.graphics.shadowQuality
+            tempQualityPreset = editor.graphics.quality
+            tempMsaaSamples = editor.graphics.msaa
+            tempTextureQuality = editor.graphics.textureQuality
         }
     }
 
@@ -257,15 +263,64 @@ class EditorSettingsWindow(
     }
 
     private fun renderGraphics() {
-        val labels = ShadowQuality.entries.map { stringManager.getString(shadowQualityKey(it)) }.toTypedArray()
-        val selected = ImInt(tempShadowQuality.ordinal)
+        // Overall quality preset
+        val presetLabels = com.pafoid.skate.editor.settings.GraphicsQuality.entries.map {
+            stringManager.getString("settings.graphics.quality.${it.name.lowercase()}")
+        }.toTypedArray()
+        val presetSel = ImInt(tempQualityPreset.ordinal)
+        MImGui.propertyRow(
+            label = stringManager.getString("settings.editor.graphics.quality_preset"),
+            helpTooltip = stringManager.getString("settings.editor.graphics.quality_preset.desc"),
+            onReset = { tempQualityPreset = com.pafoid.skate.editor.settings.GraphicsQuality.HIGH; hasPendingChanges = true }
+        ) {
+            if (combo("##quality_preset", presetSel, presetLabels, presetLabels.size)) {
+                tempQualityPreset = com.pafoid.skate.editor.settings.GraphicsQuality.entries[presetSel.get()]
+                hasPendingChanges = true
+            }
+        }
+
+        // MSAA samples
+        val msaaOptions = intArrayOf(1, 2, 4, 8)
+        val msaaLabels = msaaOptions.map { if (it == 1) stringManager.getString("settings.graphics.msaa.off") else "$it×" }.toTypedArray()
+        val msaaIdx = msaaOptions.indexOf(tempMsaaSamples).coerceAtLeast(0)
+        val msaaSel = ImInt(msaaIdx)
+        MImGui.propertyRow(
+            label = stringManager.getString("settings.editor.graphics.msaa_samples"),
+            helpTooltip = stringManager.getString("settings.editor.graphics.msaa_samples.desc"),
+            onReset = { tempMsaaSamples = 4; hasPendingChanges = true }
+        ) {
+            if (combo("##msaa_samples", msaaSel, msaaLabels, msaaLabels.size)) {
+                tempMsaaSamples = msaaOptions[msaaSel.get()]
+                hasPendingChanges = true
+            }
+        }
+
+        // Shadow quality
+        val shadowLabels = ShadowQuality.entries.map { stringManager.getString(shadowQualityKey(it)) }.toTypedArray()
+        val shadowSel = ImInt(tempShadowQuality.ordinal)
         MImGui.propertyRow(
             label = stringManager.getString("settings.editor.graphics.shadow_quality"),
             helpTooltip = stringManager.getString("settings.editor.graphics.shadow_quality.desc"),
             onReset = { tempShadowQuality = ShadowQuality.MEDIUM; hasPendingChanges = true }
         ) {
-            if (combo("##shadow_quality", selected, labels, labels.size)) {
-                tempShadowQuality = ShadowQuality.entries[selected.get()]
+            if (combo("##shadow_quality", shadowSel, shadowLabels, shadowLabels.size)) {
+                tempShadowQuality = ShadowQuality.entries[shadowSel.get()]
+                hasPendingChanges = true
+            }
+        }
+
+        // Texture quality
+        val texLabels = com.pafoid.skate.editor.settings.TextureQuality.entries.map {
+            stringManager.getString("settings.graphics.texture_quality.${it.name.lowercase()}")
+        }.toTypedArray()
+        val texSel = ImInt(tempTextureQuality.ordinal)
+        MImGui.propertyRow(
+            label = stringManager.getString("settings.editor.graphics.texture_quality"),
+            helpTooltip = stringManager.getString("settings.editor.graphics.texture_quality.desc"),
+            onReset = { tempTextureQuality = com.pafoid.skate.editor.settings.TextureQuality.HIGH; hasPendingChanges = true }
+        ) {
+            if (combo("##texture_quality", texSel, texLabels, texLabels.size)) {
+                tempTextureQuality = com.pafoid.skate.editor.settings.TextureQuality.entries[texSel.get()]
                 hasPendingChanges = true
             }
         }
@@ -338,6 +393,9 @@ class EditorSettingsWindow(
         settingsManager.updateAutoSaveSettings(tempAutoSaveEnabled, tempAutoSaveInterval)
         settingsManager.updateCompletionSettings(tempCompletionAuto, tempCompletionDelay)
         settingsManager.updateShadowQuality(tempShadowQuality)
+        settingsManager.updateMsaa(tempMsaaSamples)
+        settingsManager.updateTextureQuality(tempTextureQuality)
+        settingsManager.updateGraphicsQuality(tempQualityPreset)
         ImGuiStyleManager.preview = null
         hasPendingChanges = false
     }
