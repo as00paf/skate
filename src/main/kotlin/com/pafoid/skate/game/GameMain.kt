@@ -38,13 +38,33 @@ fun main(args: Array<String>) {
     val projectManager = ProjectManager(engine)
     // game.settings.json next to the pack: the player's backend choice (AST-12) and locale (GUI-10).
     val settings = GameSettingsStore(GameSettings.fileIn(pack.file.parentFile), engine.logger)
+
+    // Apply the project's startup language as the game's initial locale (GUI-15).
+    if (project.startupLanguage.isNotEmpty() && project.startupLanguage in project.supportedLanguages) {
+        settings.update { it.copy(startupLanguage = project.startupLanguage, supportedLanguages = project.supportedLanguages, locale = project.startupLanguage) }
+    }
+
     val requested = GameGraphics.requested(project.graphicsBackend, settings)
     val window = GameGraphics.start(requested, engine.logger, settings) { backend ->
-        Window(title = project.name, icon = icon, backend = backend)
+        Window(
+            initialWidth = project.resolution.x,
+            initialHeight = project.resolution.y,
+            title = project.name,
+            icon = icon,
+            backend = backend,
+            fullscreen = project.fullscreen,
+            vsync = project.vsync,
+        )
     }.window
 
-    window.windowController.setFullscreen(true)
+    window.windowController.setFullscreen(project.fullscreen)
     engine.start(window.glfwWindow, window.device)
+
+    // Apply the project's physics rate to the engine's fixed time step (GUI-15).
+    if (project.physicsFPS > 0) {
+        engine.systemManager.fixedTimeStep = 1f / project.physicsFPS
+    }
+    SkateGameplay.install(engine)
 
     if (projectManager.openProject(project, binFile, header, headerSize)) {
         // The project's mixer (bus volumes and mutes set in the editor) applies to the exported game too (EDT-14).
@@ -52,7 +72,7 @@ fun main(args: Array<String>) {
         // Apply game-side graphics settings from game.settings.json (overrides project defaults).
         applyGameGraphicsSettings(settings.settings, project)
         engine.runtimePlaying = true
-        installGameUi(window, settings)
+        installGameUi(window, settings, project)
         window.show(onClose = {
             // Engine first: on Vulkan the device and its window are released right after (VK-01 shutdown order).
             engine.destroy()
@@ -76,7 +96,7 @@ fun main(args: Array<String>) {
  * HUD plus the engine's pause menu (GUI-09), which behaves as in editor Play; only Restart and Quit are the game's:
  * Restart reloads the scene as it was at launch, Quit closes the window.
  */
-private fun installGameUi(window: Window, settings: GameSettingsStore) {
+private fun installGameUi(window: Window, settings: GameSettingsStore, project: Project) {
     val scene = engine.sceneManager.currentScene ?: return
     loadGameStrings()
     // The player's language choice is kept in the same game.settings.json (GUI-10).

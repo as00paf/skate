@@ -1,5 +1,7 @@
 package com.pafoid.skate.game.player
 
+import com.pafoid.skate.game.input.FakeActions
+
 import com.pafoid.skate.engine.assets.PrefabsGenerator
 import com.pafoid.skate.engine.gameplay.CharacterBehaviors
 import com.pafoid.skate.engine.gameplay.CharacterConfigs
@@ -30,7 +32,7 @@ class SkateBehaviorTest {
         vertical: Float = 0f,
         rail: Boolean = false,
     ) = CharacterInput(
-        move = stick, sprint = push, jumpPressed = jump, crouch = manual,
+        move = stick, actions = FakeActions.skate(push = push, manual = manual, ollie = jump),
         grounded = grounded, horizontalSpeed = speed, velocityYaw = velocityYaw,
         verticalSpeed = vertical, groundTag = if (rail) PrefabsGenerator.GRINDABLE_TAG else null,
     )

@@ -25,6 +25,10 @@
             "snapToGround": true,
             "stepUp": true
         },
+        "look": {
+            "stickSensitivity": 2.0,
+            "mouseSensitivity": 0.1
+        },
         "animations": {
             "IDLE": "idle",
             "WALK": "walking",
@@ -82,6 +86,15 @@
     "bail": {
         "recoverySec": 1.2,
         "drag": 4.0
+    },
+    "tricks": {
+        "flipSec": 0.4,
+        "shoveItSec": 0.3,
+        "threeSixtyShoveItSec": 0.5,
+        "olliePoints": 100,
+        "flipPoints": 500,
+        "shoveItPoints": 300,
+        "threeSixtyShoveItPoints": 800
     },
     "prediction": {
         "mass": 180.0,

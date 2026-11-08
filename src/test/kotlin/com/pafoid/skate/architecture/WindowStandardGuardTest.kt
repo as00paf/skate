@@ -108,7 +108,7 @@ class WindowStandardGuardTest {
             // E: settings dialogs
             "EditorSettingsWindow", "ProjectSettingsWindow", "KeyBindingsWindow", "ExportWizardWindow",
             // F: modals & palette
-            "ProjectSwitcherDialog", "SearchEverywhereWindow", "ProjectWizardWindow",
+            "ProjectSwitcherDialog", "ProjectWizardWindow",
             // H: domain windows
             "AudioInspectorWindow", "ScriptEditorWindow",
             // I: input testing move (the window is deleted)

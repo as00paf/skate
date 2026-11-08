@@ -11,11 +11,8 @@ import com.pafoid.skate.engine.ui.UIElementComponent
 import com.pafoid.skate.engine.ui.PauseMenu
 import com.pafoid.skate.engine.ui.UITextComponent
 
-/** Live values shown by the HUD. */
+/** Live values shown by the HUD. Score and trick name are the trick HUD's ([SkateHudSystem], GPL-21). */
 class GameHudState(
-    var score: Int = 0,
-    /** StringManager key of the trick being performed (e.g. `trick.kickflip`); empty hides the text. */
-    var trickKey: String = "",
     var elapsedSeconds: Float = 0f,
 )
 
@@ -64,9 +61,7 @@ class GameUiSystem(
 
     /** Back to a fresh run (pause menu Restart). */
     fun resetState() {
-        state.score = 0
         state.elapsedSeconds = 0f
-        state.trickKey = ""
         refreshHud()
     }
 
@@ -76,9 +71,7 @@ class GameUiSystem(
     }
 
     fun refreshHud() {
-        textOf(GameUi.SCORE_NAME)?.args = listOf(state.score.toString())
         textOf(GameUi.TIMER_NAME)?.args = listOf(GameUi.formatTime(state.elapsedSeconds))
-        textOf(GameUi.TRICK_NAME)?.key = state.trickKey
     }
 
     private fun textOf(name: String) = PauseMenu.find(hud, name)?.getComponent<UITextComponent>()

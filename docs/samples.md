@@ -6,13 +6,14 @@
 
 | Part | Contents |
 |------|----------|
-| Scene components | `ScenePhysicsComponent` (gravity, debug draw off: toggle it to see colliders), `GridLines`, `EnvironmentComponent` with the bundled HDRI sky and the ambient light, `DayNightCycleComponent`. A top-level `Sun` entity holds the `DirectionalLightComponent`, driven by the day/night cycle (REN-26). |
-| `Camera` | Default `CameraComponent` with a `FollowCameraComponent` (GPL-05) on `Skater`: it follows and orbits the skater, blends the walk/ride framing, pulls in when its spring arm hits an obstacle and shakes on hard impacts. Tune it in Properties (docs/camera.md). |
+| Scene components | `ScenePhysicsComponent` (gravity, debug draw off: toggle it to see colliders), `GridLines`, `EnvironmentComponent` with the bundled HDRI sky, `AmbientLightComponent`, `DayNightCycleComponent`, `DirectionalLightComponent` (sun). |
+| `Camera` | Default `CameraComponent` with a `FollowCameraComponent` (GPL-05) on `Skater`: it follows and orbits the skater, blends the walk/ride framing, pulls in when its spring arm hits an obstacle and shakes on hard impacts. Tune it in Properties (docs/camera.md). Its `CameraCycleComponent` (GPL-22) cycles `Camera` → `FirstPersonCamera` → `FixedCamera` from the HUD `CameraButton` or the `camera.cycle` action (C, gamepad Back). |
+| `FirstPersonCamera`, `FixedCamera` | `FirstPersonCamera`: 70° camera at the skater's eyes (`FirstPersonCameraComponent`). `FixedCamera`: a static camera at (5, 3.5, 7) looking at the spawn. |
 | `Skateboard`, `Skater` | Bundled board and character prefabs (`Skateboard`, `Skater` with the default animation set). |
 | `Floor` | 20 x 20 m static asphalt slab, top surface at y = 0, box collider. |
 | `Concrete_Ledge` | Static concrete ledge at (3, 0.25, -3) with a box collider, to grind. |
 | `QuarterPipe`, `Funbox` | GPL-04 prefabs: a wooden quarter pipe 6 m behind the spawn (riding face toward the skater) and a concrete funbox at (-4, 0, 4). They also give the follow camera's spring arm something to collide with. |
-| `HUD` | In-game UI canvas: `ScoreText` top-left (`hud.score`, "Score 0") and `RestartButton` top-right (`pause.restart`). Both keys exist in the bundled game and editor string tables. |
+| `HUD` | In-game UI canvas: `ScoreText` top-left (`hud.score`, "Score 0") and `CameraButton` top-right (`hud.camera`), which cycles the cameras. Both keys exist in the bundled game string tables. Restart is in the Esc pause menu. |
 
 No 2D sprites or test cubes. Feature demos live in `FeatureShowcase`, not in `MainScene`.
 

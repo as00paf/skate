@@ -125,7 +125,7 @@ class FeatureShowcaseTest {
 
     @Test
     fun `UI overlay has a focus button per area plus overview, a slider and formatted text`() {
-        val canvas = withComponent<UICanvasComponent>().single()
+        val canvas = withComponent<UICanvasComponent>().single { it.name != FeatureShowcase.MAP_CANVAS }
         val buttons = canvas.children.filter { it.getComponent<UIButtonComponent>() != null }.map { it.name }
         val expected = listOf(FeatureShowcase.OVERVIEW) + FeatureShowcase.AREAS.map { it.key }
         assertTrue(buttons.containsAll(expected.map { FeatureShowcase.focusButtonName(it) }), buttons.toString())

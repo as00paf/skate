@@ -2,10 +2,14 @@ package com.pafoid.skate.engine.ecs.systems
 
 import com.pafoid.skate.engine.ecs.components.Animator
 import com.pafoid.skate.engine.ecs.components.InputStateComponent
+import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.components.PlayerController
 import com.pafoid.skate.engine.ecs.components.RigidBody3D
 import com.pafoid.skate.engine.ecs.systems.SystemManager.ExecutionPriority
+import com.pafoid.skate.engine.gameplay.ActionQuery
 import com.pafoid.skate.engine.gameplay.CharacterInput
+import com.pafoid.skate.engine.gameplay.LookTuning
+import com.pafoid.skate.engine.gameplay.CharacterInputSampler
 import com.pafoid.skate.engine.gameplay.CharacterMotion
 import com.pafoid.skate.engine.gameplay.MotionMath
 import com.pafoid.skate.engine.gameplay.MountMath
@@ -20,22 +24,52 @@ import org.joml.Quaternionf
 import org.joml.Vector2f
 import org.joml.Vector3f
 
-/** Thin driver: feeds input to each player's behavior and applies the returned motion to its body. */
+/**
+ * Thin driver: feeds input to each player's behavior and applies the returned motion to its body.
+ * With an [inputSampler], every top-level [InputStateComponent] is filled from the character actions first;
+ * without one (tests), the components are used as they are.
+ */
 class PlayerMotionSystem(
     private val cameraManager: CameraManager,
+    private val inputSampler: CharacterInputSampler? = null,
 ) : System(priority = ExecutionPriority.DEFAULT) {
 
     private val footBinders = java.util.WeakHashMap<PlayerController, FootIkBinder>()
 
     private val players = query(PlayerController::class, IPhysicsBody3D::class, topLevelOnly = true)
+    private val inputs = query(InputStateComponent::class, topLevelOnly = true)
+
+    /** Per-character action views (stateless wrappers, cached to avoid a per-frame allocation). */
+    private val actionViews = java.util.WeakHashMap<PlayerController, ActionQuery>()
+    private val seen = HashSet<Any>()
+
+    override fun init(scene: Scene) {
+        super.init(scene)
+        // A new scene (Play snapshot, restart, scene switch): game presets' actions, and no context left held.
+        inputSampler?.applyPresets()
+        inputSampler?.leases?.releaseAll()
+    }
 
     override fun update(dt: Float) {
-        if (!scene.isRunning) return
+        if (!scene.isRunning) {
+            inputSampler?.leases?.releaseAll()
+            return
+        }
+        inputSampler?.let { sampler ->
+            sampler.applyPresetsIfChanged()
+            inputs.forEach { go ->
+                val state = go.getComponent<InputStateComponent>() ?: return@forEach
+                // Each character's own look tuning (its config); objects without a controller get the defaults.
+                sampler.sample(state, go.getComponent<PlayerController>()?.behavior?.look ?: LookTuning())
+            }
+        }
 
+        seen.clear()
         players.forEach { go ->
             val controller = go.getComponent<PlayerController>() ?: return@forEach
             val body = go.getComponent<RigidBody3D>() ?: return@forEach
             val inputState = go.getComponent<InputStateComponent>() ?: return@forEach
+            seen += controller
 
             val mount = (controller.behavior as? Mountable)?.let { findMount(it.mountTargetName, go) }
             val motion = controller.behavior.update(buildInput(controller, inputState, body, mount, body.getWorldPosition()), dt)
@@ -54,6 +88,8 @@ class PlayerMotionSystem(
 
             controller.state = CharacterAnimationDriver.drive(controller.behavior, motion, controller.state, go.getComponent<Animator>())
         }
+        // Characters that left the scene give their input contexts back.
+        inputSampler?.leases?.retainOnly(seen)
     }
 
     private fun buildInput(
@@ -84,6 +120,7 @@ class PlayerMotionSystem(
             yaw = MotionMath.yawOfRotation(body.getRotation()),
             cameraForward = Vector3f(camera.camForward),
             cameraRight = Vector3f(camera.camRight),
+            actions = inputSampler?.let { s -> actionViews.getOrPut(controller) { s.actionsFor(controller) } } ?: ActionQuery.NONE,
         )
     }
 
