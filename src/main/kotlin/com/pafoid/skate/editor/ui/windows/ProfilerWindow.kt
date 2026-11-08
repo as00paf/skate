@@ -1,7 +1,7 @@
 package com.pafoid.skate.editor.ui.windows
 
-import com.pafoid.skate.editor.imgui.label
 import com.pafoid.skate.editor.imgui.EditorWindow
+import com.pafoid.skate.editor.imgui.EmptyState
 import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.engine.core.StringManager
 import com.pafoid.skate.engine.render.EngineStats
@@ -22,6 +22,9 @@ class ProfilerWindow(private val stringManager: StringManager) : EditorWindow("w
     private val showGraphs = ImBoolean(true)
     private val isFrozen = ImBoolean(false)
     private val history = PerformanceHistory(200)
+
+    override val icon = Icons.CHART_LINE
+    override val relatedWindows = listOf("window.console", "window.render_graph")
 
     private class PerformanceHistory(val maxSize: Int = 200) {
         val frameTimes = FloatArray(maxSize)
@@ -61,7 +64,10 @@ class ProfilerWindow(private val stringManager: StringManager) : EditorWindow("w
     }
 
     override fun imgui() {
-        ImGui.begin(stringManager.label("window.profiler", "${Icons.CHART_LINE} "))
+        if (!beginWindow(stringManager)) {
+            ImGui.end()
+            return
+        }
 
         val io = ImGui.getIO()
         val frameTime = 1000.0f / io.framerate
@@ -78,9 +84,7 @@ class ProfilerWindow(private val stringManager: StringManager) : EditorWindow("w
         }
 
         // Freeze / Unfreeze + Reset Stats toolbar
-        renderDiagnosticsToolbar()
-
-        ImGui.separator()
+        header(stringManager) { renderDiagnosticsToolbar() }
 
         // Frozen indicator
         if (isFrozen.get()) {
@@ -157,7 +161,7 @@ class ProfilerWindow(private val stringManager: StringManager) : EditorWindow("w
         ImGui.separator()
 
         if (!threadBean.isThreadCpuTimeSupported) {
-            ImGui.text(stringManager.getString("lbl.profiler.thread_cpu_unsupported"))
+            EmptyState.render(stringManager, Icons.MICROCHIP, "lbl.profiler.thread_cpu_unsupported")
             ImGui.end()
             return
         }
@@ -168,6 +172,12 @@ class ProfilerWindow(private val stringManager: StringManager) : EditorWindow("w
         if (deltaTime > 0.5f) { // Sample every 500ms
             updateStats(currentTime)
             lastSampleTime = currentTime
+        }
+
+        if (threadCpuUsage.isEmpty()) {
+            EmptyState.nothingYet(stringManager, Icons.MICROCHIP, "empty.profiler.threads")
+            ImGui.end()
+            return
         }
 
         ImGui.columns(3, "ThreadColumns")

@@ -6,26 +6,26 @@ import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.components.RagdollComponent
 import com.pafoid.skate.engine.ecs.components.RagdollState
 import com.pafoid.skate.engine.physics3d.ColliderShape
-import com.pafoid.skate.engine.physics3d.bullet.BulletPhysics3D
+import com.pafoid.skate.engine.physics3d.IPhysics3D
+import com.pafoid.skate.engine.physics3d.PhysicsBackend
+import com.pafoid.skate.engine.physics3d.PhysicsBackends
 import com.pafoid.skate.engine.physics3d.constraints.HingeConstraint3D
-import com.pafoid.skate.engine.physics3d.native.NativeLibraryLoader
 import io.mockk.mockk
 import org.joml.Vector3f
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
-import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.MethodSource
 
 class PhysicsSystemRagdollTest {
 
-    private class Rig {
-        val backend: BulletPhysics3D
+    private class Rig(backendType: PhysicsBackend) {
+        val backend: IPhysics3D = PhysicsBackends.create(backendType)
         val scene = Scene()
         val ragdoll = RagdollComponent()
         val system: PhysicsSystem
 
         init {
-            NativeLibraryLoader().loadNativeLibrary()
-            backend = BulletPhysics3D(mockk(relaxed = true))
             system = PhysicsSystem(mockk(relaxed = true), null, backend)
             val shape = ColliderShape.Capsule(0.1f, 0.3f, 1)
             val upper = backend.createRigidBody(shape, 5f).also { it.isKinematic = true; it.setLocation(Vector3f(0f, 10f, 0f)) }
@@ -49,18 +49,20 @@ class PhysicsSystemRagdollTest {
         fun y(name: String) = ragdoll.boneBodies.getValue(name).getLocation(Vector3f()).y
     }
 
-    @Test
-    fun ragdollPhysics_AnimatedBones_StayKinematic() {
-        val rig = Rig()
+    @ParameterizedTest
+    @MethodSource("com.pafoid.skate.engine.physics3d.PhysicsBackends#joints")
+    fun ragdollPhysics_AnimatedBones_StayKinematic(backend: PhysicsBackend) {
+        val rig = Rig(backend)
 
         rig.step(60)
 
         assertEquals(10f, rig.y("upper"), 0.001f)
     }
 
-    @Test
-    fun ragdollPhysics_RagdollState_SimulatesBonesUnderGravity() {
-        val rig = Rig()
+    @ParameterizedTest
+    @MethodSource("com.pafoid.skate.engine.physics3d.PhysicsBackends#joints")
+    fun ragdollPhysics_RagdollState_SimulatesBonesUnderGravity(backend: PhysicsBackend) {
+        val rig = Rig(backend)
         rig.step(2)
         rig.ragdoll.state = RagdollState.RAGDOLL
 
@@ -69,9 +71,10 @@ class PhysicsSystemRagdollTest {
         assertTrue(rig.y("upper") < 8f, "bones should fall, was ${rig.y("upper")}")
     }
 
-    @Test
-    fun ragdollPhysics_RemovedRagdoll_LeavesTheWorld() {
-        val rig = Rig()
+    @ParameterizedTest
+    @MethodSource("com.pafoid.skate.engine.physics3d.PhysicsBackends#joints")
+    fun ragdollPhysics_RemovedRagdoll_LeavesTheWorld(backend: PhysicsBackend) {
+        val rig = Rig(backend)
         rig.step(2)
         rig.ragdoll.state = RagdollState.RAGDOLL
         rig.step(2)

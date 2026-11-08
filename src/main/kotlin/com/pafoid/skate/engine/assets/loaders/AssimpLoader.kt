@@ -53,12 +53,18 @@ class AssimpLoader(
     private val textureLoader: TextureLoader,
     private val vaoLoader: VAOLoader,
 ) {
+    companion object {
+        /**
+         * Every import path uses these. AST-24: GenSmoothNormals was missing from the file paths, so an OBJ without
+         * normals loaded with none (lit with a NaN normal) and got no tangents.
+         */
+        const val IMPORT_FLAGS = aiProcess_GenSmoothNormals or aiProcess_Triangulate or aiProcess_FlipUVs or
+            aiProcess_JoinIdenticalVertices or aiProcess_CalcTangentSpace or aiProcess_LimitBoneWeights
+    }
 
     fun loadModel(buffer: ByteBuffer, filePath: String): `3dModel` {
         try {
-            val flags = aiProcess_GenSmoothNormals or
-                    aiProcess_Triangulate or aiProcess_FlipUVs or aiProcess_JoinIdenticalVertices or aiProcess_CalcTangentSpace or aiProcess_LimitBoneWeights
-            val scene = aiImportFileFromMemory(buffer, flags, "")
+            val scene = aiImportFileFromMemory(buffer, IMPORT_FLAGS, "")
                 ?: throw RuntimeException("Error loading model: " + aiGetErrorString())
             return loadModel(scene, filePath)
         } finally {
@@ -71,9 +77,7 @@ class AssimpLoader(
         try {
             buffer.put(modelData)
             buffer.flip()
-            val flags = aiProcess_GenSmoothNormals or
-                aiProcess_Triangulate or aiProcess_FlipUVs or aiProcess_JoinIdenticalVertices or aiProcess_CalcTangentSpace or aiProcess_LimitBoneWeights
-            val scene = aiImportFileFromMemory(buffer, flags, "")
+            val scene = aiImportFileFromMemory(buffer, IMPORT_FLAGS, "")
                 ?: throw RuntimeException("Error loading model: " + aiGetErrorString())
             return loadModel(scene, filePath)
         } finally {
@@ -83,7 +87,7 @@ class AssimpLoader(
 
     /** Thread-safe, CPU only: the heavy file import. Pass the result to [buildModel] on the GL thread. */
     fun importScene(filePath: String): AIScene =
-        aiImportFile(filePath, aiProcess_Triangulate or aiProcess_FlipUVs or aiProcess_JoinIdenticalVertices or aiProcess_CalcTangentSpace or aiProcess_LimitBoneWeights)
+        aiImportFile(filePath, IMPORT_FLAGS)
             ?: throw RuntimeException("Error loading model: " + aiGetErrorString())
 
     /** Must be called on the GL thread (creates VAOs and textures). Releases the imported scene. */
@@ -96,7 +100,7 @@ class AssimpLoader(
     fun releaseScene(scene: AIScene) = org.lwjgl.assimp.Assimp.aiReleaseImport(scene)
 
     fun loadModel(filePath: String): `3dModel` {
-        val scene = aiImportFile(filePath, aiProcess_Triangulate or aiProcess_FlipUVs or aiProcess_JoinIdenticalVertices or aiProcess_CalcTangentSpace or aiProcess_LimitBoneWeights)
+        val scene = aiImportFile(filePath, IMPORT_FLAGS)
             ?: throw RuntimeException("Error loading model: " + aiGetErrorString())
         return loadModel(scene, filePath)
     }
@@ -373,10 +377,13 @@ class AssimpLoader(
             }
         }
 
+        // AST-24: all-zero normals in the file survive GenSmoothNormals (it only fills meshes without any).
+        val meshNormals = if (MeshNormals.needsRegeneration(normals)) MeshNormals.smooth(vertices, indices) else normals
+
         return vaoLoader.loadToVAO(
             vertices,
             texCoords,
-            normals,
+            meshNormals,
             indices,
             vertices,
             tangents,

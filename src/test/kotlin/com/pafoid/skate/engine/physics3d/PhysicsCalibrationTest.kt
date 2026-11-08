@@ -1,32 +1,21 @@
 package com.pafoid.skate.engine.physics3d
 
 import com.pafoid.skate.engine.addComponent
-import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.ecs.GameObject
-import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.ecs.components.RigidBody3D
 import com.pafoid.skate.engine.ecs.components.Transform
-import com.pafoid.skate.engine.physics3d.bullet.BulletPhysics3D
-import com.pafoid.skate.engine.render.renderer.DebugRenderer
-import io.mockk.mockk
 import org.joml.Vector3f
 import org.junit.jupiter.api.Assertions.assertEquals
-import com.pafoid.skate.engine.physics3d.native.NativeLibraryLoader
-import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.MethodSource
 import kotlin.math.sqrt
 
 class PhysicsCalibrationTest {
 
-    companion object {
-        val engine = mockk<Engine>()
-        val sceneManager = mockk<SceneManager>()
-        val debugRenderer = mockk<DebugRenderer>()
-    }
-
-    @Test
-    fun `test freefall timing with standard gravity`() {
-        NativeLibraryLoader().loadNativeLibrary()
-        val physics = BulletPhysics3D(debugRenderer)
+    @ParameterizedTest
+    @MethodSource("com.pafoid.skate.engine.physics3d.PhysicsBackends#core")
+    fun `test freefall timing with standard gravity`(backend: PhysicsBackend) {
+        val physics = PhysicsBackends.create(backend)
         val gravity = 9.81f
         physics.setGravity(Vector3f(0f, -gravity, 0f))
 

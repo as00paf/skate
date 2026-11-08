@@ -1,6 +1,5 @@
 package com.pafoid.skate.engine.physics3d
 
-import com.pafoid.skate.engine.physics3d.bullet.LongSet
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
