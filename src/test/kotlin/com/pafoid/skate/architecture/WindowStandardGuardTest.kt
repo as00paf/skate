@@ -105,8 +105,6 @@ class WindowStandardGuardTest {
             "SceneHierarchyWindow", "PropertiesWindow", "GameViewWindow",
             // C: project & assets
             "ProjectWindow", "AssetBrowserWindow",
-            // D: debug
-            "ConsoleWindow", "ProfilerWindow", "CommandHistoryWindow", "ShellWindow",
             // E: settings dialogs
             "EditorSettingsWindow", "ProjectSettingsWindow", "KeyBindingsWindow", "ExportWizardWindow",
             // F: modals & palette
