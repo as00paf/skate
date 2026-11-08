@@ -1,5 +1,7 @@
 package com.pafoid.skate.editor.systems
 
+import com.pafoid.skate.engine.ecs.components.DayNightCycleComponent
+import com.pafoid.skate.engine.ecs.SceneSun
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.AssetsManager
 import com.pafoid.skate.engine.assets.PrefabsGenerator
@@ -21,7 +23,6 @@ import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.ecs.components.BoxCollider3D
 import com.pafoid.skate.engine.ecs.components.CameraComponent
-import com.pafoid.skate.engine.ecs.components.DirectionalLightComponent
 import com.pafoid.skate.engine.ecs.components.EnvironmentComponent
 import com.pafoid.skate.engine.ecs.components.RigidBody3D
 import com.pafoid.skate.engine.ecs.components.ScenePhysicsComponent
@@ -230,7 +231,9 @@ class PrefabsGeneratorTest {
         val scene = scenes.first()
         assertNotNull(scene.getComponent<ScenePhysicsComponent>())
         assertNotNull(scene.getComponent<EnvironmentComponent>())
-        assertNotNull(scene.getComponent<DirectionalLightComponent>())
+        assertNotNull(SceneSun.of(scene), "a Sun entity")
+        assertEquals(SceneSun.NAME, SceneSun.of(scene)!!.gameObject!!.name)
+        assertNotNull(scene.getComponent<DayNightCycleComponent>(), "the sun follows the day/night cycle")
         assertTrue(scene.children.flatMap { it.descendants() }.none { it.getComponent<SpriteRenderer>() != null })
         verify { sceneManager.saveScene(scene, any()) }
         verify { sceneManager.saveScene(scenes[1], any()) }

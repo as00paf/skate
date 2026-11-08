@@ -23,6 +23,9 @@ class EditorSettingsManager(
 ) {
     var editorSettings: EditorSettings = EditorSettings()
 
+    /** Called when MSAA samples change, allowing the editor to recreate the scene frame buffer. */
+    var onMsaaChanged: ((samples: Int) -> Unit)? = null
+
     /**
      * Recent projects that still exist, newest first. The absolute `.skateproject` path kept in the settings is the
      * source of truth for [Project.projectPath] (EDT-41): the file itself stores it project-relative (AST-09).
@@ -124,6 +127,28 @@ class EditorSettingsManager(
     /** Stores [quality], applies it to the renderer right away and saves it to the settings file. */
     fun updateShadowQuality(quality: ShadowQuality) {
         editorSettings = editorSettings.copy(graphics = editorSettings.graphics.copy(shadowQuality = quality))
+        editorSettings.graphics.applyToEngine()
+        saveSettings()
+    }
+
+    /** Stores [msaa], applies it to the renderer right away and saves it to the settings file. */
+    fun updateMsaa(samples: Int) {
+        editorSettings = editorSettings.copy(graphics = editorSettings.graphics.copy(msaa = samples))
+        editorSettings.graphics.applyToEngine()
+        onMsaaChanged?.invoke(samples)
+        saveSettings()
+    }
+
+    /** Stores [textureQuality], applies it to the renderer right away and saves it to the settings file. */
+    fun updateTextureQuality(textureQuality: com.pafoid.skate.editor.settings.TextureQuality) {
+        editorSettings = editorSettings.copy(graphics = editorSettings.graphics.copy(textureQuality = textureQuality))
+        editorSettings.graphics.applyToEngine()
+        saveSettings()
+    }
+
+    /** Stores the overall [quality] preset, applies all derived settings and saves. */
+    fun updateGraphicsQuality(preset: com.pafoid.skate.editor.settings.GraphicsQuality) {
+        editorSettings = editorSettings.copy(graphics = editorSettings.graphics.copy(quality = preset))
         editorSettings.graphics.applyToEngine()
         saveSettings()
     }

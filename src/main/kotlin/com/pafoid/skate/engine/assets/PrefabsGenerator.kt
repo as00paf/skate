@@ -1,5 +1,6 @@
 package com.pafoid.skate.engine.assets
 
+import com.pafoid.skate.engine.ecs.SceneSun
 import com.pafoid.skate.engine.addComponent
 import com.pafoid.skate.engine.assets.data.models.`3dModel`
 import com.pafoid.skate.engine.assets.data.models.Material
@@ -10,7 +11,6 @@ import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.assets.data.Texture
 import com.pafoid.skate.engine.assets.data.models.animations.Animation
 import com.pafoid.skate.engine.assets.data.models.animations.SkeletonPose
-import com.pafoid.skate.engine.ecs.components.AmbientLightComponent
 import com.pafoid.skate.engine.ecs.components.Animator
 import com.pafoid.skate.engine.ecs.components.BoxCollider3D
 import com.pafoid.skate.engine.ecs.components.CameraComponent
@@ -18,7 +18,6 @@ import com.pafoid.skate.engine.ecs.components.FollowCameraComponent
 import com.pafoid.skate.engine.ecs.components.CompoundHullCollider3D
 import com.pafoid.skate.engine.ecs.components.CylinderCollider3D
 import com.pafoid.skate.engine.ecs.components.DayNightCycleComponent
-import com.pafoid.skate.engine.ecs.components.DirectionalLightComponent
 import com.pafoid.skate.engine.ecs.components.EnvironmentComponent
 import com.pafoid.skate.engine.ecs.components.GridLines
 import com.pafoid.skate.engine.ecs.components.PointLightComponent
@@ -243,7 +242,7 @@ class PrefabsGenerator(
         type.name.split('_').joinToString("") { part -> part.lowercase().replaceFirstChar { it.uppercase() } }
 
     /**
-     * The scenes of a new project: `MainScene` (sky, sun, day/night cycle, the skater and board on an asphalt floor,
+     * The scenes of a new project: `MainScene` (sky and ambient light, a "Sun" entity driven by the day/night cycle, the skater and board on an asphalt floor,
      * a concrete ledge to grind and a HUD canvas) and the [FeatureShowcase] scene (one labelled area per engine
      * feature). See docs/samples.md.
      */
@@ -253,9 +252,8 @@ class PrefabsGenerator(
         scene.addComponent(ScenePhysicsComponent())
             .addComponent(GridLines())
             .addComponent(EnvironmentComponent(skyTexture = skyTexture))
-            .addComponent(AmbientLightComponent())
             .addComponent(DayNightCycleComponent())
-            .addComponent(DirectionalLightComponent())
+        SceneSun.addDefaults(scene) // the "Sun" entity, driven by the day/night cycle (REN-26)
 
         spawnDefaultsSync().forEach { scene.addChild(it) }
         sceneManager.saveScene(scene, sceneDir.path)

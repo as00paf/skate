@@ -1,7 +1,6 @@
 package com.pafoid.skate.engine.assets.serialization
 
 import com.pafoid.skate.engine.assets.AssetPaths
-import com.pafoid.skate.engine.ecs.components.AmbientLightComponent
 import com.pafoid.skate.engine.ecs.components.Animator
 import com.pafoid.skate.engine.ecs.components.AudioComponent
 import com.pafoid.skate.engine.ecs.components.AudioListener
@@ -107,8 +106,7 @@ class Serializer(val assetPaths: AssetPaths = AssetPaths()) {
             subclass(LoopbackPredictionComponent::class)
 
             // Light components
-            subclass(AmbientLightComponent::class)//Scene component
-            subclass(DirectionalLightComponent::class)//Scene component
+            subclass(DirectionalLightComponent::class)
             subclass(PointLightComponent::class)
             subclass(SpotLightComponent::class)
 

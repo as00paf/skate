@@ -150,11 +150,18 @@ class ProjectExporter(
         assetsPacker.sceneFiles(project, outputDir(project, options))
 
     /**
-     * Writes the project's graphics backend into `game.settings.json` next to `game.bin` (AST-12), keeping anything
-     * else already saved there (the player's locale from an earlier run of this build).
+     * Writes the project's graphics backend and quality settings into `game.settings.json` next to `game.bin` (AST-12,
+     * REN-30), keeping anything else already saved there (the player's locale from an earlier run of this build).
      */
     private fun writeGameSettings(project: Project, outputDir: File) {
-        GameSettingsStore(GameSettings.fileIn(outputDir), logger).update { it.copy(graphicsBackend = project.graphicsBackend) }
+        GameSettingsStore(GameSettings.fileIn(outputDir), logger).update {
+            it.copy(
+                graphicsBackend = project.graphicsBackend,
+                graphicsQuality = project.graphicsQuality.name,
+                msaaSamples = project.msaaSamples,
+                textureQuality = project.textureQuality.name,
+            )
+        }
     }
 
     private fun verifyPack(outputDir: File): List<String> {
