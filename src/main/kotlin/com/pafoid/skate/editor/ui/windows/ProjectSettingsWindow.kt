@@ -29,6 +29,7 @@ import imgui.internal.ImGui.sameLine
 import imgui.internal.ImGui.setNextWindowPos
 import imgui.internal.ImGui.setNextWindowSize
 import imgui.internal.ImGui.combo
+import imgui.type.ImInt
 import imgui.type.ImString
 import java.io.File
 import java.time.Instant
