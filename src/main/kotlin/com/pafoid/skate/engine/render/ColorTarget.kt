@@ -10,7 +10,10 @@ import com.pafoid.skate.engine.render.rhi.SamplerDesc
 import com.pafoid.skate.engine.render.rhi.Wrap
 
 /** Colour-only render target (RGBA8, no depth) used as post-processing scratch space. Created lazily by [ensure]. */
-class ColorTarget(private val device: () -> RhiDevice = RhiContext::require) {
+class ColorTarget(
+    private val device: () -> RhiDevice = RhiContext::require,
+    private val msaaSamples: Int = 0,
+) {
     var target: RhiRenderTarget? = null
         private set
     val width: Int get() = target?.width ?: 0

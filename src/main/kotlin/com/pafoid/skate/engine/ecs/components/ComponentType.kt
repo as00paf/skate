@@ -9,6 +9,7 @@ enum class ComponentType {
     BONE_OVERRIDE,
     BOX_COLLIDER_3D,
     CAMERA,
+    CAMERA_CYCLE,
     CAPSULE_COLLIDER,
     COMPOUND_HULL_COLLIDER,
     CUSTOM_COLLIDER,
@@ -16,6 +17,7 @@ enum class ComponentType {
     DAY_NIGHT_CYCLE,
     DIRECTIONAL_LIGHT,
     ENVIRONMENT,
+    FIRST_PERSON_CAMERA,
     FOLLOW_CAMERA,
     GRID_LINES,
     INPUT_STATE,
@@ -54,6 +56,7 @@ enum class ComponentType {
             BONE_OVERRIDE -> BoneOverride()
             BOX_COLLIDER_3D -> BoxCollider3D()
             CAMERA -> CameraComponent()
+            CAMERA_CYCLE -> CameraCycleComponent()
             CAPSULE_COLLIDER -> CapsuleCollider3D()
             COMPOUND_HULL_COLLIDER -> CompoundHullCollider3D()
             CUSTOM_COLLIDER -> CustomCollider3D()
@@ -61,6 +64,7 @@ enum class ComponentType {
             DAY_NIGHT_CYCLE -> DayNightCycleComponent()
             DIRECTIONAL_LIGHT -> DirectionalLightComponent()
             ENVIRONMENT -> EnvironmentComponent()
+            FIRST_PERSON_CAMERA -> FirstPersonCameraComponent()
             FOLLOW_CAMERA -> FollowCameraComponent()
             GRID_LINES -> GridLines()
             INPUT_STATE -> InputStateComponent()

@@ -7,12 +7,13 @@
 | Part | Contents |
 |------|----------|
 | Scene components | `ScenePhysicsComponent` (gravity, debug draw off: toggle it to see colliders), `GridLines`, `EnvironmentComponent` with the bundled HDRI sky, `AmbientLightComponent`, `DayNightCycleComponent`, `DirectionalLightComponent` (sun). |
-| `Camera` | Default `CameraComponent` with a `FollowCameraComponent` (GPL-05) on `Skater`: it follows and orbits the skater, blends the walk/ride framing, pulls in when its spring arm hits an obstacle and shakes on hard impacts. Tune it in Properties (docs/camera.md). |
+| `Camera` | Default `CameraComponent` with a `FollowCameraComponent` (GPL-05) on `Skater`: it follows and orbits the skater, blends the walk/ride framing, pulls in when its spring arm hits an obstacle and shakes on hard impacts. Tune it in Properties (docs/camera.md). Its `CameraCycleComponent` (GPL-22) cycles `Camera` → `FirstPersonCamera` → `FixedCamera` from the HUD `CameraButton` or the `camera.cycle` action (C, gamepad Back). |
+| `FirstPersonCamera`, `FixedCamera` | `FirstPersonCamera`: 70° camera at the skater's eyes (`FirstPersonCameraComponent`). `FixedCamera`: a static camera at (5, 3.5, 7) looking at the spawn. |
 | `Skateboard`, `Skater` | Bundled board and character prefabs (`Skateboard`, `Skater` with the default animation set). |
 | `Floor` | 20 x 20 m static asphalt slab, top surface at y = 0, box collider. |
 | `Concrete_Ledge` | Static concrete ledge at (3, 0.25, -3) with a box collider, to grind. |
 | `QuarterPipe`, `Funbox` | GPL-04 prefabs: a wooden quarter pipe 6 m behind the spawn (riding face toward the skater) and a concrete funbox at (-4, 0, 4). They also give the follow camera's spring arm something to collide with. |
-| `HUD` | In-game UI canvas: `ScoreText` top-left (`hud.score`, "Score 0") and `RestartButton` top-right (`pause.restart`). Both keys exist in the bundled game and editor string tables. |
+| `HUD` | In-game UI canvas: `ScoreText` top-left (`hud.score`, "Score 0") and `CameraButton` top-right (`hud.camera`), which cycles the cameras. Both keys exist in the bundled game string tables. Restart is in the Esc pause menu. |
 
 No 2D sprites or test cubes. Feature demos live in `FeatureShowcase`, not in `MainScene`.
 
@@ -39,8 +40,8 @@ Both components are driven by the engine's `CameraControlSystem`, in editor Play
 | Area (position) | What to look for |
 |------|------------------|
 | `Lights` (back row, far left) | Red and blue point lights tint the sphere and pad from opposite sides; a green spot light makes a circular pool with a soft edge. No flicker or clipping as the camera moves. |
-| `Shadows` (back row, centre left) | Sun (scene `DirectionalLight`) cascaded shadows from `Caster` and `TallPillar`, stable while the camera moves (no shimmer, acne or peter-panning). `NoCaster` (cast shadow off) casts none. The spot light above `SpotTarget` and the warm point light near `Caster` each cast their own shadow (REN-07). `Group` has no mesh; its child cube `GroupChild` and grandchild sphere `GroupGrandchild` cast shadows, and moving `Group` moves both shadows (REN-20). |
-| `Materials` (back row, centre right) | Five gold spheres from rough/dielectric to smooth/metallic; an emissive orange cube that glows (bloom); an asphalt-textured cube; a translucent blue cube (alpha blend); a jade sphere `Asset` whose material comes from `Assets/Materials/ShowcaseJade.skmat` (EDT-17: edit that file, reopen the scene, and the sphere follows). |
+| `Shadows` (back row, centre left) | Sun (the `Sun` entity, linked to the day/night cycle) cascaded shadows from `Caster` and `TallPillar`, stable while the camera moves (no shimmer, acne or peter-panning). `NoCaster` (cast shadow off) casts none. The spot light above `SpotTarget` and the warm point light near `Caster` each cast their own shadow (REN-07). `Group` has no mesh; its child cube `GroupChild` and grandchild sphere `GroupGrandchild` cast shadows, and moving `Group` moves both shadows (REN-20). |
+| `Materials` (back row, centre right) | A chrome sphere `Mirror` (back left) that mirrors the sky and clouds (image-based lighting, REN-27); five gold spheres from rough/dielectric to smooth/metallic, whose sky reflections sharpen as they get smoother; an emissive orange cube that glows (bloom); an asphalt-textured cube; a translucent blue cube (alpha blend); a jade sphere `Asset` whose material comes from `Assets/Materials/ShowcaseJade.skmat` (EDT-17: edit that file, reopen the scene, and the sphere follows). |
 | `Particles` (back row, far right) | Play: `Fire` (additive, orange to red), `Smoke` (alpha, grows and fades), `Sparks` (a 60-particle burst every 1.5 s, falling under gravity), `Fountain` (blue jet that arcs back down). |
 | `Physics` (middle row, far left) | Play: five stacked boxes settle without jitter or tunnelling, the ball drops and rolls, the `Crate` and `Barrel` prefabs stay upright and can be knocked over. Turn on debug draw in the scene's `ScenePhysicsComponent` to see colliders. |
 | `Joints` (middle row, centre left) | Play: `HingePendulum` swings in its plane within about +/-69 degrees; `ConeTwistLamp` swings and circles under its pivot; `SliderBlock` drops 2 m along a vertical rail and stops. All are anchored to the world. |

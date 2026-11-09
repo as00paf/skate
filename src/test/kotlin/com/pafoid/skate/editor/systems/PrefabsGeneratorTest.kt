@@ -1,5 +1,7 @@
 package com.pafoid.skate.editor.systems
 
+import com.pafoid.skate.engine.ecs.components.DayNightCycleComponent
+import com.pafoid.skate.engine.ecs.SceneSun
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.AssetsManager
 import com.pafoid.skate.engine.assets.PrefabsGenerator
@@ -21,7 +23,6 @@ import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.ecs.components.BoxCollider3D
 import com.pafoid.skate.engine.ecs.components.CameraComponent
-import com.pafoid.skate.engine.ecs.components.DirectionalLightComponent
 import com.pafoid.skate.engine.ecs.components.EnvironmentComponent
 import com.pafoid.skate.engine.ecs.components.RigidBody3D
 import com.pafoid.skate.engine.ecs.components.ScenePhysicsComponent
@@ -78,7 +79,7 @@ class PrefabsGeneratorTest {
         val spawned = PrefabsGenerator(engine).spawnDefaultsSync()
 
         assertEquals(
-            listOf("Camera", "Skateboard", "Skater", "Floor", "Concrete_Ledge", "QuarterPipe", "Funbox", "HUD"),
+            listOf("Camera", "FirstPersonCamera", "FixedCamera", "Skateboard", "Skater", "Floor", "Concrete_Ledge", "QuarterPipe", "Funbox", "HUD"),
             spawned.map { it.name },
         )
         assertNotNull(spawned[0].getComponent<CameraComponent>())
@@ -113,14 +114,61 @@ class PrefabsGeneratorTest {
     }
 
     @Test
-    fun `HUD canvas holds a score text and a restart button using bundled game string keys`() {
+    fun `MainScene camera button cycles third person, first person and fixed cameras, also after a save and load`() {
+        val generated = Scene("MainScene").apply { PrefabsGenerator(engine).spawnDefaultsSync().forEach { addChild(it) } }
+        val serializer = Serializer()
+        val text = serializer.encodeFile(com.pafoid.skate.engine.assets.serialization.FileKind.SCENE, generated)
+        val loaded = serializer.decodeFile<Scene?>(com.pafoid.skate.engine.assets.serialization.FileKind.SCENE, text)!!
+
+        listOf(generated, loaded).forEach { scene ->
+            val cameras = scene.children.filter { it.getComponent<CameraComponent>() != null }
+            assertEquals(listOf(PrefabsGenerator.CAMERA_THIRD_PERSON), cameras.filter { it.getComponent<CameraComponent>()!!.isDefault }.map { it.name })
+            val cycle = scene.children.single { it.name == PrefabsGenerator.CAMERA_THIRD_PERSON }
+                .getComponent<com.pafoid.skate.engine.ecs.components.CameraCycleComponent>()!!
+            assertEquals(PrefabsGenerator.CAMERA_BUTTON, cycle.buttonName)
+            assertEquals(com.pafoid.skate.engine.gameplay.camera.CameraCycle.ACTION, cycle.actionId)
+            assertNotNull(scene.children.single { it.name == PrefabsGenerator.CAMERA_FIRST_PERSON }
+                .getComponent<com.pafoid.skate.engine.ecs.components.FirstPersonCameraComponent>())
+
+            var active = cameras.single { it.name == PrefabsGenerator.CAMERA_THIRD_PERSON }.getComponent<CameraComponent>()
+            val seen = ArrayList<String>()
+            val system = com.pafoid.skate.engine.ecs.systems.CameraCycleSystem(null, { active }) { camera, transform ->
+                active = camera
+                seen += cameras.single { it.getComponent<Transform>() === transform && it.getComponent<CameraComponent>() === camera }.name
+            }
+            system.init(scene)
+            scene.isRunning = true
+            system.update(1f / 60f)
+            val button = scene.findFirstByName(PrefabsGenerator.CAMERA_BUTTON)!!.getComponent<UIButtonComponent>()!!
+            repeat(3) { button.onClick!!(); system.update(1f / 60f) }
+
+            assertEquals(listOf(PrefabsGenerator.CAMERA_FIRST_PERSON, PrefabsGenerator.CAMERA_FIXED, PrefabsGenerator.CAMERA_THIRD_PERSON), seen)
+        }
+    }
+
+    @Test
+    fun `MainScene fixed camera looks at the spawn from above`() {
+        val fixed = PrefabsGenerator(engine).spawnDefaultsSync().single { it.name == PrefabsGenerator.CAMERA_FIXED }
+        val t = fixed.getComponent<Transform>()!!
+        val expected = Transform(Vector3f(t.translation)).apply { lookAt(Vector3f(0f, 0.8f, 0f)) }
+
+        assertTrue(t.translation.y > 2f)
+        assertEquals(expected.rotation, t.rotation)
+    }
+
+    @Test
+    fun `HUD canvas holds a score text and a camera button using bundled game string keys`() {
         val hud = PrefabsGenerator(engine).spawnHud()
 
         assertNotNull(hud.getComponent<UICanvasComponent>())
         val text = hud.children.single { it.name == "ScoreText" }.getComponent<UITextComponent>()!!
-        val button = hud.children.single { it.name == "RestartButton" }.getComponent<UIButtonComponent>()!!
+        val button = hud.children.single { it.name == PrefabsGenerator.CAMERA_BUTTON }.getComponent<UIButtonComponent>()!!
         assertEquals("hud.score", text.key)
-        assertEquals("pause.restart", button.labelKey)
+        assertEquals("hud.camera", button.labelKey)
+        // GPL-22: restart moved to the Esc pause menu.
+        assertTrue(hud.children.none { it.name == "RestartButton" })
+        // GPL-21: the trick name, filled by the trick HUD while riding; hidden (no key) until then.
+        assertEquals("", hud.children.single { it.name == PrefabsGenerator.TRICK_TEXT }.getComponent<UITextComponent>()!!.key)
         // Keys must resolve both in the editor viewport and in the exported game.
         listOf(com.pafoid.skate.engine.assets.Assets.Strings.GAME_STRINGS).forEach { path ->
             val props = com.pafoid.skate.engine.core.StringTables.merged(File(path))
@@ -230,7 +278,9 @@ class PrefabsGeneratorTest {
         val scene = scenes.first()
         assertNotNull(scene.getComponent<ScenePhysicsComponent>())
         assertNotNull(scene.getComponent<EnvironmentComponent>())
-        assertNotNull(scene.getComponent<DirectionalLightComponent>())
+        assertNotNull(SceneSun.of(scene), "a Sun entity")
+        assertEquals(SceneSun.NAME, SceneSun.of(scene)!!.gameObject!!.name)
+        assertNotNull(scene.getComponent<DayNightCycleComponent>(), "the sun follows the day/night cycle")
         assertTrue(scene.children.flatMap { it.descendants() }.none { it.getComponent<SpriteRenderer>() != null })
         verify { sceneManager.saveScene(scene, any()) }
         verify { sceneManager.saveScene(scenes[1], any()) }

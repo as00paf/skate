@@ -7,6 +7,8 @@ import com.pafoid.skate.engine.core.LoggerService
 import com.pafoid.skate.engine.ecs.systems.CameraManager
 import com.pafoid.skate.engine.render.graph.RenderGraphBuilder
 import com.pafoid.skate.engine.render.renderer.DebugRenderer
+import com.pafoid.skate.engine.render.lighting.EnvironmentProbe
+import com.pafoid.skate.engine.render.renderer.GridRenderer
 import com.pafoid.skate.engine.render.renderer.LightingUniformsLoader
 import com.pafoid.skate.engine.render.renderer.ModelRenderer
 import com.pafoid.skate.engine.render.renderer.PickingRenderer
@@ -169,6 +171,7 @@ class RenderResourcesFactory(
             useFbo = useFbo,
             cameraManager = cameraManager,
             shadowFrame = shadowFrame,
+            environmentProbe = EnvironmentProbe(assetsManager.getShader("/shaders/ibl_capture.glsl")),
         )
         // Debug visuals and the runtime UI draw into the presented target after post-processing
         val presentedViewport = PresentedViewport()
@@ -180,6 +183,7 @@ class RenderResourcesFactory(
         val debugPass = DebugPass(
             renderers.debug, cameraManager,
             bindTarget = bindPresentedTarget, targetHeight = { frameBuffer.height }, endTarget = endPresentedTarget,
+            grid = GridRenderer(assetsManager.getShader("/shaders/editor_grid.glsl"), cameraManager),
         )
         val uiPass = UiPass(
             renderer2D = renderer2D,
