@@ -103,8 +103,6 @@ class WindowStandardGuardTest {
         val ALLOW_LIST = setOf(
             // B: scene
             "SceneHierarchyWindow", "PropertiesWindow", "GameViewWindow",
-            // D: debug
-            "ConsoleWindow", "ProfilerWindow", "CommandHistoryWindow", "ShellWindow",
             // C: project & assets
             "ProjectWindow", "AssetBrowserWindow",
             // E: settings dialogs
