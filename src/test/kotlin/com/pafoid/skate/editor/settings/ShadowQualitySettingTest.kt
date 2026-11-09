@@ -1,5 +1,7 @@
 package com.pafoid.skate.editor.settings
 
+import com.pafoid.skate.editor.commands.project.SetProjectShadowQualityCommand
+import com.pafoid.skate.editor.project.Project
 import com.pafoid.skate.editor.systems.EditorSettingsManager
 import com.pafoid.skate.engine.assets.serialization.Serializer
 import com.pafoid.skate.engine.core.EventSystem
@@ -50,16 +52,13 @@ class ShadowQualitySettingTest {
     }
 
     @Test
-    fun updateShadowQualityAppliesAtOnceAndPersists() {
-        val file = File(dir, "editor.config")
-        val first = manager(file).apply { loadSettings() }
-        first.updateShadowQuality(ShadowQuality.LOW)
+    fun projectShadowQualityCommandAppliesAtOnceAndUndoRestores() {
+        val project = Project(name = "p", projectPath = "p.skateproject", defaultScene = "s", scenesPath = emptyList())
+        val command = SetProjectShadowQualityCommand(project, ShadowQuality.LOW)
+        command.execute()
         assertEquals(ShadowQualityLevel.LOW, ShadowSettings.quality)
-
-        ShadowSettings.quality = ShadowQualityLevel.HIGH // as if another session left a different tier
-        val reloaded = manager(file).apply { loadSettings() }
-        assertEquals(ShadowQuality.LOW, reloaded.editorSettings.graphics.shadowQuality)
-        assertEquals(ShadowQualityLevel.LOW, ShadowSettings.quality)
+        command.undo()
+        assertEquals(ShadowQuality.MEDIUM.toLevel(), ShadowSettings.quality)
     }
 
     @Test

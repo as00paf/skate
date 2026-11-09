@@ -4,8 +4,9 @@ import com.pafoid.skate.editor.imgui.label
 import com.pafoid.skate.editor.imgui.EditorWindow
 import com.pafoid.skate.editor.imgui.MImGui
 import com.pafoid.skate.editor.imgui.data.Icons
+import com.pafoid.skate.editor.events.ProjectEvent
 import com.pafoid.skate.editor.settings.ShadowQuality
-import com.pafoid.skate.editor.systems.EditorSettingsManager
+import com.pafoid.skate.engine.render.shadow.ShadowSettings
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.render.renderer.Renderer
 import com.pafoid.skate.engine.render.renderer.passes.PostProcessPass
@@ -19,7 +20,6 @@ import imgui.type.ImInt
 
 class RenderGraphWindow(
     private val engine: Engine,
-    private val settingsManager: EditorSettingsManager,
 ) : EditorWindow("window.render_graph") {
     private val stringManager = engine.stringManager
     private val renderer: Renderer by lazy { engine.renderer }
@@ -202,13 +202,13 @@ class RenderGraphWindow(
         return clicked
     }
 
-    /** LOW/MEDIUM/HIGH selector; writes the editor graphics setting, which applies and persists it. */
+    /** LOW/MEDIUM/HIGH selector; sets the project's shadow quality (REN-30), which applies it to the renderer. */
     private fun renderShadowQuality(pass: ShadowPass) {
         val labels = ShadowQuality.entries.map { stringManager.getString("settings.graphics.shadow_quality.${it.name.lowercase()}") }.toTypedArray()
-        val selected = ImInt(settingsManager.editorSettings.graphics.shadowQuality.ordinal)
+        val selected = ImInt(ShadowSettings.quality.ordinal)
         ImGui.setNextItemWidth(140f)
         if (ImGui.combo("${stringManager.getString("lbl.render_graph.shadow_quality")}###${pass.name}.quality", selected, labels, labels.size)) {
-            settingsManager.updateShadowQuality(ShadowQuality.entries[selected.get()])
+            engine.eventSystem.publish(ProjectEvent.SetShadowQualityRequested(ShadowQuality.entries[selected.get()]))
         }
         if (ImGui.isItemHovered()) {
             ImGui.setTooltip(stringManager.getString("tooltip.render_graph.shadow_quality"))

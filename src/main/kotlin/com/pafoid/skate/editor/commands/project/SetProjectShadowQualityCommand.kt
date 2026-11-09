@@ -2,6 +2,7 @@ package com.pafoid.skate.editor.commands.project
 
 import com.pafoid.skate.editor.commands.Command
 import com.pafoid.skate.editor.project.Project
+import com.pafoid.skate.editor.settings.graphicsSettings
 import com.pafoid.skate.editor.settings.ShadowQuality
 
 /**
@@ -14,10 +15,12 @@ class SetProjectShadowQualityCommand(private val project: Project, private val q
 
     override fun execute() {
         project.shadowQuality = quality
+        project.graphicsSettings().applyToEngine()
     }
 
     override fun undo() {
         project.shadowQuality = before
+        project.graphicsSettings().applyToEngine()
     }
 
     override fun getDisplayName(): String = "Set Shadow Quality"
