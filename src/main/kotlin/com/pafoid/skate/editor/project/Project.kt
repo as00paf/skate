@@ -1,6 +1,9 @@
 package com.pafoid.skate.editor.project
 
 import com.pafoid.skate.engine.ecs.random.RandomService
+import com.pafoid.skate.editor.settings.GraphicsQuality
+import com.pafoid.skate.editor.settings.ShadowQuality
+import com.pafoid.skate.editor.settings.TextureQuality
 import com.pafoid.skate.engine.render.rhi.GraphicsBackend
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
@@ -26,6 +29,22 @@ data class Project(
     var graphicsBackend: GraphicsBackend = GraphicsBackend.DEFAULT,
     /** Seed of the engine's random streams in Play and in the exported game (ECS-14); see `RandomService.resolve`. */
     var randomSeed: Long = RandomService.DEFAULT_SEED,
+    /** Graphics quality preset for the exported game (REN-30). */
+    var graphicsQuality: GraphicsQuality = GraphicsQuality.HIGH,
+    /** MSAA sample count for the exported game (REN-30). */
+    var msaaSamples: Int = 4,
+    /** Texture quality for the exported game (REN-30). */
+    var textureQuality: TextureQuality = TextureQuality.HIGH,
+    /** Shadow quality for the exported game (REN-30). */
+    var shadowQuality: ShadowQuality = ShadowQuality.MEDIUM,
+    /** Whether the exported game starts in fullscreen (EDT-57 / GUI-15). */
+    var fullscreen: Boolean = false,
+    /** Whether the exported game enables VSync (EDT-57 / GUI-15). */
+    var vsync: Boolean = true,
+    /** Supported UI locales for the exported game (EDT-57 / GUI-15); at least one is required. */
+    var supportedLanguages: List<String> = listOf("en"),
+    /** Startup locale for the exported game (EDT-57 / GUI-15); must be one of [supportedLanguages]. */
+    var startupLanguage: String = "en",
 ) {
     fun getProjectDirectory(): File {
         return File(projectPath).parentFile

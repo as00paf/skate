@@ -1,6 +1,7 @@
 package com.pafoid.skate.engine.events
 
 import com.pafoid.skate.engine.ecs.GameObject
+import com.pafoid.skate.engine.physics3d.PhysicsBackend
 import org.joml.Vector3f
 
 sealed class PhysicsEvent(eventName: String) : Event(eventName)
@@ -19,3 +20,10 @@ data class Collision(
 
 data class TriggerEntered(val trigger: GameObject, val other: GameObject) : PhysicsEvent("physics.trigger_entered")
 data class TriggerExited(val trigger: GameObject, val other: GameObject) : PhysicsEvent("physics.trigger_exited")
+
+/** The scene's physics world runs on [used] because [requested] could not start (e.g. missing Jolt natives), see PHY-17. */
+data class PhysicsBackendFellBack(
+    val requested: PhysicsBackend,
+    val used: PhysicsBackend,
+    val reason: String,
+) : PhysicsEvent("physics.backend_fallback")

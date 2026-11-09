@@ -13,6 +13,7 @@ fun main(args:Array<String>){
     val window = Window(title = "Skate Editor", icon = icon)
 
     engine.start(window.glfwWindow, window.device)
+    SkateGameplay.install(engine)
 
     val editorScreen = EditorScreen(window, engine)
     editorScreen.init()

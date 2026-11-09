@@ -1,7 +1,8 @@
 package com.pafoid.skate.editor.ui.windows
 
 import com.pafoid.skate.editor.commands.CommandNames
-import com.pafoid.skate.editor.imgui.label
+import com.pafoid.skate.editor.imgui.EmptyState
+import com.pafoid.skate.editor.imgui.tipped
 import com.pafoid.skate.editor.commands.Command
 import com.pafoid.skate.editor.events.UndoRedoAction
 import com.pafoid.skate.editor.imgui.EditorWindow
@@ -23,21 +24,23 @@ class CommandHistoryWindow(
     private val undoStackHeight = 250f
     private val redoStackHeight = 150f
 
+    override val icon = Icons.HISTORY
+    override val relatedWindows = listOf("window.hierarchy", "window.properties")
+
     override fun imgui() {
-        ImGui.begin(stringManager.label("window.command_history"), isOpen)
+        if (!beginWindow(stringManager)) {
+            ImGui.end()
+            return
+        }
 
-        renderToolbar()
-
-        ImGui.separator()
+        header(stringManager) { renderToolbar() }
 
         val undoStack = undoRedoManager.getUndoHistory()
         val redoStack = undoRedoManager.getRedoHistory()
 
         // Empty state
         if (undoStack.isEmpty() && redoStack.isEmpty()) {
-            ImGui.spacing()
-            ImGui.textColored(0.5f, 0.5f, 0.5f, 1f, stringManager.getString("lbl.command_history.empty"))
-            ImGui.textColored(0.4f, 0.4f, 0.4f, 1f, stringManager.getString("lbl.command_history.empty_hint"))
+            EmptyState.nothingYet(stringManager, Icons.HISTORY, "lbl.command_history.empty", "lbl.command_history.empty_hint")
             ImGui.end()
             return
         }
@@ -135,6 +138,9 @@ class CommandHistoryWindow(
             if (ImGui.isItemHovered()) {
                 ImGui.setTooltip(stringManager.getString("lbl.command_history.shortcuts"))
             }
+            stepMenu("##undo_to_$i", "context.command_history.undo_to", Icons.UNDO) {
+                eventSystem.publish(UndoRedoAction.UndoTo(i))
+            }
         }
 
         if (scrollToBottom) {
@@ -166,9 +172,22 @@ class CommandHistoryWindow(
                 scrollToBottom = true
             }
             ImGui.popStyleColor()
+            stepMenu("##redo_to_$i", "context.command_history.redo_to", Icons.REDO) {
+                eventSystem.publish(UndoRedoAction.RedoTo(i))
+            }
         }
 
         ImGui.endChild()
+    }
+
+    /** Right-click on a command row: one item that jumps the history to that command (EDT-51 §2.3). */
+    private fun stepMenu(id: String, labelKey: String, icon: String, onClick: () -> Unit) {
+        if (!ImGui.beginPopupContextItem(id)) return
+        if (stringManager.tipped(ImGui.menuItem("$icon ${stringManager.getString(labelKey)}"), labelKey)) {
+            onClick()
+            scrollToBottom = true
+        }
+        ImGui.endPopup()
     }
 
     private fun renderFooter() {

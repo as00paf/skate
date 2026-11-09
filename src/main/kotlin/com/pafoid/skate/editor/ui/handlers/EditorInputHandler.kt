@@ -18,7 +18,7 @@ import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.systems.InputSystem
 import com.pafoid.skate.engine.events.SceneAction
 import com.pafoid.skate.engine.input.ActionBinding
-import com.pafoid.skate.engine.input.DefaultActions
+import com.pafoid.skate.engine.input.UiNavigationActions
 import org.joml.Vector2f
 import org.lwjgl.glfw.GLFW
 
@@ -138,7 +138,7 @@ class EditorInputHandler(
 
     /** The game's UI cancel bindings (Esc / gamepad B by default), which open the pause menu in Play. */
     private fun cancelBindings(): List<ActionBinding> =
-        engine.systemManager.getSystem<InputSystem>()?.actionMap?.bindings(DefaultActions.UI_CANCEL).orEmpty()
+        engine.systemManager.getSystem<InputSystem>()?.actionMap?.bindings(UiNavigationActions.CANCEL).orEmpty()
 
     private fun handleClipboardAndUndo(scene: Scene) {
         val selected = scene.selectedGameObject
@@ -146,7 +146,7 @@ class EditorInputHandler(
             pressed(EditorShortcuts.COPY) -> selected?.let { clipboardService.copy(it) }
             pressed(EditorShortcuts.CUT) -> selected?.let {
                 clipboardService.copy(it)
-                eventSystem.publish(ViewportAction.Delete(it, scene))
+                eventSystem.publish(ViewportAction.Delete(it, scene, confirm = false))
             }
             pressed(EditorShortcuts.PASTE) -> eventSystem.publish(ViewportAction.PasteClipboard())
             pressed(EditorShortcuts.UNDO) -> undoRedoManager.undo()

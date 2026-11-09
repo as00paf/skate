@@ -24,10 +24,13 @@ class TexturesTab(
         val padding = 5f
 
         ImGui.beginGroup()
-        val texId: Int = assetsManager.getTexture(file.path).texId
+        // Never loads on the UI thread: a placeholder until the worker has decoded and shrunk the image (AST-23)
+        val thumb = thumbnails.get(file)
         ImGui.pushID(file.absolutePath)
-        if (ImGui.imageButton("TextureItem", texId.toLong(), size, size, 0f, 0f, 1f, 1f)) {
-            // On Click
+        if (thumb != null) {
+            ImGui.imageButton("TextureItem", thumb.texId, size, size, 0f, 0f, 1f, 1f)
+        } else {
+            ImGui.button(if (thumbnails.state(file) is AsyncAssetCache.State.Failed) Icons.WINDOW_CLOSE else Icons.FILE_IMAGE, size, size)
         }
         if (ImGui.isItemHovered()) {
             ImGui.setTooltip(file.name)
@@ -51,8 +54,8 @@ class TexturesTab(
             }
             ImGui.separator()
             if (stringManager.tipped(ImGui.menuItem("${Icons.INFO} ${stringManager.getString("context.asset_browser.properties")}"), "context.asset_browser.properties")) {
-                val tex = assetsManager.getTexture(file.path)
-                engine.logger.logEditor("Texture: ${file.name}, Size: ${tex.width}x${tex.height}, ID: ${tex.texId}")
+                val dims = thumb?.let { "${it.sourceWidth}x${it.sourceHeight}" } ?: "?"
+                engine.logger.logEditor("Texture: ${file.name}, Size: $dims, Path: ${file.absolutePath}")
             }
             ImGui.endPopup()
         }
@@ -61,10 +64,9 @@ class TexturesTab(
 
         if (ImGui.beginDragDropSource()) {
             ImGui.setDragDropPayload("TEXTURE", file.path)
-            ImGui.image(texId.toLong(), size *1.5f, size *1.5f, 0f, 0f, 1f, 1f)
+            thumb?.let { ImGui.image(it.texId, size * 1.5f, size * 1.5f, 0f, 0f, 1f, 1f) }
             ImGui.text(file.name)
-            val tex = assetsManager.getTexture(file.path)
-            ImGui.textColored(0.7f, 0.7f, 0.7f, 1f, "${tex.width}x${tex.height}")
+            thumb?.let { ImGui.textColored(0.7f, 0.7f, 0.7f, 1f, "${it.sourceWidth}x${it.sourceHeight}") }
             ImGui.endDragDropSource()
         }
 
@@ -89,5 +91,25 @@ class TexturesTab(
         engine.logger.logEditor("Applied texture ${texturePath} to ${selectedObject.name}")
     }
 
+    private val thumbnails = AsyncAssetCache<File, ThumbnailPixels, TextureThumbnail>(
+        io = { job -> engine.jobSystem.runIO { job() } },
+        decode = { ThumbnailScaler.decode(it) },
+        upload = { _, pixels -> ThumbnailScaler.upload(pixels) },
+        dispose = { it.texture.close() },
+        discard = { it.free() },
+        uploadsPerFrame = UPLOADS_PER_FRAME,
+    )
+
+    override fun pumpPreviews() {
+        thumbnails.pump()
+    }
+
+    override fun onProjectChanged() = thumbnails.clear()
+
     override fun refreshAssets() = scan(BrowserAssetType.TEXTURE) { job -> engine.jobSystem.runIO { job() } }
+
+    private companion object {
+        /** Small (≤128 px, no mips) uploads: a handful per frame keeps the frame time flat. */
+        const val UPLOADS_PER_FRAME = 4
+    }
 }

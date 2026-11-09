@@ -7,6 +7,7 @@ enum class SearchCategory(val displayNameKey: String) {
     ASSET_ANIMATION("search.everywhere.category.asset_animation"),
     ASSET_SOUND("search.everywhere.category.asset_sound"),
     ASSET_PREFAB("search.everywhere.category.asset_prefab"),
+    ASSET_SCRIPT("search.everywhere.category.asset_script"),
     COMPONENT("search.everywhere.category.component"),
     ACTION("search.everywhere.category.action")
 }

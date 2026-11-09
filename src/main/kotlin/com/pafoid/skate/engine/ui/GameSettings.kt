@@ -2,6 +2,7 @@ package com.pafoid.skate.engine.ui
 
 import com.pafoid.skate.engine.core.LoggerService
 import com.pafoid.skate.engine.render.rhi.GraphicsBackend
+import com.pafoid.skate.engine.render.shadow.ShadowQualityLevel
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import java.io.File
@@ -26,6 +27,18 @@ data class GameSettings(
      * `-Dskate.seed` system property wins over it. See `RandomService.resolve`.
      */
     val randomSeed: Long? = null,
+    /** Overall graphics quality preset (LOW/MEDIUM/HIGH/ULTRA). Applies to shadows, post-processing and textures. */
+    val graphicsQuality: String? = null,
+    /** MSAA sample count for the window (1/2/4/8, 0 = use window default). */
+    val msaaSamples: Int? = null,
+    /** Texture quality (LOW/MEDIUM/HIGH). */
+    val textureQuality: String? = null,
+    /** Game-defined pause menu options ([GameOption]) by id, e.g. the control scheme (GPL-21). */
+    val options: Map<String, String> = emptyMap(),
+    /** Supported locales for the exported game (GUI-15); written from [Project.supportedLanguages]. */
+    val supportedLanguages: List<String> = emptyList(),
+    /** Startup locale for the exported game (GUI-15); written from [Project.startupLanguage]. */
+    val startupLanguage: String = DEFAULT_LOCALE,
 ) {
     companion object {
         const val DEFAULT_LOCALE = "en"

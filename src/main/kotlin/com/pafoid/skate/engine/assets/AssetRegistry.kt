@@ -34,8 +34,8 @@ class AssetRegistry(val root: File) {
         pathById.clear()
         idByPath.clear()
         root.walkTopDown()
-            .onEnter { !it.name.startsWith(".") }
-            .filter { it.isFile && !AssetMeta.isSidecar(it) && !it.name.startsWith(".") }
+            .onEnter { !it.name.startsWith(".") && it.name != "builds" && it.name != "Builds" }
+            .filter { it.isFile && !AssetMeta.isSidecar(it) && !it.name.startsWith(".") && it.name != "builds" && it.name != "Builds" }
             .sortedBy { relativePath(it) }
             .forEach { register(it) }
     }

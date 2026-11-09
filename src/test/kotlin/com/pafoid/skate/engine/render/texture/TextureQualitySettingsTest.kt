@@ -31,9 +31,8 @@ class TextureQualitySettingsTest {
         val texture = Texture(64, 64).also { it.rhi = rhi }
         for (level in TextureQualityLevel.entries) {
             TextureQualitySettings.apply(level, listOf(texture, Texture()))
-            val expected = TextureSampling.forQuality(level, device.caps.maxAnisotropy)
-            assertEquals(expected.maxAnisotropy, rhi.sampler.anisotropy, level.name)
-            assertEquals(expected.minFilter.name, rhi.sampler.minFilter.name, level.name)
+            assertEquals(level.maxAnisotropy, rhi.sampler.anisotropy, level.name)
+            assertEquals(level.minFilter.name, rhi.sampler.minFilter.name, level.name)
             assertEquals(Wrap.REPEAT, rhi.sampler.wrap)
             assertEquals(Filter.LINEAR, rhi.sampler.magFilter)
         }

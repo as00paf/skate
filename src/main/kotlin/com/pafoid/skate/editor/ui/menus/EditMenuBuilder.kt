@@ -27,7 +27,7 @@ class EditMenuBuilder(
             "cut" -> MenuAction(hasSelection) {
                 if (selected != null) {
                     eventSystem.publish(ViewportAction.CopyClipboard(selected))
-                    eventSystem.publish(ViewportAction.Delete(selected, scene))
+                    eventSystem.publish(ViewportAction.Delete(selected, scene, confirm = false))
                     eventSystem.publish(ViewportAction.SelectionCleared)
                 }
             }

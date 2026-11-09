@@ -3,6 +3,10 @@ package com.pafoid.skate.editor.ui.handlers
 import com.pafoid.skate.editor.commands.project.SetGraphicsBackendCommand
 import com.pafoid.skate.editor.commands.project.SetRandomSeedCommand
 import com.pafoid.skate.engine.ecs.random.RandomService
+import com.pafoid.skate.editor.commands.project.SetProjectGraphicsQualityCommand
+import com.pafoid.skate.editor.commands.project.SetProjectMsaaSamplesCommand
+import com.pafoid.skate.editor.commands.project.SetProjectTextureQualityCommand
+import com.pafoid.skate.editor.commands.project.SetProjectShadowQualityCommand
 import com.pafoid.skate.editor.commands.ExecutionTrackedCommand
 import com.pafoid.skate.editor.commands.project.CloseProjectCommand
 import com.pafoid.skate.editor.commands.project.CreateFileCommand
@@ -100,6 +104,37 @@ class ProjectActionHandler(
             val project = projectManager.currentProject ?: return@subscribe
             val command = SetRandomSeedCommand(project, event.seed) { random.reseed(RandomService.resolve(it)) }
             if (!command.isNoOp) undoRedoManager.executeCommand(command)
+        }
+        eventSystem.subscribe<ProjectEvent.SetGraphicsQualityRequested> { event ->
+            val project = projectManager.currentProject ?: return@subscribe
+            val command = SetProjectGraphicsQualityCommand(project, event.quality)
+            if (!command.isNoOp) undoRedoManager.executeCommand(command)
+        }
+        eventSystem.subscribe<ProjectEvent.SetMsaaSamplesRequested> { event ->
+            val project = projectManager.currentProject ?: return@subscribe
+            val command = SetProjectMsaaSamplesCommand(project, event.samples)
+            if (!command.isNoOp) {
+                undoRedoManager.executeCommand(command)
+                settingsManager.onMsaaChanged?.invoke(event.samples)
+            }
+        }
+        eventSystem.subscribe<ProjectEvent.SetTextureQualityRequested> { event ->
+            val project = projectManager.currentProject ?: return@subscribe
+            val command = SetProjectTextureQualityCommand(project, event.quality)
+            if (!command.isNoOp) undoRedoManager.executeCommand(command)
+        }
+        eventSystem.subscribe<ProjectEvent.SetShadowQualityRequested> { event ->
+            val project = projectManager.currentProject ?: return@subscribe
+            val command = SetProjectShadowQualityCommand(project, event.quality)
+            if (!command.isNoOp) undoRedoManager.executeCommand(command)
+        }
+        eventSystem.subscribe<ProjectEvent.SetFullscreenRequested> { event ->
+            val project = projectManager.currentProject ?: return@subscribe
+            project.fullscreen = event.enabled
+        }
+        eventSystem.subscribe<ProjectEvent.SetVsyncRequested> { event ->
+            val project = projectManager.currentProject ?: return@subscribe
+            project.vsync = event.enabled
         }
         eventSystem.subscribe<CreateFileRequested> { event ->
             val command = CreateFileCommand(event.path, event.isDirectory, logger)

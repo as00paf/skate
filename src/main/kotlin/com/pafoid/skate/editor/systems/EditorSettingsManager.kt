@@ -5,7 +5,7 @@ import com.pafoid.skate.editor.events.ProjectEvent
 import com.pafoid.skate.editor.project.Project
 import com.pafoid.skate.editor.project.ProjectFileReader
 import com.pafoid.skate.editor.settings.EditorSettings
-import com.pafoid.skate.editor.settings.ShadowQuality
+import com.pafoid.skate.editor.settings.GraphicsSettings
 import com.pafoid.skate.engine.assets.serialization.Serializer
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.core.LoggerService
@@ -22,6 +22,9 @@ class EditorSettingsManager(
     private val editorSettingsFile: File = EditorPaths.file(EditorPaths.SETTINGS_FILE),
 ) {
     var editorSettings: EditorSettings = EditorSettings()
+
+    /** Called when MSAA samples change, allowing the editor to recreate the scene frame buffer. */
+    var onMsaaChanged: ((samples: Int) -> Unit)? = null
 
     /**
      * Recent projects that still exist, newest first. The absolute `.skateproject` path kept in the settings is the
@@ -51,7 +54,7 @@ class EditorSettingsManager(
             logger.logEditor("Error loading engine settings: ${e.message}", LogLevel.ERROR)
             editorSettings = EditorSettings()
         }
-        editorSettings.graphics.applyToEngine()
+        GraphicsSettings().applyToEngine()
     }
 
     fun saveSettings(): Boolean {
@@ -119,13 +122,6 @@ class EditorSettingsManager(
         } catch (e: Exception) {
             logger.logEditor("Error saving input mappings: ${e.message}", LogLevel.ERROR)
         }
-    }
-
-    /** Stores [quality], applies it to the renderer right away and saves it to the settings file. */
-    fun updateShadowQuality(quality: ShadowQuality) {
-        editorSettings = editorSettings.copy(graphics = editorSettings.graphics.copy(shadowQuality = quality))
-        editorSettings.graphics.applyToEngine()
-        saveSettings()
     }
 
     /** Stores the export's game jar override ([EditorSettings.gameJarPath]); blank clears it. */

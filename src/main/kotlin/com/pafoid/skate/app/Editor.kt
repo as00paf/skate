@@ -76,6 +76,10 @@ class Editor(
 
         engine.jobSystem.runIO {
             settingsManager.loadSettings()
+            // Wire the MSAA callback so the editor recreates the scene frame buffer when samples change.
+            settingsManager.onMsaaChanged = { samples ->
+                engine.renderer.resizeFrameBufferWithMsaa(engine.renderer.frameBuffer.width, engine.renderer.frameBuffer.height, samples)
+            }
             engine.stringManager.loadStrings(EDITOR_STRINGS)
             // Runtime UI in the viewport (HUD, showcase, pause menu) has its own strings and locale (GUI-10).
             engine.gameStrings.addStrings(GAME_STRINGS)
