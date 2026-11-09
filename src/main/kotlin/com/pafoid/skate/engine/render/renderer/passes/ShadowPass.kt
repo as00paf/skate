@@ -1,6 +1,7 @@
 package com.pafoid.skate.engine.render.renderer.passes
 
 import com.pafoid.skate.engine.render.graph.RenderResourceIds
+import com.pafoid.skate.engine.ecs.SceneSun
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.components.DirectionalLightComponent
 import com.pafoid.skate.engine.ecs.systems.CameraManager
@@ -67,7 +68,7 @@ class ShadowPass(
         frame.quality = q
         cameraManager.transform.worldMatrix.getTranslation(cameraPosition)
 
-        val light = scene.getComponent<DirectionalLightComponent>()?.takeIf { it.enabled && it.castShadows }
+        val light = SceneSun.of(scene)?.takeIf { it.castShadows }
         SceneLights.collect(scene, sceneLights)
         LocalShadows.allocate(sceneLights, cameraPosition, q.localLayers, frame.localSlots)
         if (light == null && frame.localSlots.isEmpty()) return

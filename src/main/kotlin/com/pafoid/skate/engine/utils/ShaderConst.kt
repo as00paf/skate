@@ -151,5 +151,20 @@ object ShaderConst {
 
         /** Texture unit for the spot/point light shadow map array. */
         const val LOCAL_SHADOW_TEXTURE_UNIT = 6
+
+        /** Image-based lighting (REN-27, EnvironmentProbe): enable flag, SH irradiance, sky rotation and strengths. */
+        const val ENV_ENABLED = "uEnvEnabled"
+        const val ENV_SH = "uEnvSH"
+        const val ENV_ROTATION = "uEnvRotation"
+        const val ENV_MAX_LOD = "uEnvMaxLod"
+        const val ENV_REFLECTION = "uEnvReflection"
+        const val ENV_SKY_LIGHT = "uEnvSkyLight"
+        const val ENV_SKY_SCALE = "uEnvSkyScale"
+        const val ENV_PREFILTERED = "uEnvPrefiltered"
+        const val ENV_SKY = "uEnvSky"
+        const val ENV_BRDF_LUT = "uEnvBrdfLut"
+        const val ENV_PREFILTERED_UNIT = 7
+        const val ENV_SKY_UNIT = 8
+        const val ENV_BRDF_LUT_UNIT = 9
     }
 }

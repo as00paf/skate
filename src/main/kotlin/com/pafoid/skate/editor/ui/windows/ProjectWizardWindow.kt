@@ -6,8 +6,10 @@ import com.pafoid.skate.editor.systems.EditorPaths
 import com.pafoid.skate.editor.data.FileType
 import com.pafoid.skate.editor.events.ProjectEvent.CreateProjectRequested
 import com.pafoid.skate.editor.events.ProjectEvent.OpenProjectRequested
-import com.pafoid.skate.editor.events.WindowAction
+import com.pafoid.skate.editor.imgui.EditorModal
 import com.pafoid.skate.editor.imgui.EditorWindow
+import com.pafoid.skate.editor.imgui.FooterButton
+import com.pafoid.skate.editor.imgui.WindowHeader
 import com.pafoid.skate.editor.imgui.MImGui
 import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.editor.imgui.data.UiConstants
@@ -17,7 +19,6 @@ import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.core.LoggerService.LogLevel
 import imgui.ImGui
 import imgui.flag.ImGuiCol
-import imgui.flag.ImGuiCond
 import imgui.flag.ImGuiInputTextFlags
 import imgui.flag.ImGuiWindowFlags
 import imgui.type.ImString
@@ -39,27 +40,44 @@ class ProjectWizardWindow(
     private val projectNameInput = ImString(128)
     private val projectPathInput = ImString(512)
 
-    override fun imgui() {
-        val viewport = ImGui.getMainViewport()
-        val centerX = if (viewport.sizeX > 0) viewport.centerX else 400f
-        val centerY = if (viewport.sizeY > 0) viewport.centerY else 300f
+    override val icon: String = Icons.PLUS
 
-        ImGui.setNextWindowPos(centerX, centerY, ImGuiCond.FirstUseEver, 0.5f, 0.5f)
-        ImGui.setNextWindowSize(UiConstants.DIALOG_WIDTH, UiConstants.DIALOG_HEIGHT)
-        ImGui.setNextWindowBgAlpha(0.95f)
+    override fun imgui() = modal.render()
 
+    /**
+     * A real modal (EDT-51 §3), kept minimal until the EDT-59 rewrite: the form, then the standard footer
+     * [Open Project] [Cancel] [Create Project]. Esc = Cancel, Enter = Create. Its open state is the window's.
+     */
+    private val modal = object : EditorModal(stringManager, Icons.PLUS, minWidth = UiConstants.DIALOG_WIDTH) {
+        override val titleKey = "wizard.project.title"
+        override val wantsOpen: Boolean get() = isOpen.get()
 
-        if (ImGui.begin(
-                title(stringManager, textKey = "wizard.project.title"),
-                isOpen,
-                ImGuiWindowFlags.NoResize or ImGuiWindowFlags.Modal
-            )
-        ) {
+        override fun content() {
+            // Hidden from outside this frame (the project was created or opened): close the popup with it.
+            if (!isOpen.get()) {
+                ImGui.closeCurrentPopup()
+                return
+            }
+            WindowHeader.render(stringManager, this@ProjectWizardWindow)
+            help.render(stringManager)
             renderForm()
-            renderFooter()
-
-            ImGui.end()
         }
+
+        override fun buttons() = listOf(
+            FooterButton("wizard.project.open_existing", FooterButton.Role.SECONDARY, closes = false) {
+                openExistingProjectDialog()
+            },
+            FooterButton("wizard.project.cancel", FooterButton.Role.CANCEL) {
+                isOpen.set(false)
+                wizard.reset()
+                projectNameInput.set("")
+                projectPathInput.set("")
+            },
+            // Stays open until the project exists: a successful create hides the wizard.
+            FooterButton("wizard.project.create", FooterButton.Role.PRIMARY, enabled = wizard.canCreate(), closes = false) {
+                createProject()
+            },
+        )
     }
 
     private fun renderForm() {
@@ -177,74 +195,6 @@ class ProjectWizardWindow(
         ImGui.unindent()
         ImGui.endChild()
         ImGui.popStyleColor(2)
-    }
-
-    private fun renderFooter() {
-        val canCreate = wizard.canCreate()
-
-        // Separator before footer
-        ImGui.separator()
-        ImGui.spacing()
-
-        // Calculate button positions (right-aligned)
-        val cancelButtonWidth = 110f
-        val openButtonWidth = 150f
-        val createButtonWidth = 150f
-        val buttonSpacing = 12f
-        val buttonHeight = 30f
-        val totalButtonWidth = cancelButtonWidth + openButtonWidth + createButtonWidth + buttonSpacing * 2
-        val bottomPadding = 12f
-
-        // Calculate Y position to place buttons at the bottom
-        val availableHeight = ImGui.getContentRegionAvailY()
-        val buttonYPos = if (availableHeight > buttonHeight + bottomPadding) {
-            availableHeight - buttonHeight - bottomPadding
-        } else {
-            0f
-        }
-
-        // Move cursor to bottom position
-        val currentPos = ImGui.getCursorPos()
-        ImGui.setCursorPos(currentPos.x, currentPos.y + buttonYPos)
-
-        // Push buttons to the right side
-        val availableWidth = ImGui.getContentRegionAvailX()
-        val rightPadding = 15f
-        val xPos = availableWidth - totalButtonWidth - rightPadding
-
-        ImGui.setCursorPosX(ImGui.getCursorPosX() + xPos)
-
-        // Cancel button
-        if (stringManager.tipped(ImGui.button(stringManager.getString("wizard.project.cancel"), cancelButtonWidth, buttonHeight), "wizard.project.cancel")) {
-            eventSystem.publish(WindowAction.Hide("window.project_wizard"))
-            wizard.reset()
-            projectNameInput.set("")
-            projectPathInput.set("")
-        }
-
-        ImGui.sameLine(0f, buttonSpacing)
-
-        // Open existing project button
-        if (stringManager.tipped(ImGui.button("${Icons.FOLDER_OPEN} ${stringManager.getString("wizard.project.open_existing")}", openButtonWidth, buttonHeight), "wizard.project.open_existing")) {
-            openExistingProjectDialog()
-        }
-
-        ImGui.sameLine(0f, buttonSpacing)
-
-        // Create button (highlighted)
-        ImGui.beginDisabled(!canCreate)
-        if (canCreate) {
-            ImGui.pushStyleColor(ImGuiCol.Button, 0.2f, 0.6f, 0.2f, 1f)
-            ImGui.pushStyleColor(ImGuiCol.ButtonHovered, 0.25f, 0.7f, 0.25f, 1f)
-            ImGui.pushStyleColor(ImGuiCol.ButtonActive, 0.15f, 0.5f, 0.15f, 1f)
-        }
-        if (stringManager.tipped(ImGui.button("${Icons.PLUS} ${stringManager.getString("wizard.project.create")}", createButtonWidth, buttonHeight), "wizard.project.create")) {
-            createProject()
-        }
-        if (canCreate) {
-            ImGui.popStyleColor(3)
-        }
-        ImGui.endDisabled()
     }
 
     /** Default parent folder for new projects in the user's documents ([EditorPaths]); created so it validates. */
