@@ -39,6 +39,15 @@ Done tasks live in [`docs/backlog-archive.md`](docs/backlog-archive.md). A `Deps
 7. Only `skate-lead` edits checkbox state in this file. Domain agents report status back to the lead.
 8. No backward compatibility while the engine is a work in progress: don't add migrations or upgrade-on-load code for old saved scenes/projects; the human recreates content. Instead, keep the **default projects** current: when a feature lands, update the default skate project (`PrefabsGenerator` default scenes) and the CLI samples to use it, and remove test-only content from them. The default editor project includes the **Feature Showcase** scene(s), which the human uses for manual testing: every new user-visible component or feature adds a small, labeled demo there in the same task.
 
+**PR size rules** (human, 2026-11-06/2026-11-07)
+
+1. Keep PRs under **50 changed files** (aim for at most ~60 and **3–6 tasks**). Round 27 was 190 files — too many.
+2. Anything larger is split across multiple tasks (one per task branch) or commits. The lead enforces this during integration: a branch over the limit is split before it is merged.
+3. When a task spans many files, create sub-tasks with clear boundaries (e.g. "core logic", "editor integration", "export support"), each independently testable and reviewable.
+4. Each agent's worktree branch contains only its domain's changes; cross-domain changes go to separate tasks.
+5. For rewrites (`REWRITE`), the design note must be approved before any code is written, and the rewrite is split into **testable slices of ≤50 files each**. No slice spans more than two domains (e.g. engine + editor).
+6. Integrate early and often: the lead opens a PR as soon as a coherent group of verified tasks is ready instead of batching a whole round, and splits a large round into **several PRs by area** (e.g. physics, editor windows, assets), **each based on the previous merged master**. Check the size with `git diff --stat origin/master...HEAD` before opening a PR.
+
 ---
 
 ## Ownership map
@@ -88,15 +97,15 @@ Round 27+ goals (human, 2026-11-06): post-processing quality, render-graph clari
   - Done when: The showcase metallic object clearly reflects the sky/scene; the IBL math/setup has unit tests; Vulkan parity follows in a VK task.
   - Deps: REN-26
 - [~] @skate-render **REN-28** `P2` Terrain and biomes: design note
-  - Do: Write `docs/design/REN-28.md`, reviewed by physics and assets: chunked heightmap terrain with LOD, splat materials, a noise library (e.g. FastNoiseLite, MIT), biome maps driving materials and scatter, procedural or hand-painted (editor sculpt/paint tools), seeded through ECS-14, heightfield collider (PHY-15). Split implementation tasks out after approval.
+  - Do: Write `docs/design/REN-28.md`, reviewed by physics and assets: chunked heightmap terrain with LOD, splat materials (16 layers), a noise library (e.g. FastNoiseLite, MIT), biome maps driving materials and scatter, procedural or hand-painted (editor sculpt/paint tools), seeded through ECS-14, heightfield collider (PHY-15). Terrain must support **larger worlds** than the current park scale. Erosion filters are worth including. Split implementation tasks out after approval.
   - Done when: The human approves the note.
   - Deps: ECS-14
-- [ ] **REN-29** `P2` Vegetation and water: design note
+- [~] @skate-render **REN-29** `P2` Vegetation and water: design note — draft written, awaiting the human's approval
   - Do: Write `docs/design/REN-29.md`: instanced trees/grass with LOD and wind, a water surface shader (reflection/refraction, foam), water volumes for buoyancy (PHY-16), and the Feature Showcase demo area.
   - Done when: The human approves the note.
   - Deps: REN-27
 
-- [~] @skate-render **REN-30** `P1` Renderer honours overall quality, MSAA and texture quality
+- [x] **REN-30** `P1` Renderer honours overall quality, MSAA and texture quality
   - Do: From EDT-57: the Graphics settings for overall quality, MSAA and texture quality exist (`GraphicsSettings`) but the renderer ignores them. Apply them live (MSAA on the scene target, texture quality via mip bias/max size, quality preset driving shadows/post effects).
   - Done when: Changing each setting visibly changes rendering in the editor and exported game; tests.
 
@@ -104,33 +113,33 @@ Round 27+ goals (human, 2026-11-06): post-processing quality, render-graph clari
 
 Goal (human, after REN-13): full Vulkan support for **exported games**, chosen per project at creation (OpenGL stays the default; the editor always uses OpenGL). Builds on the REN-12 RHI and the REN-13 spike (`docs/design/REN-13.md`). `skate-render` helps with explicitly assigned VK tasks.
 
-**Scheduled last** (human, 2026-11-06): the validation proof (VK-07, then closing VK-01..06) runs after all other planned work, once the LunarG Vulkan SDK is installed.
+**Deferred indefinitely** (human, 2026-11-09): the human will not install the LunarG Vulkan SDK in the near future. VK-01..06 are closed on their merged code and parity tests; the validation proof (VK-07) is parked as a P3 and is not scheduled. No agent works on it until the human reopens it.
 
-- [~] @skate-vulkan **VK-01** `P1` Windowed Vulkan runtime: surface, swapchain, frames in flight — code merged (round 23); zero-validation-error run pending the human installing the LunarG Vulkan SDK
+- [x] **VK-01** `P1` Windowed Vulkan runtime: surface, swapchain, frames in flight — code merged (round 23); validation proof deferred to VK-07
   - Do: Turn the offscreen spike into a presenting backend for the game runtime: GLFW no-API window, surface, swapchain (create/recreate on resize and minimize, present modes for vsync), frames in flight (fences/semaphores, per-frame command buffers and transient resources, deferred destruction), backbuffer as the RHI default target, validation layers in debug/test runs.
   - Done when: A test harness window presents frames with Vulkan, survives resize/minimize, zero validation errors; frame-in-flight bookkeeping unit-tested.
   - Deps: REN-13
-- [~] @skate-render **VK-02** `P1` Vulkan resources: memory, uploads, descriptors, samplers — code merged (round 23); zero-validation-error run pending the human installing the LunarG Vulkan SDK
+- [x] **VK-02** `P1` Vulkan resources: memory, uploads, descriptors, samplers — code merged (round 23); validation proof deferred to VK-07
   - Do: Memory allocator (e.g. lwjgl-vma), staging uploads for buffers/textures (mips, arrays, cube maps, depth/compare formats), sampler objects, descriptor set layouts/pools derived from SPIR-V reflection, and the `ShaderParams` named-uniform mapping to per-draw UBO data (ring buffer per frame in flight).
   - Done when: Every `RhiDevice.create*` used by the passes works on Vulkan; reflection/layout/ring logic unit-tested; zero validation errors.
   - Deps: REN-13
-- [~] @skate-vulkan **VK-03** `P1` Geometry pass parity on Vulkan — code merged (round 24); validation run pending the SDK
+- [x] **VK-03** `P1` Geometry pass parity on Vulkan — code merged (round 24); validation proof deferred to VK-07
   - Do: Port the geometry pass with materials (PBR inputs, alpha modes), UBO lights and culling, skinning, sky dome/skybox and fog to Vulkan.
   - Done when: MainScene's lit, textured, skinned frame matches OpenGL within a documented tolerance (GpuTest); zero validation errors.
   - Deps: VK-01, VK-02
-- [~] @skate-render **VK-04** `P2` Shadows on Vulkan — code merged (round 25); validation run pending the SDK
+- [x] **VK-04** `P2` Shadows on Vulkan — code merged (round 25); validation proof deferred to VK-07
   - Do: Cascaded sun shadows and spot/point shadow maps (depth arrays, compare samplers, depth bias/clamp) with the backend depth-range fix-up; REN-22 caching behaviour preserved.
   - Done when: Showcase shadow area matches OpenGL within tolerance at each quality level (GpuTest).
   - Deps: VK-03
-- [~] @skate-vulkan **VK-05** `P2` Post-processing on Vulkan — code merged (round 25); validation run pending the SDK
+- [x] **VK-05** `P2` Post-processing on Vulkan — code merged (round 25); validation proof deferred to VK-07
   - Do: PostChain ping-pong, blits, bloom/FXAA/tonemap/gamma with a documented texture-orientation (Y-flip) convention.
   - Done when: Showcase post-effects area matches OpenGL within tolerance (GpuTest).
   - Deps: VK-03
-- [~] @skate-gameui **VK-06** `P2` Runtime UI, particles and debug lines on Vulkan — code merged (round 25); validation run pending the SDK
+- [x] **VK-06** `P2` Runtime UI, particles and debug lines on Vulkan — code merged (round 25); validation proof deferred to VK-07
   - Do: UiPass (batches, SDF text, scissor, blending), instanced particles and debug lines on Vulkan.
   - Done when: Showcase UI/particles areas match OpenGL within tolerance (GpuTest).
   - Deps: VK-03
-- [!] **VK-07** `P1` Zero-validation-error proof for the Vulkan backend — blocked: the human must install the official LunarG Vulkan SDK (do not load downloaded nightly layers)
+- [ ] **VK-07** `P3` Zero-validation-error proof for the Vulkan backend — deferred indefinitely (2026-11-09): needs the official LunarG Vulkan SDK, which the human will not install for now (do not load downloaded nightly layers)
   - Do: With the SDK's Khronos validation layer enabled, run every Vulkan GpuTest (VK-01..06 harnesses, QA-16 parity suite, exported Vulkan game) and fix every validation message; then close VK-01..06.
   - Done when: All Vulkan GpuTests pass with validation on and zero messages; VK-01..06 marked done.
   - Deps: QA-16
@@ -146,23 +155,23 @@ Round 27+ goals: the Asset Browser shows every asset type, one assets folder, ex
   - Do: Also (from AST-13, lead-assigned editor change): add `jpg` to `FileType.TEXTURE` in `editor/data/FileType.kt` and drop the Asset Browser workaround. The default project hierarchy has two assets folders. Keep one, update project creation, export, path resolution and the default projects/CLI samples.
   - Done when: A new project has a single assets folder, everything still loads and exports; tests cover the layout.
   - Deps: AST-13
-- [ ] **AST-15** `P2` Export UX and export settings: design note
+- [~] @skate-assets **AST-15** `P2` Export UX and export settings: design note — draft written, awaiting the human's approval
   - Do: Write `docs/design/AST-15.md`: refined export wizard flow plus settings (splash image, icon, target platform, graphics backend, compression/packing, debug vs release, target FPS).
   - Done when: The human approves the note.
   - Deps: EDT-59
 - [~] @skate-online **AST-16** `P2` Asset store window — design approved 2026-11-06 (`docs/design/AST-16.md`, revised after the skate-assets review)
-  - Do: Human priority: **free libraries that need no login first.** Slices in order: a) SPI, registry, HTTP seam, pipeline, ledger, window skeleton + Poly Haven, b) ambientCG + texture sets, d) Kenney/Quaternius catalogs + "Import downloaded pack", f) credits on export (with AST-15), e) SimReady via Hugging Face + USD→glTF through Blender (needs AST-19), c) Sketchfab login (last, optional). No Mixamo, no Poly Pizza for now. ND licenses: warn and record the conversion.
-  - Done when: Each slice imports a real asset with its license recorded; tests on fixtures, no sockets.
-- [ ] **AST-17** `P2` City generation from OpenStreetMap: design note
+  - Do: Human decisions: **no login, no credential management.** Slices in order: a) SPI, registry, HTTP seam, pipeline, window skeleton + Poly Haven, b) ambientCG + texture sets, c) Kenney/Quaternius catalogs + "Import downloaded pack" (manual download is fine), d) Poly Haven as the primary provider, e) SimReady via Hugging Face + USD→glTF through Blender (needs AST-19). **No Sketchfab** (requires login). **No license tracking** for now — skip attribution-ledger/credits work. If an asset is in an unsupported format, warn the user on import rather than blocking.
+  - Done when: Each slice imports a real asset; tests on fixtures, no sockets.
+- [~] @skate-assets **AST-17** `P2` City generation from OpenStreetMap: design note — draft written, awaiting the human's approval
   - Do: Write `docs/design/AST-17.md` evaluating OSM2World (Java, open source, glTF export) as the open-source alternative to commercial OSM city tools: area picker, import to a scene with colliders and materials, licensing (ODbL attribution).
   - Done when: The human approves the note.
-- [ ] **AST-18** `P3` Protocol Buffers: design note
+- [~] @skate-assets **AST-18** `P3` Protocol Buffers: design note — draft written, awaiting the human's approval
   - Do: Write `docs/design/AST-18.md`. Proposed: protobuf only for runtime data (packed exports, network messages). Scenes, prefabs and settings stay JSON so git diffs/merges (EDT-60) stay readable. Measure load time/size gains first.
   - Done when: The human approves the note.
 - [x] **AST-19** `P2` Full Blender support — design approved 2026-11-06 (`docs/design/AST-19.md`)
   - Do: Implement the note. Human decisions: commit the generated GLBs; minimum Blender **4.2 LTS**; an action deleted in Blender keeps its generated clip and warns; "Send to Skate" add-on later. Lead: action mode default `FILES`. Blender is installed on the dev machine; test file `assets/obj/baseball-cap.blend`.
   - Done when: Dropping `baseball-cap.blend` into a project's Assets gives a textured model that re-imports when the .blend is saved; GUIDs survive; tests.
-- [ ] **AST-20** `P2` Classify FBX files as model or animation by content
+- [x] **AST-20** `P2` Classify FBX files as model or animation by content
   - Do: From AST-16: `.fbx` is always classed as `FileType.ANIMATION`, so FBX models show up in the Animations tab and store packs with FBX models cannot be imported as models. Inspect the file (meshes vs. animations only) and classify it accordingly; a file with both counts as a model with clips.
   - Done when: FBX models appear as models, animation-only FBX as animations; tests with fixture files.
 
@@ -215,10 +224,10 @@ Round 27+ goals: a Jolt backend selectable per project, a terrain heightfield co
   - Do: Implement the approved slices in order: a) preparation (`BodyDescription`, per-spec native loader, `ShapeWireframe` move, test helper), b) Jolt core (bodies, shapes, layers, queries, factory + fallback), c) contacts and triggers, d) joints/ragdoll/vehicle parity, e) debug draw, stats, leak/determinism tests, benchmark, f) per-project selection plumbing with EDT/AST/TLG. Decisions: physical centre of mass, ship both natives now (AST-15 strips the unused one), Bullet stays the default.
   - Done when: The physics test suite passes on Jolt as well as Bullet; the showcase runs on Jolt.
 
-- [ ] **PHY-18** `P2` Extract physics natives to a per-user folder
+- [x] **PHY-18** `P2` Extract physics natives to a per-user folder
   - Do: From PHY-17: Bullet and Jolt natives extract to `USER_DIR`, which fails for games installed in read-only folders (Program Files). Extract to a per-user data folder instead.
   - Done when: An exported game in a read-only folder starts with physics; loader tests cover the path.
-- [ ] **PHY-19** `P3` Jolt-native ragdolls, vehicles and character controller
+- [~] @skate-physics **PHY-19** `P3` Jolt-native ragdolls, vehicles and character controller — design draft written, awaiting the human's approval
   - Do: From PHY-17: optional Jolt `Ragdoll` (pose motors), `VehicleConstraint` and `CharacterVirtual` modes (the last one with GPL). Design note first.
   - Done when: The human approves the note.
   - Deps: PHY-17
@@ -283,7 +292,7 @@ Round 27+ goals: a fuller skate demo with camera modes and standard control sche
 - [~] @skate-gameplay **GPL-23** `P2` Fuller skate demo — design approved with changes 2026-11-06 (`docs/design/GPL-23.md`)
   - Do: Human decisions: 40 × 40 m park with the four zones and the new prefabs (Euro-gap deck); combo chaining (link window, manual linking, lose on bail) but **no points/score yet**; **Free skate only** (no Session mode, no timer, no goals yet); control hints on screen with a pause-menu switch; the third camera mode becomes spot cameras that **follow the skater** (no static fixed camera); one HUD for editor Play and the exported game.
   - Done when: MainScene is the new park, skateable end to end in both hosts; combos chain and break correctly; tests.
-- [ ] **GPL-24** `P3` Game systems and character customization: design note
+- [~] @skate-gameplay **GPL-24** `P3` Game systems and character customization: design note — draft written, awaiting the human's approval
   - Do: Write `docs/design/GPL-24.md`: reusable inventory, combat, interaction/pickup systems, and character customization (clothes, tattoos, headwear, eyewear via attachment points, mesh swaps and material layers).
   - Done when: The human approves the note.
 
@@ -305,7 +314,7 @@ Round 27+ goals: menu parity between the editor and the game, and a map view.
 - [~] @skate-gameui **GPL-25** `P0` GPL-21 review fixes: saved control scheme applied at startup
   - Do: From the GUI review of GPL-21 (`/tmp/skate-gameui-reviews.md`): must fix — the saved option is applied before the settings store attaches, so the default scheme runs while the menu shows the saved one (re-apply when the store changes; test). Should fix — cap the pause panel height, apply options once, cache the HUD text components, find the rider recursively. Lead-assigned to skate-gameui; skate-gameplay reviews.
   - Done when: The saved scheme is active from the first frame in both hosts; tests.
-- [ ] **GUI-15** `P1` Exported game reads the project's window and runtime settings
+- [x] **GUI-15** `P1` Exported game reads the project's window and runtime settings
   - Do: From EDT-57: the exported game reads resolution, window title, fullscreen, supported languages, startup language and the project physics rate from the project settings.
   - Done when: Each setting changed in Project Settings takes effect in an exported game; tests.
 - [~] @skate-animation **GUI-16** `P2` Reset ImGui capture hooks when the ImGui context is destroyed
@@ -351,9 +360,9 @@ Round 27+ goals (human, 2026-11-06): fix editor bugs, make every window, dialog 
   - Do: Apply EDT-51 in the chunks of `docs/design/EDT-51.md` §5: A (foundation, alone, first), then B scene, C project & assets, D debug, E settings dialogs, F modals & palette, G menus, H domain windows (AUD, SCR) in parallel, then I input-testing move (INP, after E). Chunk A: skate-editor.
   - Done when: Every item in the EDT-51 inventory meets the standard; a test checks windows register header icon, help and context menu.
   - Deps: EDT-51
-- [ ] **EDT-53** `P1` Beginner help in every window
-  - Do: The `?` in each window opens a plain-language explanation (what it is, how to use it, related windows), written for someone who never used a 3D program. Strings are localized.
-  - Done when: Every window has help; a test checks that every registered window has help strings.
+- [~] @skate-qa **EDT-53** `P1` Beginner help in every window — content as Markdown articles (skate-editor reviews)
+  - Do: Redirected by the human 2026-11-07 (see EDT-68): write the plain-language explanations (what it is, how to use it, related windows), written for someone who never used a 3D program, as **one Markdown file per window/topic** under `assets/help/en/**` and `assets/help/fr/**` (English fallback). The articles are consumed by the EDT-68 help window; no tooltip/popover text.
+  - Done when: Every registered window has a Markdown article; a test checks coverage and that each article parses.
   - Deps: EDT-51
 - [x] **EDT-54** `P1` REWRITE Render Graph window overhaul — design approved by the lead 2026-11-06 (`docs/design/EDT-54.md` rev 2, reviewed by skate-render)
   - Do: Step 2a (engine API: `RenderGraphInfo`, `PassTimings`, signature-based version, all post effects as stages, `lbl.render_pass.*` keys; skate-vulkan, skate-render reviews), then step 2b (the window, after EDT-52 chunk A so it follows the new window standard). Step 2c (per-effect GPU timers) deferred. The window opens docked by default as a background tab next to Console.
@@ -373,7 +382,7 @@ Round 27+ goals (human, 2026-11-06): fix editor bugs, make every window, dialog 
 - [x] **EDT-58** `P1` Remember the editor camera per scene
   - Do: Save the editor camera position/rotation/mode per scene (editor-only data, not in the exported game) and restore it when the scene opens.
   - Done when: Switching scenes and restarting restores each scene's camera; tests.
-- [~] @skate-tooling **EDT-59** `P1` REWRITE New Project wizard and templates
+- [~] @skate-tooling **EDT-59** `P1` REWRITE New Project wizard and templates — design draft written, awaiting the human's approval
   - Do: Design note first. Templates (Empty, Skate game, Feature Showcase, Tetris, Marble Run, later demos), which separates the skate game from the showcase. Settings: target FPS/uncapped, physics backend (Bullet, Simple, Jolt once PHY-17 lands), graphics backend (exists), include AI agent/skill files, splash screen image. Templates come from skate-tooling.
   - Done when: The human approves the design; each template creates a project that opens and runs; tests for the template registry and settings.
   - Deps: EDT-56, AST-14
@@ -406,6 +415,14 @@ Round 27+ goals (human, 2026-11-06): fix editor bugs, make every window, dialog 
   - Do: From AST-19: an inspector panel for `.blend` import settings (`blender.*` meta keys) with a Re-import button (`BlenderSync.reimport`), a "Needs Blender" badge, and a Blender section in Editor Settings (path, timeout, import on open, a Test button using `BlenderLocator`).
   - Done when: Settings edit and persist; Re-import works; tests.
   - Deps: AST-19
+- [~] @skate-editor **EDT-67** `P1` Help button on every window and unclipped button background
+  - Do: From the human testing the window standard (2026-11-07): only **some** windows show the `?` help button, and on the ones that do the **button background is clipped at the top**. Give every registered window the control and fix the clipping (padding/rect/clip-space) at any DPI and window size. The fix must work with the pending EDT-52 chunk branches (C, E, F, G, H, I) and EDT-54, which the lead integrates before final verification.
+  - Done when: Every registered window shows a correctly rendered `?` button; a test asserts coverage and the layout math is covered.
+  - Deps: EDT-52
+- [ ] **EDT-68** `P1` Help window with Markdown articles and a Help menu item — design note `docs/design/EDT-68.md` (questions for the human)
+  - Do: From the human (2026-11-07): clicking `?` must open a **help window** showing the article for the selected topic — **not** a bigger tooltip/popover. The window is docked like other editor windows, lists the topics (table of contents) and renders the `.md` articles written by EDT-53. Add a **Help** menu item that opens the same window independently of any `?` button. Implement the approved design note.
+  - Done when: `?` opens the window on the right topic, the Help menu item opens it with the topic list, articles are `.md` files under `assets/help/**`, and tests cover article discovery/loading, the menu entry and the `?` routing.
+  - Deps: EDT-53
 
 ### Tooling & samples — `TLG` (`skate-tooling`)
 

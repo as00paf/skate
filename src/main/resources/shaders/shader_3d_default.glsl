@@ -114,6 +114,18 @@ uniform vec3 uSunColor;
 uniform vec3 uAmbientLight;
 #include "fog.glsl"
 
+// Image-based lighting from the sky (REN-27, EnvironmentProbe / IblMath). uEnvEnabled 0: plain ambient as before.
+uniform int uEnvEnabled;
+uniform vec4 uEnvSH[9];            // cosine-convolved SH: evaluating gives irradiance (rgb)
+uniform float uEnvRotation;        // sky dome turn around Y (radians)
+uniform float uEnvMaxLod;          // last prefiltered level (roughness 1)
+uniform float uEnvReflection;      // specular strength
+uniform float uEnvSkyLight;        // diffuse strength
+uniform vec3 uEnvSkyScale;         // sky tint * exposure, for the full-resolution sky sample
+uniform sampler2D uEnvPrefiltered; // GGX-prefiltered radiance, encoded (IblMath.encode), one roughness per mip
+uniform sampler2D uEnvSky;         // the sky texture itself: mirror reflections at roughness 0
+uniform sampler2D uEnvBrdfLut;     // split-sum (A, B) by (NdotV, roughness)
+
 // --- Shadow Mapping Uniforms (see ShadowPass / LightingUniformsLoader) ---
 #define MAX_CASCADES 4
 #define MAX_LOCAL_SHADOW_LAYERS 18   // LocalShadows.MAX_LAYERS
@@ -271,6 +283,58 @@ float GeometrySmith(vec3 N, vec3 V, vec3 L, float roughness)
 
 // Fresnel Equation - Schlick Approximation
 // Describes the ratio of light reflected vs refracted.
+// ---- Image-based lighting (mirrors IblMath) ----
+const float IBL_MAX_RADIANCE = 16.0;
+
+// Display value -> radiance the tonemap below maps back to it (IblMath.decode)
+vec3 iblDecode(vec3 display)
+{
+    vec3 lin = min(pow(clamp(display, 0.0, 1.0), vec3(2.2)), vec3(IBL_MAX_RADIANCE / (1.0 + IBL_MAX_RADIANCE)));
+    return lin / (1.0 - lin);
+}
+
+// World direction -> sky texture UV of the dome (IblMath.toSkyLocal + skyUv)
+vec2 iblSkyUv(vec3 world)
+{
+    float c = cos(uEnvRotation);
+    float s = sin(uEnvRotation);
+    vec3 d = normalize(vec3(c * world.x - s * world.z, world.y, s * world.x + c * world.z));
+    float u = atan(d.z, d.x) / (2.0 * PI);
+    return vec2(u < 0.0 ? u + 1.0 : u, (asin(clamp(d.y, -1.0, 1.0)) + PI * 0.5) / PI);
+}
+
+// Irradiance from the SH coefficients (IblMath.shIrradiance), for a world normal
+vec3 iblIrradiance(vec3 world)
+{
+    float c = cos(uEnvRotation);
+    float s = sin(uEnvRotation);
+    vec3 n = normalize(vec3(c * world.x - s * world.z, world.y, s * world.x + c * world.z));
+    vec3 e = uEnvSH[0].rgb * 0.282095
+        + uEnvSH[1].rgb * 0.488603 * n.y + uEnvSH[2].rgb * 0.488603 * n.z + uEnvSH[3].rgb * 0.488603 * n.x
+        + uEnvSH[4].rgb * 1.092548 * n.x * n.y + uEnvSH[5].rgb * 1.092548 * n.y * n.z
+        + uEnvSH[6].rgb * 0.315392 * (3.0 * n.z * n.z - 1.0) + uEnvSH[7].rgb * 1.092548 * n.x * n.z
+        + uEnvSH[8].rgb * 0.546274 * (n.x * n.x - n.y * n.y);
+    return max(e, vec3(0.0));
+}
+
+// Radiance reflected along R for a surface of the given roughness: the prefiltered level, sharpened toward the
+// full-resolution sky (faded to fog below the horizon, like the dome) for near-mirror surfaces
+vec3 iblSpecularRadiance(vec3 R, float roughness)
+{
+    vec2 uv = iblSkyUv(R);
+    float lod = roughness * uEnvMaxLod;
+    vec3 prefiltered = iblDecode(textureLod(uEnvPrefiltered, uv, lod).rgb);
+    if (lod >= 1.0) return prefiltered;
+    vec3 sky = textureLod(uEnvSky, uv, 0.0).rgb * uEnvSkyScale;
+    sky = mix(uFogColor, sky, smoothstep(0.4, 0.55, uv.y));
+    return mix(iblDecode(sky), prefiltered, lod);
+}
+
+vec3 fresnelSchlickRoughness(float cosTheta, vec3 F0, float roughness)
+{
+    return F0 + (max(vec3(1.0 - roughness), F0) - F0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
+}
+
 vec3 fresnelSchlick(float cosTheta, vec3 F0)
 {
     return F0 + (1.0 - F0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
@@ -493,6 +557,16 @@ void main()
 
     // 5. Ambient & Final Composition
     vec3 ambient = uAmbientLight * albedo.rgb * ao;
+    if (uEnvEnabled == 1) {
+        // Image-based lighting: sky light (diffuse) and reflections (split-sum specular), REN-27
+        float NdotV = max(dot(N, V), 0.0);
+        vec3 F = fresnelSchlickRoughness(NdotV, F0, roughness);
+        vec3 kD = (vec3(1.0) - F) * (1.0 - metallic);
+        vec3 diffuse = kD * albedo.rgb * (uAmbientLight + iblIrradiance(N) / PI * uEnvSkyLight);
+        vec2 ab = texture(uEnvBrdfLut, vec2(NdotV, roughness)).rg;
+        vec3 specular = iblSpecularRadiance(reflect(-V, N), roughness) * (F0 * ab.x + ab.y) * uEnvReflection;
+        ambient = (diffuse + specular) * ao;
+    }
     vec3 colorOut = ambient + Lo + emissive;
 
     // 6. HDR Tonemapping & Gamma Correction

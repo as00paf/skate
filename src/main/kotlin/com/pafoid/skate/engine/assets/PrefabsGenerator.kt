@@ -1,5 +1,6 @@
 package com.pafoid.skate.engine.assets
 
+import com.pafoid.skate.engine.ecs.SceneSun
 import com.pafoid.skate.engine.addComponent
 import com.pafoid.skate.engine.assets.data.models.`3dModel`
 import com.pafoid.skate.engine.assets.data.models.Material
@@ -10,15 +11,16 @@ import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.assets.data.Texture
 import com.pafoid.skate.engine.assets.data.models.animations.Animation
 import com.pafoid.skate.engine.assets.data.models.animations.SkeletonPose
-import com.pafoid.skate.engine.ecs.components.AmbientLightComponent
 import com.pafoid.skate.engine.ecs.components.Animator
 import com.pafoid.skate.engine.ecs.components.BoxCollider3D
 import com.pafoid.skate.engine.ecs.components.CameraComponent
+import com.pafoid.skate.engine.ecs.components.CameraCycleComponent
+import com.pafoid.skate.engine.ecs.components.FirstPersonCameraComponent
+import com.pafoid.skate.engine.gameplay.camera.CameraCycle
 import com.pafoid.skate.engine.ecs.components.FollowCameraComponent
 import com.pafoid.skate.engine.ecs.components.CompoundHullCollider3D
 import com.pafoid.skate.engine.ecs.components.CylinderCollider3D
 import com.pafoid.skate.engine.ecs.components.DayNightCycleComponent
-import com.pafoid.skate.engine.ecs.components.DirectionalLightComponent
 import com.pafoid.skate.engine.ecs.components.EnvironmentComponent
 import com.pafoid.skate.engine.ecs.components.GridLines
 import com.pafoid.skate.engine.ecs.components.PointLightComponent
@@ -243,7 +245,7 @@ class PrefabsGenerator(
         type.name.split('_').joinToString("") { part -> part.lowercase().replaceFirstChar { it.uppercase() } }
 
     /**
-     * The scenes of a new project: `MainScene` (sky, sun, day/night cycle, the skater and board on an asphalt floor,
+     * The scenes of a new project: `MainScene` (sky and ambient light, a "Sun" entity driven by the day/night cycle, the skater and board on an asphalt floor,
      * a concrete ledge to grind and a HUD canvas) and the [FeatureShowcase] scene (one labelled area per engine
      * feature). See docs/samples.md.
      */
@@ -253,9 +255,8 @@ class PrefabsGenerator(
         scene.addComponent(ScenePhysicsComponent())
             .addComponent(GridLines())
             .addComponent(EnvironmentComponent(skyTexture = skyTexture))
-            .addComponent(AmbientLightComponent())
             .addComponent(DayNightCycleComponent())
-            .addComponent(DirectionalLightComponent())
+        SceneSun.addDefaults(scene) // the "Sun" entity, driven by the day/night cycle (REN-26)
 
         spawnDefaultsSync().forEach { scene.addChild(it) }
         sceneManager.saveScene(scene, sceneDir.path)
@@ -269,23 +270,39 @@ class PrefabsGenerator(
 
     /**
      * The default skate scene: a follow camera (GPL-05) on the skater, the board, the floor and a few obstacles. The
-     * quarter pipe behind the spawn and the funbox give the camera's spring arm something to collide with.
+     * quarter pipe behind the spawn and the funbox give the camera's spring arm something to collide with. The HUD's
+     * Camera button and the [CameraCycle.ACTION] input cycle third-person, first-person and fixed cameras (GPL-22).
      */
     fun spawnDefaultsSync(): List<GameObject> {
-        val camera = GameObject("Camera")
+        val camera = GameObject(CAMERA_THIRD_PERSON)
             .addComponent(CameraComponent(isDefault = true))
             .addComponent(Transform(Vector3f(0f, 2.2f, -3.9f)))
             .addComponent(FollowCameraComponent(targetName = "Skater"))
+            .addComponent(CameraCycleComponent(
+                cameraNames = listOf(CAMERA_THIRD_PERSON, CAMERA_FIRST_PERSON, CAMERA_FIXED).joinToString(", "),
+                buttonName = CAMERA_BUTTON,
+            ))
+        val firstPerson = GameObject(CAMERA_FIRST_PERSON)
+            .addComponent(CameraComponent(fov = 70f, nearPlane = 0.05f))
+            .addComponent(Transform(Vector3f(0f, 1.75f, 0.25f)))
+            .addComponent(FirstPersonCameraComponent(targetName = "Skater"))
+        // High front-right corner of the starting area, looking back at the spawn.
+        val fixed = GameObject(CAMERA_FIXED)
+            .addComponent(CameraComponent())
+            .addComponent(Transform(Vector3f(5f, 3.5f, 7f)).apply { lookAt(Vector3f(0f, 0.8f, 0f)) })
         val skater = spawnSkater()
         val skate = spawnSkateboard()
         val floor = spawnFloor()
         val ledge = spawnLedge(Vector3f(3f, 0f, -3f), MaterialType.CONCRETE)
         val quarterPipe = spawn(PrefabType.QUARTER_PIPE, Vector3f(0f, 0f, -6f), MaterialType.WOOD_TAN)
         val funbox = spawn(PrefabType.FUNBOX, Vector3f(-4f, 0f, 4f), MaterialType.CONCRETE)
-        return listOf(camera, skate, skater, floor, ledge, quarterPipe, funbox, spawnHud())
+        return listOf(camera, firstPerson, fixed, skate, skater, floor, ledge, quarterPipe, funbox, spawnHud())
     }
 
-    /** In-game (non-ImGui) HUD: a score line top-left and a restart button top-right. */
+    /**
+     * In-game (non-ImGui) HUD: a score line top-left, a Camera button top-right (restart is in the Esc menu) and the
+     * trick name bottom-centre, which the trick HUD fills while riding (GPL-21).
+     */
     fun spawnHud(): GameObject {
         val canvas = GameObject("HUD").addComponent(UICanvasComponent())
         canvas.addChild(
@@ -294,15 +311,28 @@ class PrefabsGenerator(
                 .addComponent(UITextComponent("hud.score", listOf("0"), fontSize = 44f))
         )
         canvas.addChild(
-            GameObject("RestartButton")
+            GameObject(CAMERA_BUTTON)
                 .addComponent(UIElementComponent().placed(1f, 0f, -40f, 30f, 260f, 70f))
-                .addComponent(UIButtonComponent("pause.restart"))
+                .addComponent(UIButtonComponent("hud.camera"))
+        )
+        canvas.addChild(
+            GameObject(TRICK_TEXT)
+                .addComponent(UIElementComponent().placed(0.5f, 1f, 0f, -120f, 1000f, 96f))
+                .addComponent(UITextComponent("", fontSize = 72f))
         )
         return canvas
     }
 
     companion object {
         const val DEFAULT_SCENE = "MainScene"
+
+        /** MainScene cameras, in the order the HUD Camera button cycles them (GPL-22). */
+        const val CAMERA_THIRD_PERSON = "Camera"
+        const val CAMERA_FIRST_PERSON = "FirstPersonCamera"
+        const val CAMERA_FIXED = "FixedCamera"
+        const val CAMERA_BUTTON = "CameraButton"
+        /** HUD text showing the current / last landed trick (empty key: hidden). */
+        const val TRICK_TEXT = "TrickText"
 
         /** [GameObject.tag] of rails, ledges and boxes that trucks can lock onto (docs/obstacles.md). */
         const val GRINDABLE_TAG = "GRINDABLE"

@@ -2,8 +2,8 @@ package com.pafoid.skate.engine.ui
 
 import com.pafoid.skate.engine.input.ActionBinding
 import com.pafoid.skate.engine.input.ActionDefinition
-import com.pafoid.skate.engine.input.DefaultActions
 import com.pafoid.skate.engine.input.InputContext
+import com.pafoid.skate.engine.input.UiNavigationActions
 import com.pafoid.skate.engine.input.ActionMap
 import com.pafoid.skate.engine.input.InputReader
 import com.pafoid.skate.engine.input.Keys
@@ -61,21 +61,21 @@ class UiNavRepeater(private val initialDelay: Float = 0.4f, private val repeatIn
 }
 
 object UiActions {
-    const val UP = DefaultActions.UI_UP
-    const val DOWN = DefaultActions.UI_DOWN
-    const val LEFT = DefaultActions.UI_LEFT
-    const val RIGHT = DefaultActions.UI_RIGHT
-    const val CONFIRM = DefaultActions.UI_CONFIRM
-    const val CANCEL = DefaultActions.UI_CANCEL
+    const val UP = UiNavigationActions.UP
+    const val DOWN = UiNavigationActions.DOWN
+    const val LEFT = UiNavigationActions.LEFT
+    const val RIGHT = UiNavigationActions.RIGHT
+    const val CONFIRM = UiNavigationActions.CONFIRM
+    const val CANCEL = UiNavigationActions.CANCEL
     const val NEXT = "ui.next"
     const val PREVIOUS = "ui.prev"
 
     /**
      * Completes the UI context of [map]: registers the tab actions and adds left-stick navigation on top of the
-     * keyboard/d-pad defaults of [DefaultActions]. Safe to call repeatedly; games may rebind afterwards.
+     * keyboard/d-pad defaults of [UiNavigationActions]. Safe to call repeatedly; games may rebind afterwards.
      */
     fun bindDefaults(map: ActionMap) {
-        if (map.definition(UP) == null) DefaultActions.register(map)
+        UiNavigationActions.register(map)
         val ui = InputContext.UI
         map.define(ActionDefinition(NEXT, ui, "Navigation", defaults = listOf(
             ActionBinding.Key(Keys.TAB), ActionBinding.GamepadButton(GamepadConstants.BUTTON_RB))))

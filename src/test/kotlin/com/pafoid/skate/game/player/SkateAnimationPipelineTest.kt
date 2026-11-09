@@ -1,5 +1,7 @@
 package com.pafoid.skate.game.player
 
+import com.pafoid.skate.game.input.FakeActions
+
 import com.pafoid.skate.engine.animation.graph.AnimationControllerAsset
 import com.pafoid.skate.engine.animation.graph.ConditionOp
 import com.pafoid.skate.engine.animation.graph.StateDef
@@ -59,7 +61,7 @@ class SkateAnimationPipelineTest {
 
     private fun on(speed: Float, push: Boolean = false, manual: Boolean = false, rail: Boolean = false, jump: Boolean = false) =
         CharacterInput(
-            sprint = push, crouch = manual, jumpPressed = jump, horizontalSpeed = speed,
+            actions = FakeActions.skate(push = push, manual = manual, ollie = jump), horizontalSpeed = speed,
             groundTag = if (rail) PrefabsGenerator.GRINDABLE_TAG else null,
         )
 

@@ -57,7 +57,7 @@ class CompoundAndMeshColliderTest {
             colliders.forEach { attachComponent(it as com.pafoid.skate.engine.ecs.components.Component) }
         }
 
-    private fun shapeOf(go: GameObject) = world.bodyShape(go.components.filterIsInstance<Collider3D>().map { it to it.toShape() })
+    private fun shapeOf(go: GameObject) = world.bodyShape(BodyDescription.parts(go.components.filterIsInstance<Collider3D>()))
 
     // --- components ---
 

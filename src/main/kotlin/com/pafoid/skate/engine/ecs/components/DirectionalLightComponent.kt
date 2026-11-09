@@ -5,6 +5,11 @@ import kotlinx.serialization.Serializable
 import org.joml.Matrix4f
 import org.joml.Vector3f
 
+/**
+ * A directional light, normally the scene's sun (REN-26): an entity component, so the light has a place in the
+ * hierarchy and the editor draws its arrow there. [com.pafoid.skate.engine.ecs.SceneSun] finds the active one; a
+ * [DayNightCycleComponent] drives its [direction], [color] and [intensity].
+ */
 @Serializable
 data class DirectionalLightComponent(
     @Contextual
@@ -26,7 +31,7 @@ data class DirectionalLightComponent(
     var depthBias: Float = 0.001f,
     var slopeScaledBias: Float = 0.002f,
     var castShadows: Boolean = true
-) : SceneComponent() {
+) : Component() {
 
     override fun reset() {
         direction.set(0f, -1f, 0f)

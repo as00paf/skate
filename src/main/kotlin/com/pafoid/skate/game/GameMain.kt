@@ -38,19 +38,41 @@ fun main(args: Array<String>) {
     val projectManager = ProjectManager(engine)
     // game.settings.json next to the pack: the player's backend choice (AST-12) and locale (GUI-10).
     val settings = GameSettingsStore(GameSettings.fileIn(pack.file.parentFile), engine.logger)
+
+    // Apply the project's startup language as the game's initial locale (GUI-15).
+    if (project.startupLanguage.isNotEmpty() && project.startupLanguage in project.supportedLanguages) {
+        settings.update { it.copy(startupLanguage = project.startupLanguage, supportedLanguages = project.supportedLanguages, locale = project.startupLanguage) }
+    }
+
     val requested = GameGraphics.requested(project.graphicsBackend, settings)
     val window = GameGraphics.start(requested, engine.logger, settings) { backend ->
-        Window(title = project.name, icon = icon, backend = backend)
+        Window(
+            initialWidth = project.resolution.x,
+            initialHeight = project.resolution.y,
+            title = project.name,
+            icon = icon,
+            backend = backend,
+            fullscreen = project.fullscreen,
+            vsync = project.vsync,
+        )
     }.window
 
-    window.windowController.setFullscreen(true)
+    window.windowController.setFullscreen(project.fullscreen)
     engine.start(window.glfwWindow, window.device)
+
+    // Apply the project's physics rate to the engine's fixed time step (GUI-15).
+    if (project.physicsFPS > 0) {
+        engine.systemManager.fixedTimeStep = 1f / project.physicsFPS
+    }
+    SkateGameplay.install(engine)
 
     if (projectManager.openProject(project, binFile, header, headerSize)) {
         // The project's mixer (bus volumes and mutes set in the editor) applies to the exported game too (EDT-14).
         engine.audioEngine.applyConfig(project.gameplaySettings.audio.toConfig())
+        // Apply game-side graphics settings from game.settings.json (overrides project defaults).
+        applyGameGraphicsSettings(settings.settings, project)
         engine.runtimePlaying = true
-        installGameUi(window, settings)
+        installGameUi(window, settings, project)
         window.show(onClose = {
             // Engine first: on Vulkan the device and its window are released right after (VK-01 shutdown order).
             engine.destroy()
@@ -74,7 +96,7 @@ fun main(args: Array<String>) {
  * HUD plus the engine's pause menu (GUI-09), which behaves as in editor Play; only Restart and Quit are the game's:
  * Restart reloads the scene as it was at launch, Quit closes the window.
  */
-private fun installGameUi(window: Window, settings: GameSettingsStore) {
+private fun installGameUi(window: Window, settings: GameSettingsStore, project: Project) {
     val scene = engine.sceneManager.currentScene ?: return
     loadGameStrings()
     // The player's language choice is kept in the same game.settings.json (GUI-10).
@@ -87,6 +109,16 @@ private fun installGameUi(window: Window, settings: GameSettingsStore) {
         hud.resetState()
     }
     engine.pauseActions.quit = { GLFW.glfwSetWindowShouldClose(window.glfwWindow, true) }
+    // Apply the post-processing quality preset from game settings (if any).
+    applyPostProcessQuality(settings.settings.graphicsQuality)
+}
+
+/** Applies the post-processing quality preset to the game's post-process pass. */
+private fun applyPostProcessQuality(qualityName: String?) {
+    if (qualityName == null) return
+    val quality = com.pafoid.skate.engine.render.renderer.passes.PostProcessQuality.fromGraphicsQuality(qualityName)
+    val settings = engine.renderer.renderResources.renderPasses.postProcess.getSettings()
+    com.pafoid.skate.engine.render.renderer.passes.PostProcessQualityPreset.apply(quality, settings)
 }
 
 /** Game UI text ships only inside game.bin (AST-07); nothing is read from the working directory. */
@@ -156,3 +188,45 @@ fun loadProjectAndIcon(binFile: ByteArray, atlas: Atlas, offset: Int): Pair<Proj
 
     return project to icon
 }
+
+/**
+ * Applies graphics settings from [gameSettings] to the engine's static settings.
+ *
+ * This allows the player to override the project's graphics settings via game.settings.json.
+ * When a setting is null, the project's value (or engine default) is kept.
+ */
+private fun applyGameGraphicsSettings(gameSettings: GameSettings, project: Project?) {
+    // Project defaults (only when no game.settings.json override exists)
+    if (gameSettings.graphicsQuality == null && project != null) {
+        val quality = com.pafoid.skate.editor.settings.GraphicsQuality.valueOf(project.graphicsQuality.name)
+        com.pafoid.skate.engine.render.shadow.ShadowSettings.quality = quality.shadowQualityLevel
+        com.pafoid.skate.engine.render.renderer.passes.PostProcessQualityPreset.apply(
+            com.pafoid.skate.engine.render.renderer.passes.PostProcessQuality.fromGraphicsQuality(quality.name),
+            engine.renderer.renderResources.renderPasses.postProcess.getSettings()
+        )
+    }
+    if (gameSettings.msaaSamples == null && project != null) {
+        com.pafoid.skate.engine.render.MsaaSettings.samples = project.msaaSamples.coerceIn(0, 8)
+    }
+    if (gameSettings.textureQuality == null && project != null) {
+        val level = com.pafoid.skate.engine.render.texture.TextureQualityLevel.fromName(project.textureQuality.name)
+        com.pafoid.skate.engine.render.texture.TextureQualitySettings.apply(level, emptyList())
+    }
+
+    // Game settings overrides (when explicitly set in game.settings.json)
+    gameSettings.msaaSamples?.let {
+        com.pafoid.skate.engine.render.MsaaSettings.samples = it.coerceIn(0, 8)
+    }
+    gameSettings.textureQuality?.let {
+        val level = com.pafoid.skate.engine.render.texture.TextureQualityLevel.fromName(it)
+        com.pafoid.skate.engine.render.texture.TextureQualitySettings.apply(level, emptyList())
+    }
+    gameSettings.graphicsQuality?.let {
+        val quality = com.pafoid.skate.editor.settings.GraphicsQuality.valueOf(it)
+        com.pafoid.skate.engine.render.shadow.ShadowSettings.quality = quality.shadowQualityLevel
+        applyPostProcessQuality(it)
+    }
+}
+
+private val com.pafoid.skate.editor.settings.GraphicsQuality.shadowQualityLevel: com.pafoid.skate.engine.render.shadow.ShadowQualityLevel
+    get() = com.pafoid.skate.engine.render.shadow.ShadowQualityLevel.fromName(name)

@@ -1,5 +1,6 @@
 package com.pafoid.skate.engine.render.renderer
 
+import com.pafoid.skate.engine.ecs.SceneSun
 import com.pafoid.skate.engine.assets.data.Shader
 import com.pafoid.skate.engine.assets.data.models.MeshPart
 import com.pafoid.skate.engine.ecs.Scene
@@ -8,6 +9,7 @@ import com.pafoid.skate.engine.ecs.components.DayNightCycleComponent
 import com.pafoid.skate.engine.ecs.components.DirectionalLightComponent
 import com.pafoid.skate.engine.ecs.components.EnvironmentComponent
 import com.pafoid.skate.engine.render.fog.FogUniforms
+import com.pafoid.skate.engine.render.lighting.EnvironmentProbe
 import com.pafoid.skate.engine.getComponent
 import com.pafoid.skate.engine.render.VAOLoader
 import com.pafoid.skate.engine.render.rhi.RhiContext
@@ -93,16 +95,12 @@ class SkyDomeRenderer(private val shader: Shader, private val loader: VAOLoader)
 
         shader.start()
 
-        // Get time component for time of day
-        val dayNightComponent = scene.getComponent<DayNightCycleComponent>()?.takeIf { it.enabled }
-        val timeOfDay = dayNightComponent?.timeOfDay ?: 12.0f
-        val sun = scene.getComponent<DirectionalLightComponent>().takeIf { it?.enabled == true }
+        val dayNightComponent = scene.getComponent<DayNightCycleComponent>()
+        val sun = SceneSun.of(scene)
 
-        // Center on camera
+        // Centred on the camera, turned with the time of day plus the manual offset (the IBL probe uses the same angle)
         modelMatrix.identity().translation(cameraPosition)
-        // Match rotation to sun direction + manual offset
-        val angle = (timeOfDay / 24.0f - 0.5f) * 2.0f * PI.toFloat()
-        modelMatrix.rotateY(-angle + Math.toRadians((environmentComponent.skyRotation ?: 0f).toDouble()).toFloat())
+        modelMatrix.rotateY(EnvironmentProbe.skyRotation(environmentComponent, dayNightComponent))
 
         shader.uploadMat4f(Uniforms.TRANSFORMATION_MATRIX, modelMatrix)
         shader.uploadMat4f(Uniforms.VIEW_MATRIX, camera.view)

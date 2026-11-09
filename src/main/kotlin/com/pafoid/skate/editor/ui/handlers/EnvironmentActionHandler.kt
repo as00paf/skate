@@ -149,7 +149,7 @@ class EnvironmentActionHandler(
                     displayNameKey = "command.environment.set_ambient_light",
                     targetName = null,
                     setter = { ambient: Vector3f ->
-                        event.ambientLightComponent.lightColor.set(ambient)
+                        event.environment.ambientColor.set(ambient)
                     },
                     oldValue = event.oldValue,
                     newValue = event.newValue,
@@ -163,7 +163,7 @@ class EnvironmentActionHandler(
                     displayNameKey = "command.environment.set_ambient_intensity",
                     targetName = null,
                     setter = { intensity: Float ->
-                        event.ambientLightComponent.intensity = intensity
+                        event.environment.ambientIntensity = intensity
                     },
                     oldValue = event.oldValue,
                     newValue = event.newValue,
