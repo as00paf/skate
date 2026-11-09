@@ -1,4 +1,4 @@
-package com.pafoid.skate.engine.physics3d.bullet
+package com.pafoid.skate.engine.physics3d
 
 /** Open-addressing set of non-zero longs that never boxes and reuses its storage after [clear]. */
 internal class LongSet(initialCapacity: Int = 16) {

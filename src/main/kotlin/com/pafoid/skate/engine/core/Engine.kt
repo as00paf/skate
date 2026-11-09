@@ -43,9 +43,11 @@ import com.pafoid.skate.engine.scripting.runtime.ScriptServices
 import com.pafoid.skate.engine.render.ui.UiFont
 import com.pafoid.skate.engine.ui.ReaderUiInputSource
 import com.pafoid.skate.engine.ui.GameLocale
+import com.pafoid.skate.engine.ui.GameOptions
 import com.pafoid.skate.engine.ui.PauseMenuActions
 import com.pafoid.skate.engine.ui.PauseMenuSystem
 import com.pafoid.skate.engine.ui.UiActions
+import com.pafoid.skate.engine.ui.UiMapSystem
 import com.pafoid.skate.engine.render.ui.SdfFont
 import com.pafoid.skate.engine.ui.UiInputSystem
 import com.pafoid.skate.engine.ui.UiLayoutSystem
@@ -79,6 +81,9 @@ class Engine {
     /** Runtime UI text (pause menu, HUD, game widgets) with the game's own locale, never the editor's. */
     val gameStrings = StringManager(logger, logSource = "game")
     val gameLocale = GameLocale(gameStrings)
+
+    /** Game-defined pause menu options (GPL-21); hosts install the game's at startup. */
+    val gameOptions = GameOptions()
     init { assetsManager.attachAsyncLoading(jobSystem, eventSystem) }
     val audioEngine = AudioEngine(logger)
     val inputProvider = InputProvider(logger)
@@ -192,7 +197,7 @@ class Engine {
             },
             ScriptingSystem(
                 logger, eventSystem,
-                ScriptServices(input = ReaderScriptInput(inputSystem.reader), inputContexts = inputSystem.contexts),
+                ScriptServices(input = ReaderScriptInput(inputSystem.reader)),
                 sceneManager = sceneManager,
             ),
         ) + uiSystems(inputSystem)
@@ -214,7 +219,9 @@ class Engine {
         volume = { systemManager.getSystem<AudioSystem>()?.masterVolume ?: 1f },
         setVolume = { v -> systemManager.getSystem<AudioSystem>()?.masterVolume = v },
         defer = defer,
-        inputContexts = { systemManager.getSystem<InputSystem>()?.contexts },
+        // Game options (GPL-21) are saved next to the language choice.
+        options = gameOptions,
+        settings = { gameLocale.store },
     )
 
     private fun uiSystems(inputSystem: InputSystem): List<System> {
@@ -228,6 +235,8 @@ class Engine {
         val pauseMenu = createPauseMenu()
         return listOf(
             pauseMenu,
+            // Map markers are placed before layout (GUI-13).
+            UiMapSystem(),
             UiLayoutSystem(screen = { UiScreenSize(framebuffer.width, framebuffer.height) }),
             UiInputSystem(
                 // The reader's pointer: render-target pixels and game-view buttons, as for picking (INP-09).

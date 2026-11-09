@@ -17,6 +17,7 @@ import com.pafoid.skate.engine.input.InputContext
 import com.pafoid.skate.engine.input.Keys
 import com.pafoid.skate.engine.input.RawInput
 import com.pafoid.skate.engine.input.UiNavigationActions
+import com.pafoid.skate.engine.input.listeners.GamepadConstants
 import com.pafoid.skate.game.player.SkateBehavior
 import com.pafoid.skate.game.player.SkateControllerConfig
 import com.pafoid.skate.game.player.SkateGameplay
@@ -36,6 +37,7 @@ class SkateInputContextTest {
 
     private class FakeRaw : RawInput {
         val keys = mutableSetOf<Int>()
+        val buttons = mutableSetOf<Int>()
         override fun isKeyDown(key: Int) = key in keys
         override fun wasKeyPressed(key: Int) = key in keys
         override fun isMouseButtonDown(button: Int) = false
@@ -45,9 +47,9 @@ class SkateInputContextTest {
         override fun mouseDeltaX() = 0f
         override fun mouseDeltaY() = 0f
         override fun scrollY() = 0f
-        override fun isGamepadConnected(pad: Int) = false
+        override fun isGamepadConnected(pad: Int) = true
         override fun gamepadAxis(axis: Int, pad: Int) = 0f
-        override fun isGamepadButtonDown(button: Int, pad: Int) = false
+        override fun isGamepadButtonDown(button: Int, pad: Int) = button in buttons
         override fun wasGamepadButtonPressed(button: Int, pad: Int) = false
     }
 
@@ -98,14 +100,14 @@ class SkateInputContextTest {
     @Test
     fun mounting_HoldsSkateAboveGameplay_AndTheSameKeysBecomeSkateActions() {
         val rig = Rig()
-        rig.frame() // the first query of an action is never a press
         rig.frame(Keys.E)
         assertTrue(rig.behavior.mounted)
 
-        val top = rig.reader.contexts.entries().first()
-        assertEquals(SkateActions.CONTEXT, top.context)
-        assertEquals(SkateInputContext.PRIORITY, top.priority)
-        assertEquals(ContextBlocking.CONSUME_BOUND, top.blocking)
+        val skate = rig.reader.contexts.entries().first { it.context == SkateActions.CONTEXT }
+        assertEquals(SkateInputContext.PRIORITY, skate.priority)
+        assertEquals(ContextBlocking.CONSUME_BOUND, skate.blocking)
+        // Directly above gameplay, under ui.
+        assertEquals(listOf(InputContext.UI, SkateActions.CONTEXT, InputContext.GAMEPLAY), rig.reader.contexts.entries().map { it.context })
 
         assertEquals("PUSH", rig.frame(Keys.LEFT_SHIFT, Keys.W))
         assertFalse(rig.state.sprintPressed, "sprint is consumed by skate.push")
@@ -116,9 +118,23 @@ class SkateInputContextTest {
     }
 
     @Test
+    fun riding_DoesNotTakeMenuInputAway() {
+        val rig = Rig()
+        rig.frame(Keys.E)
+        assertTrue(rig.skateActive)
+
+        // skate.ollie and ui.confirm share gamepad A; skate sits under ui, so the pause menu still gets it.
+        val top = rig.reader.contexts.entries().first()
+        assertEquals(InputContext.UI, top.context)
+        assertTrue(rig.reader.isContextActive(InputContext.UI))
+        rig.raw.buttons += GamepadConstants.BUTTON_A
+        assertTrue(rig.reader.isActionDown(UiNavigationActions.CONFIRM), "A still confirms in menus")
+        assertTrue(rig.reader.isActionDown(SkateActions.OLLIE), "and still ollies")
+    }
+
+    @Test
     fun dismounting_ReleasesSkate_AndShiftSprintsAgain() {
         val rig = Rig()
-        rig.frame() // the first query of an action is never a press
         rig.frame(Keys.E)
         rig.frame()
         rig.frame(Keys.E)
@@ -207,7 +223,6 @@ class SkateInputContextTest {
         val rig = Rig()
         val system = PlayerMotionSystem(CameraManager(EventSystem()), rig.sampler)
         val scene = Scene("Level")
-        rig.frame() // the first query of an action is never a press
         rig.frame(Keys.E)
         assertTrue(rig.skateActive)
 

@@ -8,6 +8,7 @@ import com.pafoid.skate.engine.ecs.components.RigidBody3D
 import com.pafoid.skate.engine.ecs.systems.SystemManager.ExecutionPriority
 import com.pafoid.skate.engine.gameplay.ActionQuery
 import com.pafoid.skate.engine.gameplay.CharacterInput
+import com.pafoid.skate.engine.gameplay.LookTuning
 import com.pafoid.skate.engine.gameplay.CharacterInputSampler
 import com.pafoid.skate.engine.gameplay.CharacterMotion
 import com.pafoid.skate.engine.gameplay.MotionMath
@@ -54,7 +55,14 @@ class PlayerMotionSystem(
             inputSampler?.leases?.releaseAll()
             return
         }
-        inputSampler?.let { sampler -> inputs.forEach { go -> go.getComponent<InputStateComponent>()?.let(sampler::sample) } }
+        inputSampler?.let { sampler ->
+            sampler.applyPresetsIfChanged()
+            inputs.forEach { go ->
+                val state = go.getComponent<InputStateComponent>() ?: return@forEach
+                // Each character's own look tuning (its config); objects without a controller get the defaults.
+                sampler.sample(state, go.getComponent<PlayerController>()?.behavior?.look ?: LookTuning())
+            }
+        }
 
         seen.clear()
         players.forEach { go ->

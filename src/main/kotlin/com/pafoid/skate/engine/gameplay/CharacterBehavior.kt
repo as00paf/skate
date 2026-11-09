@@ -60,6 +60,9 @@ interface CharacterBehavior {
     /** Ground probing, slope, step and snapping tuning used by the motion system for this character. */
     val ground: GroundConfig get() = GroundConfig()
 
+    /** How strongly look input turns this character's camera (see [CharacterInputSampler]). */
+    val look: LookTuning get() = LookTuning()
+
     fun update(input: CharacterInput, dt: Float): CharacterMotion
 
     /** Fade time in seconds into each animation request / controller state (see [CharacterMotion.animation]). */

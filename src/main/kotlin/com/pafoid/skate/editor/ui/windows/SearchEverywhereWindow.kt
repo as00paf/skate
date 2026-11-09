@@ -484,8 +484,11 @@ data class PaletteCommand(
 }
 
 object PaletteCommands {
-    /** Test Input opens Key Bindings on its Test tab (EDT-51 §3.1, EDT-52I). */
-    const val TEST_INPUT_WINDOW = KeyBindingsWindow.TEST_TAB
+    /**
+     * Test Input opens the input test (EDT-51 §3.1). Until chunk I moves it to Key Bindings › Test, that is the
+     * Input Testing dialog; chunk I points this at its new home.
+     */
+    const val TEST_INPUT_WINDOW = "window.input_testing"
 
     val TEST_INPUT = PaletteCommand(
         id = "palette.test_input",

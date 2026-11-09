@@ -39,7 +39,7 @@ class WindowRegistry(
         ProjectSettingsWindow(engine, editor.settingsManager, projectManager),
         KeyBindingsWindow(engine, editor.settingsManager, engine.stringManager, projectManager),
         CommandHistoryWindow(engine, editor.undoRedoManager),
-        RenderGraphWindow(engine, editor.settingsManager),
+        RenderGraphWindow(engine),
         SearchEverywhereWindow(engine, projectManager::getProjectDirectory),
         ProjectWizardWindow(engine),
         ProjectSwitcherDialog(engine, editor.settingsManager),

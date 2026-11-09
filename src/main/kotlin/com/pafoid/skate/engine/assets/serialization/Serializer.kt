@@ -1,7 +1,6 @@
 package com.pafoid.skate.engine.assets.serialization
 
 import com.pafoid.skate.engine.assets.AssetPaths
-import com.pafoid.skate.engine.ecs.components.AmbientLightComponent
 import com.pafoid.skate.engine.ecs.components.Animator
 import com.pafoid.skate.engine.ecs.components.AudioComponent
 import com.pafoid.skate.engine.ecs.components.AudioListener
@@ -48,6 +47,8 @@ import com.pafoid.skate.engine.ui.UICanvasComponent
 import com.pafoid.skate.engine.ui.UIElementComponent
 import com.pafoid.skate.engine.ui.UIImageComponent
 import com.pafoid.skate.engine.ui.UIListComponent
+import com.pafoid.skate.engine.ui.UIMapComponent
+import com.pafoid.skate.engine.ui.UIMapMarkerComponent
 import com.pafoid.skate.engine.ui.UIProgressBarComponent
 import com.pafoid.skate.engine.ui.UISliderComponent
 import com.pafoid.skate.engine.ui.UITextComponent
@@ -109,8 +110,7 @@ class Serializer(val assetPaths: AssetPaths = AssetPaths()) {
             subclass(LoopbackPredictionComponent::class)
 
             // Light components
-            subclass(AmbientLightComponent::class)//Scene component
-            subclass(DirectionalLightComponent::class)//Scene component
+            subclass(DirectionalLightComponent::class)
             subclass(PointLightComponent::class)
             subclass(SpotLightComponent::class)
 
@@ -136,6 +136,8 @@ class Serializer(val assetPaths: AssetPaths = AssetPaths()) {
             subclass(UISliderComponent::class)
             subclass(UIProgressBarComponent::class)
             subclass(UIListComponent::class)
+            subclass(UIMapComponent::class)
+            subclass(UIMapMarkerComponent::class)
 
             // Custom
             subclass(PlayerController::class)

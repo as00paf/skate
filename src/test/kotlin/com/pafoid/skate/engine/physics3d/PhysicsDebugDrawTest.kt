@@ -9,7 +9,6 @@ import com.pafoid.skate.engine.ecs.components.ScenePhysicsComponent
 import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.ecs.systems.PhysicsSystem
 import com.pafoid.skate.engine.ecs.systems.SystemManager
-import com.pafoid.skate.engine.physics3d.bullet.BulletPhysics3D
 import com.pafoid.skate.engine.physics3d.native.NativeLibraryLoader
 import com.pafoid.skate.engine.render.renderer.DebugRenderer
 import io.mockk.clearMocks
@@ -20,6 +19,8 @@ import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.MethodSource
 
 /** Regression tests for PHY-10: the physics debug view must emit collider wireframes. */
 class PhysicsDebugDrawTest {
@@ -52,9 +53,10 @@ class PhysicsDebugDrawTest {
         return manager to physics
     }
 
-    @Test
-    fun debugDraw_Enabled_DrawsBoxWireframe() {
-        val physics = BulletPhysics3D(debugRenderer)
+    @ParameterizedTest
+    @MethodSource("com.pafoid.skate.engine.physics3d.PhysicsBackends#core")
+    fun debugDraw_Enabled_DrawsBoxWireframe(backend: PhysicsBackend) {
+        val physics = PhysicsBackends.create(backend, debugRenderer)
         physics.add(boxObject())
         physics.debugEnabled = true
 
@@ -64,9 +66,10 @@ class PhysicsDebugDrawTest {
         physics.destroy()
     }
 
-    @Test
-    fun debugDraw_Disabled_DrawsNothing() {
-        val physics = BulletPhysics3D(debugRenderer)
+    @ParameterizedTest
+    @MethodSource("com.pafoid.skate.engine.physics3d.PhysicsBackends#core")
+    fun debugDraw_Disabled_DrawsNothing(backend: PhysicsBackend) {
+        val physics = PhysicsBackends.create(backend, debugRenderer)
         physics.add(boxObject())
 
         physics.debugDraw(0f)

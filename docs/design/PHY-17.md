@@ -1,7 +1,7 @@
 # PHY-17 – Jolt physics backend (design note)
 
-Status: **awaiting approval**. This is phase 1 only; it adds no code. Once approved, the lead splits the slices in
-[Implementation slices](#implementation-slices) into tasks.
+Status: **approved** (skate-lead and the human, 2026-11-06). Slices a to e are implemented (f waits for EDT-59); see
+[Decisions](#decisions-after-review) and [Implementation notes](#implementation-notes-slices-a-to-e).
 
 ## Goal
 
@@ -13,7 +13,7 @@ queries.
 Done when (from the backlog): the physics test suite passes on Jolt as well as on Bullet, and the Feature Showcase
 runs on Jolt.
 
-Out of scope here (possible follow-ups, see [Open questions](#open-questions)): Jolt's own `Ragdoll`,
+Out of scope here (follow-ups filed as PHY-19): Jolt's own `Ragdoll`,
 `VehicleConstraint` and `CharacterVirtual`, the heightfield shape (PHY-15), buoyancy (PHY-16), and making Jolt the
 default backend.
 
@@ -42,13 +42,14 @@ default backend.
 | Our own JNI/LWJGL-style binding | Rejected. A large C++ build to maintain on every platform. |
 | Wait for an LWJGL Jolt module | None exists. |
 
-Licences: Jolt is MIT and jolt-jni is BSD-3-Clause (check again when we pin the version). Both go into the
-third-party notices that the export copies, next to libbulletjme's.
+Licences: Jolt and jolt-jni are both MIT (checked on the jolt-jni 6.2.0 POM). Both go into the third-party notices
+that the export copies, next to libbulletjme's.
 
 ### Version pinning
 
-Pin one exact jolt-jni release in `gradle/libs.versions.toml` (`joltjni = "x.y.z"`, at least two weeks old when
-pinned). jolt-jni is still pre-1.0, so its API can change between minor versions. Upgrades are explicit tasks that
+Pinned: **jolt-jni 6.2.0** (released 2026-10-14; 7.0.0 from 2026-10-26 was too new under the two-week rule), as
+`com.github.stephengold:jolt-jni-Windows64:6.2.0` for the classes plus its `ReleaseSp` classifier for
+`windows/x86-64/com/github/stephengold/joltjni.dll`. jolt-jni is still pre-1.0, so its API can change between minor versions. Upgrades are explicit tasks that
 re-run the parity suite.
 
 ### Process and world lifecycle
@@ -76,7 +77,7 @@ thread that calls `step`. Only the contact listener runs on Jolt workers, and it
 ## 2. Native packaging for editor and exported games
 
 Today `NativeLibraryLoader` hard-codes `bulletjme` and the libbulletjme jar paths. Bullet runs from the `SpDebug`
-runtime classifier.
+runtime classifier (since PHY-20: `SpRelease`).
 
 Plan:
 
@@ -136,7 +137,7 @@ already enforce for Bullet.
 | `setAngularFactor` | per-axis factor | `EAllowedDofs`. Engine code only uses 0/1 per axis (`RigidBody3D` locks to Y). A factor of 0 locks the axis, anything else frees it. Fractional values log a one-time warning. |
 | CCD (`useCCD`) | swept sphere | `EMotionQuality.LinearCast`. The threshold and radius are ignored, since Jolt sizes the cast itself. |
 | Sleeping | `activate(true)` | Every setter that changes pose, velocity or forces activates the body. |
-| Centre of mass | body origin (compounds are **not** recentred) | Jolt puts the COM at the shape's true centre of mass. **Decision needed** (see Open questions): use the physical COM (recommended, more correct) or wrap shapes in `OffsetCenterOfMassShape` to pin the COM to the origin for exact parity. Either way, `getLocation` returns the body **origin** (`getPosition`, not `getCenterOfMassPosition`), so `Transform` sync does not change. |
+| Centre of mass | body origin (compounds are **not** recentred) | Jolt puts the COM at the shape's true centre of mass. **Decided:** use the physical COM. Either way, `getLocation` returns the body **origin** (`getPosition`, not `getCenterOfMassPosition`), so `Transform` sync does not change. |
 | User data | `userObject = go` | `body.userData = handleIndex`, an index into a Kotlin-side table of `GameObject`/handle entries. The index is resolved on the main thread. |
 | `rigidBodyCount` | `countRigidBodies()` | `PhysicsSystem.getNumBodies()` |
 
@@ -323,7 +324,112 @@ Rough effort: about 8–10 agent days in total. Slices b and d are the largest.
   values may need a second look when a project switches backend. That is why Bullet stays the default.
 - **Read-only install folders:** extraction to `USER_DIR` (both backends). Separate follow-up.
 
-## Open questions
+## Decisions after review
+
+1. **Centre of mass:** use Jolt's physical COM. `getLocation` still returns the body origin.
+2. **Exports:** ship both natives now; AST-15 strips the unused one.
+3. **Default backend:** Bullet stays the default.
+4. **Follow-ups:** Jolt-native ragdoll, vehicle and character controller are filed as PHY-19 (P3, design note later).
+5. **Extraction folder:** filed as PHY-18.
+
+## Implementation notes (slices a to e)
+
+- **Slice a:** `BodyDescription` (shared body mapping, used by Bullet), `NativeLibrarySpec` (per-library loader,
+  `loadNativeLibrary()` returns success), `ShapeWireframe` moved to `physics3d/`, and the `PhysicsBackends` test helper.
+  No behaviour change.
+- **Slice b:** `physics3d/jolt/` (`JoltRuntime`, `JoltPhysics3D`, `JoltRigidBodyHandle`, `JoltShapes`, `JoltLayers`,
+  `JoltConversions`) behind `PhysicsBackend.JOLT`. Found while testing:
+  - Jolt mesh triangles only collide on their front face during simulation. Each `TriangleMesh` is built as a static
+    compound of the mesh and its reversed copy (two meshes, so each keeps its internal-edge detection), which matches
+    Bullet's two-sided meshes.
+  - Changing a body's layer, mask or trigger flag wakes it, otherwise a sleeping body ignores the new filter.
+  - jolt-jni exposes `CombineFunction.product`, so friction and restitution combine like Bullet without a contact
+    callback.
+  - Standalone bodies (`createRigidBody`, anchors) use Bullet's defaults: layer 1, mask 1.
+  - Not implemented in slice b: contact and trigger events (done in 17c), joints (17d), debug draw (17e).
+  - Fallback: `Physics3DFactory.create(..., onFallback)` returns Bullet when Jolt cannot load; `PhysicsSystem`
+    publishes `PhysicsBackendFellBack`.
+- **Slice c (contacts and triggers):** `JoltContacts`. Callbacks on Jolt worker threads only append records to a
+  locked buffer; the stepping thread works out starts and ends after each step and dispatches last. Found while
+  testing:
+  - Jolt reports a contact as removed when its bodies fall asleep; Bullet keeps reporting it. The touching set is
+    rebuilt each step from the added and persisted callbacks, and a pair whose two bodies are both asleep stays
+    touching. A body sleeping in a trigger does not exit, and a resting body that wakes does not start again.
+  - The manifold has no contact points, so the point comes from the validate callback (point on body b). Without
+    one (a woken pair) it falls back to the midpoint of the two bodies.
+  - The impulse is an estimate (approach speed × effective mass). Bullet reports 0 at contact start because its
+    impulse is solved after the event, so the contract only requires impulse ≥ 0.
+  - As in Bullet, a dynamic trigger is held kinematic (also when toggled at runtime), and kinematic bodies collide
+    with static ones (`collideKinematicVsNonDynamic` on every moving body), so kinematic-vs-ground contacts and
+    triggers detecting statics behave the same.
+  - A mass-change rebuild carries the body's contact pairs over (Bullet keys pairs by GameObject).
+  - `LongSet` moved to `physics3d/` so both backends share it.
+- **Slice d (joints, ragdoll, vehicle):** `JoltJoints`. Descriptor pivots and axes (local to each body's origin)
+  are converted to world space through the bodies' poses when the joint is created and given to Jolt in
+  `EConstraintSpace.WorldSpace`, so the physical-COM decision needs no pivot correction. Bullet conventions kept:
+  - Fixed: identity frames on both bodies (the bodies keep the same orientation), like Bullet's 6-DOF fixed joint.
+  - Hinge: zero angle from Bullet's `btPlaneSpace1` normal, rotated onto axis B. Jolt needs min ≤ 0 ≤ max within
+    [-π, π], so limits are clamped; lower > upper means free.
+  - Slider: limits negated and swapped (Jolt measures B relative to A); clamped to contain 0; the frame's Y axis
+    locks rotation, as Bullet's slider frame does.
+  - Cone twist → swing-twist: twist axis = frame X, `swingSpan1` about Z (normal half-cone), `swingSpan2` about Y
+    (plane half-cone), twist ±`twistSpan`.
+  - 6-DOF: Bullet's per-axis rule (equal = fixed, lower > upper = free, else limited), pyramid swing limits.
+  - Removing a body first removes the joints that use it (Jolt would keep a dangling body); a removed descriptor can
+    be added again. Joints wake their bodies when added or removed.
+  - Ragdolls (`RagdollBuilder`, `RagdollSystem`) and the raycast vehicle needed no Jolt-specific code.
+- **Slice e (debug draw, stats, leaks, determinism, benchmark):**
+  - `JoltDebugDraw` draws every body from its `ShapePart`s, so the result looks like the Bullet view: boxes and
+    cylinders through the renderer's primitives (a capsule as a cylinder spanning its caps), hulls and meshes as
+    feature edges from the shared `ShapeWireframe`, cached per body. Hulls above `ShapeWireframe.MAX_HULL_POINTS` use
+    Jolt's debug mesh, aligned to the input points' bounds.
+  - `IPhysics3D.activeBodyCount` (awake, non-static bodies) is implemented by Bullet and Jolt; it defaults to the body
+    count. `EngineStats.physicsStepTime` still times the native step only (event dispatch excluded) on both.
+  - Leaks: `JoltLifecycleTest` creates, fills (67 bodies, a joint, a contact listener), steps and destroys 50 worlds.
+    Every native object a world owns is freed, and committed memory and thread count stay flat after warm-up. Each
+    world holds a 16 MB temp allocator and a thread pool, so a leak would show as hundreds of MB and 100+ threads.
+  - Determinism: two single-thread runs of the same 300-step scene give bit-identical poses.
+
+### Benchmark (manual, 2026-11-06; Bullet release native since PHY-20)
+
+`PhysicsBenchmarkTest`, skipped unless `SKATE_BENCHMARK=1`:
+`cmd.exe /c "set SKATE_BENCHMARK=1&& gradlew.bat :test --tests com.pafoid.skate.engine.physics3d.PhysicsBenchmarkTest --rerun"`.
+It writes build/reports/physics-benchmark.md. The table shows `EngineStats.physicsStepTime` per fixed step (60 Hz)
+over 600 measured steps after a 60-step warm-up, on a 16-core Windows machine. Both backends use release natives
+(Bullet `SpRelease`, Jolt `ReleaseSp`); Jolt used 4 solver threads, Bullet one. The vehicle solver's own time is
+excluded on both.
+
+| Scene | Backend | Mean ms | p50 ms | p95 ms | Max ms | Active / bodies at end |
+|---|---|---|---|---|---|---|
+| 1000-box pile | Bullet | 0.97 | 0.32 | 5.43 | 17.23 | 0 / 1001 |
+| 1000-box pile | Jolt | 1.24 | 1.14 | 2.15 | 6.63 | 800 / 1001 |
+| 50 ragdolls (650 bones, 600 joints) | Bullet | 2.84 | 2.71 | 3.99 | 5.81 | 650 / 651 |
+| 50 ragdolls (650 bones, 600 joints) | Jolt | 1.39 | 1.24 | 2.73 | 6.91 | 247 / 651 |
+| 20 raycast vehicles | Bullet | 0.03 | 0.02 | 0.05 | 0.28 | 20 / 21 |
+| 20 raycast vehicles | Jolt | 0.05 | 0.05 | 0.07 | 0.11 | 20 / 21 |
+
+A second run gave the same picture (mean Bullet 0.71 / 2.46 / 0.02 ms, Jolt 1.18 / 1.35 / 0.04 ms).
+
+Reading:
+- **Box pile:** Bullet's mean and median are lower because its pile falls asleep (0 active at the end) while Jolt's
+  stays mostly awake (one large island has to be still as a whole before it sleeps). During the collapse, Bullet's
+  spikes are 2–3× Jolt's (p95 5.4 vs 2.2 ms, max 17 vs 7 ms), which matters more for frame pacing.
+- **Ragdolls:** Jolt is about 2× faster, and lets most bones sleep where Bullet keeps all 650 awake.
+- **Vehicles:** both are negligible; Bullet's single-threaded step has less fixed overhead on tiny scenes.
+- Ragdoll bones start stacked along a line and are pulled into shape by their joints. This is a load test, not a
+  realistic ragdoll.
+
+Before PHY-20, the build shipped libbulletjme's **SpDebug** native. The same benchmark then gave Bullet mean
+3.80 ms (box pile), 12.53 ms (ragdolls) and 0.10 ms (vehicles), 4–5× slower than the release build.
+
+- Tests on Bullet and Jolt: `PhysicsFeaturesTest` (core and contact cases), `PhysicsCalibrationTest`,
+  `FrictionPropagationTest`, `JointConstraintsTest`, `RagdollBuilderTest`, `PhysicsSystemRagdollTest`,
+  `RaycastVehicleTest` and `PhysicsDebugDrawTest` (backend cases). Jolt only: `JoltPhysics3DTest`, `JoltContactsTest`,
+  `JoltJointsTest`, `JoltDebugDrawTest`, `JoltLifecycleTest`, `JoltConversionsTest`, `LayerSlotsTest` and
+  `JoltBackendGuardTest`. `tools/scripts/verify-game-jar.sh` checks that both natives ship in the game jar.
+
+## Open questions (answered above)
+
 
 For the human or the lead:
 

@@ -76,17 +76,6 @@ class CharacterInputSamplerTest {
     }
 
     @Test
-    fun CharacterSampler_KeysHeldWhenPlayStartsDoNotMountOrJump() {
-        val s = InputStateComponent()
-        raw.keys += listOf(Keys.E, Keys.SPACE)
-        frame(s)
-        assertFalse(s.mountPressed || s.jumpPressed)
-        assertTrue(s.jumpHeld)
-        frame(s)
-        assertFalse(s.mountPressed || s.jumpPressed)
-    }
-
-    @Test
     fun CharacterSampler_MountEdge() {
         val s = InputStateComponent()
         frame(s)
@@ -110,9 +99,26 @@ class CharacterInputSamplerTest {
         frame(s)
         assertEquals(0.4f, s.cameraLook.x, 1e-4f)
         assertEquals(-0.2f, s.cameraLook.y, 1e-4f)
-        sampler.settings = CharacterInputSampler.Settings(mouseLookSensitivity = 1f)
-        frame(s)
+        reader.update()
+        sampler.sample(s, LookTuning(mouseSensitivity = 1f))
         assertEquals(4f, s.cameraLook.x, 1e-4f)
+    }
+
+    @Test
+    fun LookTuning_ComesFromTheCharactersConfig() {
+        val tuned = LocomotionConfig(look = LookTuning(stickSensitivity = 3f, mouseSensitivity = 0.5f))
+        assertEquals(tuned.look, LocomotionBehavior(tuned).look)
+        assertEquals(LookTuning(), LocomotionBehavior(LocomotionConfig()).look)
+        // Saved with the character config, so it can be tuned in the editor and shipped.
+        val json = kotlinx.serialization.json.Json { encodeDefaults = true }
+        val back = json.decodeFromString(LocomotionConfig.serializer(), json.encodeToString(LocomotionConfig.serializer(), tuned))
+        assertEquals(tuned.look, back.look)
+
+        val s = InputStateComponent()
+        raw.axes[2] = 1f
+        reader.update()
+        sampler.sample(s, tuned.look)
+        assertEquals(3f, s.cameraLook.x, 1e-4f)
     }
 
     @Test

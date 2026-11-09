@@ -59,9 +59,21 @@ class InputContextStackTest {
     }
 
     @Test
+    fun ContextStack_BaseUiSitsAboveGameContexts() {
+        val s = InputContextStack.withDefaults()
+        s.push(vehicle, priority = 10)
+
+        assertEquals(listOf(InputContext.UI, vehicle, InputContext.GAMEPLAY), s.entries().map { it.context })
+        val r = s.resolve { if (it == vehicle) setOf("pad:0") else emptySet() }
+        assertEquals(emptySet<String>(), r[InputContext.UI], "a game context never hides ui sources")
+        assertEquals(setOf("pad:0"), r[InputContext.GAMEPLAY])
+    }
+
+    @Test
     fun ContextStack_AllBlockingSilencesLowerContexts() {
         val s = InputContextStack.withDefaults()
-        val h = s.push(menu, priority = 100, blocking = ContextBlocking.ALL)
+        // A modal goes above the base ui entry to silence everything, ui included.
+        val h = s.push(menu, priority = InputContextStack.UI_PRIORITY + 100, blocking = ContextBlocking.ALL)
         assertTrue(s.isActive(menu))
         assertFalse(s.isActive(InputContext.GAMEPLAY))
         assertEquals(setOf(menu), s.resolve { emptySet() }.keys)

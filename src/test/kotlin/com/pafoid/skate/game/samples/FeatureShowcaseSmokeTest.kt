@@ -54,6 +54,8 @@ import com.pafoid.skate.engine.ui.UIElementComponent
 import com.pafoid.skate.engine.ui.UiInputFrame
 import com.pafoid.skate.engine.ui.UiInputSystem
 import com.pafoid.skate.engine.ui.UiLayoutSystem
+import com.pafoid.skate.engine.ui.UiMapSystem
+import com.pafoid.skate.engine.ui.MapTransform
 import com.pafoid.skate.engine.ui.UiScreenSize
 import io.mockk.every
 import io.mockk.mockk
@@ -147,6 +149,7 @@ class FeatureShowcaseSmokeTest {
             physics, PhysicsFrameSystem(physics),
             AnimationSystem(), ParticleSystem(), LoopbackPredictionSystem(),
             CameraControlSystem { FlyInput() },
+            UiMapSystem(),
             UiLayoutSystem(screen = { UiScreenSize(1920, 1080) }),
             pauseMenu,
             UiInputSystem { pointer }.also { it.onUnhandledCancel = pauseMenu::open },
@@ -330,7 +333,7 @@ class FeatureShowcaseSmokeTest {
     @Test
     @Order(7)
     fun Showcase_UiLegend_EveryButtonIsBoundAndFliesTheCameraToItsArea() {
-        val canvas = scene.children.single { it.getComponent<UICanvasComponent>() != null && it.name != PauseMenu.NAME }
+        val canvas = overlay()
         val scale = canvas.getComponent<UICanvasComponent>()!!.scale
         val focus = obj("Camera").getComponent<CameraFocusComponent>()!!
         val camera = obj("Camera").getComponent<Transform>()!!
@@ -376,6 +379,52 @@ class FeatureShowcaseSmokeTest {
         assertTrue(!pauseMenu.isOpen && !systems.paused, "Esc did not resume")
         repeat(10) { frame() }
         assertEquals(time + 10 * DT, animator.currentTime, 1e-3f, "animation did not continue from where it paused")
+    }
+
+    /** GUI-13: the minimap follows the camera ("you"); Map opens the full map with you at the camera; Esc closes it. */
+    @Test
+    @Order(10)
+    fun Showcase_Map_ShowsTheCameraLive_AndOpensAndClosesTheFullMap() {
+        val camera = obj("Camera").getComponent<Transform>()!!
+        val canvas = overlay()
+        val minimap = canvas.children.single { it.name == FeatureShowcase.MINIMAP }
+        frame()
+        val mini = minimap.rect()
+        val youMini = minimap.children.single { it.name == "You" }.rect()
+        assertEquals(mini.centerX, youMini.centerX, 0.5f, "the minimap is centred on the camera")
+        assertEquals(mini.centerY, youMini.centerY, 0.5f)
+
+        val mapCanvas = obj(FeatureShowcase.MAP_CANVAS).getComponent<UICanvasComponent>()!!
+        assertTrue(!mapCanvas.visible)
+        click(canvas, FeatureShowcase.MAP_BUTTON)
+        assertTrue(mapCanvas.visible, "the Map button did not open the full map")
+        val full = obj(FeatureShowcase.MAP_CANVAS).children.single { it.name == "FullMap" }
+        repeat(2) { frame() }
+        val rect = full.rect()
+        val t = MapTransform(FeatureShowcase.MAP_WORLD, rect.w, rect.h)
+        val you = full.children.single { it.name == "You" }.rect()
+        assertEquals(rect.x + t.toMapX(camera.translation.x), you.centerX, 0.5f)
+        assertEquals(rect.y + t.toMapY(camera.translation.z), you.centerY, 0.5f)
+
+        frame(UiInputFrame(cancel = true))
+        assertTrue(!mapCanvas.visible, "Esc did not close the full map")
+        assertTrue(!pauseMenu.isOpen, "Esc closed the map, it must not also open the pause menu")
+    }
+
+    private fun overlay() = scene.children.single {
+        it.getComponent<UICanvasComponent>() != null && it.name != PauseMenu.NAME && it.name != FeatureShowcase.MAP_CANVAS
+    }
+
+    private fun GameObject.rect() = getComponent<UIElementComponent>()!!.rect
+
+    private fun click(canvas: GameObject, name: String) {
+        val scale = canvas.getComponent<UICanvasComponent>()!!.scale
+        val rect = canvas.children.single { it.name == name }.rect()
+        val x = (rect.x + rect.w / 2f) * scale
+        val y = (rect.y + rect.h / 2f) * scale
+        frame(UiInputFrame(x, y))
+        frame(UiInputFrame(x, y, pointerDown = true, pointerPressed = true))
+        frame(UiInputFrame(x, y, pointerDown = false, pointerReleased = true))
     }
 
     /** EDT-17: the generated project holds the `.skmat`, and the loaded scene took the material from it. */

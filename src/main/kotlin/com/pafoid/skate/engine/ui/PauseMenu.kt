@@ -7,10 +7,6 @@ import com.pafoid.skate.engine.ecs.systems.System
 import com.pafoid.skate.engine.ecs.systems.SystemManager.ExecutionPriority
 import com.pafoid.skate.engine.ecs.systems.SystemPhase
 import com.pafoid.skate.engine.getComponent
-import com.pafoid.skate.engine.input.ContextBlocking
-import com.pafoid.skate.engine.input.ContextHandle
-import com.pafoid.skate.engine.input.InputContext
-import com.pafoid.skate.engine.input.InputContextStack
 import org.joml.Vector4f
 
 /** What Restart and Quit do on the current host (GUI-09); everything else in the pause menu is shared. */
@@ -35,6 +31,13 @@ object PauseMenu {
     const val QUIT = "Quit"
     const val VOLUME = "Volume"
 
+    /** Name prefix of the rows of game options ([GameOption]), placed after Language. */
+    const val OPTION_PREFIX = "Option:"
+    const val PANEL = "Panel"
+    /** Panel height without game options, and what each option row adds (button height + spacing). */
+    const val PANEL_HEIGHT = 744f
+    const val OPTION_ROW_HEIGHT = 104f
+
     fun create(): GameObject = GameObject(NAME).apply {
         addComponent(UICanvasComponent(sortOrder = 100, visible = false, modal = true))
         addComponent(UIElementComponent().stretched())
@@ -42,7 +45,7 @@ object PauseMenu {
             addComponent(UIElementComponent().stretched())
             addComponent(UIImageComponent(tint = Vector4f(0f, 0f, 0f, 0.6f)))
         })
-        addChild(GameObject("Panel").apply {
+        addChild(GameObject(PANEL).apply {
             addComponent(
                 UIElementComponent(
                     layout = UiLayoutGroup(
@@ -50,7 +53,7 @@ object PauseMenu {
                         paddingLeft = 40f, paddingTop = 40f, paddingRight = 40f, paddingBottom = 40f,
                         spacing = 24f, fillCross = true,
                     )
-                ).placed(0.5f, 0.5f, 0f, 0f, 640f, 744f)
+                ).placed(0.5f, 0.5f, 0f, 0f, 640f, PANEL_HEIGHT)
             )
             addComponent(UIImageComponent(tint = Vector4f(0.1f, 0.1f, 0.14f, 0.95f)))
             addChild(text("Title", "pause.title", 64f).also { it.getComponent<UIElementComponent>()!!.height = 90f })
@@ -71,7 +74,7 @@ object PauseMenu {
      * exported game must produce the same list (GUI-12).
      */
     fun definition(menu: GameObject): List<PauseMenuEntry> {
-        val panel = find(menu, "Panel") ?: return emptyList()
+        val panel = find(menu, PANEL) ?: return emptyList()
         return panel.children.map { go ->
             val height = go.getComponent<UIElementComponent>()?.height ?: 0f
             val button = go.getComponent<UIButtonComponent>()
@@ -99,6 +102,9 @@ object PauseMenu {
         addComponent(UITextComponent(key = key, fontSize = size, alignX = alignX))
     }
 
+    /** The pause menu row of [option] showing [value]. */
+    fun optionButton(option: GameOption, value: String): GameObject = button(OPTION_PREFIX + option.id, option.labelKey(value))
+
     private fun button(name: String, labelKey: String) = GameObject(name).apply {
         addComponent(UIElementComponent(height = 80f))
         addComponent(UIButtonComponent(labelKey = labelKey, fontSize = 44f))
@@ -113,9 +119,6 @@ object PauseMenu {
  * [UiInputSystem.onUnhandledCancel]); cancel or Resume closes it. Opening calls [setFrozen] (true), which pauses the
  * simulation, animation and audio; closing unfreezes. Restart and Quit go through [defer] so the host can run them
  * after the frame, outside the system update (they may switch scenes or stop Play).
- *
- * While open, the menu also holds `ui` on the input context stack from [inputContexts] with [ContextBlocking.ALL]
- * (INP-10), so gameplay, character and script contexts read nothing, and keys held when it closes are not new presses.
  */
 class PauseMenuSystem(
     private val setFrozen: (Boolean) -> Unit,
@@ -124,7 +127,10 @@ class PauseMenuSystem(
     private val volume: () -> Float = { 1f },
     private val setVolume: (Float) -> Unit = {},
     private val defer: (() -> Unit) -> Unit = { it() },
-    private val inputContexts: () -> InputContextStack? = { null },
+    /** Game options shown after Language (GPL-21); none by default. */
+    private val options: GameOptions = GameOptions(),
+    /** Where option choices are saved (null: kept for this session only). */
+    private val settings: () -> GameSettingsStore? = { null },
 ) : System(priority = ExecutionPriority.LATE) {
 
     override val phase = SystemPhase.LATE_UPDATE
@@ -136,8 +142,6 @@ class PauseMenuSystem(
     private val slider = PauseMenu.find(menu, PauseMenu.VOLUME)!!.getComponent<UISliderComponent>()!!
 
     val isOpen: Boolean get() = canvas.visible
-
-    private var modalInput: ContextHandle? = null
 
     init {
         canvas.onCancel = { close() }
@@ -153,8 +157,49 @@ class PauseMenuSystem(
 
     private fun button(name: String) = PauseMenu.find(menu, name)!!.getComponent<UIButtonComponent>()!!
 
+    private val chosen = HashMap<String, String>()
+    private var builtOptions = -1
+
+    /** The current value of [option]: saved in the settings, else chosen this session, else its default. */
+    fun valueOf(option: GameOption): String =
+        option.valid(settings()?.settings?.options?.get(option.id) ?: chosen[option.id])
+
+    /** Cycles [option] to its next value, saves it, applies it and relabels its row. */
+    fun cycle(option: GameOption) {
+        val value = option.next(valueOf(option))
+        chosen[option.id] = value
+        settings()?.update { it.copy(options = it.options + (option.id to value)) }
+        option.apply(value)
+        PauseMenu.find(menu, PauseMenu.OPTION_PREFIX + option.id)?.getComponent<UIButtonComponent>()?.labelKey = option.labelKey(value)
+    }
+
+    /** Rebuilds the option rows when options were registered since, and applies every option's current value. */
+    private fun syncOptions() {
+        if (builtOptions == options.revision) return
+        builtOptions = options.revision
+        val panel = PauseMenu.find(menu, PauseMenu.PANEL) ?: return
+        panel.children.filter { it.name.startsWith(PauseMenu.OPTION_PREFIX) }.forEach(panel::removeChild)
+        val at = panel.children.indexOfFirst { it.name == PauseMenu.LANGUAGE } + 1
+        options.all.forEachIndexed { i, option ->
+            val row = PauseMenu.optionButton(option, valueOf(option))
+            row.getComponent<UIButtonComponent>()!!.onClick = { cycle(option) }
+            panel.addChild(row, at + i)
+        }
+        panel.getComponent<UIElementComponent>()?.height = PauseMenu.PANEL_HEIGHT + options.all.size * PauseMenu.OPTION_ROW_HEIGHT
+        applyOptions()
+    }
+
+    private fun applyOptions() = options.all.forEach { it.apply(valueOf(it)) }
+
+    private fun relabelOptions() = options.all.forEach { option ->
+        PauseMenu.find(menu, PauseMenu.OPTION_PREFIX + option.id)?.getComponent<UIButtonComponent>()?.labelKey = option.labelKey(valueOf(option))
+    }
+
     override fun init(scene: Scene) {
         super.init(scene)
+        // Each scene load (Play, Restart, game start) applies the saved option values.
+        syncOptions()
+        applyOptions()
         // SystemManager.loadScene clears the pause, so the menu must not stay open over the new scene.
         close()
         // Another scene (Restart reloads it): the menu moves there on the next playing frame.
@@ -165,29 +210,23 @@ class PauseMenuSystem(
     fun open() {
         if (isOpen || !scene.isRunning) return
         attach()
+        syncOptions()
+        relabelOptions()
         slider.value = volume().coerceIn(slider.min, slider.max)
         canvas.visible = true
         setFrozen(true)
-        if (modalInput == null) {
-            modalInput = inputContexts()?.push(InputContext.UI, MODAL_PRIORITY, ContextBlocking.ALL, owner = "pause-menu")
-        }
     }
 
     fun close() {
-        releaseInput()
         if (!isOpen) return
         canvas.visible = false
         setFrozen(false)
     }
 
-    private fun releaseInput() {
-        modalInput?.let { inputContexts()?.pop(it) }
-        modalInput = null
-    }
-
     fun toggle() = if (isOpen) close() else open()
 
     override fun update(dt: Float) {
+        syncOptions()
         if (scene.isRunning) {
             attach()
         } else {
@@ -202,13 +241,7 @@ class PauseMenuSystem(
     }
 
     override fun destroy() {
-        releaseInput()
         menu.parent?.removeChild(menu)
         super.destroy()
-    }
-
-    companion object {
-        /** Above any gameplay, character or script context. */
-        const val MODAL_PRIORITY = 1_000_000
     }
 }

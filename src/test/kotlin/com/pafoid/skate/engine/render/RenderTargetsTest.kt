@@ -20,7 +20,7 @@ class RenderTargetsTest {
 
     @Test
     fun FrameBuffer_SceneColorAndDepth_ResizesInPlace() {
-        val fb = FrameBuffer(640, 360) { device }
+        val fb = FrameBuffer(640, 360, device = { device })
         assertEquals(0, fb.getTextureId())
         fb.initialize()
         val target = device.targets.single()
@@ -44,7 +44,7 @@ class RenderTargetsTest {
 
     @Test
     fun ColorTarget_CreatedLazily_ClampedColorOnly() {
-        val ct = ColorTarget { device }
+        val ct = ColorTarget(device = { device })
         assertEquals(0, ct.textureId)
         assertTrue(device.targets.isEmpty())
 

@@ -1,7 +1,6 @@
 package com.pafoid.skate.engine.render.renderer
 
 import com.pafoid.skate.engine.assets.data.Shader
-import com.pafoid.skate.engine.ecs.components.AmbientLightComponent
 import com.pafoid.skate.engine.ecs.components.DirectionalLightComponent
 import com.pafoid.skate.engine.ecs.components.EnvironmentComponent
 import com.pafoid.skate.engine.render.fog.FogUniforms
@@ -24,14 +23,12 @@ class LightingUniformsLoader {
      * Uploads all lighting uniforms to the specified shader.
      *
      * @param shader The shader to upload uniforms to
-     * @param ambientLightComponent Component containing ambient light state (optional)
-     * @param directionalLight The directional light config
-     * @param environmentComponent Component containing fog settings (optional)
+     * @param directionalLight The scene's sun ([com.pafoid.skate.engine.ecs.SceneSun]), or null
+     * @param environmentComponent Ambient light and fog settings (optional; none means no ambient light)
      * @param shadows This frame's shadow maps from the shadow pass, or null to disable shadows
      */
     fun loadLightingUniforms(
         shader: Shader,
-        ambientLightComponent: AmbientLightComponent?,
         directionalLight: DirectionalLightComponent?,
         environmentComponent: EnvironmentComponent? = null,
         shadows: ShadowFrame? = null,
@@ -46,12 +43,8 @@ class LightingUniformsLoader {
             shader.uploadVec3f(Uniforms.SUN_COLOR, ZERO)
         }
 
-        // Ambient light
-        if (ambientLightComponent != null) {
-            ambient.set(ambientLightComponent.lightColor).mul(ambientLightComponent.intensity)
-        } else {
-            ambient.zero()
-        }
+        // Ambient light: an environment setting (REN-26)
+        if (environmentComponent?.enabled == true) environmentComponent.ambient(ambient) else ambient.zero()
         shader.uploadVec3f(Uniforms.AMBIENT_LIGHT, ambient)
 
         loadShadowUniforms(shader, shadows)

@@ -46,6 +46,9 @@ class VertexLayoutShaderTest {
     fun debug_FeedsTheDebugLineShader() = exact(VertexLayouts.DEBUG, "debugLine2D.glsl")
 
     @TestFactory
+    fun fullscreen2D_FeedsTheGridAndIblCaptureShaders() = exact(VertexLayouts.FULLSCREEN_2D, "editor_grid.glsl", "ibl_capture.glsl")
+
+    @TestFactory
     fun particles_FeedTheParticleShader() = exact(VertexLayouts.PARTICLES, "particles.glsl")
 
     /** Mesh shaders read a subset of the VAOLoader attributes (location 9 of picking is a per-draw constant). */

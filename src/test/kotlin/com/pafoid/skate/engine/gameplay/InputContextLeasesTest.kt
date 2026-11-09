@@ -17,7 +17,8 @@ class InputContextLeasesTest {
     private val a = Any()
     private val b = Any()
 
-    private fun top() = stack.entries().first()
+    /** The entry of the context these tests push (the base ui entry stays on top of game contexts). */
+    private fun top() = stack.entries().first { it.context == InputContext("ride") }
 
     @Test
     fun hold_PushesWithPriorityAndBlocking_AndAnUnchangedListIsANoOp() {

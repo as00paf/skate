@@ -93,7 +93,7 @@ Rules (all pure, all tested):
   - This lets a `vehicle` context take over the gamepad A button from `gameplay.jump` without anyone unbinding anything.
 - The consumed-source set is cached per stack/map `revision`, so the per-frame cost stays a hash lookup per binding.
 - Edges: when a context is popped or blocked, its held actions report released. The next frame they do not report `wasActionPressed` for a source that was already held when the context appeared. This avoids a "jump fires when the pause menu closes" glitch: a press that was held carries over, but a new press is required.
-- Base stack built by `InputSystem`: `gameplay` (priority 0) and `ui` (priority 0, `NONE`). This matches today's `{GAMEPLAY, UI}` default, so nothing changes until something pushes.
+- Base stack built by `InputSystem`: `gameplay` (priority 0) and `ui` (`InputContextStack.UI_PRIORITY` = 1000, `NONE`). This matches today's `{GAMEPLAY, UI}` default, so nothing changes until something pushes. `ui` sits above game contexts, because a context consumes sources only from the contexts below it. A ride context (priority 10) therefore never takes gamepad A or the left stick away from the pause menu. A modal that must silence everything pushes above 1000. (Changed in GPL-21: with `ui` at 0, riding hid `ui.confirm` on A.)
 - The editor pushes `editor` itself (`EditorInputHandler`). The engine never pushes it.
 
 Public API:

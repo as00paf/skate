@@ -2,6 +2,8 @@
 kotlin = "2.0.21"
 lwjgl = "3.3.6"
 libbulletjme = "22.0.3"
+# PHY-17: Jolt Physics through jolt-jni (MIT); pin releases at least two weeks old
+joltjni = "6.2.0"
 snaploader = "1.0.0-stable"
 joml = "1.10.8"
 joml-primitives = "1.10.0"
@@ -30,6 +32,7 @@ lwjgl-shaderc = { group = "org.lwjgl", name = "lwjgl-shaderc" }
 lwjgl-vma = { group = "org.lwjgl", name = "lwjgl-vma" }
 
 libbulletjme = { group = "com.github.stephengold", name = "Libbulletjme-Windows64", version.ref = "libbulletjme" }
+joltjni = { group = "com.github.stephengold", name = "jolt-jni-Windows64", version.ref = "joltjni" }
 
 snaploader = { group = "io.github.electrostat-lab", name = "snaploader", version.ref = "snaploader" }
 joml = { group = "org.joml", name = "joml", version.ref = "joml" }
