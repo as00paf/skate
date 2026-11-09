@@ -12,6 +12,8 @@ import java.lang.management.ManagementFactory
 import java.lang.management.ThreadMXBean
 
 class ProfilerWindow(private val stringManager: StringManager) : EditorWindow("window.profiler", true) {
+    override val relatedWindows: List<String> = listOf("window.console", "window.game_viewport")
+
     private val threadBean: ThreadMXBean = ManagementFactory.getThreadMXBean()
     private val threadIds = mutableMapOf<String, Long>()
     private val threadCpuUsage = mutableMapOf<String, Float>()

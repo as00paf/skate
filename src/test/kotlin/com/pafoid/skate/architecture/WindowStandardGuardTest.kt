@@ -55,6 +55,28 @@ class WindowStandardGuardTest {
     }
 
     @Test
+    fun EveryRegisteredWindow_HasBeginnerHelp() {
+        val failures = windows.mapNotNull { w ->
+            val helpId = w.windowName?.removePrefix("window.")
+            val missing = if (helpId == null) {
+                mutableListOf("${w.className}: window name not found")
+            } else {
+                val m = mutableListOf<String>()
+                listOf("en", "fr").forEach { locale ->
+                    listOf("what", "how").forEach { part ->
+                        val key = "help.$helpId.$part"
+                        if (key !in helpKeys[locale].orEmpty()) m += "${w.className}: missing $key in $locale"
+                    }
+                }
+                m
+            }
+            if (missing.isEmpty()) null else w.className to missing
+        }
+        val detail = failures.joinToString("\n") { (name, v) -> "$name: ${v.joinToString("; ")}" }
+        assertTrue(failures.isEmpty(), "Every registered editor window needs beginner help (what/how in English and French):\n" + detail)
+    }
+
+    @Test
     fun AllowList_OnlyHoldsWindowsThatStillNeedWork() {
         val byName = windows.associateBy { it.className }
         val unknown = ALLOW_LIST.filter { it !in byName }

@@ -37,6 +37,7 @@ class ShellWindow(
     private val history: ShellHistory = ShellHistory(EditorPaths.file(HISTORY_FILE)).load(),
     private val workingDir: File = File(".").absoluteFile,
 ) : EditorWindow(NAME) {
+    override val relatedWindows: List<String> = listOf("window.console")
 
     companion object {
         const val NAME = "window.shell"

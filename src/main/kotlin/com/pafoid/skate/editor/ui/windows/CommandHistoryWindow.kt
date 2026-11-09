@@ -15,6 +15,7 @@ class CommandHistoryWindow(
     engine: Engine,
     private val undoRedoManager: UndoRedoManager
 ) : EditorWindow("window.command_history", true) {
+    override val relatedWindows: List<String> = listOf("window.console")
 
     private val stringManager = engine.stringManager
     private val eventSystem = engine.eventSystem

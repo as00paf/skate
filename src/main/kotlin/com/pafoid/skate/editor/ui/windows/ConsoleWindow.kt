@@ -18,6 +18,8 @@ import imgui.type.ImString
 import org.lwjgl.glfw.GLFW
 
 class ConsoleWindow(engine: Engine) : EditorWindow("window.console", true) {
+    override val relatedWindows: List<String> = listOf("window.command_history")
+
     private val logger = engine.logger
     private val stringManager = engine.stringManager
     private val eventSystem = engine.eventSystem
