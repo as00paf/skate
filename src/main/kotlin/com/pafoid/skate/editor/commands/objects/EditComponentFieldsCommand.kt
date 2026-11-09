@@ -13,12 +13,13 @@ class EditComponentFieldsCommand(
 
     val isNoOp: Boolean get() = changes.values.all { it.before == it.after }
 
-    override fun execute() = apply { it.after }
+    override fun execute() {
+        changes.forEach { (field, change) -> ComponentValues.write(component, field, change.after) }
+        ComponentValues.sceneOf(component)?.isDirty = true
+    }
 
-    override fun undo() = apply { it.before }
-
-    private fun apply(pick: (Change) -> Any?) {
-        changes.forEach { (field, change) -> ComponentValues.write(component, field, pick(change)) }
+    override fun undo() {
+        changes.forEach { (field, change) -> ComponentValues.write(component, field, change.before) }
         ComponentValues.sceneOf(component)?.isDirty = true
     }
 

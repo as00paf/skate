@@ -66,7 +66,7 @@ class EditorStringKeysTest {
     @Test
     fun RuntimeBuiltKeys_Exist() {
         val keys = GraphicsBackend.entries.map { it.labelKey } +
-            ShadowQuality.entries.map { EditorSettingsWindow.shadowQualityKey(it) } +
+            ShadowQuality.entries.map { "settings.graphics.shadow_quality.${it.name.lowercase()}" } +
             ActionBindingsModel.MOUSE_BUTTON_KEYS
         assertEquals(emptyList<String>(), keys.filterNot { it in editorKeys })
     }

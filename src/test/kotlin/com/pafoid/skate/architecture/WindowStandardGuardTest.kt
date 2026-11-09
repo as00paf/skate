@@ -105,12 +105,12 @@ class WindowStandardGuardTest {
             "SceneHierarchyWindow", "PropertiesWindow", "GameViewWindow",
             // C: project & assets
             "ProjectWindow", "AssetBrowserWindow",
-            // D: debug
-            "ConsoleWindow", "ProfilerWindow", "CommandHistoryWindow", "ShellWindow",
             // E: settings dialogs
             "EditorSettingsWindow", "ProjectSettingsWindow", "KeyBindingsWindow", "ExportWizardWindow",
             // F: modals & palette
             "ProjectSwitcherDialog", "SearchEverywhereWindow", "ProjectWizardWindow",
+            // H: domain windows
+            "AudioInspectorWindow", "ScriptEditorWindow",
             // I: input testing move (the window is deleted)
             "InputTestingWindow",
             // EDT-54: the Render Graph rewrite adopts the standard

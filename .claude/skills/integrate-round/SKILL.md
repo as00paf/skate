@@ -13,6 +13,10 @@ Used by `skate-lead` after domain agents report `DONE`. Never push to a remote o
 - Git identity is set repo-locally (`git config --local user.name` / `user.email`). If missing, ask the human; do not invent one.
 - Every task being integrated is `DONE` and was verified (tests run in the agent's worktree).
 
+## PR size (human, 2026-11-06)
+
+Keep each PR small enough to test in one sitting: **aim for at most ~60 changed files and 3–6 tasks per PR** (round 27 was 190 files, too many). Integrate early and often: open a PR as soon as a coherent group of verified tasks is ready instead of batching a whole round, and split a large round into several PRs by area (e.g. physics, editor windows, assets), each based on the previous merged master. Check the size with `git diff --stat origin/master...HEAD` before opening the PR.
+
 ## Steps
 
 1. **Integration worktree.** `tools/herdr/integrate.sh <round-name> <domain...>` creates (or reuses) branch `integration/<round-name>` in `../skate-worktrees/integration` from the base branch (a clean worktree left on a previous round's branch is switched to the new one), merges each `agents/<domain>` branch with `--no-ff`, one at a time, runs `cmd.exe /c gradlew.bat test` and prints the test totals from the JUnit XML. It stops on the first conflict. Re-running it with the remaining domains is safe. The full suite takes longer than a foreground tool call allows, so in Claude Code start it with `run_in_background` and wait for the completion notification.

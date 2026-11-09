@@ -1,6 +1,8 @@
 package com.pafoid.skate.editor.ui.windows
 
+import com.pafoid.skate.editor.events.WindowAction
 import com.pafoid.skate.editor.imgui.EditorWindow
+import com.pafoid.skate.editor.imgui.EmptyState
 import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.editor.search.SearchEngine
 import com.pafoid.skate.editor.search.data.SearchCategory
@@ -9,12 +11,15 @@ import com.pafoid.skate.editor.search.data.SearchResultWithCategory
 import com.pafoid.skate.editor.search.history.SearchHistory
 import com.pafoid.skate.editor.search.history.SearchHistoryEntry
 import com.pafoid.skate.engine.core.Engine
+import com.pafoid.skate.engine.core.StringManager
 import imgui.ImGui
 import imgui.ImVec4
 import imgui.flag.ImGuiCol
 import imgui.flag.ImGuiCond
+import imgui.flag.ImGuiFocusedFlags
 import imgui.flag.ImGuiInputTextFlags
 import imgui.flag.ImGuiKey
+import imgui.flag.ImGuiPopupFlags
 import imgui.flag.ImGuiWindowFlags
 import imgui.type.ImBoolean
 import imgui.type.ImString
@@ -25,6 +30,10 @@ class SearchEverywhereWindow(
     projectDirectory: () -> java.io.File? = { null },
 ) : EditorWindow("window.search") {
     private val stringManager = engine.stringManager
+
+    override val icon: String = Icons.SEARCH
+
+    override val relatedWindows: List<String> = listOf("window.keybindings")
 
     private val searchHistory: SearchHistory = SearchHistory(engine.serializer, engine.logger)
     private val searchEngine: SearchEngine = SearchEngine(engine, stringManager, projectDirectory)
@@ -44,6 +53,12 @@ class SearchEverywhereWindow(
 
     private var flattenedResults: List<SearchResultWithCategory> = emptyList()
 
+    /** The palette's own commands matching the query (Test Input…), shown with the actions. */
+    private var commandResults: List<SearchResult> = emptyList()
+
+    /** Frames since opening: focus is only checked once the window has had a frame to take it. */
+    private var framesOpen = 0
+
     private val focusRequest = SearchFocusRequest()
 
     fun open() {
@@ -52,7 +67,9 @@ class SearchEverywhereWindow(
         currentResults = emptyMap()
         flattenedResults = emptyList()
         lastQueriedText = ""
+        commandResults = emptyList()
         activeFilter = SearchFilter.ALL
+        framesOpen = 0
         engine.jobSystem.runOnMain {
             loadRecentSearches()
         }
@@ -72,6 +89,10 @@ class SearchEverywhereWindow(
         recentSearches = searchHistory.getRecent(limit = 5)
     }
 
+    /**
+     * The command palette (EDT-51 §2.1): a transient popup without a title bar, centred, that closes on Esc, after
+     * a choice, or when it loses focus. EDT-48: it takes focus when it opens and the input gets keyboard focus.
+     */
     override fun imgui() {
         val justOpened = focusRequest.beginFrame()
         if (justOpened) {
@@ -81,42 +102,42 @@ class SearchEverywhereWindow(
         }
 
         val viewport = ImGui.getMainViewport()
-        val centerX = viewport.workCenterX
-        val centerY = viewport.workCenterY
-
-        ImGui.setNextWindowPos(centerX, centerY, ImGuiCond.Always, 0.5f, 0.5f)
+        ImGui.setNextWindowPos(viewport.workCenterX, viewport.workCenterY, ImGuiCond.Always, 0.5f, 0.5f)
         ImGui.setNextWindowSize(600f, 520f)
         ImGui.setNextWindowBgAlpha(0.95f)
 
-        val windowFlags = ImGuiWindowFlags.Modal or
-                ImGuiWindowFlags.NoCollapse or
-                ImGuiWindowFlags.NoResize or
-                ImGuiWindowFlags.NoMove
+        if (beginWindow(stringManager, PALETTE_FLAGS, closable = false)) {
+            header(stringManager) {
+                ImGui.textDisabled("${Icons.SEARCH} ${stringManager.getString("search.everywhere.title")}")
+            }
+            handleKeyboardInput(isOpen)
+            renderSearchInput()
 
-        ImGui.begin(title(stringManager, textKey = "search.everywhere.title"), null, windowFlags)
+            ImGui.separator()
+            renderFilterChips()
+            ImGui.separator()
 
-        handleKeyboardInput(isOpen)
-        renderSearchInput()
+            ImGui.beginChild("SearchResults", 0f, 340f)
+            if (searchQuery.get().isBlank()) {
+                renderRecentSearches()
+            } else {
+                renderResults(isOpen)
+            }
+            ImGui.endChild()
 
-        ImGui.separator()
+            ImGui.separator()
+            renderFooter()
 
-        // Category filter chips
-        renderFilterChips()
-
-        ImGui.separator()
-
-        ImGui.beginChild("SearchResults", 0f, 380f)
-        if (searchQuery.get().isBlank()) {
-            renderRecentSearches()
-        } else {
-            renderResults(isOpen)
+            if (PalettePopup.closesOnFocusLoss(
+                    framesOpen,
+                    focused = ImGui.isWindowFocused(ImGuiFocusedFlags.RootAndChildWindows),
+                    popupOpen = ImGui.isPopupOpen("", ImGuiPopupFlags.AnyPopupId),
+                )
+            ) {
+                close(isOpen)
+            }
+            framesOpen++
         }
-        ImGui.endChild()
-
-        ImGui.separator()
-
-        renderFooter()
-
         ImGui.end()
     }
 
@@ -166,14 +187,7 @@ class SearchEverywhereWindow(
         ImGui.popItemWidth()
         ImGui.sameLine()
 
-        if (ImGui.button(Icons.WINDOW_CLOSE, buttonSize, buttonSize)) {
-            searchQuery.set("")
-            currentResults = emptyMap()
-            flattenedResults = emptyList()
-            selectedResultIndex = 0
-            lastQueriedText = ""
-            focusRequest.request()
-        }
+        if (ImGui.button(Icons.WINDOW_CLOSE, buttonSize, buttonSize)) clearQuery()
         if (ImGui.isItemHovered()) {
             ImGui.setTooltip(stringManager.getString("lbl.clear"))
         }
@@ -181,6 +195,16 @@ class SearchEverywhereWindow(
         if (inputEdited) {
             triggerSearch()
         }
+    }
+
+    private fun clearQuery() {
+        searchQuery.set("")
+        currentResults = emptyMap()
+        commandResults = emptyList()
+        flattenedResults = emptyList()
+        selectedResultIndex = 0
+        lastQueriedText = ""
+        focusRequest.request()
     }
 
     private fun renderFilterChips() {
@@ -223,7 +247,7 @@ class SearchEverywhereWindow(
 
     private fun getFilteredResults(): Map<SearchCategory, List<SearchResult>> {
         return when (activeFilter) {
-            SearchFilter.ALL -> currentResults
+            SearchFilter.ALL -> withCommands(currentResults)
             SearchFilter.GAMEOBJECTS -> currentResults.filter { (cat, _) ->
                 cat == SearchCategory.GAMEOBJECT
             }
@@ -238,10 +262,17 @@ class SearchEverywhereWindow(
                     SearchCategory.COMPONENT
                 )
             }
-            SearchFilter.ACTIONS -> currentResults.filter { (cat, _) ->
+            SearchFilter.ACTIONS -> withCommands(currentResults).filter { (cat, _) ->
                 cat == SearchCategory.ACTION
             }
         }
+    }
+
+    /** The palette's commands first among the actions. */
+    private fun withCommands(results: Map<SearchCategory, List<SearchResult>>): Map<SearchCategory, List<SearchResult>> {
+        if (commandResults.isEmpty()) return results
+        val actions = commandResults + results[SearchCategory.ACTION].orEmpty()
+        return results + (SearchCategory.ACTION to actions)
     }
 
     private fun triggerSearch() {
@@ -249,6 +280,7 @@ class SearchEverywhereWindow(
         if (query == lastQueriedText) return
 
         lastQueriedText = query
+        commandResults = PaletteCommands.matching(query, stringManager::getString).map { it.toResult(stringManager) }
 
         if (query.isEmpty()) {
             currentResults = emptyMap()
@@ -323,9 +355,7 @@ class SearchEverywhereWindow(
         val filtered = getFilteredResults()
 
         if (filtered.isEmpty() || filtered.values.all { it.isEmpty() }) {
-            // Friendly "no results for '...'" message
-            ImGui.textColored(0.5f, 0.5f, 0.5f, 1f,
-                stringManager.getString("lbl.search.no_results_for", searchQuery.get().trim()))
+            EmptyState.noResults(stringManager, ::clearQuery)
             return
         }
 
@@ -400,11 +430,22 @@ class SearchEverywhereWindow(
     }
 
     private fun selectResult(result: SearchResult) {
+        PaletteCommands.byId(result.id)?.let { command ->
+            engine.eventSystem.publish(WindowAction.Show(command.window))
+            return
+        }
         engine.jobSystem.runAsync {
             searchHistory.add(searchQuery.get().trim(), result)
         }
 
         searchEngine.navigate(result)
+    }
+
+    private companion object {
+        /** No title bar (the header strip names it), fixed in the centre, never docked or saved in the layout. */
+        const val PALETTE_FLAGS = ImGuiWindowFlags.NoTitleBar or ImGuiWindowFlags.NoCollapse or
+            ImGuiWindowFlags.NoResize or ImGuiWindowFlags.NoMove or ImGuiWindowFlags.NoDocking or
+            ImGuiWindowFlags.NoSavedSettings
     }
 
     private fun renderFooter() {
@@ -415,5 +456,62 @@ class SearchEverywhereWindow(
                     "${stringManager.getString("search.everywhere.shortcut.open")}  " +
                     stringManager.getString("search.everywhere.shortcut.close")
         )
+    }
+}
+
+/** When the palette closes by itself (EDT-51 §2.1): it lost focus after its first frame, and none of its popups is open. */
+object PalettePopup {
+    fun closesOnFocusLoss(framesOpen: Int, focused: Boolean, popupOpen: Boolean): Boolean =
+        framesOpen > 0 && !focused && !popupOpen
+}
+
+/** A command the palette offers itself, on top of the search providers (EDT-52F): it opens [window]. */
+data class PaletteCommand(
+    val id: String,
+    val labelKey: String,
+    val keywordsKey: String,
+    val icon: String,
+    val window: String,
+) {
+    fun toResult(strings: StringManager) = SearchResult(
+        id = id,
+        displayName = strings.getString(labelKey),
+        category = SearchCategory.ACTION,
+        subcategory = "",
+        icon = icon,
+        relevanceScore = 1f,
+    )
+}
+
+object PaletteCommands {
+    /**
+     * Test Input opens the input test (EDT-51 §3.1). Until chunk I moves it to Key Bindings › Test, that is the
+     * Input Testing dialog; chunk I points this at its new home.
+     */
+    const val TEST_INPUT_WINDOW = "window.input_testing"
+
+    val TEST_INPUT = PaletteCommand(
+        id = "palette.test_input",
+        labelKey = "search.command.test_input",
+        keywordsKey = "search.command.test_input.keywords",
+        icon = Icons.KEYBOARD,
+        window = TEST_INPUT_WINDOW,
+    )
+
+    val ALL = listOf(TEST_INPUT)
+
+    fun byId(id: String): PaletteCommand? = ALL.firstOrNull { it.id == id }
+
+    /**
+     * Commands whose label, keywords (from [text], the current language) or id contain every word of [query],
+     * case-insensitive, so "test", "manette" or "gamepad" all find Test Input. A blank query matches nothing.
+     */
+    fun matching(query: String, text: (String) -> String): List<PaletteCommand> {
+        val words = query.lowercase().split(Regex("\\s+")).filter { it.isNotBlank() }
+        if (words.isEmpty()) return emptyList()
+        return ALL.filter { command ->
+            val haystack = listOf(text(command.labelKey), text(command.keywordsKey), command.id).joinToString(" ").lowercase()
+            words.all { it in haystack }
+        }
     }
 }

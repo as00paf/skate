@@ -53,7 +53,12 @@ dependencies {
     
     // Bullet Physics
     implementation(libs.libbulletjme)
-    runtimeOnly(libs.libbulletjme) { artifact { classifier = "SpDebug" } }
+    // Release native (PHY-20): the debug build was several times slower; see docs/design/PHY-17.md
+    runtimeOnly(libs.libbulletjme) { artifact { classifier = "SpRelease" } }
+
+    // Jolt Physics (PHY-17): classes plus the single-precision release native
+    implementation(libs.joltjni)
+    runtimeOnly(libs.joltjni) { artifact { classifier = "ReleaseSp" } }
 
     //Jsnap loader for loading native libraries
     implementation(libs.snaploader)

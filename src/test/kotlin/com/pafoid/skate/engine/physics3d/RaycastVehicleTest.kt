@@ -9,22 +9,21 @@ import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.ecs.components.VehicleComponent
 import com.pafoid.skate.engine.ecs.systems.PhysicsSystem
 import com.pafoid.skate.engine.ecs.systems.SystemManager
-import com.pafoid.skate.engine.physics3d.native.NativeLibraryLoader
 import io.mockk.mockk
 import org.joml.Vector3f
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
-import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.MethodSource
 
 class RaycastVehicleTest {
 
-    private class Rig {
+    private class Rig(backend: PhysicsBackend) {
         val vehicle = VehicleComponent()
         val body = RigidBody3D(1000f)
         val system: PhysicsSystem
 
         init {
-            NativeLibraryLoader().loadNativeLibrary()
             val scene = Scene()
             scene.addChild(GameObject("Ground").apply {
                 addComponent(Transform().apply { translation.set(0f, -0.5f, 0f) })
@@ -37,7 +36,7 @@ class RaycastVehicleTest {
                 addComponent(BoxCollider3D(Vector3f(1f, 0.3f, 1.8f)))
                 addComponent(vehicle)
             })
-            system = PhysicsSystem(mockk(relaxed = true))
+            system = PhysicsSystem(mockk(relaxed = true), null, PhysicsBackends.create(backend))
             val manager = SystemManager()
             manager.addSystem(system)
             manager.loadScene(scene)
@@ -50,9 +49,10 @@ class RaycastVehicleTest {
         val velocity get() = body.linearVelocity
     }
 
-    @Test
-    fun vehicle_Idle_SettlesOnSuspension() {
-        val rig = Rig()
+    @ParameterizedTest
+    @MethodSource("com.pafoid.skate.engine.physics3d.PhysicsBackends#joints")
+    fun vehicle_Idle_SettlesOnSuspension(backend: PhysicsBackend) {
+        val rig = Rig(backend)
 
         rig.step(240)
 
@@ -61,9 +61,10 @@ class RaycastVehicleTest {
         assertEquals(0f, rig.velocity.length(), 0.1f)
     }
 
-    @Test
-    fun vehicle_Throttle_AcceleratesAlongForward() {
-        val rig = Rig()
+    @ParameterizedTest
+    @MethodSource("com.pafoid.skate.engine.physics3d.PhysicsBackends#joints")
+    fun vehicle_Throttle_AcceleratesAlongForward(backend: PhysicsBackend) {
+        val rig = Rig(backend)
         rig.step(120)
         rig.vehicle.throttle = 1f
 
@@ -73,9 +74,10 @@ class RaycastVehicleTest {
         assertEquals(0f, rig.velocity.x, 0.5f)
     }
 
-    @Test
-    fun vehicle_SteeringWhileMoving_TurnsTheCar() {
-        val rig = Rig()
+    @ParameterizedTest
+    @MethodSource("com.pafoid.skate.engine.physics3d.PhysicsBackends#joints")
+    fun vehicle_SteeringWhileMoving_TurnsTheCar(backend: PhysicsBackend) {
+        val rig = Rig(backend)
         rig.step(120)
         rig.vehicle.throttle = 1f
         rig.step(90)
@@ -86,9 +88,10 @@ class RaycastVehicleTest {
         assertTrue(Math.abs(rig.velocity.x) > 0.5f, "lateral speed ${rig.velocity.x}")
     }
 
-    @Test
-    fun vehicle_Brake_StopsTheCar() {
-        val rig = Rig()
+    @ParameterizedTest
+    @MethodSource("com.pafoid.skate.engine.physics3d.PhysicsBackends#joints")
+    fun vehicle_Brake_StopsTheCar(backend: PhysicsBackend) {
+        val rig = Rig(backend)
         rig.step(60)
         rig.vehicle.throttle = 1f
         rig.step(120)

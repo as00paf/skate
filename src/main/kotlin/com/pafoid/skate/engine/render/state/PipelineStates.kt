@@ -44,6 +44,16 @@ object PipelineStates {
     val DEBUG_TRIANGLES = PipelineState(depth = DepthState(func = CompareFunc.LESS_EQUAL), cull = CullMode.NONE)
     val DEBUG_LINES = DEBUG_TRIANGLES.copy(topology = Topology.LINES, lineWidth = 4f)
 
+    /**
+     * Editor grid (REN-25): a full-screen quad writing its own fragment depth on the grid plane; depth tested (LEQUAL),
+     * not written, so debug lines drawn after it are not hidden; straight alpha keeping the target opaque.
+     */
+    val GRID = PipelineState(
+        depth = DepthState(write = false, func = CompareFunc.LESS_EQUAL),
+        blend = BlendState.ALPHA_KEEP_TARGET_OPAQUE,
+        cull = CullMode.NONE,
+    )
+
     /** Particle billboards: depth tested, not written, straight alpha or additive, both faces. */
     val PARTICLES = PipelineState(
         topology = Topology.TRIANGLE_STRIP,

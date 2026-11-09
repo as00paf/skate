@@ -96,6 +96,8 @@ class ThumbnailRenderer(
         shader.uploadVec3f(ShaderConst.Uniforms.LIGHT_COLOR, Vector3f(2.0f, 2.0f, 2.0f))
         shader.uploadVec3f(ShaderConst.Uniforms.AMBIENT_LIGHT, Vector3f(0.8f, 0.8f, 0.8f))
         LightingUniformsLoader.disableShadows(shader)
+        // Shared program with the geometry pass: switch off its sky lighting (REN-27), whose textures are not bound here
+        shader.uploadInt(ShaderConst.Uniforms.ENV_ENABLED, 0)
 
         // Delegate actual model rendering to ModelRenderer
         modelRenderer.render(
