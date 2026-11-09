@@ -9,11 +9,21 @@ class SchemaMigrationsTest {
     private val serializer = Serializer()
 
     @Test
-    fun Migration_UnversionedSceneUpgradesToCurrent() {
-        val legacy = serializer.encode(Scene("Old"))
-        assertFalse(legacy.contains("\"schema\""))
-        val scene = serializer.decodeFile<Scene>(FileKind.SCENE, legacy)
-        assertEquals("Old", scene.name)
+    fun Migration_OldScene_FailsWithARecreateMessage_NoUpgradeOnLoad() {
+        // Rule 8: scene layout changes (REN-26, schema 2) have no migration; old files give a clear error
+        for (old in listOf(serializer.encode(Scene("Unversioned")), """{"schema": 1, "name": "Old", "components": [], "children": []}""")) {
+            val e = assertThrows(OutdatedSchemaException::class.java) { serializer.decodeFile<Scene>(FileKind.SCENE, old) }
+            assertEquals(FileKind.SCENE, e.kind)
+            assertTrue(e.message!!.contains("older Skate version"), e.message)
+            assertTrue(e.message!!.contains("Recreate"), e.message)
+        }
+    }
+
+    @Test
+    fun Migration_CurrentScene_Loads() {
+        assertEquals(2, FileKind.SCENE.currentSchema)
+        val text = serializer.encodeFile(FileKind.SCENE, Scene("New"))
+        assertEquals("New", serializer.decodeFile<Scene>(FileKind.SCENE, text).name)
     }
 
     @Test

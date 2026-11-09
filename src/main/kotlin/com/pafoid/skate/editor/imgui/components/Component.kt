@@ -4,7 +4,6 @@ import com.pafoid.skate.editor.imgui.Tooltips
 import com.pafoid.skate.engine.core.LoggerService.LogLevel
 import com.pafoid.skate.editor.imgui.MImGui
 import com.pafoid.skate.engine.core.Engine
-import com.pafoid.skate.engine.ecs.components.AmbientLightComponent
 import com.pafoid.skate.engine.ecs.components.Animator
 import com.pafoid.skate.engine.ecs.components.AudioComponent
 import com.pafoid.skate.engine.ecs.components.CameraComponent
@@ -38,7 +37,6 @@ fun Component.imgui(engine: Engine) {
 
 private fun Component.dispatchInspector(engine: Engine) {
     when (this) {
-        is AmbientLightComponent -> this.imgui(engine)
         is DirectionalLightComponent -> this.imgui(engine)
         is PointLightComponent -> this.imgui(engine)
         is SpotLightComponent -> this.imgui(engine)

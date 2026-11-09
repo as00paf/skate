@@ -1,10 +1,10 @@
 package com.pafoid.skate.editor.ui.handlers
 
+import com.pafoid.skate.engine.ecs.components.EnvironmentComponent
 import com.pafoid.skate.editor.commands.Command
 import com.pafoid.skate.editor.events.EnvironmentAction
 import com.pafoid.skate.editor.systems.UndoRedoManager
 import com.pafoid.skate.engine.core.EventSystem
-import com.pafoid.skate.engine.ecs.components.AmbientLightComponent
 import com.pafoid.skate.engine.ecs.components.DirectionalLightComponent
 import io.mockk.every
 import io.mockk.mockk
@@ -48,27 +48,27 @@ class EnvironmentActionHandlerTest {
         }
         val handler = EnvironmentActionHandler(undoRedoManager, eventSystem)
 
-        val lightingState = AmbientLightComponent(lightColor = Vector3f(0.2f, 0.2f, 0.2f), intensity = 0.5f)
+        val lightingState = EnvironmentComponent(ambientColor = Vector3f(0.2f, 0.2f, 0.2f), ambientIntensity = 0.5f)
 
         eventSystem.publish(
             EnvironmentAction.SetAmbientLightRequested(
-                ambientLightComponent = lightingState,
+                environment = lightingState,
                 oldValue = Vector3f(0.2f, 0.2f, 0.2f),
                 newValue = Vector3f(0.4f, 0.5f, 0.6f),
             )
         )
         eventSystem.publish(
             EnvironmentAction.SetAmbientIntensityRequested(
-                ambientLightComponent = lightingState,
+                environment = lightingState,
                 oldValue = 0.5f,
                 newValue = 1.8f,
             )
         )
 
         verify(exactly = 2) { undoRedoManager.executeCommand(any()) }
-        assertEquals(0.4f, lightingState.lightColor.x, 0.0001f)
-        assertEquals(0.5f, lightingState.lightColor.y, 0.0001f)
-        assertEquals(0.6f, lightingState.lightColor.z, 0.0001f)
-        assertEquals(1.8f, lightingState.intensity, 0.0001f)
+        assertEquals(0.4f, lightingState.ambientColor.x, 0.0001f)
+        assertEquals(0.5f, lightingState.ambientColor.y, 0.0001f)
+        assertEquals(0.6f, lightingState.ambientColor.z, 0.0001f)
+        assertEquals(1.8f, lightingState.ambientIntensity, 0.0001f)
     }
 }

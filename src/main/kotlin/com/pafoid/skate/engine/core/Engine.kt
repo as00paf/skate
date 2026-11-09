@@ -47,6 +47,7 @@ import com.pafoid.skate.engine.ui.GameOptions
 import com.pafoid.skate.engine.ui.PauseMenuActions
 import com.pafoid.skate.engine.ui.PauseMenuSystem
 import com.pafoid.skate.engine.ui.UiActions
+import com.pafoid.skate.engine.ui.UiMapSystem
 import com.pafoid.skate.engine.render.ui.SdfFont
 import com.pafoid.skate.engine.ui.UiInputSystem
 import com.pafoid.skate.engine.ui.UiLayoutSystem
@@ -234,6 +235,8 @@ class Engine {
         val pauseMenu = createPauseMenu()
         return listOf(
             pauseMenu,
+            // Map markers are placed before layout (GUI-13).
+            UiMapSystem(),
             UiLayoutSystem(screen = { UiScreenSize(framebuffer.width, framebuffer.height) }),
             UiInputSystem(
                 // The reader's pointer: render-target pixels and game-view buttons, as for picking (INP-09).

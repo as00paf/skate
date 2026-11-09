@@ -1,27 +1,29 @@
 package com.pafoid.skate.editor.ui.windows
 
-import com.pafoid.skate.editor.imgui.tipped
 import com.pafoid.skate.editor.events.ProjectEvent
 import com.pafoid.skate.editor.events.ProjectEvent.OpenProjectRequested
 import com.pafoid.skate.editor.events.WindowAction
+import com.pafoid.skate.editor.imgui.EditorModal
 import com.pafoid.skate.editor.imgui.EditorWindow
+import com.pafoid.skate.editor.imgui.EmptyState
+import com.pafoid.skate.editor.imgui.FooterButton
+import com.pafoid.skate.editor.imgui.WindowHeader
 import com.pafoid.skate.editor.imgui.MImGui
 import com.pafoid.skate.editor.imgui.data.Icons
-import com.pafoid.skate.editor.imgui.data.UiConstants
 import com.pafoid.skate.editor.project.RecentProjectDisplayInfo
 import com.pafoid.skate.editor.systems.EditorSettingsManager
 import com.pafoid.skate.engine.core.Engine
 import imgui.ImGui
 import imgui.flag.ImGuiCol
-import imgui.flag.ImGuiCond
 import imgui.flag.ImGuiMouseCursor
-import imgui.flag.ImGuiWindowFlags
 import java.io.File
 
 class ProjectSwitcherDialog(
     engine: Engine,
     private val settingsManager: EditorSettingsManager,
 ) : EditorWindow("window.project_switcher") {
+
+    override val icon: String = Icons.FOLDER_OPEN
 
     private val stringManager = engine.stringManager
     private val eventSystem = engine.eventSystem
@@ -79,75 +81,50 @@ class ProjectSwitcherDialog(
         }
     }
 
-    override fun imgui() {
-        val centerX = ImGui.getMainViewport().centerX
-        val centerY = ImGui.getMainViewport().centerY
+    override fun imgui() = modal.render()
 
-        ImGui.setNextWindowPos(centerX, centerY, ImGuiCond.Always, 0.5f, 0.5f)
-        ImGui.setNextWindowSize(500f, 400f)
+    /**
+     * A real modal (EDT-51 §3): dims and blocks the editor, Esc = Cancel. The window stays registered so View and
+     * `WindowAction.Show/Hide("window.project_switcher")` keep working; its open state drives the modal.
+     */
+    private val modal = object : EditorModal(stringManager, Icons.FOLDER_OPEN, minWidth = 500f) {
+        override val titleKey = "window.switch_project"
+        override val wantsOpen: Boolean get() = isOpen.get()
 
-        if (ImGui.begin(
-                title(stringManager, textKey = "window.switch_project"),
-                isOpen,
-                ImGuiWindowFlags.NoResize or ImGuiWindowFlags.Modal
-            )
-        ) {
-            ImGui.text(stringManager.getString("lbl.switch_project.select_or_create"))
+        override fun content() {
+            // Hidden from outside this frame (a project opened from the list): close the popup with it.
+            if (!isOpen.get()) {
+                ImGui.closeCurrentPopup()
+                return
+            }
+            WindowHeader.render(stringManager, this@ProjectSwitcherDialog) {
+                ImGui.text(stringManager.getString("lbl.switch_project.select_or_create"))
+            }
+            help.render(stringManager)
             ImGui.spacing()
 
             val recentProjects = getRecentProjectsDisplayInfo()
-            if (recentProjects.isNotEmpty()) {
-                ImGui.text(stringManager.getString("lbl.switch_project.recent"))
-                ImGui.spacing()
-
-                for (project in recentProjects) {
-                    renderRecentProjectItem(project)
-                }
-            } else {
-                MImGui.textDisabled(stringManager.getString("lbl.no_recent_projects"))
+            if (recentProjects.isEmpty()) {
+                EmptyState.nothingYet(stringManager, Icons.FOLDER_OPEN, "lbl.no_recent_projects")
+                return
             }
-
-            ImGui.separator()
+            ImGui.text(stringManager.getString("lbl.switch_project.recent"))
             ImGui.spacing()
-
-            val buttonHeight = UiConstants.DEFAULT_BUTTON_HEIGHT
-            val newButtonWidth = 150f
-            val openButtonWidth = 130f
-            val cancelWidth = 100f
-            val spacing = UiConstants.SECTION_SPACING
-            val totalWidth = newButtonWidth + openButtonWidth + cancelWidth + (2 * spacing)
-
-            val contentRegionWidth = ImGui.getContentRegionAvailX()
-            ImGui.setCursorPosX(ImGui.getCursorPosX() + contentRegionWidth - totalWidth)
-
-            if (stringManager.tipped(ImGui.button(
-                    "${Icons.PLUS} ${stringManager.getString("btn.new_project")}",
-                    newButtonWidth,
-                    buttonHeight
-                ), "btn.new_project")
-            ) {
-                eventSystem.publish(WindowAction.Hide("window.project_switcher"))
-                eventSystem.publish(WindowAction.Show("window.project_wizard"))
-            }
-
-            ImGui.sameLine(0f, spacing)
-
-            if (stringManager.tipped(ImGui.button(
-                    "${Icons.FOLDER_OPEN} ${stringManager.getString("btn.open_project")}",
-                    openButtonWidth,
-                    buttonHeight
-                ), "btn.open_project")
-            ) {
-                eventSystem.publish(ProjectEvent.OpenProjectFileRequested)
-            }
-
-            ImGui.sameLine(0f, spacing)
-
-            if (ImGui.button(stringManager.getString("btn.cancel"), cancelWidth, buttonHeight)) {
-                eventSystem.publish(WindowAction.Hide("window.project_switcher"))
-            }
-
-            ImGui.end()
+            ImGui.beginChild("##recent_projects", 0f, minOf(320f, recentProjects.size * 72f), false)
+            recentProjects.forEach { renderRecentProjectItem(it) }
+            ImGui.endChild()
         }
+
+        override fun buttons() = listOf(
+            FooterButton("btn.new_project", FooterButton.Role.SECONDARY) {
+                isOpen.set(false)
+                eventSystem.publish(WindowAction.Show("window.project_wizard"))
+            },
+            FooterButton("btn.cancel", FooterButton.Role.CANCEL) { isOpen.set(false) },
+            // Stays open behind the file picker; a successful open hides it.
+            FooterButton("btn.open_project", FooterButton.Role.PRIMARY, closes = false) {
+                eventSystem.publish(ProjectEvent.OpenProjectFileRequested)
+            },
+        )
     }
 }

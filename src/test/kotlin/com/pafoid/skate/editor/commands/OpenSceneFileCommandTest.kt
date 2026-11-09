@@ -1,6 +1,7 @@
 package com.pafoid.skate.editor.commands
 
 import com.pafoid.skate.editor.commands.project.OpenSceneFileCommand
+import com.pafoid.skate.engine.assets.serialization.FileKind
 import com.pafoid.skate.engine.assets.serialization.Serializer
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.core.JobSystem
@@ -47,7 +48,7 @@ class OpenSceneFileCommandTest {
 
     @Test
     fun `execute opens scene when file loads`() {
-        val sceneFile = File(tempDir, "Test.scene").apply { writeText(serializer.encode(Scene("Loaded"))) }
+        val sceneFile = File(tempDir, "Test.scene").apply { writeText(serializer.encodeFile(FileKind.SCENE, Scene("Loaded"))) }
 
         val command = createCommand(sceneFile)
         command.execute()
@@ -70,6 +71,26 @@ class OpenSceneFileCommandTest {
         assertNull(command.openedScene)
         assertFalse(command.didCompleteSuccessfully())
         assertNotNull(failed)
+    }
+
+    @Test
+    fun `scene from an older Skate version reports a recreate message instead of crashing`() {
+        // REN-26: schema 1 scenes (AmbientLightComponent, sun on the scene) are not upgraded (rule 8)
+        val sceneFile = File(tempDir, "Old.scene").apply {
+            writeText("""{"schema": 1, "name": "Old", "sceneName": "Old", "components": [
+                {"type": "com.pafoid.skate.engine.ecs.components.AmbientLightComponent", "intensity": 0.25}], "children": []}""")
+        }
+        var failed: SceneAction.OpenFailed? = null
+        eventSystem.subscribe<SceneAction.OpenFailed> { failed = it }
+
+        val command = createCommand(sceneFile)
+        command.execute()
+
+        verify(exactly = 0) { sceneManager.openScene(any()) }
+        assertFalse(command.didCompleteSuccessfully())
+        val reason = failed!!.reason
+        assertTrue(reason.contains("Old.scene"), reason)
+        assertTrue(reason.contains("older Skate version") && reason.contains("Recreate"), reason)
     }
 
     private fun createCommand(sceneFile: File): OpenSceneFileCommand {

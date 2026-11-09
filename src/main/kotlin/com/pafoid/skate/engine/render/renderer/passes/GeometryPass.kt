@@ -1,8 +1,10 @@
 package com.pafoid.skate.engine.render.renderer.passes
 
+import com.pafoid.skate.engine.ecs.components.DayNightCycleComponent
+import com.pafoid.skate.engine.render.lighting.EnvironmentProbe
+import com.pafoid.skate.engine.ecs.SceneSun
 import com.pafoid.skate.engine.assets.data.Shader
 import com.pafoid.skate.engine.ecs.Scene
-import com.pafoid.skate.engine.ecs.components.AmbientLightComponent
 import com.pafoid.skate.engine.ecs.components.CameraComponent
 import com.pafoid.skate.engine.ecs.components.DirectionalLightComponent
 import com.pafoid.skate.engine.ecs.components.EnvironmentComponent
@@ -61,6 +63,7 @@ class GeometryPass(
     private val useFbo: Boolean,
     private val cameraManager: CameraManager,
     private val shadowFrame: ShadowFrame? = null,
+    private val environmentProbe: EnvironmentProbe? = null,
 ) : BaseRenderPass() {
 
     override val name: String = "GeometryPass"
@@ -77,6 +80,8 @@ class GeometryPass(
         val renderSky = environmentComponent?.renderSky == true
         val skyColor = environmentComponent?.skyColor.takeIf { renderSky } ?: DEFAULT_SKY_COLOR
         clear.color!!.let { it[0] = skyColor.x; it[1] = skyColor.y; it[2] = skyColor.z }
+        // Image-based lighting: re-bakes when the sky changed; it draws into its own target, so before our pass begins
+        environmentProbe?.update(environmentComponent, scene.getComponent<DayNightCycleComponent>())
         val cmd = RhiContext.require().commandList()
         cmd.beginPass(if (useFbo) frameBuffer.target else null, clear = clear, viewport = presentedViewport.of(frameBuffer, useFbo))
 
@@ -90,18 +95,17 @@ class GeometryPass(
         lightingUniformsLoader.loadCameraPosition(defaultShader, cameraPosition)
 
         // Upload lighting uniforms
-        val ambientLightComponent = scene.getComponent<AmbientLightComponent>()?.takeIf { it.enabled }
-        val directionalLight = scene.getComponent<DirectionalLightComponent>()?.takeIf { it.enabled }
+        val directionalLight = SceneSun.of(scene)
         SceneLights.collect(scene, sceneLights)
         lightBuffer.upload(sceneLights)
         lightBuffer.bind(defaultShader)
         lightingUniformsLoader.loadLightingUniforms(
             defaultShader,
-            ambientLightComponent,
             directionalLight,
             environmentComponent,
             shadowFrame?.takeIf { it.consume() },
         )
+        environmentProbe?.bind(defaultShader) ?: defaultShader.uploadInt(Uniforms.ENV_ENABLED, 0)
 
         // Collect 3D draws and 2D sprites, then draw 3D sorted: opaque by material → mesh, transparent last in scene order
         drawQueue.clear()
@@ -160,7 +164,10 @@ class GeometryPass(
     private val lightScores = FloatArray(LightCulling.MAX_LIGHTS_PER_OBJECT)
     private val boundsCenter = Vector3f()
 
-    fun destroy() = lightBuffer.destroy()
+    fun destroy() {
+        lightBuffer.destroy()
+        environmentProbe?.destroy()
+    }
 
     private data class DrawItem(val go: GameObject, val renderComponent: RenderComponent, val transform: Transform)
 

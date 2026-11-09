@@ -76,4 +76,40 @@ class NativeLibraryLoaderTest {
         verify(exactly = 0) { mockService.initPlatformLibrary(any()) }
         verify(exactly = 0) { mockService.loadLibrary(any(), any()) }
     }
+
+    @Test
+    fun NativeLoader_SpecsLoadIndependently() {
+        loader.loadNativeLibrary()
+        NativeLibraryLoader(mockService, NativeLibrarySpec.JOLT).loadNativeLibrary()
+
+        // One load per library: Bullet's flag does not stop Jolt from loading
+        verify(exactly = 2) { mockService.loadLibrary(any(), any()) }
+    }
+
+    @Test
+    fun NativeLoader_JoltSpec_RegistersTheJoltJniJarFolder() {
+        val registered = slot<Array<electrostatic4j.snaploader.platform.NativeDynamicLibrary?>>()
+        every { mockService.registerNativeLibraries(any(), capture(registered)) } returns mockLoader
+
+        NativeLibraryLoader(mockService, NativeLibrarySpec.JOLT).loadNativeLibrary()
+
+        Assertions.assertEquals(NativeLibrarySpec.JOLT.platforms.size, registered.captured.size)
+        Assertions.assertEquals("joltjni", NativeLibrarySpec.JOLT.name)
+        Assertions.assertTrue(NativeLibrarySpec.JOLT.platforms.any { it.first == "windows/x86-64/com/github/stephengold" })
+    }
+
+    @Test
+    fun NativeLoader_Failure_ReturnsFalseAndRetriesNextTime() {
+        every { mockService.loadLibrary(any(), any()) } throws IllegalStateException("missing")
+
+        Assertions.assertFalse(loader.loadNativeLibrary())
+        Assertions.assertFalse(loader.loadNativeLibrary())
+        verify(exactly = 2) { mockService.loadLibrary(any(), any()) }
+    }
+
+    @Test
+    fun NativeLoader_Success_ReturnsTrue() {
+        Assertions.assertTrue(loader.loadNativeLibrary())
+        Assertions.assertTrue(loader.loadNativeLibrary())
+    }
 }

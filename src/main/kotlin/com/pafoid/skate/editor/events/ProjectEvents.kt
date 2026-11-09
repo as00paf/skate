@@ -29,6 +29,18 @@ sealed class ProjectEvent(eventName: String) : Event(eventName) {
 
     /** Change the open project's graphics backend (EDT-43), as an undoable command. */
     data class SetGraphicsBackendRequested(val backend: GraphicsBackend) : ProjectEvent("project.action.set_graphics_backend")
+    /** Change the open project's overall graphics quality preset (REN-30). */
+    data class SetGraphicsQualityRequested(val quality: com.pafoid.skate.editor.settings.GraphicsQuality) : ProjectEvent("project.action.set_graphics_quality")
+    /** Change the open project's MSAA sample count (REN-30). */
+    data class SetMsaaSamplesRequested(val samples: Int) : ProjectEvent("project.action.set_msaa_samples")
+    /** Change the open project's texture quality (REN-30). */
+    data class SetTextureQualityRequested(val quality: com.pafoid.skate.editor.settings.TextureQuality) : ProjectEvent("project.action.set_texture_quality")
+    /** Change the open project's shadow quality (REN-30). */
+    data class SetShadowQualityRequested(val quality: com.pafoid.skate.editor.settings.ShadowQuality) : ProjectEvent("project.action.set_shadow_quality")
+    /** Change the open project's fullscreen setting (GUI-15). */
+    data class SetFullscreenRequested(val enabled: Boolean) : ProjectEvent("project.action.set_fullscreen")
+    /** Change the open project's VSync setting (GUI-15). */
+    data class SetVsyncRequested(val enabled: Boolean) : ProjectEvent("project.action.set_vsync")
     data class CreateProjectSucceeded(val name: String, val folderPath: String) : ProjectEvent("project.action.create_project_succeeded")
     data class CreateProjectFailed(val name: String, val folderPath: String, val reason: String) : ProjectEvent("project.action.create_project_failed")
     data class CreateFileRequested(val path: String, val isDirectory: Boolean) : ProjectEvent("project.action.create_file_requested")

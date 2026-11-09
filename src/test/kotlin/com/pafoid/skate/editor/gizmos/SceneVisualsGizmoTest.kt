@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.gizmos
 
+import com.pafoid.skate.engine.ecs.SceneSun
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.components.CameraComponent
@@ -18,6 +19,7 @@ import io.mockk.verify
 import org.joml.Vector3f
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
@@ -137,14 +139,36 @@ class SceneVisualsGizmoTest {
     }
 
     @Test
-    fun SceneVisuals_DrawsSceneLevelDirectionalLightArrow() {
+    fun SceneVisuals_DrawsTheSunArrowAtTheSunEntity_NotAtTheOrigin() {
+        // REN-26: the sun is an entity; its icon and arrow are drawn where it stands
         val scene = Scene("MainScene")
-        scene.addComponent(DirectionalLightComponent())
+        scene.addChild(SceneSun.create().placed())
+        val starts = mutableListOf<Vector3f>()
+        io.mockk.every { debugRenderer.addLine3D(capture(starts), any(), any(), any()) } returns Unit
 
-        gizmo.draw(scene, camera, Vector3f(), { _ -> 10f })
+        gizmo.draw(scene, camera, Vector3f(), { _ -> 1f })
 
-        // Scene-level directional light: bulb icon (24) + direction arrow (5) = 29.
-        verify(exactly = 29) { debugRenderer.addLine3D(any(), any(), any()) }
+        // Bulb icon (24) + direction arrow (5) = 29, all around the sun at (0, 10, 0)
+        assertEquals(29, starts.size)
+        assertTrue(starts.all { it.distance(SceneSun.DEFAULT_POSITION) < 6f }, "drawn at the sun, not at 0,0,0")
+    }
+
+    /** World matrix from the local translation (the transform system does this in the editor). */
+    private fun GameObject.placed(): GameObject = apply {
+        getComponent<Transform>()?.let { it.worldMatrix.translation(it.translation) }
+    }
+
+    @Test
+    fun SceneVisuals_DefaultSceneHasNoLightVisualAtTheOrigin() {
+        val scene = SceneSun.addDefaults(Scene("MainScene"))
+        scene.children.forEach { it.placed() }
+        val starts = mutableListOf<Vector3f>()
+        io.mockk.every { debugRenderer.addLine3D(capture(starts), any(), any(), any()) } returns Unit
+
+        gizmo.draw(scene, camera, Vector3f(), { _ -> 1f })
+
+        assertTrue(starts.isNotEmpty())
+        assertTrue(starts.none { it.length() < 1f }, "nothing drawn at 0,0,0")
     }
 
     @Test
@@ -220,7 +244,7 @@ class SceneVisualsGizmoTest {
     @Test
     fun SceneVisuals_DirectionalLightIconUsesHdrColorScaledIntoRange() {
         val scene = Scene("MainScene")
-        scene.addComponent(DirectionalLightComponent().apply { color.set(2f, 1f, 0f) })
+        scene.addChild(SceneSun.create(DirectionalLightComponent().apply { color.set(2f, 1f, 0f) }))
 
         gizmo.draw(scene, camera, Vector3f(), { _ -> 10f })
 
