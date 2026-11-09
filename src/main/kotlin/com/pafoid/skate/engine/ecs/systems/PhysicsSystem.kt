@@ -18,6 +18,7 @@ import com.pafoid.skate.engine.ecs.systems.SystemManager.ExecutionPriority
 import com.pafoid.skate.engine.getComponent
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.events.Collision
+import com.pafoid.skate.engine.events.PhysicsBackendFellBack
 import com.pafoid.skate.engine.events.TriggerEntered
 import com.pafoid.skate.engine.events.TriggerExited
 import com.pafoid.skate.engine.physics3d.ALL_LAYERS
@@ -38,7 +39,9 @@ import java.util.IdentityHashMap
 class PhysicsSystem(
     private val debugRenderer: DebugRenderer,
     private val eventSystem: EventSystem? = null,
-    private val physics3d: IPhysics3D = Physics3DFactory.create(debugRenderer),
+    private val physics3d: IPhysics3D = Physics3DFactory.create(debugRenderer) { fallback ->
+        eventSystem?.publish(PhysicsBackendFellBack(fallback.requested, fallback.used, fallback.reason))
+    },
 ) : System(priority = ExecutionPriority.EARLY) {
 
     override val phase = SystemPhase.FIXED_UPDATE

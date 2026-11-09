@@ -5,8 +5,25 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlin.math.sign
 
-/** Group of actions that are active together; only active contexts are read by [InputReader]. */
-enum class InputContext { GAMEPLAY, UI, EDITOR }
+/**
+ * Group of actions that are active together; only contexts on the reader's [InputContextStack] are read.
+ * Open set: the engine ships [GAMEPLAY], [UI] and [EDITOR]; games declare their own (`InputContext("vehicle")`).
+ */
+@Serializable
+@JvmInline
+value class InputContext(val id: String) {
+    /** Sort order for binding UIs: built-in contexts first in declaration order, then game contexts. */
+    val displayOrder: Int get() = BUILT_IN.indexOf(this).let { if (it < 0) BUILT_IN.size else it }
+
+    override fun toString(): String = id
+
+    companion object {
+        val GAMEPLAY = InputContext("gameplay")
+        val UI = InputContext("ui")
+        val EDITOR = InputContext("editor")
+        private val BUILT_IN = listOf(GAMEPLAY, UI, EDITOR)
+    }
+}
 
 @Serializable
 sealed class ActionBinding {
@@ -32,6 +49,12 @@ sealed class ActionBinding {
         is GamepadButton -> "pad:$button"
         is GamepadAxis -> "axis:$axis:${if (sign(scale) < 0f) "-" else "+"}"
     }
+
+    /**
+     * Physical source without axis direction: what a higher [ContextBlocking.CONSUME_BOUND] context takes away from
+     * lower ones (an analog binding reads both directions of its axis).
+     */
+    fun physicalSourceId(): String = if (this is GamepadAxis) "axis:$axis" else sourceId()
 
     fun withScale(newScale: Float): ActionBinding = when (this) {
         is Key -> copy(scale = newScale)
@@ -61,7 +84,9 @@ data class ActionDefinition(
     val category: String,
     /** Translation key for the action name; falls back to [id] in UIs. */
     val displayKey: String = "action.$id",
-    val defaults: List<ActionBinding> = emptyList()
+    val defaults: List<ActionBinding> = emptyList(),
+    /** When true, `InputSystem` publishes an `ActionEvent` on each press and release of this action. */
+    val publishEvents: Boolean = false,
 )
 
 /** User customizations of an [ActionMap]; only actions that differ from the defaults are stored. */
@@ -108,12 +133,16 @@ class ActionMap {
     private val definitions = LinkedHashMap<String, ActionDefinition>()
     private val overrides = HashMap<String, List<ActionBinding>>()
 
+    /** Profile overrides of actions not defined yet (e.g. game actions registered after the project loaded). */
+    private val pending = HashMap<String, List<ActionBinding>>()
+
     /** Incremented on every change so UIs and caches can detect it. */
     var revision: Int = 0
         private set
 
     fun define(definition: ActionDefinition): ActionMap {
         definitions[definition.id] = definition
+        pending.remove(definition.id)?.let { if (it != definition.defaults) overrides[definition.id] = it }
         revision++
         return this
     }
@@ -187,17 +216,25 @@ class ActionMap {
 
     fun resetAll() {
         overrides.clear()
+        pending.clear()
         revision++
     }
 
-    fun toProfile(name: String = "Default"): BindingProfile = BindingProfile(name, overrides = LinkedHashMap(overrides))
+    /** Customizations, including those kept for actions that are not defined (yet). */
+    fun toProfile(name: String = "Default"): BindingProfile =
+        BindingProfile(name, overrides = LinkedHashMap<String, List<ActionBinding>>(pending).apply { putAll(overrides) })
 
-    /** Replaces all customizations; unknown actions are ignored so old profiles keep loading. */
+    /**
+     * Replaces all customizations. Overrides of unknown actions are kept aside and applied if the action is defined
+     * later, and saved again by [toProfile], so a profile survives actions registered after it was loaded.
+     */
     fun loadProfile(profile: BindingProfile) {
         overrides.clear()
+        pending.clear()
         for ((id, list) in profile.overrides) {
-            val def = definitions[id] ?: continue
-            if (list != def.defaults) overrides[id] = list
+            val def = definitions[id]
+            if (def == null) pending[id] = list
+            else if (list != def.defaults) overrides[id] = list
         }
         revision++
     }
@@ -206,55 +243,5 @@ class ActionMap {
         val defaults = definitions[id]?.defaults
         if (list == defaults) overrides.remove(id) else overrides[id] = list
         revision++
-    }
-}
-
-object DefaultActions {
-    const val JUMP = "jump"
-    const val SPRINT = "sprint"
-    const val CROUCH = "crouch"
-    /** Mount / dismount the character's board or vehicle (default: E, gamepad Y). */
-    const val TOGGLE_MOUNT = "toggle_mount"
-    const val MOVE_X = "moveX"
-    const val MOVE_Y = "moveY"
-    const val LOOK_X = "lookX"
-    const val LOOK_Y = "lookY"
-    const val UI_CONFIRM = "ui.confirm"
-    const val UI_CANCEL = "ui.cancel"
-    const val UI_UP = "ui.up"
-    const val UI_DOWN = "ui.down"
-    const val UI_LEFT = "ui.left"
-    const val UI_RIGHT = "ui.right"
-
-    fun register(map: ActionMap): ActionMap {
-        val g = InputContext.GAMEPLAY
-        val ui = InputContext.UI
-        map.define(ActionDefinition(MOVE_X, g, "Movement", defaults = listOf(
-            ActionBinding.Key(Keys.D), ActionBinding.Key(Keys.A, -1f), ActionBinding.GamepadAxis(0))))
-        map.define(ActionDefinition(MOVE_Y, g, "Movement", defaults = listOf(
-            ActionBinding.Key(Keys.W), ActionBinding.Key(Keys.S, -1f), ActionBinding.GamepadAxis(1, -1f))))
-        map.define(ActionDefinition(LOOK_X, g, "Camera", defaults = listOf(ActionBinding.GamepadAxis(2))))
-        map.define(ActionDefinition(LOOK_Y, g, "Camera", defaults = listOf(ActionBinding.GamepadAxis(3, -1f))))
-        map.define(ActionDefinition(JUMP, g, "Actions", defaults = listOf(
-            ActionBinding.Key(Keys.SPACE), ActionBinding.GamepadButton(0))))
-        map.define(ActionDefinition(SPRINT, g, "Actions", defaults = listOf(
-            ActionBinding.Key(Keys.LEFT_SHIFT), ActionBinding.GamepadAxis(4))))
-        map.define(ActionDefinition(CROUCH, g, "Actions", defaults = listOf(
-            ActionBinding.Key(Keys.LEFT_CONTROL), ActionBinding.GamepadButton(4))))
-        map.define(ActionDefinition(TOGGLE_MOUNT, g, "Actions", defaults = listOf(
-            ActionBinding.Key(Keys.E), ActionBinding.GamepadButton(3))))
-        map.define(ActionDefinition(UI_CONFIRM, ui, "Navigation", defaults = listOf(
-            ActionBinding.Key(Keys.ENTER), ActionBinding.GamepadButton(0))))
-        map.define(ActionDefinition(UI_CANCEL, ui, "Navigation", defaults = listOf(
-            ActionBinding.Key(Keys.ESCAPE), ActionBinding.GamepadButton(1))))
-        map.define(ActionDefinition(UI_UP, ui, "Navigation", defaults = listOf(
-            ActionBinding.Key(Keys.UP), ActionBinding.GamepadButton(10))))
-        map.define(ActionDefinition(UI_RIGHT, ui, "Navigation", defaults = listOf(
-            ActionBinding.Key(Keys.RIGHT), ActionBinding.GamepadButton(11))))
-        map.define(ActionDefinition(UI_DOWN, ui, "Navigation", defaults = listOf(
-            ActionBinding.Key(Keys.DOWN), ActionBinding.GamepadButton(12))))
-        map.define(ActionDefinition(UI_LEFT, ui, "Navigation", defaults = listOf(
-            ActionBinding.Key(Keys.LEFT), ActionBinding.GamepadButton(13))))
-        return map
     }
 }

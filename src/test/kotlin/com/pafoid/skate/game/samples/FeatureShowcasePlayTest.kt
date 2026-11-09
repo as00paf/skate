@@ -95,7 +95,7 @@ class FeatureShowcasePlayTest {
     }
 
     private fun buttonCentre(scene: Scene, name: String): Pair<Float, Float> {
-        val canvas = scene.children.single { it.getComponent<UICanvasComponent>() != null }
+        val canvas = scene.children.single { it.getComponent<UICanvasComponent>() != null && it.name != FeatureShowcase.MAP_CANVAS }
         val scale = canvas.getComponent<UICanvasComponent>()!!.scale
         val rect = canvas.children.single { it.name == name }.getComponent<UIElementComponent>()!!.rect
         return (rect.x + rect.w / 2f) * scale to (rect.y + rect.h / 2f) * scale

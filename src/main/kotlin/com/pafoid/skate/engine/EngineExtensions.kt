@@ -59,6 +59,8 @@ fun GameObject.getComponent(type: ComponentType) =
         ComponentType.DIRECTIONAL_LIGHT -> getComponent<DirectionalLightComponent>()
         ComponentType.ENVIRONMENT -> getComponent<EnvironmentComponent>()
         ComponentType.FOLLOW_CAMERA -> getComponent<FollowCameraComponent>()
+        ComponentType.FIRST_PERSON_CAMERA -> getComponent<com.pafoid.skate.engine.ecs.components.FirstPersonCameraComponent>()
+        ComponentType.CAMERA_CYCLE -> getComponent<com.pafoid.skate.engine.ecs.components.CameraCycleComponent>()
         ComponentType.GRID_LINES -> getComponent<GridLines>()
         ComponentType.INPUT_STATE -> getComponent<InputStateComponent>()
         ComponentType.JOINT -> getComponent<JointComponent>()

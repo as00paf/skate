@@ -17,6 +17,7 @@ import org.lwjgl.opengl.GL11.glGenTextures
 import org.lwjgl.opengl.GL11.glTexImage2D
 import org.lwjgl.opengl.GL11.glTexParameterf
 import org.lwjgl.opengl.GL11.glTexParameteri
+import org.lwjgl.opengl.GL12.GL_TEXTURE_MAX_LEVEL
 import org.lwjgl.opengl.GL12.GL_TEXTURE_WRAP_R
 import org.lwjgl.opengl.GL12.glTexImage3D
 import org.lwjgl.opengl.GL12.glTexSubImage3D
@@ -49,7 +50,12 @@ internal class GlTexture(
     override val nativeHandle: Long get() = id.toLong()
 
     init {
-        withBound { applySampler(desc.sampler, previous = null) }
+        withBound {
+            // Only the declared levels exist: a shorter chain than the full one is otherwise mipmap-incomplete and
+            // samples black (REN-27's 6-level prefiltered sky); Vulkan gets the same count from the image's levels
+            glTexParameteri(target, GL_TEXTURE_MAX_LEVEL, desc.mipLevels - 1)
+            applySampler(desc.sampler, previous = null)
+        }
     }
 
     private inline fun withBound(block: () -> Unit) {

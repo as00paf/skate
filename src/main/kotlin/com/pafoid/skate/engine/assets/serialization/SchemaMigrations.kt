@@ -9,13 +9,24 @@ import kotlinx.serialization.json.jsonPrimitive
 
 /** Kinds of versioned data files. Files without a `schema` field are version 0. */
 enum class FileKind(val currentSchema: Int) {
-    SCENE(1),
+    SCENE(2),
     PREFAB(1),
     PROJECT(1)
 }
 
 class UnsupportedSchemaException(kind: FileKind, found: Int) :
     IllegalStateException("$kind file has schema $found, newer than supported ${kind.currentSchema}")
+
+/**
+ * A file saved by an older Skate version whose layout changed since (GameEngine.md rule 8: no upgrade-on-load code
+ * while the engine is a work in progress). The message is shown to the user as is, in the open-scene error dialog.
+ */
+class OutdatedSchemaException(val kind: FileKind, val found: Int) : IllegalStateException(
+    "This ${kind.label} was saved by an older Skate version (format $found, current ${kind.currentSchema}) and can no " +
+        "longer be opened. Recreate it, or create a new project to get the current default scenes."
+)
+
+private val FileKind.label: String get() = name.lowercase()
 
 /** A step that upgrades a JSON document from schema `from` to `from + 1`. */
 fun interface Migration {
@@ -36,8 +47,7 @@ class SchemaMigrations(
         var version = schemaOf(root)
         if (version > target) throw UnsupportedSchemaException(kind, version)
         while (version < target) {
-            val step = migrations[kind]?.get(version)
-                ?: throw IllegalStateException("No $kind migration from schema $version")
+            val step = migrations[kind]?.get(version) ?: throw OutdatedSchemaException(kind, version)
             root = step.migrate(root)
             version++
             root = JsonObject(root + (SCHEMA_KEY to JsonPrimitive(version)))
@@ -48,7 +58,9 @@ class SchemaMigrations(
     companion object {
         const val SCHEMA_KEY = "schema"
 
-        // v0 -> v1 only introduces the schema field; the layout is unchanged.
+        // v0 -> v1 only introduces the schema field; the layout is unchanged. Later layout changes bump the schema
+        // without a migration (rule 8): older files fail with OutdatedSchemaException. Scenes v2 (REN-26): ambient
+        // light in the environment, the sun as an entity.
         val DEFAULT: Map<FileKind, Map<Int, Migration>> = FileKind.values().associateWith {
             mapOf(0 to Migration { root -> root })
         }

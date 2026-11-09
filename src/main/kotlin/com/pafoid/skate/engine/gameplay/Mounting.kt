@@ -28,6 +28,12 @@ interface Mountable {
 
     /** Camera framing for the current mode (mounted or not), or null to leave the camera alone. */
     val cameraPreset: CameraPreset? get() = null
+
+    /**
+     * Extra rotation of the ridden mount in its own frame (+Z forward), e.g. a board spinning through a trick, or
+     * null for none. Visual only: [com.pafoid.skate.engine.ecs.systems.MountFollowSystem] applies it to the drawn pose.
+     */
+    val mountSpin: org.joml.Quaternionf? get() = null
 }
 
 /** Physics state of a mount body: carried (kinematic, collides with nothing) while ridden, a free body otherwise. */
