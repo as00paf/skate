@@ -74,7 +74,6 @@ class EditorSettingsWindow(
             Category("keybindings", "settings.editor.keybindings", arrayOf("key", "binding", "gizmo", "translate", "rotate", "scale", "select", "measure", "deselect", "camera", "reset")) { renderKeyBindings() },
             Category("gamepad_overlay", "settings.editor.gamepad_overlay", arrayOf("gamepad", "overlay", "show", "size", "scale")) { renderGamepadOverlay() },
             Category("interface", "settings.editor.interface", arrayOf("interface", "theme")) { renderInterface() },
-            Category("graphics", "settings.editor.graphics", arrayOf("graphics", "shadow", "quality")) { renderGraphics() },
             Category("autosave", "settings.editor.autosave", arrayOf("auto", "save", "autosave", "interval")) { renderAutoSave() },
             Category("script_editor", "settings.editor.script_editor", arrayOf("script", "completion", "popup", "delay", "autocomplete")) { renderScriptEditor() }
         )
@@ -254,10 +253,6 @@ class EditorSettingsWindow(
         }
     }
 
-    private fun renderGraphics() {
-        // Shadow quality moved to Project Settings (REN-30).
-        // Editor-only shadow quality remains in EditorSettings via EditorSettingsManager.
-    }
 
     private fun renderAutoSave() {
         MImGui.propertyRow(

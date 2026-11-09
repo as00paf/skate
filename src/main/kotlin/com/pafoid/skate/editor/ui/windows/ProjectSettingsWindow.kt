@@ -213,18 +213,18 @@ class ProjectSettingsWindow(
         ImGui.separator()
         ImGui.spacing()
 
-        // Fullscreen
+                // Fullscreen
         val fullscreenLabels = arrayOf("Off", "On")
         val fullscreenIdx = if (project.fullscreen) 1 else 0
         val fullscreenSel = ImInt(fullscreenIdx)
-        if (combo("##fullscreen", fullscreenSel, fullscreenLabels, fullscreenLabels.size)) {
-            eventSystem.publish(ProjectEvent.SetFullscreenRequested(fullscreenSel.get() == 1))
+        MImGui.propertyRow(
+            label = stringManager.getString("settings.project.display.fullscreen"),
+            helpTooltip = stringManager.getString("settings.project.display.fullscreen.desc")
+        ) {
+            if (combo("##fullscreen", fullscreenSel, fullscreenLabels, fullscreenLabels.size)) {
+                eventSystem.publish(ProjectEvent.SetFullscreenRequested(fullscreenSel.get() == 1))
+            }
         }
-
-        ImGui.sameLine()
-        ImGui.text(stringManager.getString("settings.project.display.fullscreen"))
-        ImGui.sameLine()
-        MImGui.textDisabled(stringManager.getString("settings.project.display.fullscreen.desc"))
 
         ImGui.spacing()
 
@@ -232,14 +232,14 @@ class ProjectSettingsWindow(
         val vsyncLabels = arrayOf("Off", "On")
         val vsyncIdx = if (project.vsync) 1 else 0
         val vsyncSel = ImInt(vsyncIdx)
-        if (combo("##vsync", vsyncSel, vsyncLabels, vsyncLabels.size)) {
-            eventSystem.publish(ProjectEvent.SetVsyncRequested(vsyncSel.get() == 1))
+        MImGui.propertyRow(
+            label = stringManager.getString("settings.project.display.vsync"),
+            helpTooltip = stringManager.getString("settings.project.display.vsync.desc")
+        ) {
+            if (combo("##vsync", vsyncSel, vsyncLabels, vsyncLabels.size)) {
+                eventSystem.publish(ProjectEvent.SetVsyncRequested(vsyncSel.get() == 1))
+            }
         }
-
-        ImGui.sameLine()
-        ImGui.text(stringManager.getString("settings.project.display.vsync"))
-        ImGui.sameLine()
-        MImGui.textDisabled(stringManager.getString("settings.project.display.vsync.desc"))
     }
 
     private fun renderGeneral() {

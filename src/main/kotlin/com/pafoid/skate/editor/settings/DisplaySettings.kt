@@ -6,7 +6,7 @@ import kotlinx.serialization.Serializable
 data class DisplaySettings(
     val width: Int = 1920,
     val height: Int = 1080,
-    val fullscreen: Boolean = false,
-    val vsync: Boolean = true
+    val fullscreen: Boolean = true,
+    val vsync: Boolean = false
 ) {
 }
