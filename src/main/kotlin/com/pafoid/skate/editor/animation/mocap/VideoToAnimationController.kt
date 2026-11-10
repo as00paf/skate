@@ -12,7 +12,8 @@ import java.util.concurrent.atomic.AtomicBoolean
 /** Which rig the clip is made for. */
 enum class TargetRig { SKATER, SELECTED }
 
-enum class MocapPhase { IDLE, PROBING, READY, EXTRACTING, SOLVING, DONE, FAILED }
+/** [DOWNLOADING_MODEL]: the pose model is fetched once before the first detection (ANI-18). */
+enum class MocapPhase { IDLE, PROBING, READY, DOWNLOADING_MODEL, EXTRACTING, SOLVING, DONE, FAILED }
 
 /** Settings the window edits; defaults give a usable clip with one click. */
 data class VideoMocapOptions(
@@ -50,20 +51,24 @@ class VideoToAnimationController(
     @Volatile var coverage = 0f; private set
     @Volatile var setup: SetupCheck? = null; private set
     @Volatile var checkingSetup = false; private set
+    /** Model download progress (0..1) while Check setup fetches it, else null. */
+    @Volatile var setupDownload: Float? = null; private set
 
     var options = VideoMocapOptions()
 
     private var cancel = AtomicBoolean(false)
 
-    val busy: Boolean get() = phase == MocapPhase.PROBING || phase == MocapPhase.EXTRACTING || phase == MocapPhase.SOLVING
+    val busy: Boolean get() = phase == MocapPhase.PROBING || phase == MocapPhase.DOWNLOADING_MODEL ||
+        phase == MocapPhase.EXTRACTING || phase == MocapPhase.SOLVING
     val canCreate: Boolean get() = video != null && !busy && animationsDir() != null
 
     fun checkSetup() {
         if (checkingSetup) return
         checkingSetup = true
         background {
-            val check = runCatching { backend.checkSetup() }.getOrElse { SetupCheck(false, problem = it.message, hint = SetupHint.OTHER) }
-            main { setup = check; checkingSetup = false }
+            val check = runCatching { backend.checkSetup { setupDownload = it.takeIf { p -> p < 1f } } }
+                .getOrElse { SetupCheck(false, problem = it.message, hint = SetupHint.OTHER) }
+            main { setup = check; checkingSetup = false; setupDownload = null }
         }
     }
 
@@ -93,7 +98,12 @@ class VideoToAnimationController(
         phase = MocapPhase.EXTRACTING
         background {
             val outcome = runCatching {
-                val seq = backend.extract(file, File(workDir(), "landmarks_${System.nanoTime()}.json"), token) { progress = it }
+                val seq = backend.extract(file, File(workDir(), "landmarks_${System.nanoTime()}.json"), token,
+                    onModelProgress = { p ->
+                        phase = if (p < 1f) MocapPhase.DOWNLOADING_MODEL else MocapPhase.EXTRACTING
+                        progress = if (p < 1f) p else 0f
+                    },
+                ) { progress = it }
                 landmarks = seq
                 phase = MocapPhase.SOLVING
                 val made = MocapImport.fromLandmarks(seq, file.nameWithoutExtension, target,
