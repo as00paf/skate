@@ -63,6 +63,9 @@ class SkateInputContextTest {
         val reader = ActionInputReader(raw, map)
         val sampler = CharacterInputSampler(reader, contexts = reader.contexts, actionMap = map)
         val actions = sampler.actionsFor(this)
+
+        // A first query is never a press (a key held at Play start), so read the actions once before the first frame.
+        init { reader.update(); sampler.sample(InputStateComponent()) }
         val state = InputStateComponent()
         val behavior = SkateBehavior(config)
         var speed = 0f

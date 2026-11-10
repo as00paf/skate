@@ -29,6 +29,9 @@ sealed class ProjectEvent(eventName: String) : Event(eventName) {
 
     /** Change the open project's graphics backend (EDT-43), as an undoable command. */
     data class SetGraphicsBackendRequested(val backend: GraphicsBackend) : ProjectEvent("project.action.set_graphics_backend")
+
+    /** Change the open project's random seed (ECS-14), as an undoable command. */
+    data class SetRandomSeedRequested(val seed: Long) : ProjectEvent("project.action.set_random_seed")
     /** Project Settings (EDT-57): the scene the project opens with, as an undoable command. */
     data class SetDefaultSceneRequested(val scenePath: String) : ProjectEvent("project.action.set_default_scene")
     /** Project Settings (EDT-57): physics steps per second, as an undoable command applied to the engine. */

@@ -2,8 +2,8 @@ package com.pafoid.skate.cli
 
 import com.pafoid.skate.engine.ecs.SceneSun
 import com.pafoid.skate.engine.ecs.components.EnvironmentComponent
-import com.pafoid.skate.editor.project.EngineAssetCopier
 import com.pafoid.skate.editor.project.Project
+import com.pafoid.skate.engine.assets.ProjectLayout
 import com.pafoid.skate.engine.addComponent
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.data.models.`3dModel`
@@ -34,23 +34,23 @@ class MarbleRunProjectBuilder(private val serializer: Serializer = Serializer())
     private lateinit var assetsPrefix: String
 
     fun build(parent: File): File {
-        val projectDir = File(parent, PROJECT_NAME).also { it.mkdirs() }
-        val assetsDir = File(projectDir, "Assets").also { it.mkdirs() }
-        val scenesDir = File(projectDir, "Scenes").also { it.mkdirs() }
-        File(projectDir, "Builds").mkdirs()
-        EngineAssetCopier().copyBundledAssets(projectDir)
+        val projectDir = File(parent, PROJECT_NAME).absoluteFile.also { it.mkdirs() }
+        val assetsDir = ProjectLayout.create(projectDir)
+        val scenesDir = ProjectLayout.scenesDir(projectDir)
+        copyEngineAssets(projectDir)
         assetsPrefix = assetsDir.absolutePath + File.separator
+        val files = ProjectFiles(serializer, projectDir)
 
-        val scenePath = File(scenesDir, "$SCENE_NAME.scene").also { it.writeText(serializer.encode(run())) }.path
+        val scenePath = files.writeScene(scenesDir, SCENE_NAME, run()).path
         val projectFile = File(projectDir, "$PROJECT_NAME.skateproject")
-        projectFile.writeText(serializer.encode(Project(
+        files.writeProject(Project(
             name = PROJECT_NAME,
             projectPath = projectFile.path,
             description = "Physics-heavy sample: rolling bodies and joints",
             defaultScene = scenePath,
             scenesPath = listOf(scenePath),
             resolution = Vector2i(1920, 1080),
-        )))
+        ))
         return projectFile
     }
 
