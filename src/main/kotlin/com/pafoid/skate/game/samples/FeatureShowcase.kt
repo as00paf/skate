@@ -147,6 +147,17 @@ class FeatureShowcase(private val prefabs: PrefabsGenerator) {
         /** Overlay button that cycles the scene fog (off, linear, exp, exp², height) in Play; see [FogCycle]. */
         const val FOG_TOGGLE_BUTTON = "FogToggle"
 
+        /**
+         * TLG-16: groups of the overlay canvas, so the Hierarchy reads by screen region. [LEGEND_PANEL] and
+         * [WIDGET_PANEL] are drawn panels whose items are their children (offsets relative to the panel); the
+         * other groups are invisible full-canvas containers.
+         */
+        const val HEADER = "Header"
+        const val LEGEND_PANEL = "LegendPanel"
+        const val TOOLBAR = "Toolbar"
+        const val WIDGET_PANEL = "WidgetPanel"
+        const val MAP_CORNER = "MapCorner"
+
         /** Prefab library pieces shown in the Prefabs area (all street/transition pieces except the large bowl and half pipe). */
         val PREFAB_PIECES = listOf(
             PrefabType.LEDGE, PrefabType.HUBBA, PrefabType.MANUAL_PAD, PrefabType.GRIND_BOX, PrefabType.FUNBOX,
@@ -450,45 +461,59 @@ class FeatureShowcase(private val prefabs: PrefabsGenerator) {
     private fun uiNode(name: String, anchorX: Float, anchorY: Float, x: Float, y: Float, w: Float, h: Float) =
         GameObject(name).addComponent(UIElementComponent().placed(anchorX, anchorY, x, y, w, h))
 
+    /** An invisible container filling its parent: groups UI items in the Hierarchy without moving them (TLG-16). */
+    private fun uiGroup(name: String) = GameObject(name).addComponent(UIElementComponent().stretched())
+
     private fun ui() {
         val canvas = GameObject("[UI] Canvas").addComponent(UICanvasComponent())
-        canvas.addChild(uiNode("Title", 0.5f, 0f, 0f, 20f, 1000f, 60f)
-            .addComponent(UITextComponent("showcase.title", fontSize = 52f, alignX = 0.5f)))
-        canvas.addChild(uiNode("Hint", 0.5f, 0f, 0f, 84f, 1500f, 36f)
-            .addComponent(UITextComponent("showcase.hint", fontSize = 28f, alignX = 0.5f)))
+        canvas.addChild(uiGroup(HEADER).apply {
+            addChild(uiNode("Title", 0.5f, 0f, 0f, 20f, 1000f, 60f)
+                .addComponent(UITextComponent("showcase.title", fontSize = 52f, alignX = 0.5f)))
+            addChild(uiNode("Hint", 0.5f, 0f, 0f, 84f, 1500f, 36f)
+                .addComponent(UITextComponent("showcase.hint", fontSize = 28f, alignX = 0.5f)))
+        })
 
         // Legend: one button per area (flies the camera there in Play) plus Overview (back to the start view).
+        // Its title and buttons are children of the panel, placed from the panel's top-left corner.
         val legend = listOf(OVERVIEW to "showcase.overview") + AREAS.map { it.key to "showcase.area.${it.key}" }
-        canvas.addChild(uiNode("LegendPanel", 0f, 0f, 20f, 140f, 560f, 70f + legend.size * legendRow)
-            .addComponent(UIImageComponent(tint = Vector4f(0.05f, 0.08f, 0.15f, 0.75f))))
-        canvas.addChild(uiNode("LegendTitle", 0f, 0f, 40f, 150f, 520f, 44f)
-            .addComponent(UITextComponent("showcase.areas", fontSize = 36f)))
-        legend.forEachIndexed { i, (key, labelKey) ->
-            canvas.addChild(uiNode(focusButtonName(key), 0f, 0f, 30f, 200f + i * legendRow, 540f, legendRow - 6f)
-                .addComponent(UIButtonComponent(labelKey, fontSize = 24f)))
-        }
+        canvas.addChild(uiNode(LEGEND_PANEL, 0f, 0f, 20f, 140f, 560f, 70f + legend.size * legendRow)
+            .addComponent(UIImageComponent(tint = Vector4f(0.05f, 0.08f, 0.15f, 0.75f))).apply {
+                addChild(uiNode("LegendTitle", 0f, 0f, 20f, 10f, 520f, 44f)
+                    .addComponent(UITextComponent("showcase.areas", fontSize = 36f)))
+                legend.forEachIndexed { i, (key, labelKey) ->
+                    addChild(uiNode(focusButtonName(key), 0f, 0f, 10f, 60f + i * legendRow, 540f, legendRow - 6f)
+                        .addComponent(UIButtonComponent(labelKey, fontSize = 24f)))
+                }
+            })
 
-        canvas.addChild(uiNode(FOG_TOGGLE_BUTTON, 1f, 0f, -20f, 20f, 320f, 64f)
-            .addComponent(UIButtonComponent("showcase.fog_toggle", fontSize = 26f)))
-        // Filled in Play by the seed script; "?" until then.
-        canvas.addChild(uiNode(SEED_LABEL, 1f, 0f, -20f, 96f, 520f, 36f)
-            .addComponent(UITextComponent("showcase.seed", listOf("?", "?"), Vector4f(0.8f, 0.9f, 1f, 1f), 26f, alignX = 1f)))
+        canvas.addChild(uiGroup(TOOLBAR).apply {
+            addChild(uiNode(FOG_TOGGLE_BUTTON, 1f, 0f, -20f, 20f, 320f, 64f)
+                .addComponent(UIButtonComponent("showcase.fog_toggle", fontSize = 26f)))
+            // Filled in Play by the seed script; "?" until then.
+            addChild(uiNode(SEED_LABEL, 1f, 0f, -20f, 96f, 520f, 36f)
+                .addComponent(UITextComponent("showcase.seed", listOf("?", "?"), Vector4f(0.8f, 0.9f, 1f, 1f), 26f, alignX = 1f)))
+        })
 
-        canvas.addChild(uiNode("WidgetPanel", 1f, 1f, -20f, -20f, 480f, 330f)
-            .addComponent(UIImageComponent(tint = Vector4f(0.1f, 0.2f, 0.4f, 0.8f))))
-        canvas.addChild(uiNode("FormattedText", 1f, 1f, -40f, -280f, 440f, 44f)
-            .addComponent(UITextComponent("showcase.text", listOf("42"), Vector4f(1f, 0.8f, 0.2f, 1f), 32f)))
-        canvas.addChild(uiNode("Button", 1f, 1f, -110f, -180f, 300f, 76f)
-            .addComponent(UIButtonComponent("showcase.button")))
-        canvas.addChild(uiNode("Progress", 1f, 1f, -60f, -110f, 400f, 30f)
-            .addComponent(UIProgressBarComponent(value = 0.6f)))
-        canvas.addChild(uiNode("Slider", 1f, 1f, -60f, -50f, 400f, 30f)
-            .addComponent(UISliderComponent(0f, 1f, 0.3f)))
+        // Widget samples, placed from the panel's bottom-right corner.
+        canvas.addChild(uiNode(WIDGET_PANEL, 1f, 1f, -20f, -20f, 480f, 330f)
+            .addComponent(UIImageComponent(tint = Vector4f(0.1f, 0.2f, 0.4f, 0.8f))).apply {
+                addChild(uiNode("FormattedText", 1f, 1f, -20f, -260f, 440f, 44f)
+                    .addComponent(UITextComponent("showcase.text", listOf("42"), Vector4f(1f, 0.8f, 0.2f, 1f), 32f)))
+                addChild(uiNode("Button", 1f, 1f, -90f, -160f, 300f, 76f)
+                    .addComponent(UIButtonComponent("showcase.button")))
+                addChild(uiNode("Progress", 1f, 1f, -40f, -90f, 400f, 30f)
+                    .addComponent(UIProgressBarComponent(value = 0.6f)))
+                addChild(uiNode("Slider", 1f, 1f, -40f, -30f, 400f, 30f)
+                    .addComponent(UISliderComponent(0f, 1f, 0.3f)))
+            })
+
         // GUI-13: minimap in the bottom-left corner (below the legend), following "you" (the camera).
-        canvas.addChild(map(MINIMAP, follow = true, labels = false)
-            .addComponent(UIElementComponent().placed(0f, 1f, 20f, -20f, MINIMAP_SIZE, MINIMAP_SIZE)))
-        canvas.addChild(uiNode(MAP_BUTTON, 0f, 1f, MINIMAP_SIZE + 36f, -20f, 220f, 60f)
-            .addComponent(UIButtonComponent("showcase.map.open", fontSize = 26f)))
+        canvas.addChild(uiGroup(MAP_CORNER).apply {
+            addChild(map(MINIMAP, follow = true, labels = false)
+                .addComponent(UIElementComponent().placed(0f, 1f, 20f, -20f, MINIMAP_SIZE, MINIMAP_SIZE)))
+            addChild(uiNode(MAP_BUTTON, 0f, 1f, MINIMAP_SIZE + 36f, -20f, 220f, 60f)
+                .addComponent(UIButtonComponent("showcase.map.open", fontSize = 26f)))
+        })
         add(canvas)
         add(fullMap())
     }
@@ -500,10 +525,12 @@ class FeatureShowcase(private val prefabs: PrefabsGenerator) {
             .addComponent(UIElementComponent().stretched())
         canvas.addChild(GameObject("Dim").addComponent(UIElementComponent().stretched())
             .addComponent(UIImageComponent(tint = Vector4f(0f, 0f, 0f, 0.6f))))
-        canvas.addChild(uiNode("MapTitle", 0.5f, 0f, 0f, 30f, 1200f, 60f)
-            .addComponent(UITextComponent("showcase.map.title", fontSize = 48f, alignX = 0.5f)))
-        canvas.addChild(uiNode("MapHint", 0.5f, 0f, 0f, 92f, 1400f, 34f)
-            .addComponent(UITextComponent("showcase.map.hint", fontSize = 26f, alignX = 0.5f)))
+        canvas.addChild(uiGroup(HEADER).apply {
+            addChild(uiNode("MapTitle", 0.5f, 0f, 0f, 30f, 1200f, 60f)
+                .addComponent(UITextComponent("showcase.map.title", fontSize = 48f, alignX = 0.5f)))
+            addChild(uiNode("MapHint", 0.5f, 0f, 0f, 92f, 1400f, 34f)
+                .addComponent(UITextComponent("showcase.map.hint", fontSize = 26f, alignX = 0.5f)))
+        })
         canvas.addChild(map("FullMap", follow = false, labels = true)
             .addComponent(UIElementComponent().placed(0.5f, 0.5f, 0f, 30f, 1500f, 820f)))
         canvas.addChild(uiNode(MAP_CLOSE, 1f, 0f, -30f, 30f, 220f, 64f)
