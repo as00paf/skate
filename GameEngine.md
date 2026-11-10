@@ -439,7 +439,7 @@ Round 27+ goals (human, 2026-11-06): fix editor bugs, make every window, dialog 
   - Do: From the human testing the window standard (2026-11-07): only **some** windows show the `?` help button, and on the ones that do the **button background is clipped at the top**. Give every registered window the control and fix the clipping (padding/rect/clip-space) at any DPI and window size. The fix must work with the pending EDT-52 chunk branches (C, E, F, G, H, I) and EDT-54, which the lead integrates before final verification.
   - Done when: Every registered window shows a correctly rendered `?` button; a test asserts coverage and the layout math is covered.
   - Deps: EDT-52
-- [ ] **EDT-68** `P1` Help window with Markdown articles and a Help menu item — design note `docs/design/EDT-68.md` (questions for the human)
+- [ ] **EDT-68** `P1` Help window with Markdown articles and a Help menu item — design approved 2026-11-10 (`docs/design/EDT-68.md`)
   - Do: From the human (2026-11-07): clicking `?` must open a **help window** showing the article for the selected topic — **not** a bigger tooltip/popover. The window is docked like other editor windows, lists the topics (table of contents) and renders the `.md` articles written by EDT-53. Add a **Help** menu item that opens the same window independently of any `?` button. Implement the approved design note.
   - Done when: `?` opens the window on the right topic, the Help menu item opens it with the topic list, articles are `.md` files under `assets/help/**`, and tests cover article discovery/loading, the menu entry and the `?` routing.
   - Deps: EDT-53
