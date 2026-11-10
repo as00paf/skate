@@ -32,7 +32,6 @@ import com.pafoid.skate.engine.ecs.components.SpotLightComponent
 import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.getComponent
 import com.pafoid.skate.engine.physics3d.BodyType
-import com.pafoid.skate.engine.ui.UIButtonComponent
 import com.pafoid.skate.engine.ui.UICanvasComponent
 import com.pafoid.skate.engine.ui.UIElementComponent
 import com.pafoid.skate.engine.ui.UITextComponent
@@ -272,8 +271,9 @@ class PrefabsGenerator(
 
     /**
      * The default skate scene: a follow camera (GPL-05) on the skater, the board, the floor and a few obstacles. The
-     * quarter pipe behind the spawn and the funbox give the camera's spring arm something to collide with. The HUD's
-     * Camera button and the [CameraCycle.ACTION] input cycle third-person, first-person and fixed cameras (GPL-22).
+     * quarter pipe behind the spawn and the funbox give the camera's spring arm something to collide with. The
+     * [CameraCycle.ACTION] input cycles third-person, first-person and fixed cameras (GPL-22); there is no HUD button
+     * for it (GPL-30).
      */
     fun spawnDefaultsSync(): List<GameObject> {
         val camera = GameObject(CAMERA_THIRD_PERSON)
@@ -282,7 +282,6 @@ class PrefabsGenerator(
             .addComponent(FollowCameraComponent(targetName = "Skater"))
             .addComponent(CameraCycleComponent(
                 cameraNames = listOf(CAMERA_THIRD_PERSON, CAMERA_FIRST_PERSON, CAMERA_FIXED).joinToString(", "),
-                buttonName = CAMERA_BUTTON,
             ))
         val firstPerson = GameObject(CAMERA_FIRST_PERSON)
             .addComponent(CameraComponent(fov = 70f, nearPlane = 0.05f))
@@ -344,8 +343,8 @@ class PrefabsGenerator(
     }
 
     /**
-     * In-game (non-ImGui) HUD: a score line top-left, a Camera button top-right (restart is in the Esc menu) and the
-     * trick name bottom-centre, which the trick HUD fills while riding (GPL-21).
+     * In-game (non-ImGui) HUD: a score line top-left and the trick name bottom-centre, which the trick HUD fills while
+     * riding (GPL-21). Restart is in the Esc menu; cameras cycle with the [CameraCycle.ACTION] input (GPL-30).
      */
     fun spawnHud(): GameObject {
         val canvas = GameObject("HUD").addComponent(UICanvasComponent())
@@ -353,11 +352,6 @@ class PrefabsGenerator(
             GameObject("ScoreText")
                 .addComponent(UIElementComponent().placed(0f, 0f, 40f, 30f, 500f, 60f))
                 .addComponent(UITextComponent("hud.score", listOf("0"), fontSize = 44f))
-        )
-        canvas.addChild(
-            GameObject(CAMERA_BUTTON)
-                .addComponent(UIElementComponent().placed(1f, 0f, -40f, 30f, 260f, 70f))
-                .addComponent(UIButtonComponent("hud.camera"))
         )
         canvas.addChild(
             GameObject(TRICK_TEXT)
@@ -373,11 +367,10 @@ class PrefabsGenerator(
         /** Side of the MainScene skatepark floor in metres (GPL-23). */
         const val PARK_SIZE = 40
 
-        /** MainScene cameras, in the order the HUD Camera button cycles them (GPL-22). */
+        /** MainScene cameras, in the order the [CameraCycle.ACTION] input cycles them (GPL-22). */
         const val CAMERA_THIRD_PERSON = "Camera"
         const val CAMERA_FIRST_PERSON = "FirstPersonCamera"
         const val CAMERA_FIXED = "FixedCamera"
-        const val CAMERA_BUTTON = "CameraButton"
         /** HUD text showing the current / last landed trick (empty key: hidden). */
         const val TRICK_TEXT = "TrickText"
 
