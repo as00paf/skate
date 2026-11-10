@@ -9,6 +9,7 @@ import com.pafoid.skate.editor.events.ViewportAction.TogglePhysicsDebug
 import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.editor.imgui.data.UiConstants.SEPARATOR_SPACING
 import com.pafoid.skate.editor.imgui.data.UiConstants.SEPARATOR_WIDTH
+import com.pafoid.skate.editor.imgui.HelpButtonLayout
 import com.pafoid.skate.editor.imgui.data.UiConstants.TOOLBAR_BUTTON_HEIGHT
 import com.pafoid.skate.editor.imgui.data.UiConstants.TOOLBAR_BUTTON_SPACING
 import com.pafoid.skate.editor.imgui.data.UiConstants.TOOLBAR_HEIGHT
@@ -166,14 +167,18 @@ class ViewportToolbar(
 
         val toolbarPosX = TOOLBAR_BUTTON_SPACING / 2f + ImGui.getStyle().framePaddingX
 
-        ImGui.setCursorPos(toolbarPosX, toolbarPosY)
+        // The child starts a little above the buttons: they were drawn exactly on its clip top, which cut their top
+        // edge, the `?` included (EDT-72).
+        val margin = HelpButtonLayout.MIN_CLIP_CLEARANCE
+        ImGui.setCursorPos(toolbarPosX, toolbarPosY - margin)
         ImGui.beginChild(
             "GameViewportToolbar",
             totalButtonWidth,
-            TOOLBAR_HEIGHT,
+            TOOLBAR_HEIGHT + margin,
             false,
             ImGuiWindowFlags.NoBackground or ImGuiWindowFlags.NoDecoration
         )
+        ImGui.setCursorPosY(margin)
 
         groups.forEachIndexed { groupIndex, buttons ->
             if (groupIndex > 0) {

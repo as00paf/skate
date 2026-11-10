@@ -116,7 +116,7 @@ class PrefabsGeneratorTest {
     }
 
     @Test
-    fun `MainScene camera button cycles third person, first person and fixed cameras, also after a save and load`() {
+    fun `MainScene camera cycle action cycles third person, first person and fixed cameras, also after a save and load`() {
         val generated = Scene("MainScene").apply { PrefabsGenerator(engine).spawnDefaultsSync().forEach { addChild(it) } }
         val serializer = Serializer()
         val text = serializer.encodeFile(com.pafoid.skate.engine.assets.serialization.FileKind.SCENE, generated)
@@ -127,22 +127,32 @@ class PrefabsGeneratorTest {
             assertEquals(listOf(PrefabsGenerator.CAMERA_THIRD_PERSON), cameras.filter { it.getComponent<CameraComponent>()!!.isDefault }.map { it.name })
             val cycle = scene.children.single { it.name == PrefabsGenerator.CAMERA_THIRD_PERSON }
                 .getComponent<com.pafoid.skate.engine.ecs.components.CameraCycleComponent>()!!
-            assertEquals(PrefabsGenerator.CAMERA_BUTTON, cycle.buttonName)
+            // GPL-30: no HUD button, only the camera.cycle action.
+            assertEquals("", cycle.buttonName)
             assertEquals(com.pafoid.skate.engine.gameplay.camera.CameraCycle.ACTION, cycle.actionId)
             assertNotNull(scene.children.single { it.name == PrefabsGenerator.CAMERA_FIRST_PERSON }
                 .getComponent<com.pafoid.skate.engine.ecs.components.FirstPersonCameraComponent>())
 
+            var pressed = false
+            val reader = io.mockk.mockk<com.pafoid.skate.engine.input.InputReader>().also {
+                io.mockk.every { it.wasActionPressed(any()) } answers {
+                    pressed && firstArg<String>() == com.pafoid.skate.engine.gameplay.camera.CameraCycle.ACTION
+                }
+            }
             var active = cameras.single { it.name == PrefabsGenerator.CAMERA_THIRD_PERSON }.getComponent<CameraComponent>()
             val seen = ArrayList<String>()
-            val system = com.pafoid.skate.engine.ecs.systems.CameraCycleSystem(null, { active }) { camera, transform ->
+            val system = com.pafoid.skate.engine.ecs.systems.CameraCycleSystem(reader, { active }) { camera, transform ->
                 active = camera
                 seen += cameras.single { it.getComponent<Transform>() === transform && it.getComponent<CameraComponent>() === camera }.name
             }
             system.init(scene)
             scene.isRunning = true
             system.update(1f / 60f)
-            val button = scene.findFirstByName(PrefabsGenerator.CAMERA_BUTTON)!!.getComponent<UIButtonComponent>()!!
-            repeat(3) { button.onClick!!(); system.update(1f / 60f) }
+            repeat(3) {
+                pressed = true
+                system.update(1f / 60f)
+                pressed = false
+            }
 
             assertEquals(listOf(PrefabsGenerator.CAMERA_FIRST_PERSON, PrefabsGenerator.CAMERA_FIXED, PrefabsGenerator.CAMERA_THIRD_PERSON), seen)
         }
@@ -159,14 +169,15 @@ class PrefabsGeneratorTest {
     }
 
     @Test
-    fun `HUD canvas holds a score text and a camera button using bundled game string keys`() {
+    fun `HUD canvas holds a score text using bundled game string keys and no camera button`() {
         val hud = PrefabsGenerator(engine).spawnHud()
 
         assertNotNull(hud.getComponent<UICanvasComponent>())
         val text = hud.children.single { it.name == "ScoreText" }.getComponent<UITextComponent>()!!
-        val button = hud.children.single { it.name == PrefabsGenerator.CAMERA_BUTTON }.getComponent<UIButtonComponent>()!!
         assertEquals("hud.score", text.key)
-        assertEquals("hud.camera", button.labelKey)
+        // GPL-30: the Camera button was removed at the human's request; cameras cycle with the camera.cycle action.
+        assertTrue(hud.children.none { it.getComponent<UIButtonComponent>() != null })
+        assertTrue(hud.children.none { it.name == "CameraButton" })
         // GPL-22: restart moved to the Esc pause menu.
         assertTrue(hud.children.none { it.name == "RestartButton" })
         // GPL-21: the trick name, filled by the trick HUD while riding; hidden (no key) until then.
@@ -175,7 +186,6 @@ class PrefabsGeneratorTest {
         listOf(com.pafoid.skate.engine.assets.Assets.Strings.GAME_STRINGS).forEach { path ->
             val props = com.pafoid.skate.engine.core.StringTables.merged(File(path))
             assertTrue(props.containsKey(text.key), "${text.key} missing from $path")
-            assertTrue(props.containsKey(button.labelKey), "${button.labelKey} missing from $path")
         }
     }
 

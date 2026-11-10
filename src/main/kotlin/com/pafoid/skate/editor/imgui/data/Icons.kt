@@ -77,5 +77,6 @@ object Icons {
     const val PROJECT_DIAGRAM = "\uf542"
     const val LIST = "\uf03a"
     const val TERMINAL = "\uf120"
+    const val CODE_BRANCH = "\uf126"
     const val QUESTION_CIRCLE = "\uf059"
 }

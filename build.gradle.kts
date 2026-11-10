@@ -101,6 +101,9 @@ dependencies {
     // MP3 decoding (MIT, pure Java, MPEG-1 Layer III), see engine/audio/Mp3Decoder.kt
     implementation(libs.javamp3)
 
+    // Git for the editor's Version Control window (EDT-60); only editor/vcs imports it, the game jar leaves it out
+    implementation(libs.jgit)
+
     // Reflection
     implementation(kotlin("reflect"))
 
@@ -160,6 +163,9 @@ tasks.withType<Test> {
 // game code (TLG-10). Two steps keep it cheap: the dependencies are packed once into gameLibsJar (redone only when
 // the runtime classpath changes), then gameJar compresses just the engine/game classes and copies the dependency
 // entries raw. Same single fat jar as before, with the main classes first (they win over duplicate dependency entries).
+/** Editor-only libraries the exported game never needs (EDT-60: JGit). */
+fun isEditorOnlyLib(jarName: String): Boolean = jarName.startsWith("org.eclipse.jgit")
+
 val gameLibsJar = tasks.register<Jar>("gameLibsJar") {
     description = "Runtime dependencies of the standalone game, merged once (input of gameJar)."
     archiveBaseName.set("skate-game-libs")
@@ -167,7 +173,7 @@ val gameLibsJar = tasks.register<Jar>("gameLibsJar") {
     dependsOn(configurations.runtimeClasspath)
     from({
         configurations.runtimeClasspath.get()
-            .filter { it.name.endsWith("jar") }
+            .filter { it.name.endsWith("jar") && !isEditorOnlyLib(it.name) }
             .map { zipTree(it) }
     }) {
         // Exclude signature files from merged JARs to avoid security exceptions

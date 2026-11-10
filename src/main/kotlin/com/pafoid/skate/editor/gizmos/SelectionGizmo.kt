@@ -1,6 +1,7 @@
 package com.pafoid.skate.editor.gizmos
 
 import com.pafoid.skate.editor.events.ViewportAction
+import com.pafoid.skate.editor.systems.SelectionLogic
 import com.pafoid.skate.editor.systems.UndoRedoManager
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.core.EventSystem
@@ -42,10 +43,18 @@ class SelectionGizmo(
             hoveredGameObjectUid = hovered?.uId ?: -1
 
             if (inputProvider.leftMouseButtonBeginPress()) {
-                if (hovered != null) {
-                    eventSystem.publish(ViewportAction.GameObjectSelected(hovered))
-                } else if (!ImGui.isPopupOpen("add_component_popup", ImGuiPopupFlags.AnyPopupId)) {
-                    eventSystem.publish(ViewportAction.SelectionCleared)
+                // EDT-74: Ctrl toggles the clicked object, Shift adds it; a plain click replaces the selection.
+                val io = ImGui.getIO()
+                val ctrl = io.keyCtrl
+                val shift = io.keyShift
+                when {
+                    hovered != null && (ctrl || shift) -> eventSystem.publish(
+                        ViewportAction.MultiSelectionChanged(SelectionLogic.viewportClick(scene.selectedGameObjects, hovered, ctrl, shift)),
+                    )
+                    hovered != null -> eventSystem.publish(ViewportAction.GameObjectSelected(hovered))
+                    ctrl || shift -> Unit
+                    !ImGui.isPopupOpen("add_component_popup", ImGuiPopupFlags.AnyPopupId) ->
+                        eventSystem.publish(ViewportAction.SelectionCleared)
                 }
             }
         } else {

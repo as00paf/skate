@@ -116,11 +116,13 @@ object ImGuiStyleManager {
             scrollbarRounding = s.rounding
             tabRounding = s.rounding
 
-            windowPadding.set(s.windowPadding.x, s.windowPadding.y)
-            framePadding.set(s.framePadding.x, s.framePadding.y)
-            itemSpacing.set(s.itemSpacing.x, s.itemSpacing.y)
-            itemInnerSpacing.set(s.itemInnerSpacing.x, s.itemInnerSpacing.y)
-            touchExtraPadding.set(s.touchExtraPadding.x, s.touchExtraPadding.y)
+            // The setters, not `windowPadding.set(...)`: imgui-java's ImVec2 getters return copies, so writing to
+            // them never reached ImGui and every theme ran with ImGui's default spacing (EDT-72).
+            setWindowPadding(s.windowPadding.x, s.windowPadding.y)
+            setFramePadding(s.framePadding.x, s.framePadding.y)
+            setItemSpacing(s.itemSpacing.x, s.itemSpacing.y)
+            setItemInnerSpacing(s.itemInnerSpacing.x, s.itemInnerSpacing.y)
+            setTouchExtraPadding(s.touchExtraPadding.x, s.touchExtraPadding.y)
             indentSpacing = s.indentSpacing
             scrollbarSize = s.scrollbarSize
             grabMinSize = s.grabMinSize

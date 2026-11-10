@@ -3,6 +3,7 @@ package com.pafoid.skate.editor.ui.windows
 import com.pafoid.skate.editor.imgui.WindowHeader
 import com.pafoid.skate.editor.imgui.Tooltips
 import com.pafoid.skate.editor.events.ViewportAction
+import com.pafoid.skate.editor.systems.SelectionLogic
 import com.pafoid.skate.editor.data.EditorShortcuts
 import com.pafoid.skate.editor.data.EditorFocus
 import com.pafoid.skate.editor.imgui.tipped
@@ -67,6 +68,19 @@ class SceneHierarchyWindow(
     private var navigationIndex = -1
     private val expandedNodes = mutableSetOf<Int>()
     private var flatObjectList: List<GameObject> = emptyList()
+
+    /** Rows in the order they were drawn (open nodes only); last frame's order is the Shift-click range (EDT-74). */
+    private var drawnRows = mutableListOf<GameObject>()
+    private var lastDrawnRows: List<GameObject> = emptyList()
+
+    /** Where the last plain or Ctrl click landed: one end of a Shift range. */
+    private var selectionAnchor: GameObject? = null
+
+    /**
+     * A plain click on an object already in a multi-selection selects only it when the mouse is released without a
+     * drag, so the whole selection can still be dragged onto a new parent.
+     */
+    private var pendingSingleClick: GameObject? = null
 
     /** The viewport's create items, reused by the empty-space menu (EDT-52B). */
     private val createMenu = ViewportContextMenu(stringManager, eventSystem)
@@ -145,6 +159,8 @@ class SceneHierarchyWindow(
             ImGui.tableSetupColumn(stringManager.getString("tbl.hierarchy.name"), ImGuiTableColumnFlags.WidthStretch)
             ImGui.tableSetupColumn(stringManager.getString("tbl.hierarchy.visibility"), ImGuiTableColumnFlags.WidthFixed, 24f)
             ImGui.tableSetupColumn(stringManager.getString("tbl.hierarchy.lock"), ImGuiTableColumnFlags.WidthFixed, 24f)
+            lastDrawnRows = drawnRows.toList()
+            drawnRows.clear()
 
             scene.children.toList().forEach { obj ->
                 if (obj.isTopLevel) {
@@ -277,6 +293,23 @@ class SceneHierarchyWindow(
         }
     }
 
+    /** Ctrl toggles, Shift selects the range from the anchor, a plain click selects only [obj] (EDT-74). */
+    private fun onRowClicked(obj: GameObject) {
+        val scene = sceneManager.currentScene ?: return
+        val io = ImGui.getIO()
+        val ctrl = io.keyCtrl
+        val shift = io.keyShift
+        val current = scene.selectedGameObjects
+        if (!ctrl && !shift && current.size > 1 && scene.isSelected(obj)) {
+            pendingSingleClick = obj
+        } else if (!ctrl && !shift) {
+            eventSystem.publish(GameObjectSelected(obj))
+        } else {
+            eventSystem.publish(ViewportAction.MultiSelectionChanged(SelectionLogic.hierarchyClick(current, obj, lastDrawnRows, selectionAnchor, ctrl, shift)))
+        }
+        selectionAnchor = SelectionLogic.anchorAfter(selectionAnchor, obj, shift)
+    }
+
     private fun selectObjectAtIndex(index: Int) {
         if (index in flatObjectList.indices) {
             val go = flatObjectList[index]
@@ -296,6 +329,7 @@ class SceneHierarchyWindow(
 
         if (!matchesFilter && !hasMatchingChild) return
 
+        drawnRows += obj
         ImGui.pushID(obj.uId)
         ImGui.tableNextRow()
         ImGui.tableNextColumn()
@@ -304,7 +338,7 @@ class SceneHierarchyWindow(
         if (obj.children.isEmpty()) {
             flags = flags or ImGuiTreeNodeFlags.Leaf
         }
-        if (obj == sceneManager.currentScene?.selectedGameObject) {
+        if (sceneManager.currentScene?.isSelected(obj) == true) {
             flags = flags or ImGuiTreeNodeFlags.Selected
         }
 
@@ -360,13 +394,21 @@ class SceneHierarchyWindow(
                 startRename(obj)
                 eventSystem.publish(GameObjectSelected(obj))
             } else if (ImGui.isItemClicked()) {
-                eventSystem.publish(GameObjectSelected(obj))
+                onRowClicked(obj)
                 navigationIndex = flatObjectList.indexOf(obj)
+            }
+            if (pendingSingleClick === obj && ImGui.isMouseReleased(0)) {
+                pendingSingleClick = null
+                if (ImGui.isItemHovered()) eventSystem.publish(GameObjectSelected(obj))
             }
 
             if (ImGui.beginDragDropSource()) {
+                // Dragging a selected row moves the whole selection (the Reparent handler expands it).
+                pendingSingleClick = null
                 ImGui.setDragDropPayload("GAMEOBJECT_UID", obj.uId as Any)
-                ImGui.text(stringManager.getString("ctx.hierarchy.drag_tooltip", obj.name))
+                val dragged = SelectionLogic.targets(sceneManager.currentScene, obj)
+                if (dragged.size > 1) ImGui.text(stringManager.getString("ctx.hierarchy.drag_tooltip_many", dragged.size))
+                else ImGui.text(stringManager.getString("ctx.hierarchy.drag_tooltip", obj.name))
                 ImGui.endDragDropSource()
             }
 
@@ -429,13 +471,10 @@ class SceneHierarchyWindow(
             ImGui.separator()
 
             if (stringManager.tipped(ImGui.menuItem("${Icons.COPY} ${stringManager.getString("context.hierarchy.copy")}", EditorShortcuts.COPY.display()), "context.hierarchy.copy", EditorShortcuts.COPY)) {
-                clipboardService.copy(obj)
+                eventSystem.publish(ViewportAction.CopyClipboard(obj))
             }
             if (stringManager.tipped(ImGui.menuItem("${Icons.CUT} ${stringManager.getString("context.hierarchy.cut")}", EditorShortcuts.CUT.display()), "context.hierarchy.cut", EditorShortcuts.CUT)) {
-                clipboardService.copy(obj)
-                sceneManager.currentScene?.let { scn ->
-                    eventSystem.publish(Delete(obj, scn, confirm = false))
-                }
+                eventSystem.publish(ViewportAction.CutClipboard(obj))
             }
             if (stringManager.tipped(ImGui.menuItem("${Icons.PASTE} ${stringManager.getString("context.hierarchy.paste_as_child")}"), "context.hierarchy.paste_as_child")) {
                 eventSystem.publish(PasteClipboard(obj))

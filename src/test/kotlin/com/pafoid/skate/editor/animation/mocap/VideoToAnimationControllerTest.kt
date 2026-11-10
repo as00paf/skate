@@ -80,6 +80,36 @@ class VideoToAnimationControllerTest {
     }
 
     @Test
+    fun `VideoToAnimation_ATrimmedRangeMakesAClipOfThatLengthOnly`() {
+        project = File(dir, "Game")
+        val c = controller()
+        c.selectVideo(video())
+        val player = c.player!!
+        assertEquals(12, player.frameCount, "the preview frames give the real frame count")
+        assertEquals(listOf(0, 2, 4, 6, 8, 10), c.preview!!.frames.toList())
+        player.seek(5)
+        assertTrue(c.previewImage()!!.name == "f_000004.jpg", "the image at or before the playhead")
+
+        player.seek(3); player.markIn()
+        player.seek(9); player.markOut()
+        c.create()
+        assertEquals(MocapPhase.DONE, c.phase, "error: ${c.error}")
+        val extract = tool.calls.last { it[2] == "extract" }
+        assertEquals("3", extract[extract.indexOf("--start-frame") + 1])
+        assertEquals("9", extract[extract.indexOf("--end-frame") + 1])
+        val clip = SkAnimFormat.decode(c.result!!.readText())
+        assertEquals(6 / 30f, clip.duration, 1e-5f, "frames 3 to 9 at 30 fps: 0.2 s")
+        assertEquals(player.rangeSeconds, clip.duration, 1e-5f)
+        assertEquals(7, c.landmarks!!.frames.size)
+        assertEquals(0, c.landmarkIndexFor(3), "the pose overlay follows the video frame")
+        assertNull(c.landmarkIndexFor(2))
+
+        player.clearRange()
+        c.create()
+        assertEquals(11 / 30f, SkAnimFormat.decode(c.result!!.readText()).duration, 1e-5f, "no markers: the whole video")
+    }
+
+    @Test
     fun `VideoToAnimation_ShowsTheToolErrorAndRecovers`() {
         project = File(dir, "Game")
         tool.extractError = "Cannot open video: corrupt"

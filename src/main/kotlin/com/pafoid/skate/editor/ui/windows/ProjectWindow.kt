@@ -9,6 +9,7 @@ import com.pafoid.skate.editor.events.WindowAction
 import com.pafoid.skate.editor.scripting.ScriptTemplates
 import com.pafoid.skate.editor.ui.handlers.ScriptEditorActionHandler
 import com.pafoid.skate.editor.data.FileSystemItem
+import com.pafoid.skate.editor.animation.clipeditor.OpenAnimationClip
 import com.pafoid.skate.editor.data.FileType
 import com.pafoid.skate.editor.events.FileSystemEvent
 import com.pafoid.skate.editor.events.ProjectEvent.CreateFileRequested
@@ -299,6 +300,11 @@ class ProjectWindow(
 
     private fun handleDoubleClick(item: FileSystemItem) {
         when (item.type) {
+            // ANI-14: a .skanim clip opens in the Animation Editor; other animation files go to the system.
+            FileType.ANIMATION -> {
+                if (opensInAnimationEditor(item.file)) eventSystem.publish(OpenAnimationClip(item.file.path))
+                else openInExternalEditor(item.file)
+            }
             FileType.SCENE -> {
                 logger.logEditor("Opening scene: ${item.file.name}")
                 eventSystem.publish(SceneAction.OpenSceneFile(item.file))
@@ -425,8 +431,11 @@ class ProjectWindow(
         }
     }
 
-    private companion object {
-        const val ITEM_MENU = "##project_item_menu"
+    companion object {
+        private const val ITEM_MENU = "##project_item_menu"
+
+        /** A double-click opens [file] in the Animation Editor (ANI-14): `.skanim` clips only. */
+        fun opensInAnimationEditor(file: File): Boolean = file.extension.equals("skanim", ignoreCase = true)
     }
 
     private fun showCreateDialog(isDirectory: Boolean, parent: FileSystemItem? = null) {

@@ -5,6 +5,8 @@ import com.pafoid.skate.editor.data.EditorInputMappings
 import com.pafoid.skate.editor.data.EditorInputState
 import com.pafoid.skate.editor.data.EditorShortcut
 import com.pafoid.skate.editor.data.EditorShortcuts
+import com.pafoid.skate.editor.data.ViewportCameraGate
+import com.pafoid.skate.editor.data.ViewportFocusReport
 import com.pafoid.skate.editor.events.EditorEvent
 import com.pafoid.skate.editor.events.ProjectEvent
 import com.pafoid.skate.editor.events.PlayModeAction
@@ -33,6 +35,10 @@ class EditorInputHandler(
     private val editorInputState: EditorInputState,
     private val engine: Engine,
     private val settingsManager: EditorSettingsManager,
+    /** Game Viewport focus/hover from its window (EDT-73); the camera moves only while the viewport is focused. */
+    private val viewportFocus: ViewportFocusReport = ViewportFocusReport(),
+    /** True while an ImGui text field takes keyboard input. */
+    private val textInputActive: () -> Boolean = { false },
 ) {
     private val logger = engine.logger
     private val eventSystem = engine.eventSystem
@@ -70,9 +76,11 @@ class EditorInputHandler(
     }
 
     private fun pollEditorInput() {
-        editorInputState.isInsideViewport = inputProvider.isInsideViewport()
+        val (viewportFocused, viewportHovered) = viewportFocus.consume()
+        val inside = inputProvider.isInsideViewport()
+        editorInputState.isInsideViewport = inside
 
-        if (!inputProvider.isControlKeyDown()) {
+        if (ViewportCameraGate.flyAllowed(viewportFocused, textInputActive(), inputProvider.isControlKeyDown())) {
             val m = inputMappings
             val moveInput = Vector2f()
             if (inputProvider.isKeyPressed(m.moveForward.keyboardKey)) moveInput.y += 1f
@@ -88,20 +96,17 @@ class EditorInputHandler(
             editorInputState.verticalMovement = verticalInput
         }
 
-        val dx = inputProvider.getMouseDx()
-        val dy = inputProvider.getMouseDy()
-        if (inputProvider.isMiddleMouseButtonDown(true) && editorInputState.isInsideViewport) {
-            editorInputState.mouseLook.set(dx, dy)
+        val lookAllowed = ViewportCameraGate.lookAllowed(viewportFocused, inside)
+        val middleHeld = inputProvider.isMiddleMouseButtonDown(true)
+        if (middleHeld && lookAllowed) {
+            editorInputState.mouseLook.set(inputProvider.getMouseDx(), inputProvider.getMouseDy())
         } else {
             editorInputState.mouseLook.set(0f, 0f)
         }
+        editorInputState.orbitPressed = inputProvider.middleMouseButtonBeginPress() && lookAllowed
+        editorInputState.orbitHeld = middleHeld && lookAllowed
 
-        editorInputState.orbitPressed =
-            inputProvider.middleMouseButtonBeginPress() && editorInputState.isInsideViewport
-        editorInputState.orbitHeld =
-            inputProvider.isMiddleMouseButtonDown(true) && editorInputState.isInsideViewport
-
-        if (editorInputState.isInsideViewport) {
+        if (ViewportCameraGate.zoomAllowed(viewportHovered, inside)) {
             editorInputState.mouseScroll = inputProvider.getMouseScrollY()
         }
 
@@ -143,11 +148,9 @@ class EditorInputHandler(
     private fun handleClipboardAndUndo(scene: Scene) {
         val selected = scene.selectedGameObject
         when {
-            pressed(EditorShortcuts.COPY) -> selected?.let { clipboardService.copy(it) }
-            pressed(EditorShortcuts.CUT) -> selected?.let {
-                clipboardService.copy(it)
-                eventSystem.publish(ViewportAction.Delete(it, scene, confirm = false))
-            }
+            // Copy and Cut take the whole selection (EDT-74, ViewportActionHandler).
+            pressed(EditorShortcuts.COPY) -> selected?.let { eventSystem.publish(ViewportAction.CopyClipboard(it)) }
+            pressed(EditorShortcuts.CUT) -> selected?.let { eventSystem.publish(ViewportAction.CutClipboard(it)) }
             pressed(EditorShortcuts.PASTE) -> eventSystem.publish(ViewportAction.PasteClipboard())
             pressed(EditorShortcuts.UNDO) -> undoRedoManager.undo()
             pressed(EditorShortcuts.REDO) || pressed(EditorShortcuts.REDO_ALT) -> undoRedoManager.redo()

@@ -18,6 +18,7 @@ import com.pafoid.skate.editor.imgui.EditorModal
 import com.pafoid.skate.editor.imgui.FooterButton
 import com.pafoid.skate.editor.imgui.ImGuiIds
 import com.pafoid.skate.editor.imgui.MImGui
+import com.pafoid.skate.editor.imgui.components.MultiEdit
 import com.pafoid.skate.editor.imgui.components.imgui
 import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.engine.core.Engine
@@ -75,6 +76,13 @@ class PropertiesWindow(
             ImGui.end()
             return
         }
+        val selection = sceneManager.currentScene?.selectedGameObjects.orEmpty()
+        if (selection.size > 1) {
+            multiSelection(selection)
+            ImGui.end()
+            return
+        }
+        MultiEdit.clear()
         when {
             go != null -> {}
             hasProject() -> EmptyState.noScene(stringManager)
@@ -113,6 +121,30 @@ class PropertiesWindow(
 
         ImGui.spacing()
         ImGui.end()
+    }
+
+    /**
+     * EDT-74: several objects selected. Only the components every one of them has are shown, drawn from the primary
+     * object; an edit is copied to the same component of every selected object ([MultiEdit]), as one undo step.
+     */
+    private fun multiSelection(selection: List<GameObject>) {
+        MultiEdit.inspect(selection)
+        ImGui.text(stringManager.getString("properties.multi.count", selection.size))
+        MImGui.textDisabled("${Icons.INFO} ${stringManager.getString("properties.multi.hint")}")
+        ImGui.spacing()
+        ImGui.separator()
+        ImGui.spacing()
+        val shared = MultiEdit.shared(selection)
+        if (shared.isEmpty()) {
+            EmptyState.nothingYet(stringManager, Icons.SLIDERS, "properties.multi.none")
+            return
+        }
+        shared.forEach { component ->
+            if (ImGui.collapsingHeader(component.name)) {
+                component.imgui(engine)
+                ImGui.spacing()
+            }
+        }
     }
 
     private fun renderComponentWithContextMenu(go: GameObject, component: Component) {

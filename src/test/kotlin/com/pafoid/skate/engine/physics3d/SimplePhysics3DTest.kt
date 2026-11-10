@@ -38,7 +38,8 @@ class SimplePhysics3DTest {
 
         repeat(300) { world.step(1f / 60f) }
 
-        assertEquals(floor.getLocation(Vector3f()).y + 2f * box.halfExtents.length(), body.getLocation(Vector3f()).y, 0.1f)
+        // PHY-25: the static floor is its real box (top at +0.5); the dynamic body is still its bounding sphere
+        assertEquals(floor.getLocation(Vector3f()).y + box.halfExtents.y + box.halfExtents.length(), body.getLocation(Vector3f()).y, 0.1f)
     }
 
     @Test

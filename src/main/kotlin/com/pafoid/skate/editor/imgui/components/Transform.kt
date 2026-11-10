@@ -14,7 +14,7 @@ fun Transform.imgui(engine: Engine) {
     drawControls(engine)
     val go = gameObject ?: return
     val interacting = ImGui.isAnyItemActive() || ImGui.isMouseDown(0)
-    editTracker.afterDraw(go, this, interacting).forEach { engine.eventSystem.publish(TransformAction.Edited(it)) }
+    editTracker.afterDraw(go, this, interacting).forEach { engine.eventSystem.publish(TransformAction.Edited(it, MultiEdit.mirrorTransform(it))) }
 }
 
 private fun Transform.drawControls(engine: Engine) {

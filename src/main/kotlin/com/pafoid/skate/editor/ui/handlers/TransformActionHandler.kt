@@ -10,7 +10,7 @@ class TransformActionHandler(eventSystem: EventSystem, undoRedoManager: UndoRedo
     init {
         eventSystem.subscribe<TransformAction.Edited> { event ->
             // Execute re-applies the new state (a no-op after an inspector edit) and records it.
-            undoRedoManager.executeCommand(TransformCommand(listOf(event.entry)))
+            undoRedoManager.executeCommand(TransformCommand(listOf(event.entry) + event.mirrors))
             sceneManager.currentScene?.isDirty = true
         }
     }
