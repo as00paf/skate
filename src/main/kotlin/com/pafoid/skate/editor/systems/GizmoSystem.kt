@@ -41,8 +41,11 @@ class GizmoSystem(
         localSpace = !localSpace
     }
 
-    /** Objects the gizmos act on. The scene currently tracks a single selection; multi-select plugs in here. */
-    private fun selection(scene: com.pafoid.skate.engine.ecs.Scene) = scene.selectedGameObjects
+    /**
+     * Objects the gizmos act on: the whole selection (EDT-74), without objects whose ancestor is also selected, which
+     * already move with it. The gizmo sits at their centre.
+     */
+    private fun selection(scene: com.pafoid.skate.engine.ecs.Scene) = SelectionLogic.roots(scene.selectedGameObjects)
 
     // Gizmos are owned directly by this system, not registered as separate systems
     private val debugRenderer by lazy { engine.renderer.renderResources.renderers.debug }

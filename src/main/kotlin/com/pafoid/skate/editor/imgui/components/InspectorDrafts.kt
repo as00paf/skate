@@ -14,6 +14,8 @@ object InspectorDrafts {
         StringFields.endFrame(events, frame)
         flushAudioDrafts(events, frame)
         settleMaterialEdits(events, anyItemActive)
-        InspectorEditTracker.shared.settle(anyItemActive).forEach { events.publish(ComponentFieldAction.Edited(it.component, it.changes)) }
+        InspectorEditTracker.shared.settle(anyItemActive).forEach {
+            events.publish(ComponentFieldAction.Edited(it.component, it.changes, MultiEdit.mirrorFields(it.component, it.changes)))
+        }
     }
 }
