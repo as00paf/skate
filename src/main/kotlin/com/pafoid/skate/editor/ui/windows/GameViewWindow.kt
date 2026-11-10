@@ -19,6 +19,9 @@ import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.editor.gizmos.UiRectGizmo
 import imgui.ImGui
 import imgui.ImVec2
+import imgui.flag.ImGuiFocusedFlags
+import imgui.flag.ImGuiHoveredFlags
+import imgui.flag.ImGuiMouseButton
 import imgui.flag.ImGuiWindowFlags
 import com.pafoid.skate.engine.input.ViewRect
 import org.joml.Vector2f
@@ -114,6 +117,8 @@ class GameViewWindow(
             )
         )
 
+        reportFocus()
+
         val hovered = sceneManager.currentScene?.hoveredGameObject
         if (hovered != null) {
             ImGui.setCursorPos(windowPos.x + 10f, windowPos.y + 20f)
@@ -127,6 +132,16 @@ class GameViewWindow(
         }
 
         ImGui.end()
+    }
+
+    /**
+     * Tells the camera input whether this window is focused / hovered (EDT-73). ImGui focuses a window on left and
+     * right click only, so a middle click (orbit) focuses the viewport too.
+     */
+    private fun reportFocus() {
+        val hovered = ImGui.isWindowHovered(ImGuiHoveredFlags.RootAndChildWindows)
+        if (hovered && ImGui.isMouseClicked(ImGuiMouseButton.Middle)) ImGui.setWindowFocus()
+        editor.viewportFocus.report(ImGui.isWindowFocused(ImGuiFocusedFlags.RootAndChildWindows), hovered)
     }
 
     /** Over the blank viewport when no scene is open (EDT-10). */
