@@ -112,7 +112,7 @@ Round 27+ goals (human, 2026-11-06): post-processing quality, render-graph clari
   - Do: From ANI-14 (skate-animation) and the human (Discord 2026-11-10: show the animation preview on the character): an offscreen viewport, used by the Animation Editor and the Video to Animation result, the Animation Editor feeds a bone pose to, drawing the skinned mesh instead of the skeleton lines.
   - Done when: The Animation Editor preview shows the skinned character following the scrubbed pose; tests for the viewport wiring.
   - Deps: ANI-14
-- [~] @skate-render **REN-34** `P2` World phase A: shared foundations (`docs/design/REN-28.md` §12, `docs/design/REN-29.md` §12)
+- [x] **REN-34** `P2` World phase A: shared foundations (`docs/design/REN-28.md` §12, `docs/design/REN-29.md` §12)
   - Do: REN-28 tasks 1–2: extract `lighting.glsl` (GL/VK pixel parity), `engine/procedural` (FastNoiseLite, ECS-14 seeding). The lead dispatches the note's tasks one at a time, in the order of the tables.
   - Done when: Both tasks done with their tests; rendering unchanged.
   - Deps: REN-28, REN-29
@@ -231,7 +231,7 @@ Round 27+ goals: the Asset Browser shows every asset type, one assets folder, ex
   - Do: From the human (2026-11-10): `Assets/` holds one folder per type: `Models`, `Shaders`, `Sounds`, `Textures`, `Materials`, `Scripts`, `Animations`; Store imports go to their type folder instead of `Assets/Store`. New-project option to copy the engine defaults into the project or not. Human decisions 2026-11-10: **no `EngineDefaults` folder anywhere** — copied engine defaults go straight into `Assets/<Type>/`; a store model stays **together** in `Assets/Models/<asset>/` (`.gltf`, `.bin`, `textures/`), texture-only and material downloads go to `Textures/` and `Materials/`. Design note `docs/design/AST-26.md` covering: how not-copied engine defaults resolve in the editor (reference scheme) and are packed on export, telling engine files apart once copied (updates, name clashes), multi-file assets (texture sets, `.blend` imports) staying loadable under AST-22 path rules, the type a file lands in (FBX via AST-20), store `.meta`/attribution, **no migration or old-layout support** (human, 2026-11-10: new projects only), and changes to samples, CLI, `skate validate` and export. Reviewed by skate-online (store), skate-editor (Asset Browser), skate-tooling (wizard, samples).
   - Done when: The human approves the note.
   - Deps: AST-14
-- [~] @skate-assets **AST-27** `P1` Typed asset folders: layout and engine defaults
+- [x] **AST-27** `P1` Typed asset folders: layout and engine defaults
   - Do: Implement AST-26 (rev 2 decisions §0): project creation, typed layout (Prefabs, Fonts, Data, and Items for GPL-24 too), editor strings/themes/help moved to `src/main/resources/editor/`, engine repo `assets/` reorganised into typed folders (delete the Font Awesome desktop zip), pack dedupe by content hash, copy/no-copy resolution and export packing, path resolution, samples and CLI. No migration of existing projects.
   - Done when: New projects use the typed layout, open, play and export in both copy modes; tests cover the layout.
   - Deps: AST-26
@@ -239,7 +239,7 @@ Round 27+ goals: the Asset Browser shows every asset type, one assets folder, ex
   - Do: Per AST-26: Poly Haven, ambientCG and Kenney/Quaternius imports land in `Models`/`Textures`/`Materials`/`Sounds`… instead of `Assets/Store`; undo, re-import in place, the attribution ledger and `.meta` store keys keep working.
   - Done when: Each provider's import lands in the right type folders and loads textured; tests on fixtures.
   - Deps: AST-27, AST-16
-- [ ] **REN-31** `P1` Project shaders: engine-default/override resolution and hot reload (AST-26 §5)
+- [~] @skate-render **REN-31** `P1` Project shaders: engine-default/override resolution and hot reload (AST-26 §5)
   - Do: Per AST-26 §5 (reviewed by skate-render): shaders resolve through `engine:Shaders/…` with project overrides in `Assets/Shaders/`, `@skate-contract` headers, includes, caches, hot reload of project shaders; basic shaders always copied; unedited copies follow the engine on project open (human, 2026-11-10); custom material shaders in the colour pass only for v1.
   - Done when: Editing a project shader changes rendering live; an incompatible edited override falls back with an error; tests.
   - Deps: AST-27
@@ -271,6 +271,10 @@ Round 27+ goals: the Asset Browser shows every asset type, one assets folder, ex
   - Do: Per `docs/design/AST-17.md` rev 3 §8: Overpass client, snapshot, parser, projection, JTS triangulation (editor-only), generation into chunks with mesh colliders by reference (box fallback on Simple after PHY-25), `.skmat` styling; OpenFreeMap vector tiles with cache and a custom raster URL; User-Agent with the repository URL; regenerate after a backend change; ODbL attribution in the ledger and credits.
   - Done when: A chosen area generates a playable, credited city; tests with no sockets.
   - Deps: AST-17, AST-27, PHY-24
+- [~] @skate-assets **AST-35** `P1` AST-27 follow-ups from REN-34 and PHY-24
+  - Do: (1) From skate-render: add `lighting.glsl` to the AST-26 basic (overridable) shader set next to `fog.glsl`. (2) From skate-physics: a GUID→path table in the pack so exported games resolve `MeshCollider3D.meshRef` (`CollisionMeshes.source = ModelCollisionMeshSource(...)` at game start-up), and set the editor's source from the project's asset registry on project open (with skate-editor). (3) From skate-editor: remove the unused `help.<id>.what/how/related` strings left in the animation, assetstore and render string files.
+  - Done when: A referenced mesh collider works in an exported game; `lighting.glsl` is copied and overridable; no unused help strings; tests.
+  - Deps: AST-27, REN-34, PHY-24
 
 ### ECS — `ECS` (`skate-ecs`)
 
@@ -323,11 +327,11 @@ Round 27+ goals: a Jolt backend selectable per project, a terrain heightfield co
   - Do: Per `docs/design/PHY-19.md` rev 3 §8: 19a joint motors (all backends; Bullet on New6Dof always), 19b POWERED ragdoll, then the bind-pose ragdoll frames task, 19c vehicle drivetrain on all backends (no migration of old fields), 19d inspector sections (EDT), 19e `CharacterBody3D` with inner body, 19f gameplay on the character body (GPL), 19g showcase walker with "Take control" only (TLG). Each project uses only its own backend.
   - Done when: Each slice's tests pass; cross-backend vehicle tests within the note's tolerances.
   - Deps: PHY-19
-- [~] @skate-physics **PHY-24** `P2` `MeshCollider3D.meshRef` (AST-17 PHY-a)
+- [x] **PHY-24** `P2` `MeshCollider3D.meshRef` (AST-17 PHY-a)
   - Do: Load collider triangles from a model by GUID instead of inline vertices, on Bullet and Jolt.
   - Done when: A city chunk collides through a referenced model; tests.
   - Deps: AST-17
-- [ ] **PHY-25** `P3` SimplePhysics3D static oriented boxes and broad phase (AST-17 PHY-b)
+- [~] @skate-physics **PHY-25** `P3` SimplePhysics3D static oriented boxes and broad phase (AST-17 PHY-b)
   - Do: Static oriented boxes (contacts and rays) and a broad phase, so the city box fallback behaves as boxes.
   - Done when: Box contacts and rays tested; a box city is walkable on Simple.
   - Deps: AST-17
@@ -364,7 +368,7 @@ Round 27+ goals: an animation authoring tool and animation from video.
   - Do: Per (`docs/design/GPL-24.md` §8): remap a skinned clothing mesh onto a target skeleton by bone name; refuse items whose bones don't match.
   - Done when: Pure remap function with tests, including the refusal case.
   - Deps: GPL-24
-- [ ] **ANI-20** `P1` Video to Animation: playback controls and a trim range
+- [~] @skate-animation **ANI-20** `P1` Video to Animation: playback controls and a trim range
   - Do: (human, Discord 2026-11-10): play/pause, scrub and frame step in the video preview, and in/out markers so only a portion of the video becomes the animation.
   - Done when: A trimmed range produces a clip of that length only; tests for the range maths and the extractor arguments.
   - Deps: ANI-18
@@ -419,7 +423,7 @@ Round 27+ goals: a fuller skate demo with camera modes and standard control sche
   - Do: From REN-29 Q4 (human, 2026-11-10): the skater bails in water for now; later the skater swims, including underwater: GPL swim states and controls, ANI swim animations, underwater follow camera, AUD underwater filter (`docs/design/REN-29.md` §8.3).
   - Done when: Design note approved, then the skater swims on and under water.
   - Deps: REN-39
-- [ ] **GPL-30** `P1` Remove the Camera button from MainScene
+- [~] @skate-gameplay **GPL-30** `P1` Remove the Camera button from MainScene
   - Do: (human, Discord 2026-11-10): remove the GPL-22 Camera button from the MainScene HUD.
   - Done when: MainScene has no Camera button; tests updated.
 
@@ -555,7 +559,7 @@ Round 27+ goals (human, 2026-11-06): fix editor bugs, make every window, dialog 
   - Do: From the human testing the window standard (2026-11-07): only **some** windows show the `?` help button, and on the ones that do the **button background is clipped at the top**. Give every registered window the control and fix the clipping (padding/rect/clip-space) at any DPI and window size. The fix must work with the pending EDT-52 chunk branches (C, E, F, G, H, I) and EDT-54, which the lead integrates before final verification.
   - Done when: Every registered window shows a correctly rendered `?` button; a test asserts coverage and the layout math is covered.
   - Deps: EDT-52
-- [~] @skate-editor **EDT-68** `P1` Help window with Markdown articles and a Help menu item — design approved 2026-11-10 (`docs/design/EDT-68.md`)
+- [x] **EDT-68** `P1` Help window with Markdown articles and a Help menu item — design approved 2026-11-10 (`docs/design/EDT-68.md`)
   - Do: From the human (2026-11-07): clicking `?` must open a **help window** showing the article for the selected topic — **not** a bigger tooltip/popover. The window is docked like other editor windows, lists the topics (table of contents) and renders the `.md` articles written by EDT-53. Add a **Help** menu item that opens the same window independently of any `?` button. Implement the approved design note.
   - Done when: `?` opens the window on the right topic, the Help menu item opens it with the topic list, articles are `.md` files under `assets/help/**`, and tests cover article discovery/loading, the menu entry and the `?` routing.
   - Deps: EDT-53
@@ -571,23 +575,23 @@ Round 27+ goals (human, 2026-11-06): fix editor bugs, make every window, dialog 
   - Do: Per `docs/design/AST-17.md` rev 3 §8: generic ImGui map widget (`MapView`, `WebMercator`, `AreaSelection`), the city dialog with link/coords/search and the embedded map, feature overlay.
   - Done when: An area can be picked on the map and generated; widget maths tested.
   - Deps: AST-34
-- [ ] **EDT-72** `P0` `?` help button still clipped at the top
+- [~] @skate-editor **EDT-72** `P0` `?` help button still clipped at the top
   - Do: (human, Discord 2026-11-10): after EDT-67 the `?` button on every editor window is still clipped at the top (likely header padding/clip rect). Reproduce at 100 % and 150 % UI scale and with EDT-76's padding settings; fix the shared header layout, not per window.
   - Done when: The human sees an unclipped `?` on every window; a layout test covers the header rect.
   - Deps: EDT-67
-- [ ] **EDT-73** `P1` Editor camera moves only when the Game Viewport is focused
+- [~] @skate-input **EDT-73** `P1` Editor camera moves only when the Game Viewport is focused
   - Do: (human, Discord 2026-11-10): WASD/mouse fly, orbit and zoom of the editor camera act only while the Game Viewport window is focused (hovered for the wheel), never while typing or working in another window.
   - Done when: Keys typed in other windows never move the camera; tests on the input gating.
-- [ ] **EDT-74** `P1` Multiple selection in the Scene Hierarchy (Ctrl/Shift-click)
+- [~] @skate-ecs **EDT-74** `P1` Multiple selection in the Scene Hierarchy (Ctrl/Shift-click)
   - Do: (human, Discord 2026-11-10): Ctrl-click toggles, Shift-click selects a range; Properties shows shared components; delete, duplicate, copy/paste, drag-reparent and the move/rotate/scale gizmo act on the whole selection as one undo step.
   - Done when: Multi-select works in the Hierarchy and the viewport with undo; tests for selection and the multi-object commands.
-- [ ] **EDT-75** `P1` Gizmos for UI items
+- [~] @skate-gameui **EDT-75** `P1` Gizmos for UI items
   - Do: (human, Discord 2026-11-10): select a runtime UI element (canvas child) in the viewport and move/resize it with a 2D gizmo (anchors, pivot, rect), with snapping and undo; skate-gameui reviews.
   - Done when: UI elements can be moved and resized in the viewport with undo; tests for the rect maths.
 - [ ] **EDT-76** `P1` Menu and button padding; Interface settings review
   - Do: (human, Discord 2026-11-10): menu items and some editor buttons have no padding. Review Editor Settings › Interface and add appearance options (item/frame padding, spacing, rounding, font size, density presets), applied everywhere through the theme, persisted.
   - Done when: Menus and buttons have padding by default; each new option visibly changes the editor and persists; tests.
-- [ ] **EDT-77** `P1` Project Settings › Random: seed field too wide
+- [~] @skate-qa **EDT-77** `P1` Project Settings › Random: seed field too wide
   - Do: (human, Discord 2026-11-10): the seed text field overflows the window; size it like the other rows.
   - Done when: The Random page fits at any dialog width; a layout test.
 - [ ] **EDT-78** `P2` Viewport toolbar: World and Snap at the end, before `?`
@@ -620,7 +624,7 @@ Round 27+ goals: tooling fixes, an Android feasibility study and new demo projec
   - Do: Per (`docs/design/GPL-24.md` §8): a showcase area with pickups, a chest, a damage target and the equip screen.
   - Done when: The area plays end to end in the editor and an export.
   - Deps: GPL-28, GUI-18
-- [ ] **TLG-16** `P2` Logical UI hierarchies in the sample projects
+- [~] @skate-tooling **TLG-16** `P2` Logical UI hierarchies in the sample projects
   - Do: (human, Discord 2026-11-10): in the Feature Showcase, the legend panel's items become children of the legend panel object and the other UI items are regrouped logically (HUD, menus, panels); same for every sample (Tetris, Marble Run, MainScene).
   - Done when: Each sample's Hierarchy shows grouped UI; samples still play; sample tests updated.
 
