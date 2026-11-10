@@ -112,4 +112,48 @@ class NativeLibraryLoaderTest {
         Assertions.assertTrue(loader.loadNativeLibrary())
         Assertions.assertTrue(loader.loadNativeLibrary())
     }
+
+    @Test
+    fun NativeLoader_DirIsUserHomeBasedNotCwd() {
+        // PHY-18: natives must extract to a per-user data folder, not the app's
+        // working directory (which can be read-only, e.g. Program Files for
+        // an exported game).
+        val dirPath = NativeLibraryLoader.nativesDir().path
+        val home = System.getProperty("user.home").orEmpty()
+        val appData = System.getenv("APPDATA")
+
+        val os = System.getProperty("os.name").orEmpty().lowercase()
+        Assertions.assertTrue(
+            dirPath.startsWith(home) ||
+                dirPath.startsWith(appData ?: ""),
+            "nativesDir should resolve under user home or APPDATA, got: $dirPath",
+        )
+        Assertions.assertFalse(
+            dirPath.startsWith(System.getProperty("user.dir").orEmpty()),
+            "nativesDir must NOT be the working directory (read-only risk): $dirPath",
+        )
+    }
+
+    @Test
+    fun NativeLoader_WindowsOsName_UsesAppDataEvenWhenCapitalised() {
+        val dir = NativeLibraryLoader.nativesDirFor("Windows 11", "C:/Users/u", "C:/Users/u/AppData/Roaming", null)
+        Assertions.assertEquals(java.io.File("C:/Users/u/AppData/Roaming", "Skate/natives"), dir)
+    }
+
+    @Test
+    fun NativeLoader_MacAndLinux_UsePerUserConfigFolders() {
+        Assertions.assertEquals(
+            java.io.File("/Users/u", "Library/Application Support/Skate/natives"),
+            NativeLibraryLoader.nativesDirFor("Mac OS X", "/Users/u", null, null),
+        )
+        Assertions.assertEquals(
+            java.io.File("/home/u/.config", "skate/natives"),
+            NativeLibraryLoader.nativesDirFor("Linux", "/home/u", null, null),
+        )
+    }
+
+    @Test
+    fun NativeLoader_NativesDir_ExistsSoTheExtractorCanWriteIntoIt() {
+        Assertions.assertTrue(java.io.File(NativeLibraryLoader.nativesDir().path).isDirectory)
+    }
 }

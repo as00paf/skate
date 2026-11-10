@@ -43,6 +43,7 @@ import com.pafoid.skate.game.prefabs.PrefabCatalog
 import com.pafoid.skate.game.prefabs.PrefabType
 import com.pafoid.skate.game.prefabs.Skateboard
 import com.pafoid.skate.game.prefabs.Skater
+import com.pafoid.skate.game.prefabs.SkateparkShapes
 import org.joml.Vector3f
 import java.io.File
 
@@ -78,14 +79,15 @@ class PrefabsGenerator(
         return skater
     }
 
-    fun spawnFloor(): GameObject {
+    /** Asphalt floor of [size] × [size] metres, its top at y = 0. */
+    fun spawnFloor(size: Int = 20): GameObject {
         val texturePath = projectAssetsDir + Assets.Bundled.ASPHALT
         val modelPath = projectAssetsDir + Assets.Bundled.CUBE
         val texture = assetsManager.getTexture(texturePath)
         val material = Material(texture)
         val baseModel = assetsManager.loadModel(modelPath)
         val model = `3dModel`(path = modelPath, mesh = baseModel.mesh)
-        return Floor("Floor", model, material)
+        return Floor("Floor", model, material, size = size / 2)
     }
 
     /**
@@ -292,11 +294,53 @@ class PrefabsGenerator(
             .addComponent(Transform(Vector3f(5f, 3.5f, 7f)).apply { lookAt(Vector3f(0f, 0.8f, 0f)) })
         val skater = spawnSkater()
         val skate = spawnSkateboard()
-        val floor = spawnFloor()
-        val ledge = spawnLedge(Vector3f(3f, 0f, -3f), MaterialType.CONCRETE)
-        val quarterPipe = spawn(PrefabType.QUARTER_PIPE, Vector3f(0f, 0f, -6f), MaterialType.WOOD_TAN)
-        val funbox = spawn(PrefabType.FUNBOX, Vector3f(-4f, 0f, 4f), MaterialType.CONCRETE)
-        return listOf(camera, firstPerson, fixed, skate, skater, floor, ledge, quarterPipe, funbox, spawnHud())
+        return listOf(camera, firstPerson, fixed, skate, skater) + spawnSkatepark() + spawnHud()
+    }
+
+    /**
+     * The MainScene skatepark (GPL-23, docs/design/GPL-23.md §2): a 40 m floor with a start plaza around the spawn and
+     * four zones. Obstacles face +Z (the way the skater starts) unless turned to be ridden up toward +Z.
+     */
+    fun spawnSkatepark(): List<GameObject> {
+        val concrete = MaterialType.CONCRETE
+        val wood = MaterialType.WOOD_TAN
+        fun place(name: String, type: PrefabType, x: Float, z: Float, material: MaterialType? = concrete, yaw: Float = 0f) =
+            spawn(type, Vector3f(x, 0f, z), material).also { go ->
+                go.name = name
+                go.getComponent<Transform>()?.rotation?.y = yaw
+            }
+        val stairs5Z = 14f
+        val stairs3Z = 6f
+        return listOf(
+            spawnFloor(PARK_SIZE),
+            // Start plaza: the ledge beside the spawn and the quarter pipe behind it.
+            spawnLedge(Vector3f(3f, 0f, -3f), concrete),
+            place("QuarterPipe", PrefabType.QUARTER_PIPE, 0f, -6f, wood),
+            // Street line (north): manual pad and rail, then up the Euro-gap deck onto the 5-stair, hubba and handrail.
+            place("Street_ManualPad", PrefabType.MANUAL_PAD, -2f, 5f),
+            place("Street_Rail", PrefabType.RAIL, 2f, 6f, null),
+            place("Street_EuroGap", PrefabType.EURO_GAP, 0f, stairs5Z + SkateparkShapes.euroGapOffset(5)),
+            place("Street_Stairs5", PrefabType.STAIRS_5, 0f, stairs5Z),
+            place("Street_Hubba", PrefabType.HUBBA, 1.05f, stairs5Z),
+            place("Street_Handrail", PrefabType.HANDRAIL, -1.05f, stairs5Z, null),
+            place("Street_GrindBox", PrefabType.GRIND_BOX, 6f, 12f),
+            place("Street_KinkedRail", PrefabType.KINKED_RAIL, -6f, 12f, null),
+            // Flat-ground (west): kicker into the funbox, two manual pads, a bank up to the 3-stair.
+            // The kicker's lip faces -Z (like the quarter pipe), so it is turned to launch north into the funbox.
+            place("Flat_Kicker", PrefabType.KICKER, -12f, -2f, wood, yaw = 180f),
+            place("Funbox", PrefabType.FUNBOX, -12f, 3f),
+            place("Flat_ManualPad1", PrefabType.MANUAL_PAD, -12f, 8.5f),
+            place("Flat_ManualPad2", PrefabType.MANUAL_PAD, -12f, 11.5f),
+            // A bank slopes down toward +Z, so it is turned to rise toward the 3-stair's landing.
+            place("Flat_Bank", PrefabType.BANK, -17f, stairs3Z - 1.95f, yaw = 180f),
+            place("Flat_Stairs3", PrefabType.STAIRS_3, -17f, stairs3Z),
+            // Transition (east): half pipe, a bank and a quarter pipe facing back south.
+            place("Transition_HalfPipe", PrefabType.HALF_PIPE, 13f, 0f, wood),
+            place("Transition_Bank", PrefabType.BANK, 8f, 7f, wood, yaw = 180f),
+            place("Transition_QuarterPipe", PrefabType.QUARTER_PIPE, 13f, 10f, wood, yaw = 180f),
+            // Bowl corner (south-east).
+            place("Bowl", PrefabType.BOWL, 12f, -12f),
+        )
     }
 
     /**
@@ -325,6 +369,9 @@ class PrefabsGenerator(
 
     companion object {
         const val DEFAULT_SCENE = "MainScene"
+
+        /** Side of the MainScene skatepark floor in metres (GPL-23). */
+        const val PARK_SIZE = 40
 
         /** MainScene cameras, in the order the HUD Camera button cycles them (GPL-22). */
         const val CAMERA_THIRD_PERSON = "Camera"

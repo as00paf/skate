@@ -33,6 +33,7 @@ import com.pafoid.skate.engine.ecs.components.ParticleEmitter
 import com.pafoid.skate.engine.ecs.components.PointLightComponent
 import com.pafoid.skate.engine.ecs.components.RenderComponent
 import com.pafoid.skate.engine.ecs.components.RigidBody3D
+import com.pafoid.skate.engine.ecs.components.ScriptComponent
 import com.pafoid.skate.engine.ecs.components.ScenePhysicsComponent
 import com.pafoid.skate.engine.ecs.components.SpotLightComponent
 import com.pafoid.skate.engine.ecs.components.Transform
@@ -116,6 +117,21 @@ class FeatureShowcase(private val prefabs: PrefabsGenerator) {
         /** The views are boxes standing on the pad; the session's origin sits at their centre height. */
         private const val VIEW_HALF_HEIGHT = 0.7f
 
+        /**
+         * ECS-14: the overlay label showing the random seed, and the script that fills it (copied to
+         * `Assets/Scripts/` by [populate]) with the seed and five dice rolls from the `showcase.dice` stream.
+         */
+        const val SEED_LABEL = "SeedLabel"
+        const val SEED_SCRIPT = "ShowcaseSeed.kts"
+        private const val SEED_SCRIPT_RESOURCE = "/samples/showcase/$SEED_SCRIPT"
+
+        /** Writes the showcase's scripts into [assetsDir]`/Scripts`. */
+        fun writeScripts(assetsDir: File) {
+            val dir = File(assetsDir, "Scripts").also { it.mkdirs() }
+            val source = FeatureShowcase::class.java.getResourceAsStream(SEED_SCRIPT_RESOURCE) ?: error("Missing resource $SEED_SCRIPT_RESOURCE")
+            source.use { input -> File(dir, SEED_SCRIPT).outputStream().use { input.copyTo(it) } }
+        }
+
         /** GUI-13: the minimap (bottom left), the button that opens the full map, and the full map's canvas. */
         const val MINIMAP = "[UI] Minimap"
         const val MAP_BUTTON = "MapButton"
@@ -135,11 +151,11 @@ class FeatureShowcase(private val prefabs: PrefabsGenerator) {
         val PREFAB_PIECES = listOf(
             PrefabType.LEDGE, PrefabType.HUBBA, PrefabType.MANUAL_PAD, PrefabType.GRIND_BOX, PrefabType.FUNBOX,
             PrefabType.RAIL, PrefabType.HANDRAIL, PrefabType.KINKED_RAIL, PrefabType.STAIRS_3, PrefabType.STAIRS_5,
-            PrefabType.KICKER, PrefabType.BANK, PrefabType.QUARTER_PIPE, PrefabType.CRATE, PrefabType.BARREL, PrefabType.BENCH,
+            PrefabType.EURO_GAP, PrefabType.KICKER, PrefabType.BANK, PrefabType.QUARTER_PIPE, PrefabType.CRATE, PrefabType.BARREL, PrefabType.BENCH,
         )
 
         /** String keys the overlay uses; they live in the bundled game and editor string tables. */
-        val STRING_KEYS = listOf("showcase.title", "showcase.hint", "showcase.areas", "showcase.text", "showcase.button", "showcase.overview", "showcase.fog_toggle") +
+        val STRING_KEYS = listOf("showcase.title", "showcase.hint", "showcase.areas", "showcase.text", "showcase.button", "showcase.overview", "showcase.fog_toggle", "showcase.seed") +
             AREAS.map { "showcase.area.${it.key}" } +
             listOf("showcase.map.open", "showcase.map.title", "showcase.map.close", "showcase.map.hint") +
             AREAS.map { "showcase.map.${it.key}" }
@@ -197,6 +213,9 @@ class FeatureShowcase(private val prefabs: PrefabsGenerator) {
         lights(); shadows(); materials(); particles()
         physics(); joints(); vehicle(); audio()
         prefabLibrary(); netcode(); animation(); fog(); ui()
+        // Tests build the scene without a project folder; the script reference is still there.
+        if (assets.isNotBlank() && File(assets).isDirectory) writeScripts(File(assets))
+        add(GameObject("[UI] SeedController").addComponent(ScriptComponent(assets + "Scripts/" + SEED_SCRIPT)))
         return scene
     }
 
@@ -376,12 +395,13 @@ class FeatureShowcase(private val prefabs: PrefabsGenerator) {
     }
 
     private fun prefabLibrary() {
+        // Nine per row, 3.1 m apart (the widest piece, the quarter pipe, is 3 m), centred in the area.
         PREFAB_PIECES.forEachIndexed { i, type ->
-            val row = i / 8
-            val col = i % 8
+            val row = i / 9
+            val col = i % 9
             val material = if (type == PrefabType.RAIL || type == PrefabType.HANDRAIL || type == PrefabType.KINKED_RAIL) null
                 else listOf(MaterialType.CONCRETE, MaterialType.WOOD_BROWN, MaterialType.WOOD_LIGHT)[i % 3]
-            add(prefabs.spawn(type, at("prefabs", -12.25f + col * 3.5f, 0f, -2f + row * 4f), material).labelled("Prefabs"))
+            add(prefabs.spawn(type, at("prefabs", -12.4f + col * 3.1f, 0f, -2f + row * 4f), material).labelled("Prefabs"))
         }
     }
 
@@ -450,6 +470,9 @@ class FeatureShowcase(private val prefabs: PrefabsGenerator) {
 
         canvas.addChild(uiNode(FOG_TOGGLE_BUTTON, 1f, 0f, -20f, 20f, 320f, 64f)
             .addComponent(UIButtonComponent("showcase.fog_toggle", fontSize = 26f)))
+        // Filled in Play by the seed script; "?" until then.
+        canvas.addChild(uiNode(SEED_LABEL, 1f, 0f, -20f, 96f, 520f, 36f)
+            .addComponent(UITextComponent("showcase.seed", listOf("?", "?"), Vector4f(0.8f, 0.9f, 1f, 1f), 26f, alignX = 1f)))
 
         canvas.addChild(uiNode("WidgetPanel", 1f, 1f, -20f, -20f, 480f, 330f)
             .addComponent(UIImageComponent(tint = Vector4f(0.1f, 0.2f, 0.4f, 0.8f))))

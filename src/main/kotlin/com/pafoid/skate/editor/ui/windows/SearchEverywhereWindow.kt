@@ -1,6 +1,7 @@
 package com.pafoid.skate.editor.ui.windows
 
 import com.pafoid.skate.editor.events.WindowAction
+import com.pafoid.skate.editor.imgui.Tooltips
 import com.pafoid.skate.editor.imgui.EditorWindow
 import com.pafoid.skate.editor.imgui.EmptyState
 import com.pafoid.skate.editor.imgui.data.Icons
@@ -188,9 +189,7 @@ class SearchEverywhereWindow(
         ImGui.sameLine()
 
         if (ImGui.button(Icons.WINDOW_CLOSE, buttonSize, buttonSize)) clearQuery()
-        if (ImGui.isItemHovered()) {
-            ImGui.setTooltip(stringManager.getString("lbl.clear"))
-        }
+        Tooltips.text(stringManager.getString("lbl.clear"))
 
         if (inputEdited) {
             triggerSearch()
@@ -240,9 +239,7 @@ class SearchEverywhereWindow(
         if (isActive) {
             ImGui.popStyleColor(2)
         }
-        if (ImGui.isItemHovered()) {
-            ImGui.setTooltip(tooltip)
-        }
+        Tooltips.text(tooltip)
     }
 
     private fun getFilteredResults(): Map<SearchCategory, List<SearchResult>> {
@@ -484,11 +481,8 @@ data class PaletteCommand(
 }
 
 object PaletteCommands {
-    /**
-     * Test Input opens the input test (EDT-51 §3.1). Until chunk I moves it to Key Bindings › Test, that is the
-     * Input Testing dialog; chunk I points this at its new home.
-     */
-    const val TEST_INPUT_WINDOW = "window.input_testing"
+    /** Test Input opens Key Bindings on its Test tab (EDT-51 §3.1, EDT-52I). */
+    const val TEST_INPUT_WINDOW = KeyBindingsWindow.TEST_TAB
 
     val TEST_INPUT = PaletteCommand(
         id = "palette.test_input",

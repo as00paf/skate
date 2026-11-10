@@ -8,7 +8,7 @@ import org.junit.jupiter.api.Test
 class InputTestingModelTest {
     @Test
     fun InputTesting_EventLog_IsBoundedPausableAndClearable() {
-        val log = InputEventLog(capacity = 3)
+        val log = InputEventLog<String>(capacity = 3)
         (1..5).forEach { log.add("e$it") }
         assertEquals(listOf("e3", "e4", "e5"), log.lines)
         log.paused = true

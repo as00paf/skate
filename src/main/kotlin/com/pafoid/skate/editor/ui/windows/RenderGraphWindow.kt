@@ -21,6 +21,8 @@ import imgui.type.ImInt
 class RenderGraphWindow(
     private val engine: Engine,
 ) : EditorWindow("window.render_graph") {
+    override val relatedWindows: List<String> = listOf("window.profiler")
+
     private val stringManager = engine.stringManager
     private val renderer: Renderer by lazy { engine.renderer }
 
