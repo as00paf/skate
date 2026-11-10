@@ -162,10 +162,10 @@ Round 27+ goals: the Asset Browser shows every asset type, one assets folder, ex
 - [~] @skate-online **AST-16** `P2` Asset store window — design approved 2026-11-06 (`docs/design/AST-16.md`, revised after the skate-assets review) — slices a, b, d (Kenney/Quaternius) and AST-25 merged in round 30; e (SimReady/USD) pending
   - Do: Human decisions: **no login, no credential management.** Slices in order: a) SPI, registry, HTTP seam, pipeline, window skeleton + Poly Haven, b) ambientCG + texture sets, c) Kenney/Quaternius catalogs + "Import downloaded pack" (manual download is fine), d) Poly Haven as the primary provider, e) SimReady via Hugging Face + USD→glTF through Blender (needs AST-19). **No Sketchfab** (requires login). **No license tracking** for now — skip attribution-ledger/credits work. If an asset is in an unsupported format, warn the user on import rather than blocking.
   - Done when: Each slice imports a real asset; tests on fixtures, no sockets.
-- [~] @skate-assets **AST-17** `P2` City generation from OpenStreetMap: design note — draft written, awaiting the human's approval
+- [~] @skate-assets **AST-17** `P2` City generation from OpenStreetMap: design note — rev 2 answered 2026-11-10 (built-in generator; embedded map now; mesh colliders by reference; triangulation library; box fallback for Simple; ODbL as Produced Work); rev 3 pending
   - Do: Write `docs/design/AST-17.md` evaluating OSM2World (Java, open source, glTF export) as the open-source alternative to commercial OSM city tools: area picker, import to a scene with colliders and materials, licensing (ODbL attribution).
   - Done when: The human approves the note.
-- [~] @skate-assets **AST-18** `P3` Protocol Buffers: design note — draft written, awaiting the human's approval
+- [x] **AST-18** `P3` Protocol Buffers: design note — approved by the human 2026-11-10 (`docs/design/AST-18.md` rev 2)
   - Do: Write `docs/design/AST-18.md`. Proposed: protobuf only for runtime data (packed exports, network messages). Scenes, prefabs and settings stay JSON so git diffs/merges (EDT-60) stay readable. Measure load time/size gains first.
   - Done when: The human approves the note.
 - [x] **AST-19** `P2` Full Blender support — design approved 2026-11-06 (`docs/design/AST-19.md`)
@@ -227,6 +227,10 @@ Round 27+ goals: the Asset Browser shows every asset type, one assets folder, ex
   - Do: From AST-15 Q5 (human, 2026-11-10): replace `run-game.bat` by a jpackage `.exe` with the project icon and a bundled Java runtime, so players need no Java install.
   - Done when: The exported `.exe` shows the icon and starts on a machine without Java; tests for the packaging step.
   - Deps: AST-29
+- [ ] **AST-32** `P3` Measure the pack index; protobuf only if it pays (AST-18)
+  - Do: Per `docs/design/AST-18.md` rev 2: measure the JSON atlas cost at game start-up; convert it to proto3 through `kotlinx-serialization-protobuf` only if it exceeds 5 %; otherwise keep JSON and add random-access pack reads. Editable files stay JSON; the network format is unchanged; no inspect command.
+  - Done when: The measurement is recorded in the note, and the chosen path is implemented with tests.
+  - Deps: AST-18, AST-27
 
 ### ECS — `ECS` (`skate-ecs`)
 
