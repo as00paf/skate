@@ -1,6 +1,7 @@
 package com.pafoid.skate.editor.ui.handlers
 
 import com.pafoid.skate.editor.data.PrefabData
+import com.pafoid.skate.editor.assetimport.blender.ModelDrop
 import com.pafoid.skate.editor.events.ViewportAction
 import com.pafoid.skate.editor.gizmos.EditorCamera
 import com.pafoid.skate.editor.ui.windows.viewport.ViewportRenderer
@@ -29,6 +30,12 @@ class ViewportDragDropHandler(
             val payloadTexture = ImGui.acceptDragDropPayload<String>("TEXTURE")
             val payloadSound = ImGui.acceptDragDropPayload<String>("SOUND")
             val payloadAnimation = ImGui.acceptDragDropPayload<Animation>("ANIMATION")
+            val payloadFile = ImGui.acceptDragDropPayload<String>("FILE_PATH")
+
+            // A model (or a .blend, through its imported GLB) from the Project window (AST-19)
+            payloadFile?.let(ModelDrop::modelFor)?.let { model ->
+                eventSystem.publish(ViewportAction.DropModel(model, computeDropPosition()))
+            }
 
             if (prefabPayload != null) {
                 computeDropPosition()?.let { hitPoint ->

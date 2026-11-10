@@ -1,5 +1,6 @@
 package com.pafoid.skate.cli
 
+import com.pafoid.skate.engine.assets.ProjectLayout
 import java.io.File
 import java.nio.file.Files
 import kotlin.test.Test
@@ -38,6 +39,47 @@ class SkateCliServiceTest {
             val report = service.validate(projectFile.path)
             assertTrue(!report.isValid)
             assertFailsWith<CliException> { service.run(projectFile.path, null, 1, 0.1f) }
+        } finally {
+            dir.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun CliService_CreatedProjectHasOneAssetsFolder() {
+        val dir = Files.createTempDirectory("skate-cli").toFile()
+        try {
+            val projectDir = SkateCliService(out = {}).createProject("Demo", dir).parentFile
+            assertTrue(ProjectLayout.duplicateAssetFolders(projectDir).isEmpty())
+            assertTrue(ProjectLayout.engineDefaultsDir(projectDir).isDirectory)
+            assertTrue(File(ProjectLayout.assetsDir(projectDir), ProjectLayout.STRINGS_FILE).isFile)
+        } finally {
+            dir.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun CliService_ValidateWarnsAboutASecondAssetsFolder() {
+        val dir = Files.createTempDirectory("skate-cli").toFile()
+        try {
+            val service = SkateCliService(out = {})
+            val projectFile = service.createProject("Demo", dir)
+            File(projectFile.parentFile, "Scenes/assets").mkdirs()
+            val report = service.validate(projectFile.path)
+            assertTrue(report.isValid)
+            assertTrue(report.warnings.any { it.startsWith("Duplicate assets folder") }, "${report.warnings}")
+        } finally {
+            dir.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun Samples_HaveOneAssetsFolder() {
+        val dir = Files.createTempDirectory("skate-cli").toFile()
+        try {
+            listOf(TetrisProjectBuilder().build(dir), MarbleRunProjectBuilder().build(dir), ShowcaseProjectBuilder().build(dir)).forEach { project ->
+                val projectDir = project.parentFile
+                assertTrue(ProjectLayout.duplicateAssetFolders(projectDir).isEmpty(), "${projectDir.name}: ${ProjectLayout.duplicateAssetFolders(projectDir)}")
+            }
         } finally {
             dir.deleteRecursively()
         }

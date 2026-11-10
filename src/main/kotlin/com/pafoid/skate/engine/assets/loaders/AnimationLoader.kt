@@ -1,5 +1,6 @@
 package com.pafoid.skate.engine.assets.loaders
 
+import com.pafoid.skate.engine.animation.edit.SkAnimFormat
 import com.pafoid.skate.engine.assets.BoneNameMapper
 import com.pafoid.skate.engine.assets.data.models.animations.Animation
 import com.pafoid.skate.engine.assets.data.models.animations.AnimationChannel
@@ -17,11 +18,16 @@ import org.lwjgl.assimp.Assimp.aiProcess_JoinIdenticalVertices
 import org.lwjgl.assimp.Assimp.aiProcess_LimitBoneWeights
 import org.lwjgl.assimp.Assimp.aiProcess_Triangulate
 import org.lwjgl.assimp.Assimp.aiReleaseImport
+import java.io.File
 import java.nio.ByteBuffer
 
 class AnimationLoader {
 
     fun loadAnimations(data: ByteBuffer, path: String): List<Animation> {
+        if (SkAnimFormat.isSkAnim(path)) {
+            val bytes = ByteArray(data.remaining()).also { data.duplicate().get(it) }
+            return listOf(SkAnimFormat.toAnimation(SkAnimFormat.decode(bytes.toString(Charsets.UTF_8)), path))
+        }
         val scene = aiImportFileFromMemory(
             data,
             aiProcess_Triangulate or aiProcess_JoinIdenticalVertices or aiProcess_LimitBoneWeights,
@@ -33,6 +39,9 @@ class AnimationLoader {
     }
 
     fun loadAnimations(path: String): List<Animation> {
+        if (SkAnimFormat.isSkAnim(path)) {
+            return listOf(SkAnimFormat.toAnimation(SkAnimFormat.decode(File(path).readText(Charsets.UTF_8)), path))
+        }
         val scene = aiImportFile(
             path,
             aiProcess_Triangulate or aiProcess_JoinIdenticalVertices or aiProcess_LimitBoneWeights
@@ -179,7 +188,11 @@ class AnimationLoader {
         /**
          * Clip name from a file path: the file name without its extension, with either separator
          * (`...\\animations\\falling idle.fbx` -> `falling idle`). Controllers refer to clips by this name.
+         * `Board@Ollie.glb`, one action exported from a `.blend` (AST-19), is the clip `Ollie`.
          */
-        fun clipName(path: String): String = path.substringAfterLast('/').substringAfterLast('\\').substringBeforeLast('.')
+        fun clipName(path: String): String {
+            val base = path.substringAfterLast('/').substringAfterLast('\\').substringBeforeLast('.')
+            return base.substringAfter('@').ifEmpty { base }
+        }
     }
 }

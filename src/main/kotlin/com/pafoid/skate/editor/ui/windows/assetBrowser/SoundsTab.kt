@@ -25,8 +25,10 @@ class SoundsTab(
     override fun imgui(label: String, searchText: ImString) {
         refreshOnProjectChange()
         durations.pump()
-        renderHeader(label, searchText)
+        content(label) { renderTable(label, searchText) }
+    }
 
+    private fun renderTable(label: String, searchText: ImString) {
         val files = items.filter { it.name.contains(searchText.get(), ignoreCase = true) }
         if (renderEmptyState(items.size, files.size, searchText)) return
 
@@ -36,10 +38,10 @@ class SoundsTab(
                          ImGuiTableFlags.Resizable
         
         if (ImGui.beginTable("##${label}Table", 4, tableFlags)) {
-            ImGui.tableSetupColumn("", ImGuiTableColumnFlags.WidthFixed, 24f)
+            ImGui.tableSetupColumn("##icon", ImGuiTableColumnFlags.WidthFixed, 24f)
             ImGui.tableSetupColumn(stringManager.getString("lbl.name"), ImGuiTableColumnFlags.WidthStretch)
             ImGui.tableSetupColumn(stringManager.getString("lbl.duration"), ImGuiTableColumnFlags.WidthFixed, 60f)
-            ImGui.tableSetupColumn("", ImGuiTableColumnFlags.WidthFixed, 40f)
+            ImGui.tableSetupColumn("##play", ImGuiTableColumnFlags.WidthFixed, 40f)
             
             ImGui.tableHeadersRow()
 

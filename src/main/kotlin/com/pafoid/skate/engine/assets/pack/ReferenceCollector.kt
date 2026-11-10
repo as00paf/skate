@@ -1,6 +1,7 @@
 package com.pafoid.skate.engine.assets.pack
 
 import com.pafoid.skate.engine.assets.AssetRegistry
+import com.pafoid.skate.engine.assets.loaders.GltfReferences
 import java.io.File
 
 /**
@@ -30,6 +31,14 @@ class ReferenceCollector(
             if (file.extension.lowercase() in modelExtensions) {
                 file.parentFile?.listFiles { f -> f.isFile && f.extension.lowercase() in modelCompanions }
                     ?.forEach { add(it.canonicalFile) }
+            }
+            // A .gltf names its buffers and images relative to itself, often in subfolders (AST-22)
+            if (file.extension.equals("gltf", ignoreCase = true)) {
+                GltfReferences.uris(file.readText()).forEach { uri ->
+                    GltfReferences.resolve(file.path, uri)?.let(::File)
+                        ?.takeIf { it.isFile && it.canonicalFile.path.startsWith(root.path) }
+                        ?.let { add(it.canonicalFile) }
+                }
             }
             if (file.extension.lowercase() !in scanExtensions) continue
             for (token in stringLiteral.findAll(file.readText()).map { unescape(it.groupValues[1]) }) {

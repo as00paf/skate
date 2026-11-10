@@ -63,6 +63,8 @@ sealed class ViewportAction(eventName: String) : Event(eventName) {
     // Drag and Drop
     data class DropTexture(val texturePath: String, val targetObject: GameObject? = null, val dropPosition: Vector3f? = null) : ViewportAction("viewport.drop_texture")
     data class DropSound(val soundPath: String, val targetObject: GameObject) : ViewportAction("viewport.drop_sound")
+    /** A model file (or a `.blend`, through its imported GLB, AST-19) dropped from the Project window. */
+    data class DropModel(val modelPath: String, val dropPosition: Vector3f? = null) : ViewportAction("viewport.drop_model")
     data class ApplyAnimation(val animation: Animation, val targetObject: GameObject) :
         ViewportAction("viewport.apply_animation")
 

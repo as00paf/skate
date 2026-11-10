@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.imgui.components
 
+import com.pafoid.skate.editor.imgui.Tooltips
 import com.pafoid.skate.editor.imgui.tipped
 import com.pafoid.skate.editor.commands.objects.AudioComponentSettings
 import com.pafoid.skate.editor.events.AudioAction
@@ -51,7 +52,7 @@ private const val SOUND_PAYLOAD = "SOUND"
 fun AudioComponent.imgui(engine: Engine) {
     val strings = engine.stringManager
     fun s(key: String) = strings.getString("component.AudioComponent.$key")
-    fun tip(key: String) { if (ImGui.isItemHovered()) ImGui.setTooltip(strings.getString("tooltip.audio.component.$key")) }
+    fun tip(key: String) { Tooltips.always(strings.getString("tooltip.audio.component.$key")) }
     ImGui.pushID(System.identityHashCode(this))
 
     val frame = ImGui.getFrameCount()
@@ -100,7 +101,7 @@ fun AudioComponent.imgui(engine: Engine) {
             if (ImGui.smallButton("X##clip$i")) publishNow = draft.copy(clips = draft.clips.filterIndexed { j, _ -> j != i })
             ImGui.sameLine()
             ImGui.textUnformatted(File(clip).name)
-            if (ImGui.isItemHovered()) ImGui.setTooltip(clip)
+            Tooltips.always(clip)
         }
         strings.tipped(ImGui.button("${s("clips.drop")}##clips_drop"), "component.AudioComponent.clips.drop")
         if (ImGui.beginDragDropTarget()) {

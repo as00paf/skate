@@ -3,7 +3,6 @@ package com.pafoid.skate.editor.ui.windows
 import com.pafoid.skate.editor.imgui.EmptyState
 import com.pafoid.skate.editor.imgui.tippedWith
 import com.pafoid.skate.editor.imgui.tipped
-import com.pafoid.skate.editor.imgui.label
 import com.pafoid.skate.editor.events.ScriptEditorAction
 import com.pafoid.skate.editor.events.WindowAction
 import com.pafoid.skate.editor.scripting.ScriptTemplates
@@ -16,6 +15,9 @@ import com.pafoid.skate.editor.events.ProjectEvent.DeleteFileRequested
 import com.pafoid.skate.editor.events.ProjectEvent.MoveFileRequested
 import com.pafoid.skate.editor.events.ProjectEvent.RenameFileRequested
 import com.pafoid.skate.editor.imgui.EditorWindow
+import com.pafoid.skate.editor.ui.windows.assetBrowser.BrowserEmptyState
+import com.pafoid.skate.editor.ui.windows.assetBrowser.EmptySpaceItem
+import com.pafoid.skate.editor.ui.windows.assetBrowser.EmptySpaceMenu
 import com.pafoid.skate.editor.imgui.MImGui
 import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.editor.systems.FileSystemScanner
@@ -24,11 +26,8 @@ import com.pafoid.skate.editor.systems.ProjectManager
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.events.SceneAction
 import imgui.flag.ImGuiSelectableFlags
-import imgui.flag.ImGuiWindowFlags
-import imgui.internal.ImGui.begin
 import imgui.internal.ImGui
 import imgui.internal.ImGui.beginDragDropSource
-import imgui.internal.ImGui.beginPopupContextWindow
 import imgui.internal.ImGui.end
 import imgui.internal.ImGui.endDragDropSource
 import imgui.internal.ImGui.endPopup
@@ -112,6 +111,13 @@ class ProjectWindow(
     private var creatingIsDir = false
     private val createInput = ImString("", 128)
 
+    override val icon: String = Icons.FOLDER
+
+    override val relatedWindows: List<String> = listOf("window.asset_browser", "window.hierarchy")
+
+    /** Set when an item is right-clicked; the item menu opens after the tree, outside the items' ID scopes. */
+    private var openItemMenu = false
+
     override fun imgui() {
         if (!isOpen.get()) return
 
@@ -120,15 +126,15 @@ class ProjectWindow(
             ImGui.setNextWindowFocus()
             reveal.focusTaken()
         }
-        if (begin(stringManager.label("window.project"), ImGuiWindowFlags.None)) {
-            // Refresh tree if needed
+        if (beginWindow(stringManager)) {
             if (needsRefresh) {
                 treeCache = fileSystemScanner.scanProject()
                 needsRefresh = false
                 statusTreeVersion++  // Invalidate status cache
             }
 
-            // ── Error Display ──
+            header(stringManager) { if (projectManager.hasProject()) renderHeaderTools() }
+
             lastOperationError?.let { errorMsg ->
                 MImGui.errorText("${Icons.WINDOW_CLOSE} $errorMsg")
                 separator()
@@ -139,44 +145,55 @@ class ProjectWindow(
             if (!projectManager.hasProject()) {
                 EmptyState.noProject(stringManager, eventSystem)
             } else {
-                // ── Search ──
-                renderSearchBar()
+                // The tree fills the window above the status bar; its empty space has the create menu (EDT-51 §2.3).
+                if (ImGui.beginChild("##project_tree", 0f, -ImGui.getFrameHeightWithSpacing())) {
+                    renderTree()
+                    if (openItemMenu) {
+                        openItemMenu = false
+                        ImGui.openPopup(ITEM_MENU)
+                    }
+                    renderContextMenu()
+                    EmptySpaceMenu.render(stringManager, "##project_empty_space", EmptySpaceItem.PROJECT, ::onEmptySpace)
+                    handleInlineInput()
+                }
+                ImGui.endChild()
                 separator()
-
-                // ── Tree ──
-                renderTree()
+                renderStatusBar()
             }
             reveal.done()
-
-            // ── Context Menu ──
-            renderContextMenu()
-
-            // ── Inline Create/Rename ──
-            handleInlineInput()
-
-            separator()
-
-            // ── Status Bar (uses cached counts, only recalculates when tree changes) ──
-            renderStatusBar()
         }
         end()
     }
 
-    // ─────────────────────────────────────────────────────────
-    // Search
-    // ─────────────────────────────────────────────────────────
-    private fun renderSearchBar() {
-        pushItemWidth(-1f)
-        val hint = "${Icons.SEARCH} ${stringManager.getString("lbl.filter")}..."
-        inputTextWithHint("##project_search", hint, searchText)
-        popItemWidth()
+    /** Header strip tools (EDT-51 §2.2): the filter box, then Refresh; `?` is drawn after them. */
+    private fun renderHeaderTools() {
+        val buttonWidth = ImGui.getFrameHeight() + ImGui.getStyle().itemSpacingX
+        ImGui.setNextItemWidth((ImGui.getContentRegionAvailX() - buttonWidth * 2).coerceAtLeast(80f))
+        inputTextWithHint("##project_search", "${Icons.SEARCH} ${stringManager.getString("lbl.filter")}...", searchText)
+        sameLine()
+        if (stringManager.tippedWith(ImGui.smallButton("${Icons.ARROW_ROTATE}##project_refresh"), "context.browser.refresh.tooltip")) {
+            needsRefresh = true
+        }
+    }
+
+    private fun onEmptySpace(item: EmptySpaceItem) {
+        val root = projectManager.getProjectDirectory() ?: return
+        when (item) {
+            EmptySpaceItem.NEW_FOLDER -> showCreateDialog(isDirectory = true)
+            EmptySpaceItem.NEW_FILE -> showCreateDialog(isDirectory = false)
+            EmptySpaceItem.REFRESH -> needsRefresh = true
+            EmptySpaceItem.SHOW_FOLDER -> openInExplorer(root)
+            EmptySpaceItem.COPY_FOLDER_PATH -> copyPathToClipboard(root.absolutePath)
+        }
     }
 
     private fun renderTree() {
         val filter = searchText.get().trim()
-        if (filter.isNotEmpty() && treeCache.none { matchesFilter(it, filter) }) {
-            EmptyState.render(stringManager, Icons.SEARCH, "empty.search", "empty.search.hint")
-            return
+        val shown = if (filter.isEmpty()) treeCache.size else treeCache.count { matchesFilter(it, filter) }
+        when (BrowserEmptyState.of(treeCache.size, shown)) {
+            BrowserEmptyState.NONE -> Unit
+            BrowserEmptyState.NOTHING_YET -> return EmptyState.nothingYet(stringManager, Icons.FOLDER, "empty.project_files", "empty.project_files.hint")
+            BrowserEmptyState.NO_RESULTS -> return EmptyState.noResults(stringManager) { searchText.set("") }
         }
         for (item in treeCache) {
             renderTreeNode(item, filter)
@@ -219,9 +236,9 @@ class ProjectWindow(
             ImGui.endDragDropTarget()
         }
 
-        // Right-click context menu on folder
         if (isItemClicked(1)) {
             contextTargetItem = item
+            openItemMenu = true
         }
 
         // Double-click to expand/collapse
@@ -250,9 +267,9 @@ class ProjectWindow(
         if (selectable(label, isSelected, selectableFlags)) reveal.select(item.path)
         if (reveal.isTarget(item.path)) ImGui.setScrollHereY(0.5f)
 
-        // Right-click
         if (isItemClicked(1)) {
             contextTargetItem = item
+            openItemMenu = true
         }
 
         // Double-click action
@@ -317,18 +334,9 @@ class ProjectWindow(
     }
 
     private fun renderContextMenu() {
-        if (beginPopupContextWindow("ProjectWindowContextMenu")) {
+        if (ImGui.beginPopup(ITEM_MENU)) {
             val target = contextTargetItem
-
-            if (target == null) {
-                // Background context — new folder/file at project root
-                if (stringManager.tipped(menuItem("${Icons.FOLDER} ${stringManager.getString("context.project.new_folder")}"), "context.project.new_folder")) {
-                    showCreateDialog(isDirectory = true)
-                }
-                if (stringManager.tipped(menuItem("${Icons.PLUS} ${stringManager.getString("context.project.new_file")}"), "context.project.new_file")) {
-                    showCreateDialog(isDirectory = false)
-                }
-            } else {
+            if (target != null) {
                 when (target.type) {
                     FileType.FOLDER -> {
                         if (stringManager.tipped(menuItem("${Icons.FOLDER} ${stringManager.getString("context.project.new_folder")}"), "context.project.new_folder")) {
@@ -364,8 +372,7 @@ class ProjectWindow(
                         // Open action for scene files
                         if (target.type == FileType.SCENE) {
                             if (stringManager.tipped(menuItem("${Icons.FOLDER_OPEN} ${stringManager.getString("context.project.open")}"), "context.project.open")) {
-                                logger.logEditor("Opening scene: ${target.name}")
-                                //eventSystem.publish(SceneAction.OpenRequested(target.path))
+                                handleDoubleClick(target)
                             }
                             separator()
                         }
@@ -412,6 +419,10 @@ class ProjectWindow(
 
             endPopup()
         }
+    }
+
+    private companion object {
+        const val ITEM_MENU = "##project_item_menu"
     }
 
     private fun showCreateDialog(isDirectory: Boolean, parent: FileSystemItem? = null) {

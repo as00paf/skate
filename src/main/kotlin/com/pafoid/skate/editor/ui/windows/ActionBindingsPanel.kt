@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.ui.windows
 
+import com.pafoid.skate.editor.imgui.Tooltips
 import com.pafoid.skate.editor.imgui.tipped
 import com.pafoid.skate.editor.commands.input.BindingOperation
 import com.pafoid.skate.editor.events.ConsoleAction
@@ -41,13 +42,16 @@ class ActionBindingsPanel(
     private var profilesStale = true
     private var status: String? = null
 
+    /** A click-to-rebind capture is waiting for input; the dialog must not treat that key as its own (Esc). */
+    val isCapturing: Boolean get() = capturing != null
+
     private fun s(key: String) = strings.getString(key)
 
     /** Null when the key is missing, so unknown actions and categories fall back to their ids. */
     private fun translated(key: String): String? = s(key).takeUnless { it.startsWith("!!") }
 
     private fun tip(key: String) {
-        if (ImGui.isItemHovered()) ImGui.setTooltip(s(key))
+        Tooltips.text(s(key))
     }
 
     private fun send(operation: BindingOperation) = events.publish(KeyBindingsAction.Apply(operation))
@@ -162,7 +166,7 @@ class ActionBindingsPanel(
     private fun renderRow(row: ActionRow) {
         val id = row.definition.id
         ImGui.text(row.name + if (row.customized) " *" else "")
-        if (row.customized && ImGui.isItemHovered()) ImGui.setTooltip(s("tip.keybindings.customized"))
+        if (row.customized) Tooltips.text(s("tip.keybindings.customized"))
         ImGui.sameLine(220f)
         row.bindings.forEachIndexed { i, binding ->
             val active = capturing?.let { it.actionId == id && it.index == i } == true
@@ -173,6 +177,7 @@ class ActionBindingsPanel(
             if (ImGui.smallButton("x##kb_${id}_rm_$i")) send(BindingOperation.Remove(id, i))
             tip("tip.keybindings.remove")
             ImGui.sameLine()
+            renderSharedHint(id, binding)
         }
         val addActive = capturing?.let { it.actionId == id && it.index == null } == true
         if (addActive) {
@@ -191,6 +196,23 @@ class ActionBindingsPanel(
             if (ImGui.smallButton(s("btn.keybindings.reset") + "##kb_${id}_reset")) send(BindingOperation.Reset(listOf(id), "command.bindings.reset_action", listOf(id)))
             tip("tip.keybindings.reset")
         }
+    }
+
+    /** INP-10: the same input is bound in another context; the higher-priority one takes it while active. */
+    private fun renderSharedHint(id: String, binding: ActionBinding) {
+        val map = actionMap() ?: return
+        val shared = ActionBindingsModel.sharedWith(map, id, binding)
+        if (shared.isEmpty()) return
+        ImGui.textDisabled("(!)")
+        if (ImGui.isItemHovered()) {
+            val names = shared.map { it.actionId }.distinct().joinToString(", ") { other ->
+                val def = map.definition(other)
+                val name = def?.let { translated(it.displayKey) } ?: other
+                def?.let { "$name (${contextLabel(it.context)})" } ?: name
+            }
+            Tooltips.always(strings.getString("tip.keybindings.shared", names))
+        }
+        ImGui.sameLine()
     }
 
     private fun contextPopupName(id: String) = "##kb_add_$id"

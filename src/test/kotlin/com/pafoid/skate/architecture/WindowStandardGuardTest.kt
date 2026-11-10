@@ -1,5 +1,6 @@
 package com.pafoid.skate.architecture
 
+import com.pafoid.skate.editor.imgui.WindowCategory
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
@@ -14,7 +15,9 @@ import kotlin.io.path.readText
  * EDT-52 (standard in docs/design/EDT-51.md §2): every editor window and dialog declares a header icon, opens with
  * `beginWindow` (title with icon, tab menu with Help / Close / Reset position, help popover), draws the header strip
  * with `?` (`header(...)`, or `WindowHeader.helpButton` in its own toolbar), and has `help.<id>.what` / `.how` strings
- * in English and French. `EditorDialog` subclasses get beginWindow and the header from their base class.
+ * in English and French. `EditorDialog` subclasses get beginWindow and the header from their base class. A modal host
+ * (a window whose `imgui()` only renders an `EditorModal`: New Project, Switch Project) needs neither: a modal has no
+ * tab or header strip (EDT-51 §2.1, EDT-64), but it still declares an icon and has help strings.
  *
  * [ALLOW_LIST] holds the windows not converted yet. Each EDT-52 chunk removes its windows; nobody adds any. EDT-52 is
  * done when it is empty.
@@ -39,7 +42,7 @@ class WindowStandardGuardTest {
     @Test
     fun Guard_FindsTheEditorWindows() {
         val names = windows.map { it.className }
-        assertTrue(names.size >= 20, "found only $names")
+        assertTrue(names.size >= 19, "found only $names") // 19 since EDT-52I deleted Input Testing
         assertTrue("ExportWizardWindow" in names && "ShellWindow" in names, names.toString())
     }
 
@@ -50,6 +53,28 @@ class WindowStandardGuardTest {
             .filterValues { it.isNotEmpty() }
         assertTrue(failures.isEmpty(), "Windows not meeting the EDT-51 standard (see docs/design/EDT-51.md §2):\n" +
             failures.entries.joinToString("\n") { (name, v) -> "$name: ${v.joinToString("; ")}" })
+    }
+
+    @Test
+    fun EveryRegisteredWindow_HasBeginnerHelp() {
+        val failures = windows.mapNotNull { w ->
+            val helpId = w.windowName?.removePrefix("window.")
+            val missing = if (helpId == null) {
+                mutableListOf("${w.className}: window name not found")
+            } else {
+                val m = mutableListOf<String>()
+                listOf("en", "fr").forEach { locale ->
+                    listOf("what", "how").forEach { part ->
+                        val key = "help.$helpId.$part"
+                        if (key !in helpKeys[locale].orEmpty()) m += "${w.className}: missing $key in $locale"
+                    }
+                }
+                m
+            }
+            if (missing.isEmpty()) null else w.className to missing
+        }
+        val detail = failures.joinToString("\n") { (name, v) -> "$name: ${v.joinToString("; ")}" }
+        assertTrue(failures.isEmpty(), "Every registered editor window needs beginner help (what/how in English and French):\n" + detail)
     }
 
     @Test
@@ -96,26 +121,100 @@ class WindowStandardGuardTest {
         assertEquals(listOf("missing help.popup.how in fr"), violations(found[2], keys))
     }
 
+    @Test
+    fun Guard_AcceptsModalHostsWithoutHeader() {
+        val src = """
+            class Switcher(s: StringManager) : EditorWindow("window.switcher") {
+                override val icon = Icons.FOLDER_OPEN
+                override fun imgui() = modal.render()
+                private val modal = object : EditorModal(s, Icons.FOLDER_OPEN) { }
+            }
+            class NotAHost(s: StringManager) : EditorWindow("window.not_a_host") {
+                override val icon = Icons.FOLDER_OPEN
+                override fun imgui() { modal.render(); other() }
+                private val modal = object : EditorModal(s) { }
+            }
+        """.trimIndent()
+        val (host, notHost) = findWindows(src)
+        val keys = listOf("en", "fr").associateWith { setOf("help.switcher.what", "help.switcher.how", "help.not_a_host.what", "help.not_a_host.how") }
+        assertEquals(emptyList<String>(), violations(host, keys))
+        assertEquals(2, violations(notHost, keys).size, violations(notHost, keys).toString())
+    }
+
+    /**
+     * A registered window that is not a dialog must be reachable from View > Windows, i.e. have a [WindowCategory];
+     * otherwise nothing can open it (Video to Animation and Asset Store were missed this way). Exempt windows are
+     * listed, with the reason, in [NO_CATEGORY].
+     */
+    @Test
+    fun EveryRegisteredDockableWindow_HasAWindowCategory() {
+        val byClass = windows.associateBy { it.className }
+        val registered = registeredWindowClasses(root.resolve(REGISTRY).readText())
+        assertTrue(registered.size >= 19, "found only $registered in $REGISTRY")
+        val unknown = registered.filter { it !in byClass }
+        assertTrue(unknown.isEmpty(), "Registered windows the guard could not find: $unknown")
+        val missing = registered.mapNotNull { byClass[it] }
+            .filter { !it.isDialog && it.className !in NO_CATEGORY }
+            .filter { w -> w.windowName == null || WindowCategory.of(w.windowName) == null }
+            .map { "${it.className} (${it.windowName})" }
+        assertTrue(missing.isEmpty(), "Windows missing from View > Windows; add them to WindowCategory.byWindow: $missing")
+        val stale = NO_CATEGORY.filter { name -> name !in registered || byClass[name]?.windowName?.let { WindowCategory.of(it) } != null }
+        assertTrue(stale.isEmpty(), "NO_CATEGORY entries that are not registered or have a category now: $stale")
+    }
+
+    @Test
+    fun Guard_ReadsTheRegisteredWindowClasses() {
+        val src = """
+            class WindowRegistry(engine: Engine) {
+                val windows: List<EditorWindow> = listOf(
+                    SceneHierarchyWindow(engine, editor.clipboardService, projectManager::hasProject),
+                    EditorSettingsWindow(a, b) { engine.eventSystem.publish(WindowAction.Show("window.keybindings")) },
+                    VideoToAnimationWindow(engine, editor, projectManager),
+                )
+                val other = listOf(NotAWindow(1))
+            }
+        """.trimIndent()
+        assertEquals(listOf("SceneHierarchyWindow", "EditorSettingsWindow", "VideoToAnimationWindow"), registeredWindowClasses(src))
+    }
+
     class WindowClass(val className: String, val isDialog: Boolean, val windowName: String?, val source: String)
 
     companion object {
         /** Windows not converted to the standard yet, by EDT-52 chunk. Remove entries; never add any. */
-        val ALLOW_LIST = setOf(
-            // B: scene
-            "SceneHierarchyWindow", "PropertiesWindow", "GameViewWindow",
-            // C: project & assets
-            "ProjectWindow", "AssetBrowserWindow",
-            // E: settings dialogs
-            "EditorSettingsWindow", "ProjectSettingsWindow", "KeyBindingsWindow", "ExportWizardWindow",
-            // F: modals & palette
-            "ProjectSwitcherDialog", "ProjectWizardWindow",
-            // H: domain windows
-            "AudioInspectorWindow", "ScriptEditorWindow",
-            // I: input testing move (the window is deleted)
-            "InputTestingWindow",
-            // EDT-54: the Render Graph rewrite adopts the standard
-            "RenderGraphWindow",
+        val ALLOW_LIST = emptySet<String>()
+
+        private const val REGISTRY = "src/main/kotlin/com/pafoid/skate/editor/imgui/WindowRegistry.kt"
+
+        /** Registered non-dialog windows deliberately absent from View > Windows. Keep each entry commented. */
+        val NO_CATEGORY = setOf(
+            // Search Anywhere palette: transient popup, opened from Edit > Search, its shortcut and the title-bar search.
+            "SearchEverywhereWindow",
+            // New Project modal host: opened from File > New Project, the no-project empty state and Switch Project.
+            "ProjectWizardWindow",
+            // Switch Project modal host: opened from the project name button in the menu bar.
+            "ProjectSwitcherDialog",
         )
+
+        /** Class names constructed in `val windows ... = listOf(...)` of the registry source, in order. */
+        fun registeredWindowClasses(registrySource: String): List<String> {
+            val start = Regex("""val\s+windows\b[^=]*=\s*listOf\(""").find(registrySource) ?: return emptyList()
+            val open = start.range.last
+            val end = skipParens(registrySource, open) ?: return emptyList()
+            val body = registrySource.substring(open + 1, end - 1)
+            // Top-level entries only: split on commas at depth 0 of () and {}.
+            val entries = mutableListOf<String>()
+            var depth = 0
+            var from = 0
+            body.forEachIndexed { i, c ->
+                when (c) {
+                    '(', '{' -> depth++
+                    ')', '}' -> depth--
+                    ',' -> if (depth == 0) { entries += body.substring(from, i); from = i + 1 }
+                }
+            }
+            entries += body.substring(from)
+            return entries.mapNotNull { Regex("""^\s*(\w+)\s*\(""").find(it)?.groupValues?.get(1) }
+        }
 
         private val CLASS = Regex("""(?<![\w.])(abstract\s+|open\s+)?class\s+(\w+)""")
         private val BASE = Regex("""^\s*:\s*(EditorWindow|EditorDialog)\s*\(""")
@@ -139,7 +238,7 @@ class WindowStandardGuardTest {
         fun violations(window: WindowClass, helpKeys: Map<String, Set<String>>): List<String> {
             val out = mutableListOf<String>()
             if (!Regex("""override\s+val\s+icon\b""").containsMatchIn(window.source)) out += "no header icon (override val icon)"
-            if (!window.isDialog) {
+            if (!window.isDialog && !isModalHost(window.source)) {
                 if (!Regex("""\bbeginWindow\s*\(""").containsMatchIn(window.source)) out += "does not open with beginWindow (tab menu, help)"
                 if (!Regex("""\bheader\s*\(|\bhelpButton\s*\(""").containsMatchIn(window.source)) out += "no header strip with ? (header(...))"
             }
@@ -155,6 +254,11 @@ class WindowStandardGuardTest {
             }
             return out
         }
+
+        /** The window only renders an [EditorModal][com.pafoid.skate.editor.imgui.EditorModal] it owns. */
+        fun isModalHost(source: String): Boolean =
+            Regex(""":\s*EditorModal\s*\(""").containsMatchIn(source) &&
+                Regex("""override\s+fun\s+imgui\s*\(\s*\)\s*(=\s*\w+\.render\(\)|\{\s*\w+\.render\(\)\s*})""").containsMatchIn(source)
 
         private fun keysOf(text: String): List<String> = text.lines()
             .map { it.trim() }

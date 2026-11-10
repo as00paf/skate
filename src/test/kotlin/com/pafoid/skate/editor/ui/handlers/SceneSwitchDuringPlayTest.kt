@@ -3,6 +3,8 @@ package com.pafoid.skate.editor.ui.handlers
 import com.pafoid.skate.editor.events.PlayModeAction
 import com.pafoid.skate.editor.events.ViewportAction
 import com.pafoid.skate.editor.gizmos.EditorCamera
+import com.pafoid.skate.editor.loading.LoadingRunner
+import com.pafoid.skate.editor.loading.StepExecutor
 import com.pafoid.skate.editor.systems.PlayMode
 import com.pafoid.skate.editor.systems.ProjectManager
 import com.pafoid.skate.editor.systems.UndoRedoManager
@@ -55,7 +57,12 @@ class SceneSwitchDuringPlayTest {
             every { it.camera } returns CameraComponent()
             every { it.transform } returns Transform()
         }
-        SceneActionHandler(engine, projectManager, undo, editorCamera)
+        // Loading steps run inline (EDT-56)
+        val inline = object : StepExecutor {
+            override fun background(block: () -> Unit) = block()
+            override fun main(block: () -> Unit) = block()
+        }
+        SceneActionHandler(engine, projectManager, undo, editorCamera, LoadingRunner(events, inline))
     }
 
     private fun scene(name: String, y: Float) = Scene(name).apply {

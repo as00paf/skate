@@ -21,9 +21,24 @@ open class GameObject(
         const val ALL_LAYERS_MASK = -1
 
         fun layerBit(layer: Int): Int = 1 shl layer
+
+        /** A new persistent object id: 32 lowercase hex digits, the same format as asset GUIDs. */
+        fun newGuid(): String = java.util.UUID.randomUUID().toString().replace("-", "")
     }
 
-    /** Unique id; changing it bumps [EcsChanges] so id lookups (`GameObjectManager.getGameObject`) stay consistent. */
+    /**
+     * Persistent id (EDT-60 §7.1): assigned once when the object is created, saved with the scene and kept on load, so
+     * saving an unchanged scene writes the same bytes and two people's objects never share an id. Copies and prefab
+     * instances get a new one ([generateUid]). Use it for references that are saved (e.g. joint targets).
+     */
+    var guid: String = newGuid()
+
+    /**
+     * Session id: unique while the program runs, never saved (a fresh one on every load). Use it for runtime lookups,
+     * picking and ImGui ids; saved references use [guid]. Changing it bumps [EcsChanges] so id lookups
+     * (`GameObjectManager.getGameObject`) stay consistent.
+     */
+    @Transient
     var uId = ID_COUNTER++
         set(value) {
             field = value
@@ -112,7 +127,11 @@ open class GameObject(
         }
     }
 
-    fun generateUid() { uId = ID_COUNTER++ }
+    /** Gives this object a new identity: a new session [uId] and a new persistent [guid] (copies, prefab instances). */
+    fun generateUid() {
+        uId = ID_COUNTER++
+        guid = newGuid()
+    }
 
     fun destroy() {
         this.isDead = true
@@ -123,11 +142,16 @@ open class GameObject(
         val objAsJSON = serializer.encode(this)
         val result = serializer.decode<GameObject>(objAsJSON)
         result.linkChildren()
-        result.generateUid()
-        result.components.forEach {
-            it.generateId()
-            it.init(result) // Re-initialize with the new parent
+        // The whole copy gets new ids, children included, so the scene never holds two objects with one guid.
+        fun renew(go: GameObject) {
+            go.generateUid()
+            go.components.forEach {
+                it.generateId()
+                it.init(go) // Re-initialize with the new parent
+            }
+            go.children.forEach(::renew)
         }
+        renew(result)
 
         // Restore transform reference
         val currentTransform = getComponent<Transform>() ?: return result

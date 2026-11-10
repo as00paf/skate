@@ -428,8 +428,9 @@ class AssimpLoader(
             }
             embeddedTextures[texturePath]
         } else {
-            embeddedTextures[p] = textureLoader.loadFromFile(p)
-            embeddedTextures[p]
+            // glTF/OBJ texture URIs are relative to the model file, not the working directory (AST-22)
+            val file = GltfReferences.texturePath(modelPath, p)
+            embeddedTextures.getOrPut(file) { textureLoader.loadFromFile(file) }
         }
     }
 }

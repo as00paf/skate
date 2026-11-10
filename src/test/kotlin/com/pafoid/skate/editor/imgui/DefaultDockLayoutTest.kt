@@ -26,6 +26,22 @@ class DefaultDockLayoutTest {
     }
 
     @Test
+    fun DockLayout_RenderGraph_IsADefaultBackgroundTabNextToConsole() {
+        // EDT-54 §7: open by default in the bottom dock, behind Console, which stays the active tab.
+        assertEquals(Zone.BOTTOM, DefaultDockLayout.zoneOf("window.render_graph"))
+        assertEquals(DefaultDockLayout.zoneOf("window.console"), DefaultDockLayout.zoneOf("window.render_graph"))
+        assertTrue("window.console" in DefaultDockLayout.ACTIVE_TABS)
+        assertTrue("window.render_graph" !in DefaultDockLayout.ACTIVE_TABS)
+        val src = File("src/main/kotlin/com/pafoid/skate/editor/ui/windows/rendergraph/RenderGraphWindow.kt").readText()
+        assertTrue(src.contains("EditorWindow(NAME, true)") && src.contains("const val NAME = \"window.render_graph\""))
+    }
+
+    @Test
+    fun DockLayout_ActiveTabs_AreDockedWindows() {
+        DefaultDockLayout.ACTIVE_TABS.forEach { assertTrue(DefaultDockLayout.zoneOf(it) != null, "$it has no dock zone") }
+    }
+
+    @Test
     fun DockLayout_DialogsStayFloating() {
         assertNull(DefaultDockLayout.zoneOf("window.project_wizard"))
         assertNull(DefaultDockLayout.zoneOf("window.editor_settings"))

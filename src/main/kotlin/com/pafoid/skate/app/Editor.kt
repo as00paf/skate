@@ -17,6 +17,7 @@ import com.pafoid.skate.editor.ui.handlers.EditorInputHandler
 import com.pafoid.skate.editor.ui.handlers.PlayModeHandler
 import com.pafoid.skate.engine.assets.Assets.Strings.EDITOR_STRINGS
 import com.pafoid.skate.engine.assets.Assets.Strings.GAME_STRINGS
+import com.pafoid.skate.editor.assetimport.blender.BlenderSync
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.core.Window
 import com.pafoid.skate.engine.input.PointerSource
@@ -32,6 +33,9 @@ class Editor(
 
     init {
         engine.uiAuthoring = true
+        // EDT-57: Show tooltips and UI scale come from the editor settings, read live.
+        com.pafoid.skate.editor.imgui.Tooltips.enabled = { settingsManager.editorSettings.showTooltips }
+        com.pafoid.skate.editor.imgui.ImGuiStyleManager.uiScale = { settingsManager.editorSettings.fontSize }
         EditorPauseActions.install(engine.pauseActions, engine.eventSystem)
         // The game's language lives in the project's game settings, never in the editor's (GUI-10, EDT-39).
         GameSettingsBinding.install(engine.eventSystem, engine.gameLocale, engine.logger)
@@ -50,7 +54,7 @@ class Editor(
 
     val editorInputHandler =
         EditorInputHandler(clipboardService, undoRedoManager, editorInputState, engine, settingsManager)
-    val editorCamera = EditorCamera(engine, editorInputState)
+    val editorCamera = EditorCamera(engine, editorInputState) { settingsManager.editorSettings.camera }
 
     val editorActionHandler =
         EditorActionHandler(
@@ -63,6 +67,9 @@ class Editor(
         )
 
     val gizmoSystem = GizmoSystem(engine, settingsManager, undoRedoManager, editorCamera)
+
+    /** Imports `.blend` files under the project's Assets and re-imports them when saved (AST-19). */
+    val blenderSync = BlenderSync(engine, projectManager, { settingsManager.editorSettings })
 
     val imGuiLayer = ImGuiLayer(engine, this, projectManager)
     val editorEventHandler = EditorEventHandler(engine.eventSystem, imGuiLayer, undoRedoManager)
@@ -98,6 +105,7 @@ class Editor(
             editorCamera.update(dt)
             gizmoSystem.update(dt)
         }
+        blenderSync.update()
         imGuiLayer.update(dt)
     }
 

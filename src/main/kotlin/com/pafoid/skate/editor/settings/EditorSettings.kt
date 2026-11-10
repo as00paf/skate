@@ -12,6 +12,7 @@ data class EditorSettings(
     var language: String = "en",
     /** Id of the editor theme (`assets/themes/<id>.theme.json`, EDT-07). */
     var theme: String = EditorTheme.DEFAULT_ID,
+    /** UI scale (EDT-57), multiplied with the theme's own font scale; 1 = 100 %. */
     var fontSize: Float = 1.0f,
     var showGamepadOverlay: Boolean = true,
     var gamepadOverlaySize: Float = 0.225f,
@@ -25,11 +26,28 @@ data class EditorSettings(
     var completionDelayMs: Int = 200,
     /** Game jar (or folder holding it) used for exports when none is found next to the editor (AST-11). */
     var gameJarPath: String? = null,
+    /** `blender.exe` for `.blend` import (AST-19); null finds it on PATH, the file association or Program Files. */
+    var blenderPath: String? = null,
+    /** A `.blend` import is cancelled after this long. */
+    var blenderTimeoutSeconds: Int = 120,
+    /** Import `.blend` files that changed while the project was closed, when it opens. */
+    var blenderImportOnOpen: Boolean = true,
+    /** Video to animation (ANI-17): the Python and MediaPipe model used by the mocap adapter. Per machine. */
+    var mocap: MocapSettings = MocapSettings(),
+    /**
+     * Button and menu tooltips (EDT-57). Off hides them; inspector and settings field explanations stay
+     * (docs/design/EDT-51.md §4.1).
+     */
+    var showTooltips: Boolean = true,
+    var gizmoSnap: GizmoSnapSettings = GizmoSnapSettings(),
+    var camera: EditorCameraSettings = EditorCameraSettings(),
 ) {
 
-    /**
-     * Add a recent project to the editor settings (default: true for Fullscreen, false for VSync)
-     */
+    companion object {
+        const val MIN_UI_SCALE = 0.75f
+        const val MAX_UI_SCALE = 2f
+    }
+
     fun addRecentProject(projectPath: String): EditorSettings {
         val updatedList = mutableListOf<String>()
         updatedList.add(projectPath)
@@ -37,3 +55,14 @@ data class EditorSettings(
         return copy(recentProjects = updatedList)
     }
 }
+
+/**
+ * Mocap tool setup (ANI-17, docs/mocap-setup.md). [pythonPath] is the Python executable (or a venv's) that has
+ * MediaPipe; [modelPath] an optional MediaPipe `pose_landmarker_*.task` file (without it the legacy pose solution is
+ * used, when the installed MediaPipe still has it).
+ */
+@Serializable
+data class MocapSettings(
+    val pythonPath: String = "python",
+    val modelPath: String? = null,
+)

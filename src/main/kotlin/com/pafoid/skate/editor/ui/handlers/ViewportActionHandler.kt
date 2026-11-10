@@ -57,6 +57,7 @@ import com.pafoid.skate.editor.systems.ClipboardService
 import com.pafoid.skate.editor.systems.GizmoSystem
 import com.pafoid.skate.editor.systems.UndoRedoManager
 import com.pafoid.skate.editor.ui.windows.viewport.ViewportRenderer
+import com.pafoid.skate.engine.core.LoggerService.LogLevel
 import com.pafoid.skate.engine.addComponent
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.data.models.`3dModel`
@@ -81,6 +82,7 @@ import com.pafoid.skate.engine.getComponent
 import com.pafoid.skate.engine.physics3d.BodyType
 import com.pafoid.skate.engine.render.data.LightType
 import org.joml.Vector3f
+import java.io.File
 
 class ViewportActionHandler(
     private val engine: Engine,
@@ -126,6 +128,9 @@ class ViewportActionHandler(
             sceneManager.currentScene?.let { handleSpawnPrefab(event.prefabType, event.position, event.material, it) }
         }
 
+        eventSystem.subscribe<ViewportAction.DropModel> { event ->
+            sceneManager.currentScene?.let { handleDropModel(event.modelPath, event.dropPosition, it) }
+        }
         eventSystem.subscribe<DropTexture> { event ->
             handleDropTexture(event.texturePath, event.targetObject, event.dropPosition)
         }
@@ -368,6 +373,19 @@ class ViewportActionHandler(
         )
         sceneManager.currentScene?.isDirty = true
         logger.logEditor("Applied texture to ${gameObject.name}: $texturePath")
+    }
+
+    /** Spawns the model file at [path] (a `.glb` imported from a `.blend`, AST-19, or any model) at the drop point. */
+    private fun handleDropModel(path: String, position: Vector3f?, scene: Scene) {
+        val model = runCatching { engine.assetsManager.loadModel(path) }.getOrElse {
+            logger.logEditor("Cannot load model $path: ${it.message}", LogLevel.ERROR)
+            return
+        }
+        val obj = GameObject(File(path).nameWithoutExtension)
+            .addComponent(Transform().apply { position?.let { translation.set(it) } })
+            .addComponent(RenderComponent(model))
+        undoRedoManager.executeCommand(CreateGameObjectCommand(obj, scene, gameObjectManager))
+        logger.logEditor("Added model ${File(path).name}")
     }
 
     private fun createTexturedPlane(position: Vector3f, texturePath: String) {

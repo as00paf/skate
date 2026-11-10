@@ -1,6 +1,12 @@
 # INP-10: Decouple input from skateboarding
 
-Status: **proposed** (phase 1, design only). No code changes until this note is approved.
+Status: **implemented** (approved by skate-lead, including A1–A5). Steps 1–4, 6 and 7 by `skate-input`, step 5 by `skate-gameplay`.
+
+Implementation notes (differences from the text below):
+- `Engine` registers `CharacterActions` before any project loads (not `PlayerMotionSystem.init`). The sampler is injected into `PlayerMotionSystem` and is optional.
+- Any change to the context stack *or* the bindings latches held actions, and the first query of an action is never a press. So keys held when Play starts don't mount or jump.
+- `ScriptInput.pushContext` takes `blocking` as a string (`"none"`, `"consume"`, `"all"`) so it reads the same in Kotlin, Lua and TS. Lua/TS default to priority 0 and `"consume"`. The new `ScriptInput` members have inert defaults so existing implementations still compile.
+- The Key Bindings "shadowing hint" lists actions of *other* contexts on the same physical input (`ActionBindingsModel.sharedWith`), because the default stack alone never shadows anything.
 
 ## Goal
 

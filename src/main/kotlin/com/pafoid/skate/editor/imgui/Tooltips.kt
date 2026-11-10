@@ -19,6 +19,22 @@ import imgui.flag.ImGuiHoveredFlags
 object Tooltips {
     const val SUFFIX = ".tooltip"
 
+    /**
+     * The Show tooltips setting (EDT-57), set by the editor. It gates the help tooltips of controls ([show], [text],
+     * `tipped`); field explanations and data ([showIfPresent], [always]) always show.
+     */
+    var enabled: () -> Boolean = { true }
+
+    /** Whether a tooltip of [kind] shows with the current setting. */
+    fun shows(kind: Kind): Boolean = kind == Kind.ALWAYS || enabled()
+
+    enum class Kind {
+        /** What a button or menu item does: hidden when tooltips are off. */
+        HELP,
+        /** A field explanation or data (a full path, an error message): shown whatever the setting. */
+        ALWAYS,
+    }
+
     fun keyFor(labelKey: String): String = labelKey + SUFFIX
 
     /**
@@ -26,7 +42,7 @@ object Tooltips {
      * and UI elements; `StringTablesTest` requires one for every `component.<Type>.<field>` and `ui.inspector.*`).
      */
     fun showIfPresent(strings: StringManager, tooltipKey: String) {
-        if (ImGui.isItemHovered() && strings.hasString(tooltipKey)) ImGui.setTooltip(strings.getString(tooltipKey))
+        if (shows(Kind.ALWAYS) && ImGui.isItemHovered() && strings.hasString(tooltipKey)) ImGui.setTooltip(strings.getString(tooltipKey))
     }
 
     /**
@@ -34,7 +50,17 @@ object Tooltips {
      * Disabled items keep their tooltip, so a grayed-out button still says what it does (EDT-45).
      */
     fun show(strings: StringManager, tooltipKey: String, shortcut: EditorShortcut? = null) {
-        if (ImGui.isItemHovered(ImGuiHoveredFlags.AllowWhenDisabled)) ImGui.setTooltip(withShortcut(strings, strings.getString(tooltipKey), shortcut))
+        if (shows(Kind.HELP) && ImGui.isItemHovered(ImGuiHoveredFlags.AllowWhenDisabled)) ImGui.setTooltip(withShortcut(strings, strings.getString(tooltipKey), shortcut))
+    }
+
+    /** A help tooltip with ready-made [text] for the last item; hidden when tooltips are off. */
+    fun text(text: String) {
+        if (shows(Kind.HELP) && ImGui.isItemHovered(ImGuiHoveredFlags.AllowWhenDisabled)) ImGui.setTooltip(text)
+    }
+
+    /** A field explanation or data tooltip (a full path, an error) for the last item; shown even with tooltips off. */
+    fun always(text: String) {
+        if (ImGui.isItemHovered(ImGuiHoveredFlags.AllowWhenDisabled)) ImGui.setTooltip(text)
     }
 
     /**

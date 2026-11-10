@@ -5,6 +5,7 @@ import com.pafoid.skate.editor.project.Project
 import com.pafoid.skate.editor.systems.FileTypeResolver
 import com.pafoid.skate.engine.assets.AssetMeta
 import com.pafoid.skate.engine.assets.Assets
+import com.pafoid.skate.engine.assets.ProjectLayout
 import com.pafoid.skate.engine.assets.AssetRegistry
 import com.pafoid.skate.engine.assets.pack.PackBuilder
 import com.pafoid.skate.engine.assets.pack.PackInput
@@ -158,7 +159,7 @@ class AssetsPacker(
     companion object {
         const val BIN_FILE = "game.bin"
         const val MANIFEST_FILE = "manifest.json"
-        const val BUILDS_DIR = "builds"
+        const val BUILDS_DIR = ProjectLayout.BUILDS_DIR
         private val MODEL_COMPANIONS = setOf("mtl", "bin")
 
         /** `<project folder>/builds`. */

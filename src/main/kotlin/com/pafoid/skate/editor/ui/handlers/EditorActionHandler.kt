@@ -1,5 +1,7 @@
 package com.pafoid.skate.editor.ui.handlers
 
+import com.pafoid.skate.editor.loading.LoadingRunner
+import com.pafoid.skate.editor.loading.StepExecutor
 import com.pafoid.skate.editor.gizmos.EditorCamera
 import com.pafoid.skate.editor.systems.EditorSettingsManager
 import com.pafoid.skate.editor.systems.ProjectManager
@@ -15,11 +17,14 @@ class EditorActionHandler(
     settingsManager: EditorSettingsManager,
     editorCamera: EditorCamera
 ) {
-    val sceneActionHandler = SceneActionHandler(engine, projectManager, undoRedoManager, editorCamera)
+    /** One long operation at a time behind the loading screen, whichever handler starts it (EDT-56). */
+    private val loading = LoadingRunner(engine.eventSystem, StepExecutor.Jobs(engine.jobSystem))
+    val sceneActionHandler = SceneActionHandler(engine, projectManager, undoRedoManager, editorCamera, loading)
     val projectActionHandler =
-        ProjectActionHandler(engine, projectManager, settingsManager, undoRedoManager, stringManager)
+        ProjectActionHandler(engine, projectManager, settingsManager, undoRedoManager, stringManager, loading)
     val environmentActionHandler = EnvironmentActionHandler(undoRedoManager, engine.eventSystem)
     val consoleActionHandler = ConsoleActionHandler(engine.eventSystem, engine.logger, undoRedoManager)
+    val renderGraphActionHandler = RenderGraphActionHandler(engine.eventSystem, undoRedoManager) { engine.renderer.renderGraph }
     val inputSettingsActionHandler = InputSettingsActionHandler(engine.eventSystem, projectManager, undoRedoManager)
     val scriptEditorActionHandler = ScriptEditorActionHandler(engine.eventSystem, undoRedoManager, engine.logger)
     val jointActionHandler = JointActionHandler(engine.eventSystem, undoRedoManager)
@@ -33,6 +38,7 @@ class EditorActionHandler(
         resolveTexture = engine.assetsManager::getTexture,
         dialogs = TinyMaterialFileDialogs(engine.stringManager),
     )
+    val assetStoreActionHandler = AssetStoreActionHandler(engine.eventSystem, engine.jobSystem, projectManager, undoRedoManager)
     val keyBindingsActionHandler = KeyBindingsActionHandler(
         engine.eventSystem, projectManager, undoRedoManager
     ) { engine.systemManager.getSystem<com.pafoid.skate.engine.ecs.systems.InputSystem>()?.actionMap }
