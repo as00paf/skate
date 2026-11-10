@@ -16,10 +16,10 @@ class InputContextRowsTest {
 
         val rows = InputContextRows.of(stack)
 
-        assertEquals(listOf("ui", "skate", "ui", "gameplay"), rows.map { it.context.id })
+        assertEquals(listOf("ui", "ui", "skate", "gameplay"), rows.map { it.context.id })
         assertEquals(listOf(false, true, true, true), rows.map { it.silenced })
         assertEquals("pause-menu", rows.first().owner)
-        assertEquals(ContextBlocking.CONSUME_BOUND, rows[1].blocking)
+        assertEquals(ContextBlocking.CONSUME_BOUND, rows[2].blocking)
     }
 
     @Test

@@ -77,7 +77,7 @@ class ScriptInputContextsTest {
         val f = Fixture()
         f.tick()
         assertEquals(1, f.held(vehicle))
-        assertEquals("script:s.fake", f.stack.entries().first().owner)
+        assertEquals("script:s.fake", f.stack.entries().first { it.context == vehicle }.owner)
         f.runtime.stop()
         assertEquals(0, f.held(vehicle))
         assertTrue(f.stack.isActive(InputContext.GAMEPLAY))

@@ -7,8 +7,10 @@ import com.pafoid.skate.editor.settings.GraphicsQuality
 import com.pafoid.skate.editor.settings.ShadowQuality
 import com.pafoid.skate.editor.settings.TextureQuality
 import com.pafoid.skate.editor.events.ProjectEvent
-import com.pafoid.skate.editor.events.WindowAction
-import com.pafoid.skate.editor.imgui.EditorWindow
+import com.pafoid.skate.editor.imgui.EditorDialog
+import com.pafoid.skate.editor.imgui.EmptyState
+import com.pafoid.skate.editor.imgui.FooterButton
+import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.editor.imgui.MImGui
 import com.pafoid.skate.editor.systems.EditorSettingsManager
 import com.pafoid.skate.editor.systems.ProjectManager
@@ -17,13 +19,8 @@ import com.pafoid.skate.engine.core.StringManager
 import imgui.ImGui
 import imgui.ImVec2
 import imgui.flag.ImGuiCol
-import imgui.flag.ImGuiCond
 import imgui.flag.ImGuiSelectableFlags
-import imgui.flag.ImGuiWindowFlags
-import imgui.internal.ImGui.begin
 import imgui.internal.ImGui.beginChild
-import imgui.internal.ImGui.button
-import imgui.internal.ImGui.end
 import imgui.internal.ImGui.endChild
 import imgui.internal.ImGui.inputText
 import imgui.internal.ImGui.sameLine
@@ -38,15 +35,23 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 import java.util.*
+import com.pafoid.skate.editor.ui.windows.input.DeadZonePanel
 
 class ProjectSettingsWindow(
     engine: Engine,
     private val settingsManager: EditorSettingsManager,
     private val projectManager: ProjectManager,
-
-    ) : EditorWindow("window.project_settings") {
+) : EditorDialog("window.project_settings", engine.stringManager, 760f, 550f) {
     private val eventSystem = engine.eventSystem
     private val stringManager: StringManager = engine.stringManager
+
+    /** Dead-zone tuning, moved here from Input Testing (EDT-52I). Edits the open project's settings. */
+    private val deadZonePanel = DeadZonePanel(stringManager, eventSystem, engine.inputProvider) {
+        projectManager.currentProject?.gameplaySettings?.inputMappings?.deadZones
+    }
+
+    override val icon: String = Icons.CUBE
+    override val relatedWindows = listOf("window.editor_settings", "window.export_wizard")
 
     // TODO: extract
     private data class Category(
@@ -63,78 +68,69 @@ class ProjectSettingsWindow(
         listOf(
             Category("general", "settings.project.metadata", arrayOf("general", "metadata", "project", "name", "version", "engine", "path", "description", "recent")) { renderGeneral() },
             Category("graphics", "settings.project.graphics", arrayOf("graphics", "backend", "vulkan", "opengl", "render", "export")) { renderGraphics() },
+            Category("input", "settings.project.input", arrayOf("input", "gamepad", "dead", "zone", "deadzone", "stick", "trigger", "threshold")) { renderInput() },
         )
     }
 
-    override fun imgui() {
-        if (!isOpen.get()) return
-
-        val viewport = ImGui.getMainViewport()
-        val defaultWidth = viewport.workSizeX * 0.5f
-        setNextWindowPos(viewport.centerX, viewport.centerY, ImGuiCond.FirstUseEver, 0.5f, 0.5f)
-        setNextWindowSize(defaultWidth, 550f, ImGuiCond.FirstUseEver)
-
-        if (begin(stringManager.label("window.project_settings"), isOpen, ImGuiWindowFlags.NoDocking)) {
-            if (!projectManager.hasProject()) {
-                ImGui.text(stringManager.getString("settings.project.no_project"))
-                MImGui.textDisabled(stringManager.getString("settings.project.no_project_description"))
-                ImGui.spacing()
-                if (stringManager.tipped(button(stringManager.getString("settings.project.btn.open_project")), "settings.project.btn.open_project")) {
-                    eventSystem.publish(WindowAction.Show("window.project_switcher"))
-                }
-                ImGui.spacing()
-                if (button(stringManager.getString("btn.close"))) {
-                    isOpen.set(false)
-                }
-            } else {
-                val avail = ImVec2()
-                ImGui.getContentRegionAvail(avail)
-                val windowW = avail.x
-                val leftW = windowW * 0.3f
-                val rightW = (windowW - leftW) - ImGui.getStyle().itemSpacingX
-                val contentH = avail.y - 45f
-
-                beginChild("leftPane", leftW, contentH)
-                ImGui.pushItemWidth(-1f)
-                inputText(stringManager.getString("settings.search.placeholder"), searchBuffer)
-                ImGui.popItemWidth()
-                ImGui.spacing()
-                val query = searchBuffer.get().lowercase()
-                val filtered = categories.filter { cat -> matchesSearch(query, *cat.searchTerms) }
-                for (cat in filtered) {
-                    val isSelected = cat.id == selectedCategoryId
-                    if (isSelected) ImGui.pushStyleColor(ImGuiCol.Header, 0.25f, 0.45f, 0.75f, 1f)
-                    val label = stringManager.getString(cat.labelKey)
-                    if (ImGui.selectable(label, isSelected, ImGuiSelectableFlags.SpanAllColumns)) {
-                        selectedCategoryId = cat.id
-                    }
-                    if (isSelected) ImGui.popStyleColor()
-                }
-                endChild()
-                sameLine()
-
-                beginChild("rightPane", rightW, contentH)
-                categories.find { it.id == selectedCategoryId }?.render()
-                endChild()
-
-                ImGui.spacing()
-                val btnW = 100f
-                if (button(stringManager.getString("btn.ok"), btnW, 0f)) {
-                    eventSystem.publish(ProjectEvent.SaveRequested)
-                    isOpen.set(false)
-                }
-                sameLine()
-                if (button(stringManager.getString("btn.cancel"), btnW, 0f)) {
-                    isOpen.set(false)
-                }
-                sameLine()
-                if (button(stringManager.getString("btn.apply"), btnW, 0f)) {
-                    eventSystem.publish(ProjectEvent.SaveRequested)
-                }
-            }
+    /**
+     * Standard footer (EDT-51 §2.6): [Cancel] [Apply] [OK]. Each change is already an undoable command; OK and Apply
+     * save the project. Without a project there is nothing to save, so only Close.
+     */
+    override fun footerButtons(): List<FooterButton> =
+        if (!projectManager.hasProject()) {
+            listOf(FooterButton("btn.close", FooterButton.Role.CANCEL))
+        } else {
+            listOf(
+                FooterButton("btn.cancel", FooterButton.Role.CANCEL),
+                FooterButton("btn.apply", FooterButton.Role.APPLY, closes = false) { eventSystem.publish(ProjectEvent.SaveRequested) },
+                FooterButton("btn.ok", FooterButton.Role.PRIMARY) { eventSystem.publish(ProjectEvent.SaveRequested) },
+            )
         }
-        end()
+
+    override fun content() {
+        if (!projectManager.hasProject()) {
+            // The shared empty state (EDT-51 §2.5), sized to end above the footer.
+            ImGui.beginChild("##no_project", 0f, ImGui.getContentRegionAvailY() - dialogFooterHeight())
+            EmptyState.noProject(stringManager, eventSystem)
+            ImGui.endChild()
+            return
+        }
+        val avail = ImVec2()
+        ImGui.getContentRegionAvail(avail)
+        val windowW = avail.x
+        val leftW = windowW * 0.3f
+        val rightW = (windowW - leftW) - ImGui.getStyle().itemSpacingX
+        val contentH = avail.y - dialogFooterHeight()
+
+        beginChild("leftPane", leftW, contentH)
+        ImGui.pushItemWidth(-1f)
+        inputText(stringManager.getString("settings.search.placeholder"), searchBuffer)
+        ImGui.popItemWidth()
+        ImGui.spacing()
+        val query = searchBuffer.get().lowercase()
+        val filtered = categories.filter { cat -> matchesSearch(query, *cat.searchTerms) }
+        for (cat in filtered) {
+            val isSelected = cat.id == selectedCategoryId
+            if (isSelected) ImGui.pushStyleColor(ImGuiCol.Header, 0.25f, 0.45f, 0.75f, 1f)
+            val label = stringManager.getString(cat.labelKey)
+            if (ImGui.selectable(label, isSelected, ImGuiSelectableFlags.SpanAllColumns)) {
+                selectedCategoryId = cat.id
+            }
+            if (isSelected) ImGui.popStyleColor()
+        }
+        endChild()
+        sameLine()
+
+        beginChild("rightPane", rightW, contentH)
+        categories.find { it.id == selectedCategoryId }?.render()
+        endChild()
     }
+
+    /**
+     * Project Settings › Input (EDT-51 §3.1): gamepad dead zones and trigger threshold with the live stick view.
+     * Each slider gesture is one undoable command, and the project is saved after it.
+     */
+    private fun renderInput() = deadZonePanel.render()
 
     /** The backend exported games start with (EDT-43); each change is an undoable command, saved with OK/Apply. */
     private fun renderGraphics() {
