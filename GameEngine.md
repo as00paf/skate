@@ -195,6 +195,18 @@ Round 27+ goals: the Asset Browser shows every asset type, one assets folder, ex
 - [x] **AST-25** `P2` Deleting a store asset updates the attribution ledger
   - Do: From AST-16a review item 11: `DeleteFileCommand` calls `AttributionLedger.removeAssetIds`, so credits stay correct.
   - Done when: Deleting an imported store asset removes it from the ledger and credits; undo restores it; tests.
+- [ ] **AST-26** `P1` REWRITE Typed asset folders: design note
+  - Do: From the human (2026-11-10): `Assets/` holds one folder per type: `Models`, `Shaders`, `Sounds`, `Textures`, `Materials`, `Scripts`, `Animations`; `EngineDefaults` follows the same hierarchy. Store imports go to their type folder instead of `Assets/Store`. New-project option to copy the engine defaults into the project or not. Design note `docs/design/AST-26.md` covering: exact layout (open question for the human: `Assets/EngineDefaults/<Type>` or `Assets/<Type>/EngineDefaults`), how not-copied engine defaults resolve in the editor and are packed on export, multi-file assets (glTF + `.bin` + textures, texture sets, `.blend` imports) staying loadable under AST-22 path rules, the type a file lands in (FBX via AST-20), store `.meta`/attribution, migration of existing projects (with undo/backup), and changes to samples, CLI, `skate validate` and export. Reviewed by skate-online (store), skate-editor (Asset Browser), skate-tooling (wizard, samples).
+  - Done when: The human approves the note.
+  - Deps: AST-14
+- [ ] **AST-27** `P1` Typed asset folders: layout, engine defaults and migration
+  - Do: Implement AST-26: project creation, EngineDefaults layout, copy/no-copy resolution and export packing, path resolution, migration of existing projects, samples and CLI.
+  - Done when: New and migrated projects use the typed layout, open, play and export in both copy modes; tests cover the layout and migration.
+  - Deps: AST-26
+- [ ] **AST-28** `P1` Asset store imports go to their type folder (owner: skate-online)
+  - Do: Per AST-26: Poly Haven, ambientCG and Kenney/Quaternius imports land in `Models`/`Textures`/`Materials`/`Sounds`… instead of `Assets/Store`; undo, re-import in place, the attribution ledger and `.meta` store keys keep working.
+  - Done when: Each provider's import lands in the right type folders and loads textured; tests on fixtures.
+  - Deps: AST-27, AST-16
 
 ### ECS — `ECS` (`skate-ecs`)
 
@@ -264,6 +276,10 @@ Round 27+ goals: an animation authoring tool and animation from video.
   - Do: ANI-12 §3: process runner, BVH writer, MediaPipe adapter script and position→rotation solver with filtering, foot contacts and optional root motion; "Import mocap file…" for BVH/FBX/glTF from any tool; "Check setup" in Editor Settings and a setup doc. Make the flow **easy**: pick a video, preview, one click to a clip that opens in the animation editor.
   - Done when: A local sample video produces a clip on the skater rig that opens in the animation editor; solver tested on synthetic landmarks.
   - Deps: ANI-13, ANI-16
+- [~] @skate-animation **ANI-18** `P0` Video to animation fails with current MediaPipe (`no attribute solutions`)
+  - Do: From the human testing PR #37 (2026-11-10): current MediaPipe releases dropped the legacy `mp.solutions` API, which `mediapipe_extract.py` uses by default. Default to the Tasks API (`PoseLandmarker`, video mode), get the `.task` model without manual steps (path override in Setup), keep `solutions` only as a fallback; Check setup reports the API in use.
+  - Done when: With the current MediaPipe from pip, Check setup reports Ready and Create animation produces a `.skanim` from a local video; docs and tests updated.
+  - Deps: ANI-17
 
 ### Audio — `AUD` (`skate-audio`)
 
@@ -427,6 +443,14 @@ Round 27+ goals (human, 2026-11-06): fix editor bugs, make every window, dialog 
   - Do: From the human (2026-11-07): clicking `?` must open a **help window** showing the article for the selected topic — **not** a bigger tooltip/popover. The window is docked like other editor windows, lists the topics (table of contents) and renders the `.md` articles written by EDT-53. Add a **Help** menu item that opens the same window independently of any `?` button. Implement the approved design note.
   - Done when: `?` opens the window on the right topic, the Help menu item opens it with the topic list, articles are `.md` files under `assets/help/**`, and tests cover article discovery/loading, the menu entry and the `?` routing.
   - Deps: EDT-53
+- [ ] **EDT-69** `P1` Asset Browser: one tab per asset type
+  - Do: Per AST-26: tabs for Models, Shaders, Sounds, Textures, Materials, Scripts and Animations (current tabs: Prefabs, Animations, Textures, Sounds…; keep Prefabs unless AST-26 says otherwise), each with the shared search, empty states and context menu of EDT-52C; engine defaults shown whether copied or not.
+  - Done when: Every type folder has a tab listing its files; tests.
+  - Deps: AST-27
+- [ ] **EDT-70** `P1` New Project: copy the engine default assets or not
+  - Do: From the human (2026-11-10): a project-creation setting choosing whether `EngineDefaults` is copied into the project's assets folder; the behaviour of each mode comes from AST-26. Fold into the EDT-59 wizard design if it is approved first, otherwise add to the current wizard.
+  - Done when: Both choices create a project that opens, plays and exports; the choice is stored in project settings; tests.
+  - Deps: AST-27
 
 ### Tooling & samples — `TLG` (`skate-tooling`)
 
