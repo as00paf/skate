@@ -7,6 +7,7 @@ import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.core.StringManager
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
+import com.pafoid.skate.editor.systems.SelectionLogic
 import imgui.ImGui
 
 /**
@@ -60,7 +61,7 @@ class DeleteObjectsConfirmation {
 /**
  * Deleting an object asks first (EDT-62), whatever the path: the Hierarchy and Viewport menus, the Delete key, Search
  * Anywhere. [ViewportAction.Delete] with `confirm = true` lands here; Delete runs [ViewportAction.DeleteConfirmed]
- * (one undoable command per object), Cancel and Esc drop the request. Cut deletes without asking (`confirm = false`).
+ * (one undo step for all the objects), Cancel and Esc drop the request. Cut deletes without asking (`confirm = false`).
  */
 class DeleteObjectsDialog(
     private val eventSystem: EventSystem,
@@ -69,7 +70,10 @@ class DeleteObjectsDialog(
 ) : EditorModal(strings, Icons.TRASH) {
 
     init {
-        eventSystem.subscribe<ViewportAction.Delete> { if (it.confirm) confirmation.request(it.gameObject, it.scene) }
+        // A delete on an object of a multi-selection asks about the whole selection (EDT-74).
+        eventSystem.subscribe<ViewportAction.Delete> { e ->
+            if (e.confirm) SelectionLogic.targets(e.scene, e.gameObject).forEach { confirmation.request(it, e.scene) }
+        }
     }
 
     override val titleKey: String = "dialog.delete_objects.title"
@@ -92,7 +96,10 @@ class DeleteObjectsDialog(
     override fun buttons() = listOf(
         FooterButton("btn.cancel", FooterButton.Role.CANCEL) { confirmation.cancel() },
         FooterButton("dialog.delete_objects.delete", FooterButton.Role.DANGER) {
-            confirmation.confirm().forEach { eventSystem.publish(ViewportAction.DeleteConfirmed(it.gameObject, it.scene)) }
+            // One undo step for everything confirmed together (EDT-74).
+            confirmation.confirm().groupBy { it.scene }.forEach { (scene, requests) ->
+                eventSystem.publish(ViewportAction.DeleteConfirmed(requests.map { it.gameObject }, scene))
+            }
         },
     )
 }
