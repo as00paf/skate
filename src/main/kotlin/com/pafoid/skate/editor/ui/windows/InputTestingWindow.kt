@@ -27,6 +27,8 @@ class InputTestingWindow(
     private val engine: Engine,
     private val projectManager: ProjectManager,
 ) : EditorDialog("window.input_testing", engine.stringManager) {
+    override val relatedWindows: List<String> = listOf("window.keybindings")
+
     private val strings = engine.stringManager
     private val input = engine.inputProvider
     private val events = engine.eventSystem

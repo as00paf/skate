@@ -8,7 +8,7 @@ import org.joml.Vector3f
 /** Snapshot of every editable [JointComponent] field. */
 data class JointSettings(
     val jointType: JointType,
-    val connectedBodyId: Int,
+    val connectedBodyGuid: String,
     val anchor: Vector3f,
     val connectedAnchor: Vector3f,
     val axis: Vector3f,
@@ -31,7 +31,7 @@ data class JointSettings(
 
     fun applyTo(c: JointComponent) {
         c.jointType = jointType
-        c.connectedBodyId = connectedBodyId
+        c.connectedBodyGuid = connectedBodyGuid
         c.anchor.set(anchor); c.connectedAnchor.set(connectedAnchor)
         c.axis.set(axis); c.connectedAxis.set(connectedAxis)
         c.limitMin = limitMin; c.limitMax = limitMax
@@ -42,7 +42,7 @@ data class JointSettings(
 
     companion object {
         fun of(c: JointComponent) = JointSettings(
-            c.jointType, c.connectedBodyId, c.anchor, c.connectedAnchor, c.axis, c.connectedAxis, c.limitMin, c.limitMax,
+            c.jointType, c.connectedBodyGuid, c.anchor, c.connectedAnchor, c.axis, c.connectedAxis, c.limitMin, c.limitMax,
             c.swingSpan1, c.swingSpan2, c.twistSpan, c.linearLower, c.linearUpper, c.angularLower, c.angularUpper,
         ).deepCopy()
     }

@@ -59,6 +59,8 @@ class ScriptEditorWindow(
     private val projectManager: ProjectManager,
     private val settingsManager: EditorSettingsManager,
 ) : EditorWindow("window.script_editor", true) {
+    override val relatedWindows: List<String> = listOf("window.console")
+
     private val strings = engine.stringManager
     private val events = engine.eventSystem
 

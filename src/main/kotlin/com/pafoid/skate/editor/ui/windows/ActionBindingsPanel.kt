@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.ui.windows
 
+import com.pafoid.skate.editor.imgui.Tooltips
 import com.pafoid.skate.editor.imgui.tipped
 import com.pafoid.skate.editor.commands.input.BindingOperation
 import com.pafoid.skate.editor.events.ConsoleAction
@@ -41,13 +42,16 @@ class ActionBindingsPanel(
     private var profilesStale = true
     private var status: String? = null
 
+    /** A click-to-rebind capture is waiting for input; the dialog must not treat that key as its own (Esc). */
+    val isCapturing: Boolean get() = capturing != null
+
     private fun s(key: String) = strings.getString(key)
 
     /** Null when the key is missing, so unknown actions and categories fall back to their ids. */
     private fun translated(key: String): String? = s(key).takeUnless { it.startsWith("!!") }
 
     private fun tip(key: String) {
-        if (ImGui.isItemHovered()) ImGui.setTooltip(s(key))
+        Tooltips.text(s(key))
     }
 
     private fun send(operation: BindingOperation) = events.publish(KeyBindingsAction.Apply(operation))
@@ -162,7 +166,7 @@ class ActionBindingsPanel(
     private fun renderRow(row: ActionRow) {
         val id = row.definition.id
         ImGui.text(row.name + if (row.customized) " *" else "")
-        if (row.customized && ImGui.isItemHovered()) ImGui.setTooltip(s("tip.keybindings.customized"))
+        if (row.customized) Tooltips.text(s("tip.keybindings.customized"))
         ImGui.sameLine(220f)
         row.bindings.forEachIndexed { i, binding ->
             val active = capturing?.let { it.actionId == id && it.index == i } == true

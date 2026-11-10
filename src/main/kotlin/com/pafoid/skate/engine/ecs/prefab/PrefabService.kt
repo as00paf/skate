@@ -34,7 +34,7 @@ class PrefabUpdateResult(val droppedOverrides: List<String>)
 class PrefabService(private val serializer: Serializer) {
 
     private companion object {
-        val OBJECT_IGNORED = setOf("uId", "isDead", "children", "components")
+        val OBJECT_IGNORED = setOf("uId", "guid", "isDead", "children", "components")
         val COMPONENT_IGNORED = setOf("uId")
         const val TYPE_KEY = "type"
     }
