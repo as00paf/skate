@@ -75,6 +75,17 @@ object StorePaths {
         return segments.joinToString("/")
     }
 
+    /**
+     * [file]'s `/`-separated path under [root], or null when it is not strictly inside. Both sides are canonicalised,
+     * so a root spelled with an 8.3 short name, `..` or a symlink still matches files resolved canonically.
+     */
+    fun relativeInside(root: File, file: File): String? {
+        val base = root.canonicalFile
+        val target = file.canonicalFile
+        if (!target.path.startsWith(base.path + File.separator)) return null
+        return target.relativeTo(base).invariantSeparatorsPath
+    }
+
     /** [relative] resolved under [root], or null if it would escape it. */
     fun resolveInside(root: File, relative: String): File? {
         val safe = safeRelative(relative) ?: return null

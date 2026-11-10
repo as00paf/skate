@@ -10,6 +10,7 @@ import com.pafoid.skate.engine.core.EventSystem
 import io.mockk.mockk
 import kotlinx.coroutines.Job
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNotEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -18,9 +19,13 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import java.io.File
 
-class ImportStoreAssetCommandTest {
+open class ImportStoreAssetCommandTest {
     @TempDir
+    lateinit var tmp: File
     lateinit var project: File
+
+    /** The project dir the importer gets; [ImportStoreAssetCommandNonCanonicalRootTest] spells it non-canonically. */
+    protected open fun projectRoot(tmp: File): File = tmp
 
     private lateinit var registry: AssetRegistry
     private lateinit var importer: StoreImporter
@@ -33,6 +38,7 @@ class ImportStoreAssetCommandTest {
 
     @BeforeEach
     fun setUp() {
+        project = projectRoot(tmp)
         registry = AssetRegistry(project)
         importer = StoreImporter(project, registry)
     }
@@ -60,11 +66,11 @@ class ImportStoreAssetCommandTest {
         c.execute()
         assertTrue(c.didCompleteSuccessfully())
         assertTrue(c.getCompletionJob()!!.isCompleted)
-        assertEquals(File(project, folder), c.importedFolder)
+        assertEquals(File(project, folder).canonicalFile, c.importedFolder?.canonicalFile)
         c.undo()
         assertFalse(File(project, folder).exists())
         assertTrue(AttributionLedger.load(project).entries.isEmpty())
-        assertEquals(File(project, folder), c.importedFolder, "kept so views can refresh after undo")
+        assertEquals(File(project, folder).canonicalFile, c.importedFolder?.canonicalFile, "kept so views can refresh after undo")
         c.execute()
         assertNotNull(registry.idOf("$folder/a.gltf"))
         assertEquals(listOf(Change.IMPORTED, Change.UNDONE, Change.IMPORTED), changes)
@@ -128,4 +134,9 @@ class ImportStoreAssetCommandTest {
         assertTrue(File(project, "$folder/a.gltf").isFile)
         assertEquals(1, manager.getUndoCount())
     }
+}
+
+/** Every test again with the project dir spelled non-canonically: CI's 8.3 temp path, reproduced locally. */
+class ImportStoreAssetCommandNonCanonicalRootTest : ImportStoreAssetCommandTest() {
+    override fun projectRoot(tmp: File): File = nonCanonicalProjectRoot(tmp).also { assertNotEquals(it.absoluteFile, it.canonicalFile) }
 }

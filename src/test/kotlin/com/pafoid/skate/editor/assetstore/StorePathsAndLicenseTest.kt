@@ -29,6 +29,17 @@ class StorePathsAndLicenseTest {
     }
 
     @Test
+    fun StorePaths_RelativeInside_MatchesAcrossSpellingsAndRefusesEscapes() {
+        val root = nonCanonicalProjectRoot(tmp)
+        val canonicalFile = File(root.canonicalFile, "Assets/a.png")
+        assertEquals("Assets/a.png", StorePaths.relativeInside(root, canonicalFile))
+        assertEquals("Assets/a.png", StorePaths.relativeInside(root.canonicalFile, File(root, "Assets/a.png")))
+        assertNull(StorePaths.relativeInside(root, File(tmp, "outside.png")), "a file outside the root is refused")
+        assertNull(StorePaths.relativeInside(root, File(root, "../outside.png")))
+        assertNull(StorePaths.relativeInside(root, root), "the root itself has no relative path")
+    }
+
+    @Test
     fun StorePaths_ImportDir_IsAssetsStoreProviderSlug() {
         val dir = StorePaths.importDir(tmp, "polyhaven", StorePaths.slug("WoodenTable_01"))
         assertEquals(File(tmp, "Assets/Store/polyhaven/woodentable_01"), dir)

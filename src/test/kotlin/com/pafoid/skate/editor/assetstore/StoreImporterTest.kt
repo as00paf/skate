@@ -5,6 +5,7 @@ import com.pafoid.skate.engine.assets.AssetRegistry
 import com.pafoid.skate.engine.render.material.MaterialAsset
 import com.pafoid.skate.engine.render.material.MaterialSchema
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNotEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertNull
@@ -17,9 +18,13 @@ import java.io.File
 import java.io.IOException
 import java.time.Instant
 
-class StoreImporterTest {
+open class StoreImporterTest {
     @TempDir
+    lateinit var tmp: File
     lateinit var project: File
+
+    /** The project dir the importer gets; [StoreImporterNonCanonicalRootTest] spells it non-canonically. */
+    protected open fun projectRoot(tmp: File): File = tmp
 
     private lateinit var registry: AssetRegistry
     private lateinit var importer: StoreImporter
@@ -27,6 +32,7 @@ class StoreImporterTest {
 
     @BeforeEach
     fun setUp() {
+        project = projectRoot(tmp)
         registry = AssetRegistry(project)
         importer = StoreImporter(project, registry) { Instant.parse("2026-11-06T12:00:00Z") }
     }
@@ -52,7 +58,7 @@ class StoreImporterTest {
     @Test
     fun Import_CopiesIntoAssetsStoreWithSidecarsAndLedger() {
         val outcome = importer.import(request())
-        assertEquals(File(project, folder), outcome.targetDir)
+        assertEquals(File(project, folder).canonicalFile, outcome.targetDir.canonicalFile)
         listOf("a.gltf", "a.bin", "textures/t.jpg").forEach { rel ->
             val file = File(project, "$folder/$rel")
             assertTrue(file.isFile, rel)
@@ -117,7 +123,7 @@ class StoreImporterTest {
         ))
         val outcome = importer.import(request(files, "jpg-1k", details, material))
         val skmat = File(project, "Assets/Store/polyhaven/rock_wall_08/rock_wall_08.skmat")
-        assertTrue(skmat in outcome.files)
+        assertTrue(skmat.canonicalFile in outcome.files.map { it.canonicalFile })
         val asset = MaterialAsset.load(skmat)
         assertEquals("Assets/Store/polyhaven/rock_wall_08/rock_wall_08_diff_1k.jpg", asset.textures[MaterialSchema.Companion.Tex.BASE_COLOR])
         assertNotNull(registry.idOf("Assets/Store/polyhaven/rock_wall_08/rock_wall_08.skmat"))
@@ -150,7 +156,7 @@ class StoreImporterTest {
     fun Import_DifferentSourceWithSameSlugGetsSuffix() {
         File(project, "$folder/other.png").apply { parentFile.mkdirs(); writeText("x") }
         val outcome = importer.import(request())
-        assertEquals(File(project, "${folder}_2"), outcome.targetDir)
+        assertEquals(File(project, "${folder}_2").canonicalFile, outcome.targetDir.canonicalFile)
     }
 
     @Test
@@ -226,4 +232,9 @@ class StoreImporterTest {
         importer.discard(staged)
         assertFalse(File(project, folder).exists())
     }
+}
+
+/** Every test again with the project dir spelled non-canonically: CI's 8.3 temp path, reproduced locally. */
+class StoreImporterNonCanonicalRootTest : StoreImporterTest() {
+    override fun projectRoot(tmp: File): File = nonCanonicalProjectRoot(tmp).also { assertNotEquals(it.absoluteFile, it.canonicalFile) }
 }
