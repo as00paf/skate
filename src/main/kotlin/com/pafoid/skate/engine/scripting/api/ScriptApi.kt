@@ -22,6 +22,9 @@ interface ScriptContext {
     val time: ScriptTime
     val log: ScriptLog
 
+    /** Seeded random numbers (ECS-14): this script's own stream, plus named streams and the game seed. */
+    val random: ScriptRandom
+
     /** Inspector-exposed values stored on the script component. */
     val properties: Map<String, String>
 
@@ -143,6 +146,39 @@ interface ScriptTime {
     val deltaTime: Float
     val fixedDeltaTime: Float
     val elapsed: Float
+}
+
+/** A deterministic random sequence: the same seed gives the same values on every run. */
+interface ScriptRandomStream {
+    /** Uniform in [0, [until]). */
+    fun nextInt(until: Int): Int
+
+    /** Uniform in [[from], [until]). */
+    fun nextInt(from: Int, until: Int): Int
+
+    /** Uniform in [0, 1). */
+    fun nextFloat(): Float
+
+    /** Uniform in [[min], [max]). */
+    fun range(min: Float, max: Float): Float
+
+    /** True with probability [p]. */
+    fun chance(p: Float): Boolean
+}
+
+/**
+ * `ctx.random` (ECS-14): draws come from this script's own stream (named after its file), so other scripts and
+ * systems drawing more or less never change its values. Every Play run starts again from [seed].
+ */
+interface ScriptRandom : ScriptRandomStream {
+    /** The game's seed: the project setting, unless overridden at launch or by [reseed]. */
+    val seed: Long
+
+    /** The shared stream called [name]; scripts using the same name draw from the same sequence. */
+    fun stream(name: String): ScriptRandomStream
+
+    /** Switches the whole game to [seed] and rewinds every stream (e.g. a new run with a typed seed). */
+    fun reseed(seed: Long)
 }
 
 interface ScriptLog {

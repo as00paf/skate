@@ -229,6 +229,7 @@ class ScriptRuntime(
             properties = component.properties.toMap(),
             state = owner.state,
             reloadCount = owner.reloads,
+            random = ScriptRandomImpl(services.random, path),
         )
     }
 

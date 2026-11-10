@@ -1,27 +1,32 @@
 package com.pafoid.skate.editor.imgui
 
-import com.pafoid.skate.editor.ui.windows.KeyBindingsWindow
-import com.pafoid.skate.editor.data.EditorShortcuts
 import com.pafoid.skate.app.Editor
-import com.pafoid.skate.editor.events.EditorEvent
 import com.pafoid.skate.editor.events.ProjectEvent
 import com.pafoid.skate.editor.events.WindowAction
 import com.pafoid.skate.editor.imgui.data.Color
 import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.editor.imgui.data.UiConstants.EDITOR_MENU_BAR_HEIGHT
 import com.pafoid.skate.editor.systems.ProjectManager
+import com.pafoid.skate.editor.ui.menus.AboutModal
 import com.pafoid.skate.editor.ui.menus.EditMenuBuilder
 import com.pafoid.skate.editor.ui.menus.FileMenuBuilder
+import com.pafoid.skate.editor.ui.menus.HamburgerMenuModel
+import com.pafoid.skate.editor.ui.menus.HelpMenuBuilder
+import com.pafoid.skate.editor.ui.menus.PlayMenuBuilder
 import com.pafoid.skate.editor.ui.menus.SettingsMenuBuilder
+import com.pafoid.skate.editor.ui.menus.ToolsMenuBuilder
 import com.pafoid.skate.editor.ui.menus.ViewMenuBuilder
 import com.pafoid.skate.editor.ui.menus.WindowControlsRenderer
-import com.pafoid.skate.editor.ui.windows.ExportWizardWindow
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.core.Engine
+import com.pafoid.skate.engine.core.StringManager
 import imgui.ImGui
-import imgui.ImGui.menuItem
 import imgui.internal.ImGui.image
 
+/**
+ * The title bar: app icon, the hamburger menu (EDT-51 §2.7: File, Edit, View, Play, Settings, Tools, Help, drawn from
+ * [HamburgerMenuModel]), the project switcher and the window controls.
+ */
 class EditorMenuBar(
     engine: Engine,
     editor: Editor,
@@ -36,10 +41,14 @@ class EditorMenuBar(
 
     private var appIconTexId = -1
 
-    private val fileMenu = FileMenuBuilder(stringManager, eventSystem)
+    private val aboutModal = AboutModal(stringManager)
+    private val fileMenu = FileMenuBuilder(stringManager, eventSystem, projectManager, settingsManager, sceneManager)
     private val editMenu = EditMenuBuilder(stringManager, sceneManager, eventSystem)
-    private val settingsMenu = SettingsMenuBuilder(stringManager, settingsManager, eventSystem)
     private val viewMenu = ViewMenuBuilder(stringManager, eventSystem, windowRegistry)
+    private val playMenu = PlayMenuBuilder(stringManager, eventSystem, editor.playModeHandler.controller)
+    private val settingsMenu = SettingsMenuBuilder(stringManager, settingsManager, eventSystem)
+    private val toolsMenu = ToolsMenuBuilder(stringManager, eventSystem)
+    private val helpMenu = HelpMenuBuilder(stringManager, eventSystem, windowRegistry, aboutModal)
     private val windowControls = WindowControlsRenderer(eventSystem, stringManager)
 
     init {
@@ -53,7 +62,7 @@ class EditorMenuBar(
     }
 
     fun render() {
-        handleTestInputShortcut()
+        toolsMenu.handleShortcut()
         if (ImGui.beginMenuBar()) {
             renderAppIcon()
             renderHamburgerMenu()
@@ -62,15 +71,7 @@ class EditorMenuBar(
 
             ImGui.endMenuBar()
         }
-    }
-
-    /** Shift+I opens Key Bindings › Test (it opened the removed Input Testing window, EDT-52I). */
-    private fun handleTestInputShortcut() {
-        val io = ImGui.getIO()
-        val combo = EditorShortcuts.INPUT_TESTING.combo()
-        if (io.keyCtrl == combo.ctrl && io.keyShift == combo.shift && ImGui.isKeyPressed(combo.key, false)) {
-            eventSystem.publish(WindowAction.Show(KeyBindingsWindow.TEST_TAB))
-        }
+        aboutModal.render()
     }
 
     private fun renderAppIcon() {
@@ -92,58 +93,13 @@ class EditorMenuBar(
         }
 
         if (ImGui.beginPopup("main_hamburger_menu")) {
-            fileMenu.render(sceneManager.currentScene)
+            fileMenu.render()
             editMenu.render()
-            settingsMenu.render()
             viewMenu.render()
-            ImGui.separator()
-
-            if (ImGui.beginMenu(stringManager.label("menu.file.recent_projects"))) {
-                val currentPath = projectManager.currentProject?.getProjectFile()?.absolutePath
-                val recentProjects = settingsManager.recentProjects
-                val filteredProjects = recentProjects.filter { it.projectPath != currentPath }
-
-                if (filteredProjects.isNotEmpty()) {
-                    for (project in filteredProjects) {
-                        if (menuItem(project.name)) {
-                            eventSystem.publish(WindowAction.Hide("window.project_wizard"))
-                            eventSystem.publish(ProjectEvent.OpenProjectRequested(project.projectPath))
-                        }
-                    }
-                } else {
-                    ImGui.textColored(0.5f, 0.5f, 0.5f, 1f, stringManager.getString("lbl.no_recent_projects"))
-                }
-                ImGui.endMenu()
-            }
-
-            ImGui.separator()
-
-            if (stringManager.tipped(menuItem("${Icons.PLUS} ${stringManager.getString("menu.file.new_project")}"), "menu.file.new_project")) {
-                eventSystem.publish(WindowAction.Show("window.project_wizard"))
-            }
-            if (stringManager.tipped(menuItem("${Icons.FOLDER_OPEN} ${stringManager.getString("menu.file.open_project_menu")}", EditorShortcuts.OPEN_PROJECT.display()), "menu.file.open_project_menu", EditorShortcuts.OPEN_PROJECT)) {
-                eventSystem.publish(ProjectEvent.OpenProjectFileRequested)
-            }
-
-            if (projectManager.hasProject()) {
-                if (stringManager.tipped(menuItem("${Icons.WINDOW_CLOSE} ${stringManager.getString("menu.file.close_project")}"), "menu.file.close_project")) {
-                    eventSystem.publish(ProjectEvent.CloseProjectRequested)
-                }
-                if (stringManager.tipped(menuItem("${Icons.SAVE} ${stringManager.getString("menu.file.save_project")}"), "menu.file.save_project")) {
-                    eventSystem.publish(ProjectEvent.SaveRequested)
-                }
-                if (stringManager.tipped(menuItem("${Icons.SAVE} ${stringManager.getString("menu.file.save_project_as")}"), "menu.file.save_project_as")) {
-                    eventSystem.publish(ProjectEvent.SaveAsRequested)
-                }
-                if (stringManager.tipped(menuItem("${Icons.EXPORT} ${stringManager.getString("menu.file.export_project")}"), "menu.file.export_project")) {
-                    eventSystem.publish(WindowAction.Show(ExportWizardWindow.NAME))
-                }
-            }
-            ImGui.separator()
-
-            if (stringManager.tipped(menuItem("${Icons.SIGN_OUT} ${stringManager.getString("menu.file.quit")}"), "menu.file.quit")) {
-                eventSystem.publish(EditorEvent.Exit)
-            }
+            playMenu.render()
+            settingsMenu.render()
+            toolsMenu.render()
+            helpMenu.render()
             ImGui.endPopup()
         }
     }
@@ -175,5 +131,65 @@ class EditorMenuBar(
 
     fun setMaximized(maximized: Boolean) {
         windowControls.isMaximized = maximized
+    }
+}
+
+/** What a hamburger menu item does this frame: [run] on click, greyed out unless [enabled], ticked when [checked]. */
+class MenuAction(val enabled: Boolean = true, val checked: Boolean = false, val run: () -> Unit)
+
+/**
+ * Draws [HamburgerMenuModel] menus. Every item gets its icon, shortcut and tooltip from the model; the builder only
+ * maps item ids to [MenuAction]s (null hides the item). Separators never lead, trail or double up.
+ */
+object HamburgerMenuRenderer {
+    fun menu(
+        strings: StringManager,
+        menu: HamburgerMenuModel.Menu,
+        actions: (String) -> MenuAction?,
+        dynamicSubmenu: (HamburgerMenuModel.Submenu) -> Unit = {},
+    ) {
+        if (!ImGui.beginMenu(strings.label(menu.labelKey))) return
+        entries(strings, menu.entries, actions, dynamicSubmenu)
+        ImGui.endMenu()
+    }
+
+    private fun entries(
+        strings: StringManager,
+        entries: List<HamburgerMenuModel.Entry>,
+        actions: (String) -> MenuAction?,
+        dynamicSubmenu: (HamburgerMenuModel.Submenu) -> Unit,
+    ) {
+        var drawn = false
+        var separatorPending = false
+        fun beforeDrawing() {
+            if (separatorPending && drawn) ImGui.separator()
+            separatorPending = false
+            drawn = true
+        }
+        for (entry in entries) {
+            when (entry) {
+                HamburgerMenuModel.Separator -> separatorPending = true
+                is HamburgerMenuModel.Item -> {
+                    val action = actions(entry.id) ?: continue
+                    beforeDrawing()
+                    item(strings, entry, action)
+                }
+                is HamburgerMenuModel.Submenu -> {
+                    beforeDrawing()
+                    if (ImGui.beginMenu(strings.label(entry.labelKey))) {
+                        if (entry.entries.isEmpty()) dynamicSubmenu(entry) else entries(strings, entry.entries, actions, dynamicSubmenu)
+                        ImGui.endMenu()
+                    }
+                }
+            }
+        }
+    }
+
+    private fun item(strings: StringManager, item: HamburgerMenuModel.Item, action: MenuAction) {
+        val label = (item.icon?.let { "$it " } ?: "") + strings.getString(item.labelKey) + "##" + item.id
+        val ticked = item.kind != HamburgerMenuModel.Kind.ACTION && action.checked
+        val clicked = ImGui.menuItem(label, item.shortcut?.display() ?: "", ticked, action.enabled)
+        Tooltips.show(strings, item.tooltipKey, item.shortcut)
+        if (clicked) action.run()
     }
 }

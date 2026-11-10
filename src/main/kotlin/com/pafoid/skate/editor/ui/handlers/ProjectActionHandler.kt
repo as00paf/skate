@@ -1,6 +1,8 @@
 package com.pafoid.skate.editor.ui.handlers
 
 import com.pafoid.skate.editor.commands.project.SetGraphicsBackendCommand
+import com.pafoid.skate.editor.commands.project.SetRandomSeedCommand
+import com.pafoid.skate.engine.ecs.random.RandomService
 import com.pafoid.skate.editor.commands.project.SetProjectGraphicsQualityCommand
 import com.pafoid.skate.editor.commands.project.SetProjectMsaaSamplesCommand
 import com.pafoid.skate.editor.commands.project.SetProjectTextureQualityCommand
@@ -61,6 +63,7 @@ class ProjectActionHandler(
 ) {
     private val jobSystem = engine.jobSystem
     private val eventSystem = engine.eventSystem
+    private val random by lazy { engine.random }
     private val logger = engine.logger
 
     /** True from an export request until its result is published (main thread only). */
@@ -99,6 +102,11 @@ class ProjectActionHandler(
         eventSystem.subscribe<ProjectEvent.SetGraphicsBackendRequested> { event ->
             val project = projectManager.currentProject ?: return@subscribe
             val command = SetGraphicsBackendCommand(project, event.backend)
+            if (!command.isNoOp) undoRedoManager.executeCommand(command)
+        }
+        eventSystem.subscribe<ProjectEvent.SetRandomSeedRequested> { event ->
+            val project = projectManager.currentProject ?: return@subscribe
+            val command = SetRandomSeedCommand(project, event.seed) { random.reseed(RandomService.resolve(it)) }
             if (!command.isNoOp) undoRedoManager.executeCommand(command)
         }
         eventSystem.subscribe<ProjectEvent.SetDefaultSceneRequested> { event ->

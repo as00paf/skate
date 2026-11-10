@@ -61,7 +61,7 @@ class TooltipToggleGuardTest {
             // D: debug
             "ConsoleWindow.kt", "ProfilerWindow.kt", "CommandHistoryWindow.kt", "ShellWindow.kt",
             // G: menus
-            "EditorMenuBar.kt", "WindowControlsRenderer.kt",
+            "EditorMenuBar.kt",
             // H: domain windows
             "AudioMixerPanel.kt", "ScriptEditorWindow.kt",
             // EDT-54: Render Graph rewrite

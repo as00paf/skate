@@ -1,94 +1,52 @@
 package com.pafoid.skate.editor.ui.menus
 
-import com.pafoid.skate.editor.imgui.data.Icons
-import com.pafoid.skate.editor.imgui.tipped
-import com.pafoid.skate.editor.imgui.label
 import com.pafoid.skate.editor.events.WindowAction
+import com.pafoid.skate.editor.imgui.HamburgerMenuRenderer
+import com.pafoid.skate.editor.imgui.MenuAction
 import com.pafoid.skate.editor.systems.EditorSettingsManager
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.core.StringManager
 import com.pafoid.skate.engine.utils.UnitSystem
-import imgui.ImGui.checkbox
-import imgui.internal.ImGui.beginMenu
-import imgui.internal.ImGui.combo
-import imgui.internal.ImGui.endMenu
-import imgui.internal.ImGui.menuItem
-import imgui.internal.ImGui.separator
-import imgui.internal.ImGui.sliderFloat
-import imgui.type.ImBoolean
-import imgui.type.ImInt
 
+/**
+ * Settings, as reviewed in EDT-51 §2.7: Language ▸ and Units ▸ as radio items (a combo would close the menu), the
+ * Show tooltips and Show gamepad overlay toggles, then the three settings dialogs. The gamepad overlay size lives in
+ * Editor Settings only.
+ */
 class SettingsMenuBuilder(
     private val stringManager: StringManager,
     private val settingsManager: EditorSettingsManager,
-    private val eventSystem: EventSystem
+    private val eventSystem: EventSystem,
 ) {
-    private val editorSettings = settingsManager.editorSettings
+    fun render() = HamburgerMenuRenderer.menu(stringManager, HamburgerMenuModel.SETTINGS, ::action)
 
-    fun render() {
-        if (beginMenu(stringManager.label("menu.settings"))) {
-            renderGamepadSettings()
-            separator()
-            renderUnitSystemSetting()
-            renderLanguageSetting()
-            separator()
-            renderWindowItems()
-            endMenu()
+    private fun action(id: String): MenuAction? {
+        val settings = settingsManager.editorSettings
+        if (id.startsWith(HamburgerMenuModel.LANGUAGE_PREFIX)) {
+            val code = id.removePrefix(HamburgerMenuModel.LANGUAGE_PREFIX)
+            return MenuAction(checked = settings.language == code) { settingsManager.setLocale(code) }
         }
-    }
-    
-    private fun renderGamepadSettings() {
-        val overlaySize = floatArrayOf(editorSettings.gamepadOverlaySize)
-        if (sliderFloat(
-                stringManager.getString("menu.settings.gamepad_overlay_size"),
-                overlaySize,
-                0.05f,
-                0.5f
-            )
-        ) {
-            settingsManager.updateEditorSettings(gamepadOverlaySize = overlaySize[0])
+        if (id.startsWith(HamburgerMenuModel.UNITS_PREFIX)) {
+            val units = UnitSystem.valueOf(id.removePrefix(HamburgerMenuModel.UNITS_PREFIX).uppercase())
+            return MenuAction(checked = settings.unitSystem == units) { settingsManager.updateEditorSettings(unitSystem = units) }
         }
-
-        val showOverlay = ImBoolean(editorSettings.showGamepadOverlay)
-        if (checkbox(stringManager.getString("menu.settings.show_gamepad_overlay"), showOverlay)) {
-            settingsManager.updateEditorSettings(showGamepadOverlay = showOverlay.get())
+        return when (id) {
+            "show_tooltips" -> MenuAction(checked = showTooltips) { showTooltips = !showTooltips }
+            "show_gamepad_overlay" -> MenuAction(checked = settings.showGamepadOverlay) {
+                settingsManager.updateEditorSettings(showGamepadOverlay = !settings.showGamepadOverlay)
+            }
+            "editor_settings" -> MenuAction { eventSystem.publish(WindowAction.Show("window.editor_settings")) }
+            "project_settings" -> MenuAction { eventSystem.publish(WindowAction.Show("window.project_settings")) }
+            "keybindings" -> MenuAction { eventSystem.publish(WindowAction.Show("window.keybindings")) }
+            else -> null
         }
     }
 
-    private fun renderUnitSystemSetting() {
-        val unitSystems = UnitSystem.entries.toTypedArray()
-        val currentUnitIdx = ImInt(editorSettings.unitSystem.ordinal)
-        if (combo(
-                stringManager.label("menu.settings.unit_system"),
-                currentUnitIdx,
-                unitSystems.map { it.name }.toTypedArray()
-            )
-        ) {
-            settingsManager.updateEditorSettings(unitSystem = unitSystems[currentUnitIdx.get()])
-        }
-    }
-
-    private fun renderLanguageSetting() {
-        val languages = arrayOf("en", "fr")
-        val currentLangIdx = ImInt(languages.indexOf(editorSettings.language))
-        if (combo(
-                stringManager.label("menu.settings.language"),
-                currentLangIdx,
-                languages,
-                languages.size
-            )
-        ) {
-            val newLang = languages[currentLangIdx.get()]
-            settingsManager.setLocale(newLang)
-        }
-    }
-    
-    private fun renderWindowItems() {
-        if (stringManager.tipped(menuItem("${Icons.KEYBOARD} ${stringManager.getString("menu.settings.keybindings")}"), "menu.settings.keybindings")) {
-            eventSystem.publish(WindowAction.Show("window.keybindings"))
-        }
-        if (stringManager.tipped(menuItem("${Icons.GEAR} ${stringManager.getString("menu.settings.settings")}"), "menu.settings.settings")) {
-            eventSystem.publish(WindowAction.Show("window.editor_settings"))
-        }
+    companion object {
+        /**
+         * Placeholder for the "Show tooltips" editor setting (EDT-57 adds it to `EditorSettings`, persisted and honoured
+         * by every tooltip). Until then the checkbox only flips this flag for the session.
+         */
+        var showTooltips = true
     }
 }
