@@ -1,5 +1,9 @@
 package com.pafoid.skate.editor.systems
 
+import com.pafoid.skate.engine.assets.pack.PackedGuids
+import com.pafoid.skate.engine.physics3d.ModelCollisionMeshSource
+import com.pafoid.skate.engine.physics3d.CollisionMeshSource
+import com.pafoid.skate.engine.physics3d.CollisionMeshes
 import com.pafoid.skate.engine.assets.EngineDefaults
 import com.pafoid.skate.engine.ecs.random.RandomService
 import com.pafoid.skate.engine.render.rhi.GraphicsBackend
@@ -209,9 +213,13 @@ class ProjectManager(
         engine.systemManager.getSystem<InputSystem>()?.mappings = project.gameplaySettings.inputMappings
 
         if (binData == null || assetAtlas == null || headerSize <= 0) {
+            // PHY-24 / AST-35: meshRef GUIDs resolve through the project's registry (scanned once on the first miss).
+            CollisionMeshes.source = assetRegistry()?.let { editorCollisionMeshSource(it, assetPaths) } ?: CollisionMeshSource.NONE
             loadDefaultScenes(project, scenes)
         } else {
             engine.assetsManager.initAssetsResolver(assetAtlas, binData, headerSize)
+            // AST-35: an exported game resolves meshRef GUIDs through the pack's GUID table.
+            CollisionMeshes.source = PackedGuids.collisionMeshSource(assetPaths)
 
             engine.assetsManager.resolve<Scene>(project.defaultScene)?.let { scene ->
                 scene.getComponent<EnvironmentComponent>()?.skyTexture?.filePath?.let { path ->
@@ -272,6 +280,7 @@ class ProjectManager(
 
         currentProject = null
         assetPaths.projectRoot = null
+        CollisionMeshes.source = CollisionMeshSource.NONE
 
         eventSystem.publish(ProjectEvent.Closed(project))
     }
@@ -336,3 +345,12 @@ class ProjectManager(
 
     fun hasProject(): Boolean = currentProject != null
 }
+
+/**
+ * Collision models in the editor (PHY-24, AST-35): GUIDs (and project paths, `engine:` references) through [registry],
+ * scanned once on the first miss because the editor does not scan it on open; files through [paths].
+ */
+internal fun editorCollisionMeshSource(registry: AssetRegistry, paths: AssetPaths) = ModelCollisionMeshSource(
+    resolve = { ref -> registry.resolve(ref) ?: run { registry.scan(); registry.resolve(ref) } },
+    localPath = paths::localPath,
+)

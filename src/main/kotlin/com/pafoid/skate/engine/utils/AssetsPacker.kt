@@ -12,6 +12,7 @@ import com.pafoid.skate.engine.assets.AssetRegistry
 import com.pafoid.skate.engine.assets.pack.PackBuilder
 import com.pafoid.skate.engine.assets.pack.PackInput
 import com.pafoid.skate.engine.assets.pack.PackManifest
+import com.pafoid.skate.engine.assets.pack.PackedGuids
 import com.pafoid.skate.engine.assets.pack.PackedStrings
 import com.pafoid.skate.engine.assets.pack.ReferenceCollector
 import com.pafoid.skate.engine.assets.serialization.Serializer
@@ -157,7 +158,11 @@ class AssetsPacker(
             // Stored under the reference itself, so the game's readBytes / localPath find `engine:` paths as saved.
             PackInput(file.absolutePath, reference, FileTypeResolver.resolve(file).name, file.readBytes())
         }
-        val inputs = projectInputs + engineInputs + gameStringInputs(projectInputs)
+        // AST-35: GUIDs saved in scenes (MeshCollider3D.meshRef) resolve in the game through this table.
+        val guids = files.mapNotNull { file ->
+            AssetMeta.read(file)?.guid?.let { it.value to file.canonicalFile.relativeTo(projectDir).invariantSeparatorsPath }
+        }.toMap()
+        val inputs = projectInputs + engineInputs + gameStringInputs(projectInputs) + PackedGuids.input(guids)
         val result = PackBuilder.build(project.name, inputs, compress, project.graphicsBackend)
         inputs.zip(result.manifest.entries).forEach { (input, entry) ->
             val type = FileType.valueOf(input.type)
