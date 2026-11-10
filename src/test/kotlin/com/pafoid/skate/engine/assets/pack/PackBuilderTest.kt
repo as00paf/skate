@@ -45,7 +45,8 @@ class PackBuilderTest {
         val tex = File(dir, "tex/used.png").also { it.parentFile.mkdirs(); it.writeText("png") }
         File(dir, "tex/unused.png").writeText("png")
         val prefab = File(dir, "prefabs/p.prefab").also { it.parentFile.mkdirs() }
-        val model = File(dir, "models/m.gltf").also { it.parentFile.mkdirs(); it.writeText("{}") }
+        val model = File(dir, "models/m.gltf").also { it.parentFile.mkdirs(); it.writeText("""{"buffers":[{"uri":"m.bin"}]}""") }
+        File(dir, "models/stray.png").writeText("png") // not named by the model: not packed (AST-26 §3.1)
         File(dir, "models/m.bin").writeText("b")
         val registry = AssetRegistry(dir).also { it.scan() }
         val guid = registry.toReference("tex/used.png")!!

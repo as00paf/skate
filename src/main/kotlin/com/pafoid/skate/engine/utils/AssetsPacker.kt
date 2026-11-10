@@ -5,6 +5,8 @@ import com.pafoid.skate.editor.project.Project
 import com.pafoid.skate.editor.systems.FileTypeResolver
 import com.pafoid.skate.engine.assets.AssetMeta
 import com.pafoid.skate.engine.assets.Assets
+import com.pafoid.skate.engine.assets.EngineDefaultResolver
+import com.pafoid.skate.engine.assets.EngineDefaults
 import com.pafoid.skate.engine.assets.ProjectLayout
 import com.pafoid.skate.engine.assets.AssetRegistry
 import com.pafoid.skate.engine.assets.pack.PackBuilder
@@ -36,17 +38,22 @@ private val serializer: Serializer = Serializer()
 /**
  * Packs a project into `builds/game.bin` + `manifest.json`. Besides the project's files, the engine's game string
  * tables ([gameStringsDir]) are always shipped under [PackedStrings.PACK_DIR] so the exported game shows its UI text.
+ *
+ * Engine defaults the project references (`engine:` references, AST-26 §4.6) are packed under the reference itself,
+ * read from the project's override when it has one, else from the engine under [engineRoot]. Shaders are always
+ * packed. Identical files are stored once ([PackBuilder]).
  */
 class AssetsPacker(
     private val logger: LoggerService,
     private val gameStringsDir: File = File(Assets.Strings.GAME_STRINGS),
+    private val engineRoot: File = File(System.getProperty("user.dir")),
 ) {
     var atlas = Atlas()
     var lastManifest: PackManifest? = null
         private set
 
     /** Types that are always packed; everything else is packed only when referenced from scenes, prefabs or the project. */
-    private val alwaysPacked = setOf(FileType.PROJECT_FILE, FileType.SCENE, FileType.SCRIPT_KOTLIN, FileType.SCRIPT_JAVA, FileType.CONFIG)
+    private val alwaysPacked = setOf(FileType.PROJECT_FILE, FileType.SCENE, FileType.SCRIPT_KOTLIN, FileType.SCRIPT_JAVA, FileType.CONFIG, FileType.SHADER)
     private val packable = alwaysPacked + setOf(
         FileType.TEXTURE, FileType.MODEL_3D, FileType.ANIMATION, FileType.SOUND, FileType.PREFAB, FileType.JSON,
         FileType.SHADER, FileType.MATERIAL, FileType.FONT, FileType.TEXT
@@ -65,18 +72,42 @@ class AssetsPacker(
         onlyReferenced: Boolean = true,
         outputDir: File = defaultOutputDir(project),
         excludedScenes: Set<String> = emptySet(),
-    ): List<File> {
+    ): List<File> = select(project, onlyReferenced, outputDir, excludedScenes).files
+
+    /** The project files and the `engine:` references a pack would hold. */
+    class Selection(val files: List<File>, val engineReferences: List<String>)
+
+    fun select(
+        project: Project,
+        onlyReferenced: Boolean = true,
+        outputDir: File = defaultOutputDir(project),
+        excludedScenes: Set<String> = emptySet(),
+    ): Selection {
         val projectDir = File(project.projectPath).parentFile
         val excluded = excludedScenes.map { File(it).canonicalFile }.toSet() - File(project.defaultScene).canonicalFile
         val all = projectFiles(project, outputDir).filter { it.canonicalFile !in excluded }
-        if (!onlyReferenced) return all.sortedBy { it.path }
 
-        val roots = all.filter { FileTypeResolver.resolve(it) in alwaysPacked }.toMutableList()
-        if (project.iconPath.isNotBlank()) roots += File(project.iconPath).takeIf { it.isFile }?.let { listOf(it) }.orEmpty()
+        val roots = (if (onlyReferenced) all.filter { FileTypeResolver.resolve(it) in alwaysPacked } else all).toMutableList()
+        if (project.iconPath.isNotBlank() && !EngineDefaults.isReference(project.iconPath)) {
+            roots += File(project.iconPath).takeIf { it.isFile }?.let { listOf(it) }.orEmpty()
+        }
         val registry = AssetRegistry(projectDir).also { it.scan() }
-        val referenced = ReferenceCollector(projectDir, registry).collect(roots)
-        val allowed = all.map { it.canonicalFile }.toSet()
-        return (referenced + roots.map { it.canonicalFile }).filter { it in allowed }.distinct().sortedBy { it.path }
+        val resolver = EngineDefaultResolver(engineRoot) { projectDir }
+        val collector = ReferenceCollector(projectDir, registry, engineDefaults = resolver)
+        val referenced = collector.collect(roots)
+        val engineRefs = LinkedHashSet(collector.engineReferences)
+        // The icon in memory may be the resolved engine file or the project's override of it.
+        project.iconPath.takeIf { it.isNotBlank() }?.let { icon ->
+            if (EngineDefaults.isReference(icon)) engineRefs += icon
+            else resolver.referenceFor(File(icon))?.let { engineRefs += it }
+        }
+        val files = if (onlyReferenced) {
+            val allowed = all.map { it.canonicalFile }.toSet()
+            (referenced + roots.map { it.canonicalFile }).filter { it in allowed }.distinct().sortedBy { it.path }
+        } else {
+            all.sortedBy { it.path }
+        }
+        return Selection(files, engineRefs.filter { resolver.resolve(it) != null }.sorted())
     }
 
     private fun projectFiles(project: Project, outputDir: File): List<File> {
@@ -111,13 +142,22 @@ class AssetsPacker(
         // CI, a `..` segment, a junction) otherwise turns every pack entry into a `../../..` path (QA-15).
         val projectDir = File(project.projectPath).parentFile.canonicalFile
         onProgress(ExportStep.COLLECTING, 0f, "")
-        val files = selectFiles(project, onlyReferenced, outputDir, excludedScenes).sortedBy { FileTypeResolver.resolve(it) }
+        val selection = select(project, onlyReferenced, outputDir, excludedScenes)
+        val files = selection.files.sortedBy { FileTypeResolver.resolve(it) }
+        val total = (files.size + selection.engineReferences.size).coerceAtLeast(1)
         val projectInputs = files.mapIndexed { index, file ->
             val relative = file.canonicalFile.relativeTo(projectDir).invariantSeparatorsPath
-            onProgress(ExportStep.PACKING, index.toFloat() / files.size, relative)
+            onProgress(ExportStep.PACKING, index.toFloat() / total, relative)
             PackInput(file.absolutePath, relative, FileTypeResolver.resolve(file).name, file.readBytes())
         }
-        val inputs = projectInputs + gameStringInputs(projectInputs)
+        val resolver = EngineDefaultResolver(engineRoot) { projectDir }
+        val engineInputs = selection.engineReferences.mapIndexedNotNull { index, reference ->
+            val file = resolver.resolve(reference) ?: return@mapIndexedNotNull null
+            onProgress(ExportStep.PACKING, (files.size + index).toFloat() / total, reference)
+            // Stored under the reference itself, so the game's readBytes / localPath find `engine:` paths as saved.
+            PackInput(file.absolutePath, reference, FileTypeResolver.resolve(file).name, file.readBytes())
+        }
+        val inputs = projectInputs + engineInputs + gameStringInputs(projectInputs)
         val result = PackBuilder.build(project.name, inputs, compress, project.graphicsBackend)
         inputs.zip(result.manifest.entries).forEach { (input, entry) ->
             val type = FileType.valueOf(input.type)
@@ -137,10 +177,13 @@ class AssetsPacker(
         lastManifest = result.manifest
         onProgress(ExportStep.PACKING, 1f, "")
 
-        val stored = result.manifest.entries.sumOf { it.storedSize }
         val raw = result.manifest.entries.sumOf { it.rawSize }
-        val report = "Packed ${inputs.size} assets: $raw bytes -> $stored bytes (atlas ${encodedAtlas.size} bytes)\n" +
-            result.manifest.entries.joinToString("\n") { "  ${it.path} ${it.rawSize}->${it.storedSize} ${it.sha256.take(12)}" }
+        val firstAt = HashMap<Int, String>()
+        val report = "Packed ${inputs.size} assets: $raw bytes -> ${result.data.size} bytes (atlas ${encodedAtlas.size} bytes)\n" +
+            result.manifest.entries.joinToString("\n") { e ->
+                val shared = firstAt.putIfAbsent(e.position, e.path)?.let { " (shared with $it)" }.orEmpty()
+                "  ${e.path} ${e.rawSize}->${e.storedSize} ${e.sha256.take(12)}$shared"
+            }
         File(outputDir, "atlas_report.txt").writeText(report)
         logger.logEngine(report, LoggerService.LogLevel.INFO)
         return true
