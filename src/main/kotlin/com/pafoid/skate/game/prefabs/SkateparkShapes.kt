@@ -88,6 +88,22 @@ object SkateparkShapes {
         return extruded(profile, width)
     }
 
+    /**
+     * Euro-gap deck (GPL-23): a bank of [bankRun] up to a flat deck of [deck] at [height], rising toward +Z. Its
+     * +Z end is a vertical drop, so set flush against the back of a [steps]-stair's landing it leads onto the stairs
+     * ([height] defaults to that landing, [euroGapOffset] gives the placement).
+     */
+    fun euroGap(steps: Int = 5, height: Float = steps * RISER, bankRun: Float = 2.0f, deck: Float = 1.5f, width: Float = 2f): ObstacleShape {
+        val half = (bankRun + deck) / 2f
+        return extruded(listOf(Vector2f(-half, 0f), Vector2f(-half + bankRun, height), Vector2f(half, height)), width)
+    }
+
+    /** Z offset from a [steps]-stair's centre to a default [euroGap] centre that ends at the stairs' landing. */
+    fun euroGapOffset(steps: Int = 5): Float = -(stairLength(steps, TREAD, LANDING) / 2f + EURO_GAP_LENGTH / 2f)
+
+    /** Length (Z) of the default [euroGap]. */
+    const val EURO_GAP_LENGTH = 3.5f
+
     /** Rail [height] above the step noses of a [steps]-stair (flat over the landing, then down the steps). */
     fun handrail(steps: Int = 5, height: Float = 0.8f, radius: Float = 0.03f): ObstacleShape =
         rail(noseLine(steps).map { Vector3f(0f, it.y + height, it.x) }, radius)

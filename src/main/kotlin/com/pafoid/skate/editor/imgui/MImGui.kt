@@ -19,7 +19,6 @@ import kotlin.math.max
 
 object MImGui {
     /** Confirmation message wrap width, in font heights (keeps the dialog readable at any DPI). */
-    private const val CONFIRMATION_WRAP_EMS = 28f
 
     /** Editor strings for the few helpers that show their own text; set by [ImGuiLayer] at startup. */
     var strings: com.pafoid.skate.engine.core.StringManager? = null
@@ -545,9 +544,7 @@ object MImGui {
             active -> ImGui.popStyleColor(1)
         }
 
-        if (tooltip != null && ImGui.isItemHovered()) {
-            ImGui.setTooltip(tooltip)
-        }
+        if (tooltip != null) Tooltips.text(tooltip)
 
         return clicked && !disabled
     }
@@ -777,9 +774,8 @@ object MImGui {
             ImGui.tableNextRow()
             ImGui.tableSetColumnIndex(0)
             ImGui.text(label)
-            if (helpTooltip != null && ImGui.isItemHovered()) {
-                ImGui.setTooltip(helpTooltip)
-            }
+            // A settings field explanation: shown even with tooltips off (EDT-57).
+            if (helpTooltip != null) Tooltips.always(helpTooltip)
             ImGui.tableSetColumnIndex(1)
             ImGui.pushItemWidth(-1f)
             widget()
@@ -806,9 +802,8 @@ object MImGui {
             ImGui.tableNextRow()
             ImGui.tableSetColumnIndex(0)
             ImGui.text(label)
-            if (helpTooltip != null && ImGui.isItemHovered()) {
-                ImGui.setTooltip(helpTooltip)
-            }
+            // A settings field explanation: shown even with tooltips off (EDT-57).
+            if (helpTooltip != null) Tooltips.always(helpTooltip)
             ImGui.tableSetColumnIndex(1)
             textDisabled(value)
             ImGui.endTable()
@@ -816,44 +811,4 @@ object MImGui {
         ImGui.popID()
     }
 
-    fun showConfirmationModal(
-        title: String,
-        message: String,
-        confirmText: String,
-        cancelText: String,
-        onConfirm: () -> Unit,
-        onCancel: (() -> Unit)? = null
-    ) {
-        // Centre on the editor and wrap long messages so the dialog keeps a readable layout (EDT-49).
-        val viewport = ImGui.getMainViewport()
-        ImGui.setNextWindowPos(viewport.workCenterX, viewport.workCenterY, ImGuiCond.Appearing, 0.5f, 0.5f)
-        if (ImGui.beginPopupModal(title, null, ImGuiWindowFlags.AlwaysAutoResize)) {
-            ImGui.pushTextWrapPos(ImGui.getFontSize() * CONFIRMATION_WRAP_EMS)
-            ImGui.textUnformatted(message)
-            ImGui.popTextWrapPos()
-            ImGui.spacing()
-            ImGui.spacing()
-            ImGui.separator()
-            ImGui.spacing()
-            ImGui.spacing()
-
-            // Confirm Button
-            if (ImGui.button(confirmText, 120f, 0f)) {
-                onConfirm()
-                ImGui.closeCurrentPopup()
-            }
-
-            // Keep default keyboard/gamepad focus on the Confirm button
-            ImGui.setItemDefaultFocus()
-            ImGui.sameLine()
-
-            // Cancel Button
-            if (ImGui.button(cancelText, 120f, 0f) || ImGui.isKeyPressed(ImGuiKey.Escape)) {
-                onCancel?.invoke()
-                ImGui.closeCurrentPopup()
-            }
-
-            ImGui.endPopup()
-        }
-    }
 }

@@ -8,8 +8,8 @@ import com.pafoid.skate.editor.ui.windows.CommandHistoryWindow
 import com.pafoid.skate.editor.ui.windows.ConsoleWindow
 import com.pafoid.skate.editor.ui.windows.EditorSettingsWindow
 import com.pafoid.skate.editor.ui.windows.ExportWizardWindow
+import com.pafoid.skate.editor.ui.windows.VideoToAnimationWindow
 import com.pafoid.skate.editor.ui.windows.GameViewWindow
-import com.pafoid.skate.editor.ui.windows.InputTestingWindow
 import com.pafoid.skate.editor.ui.windows.KeyBindingsWindow
 import com.pafoid.skate.editor.ui.windows.ProfilerWindow
 import com.pafoid.skate.editor.ui.windows.ProjectSettingsWindow
@@ -17,7 +17,7 @@ import com.pafoid.skate.editor.ui.windows.ProjectSwitcherDialog
 import com.pafoid.skate.editor.ui.windows.ProjectWindow
 import com.pafoid.skate.editor.ui.windows.ProjectWizardWindow
 import com.pafoid.skate.editor.ui.windows.PropertiesWindow
-import com.pafoid.skate.editor.ui.windows.RenderGraphWindow
+import com.pafoid.skate.editor.ui.windows.rendergraph.RenderGraphWindow
 import com.pafoid.skate.editor.ui.windows.SceneHierarchyWindow
 import com.pafoid.skate.editor.ui.windows.SearchEverywhereWindow
 import com.pafoid.skate.editor.ui.windows.ScriptEditorWindow
@@ -37,7 +37,6 @@ class WindowRegistry(
         AssetBrowserWindow(engine, editor.undoRedoManager),
         ProfilerWindow(engine.stringManager),
         ConsoleWindow(engine),
-        InputTestingWindow(engine, projectManager),
         EditorSettingsWindow(editor.settingsManager, engine.stringManager) { engine.eventSystem.publish(com.pafoid.skate.editor.events.WindowAction.Show("window.keybindings")) },
         ProjectSettingsWindow(engine, editor.settingsManager, projectManager),
         KeyBindingsWindow(engine, editor.settingsManager, engine.stringManager, projectManager),
@@ -52,12 +51,11 @@ class WindowRegistry(
         ShellWindow(engine, projectManager),
         ExportWizardWindow(engine, projectManager, editor.settingsManager),
         AssetStoreWindow(engine, projectManager),
+        VideoToAnimationWindow(engine, editor, projectManager),
     )
 
     /** Windows listed in View > Windows and stored in the layout; dialogs are excluded. */
     val dockableWindows: List<EditorWindow> get() = dockable(windows)
-
-    val inputTestingDialog: EditorDialog = windows.filterIsInstance<InputTestingWindow>().first()
 
     init {
         // The help popover's "Related windows" buttons (EDT-51 §2.4).

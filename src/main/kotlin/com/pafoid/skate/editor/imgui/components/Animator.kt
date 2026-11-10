@@ -122,7 +122,7 @@ private fun Animator.controllerSection(engine: Engine) {
             if (ImGui.selectable("${AnimatorControllerCatalog.displayName(path)}###controller:$path", path == controllerPath)) {
                 engine.eventSystem.publish(AnimatorAction.SetController(this, path))
             }
-            if (ImGui.isItemHovered()) ImGui.setTooltip(path)
+            Tooltips.always(path)
         }
         ImGui.endCombo()
     }
@@ -135,7 +135,7 @@ private fun Animator.controllerSection(engine: Engine) {
     }
     ImGui.sameLine()
     if (ImGui.button("${strings.getString("lbl.animator.controller_refresh")}##controller_refresh")) catalog.refresh()
-    if (ImGui.isItemHovered()) ImGui.setTooltip(strings.getString("lbl.animator.controller_drop_hint"))
+    Tooltips.text(strings.getString("lbl.animator.controller_drop_hint"))
 
     val machine = stateMachine
     when {

@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.project
 
+import com.pafoid.skate.engine.ecs.random.RandomService
 import com.pafoid.skate.editor.settings.GraphicsQuality
 import com.pafoid.skate.editor.settings.ShadowQuality
 import com.pafoid.skate.editor.settings.TextureQuality
@@ -26,6 +27,8 @@ data class Project(
     var gameplaySettings: GameplaySettings = GameplaySettings(),
     /** Backend the exported game renders with (AST-12); the editor always uses OpenGL. */
     var graphicsBackend: GraphicsBackend = GraphicsBackend.DEFAULT,
+    /** Seed of the engine's random streams in Play and in the exported game (ECS-14); see `RandomService.resolve`. */
+    var randomSeed: Long = RandomService.DEFAULT_SEED,
     /** Graphics quality preset for the exported game (REN-30). */
     var graphicsQuality: GraphicsQuality = GraphicsQuality.HIGH,
     /** MSAA sample count for the exported game (REN-30). */

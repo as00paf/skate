@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.systems
 
+import com.pafoid.skate.engine.ecs.random.RandomService
 import com.pafoid.skate.engine.render.rhi.GraphicsBackend
 import com.pafoid.skate.engine.assets.serialization.FileKind
 import com.pafoid.skate.editor.data.FileType
@@ -9,8 +10,10 @@ import com.pafoid.skate.editor.project.EngineAssetCopier
 import com.pafoid.skate.editor.project.Project
 import com.pafoid.skate.editor.project.ProjectFileReader
 import com.pafoid.skate.engine.assets.Assets
+import com.pafoid.skate.engine.assets.AssetPaths
 import com.pafoid.skate.engine.assets.ProjectLayout
 import com.pafoid.skate.engine.assets.AssetRegistry
+import com.pafoid.skate.engine.assets.serialization.Serializer
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.core.LoggerService.LogLevel
 import com.pafoid.skate.engine.ecs.Scene
@@ -23,6 +26,12 @@ import com.pafoid.skate.engine.getComponent
 import com.pafoid.skate.engine.utils.Atlas
 import org.joml.Vector2i
 import java.io.File
+
+/** Scenes decoded off the main thread (EDT-56); [failed] lists the files that could not be read, with the reason. */
+class DecodedScenes(val scenes: List<Scene>, val failed: List<String>)
+
+/** A project read and its scenes decoded in the background, ready to open on the main thread (EDT-56). */
+class PreparedProject(val project: Project, val scenes: DecodedScenes)
 
 class ProjectManager(
     private val engine: Engine,
@@ -37,6 +46,7 @@ class ProjectManager(
         private set
 
     /** Why the last open or save failed, for the error dialog (EDT-10); null after a success. */
+    @Volatile
     var lastError: String? = null
         private set
 
@@ -52,37 +62,20 @@ class ProjectManager(
     private val assetPaths get() = engine.serializer.assetPaths
 
     /** Creates [name] in [folder]; [graphicsBackend] is what its exported games start with (EDT-43). */
-    fun createProject(name: String, folder: File, graphicsBackend: GraphicsBackend = GraphicsBackend.DEFAULT): Result<Project> {
-        logger.logEditor("Creating project: $name in ${folder.absolutePath}")
+    fun createProject(
+        name: String,
+        folder: File,
+        graphicsBackend: GraphicsBackend = GraphicsBackend.DEFAULT,
+        preparedDir: File? = null,
+    ): Result<Project> {
         return try {
-            val projectDir = File(folder, name)
-            if (!projectDir.exists()) {
-                projectDir.mkdirs()
-            }
-
+            val projectDir = preparedDir ?: prepareProjectFolder(name, folder).getOrElse { return Result.failure(it) }
             val projectFile = File(projectDir, "$name.skateproject")
-            if (projectFile.exists()) {
-                return Result.failure(IllegalStateException("Project '$name' already exists in this folder"))
-            }
 
             if (hasProject()) closeProject()
             assetPaths.projectRoot = projectDir.absoluteFile // default scenes are saved project-relative (AST-09)
-
-            val assetsDir = ProjectLayout.create(projectDir)
+            val assetsDir = ProjectLayout.assetsDir(projectDir)
             val scenesDir = ProjectLayout.scenesDir(projectDir)
-
-            // Create default strings file
-            val stringsFile = File(assetsDir, ProjectLayout.STRINGS_FILE)
-            stringsFile.writeText("project.name=$name")
-
-            // Copy assets
-            val copyResult = engineAssetCopier.copyBundledAssets(projectDir)
-            if (copyResult.isSuccess) {
-                val count = copyResult.getOrNull() ?: 0
-                logger.logEditor("Copied $count engine-bundled assets to project")
-            } else {
-                logger.logEditor("Failed to copy engine assets: ${copyResult.exceptionOrNull()?.message}", LogLevel.ERROR)
-            }
 
             // Create default scene with prefabs
             engine.prefabsGenerator.projectAssetsDir = assetsDir.absolutePath + "\\"
@@ -96,8 +89,10 @@ class ProjectManager(
                 scenesPath = scenes.map { "${scenesDir.path}\\${it.name}.scene" },
                 resolution = Vector2i(1920, 1080),
                 graphicsBackend = graphicsBackend,
+                randomSeed = RandomService.newSeed(),
             )
             currentProject = project
+            engine.random.reseed(RandomService.resolve(project.randomSeed))
             eventSystem.publish(EngineAction.ApplyMappings(project.gameplaySettings.inputMappings))
 
             saveProject()
@@ -113,50 +108,99 @@ class ProjectManager(
         }
     }
 
-    fun openProjectFile(projectFile: File): Boolean {
+    /**
+     * The file part of [createProject], safe on a background thread (EDT-56): the project folder and its
+     * sub-folders, the strings file, and a copy of the engine's bundled assets. Fails when the project exists.
+     */
+    fun prepareProjectFolder(name: String, folder: File): Result<File> {
+        logger.logEditor("Creating project: $name in ${folder.absolutePath}")
+        return try {
+            val projectDir = File(folder, name)
+            if (!projectDir.exists()) projectDir.mkdirs()
+            if (File(projectDir, "$name.skateproject").exists()) {
+                return Result.failure(IllegalStateException("Project '$name' already exists in this folder"))
+            }
+            val assetsDir = ProjectLayout.create(projectDir)
+            File(assetsDir, ProjectLayout.STRINGS_FILE).writeText("project.name=$name")
+
+            val copyResult = engineAssetCopier.copyBundledAssets(projectDir)
+            if (copyResult.isSuccess) {
+                logger.logEditor("Copied ${copyResult.getOrNull() ?: 0} engine-bundled assets to project")
+            } else {
+                logger.logEditor("Failed to copy engine assets: ${copyResult.exceptionOrNull()?.message}", LogLevel.ERROR)
+            }
+            Result.success(projectDir)
+        } catch (e: Exception) {
+            logger.logEditor("Could not create project: ${e.message}", LogLevel.ERROR)
+            Result.failure(e)
+        }
+    }
+
+    /**
+     * The file part of [openProjectFile], safe on a background thread (EDT-56): reads [projectFile] and decodes its
+     * scenes. Scene references resolve in the folder the project is in, with a serializer of its own, so the open
+     * project is not touched. Null (and [lastError] set) when the project file cannot be read.
+     */
+    fun prepareProject(projectFile: File): PreparedProject? {
         lastError = null
         val path = projectFile.absolutePath
-        if (!projectFile.isFile) return fail("File not found: $path")
-        if (!FileType.PROJECT_FILE.extensions.contains(projectFile.extension)) return fail("Not a .skateproject file: $path")
+        if (!projectFile.isFile) return failed("File not found: $path")
+        if (!FileType.PROJECT_FILE.extensions.contains(projectFile.extension)) return failed("Not a .skateproject file: $path")
         logger.logEditor("Opening project: $path")
         val project = try {
             ProjectFileReader.read(engine.serializer, projectFile)
         } catch (e: Exception) {
-            return fail("Could not read $path: ${e.message ?: e.javaClass.simpleName}")
+            return failed("Could not read $path: ${e.message ?: e.javaClass.simpleName}")
         }
+        val serializer = Serializer(AssetPaths().apply { projectRoot = projectFile.absoluteFile.parentFile })
+        return PreparedProject(project, decodeScenes(project, serializer))
+    }
+
+    /** Opens [projectFile]; [prepared] skips the reading already done by [prepareProject]. */
+    fun openProjectFile(projectFile: File, prepared: PreparedProject? = null): Boolean {
+        val ready = prepared ?: prepareProject(projectFile) ?: return false
+        lastError = null
         if (hasProject()) closeProject()
         // References in the project file and its scenes are relative to the folder the project is in now (AST-09).
         assetPaths.projectRoot = projectFile.absoluteFile.parentFile
         return try {
-            openProject(project)
+            openProject(ready.project, scenes = ready.scenes)
         } catch (e: Exception) {
             currentProject = null
             assetPaths.projectRoot = null
-            fail("Could not open $path: ${e.message ?: e.javaClass.simpleName}")
+            fail("Could not open ${projectFile.absolutePath}: ${e.message ?: e.javaClass.simpleName}")
         }
     }
 
     private fun fail(reason: String): Boolean {
+        failed(reason)
+        return false
+    }
+
+    private fun failed(reason: String): PreparedProject? {
         lastError = reason
         logger.logEditor(reason, LogLevel.ERROR)
-        return false
+        return null
     }
 
     fun openProject(
         project: Project,
         binData: ByteArray? = null,
         assetAtlas: Atlas? = null,
-        headerSize: Int = 0
+        headerSize: Int = 0,
+        scenes: DecodedScenes? = null,
     ): Boolean {
         if (hasProject()) closeProject()
 
         currentProject = project
+        // ECS-14: Play and the exported game draw from the project's seed (unless -Dskate.seed overrides it).
+        engine.random.reseed(RandomService.resolve(project.randomSeed))
         // Editor: references resolve in the project folder. Exported game: they stay relative and come from the pack.
         assetPaths.projectRoot = if (binData == null) project.getProjectDirectory().absoluteFile else null
         engine.systemManager.getSystem<InputSystem>()?.mappings = project.gameplaySettings.inputMappings
 
         if (binData == null || assetAtlas == null || headerSize <= 0) {
-            loadDefaultScenes(project)
+            loadDefaultScenes(project, scenes)
         } else {
             engine.assetsManager.initAssetsResolver(assetAtlas, binData, headerSize)
 
@@ -223,7 +267,7 @@ class ProjectManager(
         eventSystem.publish(ProjectEvent.Closed(project))
     }
 
-    private fun loadDefaultScenes(project: Project) {
+    private fun loadDefaultScenes(project: Project, decoded: DecodedScenes? = null) {
         val defaultSceneFile = File(project.defaultScene)
 
         if (!defaultSceneFile.exists()) {
@@ -233,16 +277,7 @@ class ProjectManager(
         }
 
         // A missing or broken scene file is reported and skipped; the others still open (EDT-10).
-        val failed = mutableListOf<String>()
-        val scenes = project.scenesPath.mapNotNull { path ->
-            val file = File(path)
-            try {
-                engine.serializer.decodeFile<Scene?>(FileKind.SCENE, file.readText())
-            } catch (e: Exception) {
-                failed += "${file.absolutePath}: ${e.message ?: e.javaClass.simpleName}"
-                null
-            }
-        }
+        val (scenes, failed) = (decoded ?: decodeScenes(project, engine.serializer)).let { it.scenes to it.failed }
         if (failed.isNotEmpty()) {
             failed.forEach { logger.logEditor("Could not load scene $it", LogLevel.ERROR) }
             eventSystem.publish(EditorError("error.open_scene.title", failed.joinToString("\n")))
@@ -254,6 +289,21 @@ class ProjectManager(
         sceneManager.openScenes(scenes)
 
         logger.logEditor("Loaded default scene from ${defaultSceneFile.absolutePath}")
+    }
+
+    /** Reads and decodes every scene of [project]; touches no engine state, so it can run off the main thread. */
+    private fun decodeScenes(project: Project, serializer: Serializer): DecodedScenes {
+        val failed = mutableListOf<String>()
+        val scenes = project.scenesPath.mapNotNull { path ->
+            val file = File(path)
+            try {
+                serializer.decodeFile<Scene?>(FileKind.SCENE, file.readText())
+            } catch (e: Exception) {
+                failed += "${file.absolutePath}: ${e.message ?: e.javaClass.simpleName}"
+                null
+            }
+        }
+        return DecodedScenes(scenes, failed)
     }
 
     fun saveProject(): Boolean {

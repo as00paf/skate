@@ -1,6 +1,7 @@
 package com.pafoid.skate.editor.ui.windows
 
 import com.pafoid.skate.editor.events.AudioAction
+import com.pafoid.skate.editor.imgui.EmptyState
 import com.pafoid.skate.editor.settings.AudioSettings
 import com.pafoid.skate.editor.systems.ProjectManager
 import com.pafoid.skate.engine.core.EventSystem
@@ -22,7 +23,7 @@ class AudioMixerPanel(
     fun render() {
         val project = projectManager.currentProject
         if (project == null) {
-            ImGui.textDisabled(strings.getString("lbl.audio.mixer_no_project"))
+            emptySection("##mixer_no_project", withAction = true) { EmptyState.noProject(strings, events) }
             return
         }
         var settings = draft ?: project.gameplaySettings.audio
@@ -74,6 +75,21 @@ class AudioMixerPanel(
             // Released without an edit (or the edit was cancelled): back to the saved mix.
             draft = null
             preview(project.gameplaySettings.audio)
+        }
+    }
+
+    companion object {
+        /** Lines of height an empty section takes: message and hint, plus a button row [withAction]. */
+        fun emptySectionLines(withAction: Boolean): Float = if (withAction) 5f else 3.5f
+
+        /**
+         * A shared empty state ([content], an `EmptyState` call) inside a collapsing section. `EmptyState` centres in
+         * the space left, so a short child keeps it from pushing the next section to the bottom of the window.
+         */
+        fun emptySection(id: String, withAction: Boolean = false, content: () -> Unit) {
+            ImGui.beginChild(id, 0f, ImGui.getTextLineHeightWithSpacing() * emptySectionLines(withAction), false)
+            content()
+            ImGui.endChild()
         }
     }
 }

@@ -67,19 +67,19 @@ fun JointComponent.imgui(engine: Engine) {
 
     val candidates = bodies(engine.sceneManager.currentScene).filter { it !== gameObject }
     val names = (listOf(s("worldAnchor")) + candidates.map { it.name }).toTypedArray()
-    val currentIndex = candidates.indexOfFirst { it.uId == draft.connectedBodyId } + 1
+    val currentIndex = candidates.indexOfFirst { it.guid == draft.connectedBodyGuid } + 1
     val connected = ImInt(currentIndex)
     if (ImGui.combo(ImGuiIds.stable(s("connectedBody"), "connectedBody"), connected, names, names.size)) {
-        val id = if (connected.get() == 0) -1 else candidates[connected.get() - 1].uId
+        val guid = if (connected.get() == 0) "" else candidates[connected.get() - 1].guid
         working.remove(this)
-        engine.eventSystem.publish(JointAction.Edit(this, draft.copy(connectedBodyId = id)))
+        engine.eventSystem.publish(JointAction.Edit(this, draft.copy(connectedBodyGuid = guid)))
         ImGui.popID()
         return
     }
     Tooltips.showIfPresent(strings, "component.JointComponent.connectedBody.tooltip")
 
     vec("anchor", draft.anchor)
-    if (draft.connectedBodyId != -1) vec("connectedAnchor", draft.connectedAnchor)
+    if (draft.connectedBodyGuid.isNotEmpty()) vec("connectedAnchor", draft.connectedAnchor)
     when (draft.jointType) {
         JointType.FIXED -> {}
         JointType.HINGE, JointType.SLIDER -> {

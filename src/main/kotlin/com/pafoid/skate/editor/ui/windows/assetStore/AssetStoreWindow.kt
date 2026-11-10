@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.ui.windows.assetStore
 
+import com.pafoid.skate.editor.imgui.Tooltips
 import com.pafoid.skate.editor.assetstore.AssetStoreRegistry
 import com.pafoid.skate.editor.assetstore.AssetStoreService
 import com.pafoid.skate.editor.assetstore.JdkStoreHttp
@@ -240,7 +241,7 @@ class AssetStoreWindow(
         } else {
             ImGui.button("##thumb", size, size)
         }
-        if (ImGui.isItemHovered()) ImGui.setTooltip(item.title)
+        Tooltips.always(item.title)
         if (clicked) {
             variantIndex = 0
             service.select(item)
@@ -356,7 +357,7 @@ class AssetStoreWindow(
             LicenseBadge.RESTRICTED, null -> Triple(1f, 0.4f, 0.4f)
         }
         ImGui.textColored(r, g, b, 1f, Icons.STAR)
-        if (ImGui.isItemHovered()) ImGui.setTooltip(strings.getString((badge ?: LicenseBadge.RESTRICTED).key))
+        Tooltips.always(strings.getString((badge ?: LicenseBadge.RESTRICTED).key))
     }
 
     private fun browse(url: String) {

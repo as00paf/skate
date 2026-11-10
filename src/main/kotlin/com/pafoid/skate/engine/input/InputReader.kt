@@ -31,7 +31,10 @@ interface InputReader : RawInput {
     /** Analog value of the action, 0 when unknown or inactive. */
     fun actionValue(name: String): Float
     fun isActionDown(name: String): Boolean
-    /** True only on the first frame the action is down (see [ActionInputReader.update]). */
+    /**
+     * True only on the first frame the action is down (see [ActionInputReader.update]). The first query of an action
+     * is never a press, so a key held before the action was first read must be released and pressed again.
+     */
     fun wasActionPressed(name: String): Boolean
     /** True when [context] is on the context stack and not silenced by a modal entry above it. */
     fun isContextActive(context: InputContext): Boolean
@@ -124,7 +127,12 @@ class ActionInputReader(
     override fun isActionDown(name: String): Boolean = bindingsOf(name).any { isDown(it) }
 
     override fun wasActionPressed(name: String): Boolean {
-        if (watched.add(name)) downNow[name] = isActionDown(name)
+        if (watched.add(name)) {
+            // The first query is never an edge: a key already held when play starts (E, Space) is not a press.
+            val down = isActionDown(name)
+            downNow[name] = down
+            wasDown[name] = down
+        }
         return (downNow[name] ?: false) && wasDown[name] != true
     }
 

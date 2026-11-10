@@ -1,6 +1,7 @@
 package com.pafoid.skate.editor.ui.windows.assetBrowser
 
 import com.pafoid.skate.editor.data.FileType
+import com.pafoid.skate.editor.systems.FbxClassifier
 import com.pafoid.skate.engine.assets.ProjectLayout
 import java.io.File
 
@@ -14,6 +15,10 @@ enum class BrowserAssetType(val extensions: Set<String>) {
         val ext = file.extension.lowercase()
         // `Board@Ollie.glb`: one action exported from a .blend (AST-19) is an animation, not a model
         if (this == ANIMATION && ext == "glb" && '@' in file.nameWithoutExtension) return true
+        // FBX files: only list in Animation tab when the file is animation-only
+        if (ext == "fbx") {
+            return this == ANIMATION && FbxClassifier.classifyContent(file) == FbxClassifier.Classification.ANIMATION
+        }
         return ext in extensions
     }
 }
