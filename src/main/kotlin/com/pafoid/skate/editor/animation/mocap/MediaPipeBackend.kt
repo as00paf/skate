@@ -12,7 +12,10 @@ import java.util.concurrent.atomic.AtomicBoolean
 
 class MocapException(message: String) : Exception(message)
 
-/** What "Check setup" found. [ok] false comes with a [problem] and a [hint] for the user. */
+/**
+ * What "Check setup" found. [api] is the pose API the adapter actually opened (`tasks` or the legacy `solutions`),
+ * [model] the Tasks model file, [fallback] why the legacy API is used. [ok] false comes with a [problem] and a [hint].
+ */
 data class SetupCheck(
     val ok: Boolean,
     val python: String? = null,
@@ -21,31 +24,37 @@ data class SetupCheck(
     val api: String? = null,
     val problem: String? = null,
     val hint: SetupHint? = null,
+    val model: String? = null,
+    val fallback: String? = null,
 )
 
 /** Which help text to show when setup fails (string keys in `editor/animation`). */
-enum class SetupHint { INSTALL_PYTHON, INSTALL_MEDIAPIPE, MODEL_FILE, OTHER }
+enum class SetupHint { INSTALL_PYTHON, INSTALL_MEDIAPIPE, MODEL_FILE, UPDATE_MEDIAPIPE, OTHER }
 
 data class VideoInfo(val fps: Float, val frames: Int, val width: Int, val height: Int, val duration: Float, val thumbnail: File?)
 
 /**
  * Drives `mediapipe_extract.py` (shipped in the editor's resources) with the user's Python (ANI-17, ANI-12 §3.3).
- * Local files only: the script reads the video from disk and nothing is downloaded.
+ * The script reads the video from disk; the pose model for MediaPipe's Tasks API comes from [models] (downloaded
+ * once, ANI-18). When the model cannot be had the script still runs, so an old MediaPipe can use its legacy API.
  */
 class MediaPipeBackend(
     private val runner: MocapProcessRunner,
     private val settings: () -> MocapSettings,
+    private val models: PoseModelStore,
     private val script: () -> File = MocapScripts::mediaPipe,
 ) {
-    fun checkSetup(): SetupCheck {
-        val s = settings()
-        val result = runner.run(argv("check", modelArgs(s)))
+    /** [onModelProgress] reports the model download (0..1) when it has to be downloaded first. */
+    fun checkSetup(cancel: AtomicBoolean = AtomicBoolean(false), onModelProgress: (Float) -> Unit = {}): SetupCheck {
+        val (model, modelError) = model(cancel, onModelProgress)
+        val result = runner.run(argv("check", modelArgs(model)), cancel = cancel)
         if (result.ok) {
             val m = result.messages.lastOrNull() ?: JsonObject(emptyMap())
             fun str(k: String) = m[k]?.jsonPrimitive?.content
-            return SetupCheck(true, str("python"), str("mediapipe"), str("opencv"), str("api"))
+            val fallback = listOfNotNull(modelError, str("fallback")).joinToString(" ").ifEmpty { null }
+            return SetupCheck(true, str("python"), str("mediapipe"), str("opencv"), str("api"), model = str("model"), fallback = fallback)
         }
-        val problem = result.errorSummary()
+        val problem = withModelError(result.errorSummary(), modelError)
         return SetupCheck(false, problem = problem, hint = hintFor(problem))
     }
 
@@ -65,16 +74,23 @@ class MediaPipeBackend(
         )
     }
 
-    /** Runs the pose estimator over [video]; [output] receives the landmark JSON. */
-    fun extract(video: File, output: File, cancel: AtomicBoolean, onProgress: (Float) -> Unit): LandmarkSequence {
+    /**
+     * Runs the pose estimator over [video]; [output] receives the landmark JSON. [onModelProgress] reports the model
+     * download, when one is needed, before detection starts.
+     */
+    fun extract(
+        video: File, output: File, cancel: AtomicBoolean,
+        onModelProgress: (Float) -> Unit = {}, onProgress: (Float) -> Unit,
+    ): LandmarkSequence {
         output.parentFile?.mkdirs()
-        val s = settings()
+        val (model, modelError) = model(cancel, onModelProgress)
+        if (cancel.get()) throw MocapException("cancelled")
         val result = runner.run(
-            argv("extract", listOf("--input", video.absolutePath, "--output", output.absolutePath) + modelArgs(s)),
+            argv("extract", listOf("--input", video.absolutePath, "--output", output.absolutePath) + modelArgs(model)),
             cancel = cancel, onProgress = onProgress,
         )
         if (result.cancelled) throw MocapException("cancelled")
-        if (!result.ok) throw MocapException(result.errorSummary())
+        if (!result.ok) throw MocapException(withModelError(result.errorSummary(), modelError))
         if (!output.isFile) throw MocapException("The pose estimator wrote no landmark file")
         return MediaPipeJson.parse(output.readText())
     }
@@ -82,15 +98,33 @@ class MediaPipeBackend(
     internal fun argv(command: String, args: List<String>): List<String> =
         listOf(settings().pythonPath, script().absolutePath, command) + args
 
-    private fun modelArgs(s: MocapSettings) = s.modelPath?.let { listOf("--model", it) } ?: emptyList()
+    private fun modelArgs(model: File?) = model?.let { listOf("--model", it.absolutePath) } ?: emptyList()
+
+    /** The Tasks model, or why there is none (the script then tries the legacy API). Cancellation propagates. */
+    private fun model(cancel: AtomicBoolean, onProgress: (Float) -> Unit): Pair<File?, String?> = try {
+        models.resolve(settings().modelPath, cancel, onProgress) to null
+    } catch (e: MocapException) {
+        if (cancel.get()) throw e
+        null to e.message
+    }
+
+    /** The download problem first: it is the root cause when the script then finds no usable API. */
+    private fun withModelError(problem: String, modelError: String?) =
+        if (modelError == null || problem.contains(modelError)) problem else "$modelError $problem"
 
     companion object {
+        /** Start of the adapter's error when neither the Tasks nor the legacy pose API works. */
+        const val NO_API = "No MediaPipe pose API works"
+        private val MODEL_PROBLEMS = listOf("download the pose model", "model file not found", "no pose_landmarker model")
+
         fun hintFor(problem: String): SetupHint = when {
             // Windows' "python" can be a Microsoft Store shortcut that only prints this message.
             problem.contains("Microsoft Store", ignoreCase = true) || problem.contains("Python was not found", ignoreCase = true) ||
-                problem.startsWith("Could not start") -> SetupHint.INSTALL_PYTHON
+                problem.contains("Could not start") -> SetupHint.INSTALL_PYTHON
             problem.contains("not installed", ignoreCase = true) -> SetupHint.INSTALL_MEDIAPIPE
-            problem.contains("model", ignoreCase = true) -> SetupHint.MODEL_FILE
+            MODEL_PROBLEMS.any { problem.contains(it, ignoreCase = true) } -> SetupHint.MODEL_FILE
+            // The model was there but neither pose API could open it: the MediaPipe install itself is the problem.
+            problem.contains(NO_API) -> SetupHint.UPDATE_MEDIAPIPE
             else -> SetupHint.OTHER
         }
     }

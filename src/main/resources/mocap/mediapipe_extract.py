@@ -1,16 +1,20 @@
-"""Skate engine MediaPipe adapter (ANI-17). Runs outside the editor; talks JSON lines on stdout.
+"""Skate engine MediaPipe adapter (ANI-17, ANI-18). Runs outside the editor; talks JSON lines on stdout.
 
 Commands:
-  check   [--model M.task]                     -> {"python": ..., "mediapipe": ..., "opencv": ..., "api": ...}
+  check   [--model M.task]                     -> {"python": ..., "mediapipe": ..., "opencv": ..., "api": ..., ...}
   probe   --input VIDEO --thumbnail OUT.png    -> {"fps": ..., "frames": ..., "width": ..., "height": ..., "duration": ...}
   extract --input VIDEO --output OUT.json [--model M.task]
-          prints {"progress": 0..1} lines, then {"done": true, "frames": N, "detected": D}
+          prints {"progress": 0..1} lines, then {"done": true, "frames": N, "detected": D, "api": ...}
+
+Pose API: the Tasks API (PoseLandmarker, VIDEO mode) with the --model file; the legacy mp.solutions.pose only when
+the Tasks API cannot run (MediaPipe 0.10.14+ dropped mp.solutions). The editor downloads the model, not this script.
 
 Errors are printed as {"error": "..."} with exit code 1. Reads local files only; never downloads anything.
 Output format (version 1) is documented in docs/mocap-setup.md.
 """
 import argparse
 import json
+import os
 import platform
 import sys
 
@@ -54,15 +58,15 @@ def open_video(cv2, path):
 
 def cmd_check(args):
     cv2, mp = load_libs()
-    api = "tasks" if args.model else "solutions"
-    if args.model:
-        import os
-        if not os.path.isfile(args.model):
-            fail("Model file not found: " + args.model)
-    elif not hasattr(mp, "solutions") or not hasattr(mp.solutions, "pose"):
-        fail("This MediaPipe has no legacy pose solution; set a pose_landmarker .task model file")
-    emit({"python": platform.python_version(), "mediapipe": getattr(mp, "__version__", "?"),
-          "opencv": cv2.__version__, "api": api})
+    detector, api, fallback = open_detector(mp, args.model)
+    detector.close()
+    out = {"python": platform.python_version(), "mediapipe": getattr(mp, "__version__", "?"),
+           "opencv": cv2.__version__, "api": api}
+    if api == "tasks":
+        out["model"] = args.model
+    if fallback:
+        out["fallback"] = fallback
+    emit(out)
 
 
 def cmd_probe(args):
@@ -114,10 +118,39 @@ class SolutionsDetector:
         self.pose.close()
 
 
+def has_solutions(mp):
+    try:
+        return hasattr(mp, "solutions") and hasattr(mp.solutions, "pose")
+    except Exception:  # some builds raise on attribute access instead of lacking it
+        return False
+
+
+def open_detector(mp, model):
+    """(detector, api, fallback reason): the Tasks API when it runs, else the legacy solution, else a clear error."""
+    if not model:
+        tasks_problem = "no pose_landmarker model file was given"
+    elif not os.path.isfile(model):
+        tasks_problem = "model file not found: " + model
+    else:
+        try:
+            return TasksDetector(mp, model), "tasks", None
+        except Exception as ex:
+            tasks_problem = "%s: %s" % (type(ex).__name__, ex)
+    if has_solutions(mp):
+        try:
+            return SolutionsDetector(mp), "solutions", "Tasks API unavailable (" + tasks_problem + ")"
+        except Exception as ex:
+            solutions_problem = "%s: %s" % (type(ex).__name__, ex)
+    else:
+        solutions_problem = "not in MediaPipe " + getattr(mp, "__version__", "?")
+    fail("No MediaPipe pose API works. Tasks API (pose model): " + tasks_problem
+         + ". Legacy solutions API: " + solutions_problem + ".")
+
+
 def cmd_extract(args):
     cv2, mp = load_libs()
     cap, fps, frames, width, height = open_video(cv2, args.input)
-    detector = TasksDetector(mp, args.model) if args.model else SolutionsDetector(mp)
+    detector, api, _ = open_detector(mp, args.model)
     out_frames = []
     index = 0
     detected = 0
@@ -148,8 +181,8 @@ def cmd_extract(args):
         fail("The video has no readable frames: " + args.input)
     with open(args.output, "w", encoding="utf-8") as f:
         json.dump({"version": 1, "source": "mediapipe " + getattr(mp, "__version__", "?"), "fps": fps,
-                   "width": width, "height": height, "frames": out_frames}, f)
-    emit({"done": True, "frames": index, "detected": detected})
+                   "api": api, "width": width, "height": height, "frames": out_frames}, f)
+    emit({"done": True, "frames": index, "detected": detected, "api": api})
 
 
 def main():

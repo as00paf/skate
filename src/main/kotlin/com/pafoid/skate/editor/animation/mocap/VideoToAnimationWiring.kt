@@ -3,6 +3,7 @@ package com.pafoid.skate.editor.animation.mocap
 import com.pafoid.skate.app.Editor
 import com.pafoid.skate.editor.commands.animation.CreateAnimationClipCommand
 import com.pafoid.skate.editor.events.FileSystemEvent
+import com.pafoid.skate.editor.systems.EditorPaths
 import com.pafoid.skate.editor.systems.ProjectManager
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.loaders.AnimationLoader
@@ -19,7 +20,9 @@ data class AnimationClipCreated(val path: String) : Event("animation.clip_create
 object VideoToAnimationWiring {
     fun create(engine: Engine, editor: Editor, projectManager: ProjectManager): VideoToAnimationController {
         val settings = editor.settingsManager
-        val backend = MediaPipeBackend(MocapProcessRunner(), { settings.editorSettings.mocap })
+        // The downloaded pose model is per user, shared by all projects (ANI-18).
+        val models = PoseModelStore({ File(EditorPaths.dir, "mocap") })
+        val backend = MediaPipeBackend(MocapProcessRunner(), { settings.editorSettings.mocap }, models)
         return VideoToAnimationController(
             backend = backend,
             workDir = { File(System.getProperty("java.io.tmpdir"), "skate-mocap").apply { mkdirs() } },
