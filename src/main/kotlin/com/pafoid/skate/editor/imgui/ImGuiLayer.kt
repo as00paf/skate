@@ -84,8 +84,7 @@ class ImGuiLayer(
     fun init(windowController: WindowController) {
         createContext()
         // Only the editor has an ImGui context; engine input asks through these hooks (GUI-14).
-        inputProvider.keyListener.captureKeyboard = { getIO().wantCaptureKeyboard }
-        inputProvider.mouseListener.captureMouse = { getIO().wantCaptureMouse }
+        ImGuiCaptureHooks.install(inputProvider, { getIO().wantCaptureKeyboard }, { getIO().wantCaptureMouse })
 
         with(getIO()) {
             iniFilename = layoutStore.iniFile.path
@@ -250,6 +249,8 @@ class ImGuiLayer(
         saveLayout()
         imGuiGl3.shutdown()
         imGuiGlfw.shutdown()
+        // Input read after this point must not touch the destroyed context (GUI-16).
+        ImGuiCaptureHooks.reset(inputProvider)
         destroyContext()
     }
 }

@@ -237,6 +237,8 @@ class Engine {
         }
         var font: UiFont? = null
         val pauseMenu = createPauseMenu()
+        // GPL-25: saved game options (control scheme) take effect as soon as the settings store attaches.
+        gameLocale.onStoreChanged { pauseMenu.settingsChanged() }
         return listOf(
             pauseMenu,
             // Map markers are placed before layout (GUI-13).
