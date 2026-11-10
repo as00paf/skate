@@ -43,10 +43,15 @@ class PrefabsTab(
     private val modelTickets = HashMap<String, AssetTicket<`3dModel`>>()
     private val textureTickets = HashMap<String, AssetTicket<Texture>>()
 
+    /** The prefab catalog is built in, not a folder on disk: no Show folder, and no empty-space menu. */
+    override val folder: File? get() = null
+
     override fun imgui(label: String, searchText: ImString) {
         thumbnails.beginFrame()
-        renderHeader(label, searchText)
+        content(label) { renderCatalog(searchText) }
+    }
 
+    private fun renderCatalog(searchText: ImString) {
         val names = surfaces.map { it.displayName }.toTypedArray()
         ImGui.setNextItemWidth(180f)
         ImGui.combo(stringManager.label("lbl.material"), surfaceIndex, names, names.size)

@@ -15,14 +15,15 @@ import org.joml.Vector3f
 enum class JointType { FIXED, HINGE, CONE_TWIST, SLIDER, SIX_DOF }
 
 /**
- * Connects this object's [RigidBody3D] to another object's rigid body (by [connectedBodyId], the GameObject uId).
- * With no connected body (-1) the joint is anchored to a static point in the world.
+ * Connects this object's [RigidBody3D] to another object's rigid body (by [connectedBodyGuid], the GameObject's
+ * persistent [com.pafoid.skate.engine.ecs.GameObject.guid]). With no connected body ("") the joint is anchored to a
+ * static point in the world.
  * Angles are in radians.
  */
 @Serializable
 data class JointComponent(
     var jointType: JointType = JointType.FIXED,
-    var connectedBodyId: Int = -1,
+    var connectedBodyGuid: String = "",
     @Contextual val anchor: Vector3f = Vector3f(),
     @Contextual val connectedAnchor: Vector3f = Vector3f(),
     @Contextual val axis: Vector3f = Vector3f(0f, 1f, 0f),

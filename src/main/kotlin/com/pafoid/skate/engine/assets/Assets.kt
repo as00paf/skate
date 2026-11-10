@@ -49,6 +49,7 @@ object Assets {
         const val KINKED_RAIL = "assets/obj/kinked_rail.obj"
         const val STAIRS_3 = "assets/obj/stairs_3.obj"
         const val STAIRS_5 = "assets/obj/stairs_5.obj"
+        const val EURO_GAP = "assets/obj/euro_gap.obj"
         const val HALF_PIPE = "assets/obj/half_pipe.obj"
         const val BOWL = "assets/obj/bowl.obj"
         const val BENCH = "assets/obj/bench.obj"
@@ -134,6 +135,7 @@ object Assets {
         const val KINKED_RAIL = "EngineDefaults\\Models\\kinked_rail.obj"
         const val STAIRS_3 = "EngineDefaults\\Models\\stairs_3.obj"
         const val STAIRS_5 = "EngineDefaults\\Models\\stairs_5.obj"
+        const val EURO_GAP = "EngineDefaults\\Models\\euro_gap.obj"
         const val HALF_PIPE = "EngineDefaults\\Models\\half_pipe.obj"
         const val BOWL = "EngineDefaults\\Models\\bowl.obj"
         const val BENCH = "EngineDefaults\\Models\\bench.obj"
@@ -225,6 +227,7 @@ object Assets {
             KINKED_RAIL to Models.KINKED_RAIL,
             STAIRS_3 to Models.STAIRS_3,
             STAIRS_5 to Models.STAIRS_5,
+            EURO_GAP to Models.EURO_GAP,
             HALF_PIPE to Models.HALF_PIPE,
             BOWL to Models.BOWL,
             BENCH to Models.BENCH,

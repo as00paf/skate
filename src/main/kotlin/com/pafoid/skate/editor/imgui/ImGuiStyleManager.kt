@@ -79,12 +79,19 @@ object ImGuiStyleManager {
     /** The theme that should be showing: the previewed one, else [savedId], resolved through [library]. */
     fun effective(savedId: String): EditorTheme = library.resolve(preview ?: savedId)
 
-    /** Applies [effective] when it differs from what is showing. Call between frames (before `newFrame`). */
+    /** The editor's UI scale setting (EDT-57), multiplied with the theme's font scale. */
+    var uiScale: () -> Float = { 1f }
+    private var appliedScale = 1f
+
+    /** Applies [effective] (and the UI scale) when it differs from what is showing. Call between frames (before `newFrame`). */
     fun sync(savedId: String) {
         val theme = effective(savedId)
-        if (theme.id == appliedId) return
+        if (theme.id == appliedId && uiScale() == appliedScale) return
         apply(theme)
     }
+
+    /** The font scale ImGui uses: the theme's own times the UI scale setting. */
+    fun fontScale(themeScale: Float, uiScale: Float): Float = themeScale * uiScale
 
     /** Forgets what is applied (a new ImGui context starts with ImGui's default style), so [sync] reapplies. */
     fun invalidate() {
@@ -93,7 +100,8 @@ object ImGuiStyleManager {
 
     fun apply(theme: EditorTheme) {
         setupStyle(theme.style)
-        ImGui.getIO().fontGlobalScale = theme.fontScale
+        appliedScale = uiScale()
+        ImGui.getIO().fontGlobalScale = fontScale(theme.fontScale, appliedScale)
         appliedId = theme.id
     }
 

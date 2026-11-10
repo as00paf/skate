@@ -12,6 +12,7 @@ import com.pafoid.skate.engine.core.LoggerService
 import com.pafoid.skate.engine.fileExtension
 import com.pafoid.skate.engine.input.ViewRect
 import com.pafoid.skate.engine.ui.GameSettings
+import com.pafoid.skate.engine.ecs.random.RandomService
 import com.pafoid.skate.engine.ui.GameSettingsStore
 import com.pafoid.skate.game.ui.GameHudState
 import com.pafoid.skate.game.ui.GameUiSystem
@@ -59,6 +60,7 @@ fun main(args: Array<String>) {
 
     window.windowController.setFullscreen(project.fullscreen)
     engine.start(window.glfwWindow, window.device)
+    SkateGameplay.install(engine)
 
     // Apply the project's physics rate to the engine's fixed time step (GUI-15).
     if (project.physicsFPS > 0) {
@@ -72,6 +74,8 @@ fun main(args: Array<String>) {
         // Apply game-side graphics settings from game.settings.json (overrides project defaults).
         applyGameGraphicsSettings(settings.settings, project)
         engine.runtimePlaying = true
+        // ECS-14: -Dskate.seed, then game.settings.json "randomSeed", then the project's seed.
+        engine.random.reseed(RandomService.resolve(project.randomSeed, settings.settings.randomSeed))
         installGameUi(window, settings, project)
         window.show(onClose = {
             // Engine first: on Vulkan the device and its window are released right after (VK-01 shutdown order).
@@ -106,6 +110,8 @@ private fun installGameUi(window: Window, settings: GameSettingsStore, project: 
     engine.systemManager.addSystem(hud)
     engine.pauseActions.restart = {
         engine.sceneManager.currentScene?.let { launchState.restore(engine.sceneManager, engine.serializer, it) }
+        // A restart replays the run: same random values as at launch.
+        engine.random.restart()
         hud.resetState()
     }
     engine.pauseActions.quit = { GLFW.glfwSetWindowShouldClose(window.glfwWindow, true) }

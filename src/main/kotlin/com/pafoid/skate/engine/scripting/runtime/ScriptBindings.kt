@@ -20,10 +20,15 @@ import com.pafoid.skate.engine.scripting.api.ScriptEvents
 import com.pafoid.skate.engine.scripting.api.ScriptInput
 import com.pafoid.skate.engine.scripting.api.ScriptLog
 import com.pafoid.skate.engine.scripting.api.ScriptPhysics
+import com.pafoid.skate.engine.scripting.api.ScriptRandom
+import com.pafoid.skate.engine.scripting.api.ScriptRandomStream
+import com.pafoid.skate.engine.ecs.random.RandomService
+import com.pafoid.skate.engine.ecs.random.RandomStream
 import com.pafoid.skate.engine.scripting.api.ScriptRigidBody
 import com.pafoid.skate.engine.scripting.api.ScriptScene
 import com.pafoid.skate.engine.scripting.api.ScriptTime
 import com.pafoid.skate.engine.scripting.api.ScriptTransform
+import com.pafoid.skate.engine.input.InputContextStack
 import org.joml.Vector3f
 import kotlin.reflect.KClass
 
@@ -32,6 +37,10 @@ class ScriptServices(
     val input: ScriptInput = NoOpScriptInput,
     val physics: ScriptPhysics = NoOpScriptPhysics,
     val scenes: ScriptSceneSwitcher = NoOpScriptSceneSwitcher,
+    /** The engine's seeded streams (ECS-14); a private one with the default seed when the runtime runs alone. */
+    val random: RandomService = RandomService(),
+    /** Stack that scripts push their input contexts on; null when contexts are unsupported. */
+    val inputContexts: InputContextStack? = null,
 )
 
 /** Engine-side scene switching. [request] returns whether a scene with that name exists; the switch itself is deferred. */
@@ -51,6 +60,10 @@ object NoOpScriptInput : ScriptInput {
     override fun isKeyReleased(key: Int) = false
     override fun isMouseButtonDown(button: Int) = false
     override fun action(name: String) = 0f
+    override fun isActionDown(name: String) = false
+    override fun wasActionPressed(name: String) = false
+    override fun pushContext(context: String, priority: Int, blocking: String) = -1
+    override fun popContext(handle: Int) = false
 }
 
 object NoOpScriptPhysics : ScriptPhysics {
@@ -232,4 +245,26 @@ class ScriptContextImpl(
     override val properties: Map<String, String>,
     override val state: MutableMap<String, Any?>,
     override val reloadCount: Int,
+    override val random: ScriptRandom,
 ) : ScriptContext
+
+private open class RandomStreamFacade(private val stream: RandomStream) : ScriptRandomStream {
+    override fun nextInt(until: Int) = stream.nextInt(until)
+    override fun nextInt(from: Int, until: Int) = stream.nextInt(from, until)
+    override fun nextFloat() = stream.nextFloat()
+    override fun range(min: Float, max: Float) = stream.range(min, max)
+    override fun chance(p: Float) = stream.chance(p)
+}
+
+/** `ctx.random` of the script at [scriptPath]; its default stream is named after the file, not its folder. */
+class ScriptRandomImpl(private val service: RandomService, scriptPath: String) :
+    ScriptRandom, ScriptRandomStream by RandomStreamFacade(service.stream(streamName(scriptPath))) {
+    override val seed: Long get() = service.seed
+    override fun stream(name: String): ScriptRandomStream = RandomStreamFacade(service.stream(name))
+    override fun reseed(seed: Long) = service.reseed(seed)
+
+    companion object {
+        /** `script.Enemy.kts`: the same in the editor (absolute paths) and in an exported game (packed paths). */
+        fun streamName(scriptPath: String) = "script." + scriptPath.replace('\\', '/').substringAfterLast('/')
+    }
+}

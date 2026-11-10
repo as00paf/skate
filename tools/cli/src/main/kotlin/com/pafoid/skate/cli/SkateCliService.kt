@@ -1,9 +1,9 @@
 package com.pafoid.skate.cli
 
-import com.pafoid.skate.editor.project.EngineAssetCopier
 import com.pafoid.skate.editor.project.Project
 import com.pafoid.skate.editor.project.ProjectWizard
 import com.pafoid.skate.engine.assets.ProjectLayout
+import com.pafoid.skate.engine.assets.serialization.FileKind
 import com.pafoid.skate.engine.assets.serialization.Serializer
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.ecs.components.EnvironmentComponent
@@ -51,11 +51,13 @@ class SkateCliService(
         val assetsDir = ProjectLayout.create(projectDir)
         val scenesDir = ProjectLayout.scenesDir(projectDir)
         File(assetsDir, ProjectLayout.STRINGS_FILE).writeText("project.name=$name")
-        EngineAssetCopier().copyBundledAssets(projectDir)
+        copyEngineAssets(projectDir)
 
+        val files = ProjectFiles(serializer, projectDir)
         val sceneName = "MainScene"
-        engine.sceneManager.createNewScene(sceneName, scenesDir.path)
-        val scenePath = File(scenesDir, "$sceneName.scene").path
+        // The scene manager saves with the engine serializer.
+        ProjectFiles(engine.serializer, projectDir).inProject { engine.sceneManager.createNewScene(sceneName, scenesDir.absolutePath) }
+        val scenePath = File(scenesDir.absoluteFile, "$sceneName.scene").path
         val project = Project(
             name = name,
             projectPath = projectFile.path,
@@ -63,15 +65,17 @@ class SkateCliService(
             scenesPath = listOf(scenePath),
             resolution = Vector2i(1920, 1080),
         )
-        projectFile.writeText(serializer.encode(project))
+        files.writeProject(project)
         out("Created project '$name' at ${projectFile.path}")
         return projectFile
     }
 
     fun loadProject(path: String): Project {
-        val file = resolveProjectFile(path)
+        val file = resolveProjectFile(path).absoluteFile
+        // References are project-relative (AST-09): resolve them against this folder for the rest of the run.
+        serializer.assetPaths.projectRoot = file.parentFile
         val project = try {
-            serializer.decode<Project>(file.readText())
+            serializer.decodeFile<Project>(FileKind.PROJECT, file.readText())
         } catch (e: Exception) {
             throw CliException("Could not read project ${file.path}: ${e.message}")
         }
@@ -102,7 +106,7 @@ class SkateCliService(
                 return@forEachIndexed
             }
             try {
-                serializer.decode<Scene>(file.readText())
+                serializer.decodeFile<Scene>(FileKind.SCENE, file.readText())
             } catch (e: Exception) {
                 errors += "Scene ${file.name} is not valid: ${e.message?.lineSequence()?.firstOrNull()}"
             }
@@ -142,7 +146,7 @@ class SkateCliService(
         val dir = project.getProjectDirectory()
         return project.scenesPath.map { locate(it, dir) }.filter { it.exists() }.map {
             try {
-                serializer.decode<Scene>(it.readText())
+                serializer.decodeFile<Scene>(FileKind.SCENE, it.readText())
             } catch (e: Exception) {
                 throw CliException("Scene ${it.name} is not valid: ${e.message?.lineSequence()?.firstOrNull()}")
             }
@@ -191,10 +195,12 @@ class SkateCliService(
         return file
     }
 
-    // Stored scene paths are absolute and may use Windows separators; fall back to <project>/Scenes/<file>
+    // Scene paths are project-relative (or absolute in projects saved before AST-09, maybe with Windows separators);
+    // fall back to <project>/Scenes/<file>
     private fun locate(stored: String, projectDir: File): File {
         val direct = File(stored)
-        if (direct.exists()) return direct
+        if (direct.isAbsolute && direct.exists()) return direct
+        File(projectDir, stored).takeIf { it.exists() }?.let { return it }
         val fileName = stored.substringAfterLast('\\').substringAfterLast('/')
         return File(ProjectLayout.scenesDir(projectDir), fileName)
     }

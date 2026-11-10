@@ -3,6 +3,8 @@ package com.pafoid.skate.engine.ecs.systems
 import com.pafoid.skate.engine.ecs.ComponentQuery
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
+import com.pafoid.skate.engine.ecs.random.RandomService
+import com.pafoid.skate.engine.ecs.random.RandomStream
 import com.pafoid.skate.engine.ecs.systems.SystemManager.ExecutionPriority
 import kotlin.reflect.KClass
 
@@ -32,6 +34,22 @@ abstract class System(
     private val queries = mutableListOf<ComponentQuery>()
 
     open val displayName: String get() = javaClass.simpleName
+
+    /** Set by [SystemManager.addSystem]; a system that was never added uses its own service with the default seed. */
+    internal var randomService: RandomService? = null
+        set(value) {
+            field = value
+            cachedStream = null
+        }
+    private var cachedStream: RandomStream? = null
+
+    /** Name of this system's [random] stream; override to share a stream or keep it stable after a rename. */
+    open val randomStreamName: String get() = "system." + (javaClass.simpleName.ifEmpty { javaClass.name })
+
+    /** This system's own seeded stream (ECS-14): its values do not change when other systems draw more or less. */
+    protected val random: RandomStream
+        get() = cachedStream ?: (randomService ?: RandomService().also { randomService = it })
+            .stream(randomStreamName).also { cachedStream = it }
 
     var scene: Scene = Scene()
 

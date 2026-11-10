@@ -15,6 +15,8 @@ class OpenSceneFileCommand(
     private val serializer: Serializer,
     private val sceneManager: SceneManager,
     private val eventSystem: EventSystem,
+    /** The scene decoded off the main thread by the loading screen (EDT-56); null decodes it here. */
+    private val decoded: Result<Scene?>? = null,
 ) : AsyncCommand {
     var openedScene: Scene? = null
         private set
@@ -27,9 +29,7 @@ class OpenSceneFileCommand(
         completedSuccessfully = false
         openedScene = null
 
-        val scene = try {
-            serializer.decodeFile<Scene?>(FileKind.SCENE, sceneFile.readText())
-        } catch (e: Exception) {
+        val scene = (decoded ?: decode(sceneFile, serializer)).getOrElse { e ->
             eventSystem.publish(OpenFailed("${sceneFile.absolutePath}: ${e.message ?: e.javaClass.simpleName}"))
             return
         }
@@ -54,4 +54,10 @@ class OpenSceneFileCommand(
 
     override fun getDisplayName(): String = "Open Scene File"
     override fun getTargetName(): String? = sceneFile.name
+
+    companion object {
+        /** Reads and decodes [sceneFile]; touches no scene state, so it can run off the main thread. */
+        fun decode(sceneFile: File, serializer: Serializer): Result<Scene?> =
+            runCatching { serializer.decodeFile<Scene?>(FileKind.SCENE, sceneFile.readText()) }
+    }
 }
