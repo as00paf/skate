@@ -175,7 +175,7 @@ class AssetsManager(
     fun requestTexture(requested: String): AssetTicket<Texture> {
         val path = paths.localPath(requested)
         val absolutePath = File(path).absolutePath
-        val placeholder = runCatching { getBundledTexture(Assets.Bundled.DEFAULT_TEXTURE) }.getOrNull()
+        val placeholder = runCatching { getBundledTexture(Assets.Classpath.DEFAULT_TEXTURE) }.getOrNull()
         return service().request(
             key = absolutePath,
             placeholder = placeholder,
@@ -245,7 +245,7 @@ class AssetsManager(
             textureLoader.loadFromFile(path)
         } catch (e: Exception) {
             logger.log("Failed to load texture : $path. Error: ${e.message}. Loading default texture.", LogLevel.ERROR)
-            getBundledTexture(Assets.Bundled.DEFAULT_TEXTURE)
+            getBundledTexture(Assets.Classpath.DEFAULT_TEXTURE)
         }
         textures[absolutePath] = texture
         return texture

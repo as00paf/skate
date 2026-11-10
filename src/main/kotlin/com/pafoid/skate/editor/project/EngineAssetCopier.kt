@@ -1,83 +1,92 @@
 package com.pafoid.skate.editor.project
 
-import com.pafoid.skate.engine.assets.Assets
+import com.pafoid.skate.engine.assets.AssetId
+import com.pafoid.skate.engine.assets.AssetMeta
+import com.pafoid.skate.engine.assets.EngineDefaultResolver
+import com.pafoid.skate.engine.assets.EngineDefaults
 import com.pafoid.skate.engine.assets.ProjectLayout
 import java.io.File
 
 /**
- * Copies the engine's bundled assets ([Assets.Bundled.bundledAssets]) into a new project. A source missing from
- * [engineAssetsRoot] makes the result a failure listing it (the other assets are still copied), so a broken entry
- * shows up as an error instead of a silently missing texture (BUG-020).
+ * Copies engine defaults into a new project (AST-26 §4.3, §5.2). Copy mode copies the whole [EngineDefaults.CATALOG];
+ * reference mode only the basic shaders, which every project gets. A copy lands at `Assets/<logical path>` with
+ * `engine.source` / `engine.sha256` in its `.meta`, which makes it the override of its `engine:` reference.
+ *
+ * A file already at the target that is not the override of that reference keeps its name; the copy becomes
+ * `<name> (engine).<ext>` (decision 9). A source missing from the engine makes the result a failure listing it (the
+ * other defaults are still copied), so a broken entry is an error instead of a silently missing texture (BUG-020).
  */
-class EngineAssetCopier(private val engineAssetsRoot: File = File(System.getProperty("user.dir"))) {
+class EngineAssetCopier(
+    private val engineRoot: File = File(System.getProperty("user.dir")),
+) {
+    private val resolver = EngineDefaultResolver(engineRoot)
 
-    /** Bundled-asset sources that do not exist under [engineAssetsRoot]. */
-    fun missingSources(): List<String> =
-        Assets.Bundled.bundledAssets.map { it.second }.filterNot { File(engineAssetsRoot, it).isFile }
+    /** What a copy run did. */
+    data class Report(val copied: List<File>, val missing: List<String>)
 
-    fun copyBundledAssets(projectDir: File): Result<Int> {
-        return try {
-            val assetsDir = ProjectLayout.assetsDir(projectDir).also { it.mkdirs() }
+    /** Catalog references whose engine source does not exist (neither in the repo nor on the classpath). */
+    fun missingSources(entries: List<String> = EngineDefaults.CATALOG): List<String> =
+        entries.filter { ref -> EngineDefaults.logicalPath(ref)?.let(resolver::engineFile) == null }
 
-            var copiedCount = 0
-            var skippedCount = 0
+    /** Copies the catalog ([copyAll]) or only the basic shaders into [projectDir]; failure when sources are missing. */
+    fun copyEngineDefaults(projectDir: File, copyAll: Boolean = true): Result<Report> = runCatching {
+        val entries = if (copyAll) EngineDefaults.CATALOG else EngineDefaults.Shaders.BASIC
+        val projectResolver = EngineDefaultResolver(engineRoot) { projectDir }
+        val copied = entries.mapNotNull { ref -> copy(projectDir, ref, projectResolver) }
+        val missing = missingSources(entries)
+        if (missing.isNotEmpty()) throw IllegalStateException("Missing engine defaults (copied the other ${copied.size}): $missing")
+        Report(copied, missing)
+    }
 
-            for ((destRelative, sourceRelative) in Assets.Bundled.bundledAssets) {
-                val sourceFile = File(engineAssetsRoot, sourceRelative)
-                val destFile = File(assetsDir, destRelative)
+    /**
+     * Copies one engine default into [projectDir] (also "Copy into project" later): returns the copy, or null when the
+     * project already overrides it or the engine has no source.
+     */
+    fun copy(projectDir: File, reference: String, projectResolver: EngineDefaultResolver = EngineDefaultResolver(engineRoot) { projectDir }): File? {
+        val logical = EngineDefaults.logicalPath(reference) ?: return null
+        val source = resolver.engineFile(logical) ?: return null
+        if (projectResolver.overrideFile(logical) != null) return null
+        val target = freeTarget(File(ProjectLayout.assetsDir(projectDir), logical))
+        target.parentFile.mkdirs()
+        val bytes = source.readBytes()
+        target.writeBytes(bytes)
+        AssetMeta.write(target, AssetMeta(
+            guid = AssetId.generate(),
+            importer = AssetMeta.importerFor(target),
+            settings = mapOf(EngineDefaults.META_SOURCE to logical, EngineDefaults.META_SHA256 to EngineDefaultResolver.sha256(bytes)),
+        ))
+        projectResolver.invalidate()
+        return target
+    }
 
-                if (!sourceFile.isFile) continue // reported below
-
-                if (destFile.exists()) {
-                    skippedCount++
-                    continue
-                }
-
-                destFile.parentFile?.mkdirs()
-                sourceFile.copyTo(destFile, overwrite = false)
-                copiedCount++
-            }
-
-            // Bundled shaders go to EngineDefaults/Shaders, like the Assets.Bundled shader paths (AST-14)
-            val shadersDir = File(ProjectLayout.engineDefaultsDir(projectDir), "Shaders").also { it.mkdirs() }
-            listOf(
-                Assets.Shaders.SPLASH,
-                Assets.Shaders.SHADER_3D_DEFAULT,
-                Assets.Shaders.SHADER_3D_TEXTURE,
-                Assets.Shaders.SHADER_2D_BATCH,
-                Assets.Shaders.PICKING,
-                Assets.Shaders.PICKING_3D,
-                Assets.Shaders.SKYBOX,
-                Assets.Shaders.DEBUG,
-                Assets.Shaders.SKY_DOME,
-                Assets.Shaders.SHADOW,
-            ).forEach { path ->
-                val outputFile = File(shadersDir, path.substringAfterLast('/'))
-                EngineAssetCopier::class.java.getResourceAsStream(path)?.use { input ->
-                    outputFile.outputStream().use { input.copyTo(it) }
-                }
-                copiedCount++
-            }
-
-            // Copy assets bundled in jar
-            val outputFile = File(assetsDir, Assets.Bundled.PROJECT_APP_ICON)
-            outputFile.parentFile?.mkdirs()
-            EngineAssetCopier::class.java.getResourceAsStream(Assets.Bundled.APP_ICON)?.use { input ->
-                outputFile.outputStream().use { input.copyTo(it) }
-            }
-            copiedCount++
-
-            val missing = missingSources()
-            if (missing.isNotEmpty()) {
-                return Result.failure(IllegalStateException("Missing bundled assets (copied the other $copiedCount): $missing"))
-            }
-            Result.success(copiedCount)
-        } catch (e: Exception) {
-            Result.failure(e)
+    /**
+     * Refreshes the project's **unchanged** basic shader copies whose engine shader changed (AST-26 §5.2, NQ7): they
+     * follow the engine silently on project open. Modified copies are never touched. Returns the refreshed files.
+     */
+    fun refreshUnchangedShaders(projectDir: File): List<File> {
+        val projectResolver = EngineDefaultResolver(engineRoot) { projectDir }
+        return EngineDefaults.Shaders.BASIC.mapNotNull { ref ->
+            val logical = EngineDefaults.logicalPath(ref) ?: return@mapNotNull null
+            val copy = projectResolver.overrideFile(logical) ?: return@mapNotNull null
+            val meta = AssetMeta.read(copy) ?: return@mapNotNull null
+            val copiedHash = meta.settings[EngineDefaults.META_SHA256] ?: return@mapNotNull null
+            if (EngineDefaultResolver.sha256(copy) != copiedHash) return@mapNotNull null // modified: an override
+            val engineBytes = resolver.engineFile(logical)?.readBytes() ?: return@mapNotNull null
+            val engineHash = EngineDefaultResolver.sha256(engineBytes)
+            if (engineHash == copiedHash) return@mapNotNull null
+            copy.writeBytes(engineBytes)
+            AssetMeta.write(copy, meta.copy(settings = meta.settings + (EngineDefaults.META_SHA256 to engineHash)))
+            copy
         }
     }
 
-    fun getEngineDefaultsRoot(projectDir: File): String {
-        return ProjectLayout.engineDefaultsDir(projectDir).absolutePath
+    /** [target], or `<name> (engine).<ext>` (then ` (engine 2)`...) when a file of the user's is already there. */
+    private fun freeTarget(target: File): File {
+        if (!target.exists()) return target
+        val ext = target.extension.let { if (it.isEmpty()) "" else ".$it" }
+        val stem = target.nameWithoutExtension
+        return generateSequence(1) { it + 1 }
+            .map { n -> File(target.parentFile, if (n == 1) "$stem (engine)$ext" else "$stem (engine $n)$ext") }
+            .first { !it.exists() }
     }
 }

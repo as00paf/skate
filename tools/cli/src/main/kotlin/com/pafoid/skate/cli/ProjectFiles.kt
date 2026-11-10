@@ -39,12 +39,13 @@ internal class ProjectFiles(private val serializer: Serializer, projectDir: File
 }
 
 /**
- * Copies the bundled engine assets into [projectDir]. They are read relative to the working directory, so running
- * from anywhere but the repository root would write a sample whose references point at files that were never
- * copied; that is an error instead.
+ * Copies the engine defaults into [projectDir] (AST-26 §4.3): the whole catalog when [copyAll], else only the basic
+ * shaders (reference mode, used by the samples). They are read relative to the working directory, so running from
+ * anywhere but the repository root would write a project whose `engine:` references resolve to nothing; that is an
+ * error instead.
  */
-internal fun copyEngineAssets(projectDir: File, copier: EngineAssetCopier = EngineAssetCopier()) {
-    copier.copyBundledAssets(projectDir).onFailure { e ->
+internal fun copyEngineAssets(projectDir: File, copyAll: Boolean = true, copier: EngineAssetCopier = EngineAssetCopier()) {
+    copier.copyEngineDefaults(projectDir, copyAll).onFailure { e ->
         throw CliException("Could not copy the engine assets into ${projectDir.path} (run from the repository root): ${e.message}")
     }
 }
