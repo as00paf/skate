@@ -135,4 +135,19 @@ class EngineAssetCopierTest {
         assertEquals(EngineAssetCopier.CopyState.MODIFIED_AND_UPDATED, states[EngineDefaults.Models.BENCH])
         assertEquals(4, states.size, "only copies are listed")
     }
+
+    /** AST-35 (REN-34): the shared lighting include is a basic shader: copied in both modes and overridable. */
+    @Test
+    fun LightingInclude_IsCopiedAndOverridable() {
+        assertTrue("engine:Shaders/lighting.glsl" in EngineDefaults.Shaders.BASIC)
+        EngineAssetCopier().copyEngineDefaults(project, copyAll = false).getOrThrow()
+        val copy = File(assets, "Shaders/lighting.glsl")
+        assertTrue(copy.isFile)
+        assertEquals("Shaders/lighting.glsl", AssetMeta.read(copy)!!.settings[EngineDefaults.META_SOURCE])
+
+        val resolver = EngineDefaultResolver { project }
+        assertEquals(File("assets/Shaders/lighting.glsl").absoluteFile, resolver.resolve("engine:Shaders/lighting.glsl"), "unchanged: the engine's")
+        copy.appendText("\n// my lighting tweak\n")
+        assertEquals(copy.absoluteFile, resolver.resolve("engine:Shaders/lighting.glsl"), "edited: the override")
+    }
 }

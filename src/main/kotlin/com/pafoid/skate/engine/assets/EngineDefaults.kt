@@ -104,12 +104,13 @@ object EngineDefaults {
 
     /**
      * Engine shaders (AST-26 §5.1). The **basic** ones are copied into every project's `Assets/Shaders/` in both copy
-     * modes and can be overridden; the **internal** ones only live in the jar and are not in the catalog.
+     * modes and can be overridden; the **internal** ones only live in the jar and are not in the catalog. Include-only
+     * files (`fog`, `lighting` from REN-34) are basic too: overriding one changes every shader that includes it.
      */
     object Shaders {
         val BASIC = listOf(
             "shader_3d_default", "shader_3d_texture", "shader_2d_batch", "shadow", "skybox", "skydome", "particles",
-            "fog", "post_bloom", "post_tonemap", "post_gamma", "post_fxaa", "post_ssao",
+            "fog", "lighting", "post_bloom", "post_tonemap", "post_gamma", "post_fxaa", "post_ssao",
         ).map { "${PREFIX}Shaders/$it.glsl" }
 
         val INTERNAL = listOf("editor_grid", "picking", "shader_3d_picking", "debugLine2D", "splash", "ibl_capture")
