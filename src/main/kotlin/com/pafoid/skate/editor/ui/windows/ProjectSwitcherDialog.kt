@@ -90,6 +90,7 @@ class ProjectSwitcherDialog(
     private val modal = object : EditorModal(stringManager, Icons.FOLDER_OPEN, minWidth = 500f) {
         override val titleKey = "window.switch_project"
         override val wantsOpen: Boolean get() = isOpen.get()
+        override val helpWindow: EditorWindow get() = this@ProjectSwitcherDialog
 
         override fun content() {
             // Hidden from outside this frame (a project opened from the list): close the popup with it.
