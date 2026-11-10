@@ -1,5 +1,6 @@
 package com.pafoid.skate.engine.ecs.systems
 
+import com.pafoid.skate.engine.ecs.SceneSun
 import com.pafoid.skate.engine.addComponent
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.ecs.Scene
@@ -21,7 +22,7 @@ class DirectionalLightSystemTest {
         val system = DirectionalLightSystem(cameraManager)
         val scene = Scene("TestScene")
         scene.addComponent(DayNightCycleComponent())
-        scene.addComponent(DirectionalLightComponent(castShadows = true, autoCalculateBounds = true))
+        scene.addChild(SceneSun.create(DirectionalLightComponent(castShadows = true, autoCalculateBounds = true)))
         cameraManager.camera.viewportWidth = 1920
         cameraManager.camera.viewportHeight = 1080
         cameraManager.camera.fov = 45f
@@ -49,7 +50,7 @@ class DirectionalLightSystemTest {
         scene.addComponent(
             DayNightCycleComponent(timeOfDay = 12f)
         )
-        scene.addComponent(DirectionalLightComponent(direction = Vector3f(0f, -1f, 0f), castShadows = true, autoCalculateBounds = true))
+        scene.addChild(SceneSun.create(DirectionalLightComponent(direction = Vector3f(0f, -1f, 0f), castShadows = true, autoCalculateBounds = true)))
         cameraManager.camera.viewportWidth = 1920
         cameraManager.camera.viewportHeight = 1080
         cameraManager.camera.fov = 45f

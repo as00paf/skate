@@ -1,11 +1,12 @@
 package com.pafoid.skate.game.player
 
+import com.pafoid.skate.engine.gameplay.CharacterActions
+import com.pafoid.skate.engine.input.UiNavigationActions
 import com.pafoid.skate.engine.gameplay.CharacterInput
 import com.pafoid.skate.engine.gameplay.MountMath
 import com.pafoid.skate.engine.gameplay.MountRequest
 import com.pafoid.skate.engine.input.ActionMap
 import com.pafoid.skate.engine.input.ActionBinding
-import com.pafoid.skate.engine.input.DefaultActions
 import org.joml.Vector2f
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
@@ -63,8 +64,8 @@ class MountTest {
 
     @Test
     fun Mount_DefaultActionIsKeyEAndGamepadY() {
-        val map = DefaultActions.register(ActionMap())
-        val bindings = map.bindings(DefaultActions.TOGGLE_MOUNT)
+        val map = CharacterActions.register(UiNavigationActions.register(ActionMap()))
+        val bindings = map.bindings(CharacterActions.TOGGLE_MOUNT)
         assertTrue(bindings.any { it is ActionBinding.Key && it.key == 69 })
         assertTrue(bindings.any { it is ActionBinding.GamepadButton && it.button == 3 })
     }

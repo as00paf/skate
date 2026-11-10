@@ -23,7 +23,6 @@ data class EditorSettings(
     var editorInputMappings: EditorInputMappings = EditorInputMappings(),
     var completionAutoPopup: Boolean = true,
     var completionDelayMs: Int = 200,
-    var graphics: GraphicsSettings = GraphicsSettings(),
     /** Game jar (or folder holding it) used for exports when none is found next to the editor (AST-11). */
     var gameJarPath: String? = null,
     /** `blender.exe` for `.blend` import (AST-19); null finds it on PATH, the file association or Program Files. */
@@ -34,6 +33,9 @@ data class EditorSettings(
     var blenderImportOnOpen: Boolean = true,
 ) {
 
+    /**
+     * Add a recent project to the editor settings (default: true for Fullscreen, false for VSync)
+     */
     fun addRecentProject(projectPath: String): EditorSettings {
         val updatedList = mutableListOf<String>()
         updatedList.add(projectPath)

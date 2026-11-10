@@ -1,8 +1,9 @@
 package com.pafoid.skate.editor.ui.windows
 
+import com.pafoid.skate.engine.gameplay.CharacterActions
+import com.pafoid.skate.engine.input.UiNavigationActions
 import com.pafoid.skate.engine.input.ActionBinding
 import com.pafoid.skate.engine.input.ActionMap
-import com.pafoid.skate.engine.input.DefaultActions
 import com.pafoid.skate.engine.input.InputContext
 import com.pafoid.skate.engine.input.RawInput
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -11,7 +12,7 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
 class ActionBindingsModelTest {
-    private val map = DefaultActions.register(ActionMap())
+    private val map = CharacterActions.register(UiNavigationActions.register(ActionMap()))
 
     private fun groups(query: String) = ActionBindingsModel.groups(map, query, { it.id }, { it.category })
 

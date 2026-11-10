@@ -97,7 +97,7 @@ class OpenGlDevice private constructor(
 
     override fun createPipeline(desc: PipelineDesc): RhiPipeline = GlPipeline(desc)
 
-    override fun createRenderTarget(desc: RenderTargetDesc): RhiRenderTarget = GlRenderTarget(desc, caps.maxAnisotropy > 1f)
+    override fun createRenderTarget(desc: RenderTargetDesc): RhiRenderTarget = GlRenderTarget(desc, caps.maxAnisotropy > 1f, desc.msaaSamples)
 
     override fun readPixels(target: RhiRenderTarget?, attachment: Int, rect: IntRect, format: PixelFormat, out: ByteBuffer) {
         require(!format.isDepth) { "readPixels reads color attachments" }
