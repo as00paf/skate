@@ -5,6 +5,7 @@ import com.pafoid.skate.editor.events.ProjectEvent
 import com.pafoid.skate.editor.events.WindowAction
 import com.pafoid.skate.editor.imgui.HamburgerMenuRenderer
 import com.pafoid.skate.editor.imgui.MenuAction
+import com.pafoid.skate.editor.imgui.Tooltips
 import com.pafoid.skate.editor.systems.EditorSettingsManager
 import com.pafoid.skate.editor.systems.ProjectManager
 import com.pafoid.skate.editor.ui.windows.ExportWizardWindow
@@ -56,7 +57,7 @@ class FileMenuBuilder(
                 eventSystem.publish(WindowAction.Hide("window.project_wizard"))
                 eventSystem.publish(ProjectEvent.OpenProjectRequested(project.projectPath))
             }
-            if (ImGui.isItemHovered()) ImGui.setTooltip(project.projectPath)
+            Tooltips.always(project.projectPath)
         }
     }
 }

@@ -45,7 +45,7 @@ class ScriptingSystem(
 
     private val runtime = ScriptRuntime(
         hosts = hosts,
-        services = ScriptServices(services.input, services.physics, if (sceneManager != null) switcher else services.scenes, services.random),
+        services = ScriptServices(services.input, services.physics, if (sceneManager != null) switcher else services.scenes, services.random, services.inputContexts),
         sceneRoot = { scene },
         onError = { eventSystem?.publish(ScriptErrorEvent(it)) },
         logSink = { level, message -> logger?.log(message, level, source = "engine") },

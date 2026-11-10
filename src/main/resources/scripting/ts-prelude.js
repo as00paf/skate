@@ -60,6 +60,10 @@ globalThis.__skateWrap = function (c) {
             isKeyReleased: (k) => input.isKeyReleased(k),
             isMouseButtonDown: (b) => input.isMouseButtonDown(b),
             action: (n) => input.action(n),
+            isActionDown: (n) => input.isActionDown(n),
+            wasActionPressed: (n) => input.wasActionPressed(n),
+            pushContext: (id, priority, blocking) => input.pushContext(id, priority === undefined ? 0 : priority, blocking === undefined ? 'consume' : blocking),
+            popContext: (h) => input.popContext(h),
         },
         physics: {
             get gravity() { return physics.getGravity(); },

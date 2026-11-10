@@ -7,6 +7,8 @@ enum class ToolbarButton {
     SELECT, TRANSLATE, ROTATE, SCALE, GIZMO_SPACE, SNAP, MEASURE,
     PLAY_PAUSE, STOP,
     RESET, PHYSICS_DEBUG, SCREENSHOT,
+    /** The viewport's `?` (EDT-51 §2.2: the viewport has no title bar, so its help sits at the end of the toolbar). */
+    HELP,
 }
 
 /**
@@ -21,6 +23,7 @@ object ViewportToolbarLayout {
         ),
         listOf(ToolbarButton.PLAY_PAUSE, ToolbarButton.STOP),
         listOf(ToolbarButton.RESET, ToolbarButton.PHYSICS_DEBUG, ToolbarButton.SCREENSHOT),
+        listOf(ToolbarButton.HELP),
     )
 
     private val GIZMOS = GROUPS.first().toSet()

@@ -108,6 +108,25 @@ interface ScriptInput {
 
     /** Value of a named action in [-1, 1]; 0 when unknown. */
     fun action(name: String): Float
+
+    // INP-10 additions have inert defaults so existing ScriptInput implementations keep compiling.
+
+    /** True while the named action is held (its context active and not shadowed). */
+    fun isActionDown(name: String): Boolean = false
+
+    /** True on the frame the named action was pressed; the first query of an action never is. */
+    fun wasActionPressed(name: String): Boolean = false
+
+    /**
+     * Pushes input context [context] (e.g. "vehicle") with [priority] (higher is on top) and [blocking]: "none" (lower
+     * contexts keep everything), "consume" (they lose the sources this context binds) or "all" (they are silenced).
+     * Returns a handle for [popContext], or -1 when contexts are unsupported. Popped automatically when the script is
+     * destroyed, hot reloaded or fails.
+     */
+    fun pushContext(context: String, priority: Int, blocking: String): Int = -1
+
+    /** Pops a context pushed by this script; false when the handle is unknown or already popped. */
+    fun popContext(handle: Int): Boolean = false
 }
 
 interface ScriptPhysics {

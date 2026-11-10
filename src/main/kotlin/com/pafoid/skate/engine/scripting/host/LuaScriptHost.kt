@@ -151,6 +151,12 @@ internal object LuaContextWrapper {
             fn("isKeyReleased") { a -> bool(c.input.isKeyReleased(a.checkint(1))) }
             fn("isMouseButtonDown") { a -> bool(c.input.isMouseButtonDown(a.checkint(1))) }
             fn("action") { a -> num(c.input.action(a.checkjstring(1)).toDouble()) }
+            fn("isActionDown") { a -> bool(c.input.isActionDown(a.checkjstring(1))) }
+            fn("wasActionPressed") { a -> bool(c.input.wasActionPressed(a.checkjstring(1))) }
+            fn("pushContext") { a ->
+                LuaValue.valueOf(c.input.pushContext(a.checkjstring(1), a.optint(2, 0), a.optjstring(3, "consume")))
+            }
+            fn("popContext") { a -> bool(c.input.popContext(a.checkint(1))) }
         })
         ctx.set("physics", LuaTable().apply {
             set("gravity", vectorProxy(c.physics.gravity))

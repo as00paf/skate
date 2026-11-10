@@ -401,20 +401,18 @@ excluded on both.
 
 | Scene | Backend | Mean ms | p50 ms | p95 ms | Max ms | Active / bodies at end |
 |---|---|---|---|---|---|---|
-| 1000-box pile | Bullet | 0.97 | 0.32 | 5.43 | 17.23 | 0 / 1001 |
-| 1000-box pile | Jolt | 1.24 | 1.14 | 2.15 | 6.63 | 800 / 1001 |
-| 50 ragdolls (650 bones, 600 joints) | Bullet | 2.84 | 2.71 | 3.99 | 5.81 | 650 / 651 |
-| 50 ragdolls (650 bones, 600 joints) | Jolt | 1.39 | 1.24 | 2.73 | 6.91 | 247 / 651 |
-| 20 raycast vehicles | Bullet | 0.03 | 0.02 | 0.05 | 0.28 | 20 / 21 |
-| 20 raycast vehicles | Jolt | 0.05 | 0.05 | 0.07 | 0.11 | 20 / 21 |
-
-A second run gave the same picture (mean Bullet 0.71 / 2.46 / 0.02 ms, Jolt 1.18 / 1.35 / 0.04 ms).
+| 1000-box pile | Bullet | 0.53 | 0.18 | 2.62 | 4.42 | 0 / 1001 |
+| 1000-box pile | Jolt | 0.92 | 0.83 | 1.66 | 3.48 | 800 / 1001 |
+| 50 ragdolls (650 bones, 600 joints) | Bullet | 1.86 | 1.85 | 1.97 | 2.52 | 650 / 651 |
+| 50 ragdolls (650 bones, 600 joints) | Jolt | 1.00 | 0.86 | 2.02 | 3.78 | 247 / 651 |
+| 20 raycast vehicles | Bullet | 0.01 | 0.01 | 0.02 | 0.04 | 20 / 21 |
+| 20 raycast vehicles | Jolt | 0.04 | 0.03 | 0.06 | 0.15 | 20 / 21 |
 
 Reading:
 - **Box pile:** Bullet's mean and median are lower because its pile falls asleep (0 active at the end) while Jolt's
   stays mostly awake (one large island has to be still as a whole before it sleeps). During the collapse, Bullet's
-  spikes are 2–3× Jolt's (p95 5.4 vs 2.2 ms, max 17 vs 7 ms), which matters more for frame pacing.
-- **Ragdolls:** Jolt is about 2× faster, and lets most bones sleep where Bullet keeps all 650 awake.
+  spikes are ~2× Jolt's (p95 2.6 vs 1.7 ms, max 4.4 vs 3.5 ms), which matters more for frame pacing.
+- **Ragdolls:** Jolt is about 1.8× faster, and lets most bones sleep where Bullet keeps all 650 awake.
 - **Vehicles:** both are negligible; Bullet's single-threaded step has less fixed overhead on tiny scenes.
 - Ragdoll bones start stacked along a line and are pulled into shape by their joints. This is a load test, not a
   realistic ragdoll.

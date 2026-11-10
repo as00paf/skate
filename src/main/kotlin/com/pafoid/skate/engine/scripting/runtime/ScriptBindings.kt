@@ -28,6 +28,7 @@ import com.pafoid.skate.engine.scripting.api.ScriptRigidBody
 import com.pafoid.skate.engine.scripting.api.ScriptScene
 import com.pafoid.skate.engine.scripting.api.ScriptTime
 import com.pafoid.skate.engine.scripting.api.ScriptTransform
+import com.pafoid.skate.engine.input.InputContextStack
 import org.joml.Vector3f
 import kotlin.reflect.KClass
 
@@ -38,6 +39,8 @@ class ScriptServices(
     val scenes: ScriptSceneSwitcher = NoOpScriptSceneSwitcher,
     /** The engine's seeded streams (ECS-14); a private one with the default seed when the runtime runs alone. */
     val random: RandomService = RandomService(),
+    /** Stack that scripts push their input contexts on; null when contexts are unsupported. */
+    val inputContexts: InputContextStack? = null,
 )
 
 /** Engine-side scene switching. [request] returns whether a scene with that name exists; the switch itself is deferred. */
@@ -57,6 +60,10 @@ object NoOpScriptInput : ScriptInput {
     override fun isKeyReleased(key: Int) = false
     override fun isMouseButtonDown(button: Int) = false
     override fun action(name: String) = 0f
+    override fun isActionDown(name: String) = false
+    override fun wasActionPressed(name: String) = false
+    override fun pushContext(context: String, priority: Int, blocking: String) = -1
+    override fun popContext(handle: Int) = false
 }
 
 object NoOpScriptPhysics : ScriptPhysics {

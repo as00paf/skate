@@ -9,6 +9,10 @@ import com.pafoid.skate.editor.commands.project.SetProjectTextureQualityCommand
 import com.pafoid.skate.editor.commands.project.SetProjectShadowQualityCommand
 import com.pafoid.skate.editor.commands.ExecutionTrackedCommand
 import com.pafoid.skate.editor.commands.project.CloseProjectCommand
+import com.pafoid.skate.editor.commands.project.PhysicsRates
+import com.pafoid.skate.editor.commands.project.SetDefaultSceneCommand
+import com.pafoid.skate.editor.commands.project.SetGameLanguageCommand
+import com.pafoid.skate.editor.commands.project.SetPhysicsRateCommand
 import com.pafoid.skate.editor.commands.project.CreateFileCommand
 import com.pafoid.skate.editor.commands.project.CreateProjectCommand
 import com.pafoid.skate.editor.commands.project.DeleteFileCommand
@@ -51,7 +55,7 @@ import javax.swing.UIManager
 import javax.swing.filechooser.FileFilter
 
 class ProjectActionHandler(
-    engine: Engine,
+    private val engine: Engine,
     private val projectManager: ProjectManager,
     private val settingsManager: EditorSettingsManager,
     private val undoRedoManager: UndoRedoManager,
@@ -105,6 +109,24 @@ class ProjectActionHandler(
             val command = SetRandomSeedCommand(project, event.seed) { random.reseed(RandomService.resolve(it)) }
             if (!command.isNoOp) undoRedoManager.executeCommand(command)
         }
+        eventSystem.subscribe<ProjectEvent.SetDefaultSceneRequested> { event ->
+            val project = projectManager.currentProject ?: return@subscribe
+            val command = SetDefaultSceneCommand(project, event.scenePath)
+            if (!command.isNoOp) undoRedoManager.executeCommand(command)
+        }
+        eventSystem.subscribe<ProjectEvent.SetPhysicsRateRequested> { event ->
+            val project = projectManager.currentProject ?: return@subscribe
+            val command = SetPhysicsRateCommand(project, event.stepsPerSecond, ::applyPhysicsRate)
+            if (!command.isNoOp) undoRedoManager.executeCommand(command)
+        }
+        eventSystem.subscribe<ProjectEvent.SetGameLanguageRequested> { event ->
+            val project = projectManager.currentProject ?: return@subscribe
+            val command = SetGameLanguageCommand(project.name, engine.gameLocale.strings.locale, event.locale, engine.gameLocale::set)
+            if (!command.isNoOp) undoRedoManager.executeCommand(command)
+        }
+        // The project's physics rate drives the engine's fixed step while it is open (EDT-57).
+        eventSystem.subscribe<ProjectEvent.Opened> { applyPhysicsRate(it.project.physicsFPS) }
+        eventSystem.subscribe<ProjectEvent.Created> { applyPhysicsRate(it.project.physicsFPS) }
         eventSystem.subscribe<ProjectEvent.SetGraphicsQualityRequested> { event ->
             val project = projectManager.currentProject ?: return@subscribe
             val command = SetProjectGraphicsQualityCommand(project, event.quality)
@@ -260,5 +282,9 @@ class ProjectActionHandler(
         jobs.runOnMain {
             block()
         }
+    }
+
+    private fun applyPhysicsRate(stepsPerSecond: Int) {
+        engine.systemManager.fixedTimeStep = PhysicsRates.fixedStep(stepsPerSecond)
     }
 }

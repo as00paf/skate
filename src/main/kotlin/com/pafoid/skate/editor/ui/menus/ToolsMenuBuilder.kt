@@ -4,6 +4,7 @@ import com.pafoid.skate.editor.data.EditorShortcuts
 import com.pafoid.skate.editor.events.WindowAction
 import com.pafoid.skate.editor.imgui.HamburgerMenuRenderer
 import com.pafoid.skate.editor.imgui.MenuAction
+import com.pafoid.skate.editor.ui.windows.KeyBindingsWindow
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.core.StringManager
 import imgui.ImGui
@@ -28,11 +29,10 @@ class ToolsMenuBuilder(
         if (io.keyCtrl == combo.ctrl && io.keyShift == combo.shift && ImGui.isKeyPressed(combo.key, false)) openTestInput()
     }
 
-    // EDT-52 I moves Input Testing into Key Bindings › Test; this then opens that tab instead.
-    private fun openTestInput() = eventSystem.publish(WindowAction.Show(INPUT_TESTING))
+    /** Input Testing lives in Key Bindings › Test (EDT-52I). */
+    private fun openTestInput() = eventSystem.publish(WindowAction.Show(KeyBindingsWindow.TEST_TAB))
 
     companion object {
-        const val INPUT_TESTING = "window.input_testing"
         const val SHELL = "window.shell"
     }
 }

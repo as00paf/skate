@@ -151,7 +151,7 @@ class FeatureShowcase(private val prefabs: PrefabsGenerator) {
         val PREFAB_PIECES = listOf(
             PrefabType.LEDGE, PrefabType.HUBBA, PrefabType.MANUAL_PAD, PrefabType.GRIND_BOX, PrefabType.FUNBOX,
             PrefabType.RAIL, PrefabType.HANDRAIL, PrefabType.KINKED_RAIL, PrefabType.STAIRS_3, PrefabType.STAIRS_5,
-            PrefabType.KICKER, PrefabType.BANK, PrefabType.QUARTER_PIPE, PrefabType.CRATE, PrefabType.BARREL, PrefabType.BENCH,
+            PrefabType.EURO_GAP, PrefabType.KICKER, PrefabType.BANK, PrefabType.QUARTER_PIPE, PrefabType.CRATE, PrefabType.BARREL, PrefabType.BENCH,
         )
 
         /** String keys the overlay uses; they live in the bundled game and editor string tables. */
@@ -395,12 +395,13 @@ class FeatureShowcase(private val prefabs: PrefabsGenerator) {
     }
 
     private fun prefabLibrary() {
+        // Nine per row, 3.1 m apart (the widest piece, the quarter pipe, is 3 m), centred in the area.
         PREFAB_PIECES.forEachIndexed { i, type ->
-            val row = i / 8
-            val col = i % 8
+            val row = i / 9
+            val col = i % 9
             val material = if (type == PrefabType.RAIL || type == PrefabType.HANDRAIL || type == PrefabType.KINKED_RAIL) null
                 else listOf(MaterialType.CONCRETE, MaterialType.WOOD_BROWN, MaterialType.WOOD_LIGHT)[i % 3]
-            add(prefabs.spawn(type, at("prefabs", -12.25f + col * 3.5f, 0f, -2f + row * 4f), material).labelled("Prefabs"))
+            add(prefabs.spawn(type, at("prefabs", -12.4f + col * 3.1f, 0f, -2f + row * 4f), material).labelled("Prefabs"))
         }
     }
 
