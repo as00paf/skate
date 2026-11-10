@@ -25,6 +25,8 @@ object DefaultDockLayout {
         "window.command_history" to Zone.BOTTOM,
         "window.render_graph" to Zone.BOTTOM,
         "window.shell" to Zone.BOTTOM,
+        // EDT-68: next to the Console when first opened.
+        "window.help" to Zone.BOTTOM,
     )
 
     /**

@@ -7,7 +7,6 @@ import com.pafoid.skate.editor.imgui.EditorModal
 import com.pafoid.skate.editor.imgui.EditorWindow
 import com.pafoid.skate.editor.imgui.EmptyState
 import com.pafoid.skate.editor.imgui.FooterButton
-import com.pafoid.skate.editor.imgui.WindowHeader
 import com.pafoid.skate.editor.imgui.MImGui
 import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.editor.project.RecentProjectDisplayInfo
@@ -98,10 +97,8 @@ class ProjectSwitcherDialog(
                 ImGui.closeCurrentPopup()
                 return
             }
-            WindowHeader.render(stringManager, this@ProjectSwitcherDialog) {
-                ImGui.text(stringManager.getString("lbl.switch_project.select_or_create"))
-            }
-            help.render(stringManager)
+            // The `?` row is EditorModal's (helpWindow), above this line.
+            ImGui.text(stringManager.getString("lbl.switch_project.select_or_create"))
             ImGui.spacing()
 
             val recentProjects = getRecentProjectsDisplayInfo()

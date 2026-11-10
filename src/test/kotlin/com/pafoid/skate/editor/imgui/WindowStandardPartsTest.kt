@@ -7,7 +7,7 @@ import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
-/** EDT-52A: the logic behind the window header, tab menu, help popover, footer and Reset position. */
+/** EDT-52A: the logic behind the window header, tab menu, footer and Reset position. */
 class WindowStandardPartsTest {
 
     private class TestWindow(name: String) : EditorWindow(name) {
@@ -30,20 +30,9 @@ class WindowStandardPartsTest {
     }
 
     @Test
-    fun Help_IdAndKeysComeFromTheWindowName() {
+    fun Help_IdComesFromTheWindowName() {
         assertEquals("console", TestWindow("window.console").helpId)
-        assertEquals(listOf("help.console.what", "help.console.how", "help.console.related"), HelpPopover.keysOf("console"))
-    }
-
-    @Test
-    fun Help_WhatAndHowAlwaysShow_RelatedOnlyWhenWritten() {
-        val written = mapOf("help.console.what" to "Logs.")
-        val sections = HelpPopover.sections("console") { written[it] }
-        assertEquals(listOf("help.section.what", "help.section.how"), sections.map { it.titleKey })
-        assertEquals(listOf("Logs.", null), sections.map { it.text })
-
-        val withRelated = HelpPopover.sections("console") { "x" }
-        assertEquals("help.section.related", withRelated.last().titleKey)
+        assertEquals("game_viewport", EditorWindow.helpIdOf("window.game_viewport"))
     }
 
     @Test

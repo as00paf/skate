@@ -93,12 +93,16 @@ object WindowHeader {
         ImGui.separator()
     }
 
-    /** A header strip with only the `?`, right-aligned, without a table (modals size themselves to their content). */
-    fun helpRow(strings: StringManager, window: EditorWindow) {
+    /**
+     * A header strip with only the `?`, right-aligned, without a table (modals size themselves to their content).
+     * Returns true when it was clicked.
+     */
+    fun helpRow(strings: StringManager): Boolean {
         val size = buttonSize()
         ImGui.setCursorPosX(maxOf(ImGui.getCursorPosX(), ImGui.getWindowContentRegionMaxX() - size.width))
-        button(strings, window, size.width, size.height)
+        val clicked = clicked(strings, size.width, size.height)
         ImGui.separator()
+        return clicked
     }
 
     /**
@@ -123,10 +127,11 @@ object WindowHeader {
     }
 
     private fun button(strings: StringManager, window: EditorWindow, width: Float, height: Float) {
-        if (strings.tippedWith(ImGui.button("${Icons.QUESTION_CIRCLE}$BUTTON_ID", width, height), "window.header.help.tooltip")) {
-            window.help.open()
-        }
+        if (clicked(strings, width, height)) window.openHelp()
     }
+
+    private fun clicked(strings: StringManager, width: Float, height: Float): Boolean =
+        strings.tippedWith(ImGui.button("${Icons.QUESTION_CIRCLE}$BUTTON_ID", width, height), "window.header.help.tooltip")
 
     /** Right-click on the tab or title bar; call right after `begin`. */
     fun tabMenu(strings: StringManager, window: EditorWindow) {
@@ -141,7 +146,7 @@ object WindowHeader {
     }
 
     internal fun run(item: TabMenuItem, window: EditorWindow) = when (item) {
-        TabMenuItem.HELP -> window.help.open()
+        TabMenuItem.HELP -> window.openHelp()
         TabMenuItem.RESET_POSITION -> window.resetPositionRequested = true
         TabMenuItem.CLOSE -> window.isOpen.set(false)
     }
