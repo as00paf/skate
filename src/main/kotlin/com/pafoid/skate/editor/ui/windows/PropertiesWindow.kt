@@ -2,6 +2,7 @@ package com.pafoid.skate.editor.ui.windows
 
 import com.pafoid.skate.editor.imgui.Tooltips
 import com.pafoid.skate.editor.events.ComponentFieldAction
+import com.pafoid.skate.editor.events.FileSystemEvent
 import com.pafoid.skate.editor.imgui.EmptyState
 import com.pafoid.skate.editor.imgui.tippedWith
 import com.pafoid.skate.editor.imgui.tipped
@@ -34,6 +35,8 @@ import imgui.type.ImString
 class PropertiesWindow(
     private val engine: Engine,
     private val hasProject: () -> Boolean = { true },
+    /** Import settings of project files selected in the Project window (EDT-66). */
+    private val fileInspectors: List<FileInspector> = emptyList(),
 ) : EditorWindow("window.properties", true) {
     private val stringManager = engine.stringManager
     private val eventSystem = engine.eventSystem
@@ -48,13 +51,30 @@ class PropertiesWindow(
     private var openAddComponent = false
 
     override val icon: String = Icons.SLIDERS
-    override val relatedWindows = listOf("window.hierarchy", "window.game_viewport")
+    override val relatedWindows = listOf("window.hierarchy", "window.game_viewport", "window.project")
+
+    private val inspectedFile = InspectedFile()
+
+    init {
+        eventSystem.subscribe<FileSystemEvent.FileSelected> { event ->
+            val file = java.io.File(event.path)
+            if (fileInspectors.any { it.handles(file) }) inspectedFile.select(file, sceneManager.currentScene?.selectedGameObject)
+            else inspectedFile.clear()
+        }
+    }
 
     override fun imgui() {
         val go = sceneManager.currentScene?.selectedGameObject ?: sceneManager.currentScene
 
         beginWindow(stringManager)
         header(stringManager)
+        val file = inspectedFile.current(sceneManager.currentScene?.selectedGameObject)
+        val inspector = file?.let { f -> fileInspectors.firstOrNull { it.handles(f) } }
+        if (file != null && inspector != null) {
+            inspector.render(file)
+            ImGui.end()
+            return
+        }
         when {
             go != null -> {}
             hasProject() -> EmptyState.noScene(stringManager)
