@@ -96,11 +96,11 @@ Round 27+ goals (human, 2026-11-06): post-processing quality, render-graph clari
   - Do: Add image-based lighting (prefiltered environment map + irradiance from the skybox, BRDF LUT) and/or reflection probes so metallic/smooth materials reflect their surroundings. Add a very shiny, reflective metallic object to the Feature Showcase Materials section.
   - Done when: The showcase metallic object clearly reflects the sky/scene; the IBL math/setup has unit tests; Vulkan parity follows in a VK task.
   - Deps: REN-26
-- [~] @skate-render **REN-28** `P2` Terrain and biomes: design note — rev 2 answered 2026-11-10 (placed objects stay loaded; streamed props REMEMBER state; default budgets; freeze bodies over unloaded ground; 16 km cap; multiplayer direction agreed); rev 3 pending
+- [x] **REN-28** `P2` Terrain and biomes: design note — approved by the human 2026-11-10 (`docs/design/REN-28.md` rev 3)
   - Do: Write `docs/design/REN-28.md`, reviewed by physics and assets: chunked heightmap terrain with LOD, splat materials (16 layers), a noise library (e.g. FastNoiseLite, MIT), biome maps driving materials and scatter, procedural or hand-painted (editor sculpt/paint tools), seeded through ECS-14, heightfield collider (PHY-15). Terrain must support **larger worlds** than the current park scale. Erosion filters are worth including. Split implementation tasks out after approval.
   - Done when: The human approves the note.
   - Deps: ECS-14
-- [~] @skate-render **REN-29** `P2` Vegetation and water: design note — rev 2 answered 2026-11-10 (SSR+IBL; underwater later; infinite ocean too; bail now, swimming later; CC0 trees; foliage on meshes now); rev 3 pending. Build order (lead): foundations → water + wind → REN-28 terrain → streaming → vegetation → infinite ocean
+- [x] **REN-29** `P2` Vegetation and water: design note — approved by the human 2026-11-10 (`docs/design/REN-29.md` rev 3)
   - Do: Write `docs/design/REN-29.md`: instanced trees/grass with LOD and wind, a water surface shader (reflection/refraction, foam), water volumes for buoyancy (PHY-16), and the Feature Showcase demo area.
   - Done when: The human approves the note.
   - Deps: REN-27
@@ -112,6 +112,30 @@ Round 27+ goals (human, 2026-11-06): post-processing quality, render-graph clari
   - Do: From ANI-14 (skate-animation): an offscreen viewport the Animation Editor feeds a bone pose to, drawing the skinned mesh instead of the skeleton lines.
   - Done when: The Animation Editor preview shows the skinned character following the scrubbed pose; tests for the viewport wiring.
   - Deps: ANI-14
+- [ ] **REN-34** `P2` World phase A: shared foundations (`docs/design/REN-28.md` §12, `docs/design/REN-29.md` §12)
+  - Do: REN-28 tasks 1–2: extract `lighting.glsl` (GL/VK pixel parity), `engine/procedural` (FastNoiseLite, ECS-14 seeding). The lead dispatches the note's tasks one at a time, in the order of the tables.
+  - Done when: Both tasks done with their tests; rendering unchanged.
+  - Deps: REN-28, REN-29
+- [ ] **REN-35** `P2` World phase B: wind and water (`docs/design/REN-28.md` §12, `docs/design/REN-29.md` §12)
+  - Do: REN-29 tasks 1, 3, 7, 8, 9 (PHY-16), 10a (EDT), 13a (TLG), 14a (VK), 15 (GPL: bail + respawn), 16 (AUD, optional), with the owners in the table.
+  - Done when: The Showcase Nature area part 1 (pool, floating props, wind) works on GL and VK; tests per task.
+  - Deps: REN-34
+- [ ] **REN-36** `P2` World phase C: instancing and terrain (`docs/design/REN-28.md` §12, `docs/design/REN-29.md` §12)
+  - Do: REN-29 task 2 (instancing core) first, then REN-28 tasks 3–13 (terrain data, chunk meshes, splat, biomes, scatter, `.skterrain` (AST), heightfield collider (PHY-15), stamps, editor tools (EDT), showcase Terrain area (TLG)).
+  - Done when: A generated, sculptable terrain with biomes, scatter and stamps plays in the editor and an export; tests per task.
+  - Deps: REN-34
+- [ ] **REN-37** `P2` World phase D: streaming and remembered scatter state (`docs/design/REN-28.md` §12, `docs/design/REN-29.md` §12)
+  - Do: REN-28 tasks 14–27: far field, Vulkan parity, streaming core and focus, suspended bodies (PHY), streamed physics and scatter, random-access pack reads (AST), sparse edits, Play/export prefetch (GUI), *Big Island*, component state capture (ECS), scatter state deltas with optional per-rule respawn, save-game container, stateful props check.
+  - Done when: *Big Island* streams within the budgets; destroyed or taken props stay that way across unload, save and load; tests per task.
+  - Deps: REN-36
+- [ ] **REN-38** `P3` World phase E: vegetation (`docs/design/REN-28.md` §12, `docs/design/REN-29.md` §12)
+  - Do: REN-29 tasks 4, 5, 6, 18 (PHY: edit-mode physics queries), 17 (foliage on meshes), 10b (EDT), 11, 13b (TLG), 14b (VK).
+  - Done when: Grass, trees and bushes on flat areas, terrain and meshes, streamed with the terrain; tests per task.
+  - Deps: REN-37
+- [ ] **REN-39** `P3` World phase F: infinite ocean and underwater (`docs/design/REN-28.md` §12, `docs/design/REN-29.md` §12)
+  - Do: REN-29 tasks 19, 20 (PHY), 21 (EDT + TLG + VK), 12 (underwater view, no caustics); ocean floods only areas connected to the sea; draw distance auto-set to 4 km with an ocean or streamed terrain.
+  - Done when: *Big Island* has a sea with a correct shoreline; floating and underwater views work; tests per task.
+  - Deps: REN-37
 - [ ] **REN-32** `P3` Skinned child meshes, per-part visibility, skin texture compositing (GPL-24)
   - Do: Per (`docs/design/GPL-24.md` §8): (1) skin a child mesh with the nearest ancestor's `SkeletonComponent` in the Geometry, Shadow and Picking passes; (2) per-part visibility and per-material overrides; (3) composite tattoo layers into a per-character texture on request. Vulkan parity with skate-vulkan.
   - Done when: A skinned jacket follows the skater, hidden parts don't render, a composited tattoo shows; tests.
@@ -170,7 +194,7 @@ Round 27+ goals: the Asset Browser shows every asset type, one assets folder, ex
 - [~] @skate-online **AST-16** `P2` Asset store window — design approved 2026-11-06 (`docs/design/AST-16.md`, revised after the skate-assets review) — slices a, b, d (Kenney/Quaternius) and AST-25 merged in round 30; e (SimReady/USD) pending
   - Do: Human decisions: **no login, no credential management.** Slices in order: a) SPI, registry, HTTP seam, pipeline, window skeleton + Poly Haven, b) ambientCG + texture sets, c) Kenney/Quaternius catalogs + "Import downloaded pack" (manual download is fine), d) Poly Haven as the primary provider, e) SimReady via Hugging Face + USD→glTF through Blender (needs AST-19). **No Sketchfab** (requires login). **No license tracking** for now — skip attribution-ledger/credits work. If an asset is in an unsupported format, warn the user on import rather than blocking.
   - Done when: Each slice imports a real asset; tests on fixtures, no sockets.
-- [~] @skate-assets **AST-17** `P2` City generation from OpenStreetMap: design note — rev 2 answered 2026-11-10 (built-in generator; embedded map now; mesh colliders by reference; triangulation library; box fallback for Simple; ODbL as Produced Work); rev 3 pending
+- [x] **AST-17** `P2` City generation from OpenStreetMap: design note — approved by the human 2026-11-10 (`docs/design/AST-17.md` rev 3)
   - Do: Write `docs/design/AST-17.md` evaluating OSM2World (Java, open source, glTF export) as the open-source alternative to commercial OSM city tools: area picker, import to a scene with colliders and materials, licensing (ODbL attribution).
   - Done when: The human approves the note.
 - [x] **AST-18** `P3` Protocol Buffers: design note — approved by the human 2026-11-10 (`docs/design/AST-18.md` rev 2)
@@ -243,6 +267,10 @@ Round 27+ goals: the Asset Browser shows every asset type, one assets folder, ex
   - Do: Per (`docs/design/GPL-24.md` §8): keep Assimp mesh part names and material names on `MeshPart`/`Material`, including the packed/exported model path.
   - Done when: Imported and exported models expose part and material names; tests.
   - Deps: GPL-24
+- [ ] **AST-34** `P2` OSM city generator: data, tiles and generation (AST-17 slices a, c)
+  - Do: Per `docs/design/AST-17.md` rev 3 §8: Overpass client, snapshot, parser, projection, JTS triangulation (editor-only), generation into chunks with mesh colliders by reference (box fallback on Simple after PHY-25), `.skmat` styling; OpenFreeMap vector tiles with cache and a custom raster URL; User-Agent with the repository URL; regenerate after a backend change; ODbL attribution in the ledger and credits.
+  - Done when: A chosen area generates a playable, credited city; tests with no sockets.
+  - Deps: AST-17, AST-27, PHY-24
 
 ### ECS — `ECS` (`skate-ecs`)
 
@@ -275,7 +303,7 @@ Round 27+ goals: a Jolt backend selectable per project, a terrain heightfield co
 - [x] **PHY-18** `P2` Extract physics natives to a per-user folder
   - Do: From PHY-17: Bullet and Jolt natives extract to `USER_DIR`, which fails for games installed in read-only folders (Program Files). Extract to a per-user data folder instead.
   - Done when: An exported game in a read-only folder starts with physics; loader tests cover the path.
-- [~] @skate-physics **PHY-19** `P3` Jolt-native ragdolls, vehicles and character controller — rev 2 answered 2026-11-10 (POWERED state; drivetrain tuning and joint motors on ALL backends; bind-pose frames next; inner body; walker moves to CharacterBody3D now); rev 3 pending
+- [x] **PHY-19** `P3` Jolt-native ragdolls, vehicles and character controller — design approved by the human 2026-11-10 (`docs/design/PHY-19.md` rev 3)
   - Do: From PHY-17: optional Jolt `Ragdoll` (pose motors), `VehicleConstraint` and `CharacterVirtual` modes (the last one with GPL). Design note first.
   - Done when: The human approves the note.
   - Deps: PHY-17
@@ -291,6 +319,18 @@ Round 27+ goals: a Jolt backend selectable per project, a terrain heightfield co
   - Do: Per (`docs/design/GPL-24.md` §8): raycast, shapeCast and a new `overlap(shape, position, rotation, layerMask)` on `IPhysics3D`, exposed from `PhysicsSystem`, implemented for Bullet, Jolt and Simple.
   - Done when: The same query tests pass on every backend.
   - Deps: GPL-24
+- [ ] **PHY-23** `P3` Jolt ragdolls, vehicle drivetrain and character body (PHY-19 slices a–g)
+  - Do: Per `docs/design/PHY-19.md` rev 3 §8: 19a joint motors (all backends; Bullet on New6Dof always), 19b POWERED ragdoll, then the bind-pose ragdoll frames task, 19c vehicle drivetrain on all backends (no migration of old fields), 19d inspector sections (EDT), 19e `CharacterBody3D` with inner body, 19f gameplay on the character body (GPL), 19g showcase walker with "Take control" only (TLG). Each project uses only its own backend.
+  - Done when: Each slice's tests pass; cross-backend vehicle tests within the note's tolerances.
+  - Deps: PHY-19
+- [ ] **PHY-24** `P2` `MeshCollider3D.meshRef` (AST-17 PHY-a)
+  - Do: Load collider triangles from a model by GUID instead of inline vertices, on Bullet and Jolt.
+  - Done when: A city chunk collides through a referenced model; tests.
+  - Deps: AST-17
+- [ ] **PHY-25** `P3` SimplePhysics3D static oriented boxes and broad phase (AST-17 PHY-b)
+  - Do: Static oriented boxes (contacts and rays) and a broad phase, so the city box fallback behaves as boxes.
+  - Done when: Box contacts and rays tested; a box city is walkable on Simple.
+  - Deps: AST-17
 
 ### Animation — `ANI` (`skate-animation`)
 
@@ -367,6 +407,10 @@ Round 27+ goals: a fuller skate demo with camera modes and standard control sche
   - Do: Per (`docs/design/GPL-24.md` §8): 24c `CombatSystem` through the PHY-22 query interface; 24f appearance, skinned clothes (same skeleton required, joint remap by bone name), covered body parts hidden by name; 24g tattoos baked into a per-character texture when the list changes.
   - Done when: Combat works in the Feature Showcase; a jacket and a tattoo apply on the skater; tests.
   - Deps: GPL-27, PHY-22, REN-32, ANI-19, AST-33
+- [ ] **GPL-29** `P3` Swimming, including underwater (direction, later)
+  - Do: From REN-29 Q4 (human, 2026-11-10): the skater bails in water for now; later the skater swims, including underwater: GPL swim states and controls, ANI swim animations, underwater follow camera, AUD underwater filter (`docs/design/REN-29.md` §8.3).
+  - Done when: Design note approved, then the skater swims on and under water.
+  - Deps: REN-39
 
 ### In-game UI — `GUI` (`skate-gameui`)
 
@@ -512,6 +556,10 @@ Round 27+ goals (human, 2026-11-06): fix editor bugs, make every window, dialog 
   - Do: From the human (2026-11-10): a project-creation setting choosing whether `EngineDefaults` is copied into the project's assets folder; the behaviour of each mode comes from AST-26. Fold into the EDT-59 wizard design if it is approved first, otherwise add to the current wizard.
   - Done when: Both choices create a project that opens, plays and exports; the choice is a creation-time action, not stored (EDT-59 Q2, human 2026-11-10); tests.
   - Deps: AST-27
+- [ ] **EDT-71** `P2` Map widget and city dialog (AST-17 slice b)
+  - Do: Per `docs/design/AST-17.md` rev 3 §8: generic ImGui map widget (`MapView`, `WebMercator`, `AreaSelection`), the city dialog with link/coords/search and the embedded map, feature overlay.
+  - Done when: An area can be picked on the map and generated; widget maths tested.
+  - Deps: AST-34
 
 ### Tooling & samples — `TLG` (`skate-tooling`)
 
