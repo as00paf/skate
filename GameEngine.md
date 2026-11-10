@@ -195,18 +195,26 @@ Round 27+ goals: the Asset Browser shows every asset type, one assets folder, ex
 - [x] **AST-25** `P2` Deleting a store asset updates the attribution ledger
   - Do: From AST-16a review item 11: `DeleteFileCommand` calls `AttributionLedger.removeAssetIds`, so credits stay correct.
   - Done when: Deleting an imported store asset removes it from the ledger and credits; undo restores it; tests.
-- [~] @skate-assets **AST-26** `P1` REWRITE Typed asset folders: design note — human answered 9 questions 2026-11-10 (Prefabs/, Fonts/, Data/; project-overridable shaders, basic shaders always copied; copy defaults on; engine repo reorganized; pack dedupe); revision pending
+- [x] **AST-26** `P1` REWRITE Typed asset folders: design note — approved by the human 2026-11-10 (`docs/design/AST-26.md` rev 2)
   - Do: From the human (2026-11-10): `Assets/` holds one folder per type: `Models`, `Shaders`, `Sounds`, `Textures`, `Materials`, `Scripts`, `Animations`; Store imports go to their type folder instead of `Assets/Store`. New-project option to copy the engine defaults into the project or not. Human decisions 2026-11-10: **no `EngineDefaults` folder anywhere** — copied engine defaults go straight into `Assets/<Type>/`; a store model stays **together** in `Assets/Models/<asset>/` (`.gltf`, `.bin`, `textures/`), texture-only and material downloads go to `Textures/` and `Materials/`. Design note `docs/design/AST-26.md` covering: how not-copied engine defaults resolve in the editor (reference scheme) and are packed on export, telling engine files apart once copied (updates, name clashes), multi-file assets (texture sets, `.blend` imports) staying loadable under AST-22 path rules, the type a file lands in (FBX via AST-20), store `.meta`/attribution, **no migration or old-layout support** (human, 2026-11-10: new projects only), and changes to samples, CLI, `skate validate` and export. Reviewed by skate-online (store), skate-editor (Asset Browser), skate-tooling (wizard, samples).
   - Done when: The human approves the note.
   - Deps: AST-14
 - [ ] **AST-27** `P1` Typed asset folders: layout and engine defaults
-  - Do: Implement AST-26: project creation, EngineDefaults layout, copy/no-copy resolution and export packing, path resolution, samples and CLI. No migration of existing projects.
+  - Do: Implement AST-26 (rev 2 decisions §0): project creation, typed layout (Prefabs, Fonts, Data too), editor strings/themes/help moved to `src/main/resources/editor/`, engine repo `assets/` reorganised into typed folders (delete the Font Awesome desktop zip), pack dedupe by content hash, copy/no-copy resolution and export packing, path resolution, samples and CLI. No migration of existing projects.
   - Done when: New projects use the typed layout, open, play and export in both copy modes; tests cover the layout.
   - Deps: AST-26
 - [ ] **AST-28** `P1` Asset store imports go to their type folder (owner: skate-online)
   - Do: Per AST-26: Poly Haven, ambientCG and Kenney/Quaternius imports land in `Models`/`Textures`/`Materials`/`Sounds`… instead of `Assets/Store`; undo, re-import in place, the attribution ledger and `.meta` store keys keep working.
   - Done when: Each provider's import lands in the right type folders and loads textured; tests on fixtures.
   - Deps: AST-27, AST-16
+- [ ] **REN-31** `P1` Project shaders: engine-default/override resolution and hot reload (AST-26 §5)
+  - Do: Per AST-26 §5 (reviewed by skate-render): shaders resolve through `engine:Shaders/…` with project overrides in `Assets/Shaders/`, `@skate-contract` headers, includes, caches, hot reload of project shaders; basic shaders always copied; unedited copies follow the engine on project open (human, 2026-11-10); custom material shaders in the colour pass only for v1.
+  - Done when: Editing a project shader changes rendering live; an incompatible edited override falls back with an error; tests.
+  - Deps: AST-27
+- [ ] **GPL-26** `P2` Skater configs as overridable engine defaults
+  - Do: From AST-26 NQ2 (human, 2026-11-10: follow-up): `skater.character.json` and `skater.controller.json` become `engine:Data/skater.character.json` and `engine:Animations/skater.controller.json`, overridable per project like other engine defaults (with skate-animation).
+  - Done when: A project override changes the skater; without one the engine config is used; tests.
+  - Deps: AST-27
 
 ### ECS — `ECS` (`skate-ecs`)
 
