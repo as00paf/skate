@@ -42,6 +42,12 @@ scan of `TODO`/`FIXME` markers in `src/main`. Runtime repro steps are marked
 - Cause: `ProjectManager.openProject` (pack path) fills `Animator.animations` from the pack, then `SceneManager.openScene` → `resolveSceneReferences` → `Animator.resolveAnimationsFromPaths`. That function clears the list and reloads only paths where `File(path).exists()`. Pack paths are project-relative and are not on disk next to the game, so every clip is dropped and the controller finds no motions.
 - Fix (ANI, with AST): resolve clips through `AssetsManager.paths` (pack or disk), e.g. `loadAnimationSync`/`resolveAnimation` by `paths`, instead of `File(path).exists()`. Alternatively, don't re-resolve clips that `openProject` already resolved. Add a unit test.
 
+### BUG-022 — JOLT-parameterized physics tests fail intermittently (P2, owner: PHY)
+- Found during EDT-53 (2026-11-10), on `agents/qa` synced with master (round 30).
+- Repro: `cmd.exe /c gradlew.bat test` on the first run after test sources recompiled. Every `[2] JOLT` case of `PhysicsSystemRagdollTest`, `FrictionPropagationTest`, `JointConstraintsTest`, `PhysicsCalibrationTest`, `PhysicsDebugDrawTest` and `PhysicsFeaturesTest` failed. The same command run again right after passed with 0 failures. The `[1]` (Bullet) cases never failed.
+- Cause: not investigated. All Jolt cases fail together, which points at native setup (library extract/load or a shared Jolt global initialized by the first test in the JVM) rather than at the physics results.
+- Next step (PHY): capture the failure message from `build/test-results/test/TEST-*.xml` on a failing run, and make Jolt native init idempotent and thread-safe across the test JVM forks.
+
 ## Suspected (from source markers, to verify at runtime)
 
 | ID | Pri | Owner | File | Symptom / repro (to verify) |
