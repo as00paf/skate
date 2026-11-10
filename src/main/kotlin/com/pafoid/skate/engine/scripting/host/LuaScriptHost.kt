@@ -151,6 +151,12 @@ internal object LuaContextWrapper {
             fn("isKeyReleased") { a -> bool(c.input.isKeyReleased(a.checkint(1))) }
             fn("isMouseButtonDown") { a -> bool(c.input.isMouseButtonDown(a.checkint(1))) }
             fn("action") { a -> num(c.input.action(a.checkjstring(1)).toDouble()) }
+            fn("isActionDown") { a -> bool(c.input.isActionDown(a.checkjstring(1))) }
+            fn("wasActionPressed") { a -> bool(c.input.wasActionPressed(a.checkjstring(1))) }
+            fn("pushContext") { a ->
+                LuaValue.valueOf(c.input.pushContext(a.checkjstring(1), a.optint(2, 0), a.optjstring(3, "consume")))
+            }
+            fn("popContext") { a -> bool(c.input.popContext(a.checkint(1))) }
         })
         ctx.set("physics", LuaTable().apply {
             set("gravity", vectorProxy(c.physics.gravity))
@@ -185,8 +191,24 @@ internal object LuaContextWrapper {
             fn("get") { a -> toLua(c.state[a.checkjstring(1)]) }
             fn("set") { a -> c.state[a.checkjstring(1)] = fromLua(a.arg(2)); LuaValue.NIL }
         })
+        // `seed` is read live: a reseed from any script shows up here.
+        ctx.set("random", randomTable(c.random, object : LuaTable() {
+            override fun get(key: LuaValue): LuaValue =
+                if (key.tojstring() == "seed") num(c.random.seed.toDouble()) else super.get(key)
+        }).apply {
+            fn("stream") { a -> randomTable(c.random.stream(a.checkjstring(1))) }
+            fn("reseed") { a -> c.random.reseed(a.checklong(1)); LuaValue.NIL }
+        })
         ctx.set("reloadCount", LuaValue.valueOf(c.reloadCount))
         return ctx
+    }
+
+    /** `nextInt(until)` / `nextInt(from, until)`, `nextFloat()`, `range(min, max)`, `chance(p)`. */
+    private fun randomTable(r: com.pafoid.skate.engine.scripting.api.ScriptRandomStream, into: LuaTable = LuaTable()): LuaTable = into.apply {
+        fn("nextInt") { a -> LuaValue.valueOf(if (a.narg() >= 2) r.nextInt(a.checkint(1), a.checkint(2)) else r.nextInt(a.checkint(1))) }
+        fn("nextFloat") { num(r.nextFloat().toDouble()) }
+        fn("range") { a -> num(r.range(a.checkdouble(1).toFloat(), a.checkdouble(2).toFloat()).toDouble()) }
+        fn("chance") { a -> bool(r.chance(a.checkdouble(1).toFloat())) }
     }
 
     private fun entity(e: ScriptEntity): LuaTable = LuaTable().apply {

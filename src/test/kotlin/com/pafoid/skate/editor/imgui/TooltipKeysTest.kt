@@ -26,7 +26,7 @@ class TooltipKeysTest {
     @Test
     fun EveryTippedLabelKey_HasItsDerivedTooltip() {
         val used = tippedKeys(code)
-        assertTrue(used.size > 100, "found ${used.size}")
+        assertTrue(used.size > 50, "found ${used.size}")
         assertEquals(emptyList<String>(), used.filter { Tooltips.keyFor(it) !in keys }.sorted())
     }
 

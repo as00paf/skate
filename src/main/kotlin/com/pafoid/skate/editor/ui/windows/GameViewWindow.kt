@@ -7,6 +7,7 @@ import com.pafoid.skate.editor.imgui.label
 import com.pafoid.skate.app.Editor
 import com.pafoid.skate.editor.imgui.EditorScenesTabBar
 import com.pafoid.skate.editor.imgui.EditorWindow
+import com.pafoid.skate.editor.imgui.WindowHeader
 import com.pafoid.skate.editor.imgui.data.UiConstants.TOOLBAR_HEIGHT
 import com.pafoid.skate.editor.ui.handlers.ViewportActionHandler
 import com.pafoid.skate.editor.ui.handlers.ViewportDragDropHandler
@@ -38,7 +39,13 @@ class GameViewWindow(
     private val viewportContextMenu = ViewportContextMenu(stringManager, engine.eventSystem)
     private val viewportDragDropHandler =
         ViewportDragDropHandler(viewportRenderer, editor.editorCamera, engine.eventSystem, engine.inputProvider)
-    private val viewportToolbar = ViewportToolbar(engine, stringManager, editor.gizmoSystem, editor.playModeHandler.controller)
+    private val viewportToolbar = ViewportToolbar(
+        engine, stringManager, editor.gizmoSystem, editor.playModeHandler.controller,
+        helpButton = { WindowHeader.helpButton(stringManager, this) },
+    )
+
+    override val icon: String = Icons.CUBE
+    override val relatedWindows = listOf("window.hierarchy", "window.properties")
     private val viewportActionHandler = ViewportActionHandler(
         engine = engine,
         undoRedoManager = editor.undoRedoManager,
@@ -65,7 +72,8 @@ class GameViewWindow(
 
     override fun imgui() {
         val noTabItem = 1 shl 23
-        ImGui.begin(stringManager.label("window.game_viewport"), ImGuiWindowFlags.NoScrollbar or ImGuiWindowFlags.NoScrollWithMouse or ImGuiWindowFlags.NoTitleBar or noTabItem)
+        // No title bar or tab: the `?` is the toolbar's last button (EDT-51 §2.2).
+        beginWindow(stringManager, ImGuiWindowFlags.NoScrollbar or ImGuiWindowFlags.NoScrollWithMouse or ImGuiWindowFlags.NoTitleBar or noTabItem, closable = false)
 
         scenesTabBar.render(sceneManager)
 
@@ -125,7 +133,7 @@ class GameViewWindow(
     private fun renderEmptyState(windowPos: ImVec2) {
         ImGui.setCursorPos(windowPos.x, windowPos.y + TOOLBAR_HEIGHT)
         if (ImGui.beginChild("##viewport_empty", 0f, 0f, false, ImGuiWindowFlags.NoBackground)) {
-            if (hasProject()) EmptyState.render(stringManager, Icons.CUBE, "empty.no_scene", "empty.viewport.hint")
+            if (hasProject()) EmptyState.noScene(stringManager, "empty.viewport.hint")
             else EmptyState.noProject(stringManager, engine.eventSystem)
         }
         ImGui.endChild()

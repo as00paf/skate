@@ -62,6 +62,8 @@ class ProjectWindow(
     engine: Engine,
     private val projectManager: ProjectManager,
 ) : EditorWindow("window.project", true) {
+    override val relatedWindows: List<String> = listOf("window.asset_browser")
+
     private val eventSystem = engine.eventSystem
     private val stringManager = engine.stringManager
     private val logger = engine.logger

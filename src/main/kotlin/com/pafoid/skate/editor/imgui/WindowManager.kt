@@ -3,6 +3,7 @@ package com.pafoid.skate.editor.imgui
 import com.pafoid.skate.editor.data.EditorFocus
 import com.pafoid.skate.editor.events.WindowAction
 import com.pafoid.skate.editor.imgui.components.InspectorDrafts
+import com.pafoid.skate.editor.ui.windows.KeyBindingsWindow
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.core.StringManager
 import imgui.ImGui
@@ -16,7 +17,12 @@ class WindowManager(
 ) {
     fun init() {
         eventSystem.subscribe<WindowAction.Show> { event ->
-            windowRegistry.getWindow(event.name)?.isOpen?.set(true)
+            // Key Bindings › Test has its own target (Test Input, EDT-51 §3.1).
+            if (event.name == KeyBindingsWindow.TEST_TAB) {
+                windowRegistry.windows.filterIsInstance<KeyBindingsWindow>().firstOrNull()?.openTestTab()
+            } else {
+                windowRegistry.getWindow(event.name)?.isOpen?.set(true)
+            }
         }
         eventSystem.subscribe<WindowAction.Hide> { event -> windowRegistry.getWindow(event.name)?.isOpen?.set(false) }
         eventSystem.subscribe<WindowAction.ShowDefault> { windowRegistry.showDefaultWindows() }

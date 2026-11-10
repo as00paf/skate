@@ -69,7 +69,7 @@ class JointComponentTest {
     fun Joint_Serialization_RoundTripsPolymorphically() {
         val serializer = Serializer()
         val original: Component = JointComponent(
-            jointType = JointType.SIX_DOF, connectedBodyId = 7, angularLower = Vector3f(-1f, -2f, -3f), limitMax = 4f
+            jointType = JointType.SIX_DOF, connectedBodyGuid = "b7", angularLower = Vector3f(-1f, -2f, -3f), limitMax = 4f
         )
         val restored = serializer.decode<Component>(serializer.encode(original))
         assertEquals(original, restored)

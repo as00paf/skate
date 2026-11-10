@@ -6,6 +6,9 @@ import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.systems.System
 import com.pafoid.skate.engine.ecs.systems.SystemManager
 import com.pafoid.skate.engine.getComponent
+import com.pafoid.skate.engine.input.ContextBlocking
+import com.pafoid.skate.engine.input.InputContext
+import com.pafoid.skate.engine.input.InputContextStack
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNull
@@ -28,6 +31,7 @@ class PauseMenuSystemTest {
     private var volume = 0.4f
     private var language = "en"
 
+    private val contexts = InputContextStack.withDefaults()
     private val manager = SystemManager()
     private val sim = Simulation()
     private val pause = PauseMenuSystem(
@@ -37,6 +41,7 @@ class PauseMenuSystemTest {
         volume = { volume },
         setVolume = { volume = it },
         defer = { deferred.addLast(it) },
+        inputContexts = { contexts },
     )
     private val input = UiInputSystem { frame }.also { it.onUnhandledCancel = pause::open }
     private val scene = Scene("Level")
@@ -173,5 +178,38 @@ class PauseMenuSystemTest {
         step()
         assertSame(reloaded, pause.menu.parent)
         assertFalse(scene.children.contains(pause.menu))
+    }
+
+    /** INP-10: while open the menu holds `ui` above everything, so gameplay (and scripts, characters) read nothing. */
+    @Test
+    fun PauseMenu_HoldsBlockingUiContextWhileOpen() {
+        play()
+        assertTrue(contexts.isActive(InputContext.GAMEPLAY))
+        esc()
+        assertTrue(pause.isOpen)
+        val top = contexts.entries().first()
+        assertEquals(InputContext.UI, top.context)
+        assertEquals(ContextBlocking.ALL, top.blocking)
+        assertFalse(contexts.isActive(InputContext.GAMEPLAY))
+        assertTrue(contexts.isActive(InputContext.UI))
+        esc()
+        assertFalse(pause.isOpen)
+        assertTrue(contexts.isActive(InputContext.GAMEPLAY))
+        assertEquals(2, contexts.entries().size, "only the base stack is left")
+    }
+
+    @Test
+    fun PauseMenu_ReleasesItsContextWhenPlayStopsOrTheSceneReloads() {
+        play()
+        esc()
+        scene.isRunning = false
+        step()
+        assertTrue(contexts.isActive(InputContext.GAMEPLAY), "Stop closes the menu and its context")
+
+        play()
+        esc()
+        manager.loadScene(Scene("Other"))
+        assertTrue(contexts.isActive(InputContext.GAMEPLAY), "a new scene starts unblocked")
+        assertEquals(2, contexts.entries().size)
     }
 }

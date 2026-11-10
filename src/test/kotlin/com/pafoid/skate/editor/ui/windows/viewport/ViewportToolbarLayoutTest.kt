@@ -42,7 +42,7 @@ class ViewportToolbarLayoutTest {
     @Test
     fun ToolbarLayout_PlayPauseAndUtilitiesAlwaysEnabled() {
         PlayMode.entries.forEach { mode ->
-            listOf(ToolbarButton.PLAY_PAUSE, ToolbarButton.PHYSICS_DEBUG, ToolbarButton.SCREENSHOT).forEach {
+            listOf(ToolbarButton.PLAY_PAUSE, ToolbarButton.PHYSICS_DEBUG, ToolbarButton.SCREENSHOT, ToolbarButton.HELP).forEach {
                 assertTrue(ViewportToolbarLayout.isEnabled(it, mode, canReset = false), "$it in $mode")
             }
         }
@@ -53,5 +53,10 @@ class ViewportToolbarLayoutTest {
         assertFalse(ViewportToolbarLayout.showsPause(PlayMode.EDIT))
         assertTrue(ViewportToolbarLayout.showsPause(PlayMode.PLAYING))
         assertFalse(ViewportToolbarLayout.showsPause(PlayMode.PAUSED))
+    }
+
+    @Test
+    fun ToolbarLayout_HelpIsTheLastButton() {
+        assertEquals(ToolbarButton.HELP, ViewportToolbarLayout.GROUPS.flatten().last())
     }
 }
