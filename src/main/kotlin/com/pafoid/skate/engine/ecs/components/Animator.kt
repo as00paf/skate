@@ -20,6 +20,8 @@ import com.pafoid.skate.engine.core.LoggerService.LogLevel
 import com.pafoid.skate.engine.getComponent
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
+import com.pafoid.skate.engine.assets.EngineDefaultResolver
+import com.pafoid.skate.engine.assets.EngineDefaults
 import java.io.File
 
 @Serializable
@@ -140,8 +142,13 @@ data class Animator(
         }
     }
 
-    /** A project file at [path], else a bundled classpath resource (e.g. `configs/skater.controller.json`). */
+    /**
+     * A project file at [path], else a bundled classpath resource. An `engine:` reference (GPL-26,
+     * `engine:Animations/skater.controller.json`) reads the engine's own file; its project override is read through
+     * the `read` of [resolveController] (the scene's asset paths).
+     */
     private fun readController(path: String): String? {
+        if (EngineDefaults.isReference(path)) return engineDefaults.resolve(path)?.takeIf { it.isFile }?.readText()
         val file = File(path)
         if (file.isFile) return file.readText()
         return Animator::class.java.classLoader.getResourceAsStream(path.replace('\\', '/').trimStart('/'))
@@ -290,3 +297,6 @@ data class Animator(
         return criticalBonePatterns.any { lowerName.contains(it) }
     }
 }
+
+/** Resolves `engine:` controller references outside a project (GPL-26). */
+private val engineDefaults by lazy { EngineDefaultResolver() }

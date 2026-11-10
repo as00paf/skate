@@ -74,10 +74,24 @@ object EngineDefaults {
         const val RIGHT_STRAFE_WALKING = "engine:Animations/right strafe walking.fbx"
         const val SKATE_RIDING = "engine:Animations/skate riding.fbx"
 
+        /** The skater's animator controller (GPL-26); also in the jar as `/configs/skater.controller.json`. */
+        const val SKATER_CONTROLLER = "engine:Animations/skater.controller.json"
+
         val ALL = listOf(
             IDLE_0, IDLE_1, IDLE_PHONE, JUMP, FALLING, FALLING_IDLE, LANDING, WALKING, RUNNING, LEFT_TURN, LEFT_TURN_90,
             LEFT_STRAFE, LEFT_STRAFE_WALKING, RIGHT_TURN, RIGHT_TURN_90, RIGHT_STRAFE, RIGHT_STRAFE_WALKING, SKATE_RIDING,
         )
+
+        /** Animator controllers (not clips). */
+        val CONTROLLERS = listOf(SKATER_CONTROLLER)
+    }
+
+    /** Data files (GPL-26): character configs, edited in the editor's Properties window. */
+    object Data {
+        /** The skater's controller tuning (`SkateControllerConfig`); also in the jar as `/configs/skater.character.json`. */
+        const val SKATER_CHARACTER = "engine:Data/skater.character.json"
+
+        val ALL = listOf(SKATER_CHARACTER)
     }
 
     object Textures {
@@ -118,7 +132,14 @@ object EngineDefaults {
     }
 
     /** Every engine default a project can copy or reference, in copy order. */
-    val CATALOG: List<String> = Models.ALL + Animations.ALL + Textures.ALL + Sounds.ALL + Shaders.BASIC
+    val CATALOG: List<String> =
+        Models.ALL + Animations.ALL + Animations.CONTROLLERS + Data.ALL + Textures.ALL + Sounds.ALL + Shaders.BASIC
+
+    /**
+     * Defaults every new project gets a copy of, in both copy modes: the basic shaders (AST-26 §5.1) and the skater
+     * configs, which users edit in the editor (GPL-26).
+     */
+    val ALWAYS_COPIED: List<String> = Shaders.BASIC + Data.ALL + Animations.CONTROLLERS
 
     fun isReference(path: String?): Boolean = path != null && path.startsWith(PREFIX)
 
@@ -138,9 +159,12 @@ object EngineDefaults {
 
     fun isBasicShader(reference: String): Boolean = reference in Shaders.BASIC
 
-    /** The jar resource holding a copy of [logicalPath] (shaders and the app icon), or null. */
+    /** The jar resource holding a copy of [logicalPath] (shaders, the skater configs and the app icon), or null. */
     fun classpathResource(logicalPath: String): String? = when {
         logicalPath.startsWith("Shaders/") -> "/shaders/" + logicalPath.removePrefix("Shaders/")
+        // GPL-26: build.gradle.kts copies these into the jar under /configs/.
+        logicalPath.startsWith("Data/") && logicalPath.endsWith(".character.json") -> "/configs/" + logicalPath.substringAfterLast('/')
+        logicalPath.startsWith("Animations/") && logicalPath.endsWith(".controller.json") -> "/configs/" + logicalPath.substringAfterLast('/')
         logicalPath == Textures.APP_ICON.removePrefix(PREFIX) -> "/app_icon.png"
         else -> null
     }

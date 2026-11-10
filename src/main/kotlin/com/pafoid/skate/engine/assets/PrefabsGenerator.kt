@@ -78,7 +78,8 @@ class PrefabsGenerator(
             assetsManager.loadAnimationSync(path)
         }
         val skater = Skater("Skater", model, skate, animations = animations)
-        skater.animator.resolveController(logger)
+        // GPL-26: the project's copy of the controller (Assets/Animations) overrides the engine's.
+        skater.animator.resolveController(logger, read = { assetsManager.readText(it)?.ifEmpty { null } })
         return skater
     }
 

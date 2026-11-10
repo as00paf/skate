@@ -6,6 +6,7 @@ import com.pafoid.skate.editor.ui.windows.AnimationEditorWindow
 import com.pafoid.skate.editor.ui.windows.AssetBrowserWindow
 import com.pafoid.skate.editor.ui.windows.AudioInspectorWindow
 import com.pafoid.skate.editor.ui.windows.BlenderImportPanel
+import com.pafoid.skate.editor.ui.windows.ConfigFileInspector
 import com.pafoid.skate.editor.ui.windows.CommandHistoryWindow
 import com.pafoid.skate.editor.ui.windows.ConsoleWindow
 import com.pafoid.skate.editor.ui.windows.EditorSettingsWindow
@@ -40,7 +41,7 @@ class WindowRegistry(
 ) {
     val windows: List<EditorWindow> = listOf(
         SceneHierarchyWindow(engine, editor.clipboardService, projectManager::hasProject),
-        PropertiesWindow(engine, projectManager::hasProject, listOf(BlenderImportPanel(engine.stringManager, editor.blenderSync))),
+        PropertiesWindow(engine, projectManager::hasProject, listOf(BlenderImportPanel(engine.stringManager, editor.blenderSync), ConfigFileInspector(engine.stringManager))),
         GameViewWindow(engine, editor, projectManager::hasProject, projectManager::getProjectDirectory),
         AssetBrowserWindow(engine, editor.undoRedoManager),
         ProfilerWindow(engine.stringManager),
