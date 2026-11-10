@@ -1,6 +1,6 @@
 # REN-28: Terrain and biomes (design)
 
-Status: **proposal rev 3, awaiting approval** (§12 put in the shared phase order, 2026-11-10). Rev 2 recorded the human's answers to rev 1 §13 (2026-11-10, §14) and
+Status: **APPROVED (rev 3, by the human, 2026-11-10).** Answers to rev 3 §13 are in §17; where they differ from the body, §17 wins. §12 is in the shared phase order; the backlog tracks it as REN-34..39. Rev 2 recorded the human's answers to rev 1 §13 (2026-11-10, §14) and
 added **chunk streaming** for 2 km+ worlds (§15). Rev 3 records the answers to rev 2 §13 (2026-11-10, §16): streamed
 scripted props **remember their state** (new §15.10), the freeze rule gets a physics API (§15.5), and the multiplayer
 split is clarified (§15.8). Owner: skate-render. Reviewers: skate-physics (§8, §15.5), skate-assets (§10, §15.6,
@@ -882,3 +882,19 @@ Where each one landed:
 4. §15.5 (suspension rule and `IRigidBodyHandle.simulationSuspended`), §8; tasks 17 and 26.
 5. §1 non-goals, §15.8 (size validation).
 6. §15.3 driver table (server and client rows), §15.8 (`StreamingProfile.SERVER` / `CLIENT`).
+
+## 17. Human decisions (2026-11-10, answers to rev 3 §13; approval)
+
+Recorded verbatim:
+
+1) optional per-rule respawnAfterSeconds (default never);
+2) acceptable: non-matching records dropped after a patch, FOREIGN props kept;
+3) yes, scatter-rule decoration removal is remembered; grass bend is separate and not saved.
+
+Where each one landed:
+1. Scatter rules get an optional `respawnAfterSeconds` (default: never). Records carry their capture time (game
+   time), and a `DESTROYED` or `TAKEN` record older than the rule's value is dropped when its chunk loads (§15.10.2,
+   task 23).
+2. The §15.10.4 fingerprint policy stands as designed (task 23).
+3. `TerrainScatter.remove` and its `DESTROYED` record stand as designed (§15.10.2). REN-29 grass bending is a
+   separate, unsaved effect.

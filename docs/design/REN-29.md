@@ -1,6 +1,6 @@
 # REN-29: Vegetation and water (design)
 
-Status: **proposal rev 3, awaiting approval.** Rev 1 was rejected by the lead (not grounded in the code). Rev 3
+Status: **APPROVED (rev 3, by the human, 2026-11-10).** Answers to rev 3 §13 are in §15; where they differ from the body, §15 wins. The backlog tracks §12 as REN-34..39 (edit-mode physics queries in REN-38, ocean physics in REN-39, swimming as GPL-29). Rev 1 was rejected by the lead (not grounded in the code). Rev 3
 records the human's answers to rev 2 §13 (2026-11-10, §14) and adds the **infinite ocean** (§3.5, §6.7, §8.4),
 **foliage on arbitrary meshes** (§4.6), the **swimming direction** (§8.3) and the phase order shared with REN-28 (§12).
 Owner: skate-render. Reviewers: skate-physics (§4.6 edit-mode queries, §8, PHY-16), skate-assets (§10), skate-ecs (§3,
@@ -795,3 +795,17 @@ Where each one landed:
 7. §4.2; tasks 4 and 14b.
 8. §1 goal 8, §3.3, §4.6, §9, §10, §11; tasks 17 and 18 (PHY, edit-mode queries), 10b.
 9. §12 here and REN-28 §12: both tables carry the same phases A–F.
+
+## 15. Human decisions (2026-11-10, answers to rev 3 §13; approval)
+
+Recorded verbatim:
+
+1) the ocean floods only areas connected to the sea;
+2) draw distance auto-set to 4 km (undoable, inspector note) with an ocean or streamed terrain.
+
+Where each one landed:
+1. `OceanMask` flood fill as designed in §6.7 (task 19).
+2. Adding an `OceanComponent` or a streamed terrain (REN-28 `streaming` ON or AUTO-on) sets the active
+   `CameraComponent.farPlane` to 4000 m if it is lower. It is an undoable editor command, and the inspector shows a
+   note. The ocean inspector's suggestion (§6.7, §9) becomes this automatic step. Tasks 21 (ocean) and REN-28 task
+   20/22 (terrain editor) carry it.
