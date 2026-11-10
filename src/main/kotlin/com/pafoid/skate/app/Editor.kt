@@ -33,6 +33,8 @@ class Editor(
         EditorSettingsManager(engine.serializer, engine.eventSystem, engine.logger, engine.stringManager)
     val clipboardService = ClipboardService(engine.serializer)
     val editorInputState = EditorInputState()
+    /** Game Viewport focus/hover, reported by its window and read by the camera input (EDT-73). */
+    val viewportFocus = com.pafoid.skate.editor.data.ViewportFocusReport()
 
     init {
         engine.uiAuthoring = true
@@ -56,7 +58,10 @@ class Editor(
     val playModeHandler = PlayModeHandler(engine, undoRedoManager).also { it.init() }
 
     val editorInputHandler =
-        EditorInputHandler(clipboardService, undoRedoManager, editorInputState, engine, settingsManager)
+        EditorInputHandler(
+            clipboardService, undoRedoManager, editorInputState, engine, settingsManager, viewportFocus,
+            textInputActive = { imgui.ImGui.getIO().wantTextInput },
+        )
     val editorCamera = EditorCamera(engine, editorInputState) { settingsManager.editorSettings.camera }
 
     val editorActionHandler =
