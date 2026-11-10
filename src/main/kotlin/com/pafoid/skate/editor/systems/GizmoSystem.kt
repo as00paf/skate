@@ -32,6 +32,8 @@ class GizmoSystem(
     val translateSnap: Float get() = if (snapEnabled) settingsManager.editorSettings.gizmoSnap.translate else 0f
     val rotateSnapDegrees: Float get() = if (snapEnabled) settingsManager.editorSettings.gizmoSnap.rotateDegrees else 0f
     val scaleSnap: Float get() = if (snapEnabled) settingsManager.editorSettings.gizmoSnap.scale else 0f
+    /** UI rect gizmo snap step in canvas units; 0 while snapping is off (EDT-75). */
+    val uiSnap: Float get() = if (snapEnabled) settingsManager.editorSettings.gizmoSnap.ui else 0f
 
     fun toggleSnap() {
         snapEnabled = !snapEnabled
