@@ -1,7 +1,10 @@
 # REN-29: Vegetation and water (design)
 
-Status: **proposal rev 2, awaiting approval** (rev 1 was rejected by the lead: not grounded in the code). Owner:
-skate-render. Reviewers: skate-physics (§8, PHY-16), skate-assets (§10), skate-ecs (§3, §5.3), skate-vulkan (§12 task 14).
+Status: **proposal rev 3, awaiting approval.** Rev 1 was rejected by the lead (not grounded in the code). Rev 3
+records the human's answers to rev 2 §13 (2026-11-10, §14) and adds the **infinite ocean** (§3.5, §6.7, §8.4),
+**foliage on arbitrary meshes** (§4.6), the **swimming direction** (§8.3) and the phase order shared with REN-28 (§12).
+Owner: skate-render. Reviewers: skate-physics (§4.6 edit-mode queries, §8, PHY-16), skate-assets (§10), skate-ecs (§3,
+§5.3), skate-vulkan (§12), skate-gameplay and skate-animation (§8.3 swim direction).
 Depends on REN-27 (IBL: `EnvironmentProbe`) and **builds on REN-28** (`docs/design/REN-28.md`): task 1 (`lighting.glsl`),
 task 2 (`engine/procedural`, ECS-14 seeding), task 7 (scatter rules, per-chunk placement, instance batches) and §6
 biomes. Feeds PHY-16 (water volumes and buoyancy).
@@ -45,15 +48,21 @@ include REN-28.
    refraction, depth absorption, reflections (screen-space plus IBL fallback), foam, sun specular, shadows and fog.
 6. **Buoyancy (PHY-16):** dynamic bodies float, bob and settle in water using the same wave heights the renderer
    draws, on Bullet, Jolt and `SimplePhysics3D`.
+7. **Infinite ocean (human, §14):** a camera-following sea that reaches the horizon, alongside bounded water. It has
+   far-field LOD, a seamless horizon, a shoreline against REN-28 terrain that works with streaming, and buoyancy and
+   volume queries for PHY-16 (§6.7, §8.4). It is built last, after terrain and streaming.
+8. **Foliage on arbitrary meshes (human, §14):** `FoliageComponent` places plants on any static mesh by raycasting
+   down, using physics queries in edit mode (§4.6).
 
 **Non-goals (for now)**
 - GPU-driven culling or compute: the renderer is GL 3.3 core (`#version 330 core` in `shader_3d_default.glsl`), with
   no compute or SSBO. Culling stays on the CPU.
-- FFT ocean, caustics, wakes or ripples from moving objects, waterfalls, spline rivers with banks.
-- Infinite (camera-following) oceans: open question 3.
-- Grass reacting to the skater: open question 6.
+- FFT ocean, caustics (human, §14), wakes or ripples from moving objects, waterfalls, spline rivers with banks.
+- Planar reflections: later, and only if pools look wrong with SSR + IBL (human, §14).
+- Grass reacting to the skater: a later follow-up (human, §14).
 - Skeletal or bone-driven trees: wind is vertex-shader only.
-- Swimming and character water locomotion: open question 4, GPL.
+- Swimming: a later GPL/ANI direction (human, §14). Nothing in this design may prevent it; the hooks are in §8.3.
+- Earth curvature on the ocean horizon: worlds are capped at 16 km (REN-28 §16).
 
 ## 2. Overview
 
@@ -118,7 +127,11 @@ Vegetation without terrain, for the skatepark and the showcase:
 |---|---|---|
 | `areaSize` | 10 × 10 m | Rectangle on the entity's local XZ. The Transform places it; only yaw is used. |
 | `layers` | 1 grass layer | Up to 8 `FoliageLayer(foliageType GUID, densityPer100m2, minSpacing, scaleMin/Max, yawJitter, alignToNormal)`. These are REN-28 §7 scatter rule fields minus height/slope. |
-| `placement` | `FLAT` | `FLAT`: at the entity's Y. `TERRAIN`: snaps to the `HeightField` of the terrain below (REN-28 §3.2) and reads its normal. Raycasting onto meshes is open question 8. |
+| `placement` | `FLAT` | `FLAT`: at the entity's Y. `TERRAIN`: snaps to the `HeightField` of the terrain below (REN-28 §3.2) and reads its normal. `MESH` (human, §14): raycasts down onto static colliders (§4.6). |
+| `areaHeight` | 10 m | `MESH` only: the area is a box reaching this far below the entity; rays run from its top to its bottom. |
+| `surfaceLayers` | static layers | `MESH` only: collision layer mask that rays hit. `Character` and dynamic bodies are never hit. |
+| `surfaces` | `TOP` | `MESH` only: `TOP` (first hit per ray) or `ALL` (every upward-facing hit, for multi-level structures). |
+| `maxSlope` | 45° | `MESH` (and `TERRAIN`): rejects steeper surface normals. |
 | `densityMask` | none | Optional painted R8 mask per layer, stored as a sidecar asset (§10). |
 | `seedName` | `"foliage/<entity name>"` | ECS-14 stream name; same rules as REN-28 §5.1. |
 
@@ -140,17 +153,38 @@ patches.
 | `linearDrag` / `angularDrag` | 1.0 / 0.5 | Per second, scaled by submerged fraction (§8). |
 | `receiveShadows` | true | Water never casts. |
 
+| `cutsOcean` | true | When the rectangle lies over an ocean (§6.7), the ocean is not drawn and not queried inside it, so a harbour pool or a lagoon at another level stays separate. |
+| `buoyancy` on bodies | — | See §8.3: a body can opt out of `BuoyancySystem` (`RigidBody3D.buoyancy = AUTO / OFF / CONTROLLER`). |
+
 Presets in the inspector: *Calm pool*, *Lake*, *Ocean swell*, *River* (flow 1 m/s).
 
-### 3.5 Runtime objects (render domain, not serialized)
+### 3.5 `OceanComponent` (entity component, ECS registers; **new**: `engine/ecs/components/OceanComponent.kt`)
+
+The infinite ocean (human, §14). At most one per scene; scene validation warns about a second one and only the first
+is used.
+
+| Field | Default | Notes |
+|---|---|---|
+| `seaLevel` | 0 m | World Y of the still surface. Only the Transform's Y is ignored; the ocean has no position or rotation. |
+| `waves` | "Ocean swell" preset | Up to 4 `GerstnerWave`s, same type and normalization as `WaterComponent` (§6.1). |
+| `windDrivenWaves` | true | As `WaterComponent`. |
+| `material` | `water_ocean.skmat` | Schema `"water"`, the same as bounded water. |
+| `quadSize` | 0.5 m | Inner clipmap quad size (§6.7). |
+| `shoreMask` | `AUTO` | `AUTO`: derived from the REN-28 terrain in the scene, if any (§6.7). `NONE`: the sea is everywhere. |
+| `shoalingDepth` | 8 m | Water shallower than this scales wave amplitude down and crest foam up. |
+| `current` | (0, 0) m/s | Constant drift for floating bodies and foam scroll. |
+| `density`, `linearDrag`, `angularDrag` | 1025 kg/m³, 1.0, 0.5 | Buoyancy (§8.4). |
+| `receiveShadows` | true | As bounded water. |
+
+### 3.6 Runtime objects (render domain, not serialized)
 
 - **`FoliageCell`** (**new**, `engine/render/vegetation/FoliageCell.kt`): a square cell (16 m by default, or REN-28
   terrain chunk size when on terrain) with an AABB and, per `FoliageType`, a packed instance array. Each instance is
   16 floats (64 B): a 3×4 world matrix (12), then `tint`, `random` (0..1, seeded), `windPhase` and `lodFade`.
 - **`InstanceBatch`** (**new**, `engine/render/instancing/InstanceBatch.kt`): one mesh part × material × instance
   buffer, with a vertex input that combines the mesh's static buffers and the instance buffer. It is the "instance
-  batch" REN-28 §7 refers to. **Whichever of REN-28 task 7 or this note's task 2 lands first creates it, and the
-  other reuses it** (§12).
+  batch" REN-28 §7 refers to. It is created by this note's task 2, which the phase order (§12) runs at the start
+  of the terrain phase, before REN-28 task 7 (scatter) needs it.
 - **`WaterSurfaceMesh`** (**new**, `engine/render/water/WaterSurfaceMesh.kt`): grid chunks plus LOD index sets. It is
   built by the pure `WaterMeshBuilder` (**new**).
 
@@ -205,9 +239,12 @@ Presets in the inspector: *Calm pool*, *Lake*, *Ocean swell*, *River* (flow 1 m/
      `ALPHA_TEST` path, which avoids blending.
 - **Shadows:** `ShadowRenderer` (`engine/render/renderer/ShadowRenderer.kt`) gets instanced casters. Cascades use a
   LOD one coarser, `MASK` materials use the existing `alphaTestShader`, and LOD ≥ 2 and grass never cast.
-  `ShadowLayerCache` (`engine/render/shadow/ShadowLayerCache.kt`) hashes caster signatures. Wind-animated casters add
-  the wind time to their signature, so cascades with swaying trees re-render every frame; static vegetation keeps the
-  cache. Open question 7 covers freezing tree shadows at low quality.
+  `ShadowLayerCache` (`engine/render/shadow/ShadowLayerCache.kt`) hashes caster signatures.
+  - **Medium quality and above (human, §14):** wind-animated casters are drawn with the `WIND` shadow variant and add
+    the wind time to their signature, so cascades with swaying trees re-render every frame.
+  - **Low quality (human, §14):** tree shadows use the rest pose. The shadow variant is compiled without `WIND` and the
+    wind time is left out of the signature, so the cascades stay cached while the trees themselves still sway.
+  - The quality level comes from the REN-30 graphics preset; switching it invalidates the cache once.
 - **Picking:** `PickingPass` draws each batch with the entity id of the owning `FoliageComponent` or terrain.
   Clicking a tree selects the patch, not the instance.
 - **Stats:** add `EngineStats.foliageInstances`, `foliageDraws` and `waterDraws` (`engine/render/EngineStats.kt`).
@@ -238,6 +275,45 @@ always drawn instanced, never spawned as entities. Biome scatter rules (REN-28 �
 scale per biome with soft borders. For example: beach (sparse dune grass), grassland (dense grass, a few trees), peak
 (no grass, rocks with colliders). The `TERRAIN` placement of `FoliageComponent` reads `HeightField.heightAt` and
 `normalAt`, so patches sit on sculpted ground.
+
+### 4.6 Foliage on arbitrary meshes (human, §14: yes, now)
+
+`FoliageComponent.placement = MESH` places plants on static geometry: rooftops, planters, ramps, rocks, a level built
+from meshes.
+- **`SurfaceProbe`** (**new**, pure interface: `engine/render/vegetation/SurfaceProbe.kt`):
+  `castDown(x, z, top, bottom, layerMask, surfaces, out: SurfaceHits)`. It returns hit points and normals, and reuses
+  `out`, so it doesn't allocate.
+  - **Three implementations:**
+    - `FlatSurfaceProbe` (`FLAT`);
+    - `HeightFieldSurfaceProbe` (`TERRAIN`, REN-28 `HeightField`);
+    - `PhysicsSurfaceProbe` (`MESH`), over `IPhysics3D.raycast` / `raycastAll` (`engine/physics3d/IPhysics3D.kt`
+      *(30g)*, `PhysicsHit` in `PhysicsQueries.kt`).
+  - `ScatterPlacer` (REN-28 task 7) takes a probe. Placement, rejection by slope, spacing and seeding are then the same
+    code for all three modes, and unit tests use a fake probe.
+- **Rays:** one vertical ray per candidate, from the top of the area box to its bottom, against `surfaceLayers`.
+  - `TOP` keeps the first upward-facing hit.
+  - `ALL` keeps every upward-facing hit, through `raycastAll`, so a multi-level car park gets plants on each level.
+  - Hits are rejected when the normal is steeper than `maxSlope`, when they are on a dynamic body or a `Character`,
+    or when the density mask (projected on the area's XZ) rejects them.
+- **Edit-mode physics (with skate-physics, task 18):** rays need the scene's static colliders while the editor is not
+  playing. Task 18 makes sure the physics world holds static and kinematic colliders in edit mode, kept in sync with
+  transform and collider edits, without stepping. skate-physics confirms what `PhysicsSystem` already does in edit
+  mode; if the colliders are already there, task 18 is only the sync guarantee and tests. Queries run on the main
+  thread, which is how the engine already uses the Bullet and Jolt query APIs.
+- **Bake:** the editor raycasts on the main thread with a 2 ms per frame budget, using the same time-budgeted queue
+  pattern as REN-28's `StreamingUploadQueue`. A 20 × 20 m patch at 4 candidates per m² is 1,600 rays, about one
+  frame. Cells swap in when complete.
+- **Placement cache:** the baked instances are saved as `<scene>.foliage/<entity guid>/placement.bin`, the sidecar
+  folder masks already use (§10).
+  - Play and the exported game load the cache and **never raycast at load**. Placement then doesn't depend on
+    backend raycast differences (Bullet versus Jolt), needs no physics at load and is deterministic.
+  - The cache key is a hash of the component fields, the seed and a **surface signature**: GUID, transform and
+    collider hash of every object whose bounds overlap the area box.
+- **Dirty tracking (editor):** moving, adding or removing an overlapping object, or editing its collider, marks the
+  patch stale. It rebakes 0.5 s after the edit ends, not during a gizmo drag. A "Rebake" button forces it.
+- **Stale or missing cache at run time:** rebaked at load under the same budget, with one warning in the log.
+- **Limits:** surfaces must be static. Foliage doesn't follow a mesh that moves at run time (documented), and dynamic
+  bodies are never hit. Terrain scatter keeps using the `HeightField` (REN-28), not rays.
 
 ## 5. Wind
 
@@ -291,7 +367,8 @@ Water (§6) and buoyancy (§8) read the same clock, so what floats is what you s
 - **Grid:** `WaterMeshBuilder` (**new**, pure) builds a grid at `quadSize` in 32 × 32-quad chunks with 3 LOD index sets
   (step 1, 2, 4) and skirts, as REN-28 §4.1. A 20 × 20 m pool at 0.5 m is 40 × 40 quads in 2 × 2 chunks. Chunks are
   frustum-culled. LOD uses distance and wave amplitude, and the same screen-error selection as `TerrainLod`
-  (REN-28 task 4); the water uses it if it lands first, otherwise a copy in `WaterLod`.
+  (REN-28 task 4). Water lands first in the phase order (§12), so task 7 creates the shared pure helper
+  `ScreenErrorLod` (**new**, `engine/render/lod/ScreenErrorLod.kt`) and REN-28 task 4's `TerrainLod` reuses it.
 - **Vertex shader:** the vertex shader displaces the grid with the Gerstner sum.
 
 ### 6.2 Pass split and `WaterPass` (**new**: `engine/render/renderer/passes/WaterPass.kt`)
@@ -307,13 +384,13 @@ Water (§6) and buoyancy (§8) read the same clock, so what floats is what you s
    - Blit `SceneColor` and `SceneDepth` into a `WaterSceneCopy` target (**new**, a `ColorTarget`-like pair at full
      resolution, created on first use).
    - `RhiCommandList.blit` copies colour only today (`GlCommandList.kt`:144, `GL_COLOR_BUFFER_BIT`), so task 7 adds a
-     `mask` parameter (COLOR, DEPTH) on the RHI and the GL backend; the Vulkan backend follows in task 14.
+     `mask` parameter (COLOR, DEPTH) on the RHI and the GL backend; the Vulkan backend follows in task 14a.
    - The copy avoids sampling the depth attachment being tested (a GL feedback loop).
    - MSAA is not a concern: `GlRenderTarget` uses single-sample textures (`resolve()` is a no-op).
    - New resource ids: `SceneColorCopy`, `SceneDepthCopy` in `RenderResourceIds` *(30g)*.
 4. **Draw:** draw the water chunks with `water.glsl` (**new**), depth test on, **depth write on**, so the
    transparent and particle passes test against the surface. It is double-sided only when the camera is under the
-   surface (open question 2).
+   surface (underwater slice, §6.6).
 
 ### 6.3 Shading (`water.glsl`, includes `lighting.glsl` from REN-28 task 1, `fog.glsl`, `water_waves.glsl`, `wind.glsl`)
 
@@ -334,7 +411,8 @@ Water (§6) and buoyancy (§8) read the same clock, so what floats is what you s
     fades at screen edges and for rays facing the camera. On a miss it falls back to IBL. This is what reflects the
     surrounding geometry (rev 1 acceptance 1). Step counts come from the Graphics quality preset (REN-30 settings):
     Low = IBL only, Medium = 16 steps, High = 32 steps.
-  - **Planar reflections:** open question 1.
+  - **Planar reflections (human, §14):** not now. SSR + IBL is the design; a per-water planar option is a later task
+    only if pools look wrong.
 - **Lighting:** Fresnel–Schlick with F0 = 0.02, GGX sun specular, sun shadows via `sunShadow` (`lighting.glsl`), local
   lights through the shared `LightBuffer`, then fog.
 
@@ -363,7 +441,74 @@ Registered in `MaterialSchemas` with shader `water.glsl`:
 
 - **Picking:** `PickingPass` draws the surface chunks (LOD 2) with the entity id.
 - **Debug:** `DebugPass` draws the volume box (surface plus `depth`) when the entity is selected.
-- **Underwater:** open question 2.
+- **Underwater (human, §14: yes, a small later slice, no caustics; task 12):**
+  - **Detection:** the camera is underwater when `WaterQueries.sample` (§8.4) at the camera position returns a
+    surface above it. This works for bounded water and the ocean, and for any camera (editor, follow, a future swim
+    camera, §8.3).
+  - **Surface from below:** the water draws double-sided; from below, it shows total internal reflection outside
+    Snell's window (a Fresnel term on the flipped normal) and the refracted sky inside it.
+  - **Volume:** a new `PostEffect.UNDERWATER` (`engine/render/renderer/passes/PostEffect.kt`), first in
+    `DEFAULT_PIPELINE` and a no-op above water, tints and fogs the scene with the material's
+    `deepColor` and `absorptionDistance` (Beer–Lambert on scene depth), so it matches the view from above.
+  - **Not included:** caustics, god rays, particles; underwater audio filtering is an AUD follow-up.
+
+### 6.7 Infinite ocean (human, §14; tasks 19–21, built last)
+
+The ocean is drawn by the same `WaterPass` with the same `water.glsl`, under a new `ShaderFeature.OCEAN` define. It
+shares the scene copy, SSR, IBL, foam, fog and lighting with bounded water, and draws after the bounded bodies.
+
+**Mesh: camera-following clipmap** (`OceanMeshBuilder`, **new**, pure: `engine/render/water/OceanMeshBuilder.kt`)
+- **Rings:** an inner 64 × 64-quad patch at `quadSize` (32 m across at 0.5 m), then 7 rings with the same layout, each
+  with double the quad size of the previous one. Ring 7 reaches ±4 km with 64 m quads.
+- **Snapping:** each ring's origin is snapped to twice its quad size in XZ, so vertices don't swim as the camera
+  moves. The outer quarter of each ring geomorphs towards the next ring's positions, so there are no seams or pops.
+- **Horizon skirt:** a last flat ring from 4 km to the camera's `farPlane` (`CameraComponent.farPlane`), at
+  `seaLevel`, without displacement.
+- **Cost:** the buffers are static and built once per `quadSize`. Only the ring origins (`uOceanRingOrigin[8]`)
+  change per frame, so nothing is uploaded per frame. Each ring is split into 4 quadrants for frustum culling, for at
+  most 36 draws.
+- **Camera height:** rings whose quads would be under 1/200 of the camera height above `seaLevel` are skipped, so
+  flying high doesn't create tiny triangles.
+
+**Waves and LOD**
+- **Same waves:** `WaterWaves` (§6.1) and `water_waves.glsl`, using the ocean's `waves`.
+- **Fading short waves:** in the vertex shader, each wave fades out where its wavelength is under 4 × the local quad
+  size, which prevents aliasing. Detail normal maps and crest foam also fade with distance.
+- **Physics doesn't fade:** `WaterWaves.heightAt` never fades a wave, so physics always sees the full sum. A difference
+  appears only where the renderer has faded short waves, beyond about 64 m from the camera, where it isn't visible.
+
+**Horizon**
+- With fog on, `fog.glsl` blends both the ocean and the sky into the fog colour, so the horizon seam disappears.
+- With fog off, the horizon skirt is seen at grazing angles, where Fresnel goes to 1. It then reflects `uEnvSky` in
+  the horizon direction, which is the same texture the sky dome draws, so water and sky meet without a line.
+- **Far plane:** `CameraComponent.farPlane` defaults to 1000 m, so the ocean ends at 1 km by default. The ocean
+  inspector suggests 4 km (or fog) when an ocean is present; REN-28's far field wants the same.
+- No earth curvature: worlds are capped at 16 km (REN-28 §16).
+
+**Shoreline against REN-28 terrain and streaming**
+- **Occlusion:** terrain detail chunks and the far field draw before water and write depth, so land hides the sea.
+- **Near shore** (≤ 1 km): foam and absorption come from the scene depth copy, as for bounded water. They are right
+  as soon as a detail chunk is drawn.
+- **`OceanMask`** (**new**, `engine/render/water/OceanMask.kt`, pure builder):
+  - **Build:** a flood fill over REN-28's `TerrainOverview` (8 m spacing, always resident, REN-28 §3.2), starting
+    from the terrain border. A cell is **sea** if it is below `seaLevel` and connected to open water.
+  - **Result:** an R8 texture at overview resolution (4 MB at 16 km), plus a CPU copy for queries (§8.4). Outside the
+    terrain bounds it is all sea. Inland basins below sea level stay dry (open question 1).
+  - **Use:** ocean fragments over non-sea texels are discarded, with a dithered one-texel edge.
+  - **Far shore:** beyond 1 km, 24-bit depth (GL 3.3, no reversed Z) can't separate water from the far-field terrain
+    reliably, so the far shoreline is decided **by the mask, not by depth**.
+  - **Rebuilds:** on a worker, when the overview changes (REN-28 §15.7 incremental refresh) or `seaLevel` changes.
+  - **Without terrain,** or with `shoreMask = NONE`, the sea is everywhere.
+- **Shoaling:** sea depth is `seaLevel` minus the overview height, sampled from the overview R16 texture that REN-28
+  already keeps on the GPU (§15.4), so it adds no memory. Wave amplitude scales by `saturate(depth / shoalingDepth)`
+  and crest foam grows where waves shoal.
+- **Streaming:** the ocean itself never streams. It uses only the clipmap, procedural waves and always-resident data
+  (overview, mask). So it is correct in the far field before detail chunks arrive, and a dedicated server (no
+  rendering, REN-28 §15.8) keeps only the mask for queries.
+- **Bounded water in the ocean:** the ocean is cut out inside up to 8 `WaterComponent` rectangles with `cutsOcean`
+  (an oriented-rect uniform array), for harbour pools and lagoons at another level.
+- **Precision:** within REN-28's ±8 km cap, ring origins are world floats and vertices are ring-local, so precision
+  is fine.
 
 ## 7. Performance budget (dev machine, measured with the REN-22 per-pass GPU timers)
 
@@ -372,6 +517,8 @@ Registered in `MaterialSchemas` with shader `water.glsl`:
 | `VegetationPass` (showcase patch, ~60k grass visible + 200 trees) | < 1.5 ms GPU, < 0.5 ms CPU |
 | Vegetation shadows (trees, wind on) | < 1 ms GPU |
 | `WaterPass` (one 20 × 20 m body, SSR High) | < 1 ms GPU, including the scene copy |
+| Ocean (full screen, SSR High, *Big Island*) | < 1.5 ms GPU, < 0.1 ms CPU (ring origins only) |
+| `MESH` foliage bake (editor) | ≤ 2 ms main thread per frame while baking; 0 at run time with a valid cache |
 | Allocation per frame | none: instance staging is reused, like `ParticlePass.instanceBuffer` |
 
 ## 8. Physics: water volumes and buoyancy (PHY-16, needs skate-physics review)
@@ -409,11 +556,54 @@ Registered in `MaterialSchemas` with shader `water.glsl`:
 - **Backends:** only uses `applyForce` and `applyTorqueImpulse`, so Bullet, Jolt and `SimplePhysics3D` behave the same.
   Jolt's native buoyancy is not used, to keep backend parity and determinism.
 
-### 8.3 Characters
+### 8.3 Characters: bail now, swimming later (human, §14)
 
 The skater is driven by `PlayerController` and `SkateboardController` (`game/skateboard/SkateboardController.kt`), not
-by free buoyancy. What happens when the skater enters water is a GPL decision (open question 4). The
-`WaterEntered` event and a `WaterQueries.surfaceAt(x, z)` helper (**new**, `engine/environment`) are the hooks.
+by free buoyancy.
+- **Now (task 15, GPL):** entering water bails the skater and respawns them at the last safe spot. This is GPL
+  **policy** in `PlayerController`: a `waterResponse = BAIL` setting that reacts to `WaterEntered`. The engine has no
+  built-in "water kills the player" rule.
+- **Later direction (GPL/ANI, recorded so nothing here blocks it):** the skater must be able to **swim**, at the
+  surface and underwater:
+  - **GPL:** swim states (tread, surface swim, dive, underwater swim, climb out), swim controls (stroke, dive, surface,
+    sprint), and a `waterResponse = SWIM` option;
+  - **ANI:** swim animations in the existing state machine (no engine change);
+  - **Camera:** an underwater follow camera;
+  - **AUD:** underwater filtering.
+- **What this design guarantees for swimming:**
+  1. **Queries rich enough for a swim controller:** `WaterQueries.sample` (§8.4) gives the surface height, normal,
+     flow or current, density and floor height at any point, for bounded water and the ocean. `WaterQueries.submersion(
+     capsule, out)` (**new**) gives the depth of the feet, centre and head, and the submerged fraction.
+  2. **Characters aren't pushed around by `BuoyancySystem`:** a body opts out with `RigidBody3D.buoyancy` (**new
+     field**). `AUTO` is normal buoyancy; `OFF` ignores water; `CONTROLLER` (the default for a body with a
+     `PlayerController`) reports `WaterEntered`/`WaterExited` but applies no force, so a future swim controller applies
+     its own.
+  3. **Events per body:** `WaterEntered` and `WaterExited` carry the water source (bounded or ocean) and the body.
+     Head-under or head-out transitions come from `submersion`, so no extra events are needed.
+  4. **Underwater rendering is per camera, not per skater** (§6.6), so a diving follow camera just works.
+  5. **No design rule assumes water is fatal or shallow:** bounded volumes have a `depth`, and the ocean has a floor
+     from the terrain or none.
+
+### 8.4 Ocean volume and queries (PHY-16 extension, task 20)
+
+- **`WaterQueries`** (**new**, `engine/environment/WaterQueries.kt`, pure apart from reading the components) is the
+  single entry point for physics, gameplay, audio and the underwater view: `sample(x, z, t, out: WaterSample):
+  Boolean`, with surface Y, normal, flow, density, drags, floor Y and the source entity.
+  - **Lookup order:** bounded bodies first (they cut the ocean), then the ocean where the `OceanMask` CPU copy says
+    sea.
+  - **Ocean floor:** REN-28 `HeightField.heightAt`, which falls back to the overview far away; without terrain there is
+    no floor (−∞).
+- **`BuoyancySystem` and the ocean:** the ocean has no bounds, so the broad phase is a test that a body's AABB minimum
+  Y is below `seaLevel` plus the maximum crest (the sum of amplitudes), then the mask at the body's centre. This is
+  O(bodies), with no volume AABB. Forces, drag and current then work as in §8.2.
+- **Far bodies:**
+  - **Inside the terrain bounds:** a body over a chunk without a collider is suspended by REN-28's rule (§15.5), even
+    at sea, until a focus comes near. That keeps far simulation free.
+  - **Outside the terrain bounds:** open sea never freezes, and floating bodies keep simulating. The cost is bounded
+    by the body count.
+- **Events:** `WaterEntered` and `WaterExited` with the ocean entity as the source.
+- **Dedicated server:** queries and buoyancy need only the mask and the waves, with no rendering, so they run there
+  unchanged.
 
 ## 9. Editor tools (editor domain, EDT tasks)
 
@@ -424,6 +614,10 @@ by free buoyancy. What happens when the skater enters water is a GPL decision (o
 - **`FoliageType` inspector** for `.skfoliage` assets: LOD list with screen sizes and a live LOD-colour debug view,
   wind profile with a preview, and a "Bake impostor" button after task 11.
 - **Water inspector:** wave presets, a per-wave editor, material picker, a volume gizmo and a "Freeze time" toggle.
+- **`MESH` placement:** the area box gizmo shows its height, a stale or baking badge, a "Rebake" button and a hit
+  preview (dots on the hit surfaces) (§4.6).
+- **Ocean inspector:** sea level, wave presets, shore mask mode with a mask preview on the REN-28 minimap, and the
+  far-plane suggestion (§6.7). A bounded water's `cutsOcean` rectangle is drawn on the sea.
 - **Environment inspector:** a wind section with presets. When the Environment is selected, a wind arrow is drawn in
   the viewport via `DebugPass`.
 
@@ -435,10 +629,16 @@ by free buoyancy. What happens when the skater enters water is a GPL decision (o
   the material override and the impostor atlas.
 - **Foliage density masks:** `FoliageComponent` masks are a sidecar folder `<scene>.foliage/<entity guid>/<layer>.png`
   (R8), referenced by GUID. Masks on terrain stay in the `.skterrain` folder (REN-28 §10).
+- **`MESH` placement cache:** `<scene>.foliage/<entity guid>/placement.bin` (§4.6): versioned, with the cache key in
+  its header and packed instances, about 64 B per instance and deflated. It is packed with the scene. A stale cache
+  is still loadable and is rebaked.
+- **Ocean:** `OceanComponent` is serialized in the scene. `OceanMask` is **not** stored; it is rebuilt from the terrain
+  overview on load (a flood fill over 2049² cells takes about 30 ms on a worker).
 - **Water `.skmat`:** normal `.skmat` assets with schema id `"water"`. `MaterialAsset` already stores the schema id.
 - **Bundled assets** (AST/TLG source them):
   - grass is generated (no asset);
-  - 2 CC0 low-poly trees with 2 LODs each and the vertex-colour convention, plus a bush (open question 5);
+  - 2 CC0 low-poly trees with 2 LODs each and the vertex-colour convention, plus a bush (human, §14: yes, e.g.
+    Quaternius or Kenney; the licence goes in `docs/third-party.md`);
   - two tileable water normal maps and a foam texture (CC0, e.g. ambientCG/Poly Haven via AST-16, or generated
     offline from `NoiseField`).
 
@@ -462,74 +662,136 @@ by free buoyancy. What happens when the skater enters water is a GPL decision (o
     - the righting torque sign;
     - flow drag moves a body downstream.
   - `.skfoliage` round-trip.
+  - `MESH` placement with a fake `SurfaceProbe`: `TOP` versus `ALL`, slope rejection, layer mask, dynamic bodies
+    ignored, mask applied, deterministic; the cache key changes when an overlapping object moves and not when an
+    unrelated one does; the placement cache round-trip; the bake respects its time budget (fake clock).
+  - Tree shadow quality: at Low, the signature ignores wind time and the variant has no `WIND`; at Medium, it
+    includes both.
+  - Ocean:
+    - clipmap ring layout, snapping (no vertex swim when moving under a snap step), geomorph continuity at ring
+      borders, and ring skipping with camera height;
+    - short-wave fade by quad size;
+    - `OceanMask` flood fill: a basin below sea level and not connected stays dry, a bay connected through one cell
+      is sea, and the area outside the bounds is sea;
+    - shoaling scale;
+    - the `cutsOcean` rectangle test.
+  - `WaterQueries`: bounded water wins over the ocean; the floor comes from the `HeightField`; `submersion` depths for
+    a capsule.
+  - `BuoyancySystem` and the ocean: the broad-phase test; `CONTROLLER` bodies get events and no force; `OFF` bodies
+    get neither.
+  - Underwater detection at the camera for both water kinds.
 - **GPU tests:**
   - With no vegetation or water, the task 1 split is pixel-identical to before.
   - Water refraction shows the pool floor.
   - Foam appears at an intersecting box.
   - Instanced draws match non-instanced ones for the same mesh and transform.
   - Timings are logged against §7.
+  - Ocean: no seam between rings from a low grazing view, and the horizon meets the sky with fog off.
 - **Feature Showcase** (`game/samples/FeatureShowcase.kt`, an `Area` entry in `AREAS`, TLG owns the file): a new
   **"Nature"** area behind the back row, next to REN-28's "Terrain" area.
   - **Water:** a 10 × 6 m pool, 1.5 m deep, using `water_pool.skmat`, with steps into it (shore foam). Inside are
     floating crates of 3 densities, a ball and a log, which bob, settle and roll (PHY-16 "done when").
   - **Vegetation:** a grass patch with two trees and bushes from a `FoliageComponent`.
   - **Wind button:** an overlay button that cycles calm, breeze and storm, like the existing fog button.
-  - When REN-28 is in, the Terrain island gets biome vegetation and a sea `WaterComponent` around it.
+  - **Foliage on meshes:** bushes on top of a planter box and on a ramp deck, placed with `MESH`.
+  - When REN-28 is in, the Terrain island gets biome vegetation. The **infinite ocean** is shown in REN-28's *Big
+    Island* sample (task 21), where the shoreline, horizon and streaming matter. The showcase island keeps a bounded
+    sea box, because the showcase has a short far plane.
 - **Acceptance**, from rev 1 and made concrete:
   1. The water reflects the sky (IBL) and nearby showcase objects (SSR), and refracts the pool floor.
   2. A dropped debug cube and crates float and settle in water.
   3. Trees switch LOD with distance without popping, and grass and trees sway visibly with wind.
   4. Swapping a `.skfoliage` or water `.skmat` changes the look with no code change.
+  5. On *Big Island*, the ocean reaches the horizon and meets the island shore with foam, without z-fighting at
+     distance. Crates float far from the island.
+  6. Bushes sit on the planter and the ramp, and moving the planter in the editor rebakes them.
 
 ## 12. Implementation tasks (after approval)
 
-| # | Task | Domain | Deps |
-|---|---|---|---|
-| 1 | Split `GeometryPass` into opaque `GeometryPass` and `TransparentPass`; hoist `EnvironmentProbe`/`LightBuffer` into `RenderResources`; pixel parity | REN | REN-28 task 1 (`lighting.glsl`) |
-| 2 | Instancing core: `InstanceBatch`, `VAOLoader.instancedInput`, `VertexLayouts.INSTANCE_TRANSFORM`, `ShaderFeature.INSTANCED` in default/shadow/picking shaders, `ModelRenderer.drawInstanced`, `EngineStats` counters (shared with REN-28 task 7) | REN | 1 |
-| 3 | Wind: `EnvironmentComponent` fields, `EnvironmentClockSystem`, `WindField` + `wind.glsl`, `ShaderFeature.WIND`, shadow-cache signature | ECS (component, system review) + REN | 2 |
-| 4 | Vegetation: `FoliageType`, `GrassMeshBuilder`, `FoliageComponent` (`FLAT`), `FoliageCell`, `VegetationLod`, `VegetationPass`, shadows, picking | REN (+ ECS registers component) | 2, 3, REN-28 task 2 (seeding; `ScatterPlacer` from REN-28 task 7, or extracted here if first) |
-| 5 | `.skfoliage` asset: save/load, GUID meta, hot reload, packing; foliage mask sidecars; bundled trees and water textures | AST | 4 |
-| 6 | Terrain hookup: `ScatterRule.foliageType`, biome-driven vegetation, `FoliageComponent.TERRAIN` placement | REN | 4, REN-28 tasks 6–7 |
-| 7 | Water: `WaterComponent`, `WaterWaves` + `water_waves.glsl`, `WaterMeshBuilder`, RHI `blit` depth mask (GL), `WaterPass` with refraction, absorption, IBL reflection, foam, shadows, fog, picking, water schema and presets | REN (+ ECS registers component) | 1, 3 (clock) |
-| 8 | SSR for water, tied to the quality preset | REN | 7 |
-| 9 | PHY-16: `BuoyancySystem`, `BuoyancyMath`, `WaterEntered`/`WaterExited` events, `WaterQueries` | PHY | 7 |
-| 10 | Editor: foliage paint, `.skfoliage` inspector, water and wind inspectors and gizmos, presets | EDT | 4, 7, REN-28 task 10 (brush) |
-| 11 | Impostor baker and far LOD | REN | 4, 5 |
-| 12 | Underwater view (only if open question 2 says yes) | REN | 7 |
-| 13 | Showcase "Nature" area, wind button, docs (`docs/samples.md`, `docs/vegetation.md`) | TLG + REN | 4, 7, 9 |
-| 14 | Vulkan parity: instance attributes 8–11, depth blit, water and vegetation passes through `GlslToVulkan` | VK | 4, 7, 8 |
-| 15 | Skater in water (open question 4) | GPL | 9 |
-| 16 | Splash and water-ambience sounds on `WaterEntered` (optional) | AUD | 9 |
+**Phase order (decided by the lead, human §14 decision 9), shared with REN-28 §12:**
+**A** shared foundations (REN-28 tasks 1–2: `lighting.glsl`, `engine/procedural`) → **B** water and wind (this
+note) → **C** REN-28 terrain → **D** REN-28 streaming → **E** vegetation (this note) → **F** infinite ocean (this
+note; it needs terrain and streaming). Rows are in that order. Task numbers are kept from rev 2 so references stay
+valid; new tasks are 17–21, and split tasks get a letter.
 
-Water and wind (tasks 1, 3, 7, 8, 9) don't need terrain. Only task 1's `lighting.glsl` prerequisite and tasks 4 and 6
-touch REN-28 work.
+| Phase | # | Task | Domain | Deps |
+|---|---|---|---|---|
+| A | — | (REN-28 tasks 1–2) | REN | — |
+| B | 1 | Split `GeometryPass` into opaque `GeometryPass` and `TransparentPass`; hoist `EnvironmentProbe`/`LightBuffer` into `RenderResources`; pixel parity | REN | REN-28 task 1 |
+| B | 3 | Wind: `EnvironmentComponent` fields, `EnvironmentClockSystem`, `WindField` + `wind.glsl`, `ShaderFeature.WIND` | ECS (component, system review) + REN | 1 |
+| B | 7 | Water: `WaterComponent` (incl. `cutsOcean`), `WaterWaves` + `water_waves.glsl`, `WaterMeshBuilder`, shared `ScreenErrorLod`, RHI `blit` depth mask (GL), `WaterPass` with refraction, absorption, IBL reflection, foam, shadows, fog, picking, water schema and presets | REN (+ ECS registers component) | 1, 3 |
+| B | 8 | SSR for water, tied to the quality preset | REN | 7 |
+| B | 9 | PHY-16: `BuoyancySystem`, `BuoyancyMath`, `RigidBody3D.buoyancy` (`AUTO`/`OFF`/`CONTROLLER`), `WaterEntered`/`WaterExited`, `WaterQueries.sample` and `submersion` (bounded water) | PHY | 7 |
+| B | 10a | Editor: water and wind inspectors, gizmos, presets | EDT | 3, 7 |
+| B | 13a | Showcase "Nature" area, part 1: pool, floating props, wind button; `docs/samples.md` | TLG + REN | 7, 9 |
+| B | 14a | Vulkan parity for wind and water: depth blit, `WaterPass`, SSR through `GlslToVulkan` | VK | 7, 8 |
+| B | 15 | Skater in water: bail + respawn as `PlayerController` policy (`waterResponse = BAIL`) on `WaterEntered` | GPL | 9 |
+| B | 16 | Splash and water-ambience sounds on `WaterEntered` (optional) | AUD | 9 |
+| C | 2 | Instancing core: `InstanceBatch`, `VAOLoader.instancedInput`, `VertexLayouts.INSTANCE_TRANSFORM`, `ShaderFeature.INSTANCED` in default/shadow/picking shaders, `ModelRenderer.drawInstanced`, `EngineStats` counters. First in phase C, because REN-28 task 7 (scatter) needs it | REN | 1 |
+| D | — | (REN-28 streaming, tasks 14–27) | — | — |
+| E | 4 | Vegetation: `FoliageType`, `GrassMeshBuilder`, `FoliageComponent` (`FLAT`), `FoliageCell`, `VegetationLod`, `VegetationPass`, shadows with the quality rule (§4.2), picking | REN (+ ECS registers component) | 2, 3, REN-28 task 7 (`ScatterPlacer`) |
+| E | 5 | `.skfoliage` asset: save/load, GUID meta, hot reload, packing; foliage mask sidecars; bundled 2 CC0 trees + bush and water textures | AST | 4 |
+| E | 6 | Terrain hookup: `ScatterRule.foliageType`, biome-driven vegetation, `FoliageComponent.TERRAIN`; foliage cells stream with REN-28 task 18 | REN | 4, REN-28 tasks 6, 7, 18 |
+| E | 18 | Edit-mode physics queries: static and kinematic colliders present and raycastable while not playing, synced on transform/collider edits, no stepping (§4.6) | PHY | — |
+| E | 17 | Foliage on meshes: `SurfaceProbe` (flat, heightfield, physics), `MESH` placement, budgeted bake, placement cache + surface signature, dirty tracking and rebake | REN | 4, 18 |
+| E | 10b | Editor: foliage paint, `.skfoliage` inspector, `MESH` area gizmo, hit preview, Rebake | EDT | 4, 17, REN-28 task 10 (brush) |
+| E | 11 | Impostor baker and far LOD | REN | 4, 5 |
+| E | 13b | Showcase "Nature" area, part 2: grass, trees, bushes, foliage on meshes; terrain island vegetation; `docs/vegetation.md` | TLG + REN | 4, 6, 17 |
+| E | 14b | Vulkan parity for vegetation: instance attributes 8–11, `VegetationPass`, wind shadows | VK | 4 |
+| F | 19 | Ocean rendering: `OceanComponent`, `OceanMeshBuilder` clipmap, `ShaderFeature.OCEAN`, wave fade, horizon, `OceanMask` from the REN-28 overview, shoaling, `cutsOcean` (§6.7) | REN (+ ECS registers component) | 7, 8, REN-28 tasks 14, 20 (overview and its refresh) |
+| F | 20 | Ocean physics: `WaterQueries` ocean source, `BuoyancySystem` broad phase for the ocean, events (§8.4) | PHY | 9, 19 |
+| F | 21 | Ocean editor inspector, mask preview, *Big Island* sea and shoreline check, Vulkan parity of the ocean | EDT + TLG + VK | 19, 20, REN-28 task 22 |
+| F | 12 | Underwater view for bounded water and the ocean: detection, surface from below, `PostEffect.UNDERWATER`; no caustics (§6.6) | REN | 7, 19 |
+| Later | — | Planar reflections, only if pools look wrong with SSR + IBL | REN | 8 |
+| Later | — | Grass interaction with the skater and wheels (up to 4 spheres) | REN | 4 |
+| Later | — | Swimming: GPL swim states and controls, ANI swim animations, underwater follow camera, AUD underwater filter (§8.3) | GPL + ANI (+ AUD) | 9, 12, 20 |
+
+Phase B needs no terrain. Only REN-28 task 1 (`lighting.glsl`, phase A) comes first. Bounded water keeps working
+without an ocean, and the ocean works without terrain (`shoreMask = NONE`). It is scheduled last because its shoreline
+and the *Big Island* check need REN-28's overview and streaming.
 
 ## 13. Open questions for the human
 
-1. **Reflections:** is screen-space reflection plus IBL enough, or do you want true planar reflections for mirror-flat
-   pools? Planar re-renders the scene mirrored, which roughly doubles the geometry cost.
-   *Recommended:* SSR + IBL now; add planar later as a per-water "High" option only if pools look wrong.
-2. **Underwater:** does the camera need to go underwater (blue fog and tint, surface seen from below)?
-   *Recommended:* yes, as a small later slice (task 12). No caustics.
-3. **Ocean:** do we need an infinite, camera-following ocean, or are bounded water boxes enough (a large box can
-   surround an island)?
-   *Recommended:* bounded boxes only for now.
-4. **Skater in water:** when the skater rides into water, should they bail and respawn at the last safe spot, or float
-   or swim?
-   *Recommended:* bail + respawn (GPL task 15); crates and props float.
-5. **Vegetation assets:** may we ship 2 CC0 low-poly trees and a bush (e.g. Quaternius/Kenney), with grass generated
-   procedurally?
-   *Recommended:* yes.
-6. **Grass interaction:** should grass bend away from the skater and wheels (up to 4 interaction spheres, a uniform
-   array)?
-   *Recommended:* later, as a small follow-up after task 4.
-7. **Tree shadows in wind:** swaying shadows force cascades to re-render every frame. Should they animate at every
-   quality level?
-   *Recommended:* animate at Medium and above; at Low, keep rest-pose shadows (cached).
-8. **Foliage on meshes:** besides flat areas and terrain, should `FoliageComponent` place plants on arbitrary meshes by
-   raycasting down (needs physics queries in edit mode)?
-   *Recommended:* not now; `FLAT` + `TERRAIN` cover the park and terrain.
-9. **Order with REN-28:** if REN-28 approval or implementation is delayed, should water and wind (tasks 1, 3, 7–9)
-   start first? Task 1 would then extract `lighting.glsl` itself.
-   *Recommended:* yes.
+Rev 2's questions are answered in §14. Remaining questions from the ocean design:
+
+1. **Inland basins below sea level:** should the ocean flood every terrain area below `seaLevel`, or only areas
+   connected to the open sea?
+   *Recommended:* only connected areas (the `OceanMask` flood fill, §6.7). A dry valley below sea level stays dry; a
+   lake there is a bounded `WaterComponent`.
+2. **Default far plane with an ocean or a REN-28 far field:** `CameraComponent.farPlane` defaults to 1000 m, so the
+   ocean and the far field stop at 1 km unless fog hides the edge. Should scenes with an ocean or a streamed terrain
+   default to a 4 km far plane?
+   *Recommended:* yes. Set it automatically when an `OceanComponent` or a streamed terrain is added (undoable, with a
+   note in the inspector). The far shoreline doesn't rely on depth precision (mask, §6.7).
+
+## 14. Human decisions (2026-11-10, answers to rev 2 §13)
+
+Recorded verbatim:
+
+1. Reflections: SSR + IBL now; planar later only if pools look wrong.
+2. Underwater: yes, a small later slice; no caustics.
+3. Ocean: an INFINITE camera-following ocean TOO (besides bounded water): design it (far-field LOD, horizon,
+   shoreline against REN-28 terrain and its streaming, buoyancy/volume queries for PHY-16), as its own task(s).
+4. Skater in water: bail + respawn for now; in the future the skater must be able to SWIM, including underwater:
+   record it as a later GPL/ANI direction (swim states, animations, controls, underwater camera) so nothing in this
+   design prevents it.
+5. Vegetation assets: yes, ship 2 CC0 low-poly trees and a bush; procedural grass.
+6. Grass interaction: later follow-up.
+7. Swaying tree shadows at Medium and above; cached rest-pose shadows at Low.
+8. Foliage on arbitrary meshes: YES, NOW (raycast placement on meshes, physics queries in edit mode with
+   skate-physics).
+9. Order: decided by the lead: shared foundations (lighting.glsl, engine/procedural) -> water + wind -> REN-28
+   terrain -> streaming -> vegetation -> infinite ocean last (it needs terrain and streaming). Make both notes' task
+   lists consistent with that order.
+
+Where each one landed:
+1. §6.3, §1 non-goals; the "Later" planar row in §12.
+2. §6.6; task 12 (phase F, after the ocean, so it covers both water kinds).
+3. §1 goal 7, §3.5, §6.7, §8.4, §7, §11; tasks 19–21 (phase F).
+4. §8.3 (bail as GPL policy now; swim hooks: `WaterQueries.sample`/`submersion`, `RigidBody3D.buoyancy = CONTROLLER`,
+   per-camera underwater); task 15 and the "Later" swimming row.
+5. §10; task 5.
+6. §1 non-goals; the "Later" grass interaction row.
+7. §4.2; tasks 4 and 14b.
+8. §1 goal 8, §3.3, §4.6, §9, §10, §11; tasks 17 and 18 (PHY, edit-mode queries), 10b.
+9. §12 here and REN-28 §12: both tables carry the same phases A–F.

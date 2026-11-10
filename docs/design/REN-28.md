@@ -1,6 +1,6 @@
 # REN-28: Terrain and biomes (design)
 
-Status: **proposal rev 3, awaiting approval.** Rev 2 recorded the human's answers to rev 1 §13 (2026-11-10, §14) and
+Status: **proposal rev 3, awaiting approval** (§12 put in the shared phase order, 2026-11-10). Rev 2 recorded the human's answers to rev 1 §13 (2026-11-10, §14) and
 added **chunk streaming** for 2 km+ worlds (§15). Rev 3 records the answers to rev 2 §13 (2026-11-10, §16): streamed
 scripted props **remember their state** (new §15.10), the freeze rule gets a physics API (§15.5), and the multiplayer
 split is clarified (§15.8). Owner: skate-render. Reviewers: skate-physics (§8, §15.5), skate-assets (§10, §15.6,
@@ -380,39 +380,48 @@ so it can be re-run with a new seed.
 
 ## 12. Implementation tasks (after approval)
 
-| # | Task | Domain | Deps |
-|---|---|---|---|
-| 1 | Extract `lighting.glsl` from `shader_3d_default.glsl` (sun, lights, shadows, IBL, fog); pixel parity GL/VK | REN | — |
-| 2 | `engine/procedural`: vendored FastNoiseLite + `NoiseField`/`NoiseSettings`, ECS-14 seeding helpers | REN | ECS-14 |
-| 3 | `TerrainComponent` + `TerrainChunkData` + `HeightField` (chunked, apron, overview fallback) + `TerrainRecipe` + per-chunk builder on workers | ECS (component) + REN | 2 |
-| 4 | Chunk meshes: shared grid + pooled height streams (`ChunkBufferPool`), LOD selection, skirts, culling, `TerrainPass`, shadows, picking | REN | 1, 3 |
-| 5 | Splat materials: layer texture arrays, `SplatAtlas`, `terrain.glsl`, height blend, triplanar, far tiling | REN | 4 |
-| 6 | Biomes: climate noise, lookup, border weights → splat; macro colour bake; biome debug view | REN | 5 |
-| 7 | Scatter: rules, per-chunk placement, instance batches, prefab entities, colliders (per chunk, streamable) | REN (+ PHY colliders) | 6 |
-| 8 | `.skterrain` asset: `terrain.json`, `overview.r16`, `macro.png`, region files (§15.6), GUID meta, hot reload, packing | AST | 3 |
-| 9 | Heightfield collider (PHY-15): one shape per chunk on Bullet, Jolt and `SimplePhysics3D`, seam test | PHY | 3 |
-| 10 | Editor terrain tools: sculpt, paint, biome, scatter and **stamp** brushes and gizmos, undo, bake; "Flatten terrain under" on prefabs | EDT | 4–8, 13 |
-| 11 | Showcase `Terrain` area + reroll button, docs/samples | REN + TLG | 6, 7, 9 |
-| 12 | Vulkan parity for terrain, including the far field (VK) | VK | 5, 14 |
-| 13 | Stamps: `TerrainStamp`, recipe step, overlap index, apply to data chunks | REN | 3 |
-| 14 | Far field: `TerrainOverview`, quadtree tiles from the overview, macro colour shading, detail/far crack hiding | REN | 4, 6 |
-| 15 | Streaming core: `ChunkStreamingPlanner` (pure), `TerrainStreamer` state machine, priorities and prediction, memory budgets and LRU, `StreamingUploadQueue` (time-budgeted), `EngineStats` counters, debug overlay | REN | 4, 5, 8 |
-| 16 | Streaming focus: `StreamingFocus` component, `TerrainStreamingSystem`, editor-camera and active-camera focus, `prefetch` API | ECS (component, system review) + REN | 15 |
-| 17 | Streamed physics: worker shape build, budgeted add/remove per fixed step, "collider present" bitset, freezing bodies over unloaded chunks (§15.5), prefetch of the physics ring, `StreamingProfile.SERVER` (physics only) | PHY + REN | 9, 16, 26 |
-| 18 | Streamed scatter: per-chunk batches and budgeted entity spawn/despawn on load/unload; stable rule ids | REN | 7, 15 |
-| 19 | Random-access pack reading: stream entries from `game.bin` through a `FileChannel` instead of `readBytes()` | AST | 8 |
-| 20 | Sparse edits: per-chunk bake on first edit of a procedural terrain, dirty-chunk pinning, region save, overview/macro refresh, reroll warning | REN + EDT | 10, 15 |
-| 21 | Exported game and Play: spawn prefetch behind the loading screen, quality-scaled radii from the graphics settings | GUI + REN | 16, 17, 19 |
-| 22 | *Big Island* large-world sample + streaming stats overlay, hitch and budget measurements; tune the accepted default radii and budgets (§16 decision 3) | TLG + REN | 14–18, 21 |
-| 23 | Scatter state deltas: `ScatterItemKey`, `ChunkStateDelta`, `ScatterStateStore`, capture on despawn/destroy/detach, restore on load (batch filtering, `CHANGED`/`FOREIGN` spawns), touched items kept as entities through the detail ring, fingerprints, budget, debug overlay (§15.10) | REN | 18, 24 |
-| 24 | Component state capture: side-effect-free `PrefabService.diff`, `@StreamTransient`, `ScatterItem` component (key, `detach()`, `randomStream()`, destroy hook), diff/instantiate round-trip guarantee (§15.10.5) | ECS | 18 |
-| 25 | Save-game container with named sections (ECS scene state, terrain sections, game data), atomic write, user data dir; `TerrainStateService.snapshot/restore` and the `SKSD` terrain section (§15.10.5) | AST (container) + REN (section) | 23; AST-18 decision |
-| 26 | `IRigidBodyHandle.simulationSuspended` on Bullet, Jolt and `SimplePhysics3D`, keeping and restoring velocities (§15.5) | PHY | — |
-| 27 | Stateful props in *Big Island*: a breakable-crate scatter rule, manual check of break, throw, fly away, save and load | TLG + REN | 22, 23, 25 |
-| — | Later (human: erosion later): offline erosion bake into data chunks | REN | 20 |
+**Phase order (decided by the lead, REN-29 §14 decision 9), shared with REN-29 §12:**
+**A** shared foundations (tasks 1–2) → **B** water and wind (REN-29) → **C** terrain (this note) → **D** streaming and
+stateful props (this note) → **E** vegetation (REN-29) → **F** infinite ocean (REN-29). Rows are in that order; task
+numbers are unchanged.
 
-REN-29 (vegetation and water) builds on tasks 2 and 7 (instance batches, scatter rules), and its vegetation cells
-stream with task 18. Without streaming (small terrains, `streaming = OFF`), tasks 1–13 stand alone; tasks 14–22 add
+| Phase | # | Task | Domain | Deps |
+|---|---|---|---|---|
+| A | 1 | Extract `lighting.glsl` from `shader_3d_default.glsl` (sun, lights, shadows, IBL, fog); pixel parity GL/VK | REN | — |
+| A | 2 | `engine/procedural`: vendored FastNoiseLite + `NoiseField`/`NoiseSettings`, ECS-14 seeding helpers | REN | ECS-14 |
+| B | — | (REN-29 phase B: pass split, wind, water, SSR, buoyancy, bail; REN-29 tasks 1, 3, 7–9, 10a, 13a, 14a, 15, 16) | — | 1 |
+| C | — | REN-29 task 2, instancing core, runs first in this phase (task 7 needs it) | REN | REN-29 task 1 |
+| C | 3 | `TerrainComponent` + `TerrainChunkData` + `HeightField` (chunked, apron, overview fallback) + `TerrainRecipe` + per-chunk builder on workers | ECS (component) + REN | 2 |
+| C | 4 | Chunk meshes: shared grid + pooled height streams (`ChunkBufferPool`), LOD selection, skirts, culling, `TerrainPass`, shadows, picking | REN | 1, 3 |
+| C | 5 | Splat materials: layer texture arrays, `SplatAtlas`, `terrain.glsl`, height blend, triplanar, far tiling | REN | 4 |
+| C | 6 | Biomes: climate noise, lookup, border weights → splat; macro colour bake; biome debug view | REN | 5 |
+| C | 7 | Scatter: rules, per-chunk placement, instance batches, prefab entities, colliders (per chunk, streamable) | REN (+ PHY colliders) | 6, REN-29 task 2 (instancing core) |
+| C | 8 | `.skterrain` asset: `terrain.json`, `overview.r16`, `macro.png`, region files (§15.6), GUID meta, hot reload, packing | AST | 3 |
+| C | 9 | Heightfield collider (PHY-15): one shape per chunk on Bullet, Jolt and `SimplePhysics3D`, seam test | PHY | 3 |
+| C | 13 | Stamps: `TerrainStamp`, recipe step, overlap index, apply to data chunks | REN | 3 |
+| C | 10 | Editor terrain tools: sculpt, paint, biome, scatter and **stamp** brushes and gizmos, undo, bake; "Flatten terrain under" on prefabs | EDT | 4–8, 13 |
+| C | 11 | Showcase `Terrain` area + reroll button, docs/samples | REN + TLG | 6, 7, 9 |
+| D | 14 | Far field: `TerrainOverview`, quadtree tiles from the overview, macro colour shading, detail/far crack hiding | REN | 4, 6 |
+| D | 12 | Vulkan parity for terrain, including the far field (VK) | VK | 5, 14 |
+| D | 15 | Streaming core: `ChunkStreamingPlanner` (pure), `TerrainStreamer` state machine, priorities and prediction, memory budgets and LRU, `StreamingUploadQueue` (time-budgeted), `EngineStats` counters, debug overlay | REN | 4, 5, 8 |
+| D | 16 | Streaming focus: `StreamingFocus` component, `TerrainStreamingSystem`, editor-camera and active-camera focus, `prefetch` API | ECS (component, system review) + REN | 15 |
+| D | 26 | `IRigidBodyHandle.simulationSuspended` on Bullet, Jolt and `SimplePhysics3D`, keeping and restoring velocities (§15.5) | PHY | — |
+| D | 17 | Streamed physics: worker shape build, budgeted add/remove per fixed step, "collider present" bitset, freezing bodies over unloaded chunks (§15.5), prefetch of the physics ring, `StreamingProfile.SERVER` (physics only) | PHY + REN | 9, 16, 26 |
+| D | 18 | Streamed scatter: per-chunk batches and budgeted entity spawn/despawn on load/unload; stable rule ids | REN | 7, 15 |
+| D | 19 | Random-access pack reading: stream entries from `game.bin` through a `FileChannel` instead of `readBytes()` | AST | 8 |
+| D | 20 | Sparse edits: per-chunk bake on first edit of a procedural terrain, dirty-chunk pinning, region save, overview/macro refresh, reroll warning | REN + EDT | 10, 15 |
+| D | 21 | Exported game and Play: spawn prefetch behind the loading screen, quality-scaled radii from the graphics settings | GUI + REN | 16, 17, 19 |
+| D | 22 | *Big Island* large-world sample + streaming stats overlay, hitch and budget measurements; tune the accepted default radii and budgets (§16 decision 3) | TLG + REN | 14–18, 21 |
+| D | 24 | Component state capture: side-effect-free `PrefabService.diff`, `@StreamTransient`, `ScatterItem` component (key, `detach()`, `randomStream()`, destroy hook), diff/instantiate round-trip guarantee (§15.10.5) | ECS | 18 |
+| D | 23 | Scatter state deltas: `ScatterItemKey`, `ChunkStateDelta`, `ScatterStateStore`, capture on despawn/destroy/detach, restore on load (batch filtering, `CHANGED`/`FOREIGN` spawns), touched items kept as entities through the detail ring, fingerprints, budget, debug overlay (§15.10) | REN | 18, 24 |
+| D | 25 | Save-game container with named sections (ECS scene state, terrain sections, game data), atomic write, user data dir; `TerrainStateService.snapshot/restore` and the `SKSD` terrain section (§15.10.5) | AST (container) + REN (section) | 23; AST-18 decision |
+| D | 27 | Stateful props in *Big Island*: a breakable-crate scatter rule, manual check of break, throw, fly away, save and load | TLG + REN | 22, 23, 25 |
+| E | — | (REN-29 phase E: vegetation, foliage on meshes; foliage cells stream with task 18) | — | — |
+| F | — | (REN-29 phase F: infinite ocean, using the overview from tasks 14 and 20; underwater view) | — | — |
+| Later | — | Later (human: erosion later): offline erosion bake into data chunks | REN | 20 |
+
+REN-29 builds on tasks 1, 2 and 7 (`lighting.glsl`, seeding, scatter rules). Its vegetation cells stream with task
+18, and its ocean shoreline reads the overview (tasks 14, 20) through the texture already on the GPU (§15.4). Without streaming (small terrains, `streaming = OFF`), tasks 1–13 stand alone; tasks 14–22 add
 big worlds; tasks 23–27 add stateful props. Scatter state deltas also matter without streaming: a save game made on
 a small terrain uses the same store and section (tasks 23–25), so they don't depend on tasks 14–17.
 Later, outside this note: entity-cell streaming for hand-placed entities (ECS, §16 decision 1), scatter-state
