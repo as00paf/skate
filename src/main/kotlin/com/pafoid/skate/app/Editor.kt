@@ -15,6 +15,9 @@ import com.pafoid.skate.editor.ui.handlers.EditorActionHandler
 import com.pafoid.skate.editor.ui.handlers.EditorEventHandler
 import com.pafoid.skate.editor.ui.handlers.EditorInputHandler
 import com.pafoid.skate.editor.ui.handlers.PlayModeHandler
+import com.pafoid.skate.editor.ui.handlers.VcsActionHandler
+import com.pafoid.skate.editor.vcs.VcsRunner
+import com.pafoid.skate.editor.vcs.VcsSession
 import com.pafoid.skate.engine.assets.Assets.Strings.EDITOR_STRINGS
 import com.pafoid.skate.engine.assets.Assets.Strings.GAME_STRINGS
 import com.pafoid.skate.editor.assetimport.blender.BlenderSync
@@ -65,6 +68,18 @@ class Editor(
             settingsManager,
             editorCamera
         )
+
+    /** The project's local Git repository (EDT-60), shared by the Version Control window and its handler. */
+    val vcsSession = VcsSession(
+        projectRoot = { projectManager.currentProject?.getProjectFile()?.absoluteFile?.parentFile },
+        runner = VcsRunner.Jobs(engine.jobSystem),
+    )
+    val vcsActionHandler = VcsActionHandler(
+        engine.eventSystem, undoRedoManager, vcsSession,
+        playing = { engine.runtimePlaying },
+        unsavedScenes = { engine.sceneManager.openScenes.any { it.isDirty } },
+        projectPath = { projectManager.currentProject?.projectPath },
+    )
 
     val gizmoSystem = GizmoSystem(engine, settingsManager, undoRedoManager, editorCamera)
 

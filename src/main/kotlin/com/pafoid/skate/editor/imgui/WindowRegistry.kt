@@ -22,6 +22,7 @@ import com.pafoid.skate.editor.ui.windows.SceneHierarchyWindow
 import com.pafoid.skate.editor.ui.windows.SearchEverywhereWindow
 import com.pafoid.skate.editor.ui.windows.ScriptEditorWindow
 import com.pafoid.skate.editor.ui.windows.ShellWindow
+import com.pafoid.skate.editor.ui.windows.VersionControlWindow
 import com.pafoid.skate.editor.ui.windows.assetStore.AssetStoreWindow
 import com.pafoid.skate.engine.core.Engine
 
@@ -49,6 +50,7 @@ class WindowRegistry(
         ProjectWindow(engine, projectManager),
         ScriptEditorWindow(engine, projectManager, editor.settingsManager),
         ShellWindow(engine, projectManager),
+        VersionControlWindow(engine, projectManager, editor.vcsSession),
         ExportWizardWindow(engine, projectManager, editor.settingsManager),
         AssetStoreWindow(engine, projectManager),
         VideoToAnimationWindow(engine, editor, projectManager),

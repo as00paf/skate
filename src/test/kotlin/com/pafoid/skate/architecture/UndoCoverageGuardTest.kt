@@ -42,6 +42,7 @@ class UndoCoverageGuardTest {
         "project/SaveSceneAsCommand.kt" to "file write",
         "project/SaveProjectCommand.kt" to "file write",
         "scene/SwitchSceneCommand.kt" to "scene tab navigation",
+        "vcs/VcsCommands.kt" to "Git actions (EDT-60): history cannot be undone with Ctrl+Z; discard asks first",
     )
 
     @Test
