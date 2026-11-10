@@ -18,6 +18,7 @@ enum class WindowCategory(val labelKey: String) {
             "window.properties" to SCENE,
             "window.project" to SCENE,
             "window.asset_browser" to ASSETS,
+            "window.video_to_animation" to ASSETS,
             "window.console" to DEBUG,
             "window.profiler" to DEBUG,
             "window.command_history" to DEBUG,
@@ -27,7 +28,9 @@ enum class WindowCategory(val labelKey: String) {
             "window.audio_inspector" to AUDIO,
         )
 
-        fun of(window: EditorWindow): WindowCategory? = byWindow[window.name]
+        fun of(window: EditorWindow): WindowCategory? = of(window.name)
+
+        fun of(windowName: String): WindowCategory? = byWindow[windowName]
 
         /** Dockable windows grouped by category in declaration order; uncategorised windows are omitted. */
         fun grouped(windows: List<EditorWindow>): Map<WindowCategory, List<EditorWindow>> =
