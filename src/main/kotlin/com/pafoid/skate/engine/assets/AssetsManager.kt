@@ -42,8 +42,8 @@ class AssetsManager(
     /** Text of the asset at [path] from the pack or the project, or null. */
     fun readText(path: String): String? = paths.readText(path)
 
-    // Editor/dev runs from the repo: shader edits under resources/shaders are picked up live
-    private val shaderDevRoot = File("src/main/resources").takeIf { File(it, "shaders").isDirectory }
+    // Editor/dev runs from the repo: shader edits under assets/Shaders are picked up live (AST-27)
+    private val shaderDevRoot = File(ShaderLoader.REPO_DIR).takeIf { it.isDirectory }
     private val shaderLoader = ShaderLoader(false, logger, shaderDevRoot)
     private val shaderPaths = mutableMapOf<String, String>()
     private val shaderVariants = ShaderVariantCache<Shader>(
@@ -51,7 +51,7 @@ class AssetsManager(
         destroy = { it.destroy() },
     )
     private val shaderReloader: ShaderHotReloader? = shaderDevRoot?.let { root ->
-        ShaderHotReloader(File(root, "shaders")) { changed ->
+        ShaderHotReloader(root) { changed ->
             logger.log("Shader sources changed: ${changed.joinToString()}", LogLevel.INFO)
             reloadShaders()
         }
