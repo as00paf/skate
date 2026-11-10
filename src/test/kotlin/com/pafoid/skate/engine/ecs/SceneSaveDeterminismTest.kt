@@ -11,7 +11,6 @@ import com.pafoid.skate.engine.assets.serialization.FileKind
 import com.pafoid.skate.engine.assets.serialization.Serializer
 import com.pafoid.skate.engine.addComponent
 import com.pafoid.skate.engine.core.Engine
-import com.pafoid.skate.engine.ecs.components.AmbientLightComponent
 import com.pafoid.skate.engine.ecs.components.DayNightCycleComponent
 import com.pafoid.skate.engine.ecs.components.DirectionalLightComponent
 import com.pafoid.skate.engine.ecs.components.EnvironmentComponent
@@ -49,7 +48,6 @@ class SceneSaveDeterminismTest {
         addComponent(ScenePhysicsComponent())
         addComponent(GridLines())
         addComponent(EnvironmentComponent(skyTexture = Texture()))
-        addComponent(AmbientLightComponent())
         addComponent(DayNightCycleComponent())
         addComponent(DirectionalLightComponent())
         prefabs.spawnDefaultsSync().forEach { addChild(it) }
