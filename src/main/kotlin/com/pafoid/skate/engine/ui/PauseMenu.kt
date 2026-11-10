@@ -183,11 +183,24 @@ class PauseMenuSystem(
         PauseMenu.find(menu, PauseMenu.OPTION_PREFIX + option.id)?.getComponent<UIButtonComponent>()?.labelKey = option.labelKey(value)
     }
 
-    /** Rebuilds the option rows when options were registered since, and applies every option's current value. */
-    private fun syncOptions() {
-        if (builtOptions == options.revision) return
+    /**
+     * The settings store changed (a project opened or closed, or the exported game attached `game.settings.json`):
+     * applies the values saved there and relabels the rows. Without this, options applied at scene load before the
+     * store was attached kept their defaults while the menu showed the saved values (GPL-25).
+     */
+    fun settingsChanged() {
+        applyOptions()
+        relabelOptions()
+    }
+
+    /**
+     * Rebuilds the option rows when options were registered since, and applies every option's current value.
+     * Returns true when it did.
+     */
+    private fun syncOptions(): Boolean {
+        if (builtOptions == options.revision) return false
         builtOptions = options.revision
-        val panel = PauseMenu.find(menu, PauseMenu.PANEL) ?: return
+        val panel = PauseMenu.find(menu, PauseMenu.PANEL) ?: return false
         panel.children.filter { it.name.startsWith(PauseMenu.OPTION_PREFIX) }.forEach(panel::removeChild)
         val at = panel.children.indexOfFirst { it.name == PauseMenu.LANGUAGE } + 1
         options.all.forEachIndexed { i, option ->
@@ -197,6 +210,7 @@ class PauseMenuSystem(
         }
         panel.getComponent<UIElementComponent>()?.height = PauseMenu.PANEL_HEIGHT + options.all.size * PauseMenu.OPTION_ROW_HEIGHT
         applyOptions()
+        return true
     }
 
     private fun applyOptions() = options.all.forEach { it.apply(valueOf(it)) }
@@ -207,9 +221,8 @@ class PauseMenuSystem(
 
     override fun init(scene: Scene) {
         super.init(scene)
-        // Each scene load (Play, Restart, game start) applies the saved option values.
-        syncOptions()
-        applyOptions()
+        // Each scene load (Play, Restart, game start) applies the saved option values, once.
+        if (!syncOptions()) applyOptions()
         // SystemManager.loadScene clears the pause, so the menu must not stay open over the new scene.
         close()
         // Another scene (Restart reloads it): the menu moves there on the next playing frame.

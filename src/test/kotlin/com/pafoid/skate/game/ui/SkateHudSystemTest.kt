@@ -95,6 +95,45 @@ class SkateHudSystemTest {
         assertEquals(emptyList<TrickCompleted>(), completed)
     }
 
+    @Test
+    fun aRiderParentedUnderItsBoard_IsFound() {
+        // GPL-25: Skater(skate = board) hangs the skater under the board, so it is not a top-level object.
+        val nested = Scene("Nested")
+        val board = GameObject("Skateboard")
+        val skater = GameObject("Skater").addComponent(PlayerController(SkateBehavior.ID, Assets.Configs.SKATER_CHARACTER))
+        board.addChild(skater)
+        nested.addChild(board)
+        nested.addChild(PrefabsGeneratorHud.create())
+        val nestedHud = SkateHudSystem(events, showSec = 0.5f).also { it.init(nested) }
+        nested.isRunning = true
+        val nestedRider = (skater.getComponent<PlayerController>()!!.behavior as SkateBehavior).also { it.mounted = true }
+
+        fun step(actions: FakeActions = FakeActions(), move: Vector2f = Vector2f(), grounded: Boolean = true) {
+            nestedRider.update(CharacterInput(move = move, grounded = grounded, horizontalSpeed = 3f, actions = actions), dt)
+            nestedHud.update(dt)
+        }
+        step()
+        step(FakeActions(pressed = setOf(SkateActions.FLIP)), Vector2f(-1f, 0f))
+        step(grounded = false)
+
+        assertEquals(TrickType.KICKFLIP.nameKey, nested.findFirstByName(SkateHudSystem.TRICK_TEXT)!!.getComponent<UITextComponent>()!!.key)
+    }
+
+    @Test
+    fun hudTextsAddedLater_AreFound() {
+        // The cached text list is rebuilt when the scene tree changes.
+        val extra = PrefabsGeneratorHud.create().also { it.name = "SecondHud" }
+        scene.addChild(extra)
+        frame()
+        val texts = mutableListOf<UITextComponent>()
+        fun walk(go: GameObject) {
+            go.children.forEach { c -> if (c.name == SkateHudSystem.SCORE_TEXT) c.getComponent<UITextComponent>()?.let(texts::add); walk(c) }
+        }
+        walk(scene)
+        assertEquals(2, texts.size)
+        texts.forEach { assertEquals(listOf("0"), it.args) }
+    }
+
     /** The MainScene HUD as the project generator builds it (holds TrickText and ScoreText). */
     private object PrefabsGeneratorHud {
         fun create(): GameObject = PrefabsGenerator(io.mockk.mockk(relaxed = true)).spawnHud()
