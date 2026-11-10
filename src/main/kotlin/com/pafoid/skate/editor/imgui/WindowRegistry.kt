@@ -5,6 +5,7 @@ import com.pafoid.skate.editor.systems.ProjectManager
 import com.pafoid.skate.editor.ui.windows.AnimationEditorWindow
 import com.pafoid.skate.editor.ui.windows.AssetBrowserWindow
 import com.pafoid.skate.editor.ui.windows.AudioInspectorWindow
+import com.pafoid.skate.editor.ui.windows.BlenderImportPanel
 import com.pafoid.skate.editor.ui.windows.CommandHistoryWindow
 import com.pafoid.skate.editor.ui.windows.ConsoleWindow
 import com.pafoid.skate.editor.ui.windows.EditorSettingsWindow
@@ -34,12 +35,12 @@ class WindowRegistry(
 ) {
     val windows: List<EditorWindow> = listOf(
         SceneHierarchyWindow(engine, editor.clipboardService, projectManager::hasProject),
-        PropertiesWindow(engine, projectManager::hasProject),
+        PropertiesWindow(engine, projectManager::hasProject, listOf(BlenderImportPanel(engine.stringManager, editor.blenderSync))),
         GameViewWindow(engine, editor, projectManager::hasProject, projectManager::getProjectDirectory),
         AssetBrowserWindow(engine, editor.undoRedoManager),
         ProfilerWindow(engine.stringManager),
         ConsoleWindow(engine),
-        EditorSettingsWindow(editor.settingsManager, engine.stringManager) { engine.eventSystem.publish(com.pafoid.skate.editor.events.WindowAction.Show("window.keybindings")) },
+        EditorSettingsWindow(editor.settingsManager, engine.stringManager, testBlender = editor.blenderSync::test) { engine.eventSystem.publish(com.pafoid.skate.editor.events.WindowAction.Show("window.keybindings")) },
         ProjectSettingsWindow(engine, editor.settingsManager, projectManager),
         KeyBindingsWindow(engine, editor.settingsManager, engine.stringManager, projectManager),
         CommandHistoryWindow(engine, editor.undoRedoManager),
