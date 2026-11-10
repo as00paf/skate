@@ -115,6 +115,10 @@ focus or on Esc, and stays as it is (EDT-48 fixes its focus bug).
 - **`?` button (decided):** every window and dialog has a `?` button at the right end of a one-line header strip,
   drawn by a shared `WindowHeader`. The window's own tools (search box, filters, toggles) go on the left of the same strip. This
   replaces the ad-hoc toolbars at the top of the Console, Project, Asset Browser and Profiler.
+  (EDT-67) The strip is a two-column table: the tools get, and are clipped to, the width left of a fixed `?` column,
+  so they never reserve room for `?` themselves. The `?` is a full frame-height button (`HelpButtonLayout`), since
+  the merged icon glyph is taller than a `smallButton`. Modal hosts (New Project, Switch Project) show their `?`
+  at the top of the modal through `EditorModal.helpWindow`.
 - **Viewport:** the Game Viewport keeps no title bar. Its `?` goes at the right end of the viewport toolbar.
 
 Icons (decided; ★ = a new glyph to add to `Icons`, all from Font Awesome, which the editor already uses):
