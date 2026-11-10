@@ -1,5 +1,6 @@
 package com.pafoid.skate.game.samples
 
+import com.pafoid.skate.engine.getAllChildren
 import com.pafoid.skate.engine.assets.AssetsManager
 import com.pafoid.skate.engine.assets.PrefabsGenerator
 import com.pafoid.skate.engine.assets.data.Texture
@@ -97,7 +98,7 @@ class FeatureShowcasePlayTest {
     private fun buttonCentre(scene: Scene, name: String): Pair<Float, Float> {
         val canvas = scene.children.single { it.getComponent<UICanvasComponent>() != null && it.name != FeatureShowcase.MAP_CANVAS }
         val scale = canvas.getComponent<UICanvasComponent>()!!.scale
-        val rect = canvas.children.single { it.name == name }.getComponent<UIElementComponent>()!!.rect
+        val rect = canvas.getAllChildren().single { it.name == name }.getComponent<UIElementComponent>()!!.rect
         return (rect.x + rect.w / 2f) * scale to (rect.y + rect.h / 2f) * scale
     }
 
