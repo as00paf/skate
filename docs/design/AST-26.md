@@ -191,8 +191,12 @@ assets/
   - `build.gradle.kts` `processResources` copies `assets/Shaders/**` into the jar at `/shaders/`, so the editor and
     the game jar keep a classpath copy (`Assets.Fonts.FONTS_FILE` and `/textures/default.png` are classpath resources
     already and stay).
-  - `tools/scripts/verify-game-jar.sh` gets a step that checks `skate-game.jar` contains every shader of
-    `EngineDefaults.SHADERS` under `/shaders/`.
+  - `tools/scripts/verify-game-jar.sh` gets a step that checks `skate-game.jar` contains all 19 shaders (basic and
+    internal, §5.1) under `/shaders/`.
+  - The shader move is **its own commit with only the shader move**. skate-render is told before it lands, so
+    in-flight REN branches can rebase. Tests that read engine shaders (`VertexLayoutShaderTest`, the `GlslToVulkan`
+    tests, the preprocessor tests) still find them on the test classpath, because `processResources` keeps the
+    `/shaders/` prefix.
   - The export (`ProjectExporter` / `GameJarTask`) needs no path change: it copies the jar and the pack.
 
 ### 4.2 Catalog and the `engine:` reference
@@ -215,9 +219,7 @@ assets/
 - **Catalog contents:**
   - the prefab models, `james.glb`, the 18 skater clips, the surface textures, `sky_hdri.png`, `app_icon.png` and the
     music;
-  - the **shaders** (§5): every game-pipeline shader is an engine default;
-  - the editor-only shaders (`editor_grid`, `picking`, `shader_3d_picking`, `debugLine2D`, `splash`) stay internal,
-    with no override (NQ5).
+  - the **basic shaders** (§5.1). The 6 internal shaders are not in the catalog and cannot be overridden.
 
 ### 4.3 The two modes (EDT-70 setting "Copy engine default assets", **on** by default; decision 4)
 
@@ -268,6 +270,7 @@ A copy's `.meta` `settings` (`AssetMeta` stays at schema 1):
   - A modified copy is never overwritten. It shows "modified, engine has a newer version", with "Replace with engine
     version" (undoable).
   - Nothing updates silently.
+- **Exception for shaders:** an unchanged shader copy follows the engine (§5.2).
 - **Name clash (decision 9):** `Assets/Models/cube.obj` exists and is not already the override for that logical path.
   The user's file keeps its name, and the copy is `cube (engine).obj`, which carries `engine.source` and becomes the
   override.
@@ -290,76 +293,131 @@ A copy's `.meta` `settings` (`AssetMeta` stays at schema 1):
   so readers (`AssetsResolver`, `PackBuilder.verify`) need no change and `PackManifest.SCHEMA` stays. An override that
   is referenced both as `engine:` and by its project path is stored once. `atlas_report.txt` lists shared entries.
 - `ProjectExporter` resolves `iconPath` through `AssetPaths`.
-- Shaders are always packed (§5.4).
+- Shaders are always packed (§5.5).
 
-## 5. Shaders (decision 3; REN slice, reviewed by skate-render)
+## 5. Shaders (decision 3; REN slice, reviewed by skate-render, §11.1)
 
 ### 5.1 Engine shaders are engine defaults
 
-- `assets/Shaders/*.glsl` (moved from `src/main/resources/shaders`; also in the jar at `/shaders/`, §4.1) are
-  `engine:Shaders/<name>.glsl`.
+- `assets/Shaders/*.glsl` (moved from `src/main/resources/shaders`; `processResources` also puts **all 19** in the jar
+  at `/shaders/`, §4.1) are `engine:Shaders/<name>.glsl`.
 - `Assets.Shaders` constants and the string literals in `RenderResourcesFactory`, `PickingRenderer` and
   `ThumbnailRenderer` become `EngineDefaults.Shaders.*` references.
-- `AssetsManager.getShader` and the `ShaderVariantCache` key on the **reference**, not on `File(path).absolutePath`.
+- **Two sets**, kept in the catalog and checked by a guard test (every `.glsl` in `assets/Shaders/` belongs to exactly
+  one):
+  - **Basic** (always copied, can be overridden), 13 today: `shader_3d_default`, `shader_3d_texture`,
+    `shader_2d_batch`, `shadow`, `skybox`, `skydome`, `particles`, `fog` (include), `post_bloom`, `post_tonemap`,
+    `post_gamma`, `post_fxaa`, `post_ssao`. REN-28 task 1 adds `lighting.glsl`; REN-29 adds `wind.glsl`,
+    `water_waves.glsl`, `water.glsl`; REN-28 adds `terrain.glsl`.
+  - **Internal** (only in the jar, never copied, cannot be overridden), 6:
+    - `editor_grid`;
+    - `picking` and `shader_3d_picking`: they must match the entity-id encoding in `PickingTexture`;
+    - `debugLine2D`;
+    - `splash`: it draws before any project is resolved;
+    - `ibl_capture`: its output encoding (`IblMath.encode`) is a contract with `shader_3d_default` and the Kotlin
+      bake.
 
-### 5.2 Basic shaders are always copied
+    Internal shaders also ship in exported games, so all 19 stay in the jar.
+- **Contract version:** every basic engine shader starts with `// @skate-contract <n>`. `n` is bumped whenever its
+  contract with Kotlin code changes: uniform names, `ShaderFeature` defines, UBO layouts.
 
-Every project gets the game-pipeline shaders in `Assets/Shaders/`, with `engine.*` keys, in both copy modes:
+### 5.2 Basic shaders are always copied, and unchanged copies follow the engine
 
-- `shader_3d_default`, `shader_3d_texture`, `shader_2d_batch`
-- `shadow`, `skybox`, `skydome`, `particles`
-- `fog` (include)
-- `ibl_capture`
-- `post_bloom`, `post_tonemap`, `post_gamma`, `post_fxaa`, `post_ssao`
-
-Together these are `EngineDefaults.BASIC_SHADERS` (NQ5). The editor-only shaders are not copied and cannot be
-overridden.
+- Every project gets the basic set in `Assets/Shaders/`, with `engine.*` keys, in both copy modes (decision 3).
+- **Shader exception to §4.5** (skate-render CR1): an engine shader is a contract with Kotlin code, so a stale copy
+  renders wrong after an engine update.
+  - An **unchanged** shader copy (its hash equals `engine.sha256`) is **not** an override: it resolves to the engine
+    file. The copy is refreshed silently when the project opens. It has no user edits, so nothing is lost. NQ7
+    confirms this exception with the human.
+  - A **modified** override whose `@skate-contract` is lower than the engine shader's logs one clear error and falls
+    back to the engine shader instead of drawing garbage. `skate validate` reports it too. The user then merges their
+    edits into the new version ("Replace with engine version" keeps a backup through undo).
 
 ### 5.3 Resolution
 
-`ShaderLoader` gets a `ShaderSourceResolver` instead of `devSourceRoot` + `getResourceAsStream`. The resolver uses the
-same `EngineDefaultResolver` as other assets. For a reference:
+`ShaderLoader` gets a `ShaderSourceResolver` instead of `devSourceRoot` + `getResourceAsStream`.
+`AssetsManager.shaderDevRoot` (hard-coded `src/main/resources`) goes away. For a reference:
 
-1. `engine:Shaders/X`: the project override (any file with `engine.source = Shaders/X`), else
-   `<engineRoot>/assets/Shaders/X` (dev runs), else classpath `/shaders/X`. In an exported game: the pack entry, else
-   the classpath.
+1. `engine:Shaders/X`:
+   1. a modified project override (`engine.source = Shaders/X`) with a current contract;
+   2. else `<engineRoot>/assets/Shaders/X` (dev runs);
+   3. else the classpath `/shaders/X`.
+
+   In an exported game: the pack entry, else the classpath.
 2. A project shader (`Assets/Shaders/my_water.glsl`): the file, or its pack entry.
 
-`#include "fog.glsl"` in `ShaderPreprocessor` resolves relative to the including shader first (project folder or pack),
-then as `engine:Shaders/fog.glsl` through rule 1. So overriding an include changes every shader that includes it. The
-preprocessor records each program's resolved files, which are its **dependencies**.
+**Includes** (skate-render CR4):
 
-### 5.4 Hot reload
+- `ShaderPreprocessor`'s resolver becomes `(name, includerId) -> ResolvedSource(id, text)?`. An include resolves
+  relative to its **includer**, so an include nested in an engine include resolves from the engine's `Shaders/`.
+- If that fails, it resolves as `engine:Shaders/<name>` through rule 1.
+- The included set and the dependency set are keyed by the resolved id.
+- An explicit `#include "engine:Shaders/fog.glsl"` is allowed, so an override can wrap the original.
+- Overriding an include changes every shader that includes it.
 
-- `ShaderHotReloader` watches resolved files instead of one source root:
-  - every file in a loaded program's dependency set;
-  - the project's `Assets/` tree for `.glsl` files that are created or deleted, because a new or removed override
-    changes what a reference resolves to.
+**Caches** (CR3): one `ShaderVariantCache` keyed by `ShaderVariantKey(reference, defines)`; empty defines is the base
+program. It replaces the `shaders` cache keyed by `File(path).absolutePath`. A failed load falls back to the **engine
+version of the same reference**, then a hard error. It never falls back to `shader_3d_default` (today a broken
+`post_bloom` would silently get the mesh shader).
+
+**Line numbers** (CR9): `ShaderLoader` keeps a line map from the expanded source back to each file, so a compile
+error reads `my_water.glsl:42`.
+
+### 5.4 Validation for Vulkan (CR2)
+
+`GlslToVulkan` handles only the engine's GLSL subset:
+
+- one uniform per declaration, at global scope, outside conditionals, no initializers;
+- the `#type vertex`/`#type fragment` single-file format.
+
+A shader that compiles on GL may therefore fail only in a Vulkan export. So:
+
+- `GlslToVulkan.convert` (text only, no GPU) runs on every user shader and override when it loads in the editor,
+  even on GL, and in `skate validate`. Errors go to the console with the file name.
+- The subset is documented in `docs/shaders.md` (new, REN-owned).
+- Vulkan start-up compiles every shader through shaderc (`VkShaders`) with no SPIR-V cache. That grows with user
+  shaders; a cache keyed by source hash is a later VK task.
+
+### 5.5 Hot reload (CR5)
+
+- A reload **re-resolves before it recompiles**: adding or deleting an override changes which file a reference
+  points to.
+- `ShaderHotReloader` watches only the files in loaded programs' dependency sets, not all of `Assets/` every 500 ms.
+  It uses `AssetRegistry` register, move and delete events for overrides that appear or disappear.
 - It can reuse `AssetReloader`'s stable-for-two-polls rule. Polling stays on the GL thread
   (`AssetsManager.pollShaderChanges`).
-- On a change, the programs and variants whose dependencies changed are recompiled in place (`Shader.replaceWith`).
-  This works on both backends: `RhiDevice.createShader` compiles GLSL at run time on OpenGL, and through
-  `GlslToVulkan` + shaderc on Vulkan.
-- A failed compile keeps the previous program, logs the stage error with the file, and shows it in the editor console
-  (as today).
-- Dev runs from the repo still pick up edits to `assets/Shaders/` (engine sources), with no special case: rule 1, step 2.
-- Export: `FileType.SHADER` joins `AssetsPacker.alwaysPacked`, so overrides and user shaders ship without being
-  referenced from a scene. Dedupe keeps the cost at one copy each.
-- The exported game loads `engine:Shaders/*` from the pack (the project's copies) and falls back to the jar.
+- Programs and variants whose dependencies changed are recompiled in place (`Shader.replaceWith`) on both backends.
+- A failed compile keeps the previous program and logs the mapped file and line.
+- Dev runs pick up edits to `assets/Shaders/` through rule 1, step 2.
+- Export: `FileType.SHADER` joins `AssetsPacker.alwaysPacked`. Dedupe stores each distinct file once. The exported
+  game loads `engine:Shaders/*` from the pack (modified overrides) and falls back to the jar.
 
-### 5.5 User shaders on materials
+### 5.6 User shaders on materials
 
-- `MaterialAsset` gets `shader: String? = null`, a reference to a project shader or `engine:Shaders/…`. A null shader
-  means the schema's shader, as today. `MaterialAsset.CURRENT_VERSION` is bumped, with a migration test: an older
-  file reads as `shader = null`. That is file-format versioning, not project migration.
-- A custom shader must accept the uniforms and samplers of the material's `MaterialSchema`. For `pbr-metallic-roughness`
-  those are the ones `shader_3d_default` uses. It is compiled with the same `ShaderFeature` defines (variants) as the
-  default.
-- If a variant fails to compile, that material draws with the schema's default shader and an error is logged once.
-- Shader-declared parameters (custom uniforms shown in the inspector) are a later task (NQ6).
-- The renderer picks the program per material (`MaterialBinder` / the 3D pass): REN decides where.
-- The material inspector gets a "Shader" field that lists `.glsl` files in the project plus the engine shaders. That
-  is an EDT-owned widget; it ships in the REN slice with an EDT review.
+- `MaterialAsset` gets `shader: String? = null`, a reference to a project shader or `engine:Shaders/…`. Null means the
+  schema's shader, as today. `MaterialAsset.CURRENT_VERSION` is bumped, with a migration test: an older file reads as
+  `shader = null`. That is file-format versioning, not project migration.
+- **Uniform contract:** a custom shader must declare the uniforms and samplers of the material's `MaterialSchema`. This
+  is checked when the shader is assigned, from `SpirvReflection` / GL's active uniforms, and a warning is shown when
+  something is missing.
+- **Features** (CR8): the shader is compiled with the draw's `ShaderFeature` defines (`SKINNED`, `SHADOWED`, `FOG`,
+  `ALPHA_TEST`; later `INSTANCED`, `WIND`). A shader opts in to a feature by containing `#ifdef X` or
+  `#if defined(X)` (text scan). For a draw needing a feature the shader does not handle, or a variant that fails to
+  compile, the material falls back to the schema shader, logged once.
+- **Frame uniforms** (CR6, REN-internal): today `GeometryPass` uploads frame uniforms (matrices, camera, sun,
+  `LightBuffer`, shadow cascades, IBL via `EnvironmentProbe.bind`) only to the default shader. The REN slice uploads
+  them to each program on its first use in a frame, and fills the 16-bit shader field of `SortKey.build` (0 today),
+  so draws group by program.
+- **Scope v1: the colour pass only** (CR7). Shadow, picking and instanced vegetation keep the engine shaders, so a
+  user shader that moves vertices will not match its shadow or its clickable area. This is documented; an optional
+  `shadowShader` is a later task.
+- **Editor:** the material inspector gets a "Shader" field (`.glsl` files in the project plus the basic engine
+  shaders). The Asset Browser gets a "New Shader" action that creates a template compatible with the PBR schema in
+  the `#type` format. These are EDT widgets in the REN slice, with an EDT review.
+- **Custom parameters** (NQ6, answered by skate-render): a later REN task. Parameters are declared in the GLSL file
+  with annotations (`// @param float uWaveHeight = 0.5 "Wave height"`, `// @texture uFoam slot 6`). A GL-free parser
+  turns them into a `MaterialSchema` with id `shader:<reference>`, registered through `MaterialSchemas.register`; this
+  is the same mechanism as REN-29's water schema.
 
 ## 6. Store imports (AST-28, skate-online)
 
@@ -420,7 +478,7 @@ preprocessor records each program's resolved files, which are its **dependencies
 |---|---|---|---|
 | **AST-27a** | skate-assets | Repo `assets/` reorganisation (§4.1) in its own commit: moves, path updates in main code, tests, samples, docs, guard test, `processResources` + `verify-game-jar.sh` (the shader move itself needs REN's OK, `NEEDS REN`). | AST-26 |
 | **AST-27b** | skate-assets | `ProjectLayout`/`AssetFolder`, `folderFor`, `EngineDefaults` catalog, `engine:` resolution in `AssetPaths` + `AssetRegistry`, copier (both modes, basic shaders, name clash, `engine.*` meta), update detection service, `ReferenceCollector`/`AssetsPacker` (`engine:` items, narrower companions, `SHADER` always packed), `PackBuilder` dedupe, `ProjectManager` creation flag, `PrefabsGenerator`/`PrefabCatalog`/`MaterialType`/`FeatureShowcase`/`PrefabThumbnailMaterial` on `engine:` references. | AST-27a |
-| **REN-xx** (new) | skate-render | §5: `ShaderSourceResolver` in `ShaderLoader`/`ShaderPreprocessor`, reference-keyed shader and variant caches, dependency-based `ShaderHotReloader`, `EngineDefaults.Shaders` in `RenderResourcesFactory`/`PickingRenderer`/`ThumbnailRenderer`, `MaterialAsset.shader` (version bump) and per-material program selection with fallback, the material inspector "Shader" field (EDT review). | AST-27b |
+| **REN-xx** (new) | skate-render | §5: `@skate-contract` headers and the stale-override fallback, `ShaderSourceResolver` with includer-aware includes (`ShaderPreprocessor`), one reference-keyed `ShaderVariantCache` with same-reference fallback, line maps, `GlslToVulkan` subset validation on load + `docs/shaders.md`, dependency-based re-resolving `ShaderHotReloader`, `EngineDefaults.Shaders` in `RenderResourcesFactory`/`PickingRenderer`/`ThumbnailRenderer`, `MaterialAsset.shader` (version bump), uniform-contract check, feature opt-in scan and fallback, per-program frame uniforms and the `SortKey` shader field, colour pass only. EDT review for the material "Shader" field and the "New Shader" template. | AST-27b; coordinate with REN-28 task 1 |
 | **AST-28** | skate-online | §6. | AST-27b, AST-16 |
 | **EDT-69** | skate-editor | §8. | AST-27b |
 | **EDT-70** | skate-tooling | §7. | AST-27b |
@@ -450,20 +508,26 @@ preprocessor records each program's resolved files, which are its **dependencies
   - an `.obj` packs its `.mtl` maps and not unrelated images;
   - shaders are always packed;
   - identical inputs are stored once and both entries extract and `verify`.
+- **Shaders (AST-27b):** catalog guard (every `assets/Shaders/*.glsl` is basic or internal); an unchanged copy
+  resolves to the engine file and is refreshed on open; a modified copy stays an override.
 - **Shaders (REN):**
   - the resolver order (override > engine file > classpath; pack > classpath);
   - an `#include` override applies to its includers;
   - a dependency change marks exactly the programs that include it;
   - a failed recompile keeps the old program (fake device);
   - `MaterialAsset` v-old → `shader = null`;
-  - a material shader that fails a variant falls back to the default.
+  - a material shader that fails a variant, or lacks a feature, falls back to the schema shader;
+  - a modified override with an older `@skate-contract` falls back to the engine shader;
+  - a nested include resolves against its includer; `#include "engine:Shaders/fog.glsl"` works;
+  - a failed `post_bloom` override falls back to the engine `post_bloom`, never to `shader_3d_default`;
+  - a compile error is reported with the original file and line (line map);
+  - `GlslToVulkan.convert` rejects a shader outside the subset, on GL too.
 - **Store (AST-28):** fixture tests per provider for target folders and ledger `folders`, re-import in place, undo.
 - **CLI and validate (EDT-70):** tests for the sample builders and the validate rules.
 
 ## 11. Reviews
 
-- **skate-render:** asked through herdr to review §5 and the REN-xx slice. Its answer is recorded in §11.1 when it
-  arrives.
+- **skate-render:** reviewed §4.1, §5 and the REN-xx slice (§11.1); its changes are in this revision.
 - **skate-online:**
   - §6;
   - whether each provider's `ImportPlan` can say "model item", "texture set", "sound" or "font" without guessing;
@@ -476,7 +540,7 @@ preprocessor records each program's resolved files, which are its **dependencies
   - the "Show model textures" filter;
   - virtual engine entries in the AST-23 async cache;
   - where the update notification lives;
-  - the material "Shader" field (§5.5).
+  - the material "Shader" field and the "New Shader" template (§5.6).
 - **skate-tooling:**
   - §7;
   - samples in reference mode;
@@ -488,7 +552,25 @@ preprocessor records each program's resolved files, which are its **dependencies
 
 ### 11.1 skate-render review
 
-(pending)
+Verdict (2026-11-10, against `ShaderLoader`, `ShaderPreprocessor`, `ShaderHotReloader`, `ShaderVariantCache`,
+`AssetsManager`, `RenderResourcesFactory`, `MaterialBinder`/`MaterialAsset`, `SortKey`, `GlslToVulkan`/`VkShaders` on
+`integration/30g`): **agree with changes.**
+
+| # | Request | Where it is applied |
+|---|---|---|
+| CR1 (blocking) | An unchanged shader copy follows the engine and is refreshed on open; `@skate-contract <n>` headers; an older modified override falls back to the engine shader with an error | §5.1, §5.2, NQ7 |
+| CR2 | `GlslToVulkan.convert` validation on load and in `skate validate`; `docs/shaders.md` | §5.4 |
+| CR3 | One cache keyed by `(reference, defines)`; fall back to the engine version of the same reference, never to `shader_3d_default` | §5.3 |
+| CR4 | Include resolver `(name, includerId)`; dependency set keyed by resolved id; explicit `engine:` includes | §5.3 |
+| CR5 | Reload re-resolves; drop `shaderDevRoot`; watch dependency files plus registry events, not all of `Assets/` | §5.5 |
+| CR6 | Per-program frame uniforms; fill the `SortKey` shader field | §5.6, REN-xx row |
+| CR7 | v1 changes the colour pass only; documented | §5.6 |
+| CR8 | Feature opt-in by `#ifdef` scan; fallback per draw | §5.6 |
+| CR9 | Line map for errors; "New Shader" template | §5.3, §5.6 |
+| CR10 | Shader sets as a guarded catalog; shader move in its own commit, announced to skate-render; tests keep the `/shaders/` classpath | §4.1, §5.1 |
+| NQ5 | 13 basic + 6 internal ("internal", not "editor-only": they ship in exported games) | §5.1 |
+| NQ6 | Parameters as annotations in the GLSL file → a `MaterialSchema` `shader:<reference>` | §5.6 |
+| Missing | Uniform contract check on assignment; Vulkan start-up compile cost (SPIR-V cache later, VK) | §5.4, §5.6 |
 
 ## 12. New open questions (with recommended answers)
 
@@ -503,8 +585,13 @@ preprocessor records each program's resolved files, which are its **dependencies
    expects it there, and it is one file), or move it to `Data/`?
 4. **NQ4 — Font Awesome desktop zip** (`assets/fonts/fontawesome-free-7.1.0-desktop.zip`, a source archive):
    recommended: move to `tools/fonts/`, out of the assets tree.
-5. **NQ5 — the shader sets:** recommended: the 14 game-pipeline shaders of §5.2 are the "basic shaders" (always
-   copied, overridable); the 5 editor-only shaders stay internal and cannot be overridden. skate-render may adjust the
-   list.
-6. **NQ6 — custom shader parameters:** v1 user shaders must use their material schema's uniforms. Recommended: shaders
-   that declare their own parameters (custom schema, inspector fields) are a separate REN task.
+5. **NQ5 — the shader sets:** answered by skate-render (§5.1, §11.1): 13 basic, 6 internal. No longer open.
+6. **NQ6 — custom shader parameters:** answered by skate-render: a later REN task using GLSL annotations (§5.6). No
+   longer open.
+7. **NQ7 — unchanged shader copies update silently:** skate-render asks for one exception to "nothing updates
+   silently": an unchanged copy of an engine shader (hash equal to `engine.sha256`) follows the engine and is
+   refreshed when the project opens, because a stale shader breaks rendering after an engine update. Recommended:
+   accept (only files with no user edits are touched).
+8. **NQ8 — user shaders in the colour pass only (v1):** a custom material shader does not affect shadows or picking,
+   so vertex-moving shaders show a mismatched shadow. Recommended: accept for v1, with an optional `shadowShader` as a
+   later REN task.
