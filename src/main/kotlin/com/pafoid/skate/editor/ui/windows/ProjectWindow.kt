@@ -9,6 +9,7 @@ import com.pafoid.skate.editor.events.WindowAction
 import com.pafoid.skate.editor.scripting.ScriptTemplates
 import com.pafoid.skate.editor.ui.handlers.ScriptEditorActionHandler
 import com.pafoid.skate.editor.data.FileSystemItem
+import com.pafoid.skate.editor.animation.clipeditor.OpenAnimationClip
 import com.pafoid.skate.editor.data.FileType
 import com.pafoid.skate.editor.events.FileSystemEvent
 import com.pafoid.skate.editor.events.ProjectEvent.CreateFileRequested
@@ -265,7 +266,10 @@ class ProjectWindow(
         val isSelected = reveal.isSelected(item.path)
         val selectableFlags = ImGuiSelectableFlags.SpanAllColumns
 
-        if (selectable(label, isSelected, selectableFlags)) reveal.select(item.path)
+        if (selectable(label, isSelected, selectableFlags)) {
+            reveal.select(item.path)
+            eventSystem.publish(FileSystemEvent.FileSelected(item.path))
+        }
         if (reveal.isTarget(item.path)) ImGui.setScrollHereY(0.5f)
 
         if (isItemClicked(1)) {
@@ -296,6 +300,11 @@ class ProjectWindow(
 
     private fun handleDoubleClick(item: FileSystemItem) {
         when (item.type) {
+            // ANI-14: a .skanim clip opens in the Animation Editor; other animation files go to the system.
+            FileType.ANIMATION -> {
+                if (opensInAnimationEditor(item.file)) eventSystem.publish(OpenAnimationClip(item.file.path))
+                else openInExternalEditor(item.file)
+            }
             FileType.SCENE -> {
                 logger.logEditor("Opening scene: ${item.file.name}")
                 eventSystem.publish(SceneAction.OpenSceneFile(item.file))
@@ -422,8 +431,11 @@ class ProjectWindow(
         }
     }
 
-    private companion object {
-        const val ITEM_MENU = "##project_item_menu"
+    companion object {
+        private const val ITEM_MENU = "##project_item_menu"
+
+        /** A double-click opens [file] in the Animation Editor (ANI-14): `.skanim` clips only. */
+        fun opensInAnimationEditor(file: File): Boolean = file.extension.equals("skanim", ignoreCase = true)
     }
 
     private fun showCreateDialog(isDirectory: Boolean, parent: FileSystemItem? = null) {
@@ -450,10 +462,14 @@ class ProjectWindow(
         needsRefresh = true
     }
 
+    /** Only `.blend` files have a source to import from today (EDT-66, BlenderSync); other assets just log. */
     private fun reimportAsset(item: FileSystemItem) {
         val guid = item.assetGuid ?: return
-        // For now, just log — actual reimport would go through ImportPipeline
-        logger.logEditor("Reimport requested for: ${item.name} (GUID: ${guid.take(8)}...)")
+        if (item.file.extension.equals("blend", ignoreCase = true)) {
+            eventSystem.publish(FileSystemEvent.ReimportRequested(item.path))
+        } else {
+            logger.logEditor("Reimport requested for: ${item.name} (GUID: ${guid.take(8)}...): nothing to import it from")
+        }
         needsRefresh = true
     }
 

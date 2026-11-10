@@ -1,11 +1,13 @@
 package com.pafoid.skate.engine.physics3d.native
 
-import electrostatic4j.snaploader.LoadingCriterion
-import electrostatic4j.snaploader.NativeBinaryLoader
-import electrostatic4j.snaploader.platform.NativeDynamicLibrary
+import java.io.File
+import java.io.InputStream
 
+/** The side effects of loading a native library, replaceable in tests. */
 interface INativeLibraryLoaderService {
-    fun registerNativeLibraries(loader: NativeBinaryLoader, libraries: Array<NativeDynamicLibrary?>): NativeBinaryLoader
-    fun initPlatformLibrary(loader: NativeBinaryLoader): NativeBinaryLoader
-    fun loadLibrary(loader: NativeBinaryLoader, criterion: LoadingCriterion): NativeBinaryLoader
+    /** Opens the binary bundled at classpath [resourcePath], or returns null when no jar on the classpath carries it. */
+    fun openResource(resourcePath: String): InputStream?
+
+    /** Loads the native library at [file] into the process (`System.load`). */
+    fun load(file: File)
 }

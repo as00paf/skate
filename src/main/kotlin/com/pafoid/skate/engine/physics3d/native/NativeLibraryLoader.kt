@@ -1,10 +1,5 @@
 package com.pafoid.skate.engine.physics3d.native
 
-import electrostatic4j.snaploader.LibraryInfo
-import electrostatic4j.snaploader.LoadingCriterion
-import electrostatic4j.snaploader.NativeBinaryLoader
-import electrostatic4j.snaploader.filesystem.DirectoryPath
-import electrostatic4j.snaploader.platform.NativeDynamicLibrary
 import electrostatic4j.snaploader.platform.util.PlatformPredicate
 import java.io.File
 
@@ -35,26 +30,35 @@ class NativeLibrarySpec(val name: String, val platforms: List<Pair<String, Platf
     }
 }
 
-/** Extracts and loads one [spec]'s native library once per process. Defaults to Bullet. */
+/**
+ * Extracts and loads one [spec]'s native library once per process. Defaults to Bullet. The binary is installed by
+ * [NativeExtractor] into a content-hashed subfolder of [nativesDir], so concurrent processes share it safely.
+ * [isCurrentPlatform] picks the [NativeLibrarySpec.platforms] row for this machine (replaced in tests).
+ */
 class NativeLibraryLoader(
     private val nativeLibraryLoaderService: INativeLibraryLoaderService = DefaultNativeLibraryLoaderService(),
     private val spec: NativeLibrarySpec = NativeLibrarySpec.BULLET,
+    private val isCurrentPlatform: (PlatformPredicate) -> Boolean = { it.evaluatePredicate() },
+    private val root: () -> File = ::nativesDir,
 ) {
     companion object {
         private val loaded = HashSet<String>()
 
         internal fun resetForTests() = synchronized(loaded) { loaded.clear() }
 
+        /** Overrides [nativesDir] (CI, tests); the per-user folder is used when unset. */
+        const val NATIVES_DIR_PROPERTY = "skate.natives.dir"
+
         /** Per-user data directory for physics natives (EDT-18 safety), created if missing. */
-        fun nativesDir(): DirectoryPath {
-            val dir = nativesDirFor(
+        fun nativesDir(): File {
+            val dir = System.getProperty(NATIVES_DIR_PROPERTY)?.takeIf { it.isNotBlank() }?.let(::File) ?: nativesDirFor(
                 System.getProperty("os.name").orEmpty(),
                 System.getProperty("user.home").orEmpty(),
                 System.getenv("APPDATA"),
                 System.getenv("XDG_CONFIG_HOME"),
             )
             dir.mkdirs()
-            return DirectoryPath(dir.path)
+            return dir
         }
 
         /** `os.name` is e.g. "Windows 11" or "Mac OS X", so it is compared case-insensitively. */
@@ -72,22 +76,23 @@ class NativeLibraryLoader(
     fun loadNativeLibrary(): Boolean = synchronized(loaded) {
         if (spec.name in loaded) return true
         try {
-            val info = LibraryInfo(null, spec.name, nativesDir())
-            val loader = NativeBinaryLoader(info)
-            val libraries: Array<NativeDynamicLibrary?> =
-                spec.platforms.map { (path, platform) -> NativeDynamicLibrary(path, platform) }.toTypedArray()
-
-            nativeLibraryLoaderService.registerNativeLibraries(loader, libraries)
-            nativeLibraryLoaderService.initPlatformLibrary(loader)
-            nativeLibraryLoaderService.loadLibrary(loader, LoadingCriterion.CLEAN_EXTRACTION)
+            nativeLibraryLoaderService.load(install())
             loaded += spec.name
             true
-        } catch (e: Exception) {
-            // In test environments or when native files are not available, we log the issue
-            // but don't crash the application. The physics engine may not work properly
-            // without the native libraries, but the application can continue running.
+        } catch (e: Throwable) {
+            // Missing natives (unsupported platform, stripped export) must not crash the app: callers fall back
             System.err.println("Warning: Could not load native physics library ${spec.name}: ${e.message}")
             false
         }
+    }
+
+    /** Extracts this platform's bundled binary (or reuses an identical copy) and returns the file to load. */
+    internal fun install(): File {
+        val folder = spec.platforms.firstOrNull { isCurrentPlatform(it.second) }?.first
+            ?: error("no ${spec.name} native for this platform")
+        val fileName = System.mapLibraryName(spec.name)
+        val bytes = nativeLibraryLoaderService.openResource("$folder/$fileName")?.use { it.readBytes() }
+            ?: error("$folder/$fileName is not on the classpath")
+        return NativeExtractor.install(root(), spec.name, fileName, bytes)
     }
 }
