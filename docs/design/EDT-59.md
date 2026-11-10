@@ -1,6 +1,7 @@
 # EDT-59 — New Project wizard and templates (design note)
 
-Status: **revision 2, awaiting the human's approval.** No code has been written.
+Status: **approved** (revision 2, by the human on 2026-11-10; answers in §9). No code has been written: implementation
+starts after AST-27 lands, and the lead dispatches it.
 Revision 2 (2026-11-10, after the lead's review): rewritten against the code on `integration/30g`; folds in EDT-70 (copy
 the engine defaults or not) and the AST-26 typed asset folders (draft on `agents/assets`, `docs/design/AST-26.md`). The
 human decisions of 2026-11-07 are in §9, unchanged.
@@ -275,6 +276,23 @@ Human decisions recorded on 2026-11-10 (from EDT-70 and AST-26, applied here):
 6. Typed asset folders under `Assets/` (`Models`, `Shaders`, `Sounds`, `Textures`, `Materials`, `Scripts`,
    `Animations`); no `EngineDefaults` folder anywhere; new projects only, no migration.
 
+Human answers to §12, recorded on 2026-11-10 (revision 2 approved):
+
+1. Preselected template: Skate Game.
+2. The 'Copy engine default assets' choice is a creation-time action, not stored (follow AST-26; EDT-70 updated).
+3. Default project location: ~/SkateProjects/ (as decided 2026-11-07), still configurable.
+4. Target FPS caps the exported game only; the editor stays on VSync.
+5. AI files: AGENTS.md, .claude/skills/skate-project/SKILL.md and .github/copilot-instructions.md; no .mcp.json yet.
+6. Block creation when the folder already holds <name>.skateproject; warn for any other non-empty folder.
+7. Version control checkbox: HIDDEN until EDT-60 phase 1 lands (then it does .gitignore/.gitattributes/LFS and git init together).
+8. In the wizard, every template follows the copy choice; 'skate sample' keeps reference mode.
+
+Also recorded 2026-11-10: **AST-26 is approved** (on `agents/assets`). Editor strings, themes and help move to
+`src/main/resources/editor/`, so this note's `assets/strings/editor/core*.properties` references follow that move.
+
+Where this changes the body above: §6 and §7 show the Version control checkbox only once EDT-60 phase 1 lands
+(answer 7), and the "Default project location" setting defaults to `~/SkateProjects/` (answer 3).
+
 ## 10. Slicing
 
 | Task | Owner | Contents | Deps |
@@ -305,6 +323,9 @@ other.
   destinations follow `AssetFolders.folderFor` rather than hard-coded folders.
 
 ## 12. Open questions for the human
+
+All answered on 2026-11-10; the answers are in §9.
+
 
 1. **Preselected template.** Recommended: **Skate Game**, which matches what a new project contains today (the skate
    MainScene). Alternative: Empty.
