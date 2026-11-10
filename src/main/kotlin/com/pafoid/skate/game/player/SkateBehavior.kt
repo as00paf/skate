@@ -309,11 +309,14 @@ class SkateBehavior(
 object SkateGameplay {
     /**
      * Per-engine setup, called by each host (editor and exported game) once the engine has started: the control
-     * scheme option in the pause menu and the trick HUD (GPL-21). Call [register] first.
+     * scheme option in the pause menu and the trick HUD (GPL-21). Call [register] first. Safe to call again.
      */
     fun install(engine: Engine) {
         engine.gameOptions.register(SkateControls.option())
-        engine.systemManager.addSystem(SkateHudSystem(engine.eventSystem))
+        // Once per engine: a second HUD would score every trick twice (GPL-25).
+        if (engine.systemManager.getSystem<SkateHudSystem>() == null) {
+            engine.systemManager.addSystem(SkateHudSystem(engine.eventSystem))
+        }
     }
 
     fun register() {
