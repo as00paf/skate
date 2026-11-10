@@ -247,7 +247,7 @@ Round 27+ goals: a Jolt backend selectable per project, a terrain heightfield co
 - [x] **PHY-20** `P1` Ship Bullet's release native instead of SpDebug
   - Do: From the PHY-17 benchmark: `build.gradle.kts` uses libbulletjme's `SpDebug` classifier, so the editor and exported games run Bullet's debug build. Switch to the release single-precision classifier (keep debug only for tests if useful), update `verify-game-jar.sh`, re-run the benchmark.
   - Done when: Exports ship the release native; physics suite green; benchmark numbers updated in `docs/design/PHY-17.md`.
-- [ ] **PHY-21** `P1` Concurrent processes must not clobber the shared natives folder
+- [~] @skate-physics **PHY-21** `P1` Concurrent processes must not clobber the shared natives folder
   - Do: From round 30 integration (skate-audio, skate-tooling): since PHY-18, `NativeLibraryLoader` extracts with `CLEAN_EXTRACTION` into the shared `%APPDATA%\Skate\natives`, so concurrent JVMs (parallel worktree test runs, a running editor next to an exported game) wipe or lock each other's DLLs and physics fails with `UnsatisfiedLinkError`. Use a per-version (content-hash) subfolder and skip extraction when an identical DLL is already present; never delete a DLL another process may hold.
   - Done when: Two JVMs loading Bullet and Jolt at the same time both succeed; loader tests cover reuse and the versioned path.
   - Deps: PHY-18
@@ -261,7 +261,7 @@ Round 27+ goals: an animation authoring tool and animation from video.
   - Do: ANI-12 §2.2 and §5.1: JSON `*.skanim` format (versioned), loader to the existing `Animation` types, and the pure editing core under `engine/animation/edit/` (keys, tangents, Euler↔quat curves, keyframe reduction, filters, loop seam, foot-lock).
   - Done when: A `.skanim` round-trips and plays on the skater; the core is unit-tested.
   - Deps: ANI-12
-- [ ] **ANI-14** `P2` Animation editor window: timeline, dope sheet, events, preview
+- [~] @skate-animation **ANI-14** `P2` Animation editor window: timeline, dope sheet, events, preview
   - Do: ANI-12 §2.1. Written by skate-animation, reviewed by skate-editor (lead decision); edits go through `Command`s; offscreen preview with REN help.
   - Done when: A clip can be scrubbed, keyed, retimed and saved, with undo; window logic tested.
   - Deps: ANI-13, EDT-52
@@ -331,13 +331,13 @@ Round 27+ goals: menu parity between the editor and the game, and a map view.
   - Do: Found by the human testing PR #29 (GUI-12 did not fix it). Find what closes the window on Esc in the exported game (e.g. `engine/core/WindowController.kt` `glfwSetWindowShouldClose`, a GLFW key callback, or `ui.cancel` with no handler) and route Esc to the pause menu exactly as in editor Play. Lead-assigned; skate-gameui reviews.
   - Done when: Esc in the exported game opens the pause menu and Esc again resumes; Quit is the only way to close from the menu; test on the key path.
 
-- [ ] **GPL-25** `P0` GPL-21 review fixes: saved control scheme applied at startup
+- [~] @skate-gameplay **GPL-25** `P0` GPL-21 review fixes: saved control scheme applied at startup
   - Do: From the GUI review of GPL-21 (`/tmp/skate-gameui-reviews.md`): must fix — the saved option is applied before the settings store attaches, so the default scheme runs while the menu shows the saved one (re-apply when the store changes; test). Should fix — cap the pause panel height, apply options once, cache the HUD text components, find the rider recursively. Lead-assigned to skate-gameui; skate-gameplay reviews.
   - Done when: The saved scheme is active from the first frame in both hosts; tests.
 - [x] **GUI-15** `P1` Exported game reads the project's window and runtime settings
   - Do: From EDT-57: the exported game reads resolution, window title, fullscreen, supported languages, startup language and the project physics rate from the project settings.
   - Done when: Each setting changed in Project Settings takes effect in an exported game; tests.
-- [ ] **GUI-16** `P2` Reset ImGui capture hooks when the ImGui context is destroyed
+- [~] @skate-gameui **GUI-16** `P2` Reset ImGui capture hooks when the ImGui context is destroyed
   - Do: From the GUI-14 review: `ImGuiLayer.destroy()` must reset `captureKeyboard`/`captureMouse` to `{ false }` before destroying the context, so input read after shutdown cannot end the JVM.
   - Done when: Reading input after `destroy()` is safe; test.
 
@@ -406,7 +406,7 @@ Round 27+ goals (human, 2026-11-06): fix editor bugs, make every window, dialog 
   - Do: Design note first. Templates (Empty, Skate game, Feature Showcase, Tetris, Marble Run, later demos), which separates the skate game from the showcase. Settings: target FPS/uncapped, physics backend (Bullet, Simple, Jolt once PHY-17 lands), graphics backend (exists), include AI agent/skill files, splash screen image. Templates come from skate-tooling.
   - Done when: The human approves the design; each template creates a project that opens and runs; tests for the template registry and settings.
   - Deps: EDT-56, AST-14
-- [ ] **EDT-60** `P2` Git version control (phase 0 done; phase 1: @skate-ecs) — approved 2026-11-06 (`docs/design/EDT-60.md`)
+- [~] @skate-ecs **EDT-60** `P2` Git version control (phase 0 done; phase 1: @skate-ecs) — approved 2026-11-06 (`docs/design/EDT-60.md`)
   - Do: Phase 0 (ECS/AST): persistent GameObject ids so an unchanged scene saves byte-identical; load→save→load→save test on MainScene and the Feature Showcase. Phase 1 (EDT): local repository panel with JGit (init, status, diff, commit, history, branches, discard, conflict-safe loading; no Git install needed). Conflicts: whole-file "Keep mine / Take theirs" for now (human). Human decisions for later phases: GitHub sign-in supports **both** browser sign-in (a registered "Skate" OAuth app, set up with the human when phase 2 starts) and pasting a personal access token; **Git LFS on by default** for new projects (models, textures, audio).
   - Done when: Phase 1 commits and diffs a project locally; tests.
 ## Testing & tooling
@@ -431,11 +431,11 @@ Round 27+ goals (human, 2026-11-06): fix editor bugs, make every window, dialog 
   - Do: From EDT-57: convert the 14 files listed in `TooltipToggleGuardTest`'s allow-list (chunks C, D, G, H, I and EDT-54) to `Tooltips.text` (control help) or `Tooltips.always` (explanations, data), and empty the list.
   - Done when: The allow-list is empty; tests.
   - Deps: EDT-52, EDT-57
-- [ ] **EDT-66** `P2` Blender import settings in the inspector and Editor Settings
+- [~] @skate-assets **EDT-66** `P2` Blender import settings in the inspector and Editor Settings
   - Do: From AST-19: an inspector panel for `.blend` import settings (`blender.*` meta keys) with a Re-import button (`BlenderSync.reimport`), a "Needs Blender" badge, and a Blender section in Editor Settings (path, timeout, import on open, a Test button using `BlenderLocator`).
   - Done when: Settings edit and persist; Re-import works; tests.
   - Deps: AST-19
-- [ ] **EDT-67** `P1` Help button on every window and unclipped button background
+- [~] @skate-editor **EDT-67** `P1` Help button on every window and unclipped button background
   - Do: From the human testing the window standard (2026-11-07): only **some** windows show the `?` help button, and on the ones that do the **button background is clipped at the top**. Give every registered window the control and fix the clipping (padding/rect/clip-space) at any DPI and window size. The fix must work with the pending EDT-52 chunk branches (C, E, F, G, H, I) and EDT-54, which the lead integrates before final verification.
   - Done when: Every registered window shows a correctly rendered `?` button; a test asserts coverage and the layout math is covered.
   - Deps: EDT-52
