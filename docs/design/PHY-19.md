@@ -1,269 +1,344 @@
 # PHY-19 — Jolt-native ragdolls, vehicles and character controller (design note)
 
-Status: **revision 2, awaiting human approval**. No implementation code has been written.
+Status: **revision 3, awaiting human approval**. No implementation code has been written.
 
 Task (GameEngine.md, Physics): "From PHY-17: optional Jolt `Ragdoll` (pose motors), `VehicleConstraint` and
 `CharacterVirtual` modes (the last one with GPL). Design note first." Deps: PHY-17 (slices a–e done).
 
-Revision 2 replaces the first draft, which the lead rejected because it was not grounded in the code. That draft
-described a `skate-physics-jolt` module and `IRagdoll` / `IVehicle` / `ICharacterController` interfaces, and none of
-them exist. It also called GPL-24 a movement system, but GPL-24 covers inventory, combat, interaction and
-customization and is not involved here. The human decisions recorded on 2026-11-07 (section 9) are kept word for word.
+History:
+- Revision 1 was rejected because it was not grounded in the code.
+- Revision 2 rebuilt the note on the real `physics3d` API.
+- Revision 3 applies the human's answers of 2026-11-10 to revision 2's open questions. They are recorded word for word
+  in §9. The main changes: powered ragdolls and the full vehicle drivetrain work on **every** backend, and the
+  Feature Showcase gets a walker on `CharacterBody3D`.
 
 All paths below are relative to `src/main/kotlin/com/pafoid/skate/` unless they start with `src/test/` or `docs/`.
 **NEW** marks a file or type that does not exist yet.
 
 ## 1. How it works today
 
-Nothing in this area is Bullet-specific. All three features are engine code built on `IPhysics3D`, and they already
-run unchanged on Jolt (PHY-17, `docs/design/PHY-17.md` §4 "Ragdolls" / "Vehicles").
+Nothing in this area is Bullet-specific today. All three features are engine code built on `IPhysics3D`, and they
+already run unchanged on Jolt (PHY-17, `docs/design/PHY-17.md` §4 "Ragdolls" / "Vehicles").
 
 | Feature | Code today | Physics it uses |
 |---|---|---|
-| Ragdoll | `engine/physics3d/RagdollBuilder.kt` (`buildMixamoRagdoll`: 13 capsule bones, `ConeTwistConstraint3D` joints with identity frames and fixed ±0.15 m pivots), `engine/ecs/components/RagdollComponent.kt` (`boneBodies`, `joints`, `state`), `RagdollState.kt` (`ANIMATED`, `RAGDOLL`, `BLENDING`; `BLENDING` is a stub that falls back to `ANIMATED`), `engine/ecs/systems/RagdollSystem.kt` (kinematic sync from the animation pose, or writes physics poses back to the skeleton), `PhysicsSystem.syncRagdolls()` (adds joints, makes bones dynamic in `RAGDOLL`) | `createRigidBody`, `isKinematic`, `addConstraint(ConeTwistConstraint3D)`. Limp only, no motors. |
-| Vehicle | `engine/ecs/components/VehicleComponent.kt` (`WheelConfig`, `WheelState`, `throttle`/`steering`/`brake`, spring/damper/force fields in N), `engine/physics3d/RaycastVehicleSolver.kt` (PHY-09), called from `PhysicsSystem.fixedUpdate` before `physics3d.step` | `raycastClosest`, `applyImpulse` on the chassis `RigidBody3D.rawBody` |
-| Character | No controller in physics. `engine/ecs/components/PlayerController.kt` + `engine/gameplay/LocomotionBehavior.kt` produce a `CharacterMotion` (horizontal velocity, jump impulse). `engine/ecs/systems/PlayerMotionSystem.kt` writes it to the object's dynamic `RigidBody3D` (as `IPhysicsBody3D`) and snaps it to the ground with `GroundMotion`. `PhysicsSystem.probeGround()` fills `PlayerController.ground` / `groundTag` / `stepAhead` with `GroundDetector` (`engine/gameplay/ground/GroundDetection.kt`) raycasts and a `shapeCast`. | A dynamic capsule `RigidBody3D`, `raycast`, `shapeCast` |
+| Ragdoll | `engine/physics3d/RagdollBuilder.kt` (`buildMixamoRagdoll`: 13 capsule bones, `ConeTwistConstraint3D` joints with identity frames and fixed ±0.15 m pivots), `engine/ecs/components/RagdollComponent.kt`, `RagdollState.kt` (`ANIMATED`, `RAGDOLL`, `BLENDING`; `BLENDING` is a stub that falls back to `ANIMATED`), `engine/ecs/systems/RagdollSystem.kt`, `PhysicsSystem.syncRagdolls()` | `createRigidBody`, `isKinematic`, `addConstraint`. Bullet builds a `ConeJoint` (`bullet/BulletPhysics3D.kt`), Jolt a `SwingTwistConstraint` (`jolt/JoltJoints.kt`). Limp only, no motors. |
+| Vehicle | `engine/ecs/components/VehicleComponent.kt` (`WheelConfig`, `WheelState`, `throttle`/`steering`/`brake`, `maxEngineForce`/`maxBrakeForce` in N, spring/damper), `engine/physics3d/RaycastVehicleSolver.kt` (PHY-09: forces applied straight at the contact, no engine, gearbox or wheel spin), called from `PhysicsSystem.fixedUpdate` before `physics3d.step` | `raycastClosest`, `applyImpulse` on the chassis `RigidBody3D.rawBody` |
+| Character | `engine/ecs/components/PlayerController.kt` + `engine/gameplay/LocomotionBehavior.kt` produce a `CharacterMotion`. `engine/ecs/systems/PlayerMotionSystem.kt` writes it to a dynamic `RigidBody3D` (as `IPhysicsBody3D`) and snaps it to the ground with `GroundMotion`. `PhysicsSystem.probeGround()` fills `PlayerController.ground` / `groundTag` / `stepAhead` using `GroundDetector` (`engine/gameplay/ground/GroundDetection.kt`). Only the skater (`game/prefabs/Skater.kt`) has a `PlayerController` today. | A dynamic capsule `RigidBody3D`, `raycast`, `shapeCast` |
+| Showcase | `game/samples/FeatureShowcase.kt` has **no walking character**. "[Animation] Character" and "[Animation] Upper-body mask" (`animation()`, via `PrefabsGenerator.spawnAnimatedCharacter`) are animated meshes with no body or controller, and line 140 notes "the showcase has no player character; the camera is 'you'". | — |
 
-The Jolt backend lives in `engine/physics3d/jolt/`: `JoltPhysics3D` (world, `step` = `system.update` then
-`contacts.afterStep`), `JoltJoints` (descriptor → Jolt constraint; `ConeTwistConstraint3D` →
-`SwingTwistConstraintSettings`), `JoltRigidBodyHandle`, `JoltShapes`, `JoltLayers`, `JoltContacts`, `JoltDebugDraw`,
-`JoltRuntime`. `ownedNativeObjects()` and `JoltLifecycleTest` check that every native object is freed.
+Jolt backend: `engine/physics3d/jolt/` contains `JoltPhysics3D`, `JoltJoints`, `JoltRigidBodyHandle`, `JoltShapes`,
+`JoltLayers`, `JoltContacts`, `JoltDebugDraw` and `JoltRuntime`. `ownedNativeObjects()` and `JoltLifecycleTest`
+check that every native object is freed.
 
-The relevant jolt-jni 6.2.0 API, checked in the jar:
-- `SwingTwistConstraint.setSwingMotorState` / `setTwistMotorState(EMotorState)`, `setTargetOrientationCs(Quat)`,
-  `getSwingMotorSettings` / `getTwistMotorSettings` (`MotorSettings`).
-- `VehicleConstraint(Settings)` with `WheeledVehicleControllerSettings` and `WheelSettingsWv`
-  (`setPosition`, `setRadius`, `setSuspensionMin/MaxLength`, `setMaxSteerAngle`, `setMaxBrakeTorque`).
-  Driven with `WheeledVehicleController.setDriverInput(forward, right, brake, handBrake)`; read with
-  `getWheel(i)` and `getWheelWorldTransform(i, right, up)`. It needs `PhysicsSystem.addStepListener`.
-- `CharacterVirtual(Settings)` with `CharacterVirtualSettings` (`setMaxSlopeAngle`, `setInnerBodyShape`, `setMass`,
-  `setMaxStrength`). Driven with `extendedUpdate(dt, gravity, ExtendedUpdateSettings, filters…, TempAllocator)`,
-  `setLinearVelocity`, `setShape` (crouch), `getGroundState`, `getGroundNormal`, `isSupported`, and
-  `CharacterContactListener`.
+APIs, checked in the jars:
+- jolt-jni 6.2.0:
+  - `SwingTwistConstraint` motors: `setSwingMotorState` / `setTwistMotorState`, `setTargetOrientationCs`,
+    `MotorSettings`.
+  - `VehicleConstraint` with `WheeledVehicleControllerSettings` (`VehicleEngineSettings`,
+    `VehicleTransmissionSettings`, `VehicleDifferentialSettings`), `VehicleAntiRollBar`, `WheelSettingsWv`, and
+    `WheeledVehicleController.setDriverInput`.
+  - `CharacterVirtual` / `CharacterVirtualSettings` (`setInnerBodyShape`, `setMaxSlopeAngle`, `extendedUpdate`,
+    `setShape`, `getGroundState`).
+- libbulletjme 22.0.3: `New6Dof(bodyA, bodyB, pivotA, pivotB, rotA, rotB, RotationOrder)`,
+  `getRotationMotor(axis)`, and `RotationMotor.setServoEnabled` / `setSpringEnabled` / `setMotorEnabled` /
+  `set(MotorParam.ServoTarget | Stiffness | Damping | MaxMotorForce, v)`.
 
 ## 2. Principles
 
-1. **Opt-in per component, and the engine-side API stays the same.** The current behaviour stays the default on every
-   backend: limp ragdolls, the raycast vehicle solver, and the rigid-body character. Jolt-native modes are a field on
-   the component. When the backend cannot do the mode, the engine uses today's code path and logs a warning once.
-2. **No Jolt types outside `engine/physics3d/jolt/`.** New API on `IPhysics3D` uses neutral descriptors and handles,
-   following the existing pattern (`IPhysicsConstraint` descriptors with `rawJoint`, and `IRigidBodyHandle`). New
-   methods have defaults that mean "unsupported", so `BulletPhysics3D` and `SimplePhysics3D` compile unchanged.
+1. **One component API, every backend.** Ragdoll motors and the vehicle drivetrain are engine features with one set
+   of fields. Each backend implements them natively where it can (Jolt motors and `VehicleConstraint`, Bullet
+   `New6Dof` servos). Otherwise the engine does it (`RaycastVehicleSolver` drivetrain on Bullet and Simple). The only
+   documented exception: Simple has no joints, so `POWERED` stays limp there.
+2. **No backend types outside the backend package.** Jolt stays in `engine/physics3d/jolt/` and Bullet
+   (`com.jme3`) in `engine/physics3d/bullet/` (guard: `EngineLayeringGuardTest`). New `IPhysics3D` methods have
+   "unsupported" defaults.
 3. **Backends are still built only through `Physics3DFactory`.** Bullet stays the default backend (PHY-17 decision 3).
-   Per-project selection remains PHY-17 slice f, which waits on EDT-59, and is not part of this task.
-4. **Fixed timestep.** Native vehicles and characters advance inside `IPhysics3D.step` (Jolt step listener /
-   `extendedUpdate` before `system.update`), so `PhysicsSystem`'s interpolation keeps working.
-5. **Leak-safe.** Every new native object is listed in `JoltPhysics3D.ownedNativeObjects()` and freed in `destroy()`.
-   `JoltLifecycleTest` gets a ragdoll with motors, a vehicle and a character in its scene.
+   Per-project selection remains PHY-17 slice f, which waits on EDT-59.
+4. **Fixed timestep.** Motors, vehicles and characters advance inside `IPhysics3D.step` or the existing fixed-step
+   vehicle loop, so `PhysicsSystem`'s interpolation keeps working.
+5. **Leak-safe.** New native objects are listed in `JoltPhysics3D.ownedNativeObjects()` and freed in `destroy()`.
+   `JoltLifecycleTest` gets a powered ragdoll, a vehicle and a character in its scene.
+6. **Cross-backend tests.** Where the human asked for equal behaviour (powered ragdoll, vehicle), tests run the same
+   scenario on each backend and compare measured outcomes within the tolerances in §8.
 
-## 3. Ragdoll — pose motors (human decision 1: no Jolt built-in `Ragdoll`)
+## 3. Ragdoll — pose motors on every backend (decisions 1 of 2026-11-07; 1, 3 and 4 of 2026-11-10)
 
 ### 3.1 API (backend-neutral)
 
-- `engine/physics3d/constraints/ConeTwistConstraint3D.kt`: add `var motor: JointMotor? = null` (default null = limp,
-  as today).
+- `engine/physics3d/constraints/ConeTwistConstraint3D.kt`: add `var motor: JointMotor? = null` (null = limp).
 - **NEW** `engine/physics3d/constraints/JointMotor.kt`: `data class JointMotor(var frequency: Float = 20f,
-  var damping: Float = 1f, var maxTorque: Float = Float.MAX_VALUE)` (spring-style motor tuning).
+  var damping: Float = 1f, var maxTorque: Float = Float.MAX_VALUE)`. These are spring-style terms, so both backends
+  can derive their own gains from the same numbers.
 - `engine/physics3d/IPhysics3D.kt`: add
   `fun setJointMotorTarget(constraint: IPhysicsConstraint, targetInConstraintSpace: Quaternionf): Boolean = false`
   and `val supportsJointMotors: Boolean get() = false`.
 
 ### 3.2 Jolt
 
-- `jolt/JoltJoints.kt`: when `ConeTwistConstraint3D.motor != null`, set the swing and twist `MotorSettings`
-  (spring frequency/damping, torque limits) on the `SwingTwistConstraintSettings`.
+- `jolt/JoltJoints.kt`: with a `motor`, configure the swing and twist `MotorSettings` (spring frequency/damping,
+  torque limits) on the `SwingTwistConstraintSettings`.
 - `jolt/JoltPhysics3D.kt`: `setJointMotorTarget` sets both motor states to `EMotorState.Position` and calls
-  `setTargetOrientationCs`. `null` motor or an unknown constraint returns false.
+  `setTargetOrientationCs`. `supportsJointMotors = true`.
 
-### 3.3 Engine
+### 3.3 Bullet (decision 3 of 2026-11-10)
 
-- `RagdollState.kt`: add `POWERED` (bones are dynamic, and joint motors pull them toward the animation pose).
-  `BLENDING` keeps its current stub behaviour (see open question 1).
-- `RagdollComponent.kt`: add `var motorStrength: Float = 1f` (scales `JointMotor.maxTorque`; serialised, so it shows
-  in the inspector through `reflectedImgui`).
-- `RagdollSystem.kt`, `POWERED` branch: for each joint, the target is the child bone's rotation relative to its
-  parent bone in the current animation pose (`pose.globalTransforms`), expressed in the joint's constraint space. The
-  physics poses are then written back as in `RAGDOLL`. If `physics.supportsJointMotors` is false, `POWERED` behaves
-  like `RAGDOLL`, with one warning.
-- `PhysicsSystem.syncRagdolls()`: `POWERED` makes bones dynamic like `RAGDOLL`.
-- `RagdollBuilder.kt`: give every joint a default `JointMotor` (unused unless `POWERED`). Constraint frames are
-  identity today, so constraint space equals parent-bone space. Proper frames from the bind pose are a known gap: the
-  builder comment says pivots are approximate. They are not fixed here (open question 4).
+- `bullet/BulletPhysics3D.kt`: every `ConeTwistConstraint3D` becomes a `New6Dof` instead of a `ConeJoint`:
+  - Frames are `pivotA/B` and `rotA/B`, with `RotationOrder.XYZ`.
+  - Twist (X) is limited to ±`twistSpan`, and the swing axes (Y, Z) to ±`swingSpan1` / ±`swingSpan2`. Translation
+    is locked.
+  - This applies to limp joints too, so ragdolls have one joint type on Bullet (open question 2).
+- With a `motor`: on each rotation axis, `setMotorEnabled(true)`, `setServoEnabled(true)`, `setSpringEnabled(true)`.
+  Stiffness and damping come from `frequency` / `damping` and the joint's effective inertia
+  (k = I·(2πf)², c = 2ζ·I·2πf), and `MaxMotorForce = maxTorque`.
+- `setJointMotorTarget` decomposes the target quaternion into XYZ Euler angles and sets `ServoTarget` on each axis.
+  The middle axis of an XYZ `New6Dof` is limited to ±π/2 by Bullet. Ragdoll swing spans stay well below that
+  (≤ 0.5 rad today), so the decomposition is unambiguous. `supportsJointMotors = true`.
 
-### 3.4 Tests (unit, Jolt-native where noted)
+### 3.4 Simple
 
-- `JoltJoints`: a cone-twist with a motor creates a `SwingTwistConstraint` with both motors configured.
-- Jolt: two bodies joined by a motorised cone-twist, with a 45° twist target, reach the target within 0.05 rad in 120
-  steps. With no motor they do not.
-- Bullet/Simple: `setJointMotorTarget` returns false, and a `POWERED` ragdoll behaves like `RAGDOLL` (extends
+`SimplePhysics3D` has no joints, so `supportsJointMotors` stays false, and `POWERED` behaves like `RAGDOLL` (limp)
+with one warning.
+
+### 3.5 Engine
+
+- `RagdollState.kt`: add `POWERED` (decision 1 of 2026-11-10): bones are dynamic, and motors pull them toward the
+  animation pose. `BLENDING` keeps its stub. Animation↔physics blending with motors is a **separate ANI+PHY task**.
+- `RagdollComponent.kt`: add `var motorStrength: Float = 1f` (scales `JointMotor.maxTorque`; serialised).
+- `RagdollSystem.kt`, `POWERED` branch: each joint's target is the child bone's rotation relative to its parent bone
+  in the current animation pose (`pose.globalTransforms`), in constraint space. The physics poses are then written
+  back as in `RAGDOLL`.
+- `PhysicsSystem.syncRagdolls()`: `POWERED` makes bones dynamic, like `RAGDOLL`.
+- `RagdollBuilder.kt`: give every joint a default `JointMotor`. The frames stay identity in this task.
+  **Bind-pose frames are a separate PHY task, scheduled right after the motor slice** (decision 4 of 2026-11-10;
+  §7).
+
+### 3.6 Tests (unit)
+
+- Per backend, a motorised two-body joint with a 45° twist target reaches it within the joint tolerance (§8) in 120
+  steps. Without a motor it does not. Bullet and Jolt are measured with the same scenario and compared.
+- Bullet: a `ConeTwistConstraint3D` is created as `New6Dof` with the expected limits. The Euler decomposition
+  round-trips for targets inside the spans.
+- Simple: `setJointMotorTarget` returns false, and a `POWERED` ragdoll behaves like `RAGDOLL` (extends
   `src/test/.../ecs/systems/PhysicsSystemRagdollTest.kt`).
 - `RagdollSystem`: targets computed from a two-bone pose equal the relative rotation.
 
-## 4. Vehicle — Jolt `VehicleConstraint`
+## 4. Vehicle — full drivetrain on every backend (decision 2 of 2026-11-07; 2 of 2026-11-10)
 
-### 4.1 API (backend-neutral)
+### 4.1 One field set (`VehicleComponent.kt`)
 
-- `VehicleComponent.kt`: add `var mode: VehicleMode = VehicleMode.RAYCAST`. **NEW** enum
-  `VehicleMode { RAYCAST, NATIVE }` in the same file. All existing fields keep their meaning in both modes. Nothing
-  moves to new units (open question 2).
-- **NEW** `engine/physics3d/VehicleHandle.kt`: `interface IVehicleHandle { fun setDriverInput(throttle: Float,
-  steering: Float, brake: Float); fun readWheels(into: List<WheelState>); fun wheelWorldTransform(index: Int, out:
-  Matrix4f): Matrix4f }`. This is a neutral handle in the style of `IRigidBodyHandle`.
-- `IPhysics3D.kt`: add `fun createVehicle(chassis: IRigidBodyHandle, vehicle: VehicleComponent): IVehicleHandle? =
-  null` and `fun removeVehicle(handle: IVehicleHandle) {}`.
+The model follows Jolt's wheeled-vehicle model, so Jolt maps 1:1. `RaycastVehicleSolver` implements the same model
+for Bullet and Simple. **NEW** serialisable types live in `engine/ecs/components/VehicleComponent.kt` (or a **NEW**
+`VehicleDrivetrain.kt` next to it):
+
+| Group | Fields (units) |
+|---|---|
+| `WheelConfig` (extended) | `offset`, `radius`, `steerable`, `driven` (kept) + `width`, `inertia` (kg·m²), `angularDamping`, `maxBrakeTorque` (N·m), `maxHandBrakeTorque` (N·m), `suspensionMinLength` / `suspensionMaxLength` (m), `suspensionFrequency` (Hz), `suspensionDampingRatio`, `longitudinalFriction` / `lateralFriction` (curves: slip → friction coefficient, as point lists) |
+| **NEW** `VehicleEngine` | `maxTorque` (N·m), `minRpm`, `maxRpm`, `torqueCurve` (normalised RPM → torque factor, point list), `inertia`, `angularDamping` |
+| **NEW** `VehicleTransmission` | `mode` (`AUTO` / `MANUAL`), `gearRatios`, `reverseGearRatios`, `switchTime` (s), `clutchReleaseTime` (s), `switchLatency` (s), `shiftUpRpm`, `shiftDownRpm`, `clutchStrength` |
+| **NEW** `VehicleDifferential` (list) | `leftWheel`, `rightWheel` (indices into `wheels`), `differentialRatio`, `leftRightSplit`, `limitedSlipRatio`, `engineTorqueRatio` |
+| **NEW** `VehicleAntiRollBar` (list) | `leftWheel`, `rightWheel`, `stiffness` (N·m/rad) |
+| Vehicle | `maxSteerAngle` (kept), `maxPitchRollAngle`; inputs (transient): `throttle`, `steering`, `brake` (kept) + `handBrake`, `shiftUp` / `shiftDown` (manual mode) |
+| Read-back | `WheelState` (kept fields) + `angularVelocity`, `rotationAngle`, `longitudinalSlip`, `lateralSlip`; `VehicleComponent.engineRpm`, `currentGear` (transient, for HUD/audio) |
+
+Defaults describe the current 4-wheel car (rear-wheel drive via one rear differential, front and rear anti-roll bars,
+5 forward gears), so a new `VehicleComponent()` drives out of the box.
+
+Fields removed: `maxEngineForce`, `maxBrakeForce`, `springStiffness`, `springDamping`, `maxSuspensionForce`,
+`suspensionRestLength`, `tyreFriction`. Scenes saved with them are migrated on load (open question 3; the
+serializer uses `ignoreUnknownKeys = true`, so without a migration the old tuning would be silently dropped).
+
+The `VehicleMode` from revision 2 is dropped: the backend decides. Jolt uses `VehicleConstraint`; Bullet and Simple
+use the engine solver. Tests can force the engine solver on Jolt through an internal `PhysicsSystem` switch, but there
+is no user-facing mode (open question 4).
 
 ### 4.2 Jolt (**NEW** `engine/physics3d/jolt/JoltVehicle.kt`)
 
-Mapping from `VehicleComponent` to Jolt:
+- `WheelConfig` maps to `WheelSettingsWv`. `VehicleEngine` maps to `VehicleEngineSettings`, and its torque curve to
+  `LinearCurve`. `VehicleTransmission` maps to `VehicleTransmissionSettings`, `VehicleDifferential` to
+  `VehicleDifferentialSettings`, and `VehicleAntiRollBar` to `VehicleAntiRollBar`.
+- The collision tester is `VehicleCollisionTesterRay` on the chassis layer.
+- Inputs go through `WheeledVehicleController.setDriverInput(throttle, steering, brake, handBrake)`. Manual shifts
+  use the transmission's gear request.
+- `JoltPhysics3D` calls `system.addConstraint` and `addStepListener`, lists all vehicle objects in
+  `ownedNativeObjects()`, and removes a chassis's vehicle before its body.
+- Read-back: `WheelState` and the RPM/gear are filled from `Wheel` and the controller after each step.
 
-| Engine | Jolt |
-|---|---|
-| `WheelConfig.offset`, `radius` | `WheelSettingsWv.setPosition` (chassis space, already +Y up / +Z forward), `setRadius` |
-| `suspensionRestLength` | `setSuspensionMaxLength` (min 0) |
-| `springStiffness`, `springDamping` | Suspension `SpringSettings` as frequency/damping ratio, from the mass share per wheel: f = √(k/m)/2π, ζ = c / (2√(k·m)) |
-| `maxSteerAngle` on `steerable` wheels | `setMaxSteerAngle` (0 on others) |
-| `maxBrakeForce` | `setMaxBrakeTorque` = force share × radius |
-| `maxEngineForce`, `driven` | `VehicleEngineSettings` max torque (force × radius); a differential over the driven wheels |
-| `tyreFriction` | Flat longitudinal/lateral friction curves at that value |
-| `throttle`, `steering`, `brake` | `WheeledVehicleController.setDriverInput(throttle, steering, brake, 0)` |
+### 4.3 Bullet and Simple (`engine/physics3d/RaycastVehicleSolver.kt`, rewritten)
 
-- The collision tester is `VehicleCollisionTesterRay` on the chassis layer, which matches the current ray behaviour.
-- `JoltPhysics3D` keeps the constraint in its own list, calls `system.addConstraint` + `addStepListener`, and lists
-  the constraint, settings and tester in `ownedNativeObjects()`. Removing the chassis body removes its vehicle first
-  (as `destroyBody` already does for joints).
-- `readWheels` fills `WheelState.grounded` / `compression` / `steerAngle` / `load` from `Wheel`, so audio and visuals
-  that read `wheelStates` keep working.
+The solver keeps its contract: rays plus `applyImpulse` on the chassis, so it stays backend-agnostic. It implements
+the same model as Jolt each fixed step:
+1. **Suspension:** a ray per wheel between min and max length. Spring force comes from frequency and damping ratio
+   (as Jolt: k = m·(2πf)², c = 2ζ·m·2πf with m = the chassis mass share), and the contact point/normal from the hit.
+2. **Anti-roll bars:** the compression difference × `stiffness` is applied as opposite forces on the two wheels.
+3. **Engine and gearbox:** engine RPM follows the driven wheels' angular velocity × gear ratio × differential ratio,
+   clamped to [`minRpm`, `maxRpm`]. Torque = `torqueCurve(rpm)` × `maxTorque` × throttle. In auto mode it shifts at
+   `shiftUpRpm` / `shiftDownRpm` with `switchTime` and `clutchReleaseTime`.
+4. **Differentials:** torque is split by `engineTorqueRatio` and `leftRightSplit`, with a limited-slip cap.
+5. **Wheels:** each wheel has angular velocity, integrated from drive, brake and tyre torque over `inertia`, with
+   `angularDamping`.
+6. **Tyres:** longitudinal slip from wheel surface speed vs ground speed, and lateral slip from slip angle. Friction
+   comes from the two curves × suspension load, and the forces are applied at the contact (hub height, as today).
 
-### 4.3 Engine
+`WheelState` and RPM/gear are filled exactly like on Jolt. The implementation follows Jolt's published
+`WheeledVehicleController` / `VehicleConstraint` behaviour, so the two agree within tolerance. Sub-stepping inside a
+fixed step is not needed at 60 Hz for car-like inertias (risk §8).
 
-`PhysicsSystem.fixedUpdate`, vehicle loop: in `NATIVE` mode, create the handle once per vehicle (identity map, like
-`activeJoints`) and push `throttle` / `steering` / `brake` each step. If `createVehicle` returns null (Bullet/Simple),
-use `RaycastVehicleSolver`, with one warning. Changing `mode` or the wheel list rebuilds the handle. `WheelState` gets
-no new fields.
+### 4.4 Editor (decision 2 of 2026-11-07)
 
-Human decision 2 (suspension parameters in the editor inspector): `VehicleComponent` has no custom drawer today. It
-is drawn by `Component.reflectedImgui` (`editor/imgui/components/Component.kt`), which already lists
-`suspensionRestLength`, `springStiffness`, `springDamping` and `maxSuspensionForce`, and will list `mode`. A grouped
-"Suspension" section with tooltips and translations is slice PHY-19d (EDT).
+`VehicleComponent` is drawn by `Component.reflectedImgui` (`editor/imgui/components/Component.kt`), which shows plain
+numeric fields only. The grouped Suspension / Engine / Transmission / Differentials / Anti-roll bars sections, list
+editors and curve editors are slice PHY-19d (EDT).
 
-### 4.4 Tests
+### 4.5 Tests (unit, cross-backend)
 
-- `JoltVehicle` mapping: the spring conversion round-trips, brake and engine torque scale with the radius, and only
-  steerable wheels get a steer angle.
-- Jolt `NATIVE`: a 4-wheel chassis on a plane settles with all wheels grounded and the chassis level within 2°. Full
-  throttle for 2 s moves it forward. Braking from speed stops it. Steering right yaws it right. These mirror the
-  scenarios in `src/test/.../physics3d/RaycastVehicleTest.kt`.
-- Bullet: `NATIVE` falls back to the raycast solver (same result as `RAYCAST`).
-- `JoltLifecycleTest`: the populated world includes a native vehicle; nothing leaks.
+- `JoltVehicle` mapping: every field reaches its Jolt setting (engine, transmission, differential, anti-roll bar,
+  wheel).
+- Solver unit tests: torque curve lookup; RPM from wheel speed and gear; auto shift points; differential split and
+  limited slip; anti-roll force sign; tyre force vs slip from the curves.
+- **Cross-backend scenarios**, each on Bullet (solver), Jolt (native) and Jolt (forced solver), compared within §8:
+  - settle ride height and level
+  - 0→50 km/h time on flat ground
+  - top speed in 2nd gear
+  - shift points (RPM at upshift)
+  - braking distance from 50 km/h
+  - steady-state body roll in a constant-radius turn with and without anti-roll bars
+  - handbrake locks the rear wheels
+- Simple runs the solver scenarios too (same code path as Bullet; checks that it works with ray-only queries).
+- `RaycastVehicleTest` and `PhysicsBenchmarkTest` (vehicle scene) are updated to the new fields.
+- Migration: a scene JSON with the old fields loads into the equivalent drivetrain (open question 3).
 
-## 5. Character controller — Jolt `CharacterVirtual` (with GPL)
+## 5. Character controller — `CharacterBody3D` (decision 3 of 2026-11-07; 5 and 6 of 2026-11-10)
 
 ### 5.1 API (backend-neutral)
 
-- **NEW** `engine/ecs/components/CharacterBody3D.kt` (PHY-owned). It implements `IPhysicsBody3D`, so
-  `PlayerMotionSystem` can drive it the way it drives `RigidBody3D` today. It is used instead of `RigidBody3D` on an
-  object, not in addition to it. Serialised fields (human decision 3: configurable capsule radius and height):
-  `radius = 0.3f`, `height = 1.2f` (cylinder part, matching `ColliderShape.Capsule`), `crouchHeight = 0.6f`,
-  `mass = 70f`, `maxSlopeAngle = 50°`, `stepHeight = 0.35f`, `maxStrength = 100f` (push force on dynamic bodies),
-  `collisionLayer`, `collisionMask`. Runtime: `rawCharacter: ICharacterHandle?`, `crouching`, and read-only ground
-  state.
-- **NEW** `engine/physics3d/CharacterHandle.kt`: `interface ICharacterHandle { position/rotation get/set;
-  linearVelocity get/set; val groundState: CharacterGround (NEW enum ON_GROUND, ON_STEEP_GROUND, NOT_SUPPORTED,
-  IN_AIR); fun groundNormal(out: Vector3f); fun setCrouching(crouching: Boolean): Boolean }`. `setCrouching` returns
-  false when standing up is blocked.
-- `IPhysics3D.kt`: add `fun add(go)` support for `CharacterBody3D` (the same entry point as rigid bodies, so
-  `PhysicsSystem`'s add/teleport/remove bookkeeping is reused). Add a `fun createCharacter(desc:
-  CharacterDescription): ICharacterHandle?` hook. **NEW** `CharacterDescription` is in `engine/physics3d/` next to
-  `BodyDescription.kt`.
+- **NEW** `engine/ecs/components/CharacterBody3D.kt` (PHY-owned) implements `IPhysicsBody3D`, so
+  `PlayerMotionSystem` drives it like `RigidBody3D`. It is used **instead of** `RigidBody3D` on an object.
+  - Serialised (decision 3 of 2026-11-07): `radius = 0.3f`, `height = 1.2f`, `crouchHeight = 0.6f`, `mass = 70f`,
+    `maxSlopeAngle = 50°`, `stepHeight = 0.35f`, `maxStrength = 100f`, `collisionLayer`, `collisionMask`.
+  - Runtime: `rawCharacter: ICharacterHandle?`, `crouching`, and read-only ground state.
+- **NEW** `engine/physics3d/CharacterHandle.kt`: `interface ICharacterHandle`. It has position/rotation and
+  `linearVelocity`, `groundState: CharacterGround` (**NEW** enum `ON_GROUND`, `ON_STEEP_GROUND`, `NOT_SUPPORTED`,
+  `IN_AIR`), `groundNormal(out)`, and `setCrouching(Boolean): Boolean`.
+- **NEW** `engine/physics3d/CharacterDescription.kt` (next to `BodyDescription.kt`).
+- `IPhysics3D.add(go)` accepts `CharacterBody3D`, so `PhysicsSystem`'s add/teleport/remove bookkeeping is reused.
+  It goes through a `createCharacter(desc): ICharacterHandle? = null` hook.
 
 ### 5.2 Jolt (**NEW** `engine/physics3d/jolt/JoltCharacter.kt`)
 
-- `CharacterVirtualSettings`: capsule shape (from `JoltShapes`), `setMaxSlopeAngle`, `setMass`, `setMaxStrength`,
-  plus an inner body (`setInnerBodyShape` on the character's object layer). Raycasts, `shapeCast`, triggers and
-  other bodies' contacts then see the character, like they see the rigid-body capsule today (open question 5).
-- `JoltPhysics3D.step`: before `system.update`, call `extendedUpdate(dt, gravity, ExtendedUpdateSettings(stick to
-  floor, walk stairs with stepHeight), filters from JoltLayers, tempAllocator)` for each character. Jolt does the
-  sliding, step-up and slope limit.
-- Crouch: `setShape(crouch capsule, maxPenetration, …)`. If standing up would penetrate, the call returns false and
-  the character stays crouched.
-- A `CharacterContactListener` turns character-vs-trigger overlaps into `JoltContacts` trigger events, so
-  `TriggerEntered` / `TriggerExited` (`engine/events/PhysicsEvents.kt`) still fire.
-- Debug draw: `JoltDebugDraw` draws the capsule with the existing primitives.
+- `CharacterVirtualSettings`: capsule (from `JoltShapes`), `setMaxSlopeAngle`, `setMass`, `setMaxStrength`.
+- **Inner rigid body** (decision 5 of 2026-11-10): `setInnerBodyShape`, on the character's object layer and
+  registered in `handles` like other bodies. It is visible to `raycast` / `raycastAll` / `shapeCast` (AI line of
+  sight, other characters' `probeGround`), and it triggers `TriggerEntered` / `TriggerExited` through `JoltContacts`.
+- `JoltPhysics3D.step` calls `extendedUpdate` for each character before `system.update`: stick to floor, walk stairs
+  up to `stepHeight`, using `JoltLayers` filters and the world's `tempAllocator`.
+- Crouch uses `setShape(crouch capsule)`. If standing up is blocked, the character stays crouched.
+- A `CharacterContactListener` covers character-vs-trigger overlaps that the inner body misses (sensor-only bodies).
+- Debug draw: `JoltDebugDraw` draws the capsule.
 
-### 5.3 Fallback on Bullet / Simple
+### 5.3 Bullet / Simple
 
-`createCharacter` returns null. `PhysicsSystem` then builds what characters use today: a dynamic capsule body
-(`createRigidBody(ColliderShape.Capsule(radius, height, 1), mass)`, angular factor 0). It is wrapped in a small
-**NEW** `RigidBodyCharacter` adapter (`engine/physics3d/RigidBodyCharacter.kt`) that implements `ICharacterHandle`, so
-one component works on every backend. Crouch on the fallback rebuilds the capsule. Step-up and slope limit are not
-done on the fallback; GPL's existing `GroundMotion` keeps doing them.
+`createCharacter` returns null. `PhysicsSystem` builds a dynamic capsule (angular factor 0, which is what characters
+use today) and wraps it in **NEW** `engine/physics3d/RigidBodyCharacter.kt`, which implements `ICharacterHandle`.
+Crouch rebuilds the capsule. Step-up and slope handling come from GPL's existing `GroundMotion`.
 
-### 5.4 Gameplay integration (GPL)
+### 5.4 Gameplay (GPL, reviewed by skate-gameplay)
 
-- `engine/ecs/systems/PlayerMotionSystem.kt` (GPL): query `PlayerController` with `RigidBody3D` **or**
-  `CharacterBody3D`, and drive both through `IPhysicsBody3D`. On a native character, the jump impulse becomes a
-  velocity change (impulse / mass). `applyGround` (`GroundMotion` snapping) is skipped, because `extendedUpdate`
-  already sticks to the floor and walks stairs. `CharacterInput.crouch` sets `CharacterBody3D.crouching`.
-- `PhysicsSystem.probeGround()` (PHY): with a native character, `PlayerController.ground.standing` comes from
-  `groundState == ON_GROUND` and the normal from `groundNormal`. `GroundDetector` still runs for foot IK targets,
-  `groundTag` and `stepAhead`, which `CharacterVirtual` does not provide.
-- Existing prefabs keep `RigidBody3D`: the skater (`game/prefabs/Skater.kt`, mount/ride logic, net prediction in
-  `game/net/SkaterPredictionStep.kt`) and the showcase character. Moving any of them is a separate GPL task
-  (open question 6).
+- `engine/ecs/systems/PlayerMotionSystem.kt`: query `PlayerController` with `RigidBody3D` **or** `CharacterBody3D`
+  (through `IPhysicsBody3D`).
+  - On a native character, the jump impulse becomes a velocity change (impulse / mass).
+  - `applyGround` is skipped, because `extendedUpdate` already sticks to the floor and walks stairs.
+  - `CharacterInput.crouch` sets `CharacterBody3D.crouching`.
+- `PhysicsSystem.probeGround()` (PHY): on a native character, `ground.standing` and the normal come from
+  `groundState` / `groundNormal`. `GroundDetector` still runs for foot IK, `groundTag` and `stepAhead`.
+- **The skater keeps `RigidBody3D`** (decision 6 of 2026-11-10): board mount and net prediction
+  (`game/net/SkaterPredictionStep.kt`).
 
-### 5.5 Tests
+### 5.5 Showcase walker (decision 6 of 2026-11-10)
 
-- Jolt: a character on a plane stays grounded (`ON_GROUND`). Walking into a 0.3 m step climbs it, and a 0.5 m wall
-  does not. A 60° slope reports `ON_STEEP_GROUND` with max 50°. Crouch then stand under a 1 m ceiling stays crouched.
-  A trigger volume fires enter/exit. Pushing a 10 kg box moves it.
-- Fallback: on Bullet, `CharacterBody3D` creates a capsule body with angular factor 0, and `ICharacterHandle`
-  velocity round-trips.
-- GPL: `PlayerMotionSystem` drives a `CharacterBody3D` object (walk speed reached, jump leaves the ground).
-- `JoltLifecycleTest`: the populated world includes a character; nothing leaks.
-- Serialization: `CharacterBody3D` round-trips through `engine/assets/serialization/Serializer.kt` (registered as a
-  subclass, `ComponentType` entry), and `rawCharacter` is not saved.
+There is no walker in the showcase today (§1), so this adds one. Adding a **NEW** object
+"[Physics] Character controller" in `FeatureShowcase.kt` takes these pieces:
+- the James model and bundled locomotion clips, through `PrefabsGenerator.spawnAnimatedCharacter`
+- `PlayerController(LocomotionBehavior.ID)`, `CharacterBody3D` and `InputStateComponent`
+- a small course next to it: a 0.3 m step, a 30° ramp, a 60° slope it cannot climb, a crouch tunnel, a pushable box
+  and a trigger pad.
+
+How it receives input is open question 1, because the showcase camera is "you" and has no possessed character.
+
+### 5.6 Tests
+
+- Jolt:
+  - a character stays `ON_GROUND`
+  - it climbs a 0.3 m step but not a 0.5 m wall
+  - a 60° slope reports `ON_STEEP_GROUND` (max 50°)
+  - it stays crouched under a 1 m ceiling
+  - the inner body is hit by `raycast` and fires trigger enter/exit
+  - pushing a 10 kg box moves it
+- Bullet fallback: the capsule has angular factor 0, and `ICharacterHandle` velocity round-trips.
+- GPL: `PlayerMotionSystem` drives a `CharacterBody3D` (walk speed reached, jump leaves the ground, crouch).
+- `JoltLifecycleTest` includes a character, and nothing leaks.
+- `CharacterBody3D` round-trips through `engine/assets/serialization/Serializer.kt`.
+- `src/test/.../game/samples/FeatureShowcaseTest.kt`: the walker exists with `CharacterBody3D` and no `RigidBody3D`,
+  and the course pieces are present.
 
 ## 6. Ownership of touched files
 
 | File | Owner | Change |
 |---|---|---|
-| `engine/physics3d/IPhysics3D.kt`, `constraints/ConeTwistConstraint3D.kt`, **NEW** `constraints/JointMotor.kt`, **NEW** `VehicleHandle.kt`, **NEW** `CharacterHandle.kt`, **NEW** `CharacterDescription.kt`, **NEW** `RigidBodyCharacter.kt` | PHY | Neutral API |
+| `engine/physics3d/IPhysics3D.kt`, `constraints/ConeTwistConstraint3D.kt`, **NEW** `constraints/JointMotor.kt`, **NEW** `CharacterHandle.kt`, **NEW** `CharacterDescription.kt`, **NEW** `RigidBodyCharacter.kt`, `RaycastVehicleSolver.kt` | PHY | Neutral API, engine drivetrain |
+| `engine/physics3d/bullet/BulletPhysics3D.kt` | PHY | `New6Dof` joints with servos |
 | `engine/physics3d/jolt/JoltPhysics3D.kt`, `JoltJoints.kt`, `JoltContacts.kt`, `JoltDebugDraw.kt`, **NEW** `JoltVehicle.kt`, **NEW** `JoltCharacter.kt` | PHY | Jolt implementation |
-| `engine/ecs/systems/PhysicsSystem.kt`, `RagdollSystem.kt`, `engine/ecs/components/RagdollComponent.kt`, `RagdollState.kt`, `VehicleComponent.kt`, **NEW** `CharacterBody3D.kt`, `engine/physics3d/RagdollBuilder.kt` | PHY | Engine glue |
-| `engine/ecs/components/ComponentType.kt`, `Component.kt` (type mapping), `engine/EngineExtensions.kt`, `engine/assets/serialization/Serializer.kt` | ECS / AST | Register `CharacterBody3D` (one line each) |
+| `engine/ecs/systems/PhysicsSystem.kt`, `RagdollSystem.kt`, `engine/ecs/components/RagdollComponent.kt`, `RagdollState.kt`, `VehicleComponent.kt` (+ **NEW** `VehicleDrivetrain.kt`), **NEW** `CharacterBody3D.kt`, `engine/physics3d/RagdollBuilder.kt` | PHY | Engine glue |
+| `engine/ecs/components/ComponentType.kt`, `Component.kt`, `engine/EngineExtensions.kt`, `engine/assets/serialization/Serializer.kt` (+ the vehicle field migration hook) | ECS / AST | Register `CharacterBody3D`; old-vehicle-field migration |
 | `engine/ecs/systems/PlayerMotionSystem.kt` | GPL | Drive `CharacterBody3D` |
-| `editor/imgui/components/` (optional grouped drawers) | EDT | Inspector sections |
-| `game/samples/FeatureShowcase.kt` | TLG | Showcase entries |
-| `src/test/kotlin/com/pafoid/skate/architecture/` | QA | A guard: only `engine/physics3d/jolt/` may import `com.github.stephengold.joltjni` (it is not enforced today; the Bullet guard in `EngineLayeringGuardTest` is) |
+| `editor/imgui/components/` | EDT | Vehicle and character inspector sections |
+| `game/samples/FeatureShowcase.kt`, `src/test/.../game/samples/FeatureShowcaseTest.kt` | TLG (GPL reviews the walker) | Showcase walker, course, powered ragdoll, vehicle |
+| `src/test/kotlin/com/pafoid/skate/architecture/` | QA | Guard: only `engine/physics3d/jolt/` may import `com.github.stephengold.joltjni` |
 
 ## 7. Slicing
 
-Each slice is one task with its own tests and lands green on its own. Slices a–c and e do not depend on each other.
+Each slice is one task with its own tests and lands green on its own.
 
 | Slice | Owner | Content | Deps |
 |---|---|---|---|
-| **PHY-19a** Joint motors | PHY | `JointMotor`, `ConeTwistConstraint3D.motor`, `IPhysics3D.setJointMotorTarget` / `supportsJointMotors`, Jolt `SwingTwistConstraint` motors, Bullet/Simple unsupported (§3.1–3.2) | — |
-| **PHY-19b** Powered ragdoll | PHY (ANI reviews the pose maths) | `RagdollState.POWERED`, `motorStrength`, targets in `RagdollSystem`, default motors in `RagdollBuilder`, fallback to `RAGDOLL` (§3.3) | 19a |
-| **PHY-19c** Native vehicle | PHY | `VehicleMode`, `IVehicleHandle`, `JoltVehicle`, `PhysicsSystem` mode switch + fallback, `WheelState` readback (§4) | — |
-| **PHY-19d** Inspector sections | EDT | Grouped "Suspension" (vehicle) and "Capsule" (character) sections with tooltips and translation keys; `reflectedImgui` covers the fields until then (human decisions 2 and 3) | 19c, 19e |
-| **PHY-19e** Character body | PHY (ECS/AST one-line registrations) | `CharacterBody3D`, `ICharacterHandle`, `CharacterDescription`, `JoltCharacter`, `RigidBodyCharacter` fallback, trigger events, debug draw, `probeGround` ground state (§5.1–5.3) | — |
-| **PHY-19f** Gameplay on the character body | GPL | `PlayerMotionSystem` drives `CharacterBody3D`, skips `GroundMotion` on native characters, crouch (§5.4) | 19e |
-| **PHY-19g** Showcase | TLG | A powered ragdoll, a native-mode vehicle and a `CharacterBody3D` walker in the Feature Showcase, shown when the project runs on Jolt | 19b, 19c, 19f; PHY-17 slice f for switching backend |
-| **QA guard** | QA | joltjni import guard (§6) | — |
+| **PHY-19a** Joint motors | PHY | `JointMotor`, `ConeTwistConstraint3D.motor`, `setJointMotorTarget` / `supportsJointMotors`; Jolt `SwingTwistConstraint` motors; Bullet `ConeJoint` → `New6Dof` with servos; Simple unsupported; cross-backend motor test (§3.1–3.4) | — |
+| **New PHY task** (ID from the lead) Ragdoll bind-pose frames | PHY | Joint frames and pivots from the skeleton bind pose, capsule sizes from bone lengths (decision 4 of 2026-11-10) | 19a; done right after it |
+| **PHY-19b** Powered ragdoll | PHY (ANI reviews the pose maths) | `RagdollState.POWERED`, `motorStrength`, targets in `RagdollSystem`, default motors, Simple fallback (§3.5) | 19a, the bind-pose task |
+| **Separate ANI+PHY task** (ID from the lead) Ragdoll blending | ANI + PHY | `BLENDING` with motors: animation↔physics cross-fade (decision 1 of 2026-11-10) | 19b |
+| **PHY-19c** Vehicle drivetrain | PHY (ECS/AST for the migration hook) | New `VehicleComponent` fields and types, `JoltVehicle`, rewritten `RaycastVehicleSolver`, read-back, old-field migration, cross-backend tests (§4.1–4.3, 4.5) | — |
+| **PHY-19d** Inspector sections | EDT | Vehicle groups with list and curve editors; `CharacterBody3D` capsule section (decisions 2 and 3 of 2026-11-07) | 19c, 19e |
+| **PHY-19e** Character body | PHY (ECS/AST one-line registrations) | `CharacterBody3D`, `ICharacterHandle`, `CharacterDescription`, `JoltCharacter` with inner body, `RigidBodyCharacter`, triggers, debug draw, `probeGround` (§5.1–5.3) | — |
+| **PHY-19f** Gameplay on the character body | GPL | `PlayerMotionSystem` drives `CharacterBody3D` (§5.4) | 19e |
+| **PHY-19g** Showcase | TLG (GPL reviews the walker) | Walker on `CharacterBody3D` with its course (§5.5), a `POWERED` ragdoll, a vehicle using the full drivetrain | 19b, 19c, 19f |
+| **QA guard** | QA | joltjni import guard | — |
 
-## 8. Risks
+Suggested order: 19a → bind-pose task → 19b; 19c in parallel; 19e → 19f → 19g; 19d once 19c and 19e land.
 
-- **Motor stability**: stiff motors on light bones (0.05 × 70 kg = 3.5 kg forearms) can jitter. Defaults are a
-  20 Hz / critically damped spring, and torque is limited by `motorStrength`. Tuning is per project.
-- **Ragdoll frames**: identity constraint frames and fixed pivots in `RagdollBuilder` make motor targets only
-  approximately anatomical. This is acceptable for "keep the pose" and wrong for precise limits (open question 4).
-- **Vehicle tuning drift**: the same numbers will not feel identical in `RAYCAST` and `NATIVE` modes (Jolt models
-  engine RPM, a differential and friction curves). The tests check behaviour (settles, accelerates, brakes, turns),
-  not equal trajectories.
-- **Character and networking**: `CharacterVirtual` is not part of the rigid-body world state that net prediction
-  replays. Characters that are predicted over the network stay on `RigidBody3D` until NET reviews this.
-- **Platform**: only `jolt-jni-Windows64` is on the classpath today (`NativeLibrarySpec.JOLT`), the same constraint
-  as PHY-17. On another OS every mode falls back.
+## 8. Tolerances and risks
+
+Proposed cross-backend tolerances (open question 5):
+
+| Measure | Tolerance |
+|---|---|
+| Joint reaches its motor target | ≤ 0.05 rad on each backend; backends within 0.05 rad of each other |
+| Vehicle ride height at rest | ± 2 cm |
+| Vehicle 0→50 km/h time, braking distance from 50 km/h | ± 10 % |
+| Top speed in a gear, RPM at upshift | ± 5 % |
+| Steady-state body roll in a turn | ± 1° |
+
+Risks:
+- **Matching Jolt's vehicle model in the solver** is the largest piece of work in this task. Jolt's controller has
+  details (clutch model, friction-curve evaluation, wheel/ground velocity projection) that must be reproduced, not
+  approximated. Mitigation: the per-component solver tests are written against Jolt's own numbers for single-wheel
+  setups first, then the whole-car scenarios.
+- **Bullet `New6Dof` limits differ from a cone**: XYZ Euler limits make a box-shaped swing range, not a cone. Limp
+  ragdolls on Bullet will move slightly differently than today (open question 2).
+- **Motor stability**: 3.5 kg forearms with stiff motors can jitter. Defaults are a 20 Hz, critically damped motor
+  scaled by `motorStrength`. Bullet's servos are sensitive to the effective-inertia estimate.
+- **Character and networking**: `CharacterVirtual` is not in the rigid-body state that net prediction replays. The
+  skater stays on `RigidBody3D` (decision 6).
+- **Platform**: only `jolt-jni-Windows64` is on the classpath (`NativeLibrarySpec.JOLT`). Elsewhere Jolt falls back
+  to Bullet, which now supports every feature above, so the fallback loses fidelity, not features.
 
 ## 9. Decisions
 
@@ -273,27 +348,42 @@ Human decisions recorded on 2026-11-07:
 2. **Vehicle suspension in editor**: Yes — expose suspension parameters in the editor inspector.
 3. **Character controller collision shapes**: Yes — configurable capsule radius and height.
 
+Human decisions recorded on 2026-11-10 (answers to revision 2's open questions):
+
+1. Add RagdollState.POWERED; animation<->physics blending (BLENDING with motors) is a separate ANI+PHY task.
+2. Vehicles: ADD the full tuning NOW (engine RPM/torque curve, gearbox, anti-roll bars) in VehicleComponent, and make it work on ALL backends: Jolt maps it onto its native VehicleConstraint; Bullet and Simple get the same drivetrain model in the engine's RaycastVehicleSolver. One field set, same behaviour within tolerance across backends (tests compare them).
+3. Joint motors on ALL backends: rebuild Bullet ragdoll joints as libbulletjme New6Dof with motors so POWERED works on Bullet; Simple has no joints -> limp fallback.
+4. Ragdoll bind-pose frames: a separate PHY task right after the motor slice.
+5. CharacterVirtual gets an inner rigid body (visible to raycasts, triggers, AI line of sight).
+6. MOVE THE SHOWCASE WALKER to CharacterBody3D now (in PHY-19, with the gameplay side reviewed by skate-gameplay); the skater keeps RigidBody3D.
+
 Already decided elsewhere and assumed here: Bullet stays the default backend, and per-project selection is PHY-17
 slice f, which waits on EDT-59 (PHY-17 "Decisions after review" 3).
 
 ## 10. Open questions for the human
 
-1. **Powered ragdoll state.** Add a new `RagdollState.POWERED` and leave `BLENDING` as it is, or implement `BLENDING`
-   with motors (blend from physics back to animation)? *Recommended:* add `POWERED` now. File animation↔physics
-   blending as a separate ANI+PHY task, because it needs animation-side cross-fade work.
-2. **Vehicle units in `NATIVE` mode.** Keep one set of `VehicleComponent` fields (forces in N, converted to Jolt
-   torques and spring frequencies), or add Jolt-specific fields (engine RPM/torque curve, gearbox, anti-roll bars)?
-   *Recommended:* one set of fields now, converted. Add a separate `NativeVehicleTuning` block later if a game needs
-   gears or anti-roll bars.
-3. **Joint motors on Bullet.** Leave them unsupported on Bullet (`POWERED` falls back to limp), or also implement
-   them with libbulletjme `New6Dof` motors? *Recommended:* Jolt only for now. Bullet would need the ragdoll joints
-   rebuilt as 6-DoF joints, and Bullet stays the default mostly for compatibility.
-4. **Ragdoll frames from the bind pose.** Fix `RagdollBuilder` now (joint frames and pivots from the skeleton bind
-   pose, capsule sizes from bone lengths), or later? *Recommended:* a separate PHY task right after 19b. Motor
-   targets work with today's identity frames, but accurate limits and nicer poses need real frames.
-5. **Character inner body.** Give `CharacterVirtual` an inner rigid body so raycasts, shape casts, triggers and
-   other bodies see it? *Recommended:* yes. Without it, `probeGround` of other characters, trigger zones and AI line
-   of sight would ignore Jolt characters.
-6. **Existing characters.** Move the showcase walker and the skater to `CharacterBody3D`? *Recommended:* no.
-   `CharacterBody3D` stays opt-in for new characters. The skater keeps `RigidBody3D`, because its board mount and net
-   prediction depend on it. Revisit the walker after 19f ships.
+1. **How the showcase walker gets input.** The showcase has no walker today, and its camera is "you" (free camera
+   with its own input). Options:
+   - (a) an autopilot: a scripted input feed walks the course in a loop, jumps the step and crouches through the
+     tunnel
+   - (b) a "Take control" toggle that hands WASD to the walker and switches to a follow camera
+   - (c) both
+
+   *Recommended:* (c), autopilot by default so the feature is visible without interaction, plus the toggle.
+2. **Bullet limp ragdolls on `New6Dof`.** Decision 3 rebuilds Bullet's ragdoll joints as `New6Dof`. Should limp
+   (non-powered) ragdolls also use it, or keep `ConeJoint` and switch only when a motor is set? *Recommended:*
+   `New6Dof` always. Then there is one joint type and switching `RAGDOLL` ↔ `POWERED` never rebuilds joints. The
+   swing range becomes box-shaped instead of a cone, which is invisible at today's spans (≤ 0.5 rad).
+3. **Old vehicle fields in saved scenes.** Migrate `maxEngineForce` / `springStiffness` / … on load into an
+   equivalent drivetrain, or drop them (scenes fall back to the new defaults)? *Recommended:* migrate:
+   - engine torque = force × rear wheel radius ÷ (first gear × differential)
+   - spring frequency and damping ratio from stiffness/damping and the mass share
+   - friction curves flat at `tyreFriction`
+
+   The migration hook goes in the serializer, owned by AST, and a test loads a pre-PHY-19 scene.
+4. **No user-facing vehicle mode.** The backend decides: native on Jolt, engine solver elsewhere. Should a Jolt
+   project be able to force the engine solver (for example to match a Bullet-tuned feel)? *Recommended:* no
+   user-facing switch; only an internal test switch. Decision 2 already requires both paths to behave the same within
+   tolerance.
+5. **Cross-backend tolerances.** Are the values in §8 acceptable? *Recommended:* yes as a starting point, tightened
+   per scenario once the tests run.
