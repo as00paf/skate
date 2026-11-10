@@ -35,7 +35,7 @@ class AssetRegistry(val root: File) {
         idByPath.clear()
         root.walkTopDown()
             .onEnter { !it.name.startsWith(".") && it.name != "builds" && it.name != "Builds" }
-            .filter { it.isFile && !AssetMeta.isSidecar(it) && !it.name.startsWith(".") && it.name != "builds" && it.name != "Builds" }
+            .filter { it.isFile && !AssetMeta.isSidecar(it) && !it.name.startsWith(".") && it.name != "builds" && it.name != "Builds" && !isToolSideFile(it) }
             .sortedBy { relativePath(it) }
             .forEach { register(it) }
     }
@@ -88,6 +88,13 @@ class AssetRegistry(val root: File) {
 
     private fun relativePath(file: File): String =
         normalize(file.absoluteFile.relativeTo(root.absoluteFile).path)
+
+    companion object {
+        private val TOOL_SIDE_FILE = Regex("""\.blend(\d+|@)$|\.part$""", RegexOption.IGNORE_CASE)
+
+        /** Blender backups (`x.blend1`), its in-progress save (`x.blend@`) and our `.part` temp files: never assets. */
+        fun isToolSideFile(file: File): Boolean = TOOL_SIDE_FILE.containsMatchIn(file.name)
+    }
 
     private fun normalize(path: String): String = path.replace('\\', '/').removePrefix("./").trimStart('/')
 }

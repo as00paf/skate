@@ -188,7 +188,11 @@ class AnimationLoader {
         /**
          * Clip name from a file path: the file name without its extension, with either separator
          * (`...\\animations\\falling idle.fbx` -> `falling idle`). Controllers refer to clips by this name.
+         * `Board@Ollie.glb`, one action exported from a `.blend` (AST-19), is the clip `Ollie`.
          */
-        fun clipName(path: String): String = path.substringAfterLast('/').substringAfterLast('\\').substringBeforeLast('.')
+        fun clipName(path: String): String {
+            val base = path.substringAfterLast('/').substringAfterLast('\\').substringBeforeLast('.')
+            return base.substringAfter('@').ifEmpty { base }
+        }
     }
 }

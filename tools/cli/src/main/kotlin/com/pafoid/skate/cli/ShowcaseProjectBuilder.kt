@@ -1,6 +1,7 @@
 package com.pafoid.skate.cli
 
 import com.pafoid.skate.editor.project.Project
+import com.pafoid.skate.engine.assets.ProjectLayout
 import com.pafoid.skate.engine.assets.PrefabsGenerator
 import com.pafoid.skate.engine.assets.serialization.Serializer
 import com.pafoid.skate.engine.core.Engine
@@ -25,9 +26,8 @@ class ShowcaseProjectBuilder(
 
     fun build(parent: File): File {
         val projectDir = File(parent, PROJECT_NAME).absoluteFile.also { it.mkdirs() }
-        val assetsDir = File(projectDir, "Assets").also { it.mkdirs() }
-        val scenesDir = File(projectDir, "Scenes").also { it.mkdirs() }
-        File(projectDir, "Builds").mkdirs()
+        val assetsDir = ProjectLayout.create(projectDir)
+        val scenesDir = ProjectLayout.scenesDir(projectDir)
         copyEngineAssets(projectDir)
         File(assetsDir, "strings.properties").writeText("project.name=$PROJECT_NAME\n")
 

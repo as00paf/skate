@@ -82,6 +82,15 @@ class AssetSearchProvider(
 
     private fun kindOf(file: File): Kind? {
         val ext = file.extension.lowercase()
+        // FBX files can be models or animations depending on content; use the resolver for content-aware classification.
+        if (ext == "fbx") {
+            val resolved = com.pafoid.skate.editor.systems.FileTypeResolver.resolve(file)
+            return when (resolved) {
+                FileType.MODEL_3D -> Kind.MODEL
+                FileType.ANIMATION -> Kind.ANIMATION
+                else -> null
+            }
+        }
         return Kind.entries.firstOrNull { ext in it.extensions }
     }
 

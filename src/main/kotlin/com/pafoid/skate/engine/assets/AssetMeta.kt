@@ -40,6 +40,7 @@ data class AssetMeta(
             "wav", "ogg", "mp3" -> "sound"
             "glsl", "vert", "frag", "vs", "fs" -> "shader"
             "scene", "prefab", "json" -> "data"
+            "blend" -> "blender"
             else -> "default"
         }
     }

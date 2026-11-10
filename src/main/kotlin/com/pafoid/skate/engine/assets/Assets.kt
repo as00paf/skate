@@ -14,7 +14,6 @@ object Assets {
         const val SHADOW = "/shaders/shadow.glsl"
     }
     object Textures {
-        const val APP_ICON = "\\textures\\app_icon.png"
         const val SPLASH = "assets/textures/splash_screen.png"
 
         const val CAMERA = "assets/textures/camera.png"
@@ -173,6 +172,8 @@ object Assets {
 
         const val SKY = "EngineDefaults\\Textures\\sky_hdri.png"
         const val APP_ICON = "/app_icon.png"
+        /** Where new projects get the app icon ([APP_ICON] is the jar resource), next to the other defaults (AST-14). */
+        const val PROJECT_APP_ICON = "EngineDefaults\\Textures\\app_icon.png"
 
         const val SPLASH = "EngineDefaults\\Shaders\\splash.glsl"
         const val SHADER_3D_DEFAULT = "EngineDefaults\\Shaders\\shader_3d_default.glsl"

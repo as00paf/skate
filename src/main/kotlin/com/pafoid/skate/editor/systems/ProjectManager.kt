@@ -11,6 +11,7 @@ import com.pafoid.skate.editor.project.Project
 import com.pafoid.skate.editor.project.ProjectFileReader
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.AssetPaths
+import com.pafoid.skate.engine.assets.ProjectLayout
 import com.pafoid.skate.engine.assets.AssetRegistry
 import com.pafoid.skate.engine.assets.serialization.Serializer
 import com.pafoid.skate.engine.core.Engine
@@ -73,8 +74,8 @@ class ProjectManager(
 
             if (hasProject()) closeProject()
             assetPaths.projectRoot = projectDir.absoluteFile // default scenes are saved project-relative (AST-09)
-            val assetsDir = File(projectDir, "Assets")
-            val scenesDir = File(projectDir, "Scenes")
+            val assetsDir = ProjectLayout.assetsDir(projectDir)
+            val scenesDir = ProjectLayout.scenesDir(projectDir)
 
             // Create default scene with prefabs
             engine.prefabsGenerator.projectAssetsDir = assetsDir.absolutePath + "\\"
@@ -83,7 +84,7 @@ class ProjectManager(
             val project = Project(
                 name = name,
                 projectPath = projectFile.absolutePath,
-                iconPath = assetsDir.absolutePath + Assets.Textures.APP_ICON,
+                iconPath = File(assetsDir, Assets.Bundled.PROJECT_APP_ICON).absolutePath,
                 defaultScene = scenesDir.path + "\\MainScene.scene",
                 scenesPath = scenes.map { "${scenesDir.path}\\${it.name}.scene" },
                 resolution = Vector2i(1920, 1080),
@@ -119,10 +120,8 @@ class ProjectManager(
             if (File(projectDir, "$name.skateproject").exists()) {
                 return Result.failure(IllegalStateException("Project '$name' already exists in this folder"))
             }
-            val assetsDir = File(projectDir, "Assets").also { it.mkdirs() }
-            File(projectDir, "Scenes").mkdirs()
-            File(projectDir, "Builds").mkdirs()
-            File(assetsDir, "strings.properties").writeText("project.name=$name")
+            val assetsDir = ProjectLayout.create(projectDir)
+            File(assetsDir, ProjectLayout.STRINGS_FILE).writeText("project.name=$name")
 
             val copyResult = engineAssetCopier.copyBundledAssets(projectDir)
             if (copyResult.isSuccess) {

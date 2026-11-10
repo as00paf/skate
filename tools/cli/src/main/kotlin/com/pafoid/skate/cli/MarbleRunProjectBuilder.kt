@@ -2,8 +2,8 @@ package com.pafoid.skate.cli
 
 import com.pafoid.skate.engine.ecs.SceneSun
 import com.pafoid.skate.engine.ecs.components.EnvironmentComponent
-import com.pafoid.skate.editor.project.EngineAssetCopier
 import com.pafoid.skate.editor.project.Project
+import com.pafoid.skate.engine.assets.ProjectLayout
 import com.pafoid.skate.engine.addComponent
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.data.models.`3dModel`
@@ -35,9 +35,8 @@ class MarbleRunProjectBuilder(private val serializer: Serializer = Serializer())
 
     fun build(parent: File): File {
         val projectDir = File(parent, PROJECT_NAME).absoluteFile.also { it.mkdirs() }
-        val assetsDir = File(projectDir, "Assets").also { it.mkdirs() }
-        val scenesDir = File(projectDir, "Scenes").also { it.mkdirs() }
-        File(projectDir, "Builds").mkdirs()
+        val assetsDir = ProjectLayout.create(projectDir)
+        val scenesDir = ProjectLayout.scenesDir(projectDir)
         copyEngineAssets(projectDir)
         assetsPrefix = assetsDir.absolutePath + File.separator
         val files = ProjectFiles(serializer, projectDir)

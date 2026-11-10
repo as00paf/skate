@@ -7,6 +7,7 @@ import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.editor.imgui.tippedWith
 import com.pafoid.skate.editor.systems.UndoRedoManager
 import com.pafoid.skate.editor.ui.windows.assetBrowser.AnimationsTab
+import com.pafoid.skate.editor.ui.windows.assetBrowser.AssetBrowserRefresh
 import com.pafoid.skate.editor.ui.windows.assetBrowser.PrefabsTab
 import com.pafoid.skate.editor.ui.windows.assetBrowser.SoundsTab
 import com.pafoid.skate.editor.ui.windows.assetBrowser.TexturesTab
@@ -29,6 +30,7 @@ class AssetBrowserWindow(
 
     init {
         refreshAssets()
+        AssetBrowserRefresh.subscribe(engine.eventSystem, ::refreshAssets)
     }
 
     fun refreshAssets() {
