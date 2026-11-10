@@ -1,6 +1,5 @@
 package com.pafoid.skate.editor.ui.menus
 
-import com.pafoid.skate.editor.imgui.Tooltips
 import com.pafoid.skate.editor.data.EditorShortcuts
 import com.pafoid.skate.editor.imgui.tippedWith
 import com.pafoid.skate.editor.imgui.tipped
@@ -51,18 +50,15 @@ class WindowControlsRenderer(
     }
 
     private fun renderSettingsButton() {
-        if (ImGui.button(Icons.GEAR, WINDOW_BTN_SIZE, WINDOW_BTN_SIZE)) {
+        if (stringManager.tippedWith(ImGui.button(Icons.GEAR, WINDOW_BTN_SIZE, WINDOW_BTN_SIZE), "tooltip.settings")) {
             ImGui.openPopup("##SettingsPopup")
-        }
-        if (ImGui.isItemHovered()) {
-            ImGui.setTooltip(stringManager.getString("tooltip.settings"))
         }
 
         if (ImGui.beginPopup("##SettingsPopup")) {
             if (stringManager.tipped(ImGui.menuItem("${Icons.GEAR} ${stringManager.getString("window.editor_settings")}"), "window.editor_settings")) {
                 eventSystem.publish(WindowAction.Show("window.editor_settings"))
             }
-            if (stringManager.tipped(ImGui.menuItem("${Icons.GEAR} ${stringManager.getString("window.project_settings")}"), "window.project_settings")) {
+            if (stringManager.tipped(ImGui.menuItem("${Icons.SLIDERS} ${stringManager.getString("window.project_settings")}"), "window.project_settings")) {
                 eventSystem.publish(WindowAction.Show("window.project_settings"))
             }
             ImGui.endPopup()
@@ -70,11 +66,8 @@ class WindowControlsRenderer(
     }
 
     private fun renderSearchButton() {
-        if (ImGui.button(Icons.SEARCH, WINDOW_BTN_SIZE, WINDOW_BTN_SIZE)) {
+        if (stringManager.tippedWith(ImGui.button(Icons.SEARCH, WINDOW_BTN_SIZE, WINDOW_BTN_SIZE), "tooltip.search_everywhere_shortcut", EditorShortcuts.SEARCH)) {
             eventSystem.publish(WindowAction.Show("window.search"))
-        }
-        if (ImGui.isItemHovered()) {
-            ImGui.setTooltip(Tooltips.withShortcut(stringManager, stringManager.getString("tooltip.search_everywhere_shortcut"), EditorShortcuts.SEARCH))
         }
     }
 
@@ -90,7 +83,8 @@ class WindowControlsRenderer(
         } else {
             Icons.WINDOW_MAXIMIZE
         }
-        if (ImGui.button(maxRestoreIcon, WINDOW_BTN_SIZE, WINDOW_BTN_SIZE)) {
+        val tooltipKey = if (isMaximized) "tooltip.window_controls.restore" else "tooltip.window_controls.maximize"
+        if (stringManager.tippedWith(ImGui.button(maxRestoreIcon, WINDOW_BTN_SIZE, WINDOW_BTN_SIZE), tooltipKey)) {
             eventSystem.publish(EditorEvent.ToggleMaximize)
         }
     }

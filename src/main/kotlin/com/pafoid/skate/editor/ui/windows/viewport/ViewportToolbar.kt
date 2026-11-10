@@ -32,6 +32,8 @@ class ViewportToolbar(
     private val stringManager: StringManager,
     private val gizmoSystem: GizmoSystem,
     private val playMode: PlayModeController,
+    /** Draws the window's `?` button (`WindowHeader.helpButton`), supplied by the Game Viewport. */
+    private val helpButton: () -> Unit = {},
 ) {
     private val eventSystem = engine.eventSystem
     private val logger = engine.logger
@@ -105,6 +107,11 @@ class ViewportToolbar(
                     logger.logEditor("Physics debug toggled")
                 }
                 if (on) ImGui.popStyleColor()
+            }
+            ToolbarButton.HELP -> {
+                // The small `?` button, centred on the toolbar's row of square buttons.
+                ImGui.setCursorPosY(ImGui.getCursorPosY() + (TOOLBAR_BUTTON_HEIGHT - ImGui.getFrameHeight()) / 2f)
+                helpButton()
             }
             ToolbarButton.SCREENSHOT -> {
                 if (stringManager.tippedWith(ImGui.button(Icons.CAMERA, TOOLBAR_BUTTON_HEIGHT, TOOLBAR_BUTTON_HEIGHT), "tooltip.viewport_toolbar.screenshot")) {

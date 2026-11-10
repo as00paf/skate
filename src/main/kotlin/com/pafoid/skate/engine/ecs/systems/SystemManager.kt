@@ -1,6 +1,7 @@
 package com.pafoid.skate.engine.ecs.systems
 
 import com.pafoid.skate.engine.ecs.Scene
+import com.pafoid.skate.engine.ecs.random.RandomService
 import kotlin.reflect.KClass
 
 class SystemManager {
@@ -15,6 +16,10 @@ class SystemManager {
     private var hasStarted = false
 
     val systems: List<System> get() = _systems
+
+    /** Seeded random streams of this engine (ECS-14); every system reads its own through [System.random]. */
+    val random = RandomService()
+    private var sceneWasRunning = false
 
     /**
      * Runtime pause (pause menu): only [System.runsWhilePaused] systems update, fixed steps do not run and time does
@@ -47,6 +52,10 @@ class SystemManager {
 
     fun update(dt: Float) {
         sortSystemsIfNeeded()
+        // Every Play run replays the same random values: streams rewind when the scene starts running.
+        val running = loadedScene?.isRunning == true
+        if (running && !sceneWasRunning) random.restart()
+        sceneWasRunning = running
         // Snapshot: systems may be added/removed (deferred) while updating
         updating = true
         try {
@@ -107,6 +116,7 @@ class SystemManager {
     }
 
     fun addSystem(system: System, isRunning: Boolean = false) {
+        system.randomService = random
         if (!isRunning) {
             _systems.add(system)
             systemsNeedSort = true

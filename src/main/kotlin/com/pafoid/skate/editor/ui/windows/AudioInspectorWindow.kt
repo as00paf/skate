@@ -18,7 +18,7 @@ import imgui.ImGui
 class AudioInspectorWindow(private val engine: Engine, private val projectManager: ProjectManager) : EditorWindow(NAME) {
 
     override val icon = Icons.MUSIC
-    override val relatedWindows = listOf("window.properties", "window.asset_browser")
+    override val relatedWindows = listOf("window.properties", "window.asset_browser", "window.game_viewport")
 
     private val stringManager = engine.stringManager
     private val sceneManager = engine.sceneManager

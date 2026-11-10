@@ -33,6 +33,31 @@ class ActionBindingsModelTest {
     }
 
     @Test
+    fun ActionBindingsModel_GameContextsSortAfterBuiltInsAndLabelFallsBackToId() {
+        map.define(com.pafoid.skate.engine.input.ActionDefinition("horn", InputContext("vehicle"), "Vehicle",
+            defaults = listOf(ActionBinding.Key(com.pafoid.skate.engine.input.Keys.SPACE))))
+        val contexts = groups("").map { it.context }.distinct()
+        assertEquals(listOf(InputContext.GAMEPLAY, InputContext.UI, InputContext("vehicle")), contexts)
+        val translations = mapOf("lbl.keybindings.context.gameplay" to "Gameplay")
+        assertEquals("Gameplay", ActionBindingsModel.contextLabel(InputContext.GAMEPLAY, translations::get))
+        assertEquals("vehicle", ActionBindingsModel.contextLabel(InputContext("vehicle"), translations::get))
+    }
+
+    @Test
+    fun ActionBindingsModel_SharedWithListsOtherContextsOnTheSameInput() {
+        map.define(com.pafoid.skate.engine.input.ActionDefinition("horn", InputContext("vehicle"), "Vehicle",
+            defaults = listOf(ActionBinding.Key(com.pafoid.skate.engine.input.Keys.SPACE), ActionBinding.GamepadAxis(0, -1f))))
+        val space = ActionBinding.Key(com.pafoid.skate.engine.input.Keys.SPACE)
+        assertEquals(listOf("horn"), ActionBindingsModel.sharedWith(map, CharacterActions.JUMP, space).map { it.actionId })
+        assertEquals(listOf(CharacterActions.JUMP), ActionBindingsModel.sharedWith(map, "horn", space).map { it.actionId })
+        assertEquals(listOf("horn"), ActionBindingsModel.sharedWith(map, CharacterActions.MOVE_X, ActionBinding.GamepadAxis(0)).map { it.actionId },
+            "an analog axis shares both directions")
+        assertTrue(ActionBindingsModel.sharedWith(map, CharacterActions.SPRINT, ActionBinding.Key(com.pafoid.skate.engine.input.Keys.LEFT_SHIFT)).isEmpty(),
+            "same-context reuse is a conflict, not a shadow")
+        assertTrue(ActionBindingsModel.sharedWith(map, "unknown", space).isEmpty())
+    }
+
+    @Test
     fun ActionBindingsModel_LabelsDevices() {
         assertEquals("Mouse Left", ActionBindingsModel.label(ActionBinding.MouseButton(0)))
         assertEquals("A", ActionBindingsModel.label(ActionBinding.GamepadButton(0)))

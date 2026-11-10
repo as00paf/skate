@@ -15,17 +15,17 @@ class EditJointCommandTest {
     fun EditJoint_ExecuteAndUndoRestoreEveryField() {
         val joint = JointComponent()
         val edited = JointSettings.of(joint).copy(
-            jointType = JointType.HINGE, connectedBodyId = 7, anchor = Vector3f(1f, 2f, 3f), limitMax = 2.5f,
+            jointType = JointType.HINGE, connectedBodyGuid = "b7", anchor = Vector3f(1f, 2f, 3f), limitMax = 2.5f,
         )
         val command = EditJointCommand(joint, edited)
         command.execute()
         assertEquals(JointType.HINGE, joint.jointType)
-        assertEquals(7, joint.connectedBodyId)
+        assertEquals("b7", joint.connectedBodyGuid)
         assertEquals(Vector3f(1f, 2f, 3f), joint.anchor)
         assertEquals(2.5f, joint.limitMax)
         command.undo()
         assertEquals(JointType.FIXED, joint.jointType)
-        assertEquals(-1, joint.connectedBodyId)
+        assertEquals("", joint.connectedBodyGuid)
         assertEquals(Vector3f(), joint.anchor)
         assertEquals(1f, joint.limitMax)
     }

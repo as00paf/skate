@@ -14,6 +14,7 @@ import com.pafoid.skate.editor.events.ViewportAction.CreatePrimitive
 import com.pafoid.skate.editor.events.ViewportAction.Delete
 import com.pafoid.skate.editor.events.ViewportAction.Duplicate
 import com.pafoid.skate.editor.events.ViewportAction.FocusSelected
+import com.pafoid.skate.editor.events.ViewportAction.PasteClipboard
 import com.pafoid.skate.editor.events.ViewportAction.ResetCamera
 import com.pafoid.skate.editor.events.ViewportAction.SpawnPrefab
 import com.pafoid.skate.editor.imgui.data.Icons
@@ -44,14 +45,19 @@ class ViewportContextMenu(
             ImGui.text(stringManager.getString("context.viewport.title"))
             ImGui.separator()
 
-            renderCreateMenu(scene)
+            renderCreateItems(scene)
+            ImGui.separator()
             renderObjectManipulationMenu(scene)
 
             ImGui.endPopup()
         }
     }
 
-    private fun renderCreateMenu(scene: Scene?) {
+    /**
+     * The create items shared by the viewport menu and the Hierarchy's empty-space menu (EDT-52B): empty object,
+     * 3D object ▸, light ▸, UI ▸, camera, obstacle ▸. New objects go to the top level of [scene].
+     */
+    fun renderCreateItems(scene: Scene?) {
         // Create Empty
         if (stringManager.tipped(ImGui.menuItem("${Icons.PLUS} ${stringManager.getString("context.viewport.create_empty")}", EditorShortcuts.CREATE_EMPTY.display()), "context.viewport.create_empty", EditorShortcuts.CREATE_EMPTY)) {
             scene?.let { eventSystem.publish(CreateEmpty(it)) }
@@ -111,30 +117,33 @@ class ViewportContextMenu(
             }
             ImGui.endMenu()
         }
-
-        ImGui.separator()
     }
 
+    /** Main actions first, then the destructive Delete last; items without a selection are grayed out (EDT-51 §2.3). */
     private fun renderObjectManipulationMenu(scene: Scene?) {
         val selectedObject = scene?.selectedGameObject
-        if (selectedObject != null) {
-            if (stringManager.tipped(ImGui.menuItem("${Icons.CLONE} ${stringManager.getString("context.viewport.duplicate")}", EditorShortcuts.DUPLICATE.display()), "context.viewport.duplicate", EditorShortcuts.DUPLICATE)) {
-                eventSystem.publish(Duplicate(selectedObject))
-            }
-            if (stringManager.tipped(ImGui.menuItem("${Icons.TRASH} ${stringManager.getString("context.viewport.delete")}", EditorShortcuts.DELETE.display()), "context.viewport.delete", EditorShortcuts.DELETE)) {
-                scene?.let { eventSystem.publish(Delete(selectedObject, it)) }
-            }
-            ImGui.separator()
-        }
+        val hasSelection = selectedObject != null
 
-        // Focus Selected
-        if (stringManager.tipped(ImGui.menuItem("${Icons.EYE} ${stringManager.getString("context.viewport.focus_selected")}", EditorShortcuts.FOCUS.display()), "context.viewport.focus_selected", EditorShortcuts.FOCUS)) {
+        if (stringManager.tipped(ImGui.menuItem("${Icons.EYE} ${stringManager.getString("context.viewport.focus_selected")}", EditorShortcuts.FOCUS.display(), false, hasSelection), "context.viewport.focus_selected", EditorShortcuts.FOCUS)) {
             eventSystem.publish(FocusSelected)
         }
-
-        // Reset Camera
         if (stringManager.tipped(ImGui.menuItem("${Icons.ARROW_ROTATE} ${stringManager.getString("context.viewport.reset_camera")}", EditorShortcuts.CAMERA_RESET.display()), "context.viewport.reset_camera", EditorShortcuts.CAMERA_RESET)) {
             eventSystem.publish(ResetCamera)
+        }
+
+        ImGui.separator()
+
+        if (stringManager.tipped(ImGui.menuItem("${Icons.CLONE} ${stringManager.getString("context.viewport.duplicate")}", EditorShortcuts.DUPLICATE.display(), false, hasSelection), "context.viewport.duplicate", EditorShortcuts.DUPLICATE)) {
+            selectedObject?.let { eventSystem.publish(Duplicate(it)) }
+        }
+        if (stringManager.tipped(ImGui.menuItem("${Icons.PASTE} ${stringManager.getString("context.viewport.paste")}", EditorShortcuts.PASTE.display(), false, scene != null), "context.viewport.paste", EditorShortcuts.PASTE)) {
+            eventSystem.publish(PasteClipboard())
+        }
+
+        ImGui.separator()
+
+        if (stringManager.tipped(ImGui.menuItem("${Icons.TRASH} ${stringManager.getString("context.viewport.delete")}", EditorShortcuts.DELETE.display(), false, hasSelection), "context.viewport.delete", EditorShortcuts.DELETE)) {
+            scene?.let { s -> selectedObject?.let { eventSystem.publish(Delete(it, s)) } }
         }
     }
 }

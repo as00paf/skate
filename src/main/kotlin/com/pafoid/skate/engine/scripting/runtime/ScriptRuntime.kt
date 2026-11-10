@@ -38,8 +38,15 @@ class ScriptRuntime(
         var failed = false
         var sourceHash = 0
         var reloads = 0
+        /** This instance's input; owns the contexts the script pushed. */
+        var input: ScriptInputScope? = null
         val state = mutableMapOf<String, Any?>()
         val live get() = script != null && !failed
+
+        fun releaseInput() {
+            input?.releaseContexts()
+            input = null
+        }
     }
 
     private val instances = LinkedHashMap<ScriptComponent, Instance>()
@@ -125,6 +132,7 @@ class ScriptRuntime(
             }
         }
         eventBus.removeOwner(instance)
+        instance.releaseInput()
         instance.script = replacement
         instance.failed = false
         instance.reloads++
@@ -159,6 +167,7 @@ class ScriptRuntime(
     private fun destroy(instance: Instance) {
         if (instance.live) call(instance) { script, ctx -> script.onDestroy(ctx) }
         eventBus.removeOwner(instance)
+        instance.releaseInput()
         instance.script = null
     }
 
@@ -177,6 +186,7 @@ class ScriptRuntime(
 
     private fun fail(instance: Instance, errors: List<ScriptError>) {
         instance.failed = true
+        instance.releaseInput()
         reportErrors(errors)
     }
 
@@ -207,10 +217,11 @@ class ScriptRuntime(
             override fun emit(name: String, payload: Any?) =
                 eventBus.emit(name, payload) { fail(owner, errorFrom(path, it)) }
         }
+        val input = ScriptInputScope(services.input, services.inputContexts, "script:$path").also { owner.input = it }
         return ScriptContextImpl(
             entity = entity,
             scene = ScriptSceneImpl(sceneRoot, services.scenes),
-            input = services.input,
+            input = input,
             physics = services.physics,
             events = events,
             time = time,
@@ -218,6 +229,7 @@ class ScriptRuntime(
             properties = component.properties.toMap(),
             state = owner.state,
             reloadCount = owner.reloads,
+            random = ScriptRandomImpl(services.random, path),
         )
     }
 

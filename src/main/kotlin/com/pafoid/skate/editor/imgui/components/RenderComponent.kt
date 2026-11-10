@@ -75,7 +75,7 @@ private fun RenderComponent.materialInspector(engine: Engine) {
 
     // Asset row
     ImGui.text("${s("asset")}: ${materialPath?.let { File(it).name } ?: s("asset.none")}")
-    materialPath?.let { tooltip(it) }
+    materialPath?.let { Tooltips.always(it) }
     if (materialPath != null) {
         if (ImGui.button("${s("asset.save")}##asset_save")) publish(MaterialAction.Save(this))
         tooltip(s("asset.save.tooltip"))
@@ -183,5 +183,5 @@ private inline fun row(id: String, label: String, tooltipKey: String, control: (
 }
 
 private fun tooltip(text: String) {
-    if (ImGui.isItemHovered()) ImGui.setTooltip(text)
+    Tooltips.text(text)
 }
