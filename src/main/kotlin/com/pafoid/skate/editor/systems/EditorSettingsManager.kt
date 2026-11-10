@@ -124,6 +124,20 @@ class EditorSettingsManager(
         }
     }
 
+    /** Applies [change] to the settings and saves them (EDT-57); values are clamped to their editable ranges. */
+    fun update(change: (EditorSettings) -> EditorSettings) {
+        val next = change(editorSettings)
+        editorSettings = next.copy(
+            fontSize = next.fontSize.coerceIn(EditorSettings.MIN_UI_SCALE, EditorSettings.MAX_UI_SCALE),
+            gizmoSnap = next.gizmoSnap.sanitized(),
+            camera = next.camera.sanitized(),
+        )
+        saveSettings()
+    }
+
+    /** The Settings ▸ Show tooltips checkbox and Editor Settings › Interface (EDT-57). */
+    fun setShowTooltips(show: Boolean) = update { it.copy(showTooltips = show) }
+
     /** Stores the export's game jar override ([EditorSettings.gameJarPath]); blank clears it. */
     fun updateGameJarPath(path: String?) {
         editorSettings = editorSettings.copy(gameJarPath = path?.trim()?.ifEmpty { null })

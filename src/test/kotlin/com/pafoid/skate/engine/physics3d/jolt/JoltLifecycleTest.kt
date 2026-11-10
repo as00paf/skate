@@ -52,11 +52,21 @@ class JoltLifecycleTest {
         return bodies
     }
 
+    /**
+     * Process memory the JVM does not account for (native allocations such as Jolt's), in bytes, after a GC: process
+     * committed memory minus the JVM's committed heap and non-heap, so heap resizing caused by other tests cancels out.
+     */
+    private fun nativeCommitted(os: OperatingSystemMXBean): Long {
+        System.gc()
+        val mem = ManagementFactory.getMemoryMXBean()
+        return os.committedVirtualMemorySize - mem.heapMemoryUsage.committed - mem.nonHeapMemoryUsage.committed
+    }
+
     @Test
     fun JoltLifecycle_FiftyWorlds_FreeEverythingTheyOwn() {
         val os = ManagementFactory.getOperatingSystemMXBean() as OperatingSystemMXBean
         val threads = ManagementFactory.getThreadMXBean()
-        var memoryAfterWarmup = 0L
+        val nativeAfterWorld = LongArray(50)
         var threadsAfterWarmup = 0
 
         repeat(50) { n ->
@@ -70,16 +80,21 @@ class JoltLifecycleTest {
 
             val leaked = owned.filter { it.hasAssignedNativeObject() }
             assertTrue(leaked.isEmpty(), "world $n kept ${leaked.map { it::class.simpleName }}")
-            if (n == 9) {
-                System.gc()
-                memoryAfterWarmup = os.committedVirtualMemorySize
-                threadsAfterWarmup = threads.threadCount
-            }
+            nativeAfterWorld[n] = nativeCommitted(os)
+            if (n == 9) threadsAfterWarmup = threads.threadCount
         }
-        System.gc()
-        // Each world holds a 16 MB temp allocator and a thread pool: leaking them would grow by ~640 MB and 100+ threads
-        val growthMb = (os.committedVirtualMemorySize - memoryAfterWarmup) / (1024 * 1024)
-        assertTrue(growthMb < 128, "committed memory grew by $growthMb MB over 40 worlds")
+        // The native allocator gives memory back to the OS irregularly, so single samples swing by hundreds of MB
+        // between worlds. Compare peaks instead: a world holds a 16 MB temp allocator and a thread pool, so a leak
+        // raises the peak of worlds 40-49 above that of worlds 10-19 by at least 30 * 16 MB = 480 MB.
+        val mb = 1024 * 1024
+        val earlyPeak = nativeAfterWorld.copyOfRange(10, 20).max()
+        val latePeak = nativeAfterWorld.copyOfRange(40, 50).max()
+        val growthMb = (latePeak - earlyPeak) / mb
+        assertTrue(
+            growthMb < 128,
+            "native (non-JVM) memory peak grew by $growthMb MB from worlds 10-19 to 40-49: " +
+                nativeAfterWorld.joinToString { "${it / mb}" },
+        )
         assertTrue(threads.threadCount - threadsAfterWarmup < 8, "threads grew from $threadsAfterWarmup to ${threads.threadCount}")
     }
 
