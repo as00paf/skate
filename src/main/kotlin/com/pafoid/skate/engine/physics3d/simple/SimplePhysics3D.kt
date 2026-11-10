@@ -47,7 +47,10 @@ class SimplePhysics3D : IPhysics3D {
 
         val colliders = go.components.filterIsInstance<Collider3D>()
         val scale = go.getComponent<Transform>()?.scale ?: Vector3f(1f)
-        val radius = if (colliders.isEmpty()) 1f else colliders.maxOf { boundingRadius(it.toShape()) }
+        // Like BodyDescription: unavailable colliders add nothing, and with none available there is no body
+        val shapes = colliders.mapNotNull { it.toShapeOrNull() }
+        if (colliders.isNotEmpty() && shapes.isEmpty()) return
+        val radius = if (shapes.isEmpty()) 1f else shapes.maxOf { boundingRadius(it) }
         val body = SimpleBody(
             mass = if (rb.bodyType == BodyType.Static || colliders.any { it.staticOnly }) 0f else rb.mass,
             radius = radius * max(scale.x, max(scale.y, scale.z)),
