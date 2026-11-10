@@ -69,10 +69,22 @@ class AssetDiscoveryTest {
 
     @Test
     fun bundledAssets_GiveANewProjectAnimationsTexturesAndSounds() {
-        val copied = Assets.Bundled.bundledAssets.map { File(it.first.replace('\\', '/')) }
+        newProjectLayout()
 
+        // Verify the discovery finds at least one file per asset type
+        var foundAnimation = false
+        var foundTexture = false
+        var foundSound = false
         BrowserAssetType.entries.forEach { type ->
-            assertTrue(copied.any(type::matches), "a new project has no $type to list")
+            val files = AssetDiscovery.discover(File(dir, "Assets"), type)
+            if (files.isNotEmpty()) when (type) {
+                BrowserAssetType.ANIMATION -> foundAnimation = true
+                BrowserAssetType.TEXTURE -> foundTexture = true
+                BrowserAssetType.SOUND -> foundSound = true
+            }
         }
+        assertTrue(foundAnimation, "a new project has no ANIMATION to list")
+        assertTrue(foundTexture, "a new project has no TEXTURE to list")
+        assertTrue(foundSound, "a new project has no SOUND to list")
     }
 }

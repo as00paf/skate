@@ -7,6 +7,10 @@ import com.pafoid.skate.engine.ecs.systems.System
 import com.pafoid.skate.engine.ecs.systems.SystemManager.ExecutionPriority
 import com.pafoid.skate.engine.ecs.systems.SystemPhase
 import com.pafoid.skate.engine.getComponent
+import com.pafoid.skate.engine.input.ContextBlocking
+import com.pafoid.skate.engine.input.ContextHandle
+import com.pafoid.skate.engine.input.InputContext
+import com.pafoid.skate.engine.input.InputContextStack
 import org.joml.Vector4f
 
 /** What Restart and Quit do on the current host (GUI-09); everything else in the pause menu is shared. */
@@ -119,6 +123,9 @@ object PauseMenu {
  * [UiInputSystem.onUnhandledCancel]); cancel or Resume closes it. Opening calls [setFrozen] (true), which pauses the
  * simulation, animation and audio; closing unfreezes. Restart and Quit go through [defer] so the host can run them
  * after the frame, outside the system update (they may switch scenes or stop Play).
+ *
+ * While open, the menu also holds `ui` on the input context stack from [inputContexts] with [ContextBlocking.ALL]
+ * (INP-10), so gameplay, character and script contexts read nothing, and keys held when it closes are not new presses.
  */
 class PauseMenuSystem(
     private val setFrozen: (Boolean) -> Unit,
@@ -131,6 +138,7 @@ class PauseMenuSystem(
     private val options: GameOptions = GameOptions(),
     /** Where option choices are saved (null: kept for this session only). */
     private val settings: () -> GameSettingsStore? = { null },
+    private val inputContexts: () -> InputContextStack? = { null },
 ) : System(priority = ExecutionPriority.LATE) {
 
     override val phase = SystemPhase.LATE_UPDATE
@@ -156,6 +164,8 @@ class PauseMenuSystem(
     }
 
     private fun button(name: String) = PauseMenu.find(menu, name)!!.getComponent<UIButtonComponent>()!!
+
+    private var modalInput: ContextHandle? = null
 
     private val chosen = HashMap<String, String>()
     private var builtOptions = -1
@@ -215,12 +225,21 @@ class PauseMenuSystem(
         slider.value = volume().coerceIn(slider.min, slider.max)
         canvas.visible = true
         setFrozen(true)
+        if (modalInput == null) {
+            modalInput = inputContexts()?.push(InputContext.UI, MODAL_PRIORITY, ContextBlocking.ALL, owner = "pause-menu")
+        }
     }
 
     fun close() {
+        releaseInput()
         if (!isOpen) return
         canvas.visible = false
         setFrozen(false)
+    }
+
+    private fun releaseInput() {
+        modalInput?.let { inputContexts()?.pop(it) }
+        modalInput = null
     }
 
     fun toggle() = if (isOpen) close() else open()
@@ -241,7 +260,13 @@ class PauseMenuSystem(
     }
 
     override fun destroy() {
+        releaseInput()
         menu.parent?.removeChild(menu)
         super.destroy()
+    }
+
+    companion object {
+        /** Above any gameplay, character or script context. */
+        const val MODAL_PRIORITY = 1_000_000
     }
 }

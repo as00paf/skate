@@ -87,6 +87,21 @@ class InputReaderTest {
     }
 
     @Test
+    fun InputReader_FirstQueryOfHeldActionIsNotAPress() {
+        val raw = FakeRaw()
+        val reader = reader(raw, def("mount", ActionBinding.Key(Keys.E)))
+        raw.keys.add(Keys.E) // held when Play starts
+        reader.update()
+        assertFalse(reader.wasActionPressed("mount"), "first query must not be an edge")
+        reader.update()
+        assertFalse(reader.wasActionPressed("mount"), "still the same hold")
+        assertTrue(reader.isActionDown("mount"))
+        raw.keys.clear(); reader.update()
+        raw.keys.add(Keys.E); reader.update()
+        assertTrue(reader.wasActionPressed("mount"), "a new press after release counts")
+    }
+
+    @Test
     fun InputReader_InactiveContextReadsZero() {
         val raw = FakeRaw()
         val reader = reader(raw, def("gizmo", ActionBinding.Key(Keys.W), context = InputContext.EDITOR))

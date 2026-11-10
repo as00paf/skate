@@ -3,6 +3,7 @@ package com.pafoid.skate.editor.imgui
 import com.pafoid.skate.editor.data.EditorFocus
 import com.pafoid.skate.editor.events.WindowAction
 import com.pafoid.skate.editor.imgui.components.InspectorDrafts
+import com.pafoid.skate.editor.ui.windows.KeyBindingsWindow
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.core.StringManager
 import imgui.ImGui
@@ -16,7 +17,12 @@ class WindowManager(
 ) {
     fun init() {
         eventSystem.subscribe<WindowAction.Show> { event ->
-            windowRegistry.getWindow(event.name)?.isOpen?.set(true)
+            // Key Bindings › Test has its own target (Test Input, EDT-51 §3.1).
+            if (event.name == KeyBindingsWindow.TEST_TAB) {
+                windowRegistry.windows.filterIsInstance<KeyBindingsWindow>().firstOrNull()?.openTestTab()
+            } else {
+                windowRegistry.getWindow(event.name)?.isOpen?.set(true)
+            }
         }
         eventSystem.subscribe<WindowAction.Hide> { event -> windowRegistry.getWindow(event.name)?.isOpen?.set(false) }
         eventSystem.subscribe<WindowAction.ShowDefault> { windowRegistry.showDefaultWindows() }
@@ -34,12 +40,19 @@ class WindowManager(
             }
             dockBuilderDockWindow(window.title(stringManager), dockId)
         }
+        activateDefaultTabs = true
     }
+
+    /** Set when the default layout was just built: bring [DefaultDockLayout.ACTIVE_TABS] to the front once. */
+    private var activateDefaultTabs = false
 
     private val closeTracker = WindowCloseTracker()
 
     /** Failed user actions (EDT-10); drawn last so it sits above every window. */
     private val errorDialog = ErrorDialog(eventSystem, stringManager)
+
+    /** Long operations (EDT-56); before the error dialog, so an error from a failed load shows on top. */
+    private val loadingScreen = LoadingScreen(eventSystem, stringManager)
 
     /** Asks before deleting objects, from any path (EDT-62). */
     private val deleteDialog = DeleteObjectsDialog(eventSystem, stringManager)
@@ -49,11 +62,18 @@ class WindowManager(
             if (!window.isOpen.get()) return@forEach
             window.imgui()
         }
+        if (activateDefaultTabs) {
+            // After the windows' first begin of the new layout, so they exist in their dock nodes.
+            activateDefaultTabs = false
+            DefaultDockLayout.ACTIVE_TABS.mapNotNull { windowRegistry.getWindow(it) }.filter { it.isOpen.get() }
+                .forEach { ImGui.setWindowFocus(it.title(stringManager)) }
+        }
         closeTracker.update(windowRegistry.windows)
         InspectorDrafts.endFrame(eventSystem, ImGui.getFrameCount(), ImGui.isAnyItemActive())
         windowRegistry.menuBar.render()
         windowRegistry.statusBar.render()
         deleteDialog.render()
+        loadingScreen.render()
         errorDialog.render()
         EditorFocus.endFrame()
     }

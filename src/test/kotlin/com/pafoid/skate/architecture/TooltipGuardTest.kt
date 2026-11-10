@@ -60,7 +60,7 @@ class TooltipGuardTest {
         private val GENERIC = Regex(""""btn\.(ok|cancel|apply|close|yes|no)"""")
         private val CONTROL = Regex("""(?<![\w.])(ImGui\.)?(button|smallButton|menuItem)\s*\(""")
         private val SKIP = Regex("""^(}|if \(!?\w+\) \{|ImGui\.pop\w*\(.*\)|pop\w*\(.*\)|ImGui\.endDisabled\(\)|if \(\w+\) ImGui\.pop\w*\(.*\))$""")
-        private val TOOLTIP = Regex("""setTooltip\s*\(|\btip\s*\(|\btooltip\s*\(|isItemHovered|Tooltips\.show\s*\(|\btipped(With)?\s*\(""")
+        private val TOOLTIP = Regex("""setTooltip\s*\(|\btip\s*\(|\btooltip\s*\(|isItemHovered|Tooltips\.(show|text|always)\s*\(|\btipped(With)?\s*\(""")
 
         fun findViolations(source: String): List<Pair<Int, String>> {
             val bare = CALLS.filter { Regex("""import\s+imgui(\.internal)?\.ImGui\.$it\b""").containsMatchIn(source) }.toSet()

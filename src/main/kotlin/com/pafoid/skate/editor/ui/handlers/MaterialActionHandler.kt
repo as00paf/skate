@@ -8,6 +8,7 @@ import com.pafoid.skate.editor.commands.objects.MaterialState
 import com.pafoid.skate.editor.commands.objects.SaveMaterialAssetCommand
 import com.pafoid.skate.editor.events.MaterialAction
 import com.pafoid.skate.editor.systems.UndoRedoManager
+import com.pafoid.skate.engine.assets.ProjectLayout
 import com.pafoid.skate.engine.assets.data.Texture
 import com.pafoid.skate.engine.assets.data.models.Material
 import com.pafoid.skate.engine.core.EventSystem
@@ -90,7 +91,7 @@ class MaterialActionHandler(
         if (!command.isNoOp) undoRedoManager.executeCommand(command)
     }
 
-    private fun materialsDir(): File? = projectDir()?.let { File(it, "Assets${File.separator}Materials") }
+    private fun materialsDir(): File? = projectDir()?.let { File(ProjectLayout.assetsDir(it), "Materials") }
 
     private fun saveAs(component: RenderComponent) {
         val material = component.material ?: return

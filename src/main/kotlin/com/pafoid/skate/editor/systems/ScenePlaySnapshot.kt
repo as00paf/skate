@@ -14,6 +14,8 @@ import com.pafoid.skate.engine.ecs.SceneManager
 class ScenePlaySnapshot private constructor(
     private val data: String,
     private val selectionPaths: List<List<Int>>,
+    /** `Scene.isDirty` is not saved (EDT-60 §7.1), so the snapshot keeps the pre-Play unsaved marker itself. */
+    private val wasDirty: Boolean,
 ) {
     /** A fresh scene instance built from the snapshot. */
     fun decode(serializer: Serializer): Scene = serializer.decodeFile<Scene>(FileKind.SCENE, data)
@@ -28,10 +30,13 @@ class ScenePlaySnapshot private constructor(
     /**
      * Replaces [current] in [sceneManager] by a fresh copy of this snapshot, in the same tab. It stays active if
      * [current] was. The copy keeps the captured `isDirty`: edits thrown away by the restore leave no unsaved marker.
-     * Returns the new scene.
+     * Objects that still exist keep their session `uId` (matched by `guid`), so per-object editor state such as the
+     * hierarchy's expanded nodes survives Stop and Reset. Returns the new scene.
      */
     fun restore(sceneManager: SceneManager, serializer: Serializer, current: Scene): Scene {
         val fresh = decode(serializer)
+        fresh.isDirty = wasDirty
+        keepSessionIds(current, fresh)
         sceneManager.replaceScene(current, fresh)
         fresh.setSelection(selectionIn(fresh))
         return fresh
@@ -40,7 +45,22 @@ class ScenePlaySnapshot private constructor(
     companion object {
         fun capture(scene: Scene, serializer: Serializer): ScenePlaySnapshot {
             val paths = scene.selectedGameObjects.mapNotNull { pathOf(scene, it) }
-            return ScenePlaySnapshot(serializer.encodeFile(FileKind.SCENE, scene), paths)
+            return ScenePlaySnapshot(serializer.encodeFile(FileKind.SCENE, scene), paths, scene.isDirty)
+        }
+
+        /** Gives each object of [fresh] the session `uId` of the object with the same `guid` in [old], if any. */
+        fun keepSessionIds(old: GameObject, fresh: GameObject) {
+            val byGuid = HashMap<String, Int>()
+            fun collect(go: GameObject) {
+                byGuid[go.guid] = go.uId
+                go.children.forEach(::collect)
+            }
+            fun apply(go: GameObject) {
+                byGuid[go.guid]?.let { if (go.uId != it) go.uId = it }
+                go.children.forEach(::apply)
+            }
+            collect(old)
+            apply(fresh)
         }
 
         private fun pathOf(root: GameObject, target: GameObject): List<Int>? {

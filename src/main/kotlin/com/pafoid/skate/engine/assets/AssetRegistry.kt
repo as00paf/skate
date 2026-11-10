@@ -35,7 +35,7 @@ class AssetRegistry(val root: File) {
         idByPath.clear()
         root.walkTopDown()
             .onEnter { !it.name.startsWith(".") && it.name != "builds" && it.name != "Builds" }
-            .filter { it.isFile && !AssetMeta.isSidecar(it) && !it.name.startsWith(".") && it.name != "builds" && it.name != "Builds" }
+            .filter { it.isFile && !AssetMeta.isSidecar(it) && !it.name.startsWith(".") && it.name != "builds" && it.name != "Builds" && !isToolSideFile(it) }
             .sortedBy { relativePath(it) }
             .forEach { register(it) }
     }
@@ -86,8 +86,26 @@ class AssetRegistry(val root: File) {
         return file.delete()
     }
 
-    private fun relativePath(file: File): String =
-        normalize(file.absoluteFile.relativeTo(root.absoluteFile).path)
+    /**
+     * [file]'s path relative to [root]. Falls back to canonical forms when the plain absolute paths disagree on the
+     * spelling of the root (an 8.3 short name like `RUNNER~1`, a symlink or junction): callers that resolved [file]
+     * canonically must still land inside the project instead of at `../../long-name/...`.
+     */
+    private fun relativePath(file: File): String {
+        val plain = runCatching { file.absoluteFile.relativeTo(root.absoluteFile).path }.getOrNull()
+        if (plain != null && !escapesRoot(plain)) return normalize(plain)
+        val canonical = runCatching { file.canonicalFile.relativeTo(root.canonicalFile).path }.getOrNull()
+        return normalize(canonical?.takeUnless { escapesRoot(it) } ?: plain ?: file.absolutePath)
+    }
+
+    private fun escapesRoot(relative: String): Boolean = relative == ".." || relative.startsWith("..${File.separator}")
+
+    companion object {
+        private val TOOL_SIDE_FILE = Regex("""\.blend(\d+|@)$|\.part$""", RegexOption.IGNORE_CASE)
+
+        /** Blender backups (`x.blend1`), its in-progress save (`x.blend@`) and our `.part` temp files: never assets. */
+        fun isToolSideFile(file: File): Boolean = TOOL_SIDE_FILE.containsMatchIn(file.name)
+    }
 
     private fun normalize(path: String): String = path.replace('\\', '/').removePrefix("./").trimStart('/')
 }

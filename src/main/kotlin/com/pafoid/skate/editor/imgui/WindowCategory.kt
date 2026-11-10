@@ -1,14 +1,15 @@
 package com.pafoid.skate.editor.imgui
 
-/** Grouping of windows in View > Windows. Windows without a category (transient popups) are not listed. */
+/**
+ * Grouping of windows in View > Windows. Windows without a category (dialogs, transient popups) are not listed: the
+ * settings and Key Bindings dialogs open from the gear and Settings menus (EDT-52E, EDT-64).
+ */
 enum class WindowCategory(val labelKey: String) {
     SCENE("menu.view.windows.scene"),
     ASSETS("menu.view.windows.assets"),
     DEBUG("menu.view.windows.debug"),
-    INPUT("menu.view.windows.input"),
     SCRIPTING("menu.view.windows.scripting"),
-    AUDIO("menu.view.windows.audio"),
-    SETTINGS("menu.view.windows.settings");
+    AUDIO("menu.view.windows.audio");
 
     companion object {
         private val byWindow = mapOf(
@@ -17,19 +18,20 @@ enum class WindowCategory(val labelKey: String) {
             "window.properties" to SCENE,
             "window.project" to SCENE,
             "window.asset_browser" to ASSETS,
+            "window.asset_store" to ASSETS,
+            "window.video_to_animation" to ASSETS,
             "window.console" to DEBUG,
             "window.profiler" to DEBUG,
             "window.command_history" to DEBUG,
             "window.render_graph" to DEBUG,
             "window.shell" to DEBUG,
-            "window.keybindings" to INPUT,
             "window.script_editor" to SCRIPTING,
             "window.audio_inspector" to AUDIO,
-            "window.editor_settings" to SETTINGS,
-            "window.project_settings" to SETTINGS,
         )
 
-        fun of(window: EditorWindow): WindowCategory? = byWindow[window.name]
+        fun of(window: EditorWindow): WindowCategory? = of(window.name)
+
+        fun of(windowName: String): WindowCategory? = byWindow[windowName]
 
         /** Dockable windows grouped by category in declaration order; uncategorised windows are omitted. */
         fun grouped(windows: List<EditorWindow>): Map<WindowCategory, List<EditorWindow>> =

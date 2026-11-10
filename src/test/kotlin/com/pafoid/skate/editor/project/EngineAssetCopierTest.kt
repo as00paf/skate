@@ -1,6 +1,7 @@
 package com.pafoid.skate.editor.project
 
 import com.pafoid.skate.engine.assets.Assets
+import com.pafoid.skate.engine.assets.ProjectLayout
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
@@ -50,5 +51,24 @@ class EngineAssetCopierTest {
         assertTrue(Assets.Bundled.bundledAssets.filter { it.second != source }.all { it.second in message })
         assertFalse(source in copier.missingSources())
         assertTrue(File(project, "Assets/" + destination.replace('\\', '/')).isFile, "present sources are still copied")
+    }
+
+    @Test
+    fun CopyBundledAssets_EverythingLandsInEngineDefaults() {
+        assertTrue(EngineAssetCopier().copyBundledAssets(dir).isSuccess)
+
+        val assets = ProjectLayout.assetsDir(dir)
+        assertEquals(listOf(ProjectLayout.ENGINE_DEFAULTS_DIR), assets.listFiles()!!.filter { it.isDirectory }.map { it.name })
+        assertTrue(ProjectLayout.duplicateAssetFolders(dir).isEmpty(), "${ProjectLayout.duplicateAssetFolders(dir)}")
+    }
+
+    @Test
+    fun CopyBundledAssets_ShadersAndAppIconFollowTheBundledPaths() {
+        EngineAssetCopier().copyBundledAssets(dir)
+        val assets = ProjectLayout.assetsDir(dir)
+
+        assertTrue(File(assets, Assets.Bundled.PROJECT_APP_ICON.replace('\\', '/')).isFile, "app icon")
+        assertTrue(File(assets, Assets.Bundled.SHADER_3D_DEFAULT.replace('\\', '/')).isFile, "default shader")
+        assertTrue(File(assets, Assets.Bundled.SHADOW.replace('\\', '/')).isFile, "shadow shader")
     }
 }

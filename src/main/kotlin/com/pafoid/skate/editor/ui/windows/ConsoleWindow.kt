@@ -19,6 +19,7 @@ import imgui.type.ImString
 import org.lwjgl.glfw.GLFW
 
 class ConsoleWindow(engine: Engine) : EditorWindow("window.console", true) {
+
     private val logger = engine.logger
     private val stringManager = engine.stringManager
     private val eventSystem = engine.eventSystem

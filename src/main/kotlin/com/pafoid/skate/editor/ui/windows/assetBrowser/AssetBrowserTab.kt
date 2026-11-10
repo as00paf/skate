@@ -8,6 +8,7 @@ import com.pafoid.skate.engine.core.StringManager
 import imgui.ImGui
 import imgui.flag.ImGuiTableFlags
 import imgui.type.ImString
+import java.awt.Desktop
 import java.io.File
 import kotlin.math.max
 
@@ -22,24 +23,49 @@ abstract class AssetBrowserTab(
     private var scannedProject: File? = null
     private var scanned = false
 
-    open fun imgui(label:String, searchText: ImString) {
+    /** The tab content; the search box and Refresh live in the window's header strip (EDT-51 §2.2). */
+    open fun imgui(label: String, searchText: ImString) {
         refreshOnProjectChange()
         pumpPreviews()
-        renderHeader(label, searchText)
-
-        val availableWidth = ImGui.getContentRegionAvailX()
-        val files = items.filter { it.name.contains(searchText.get(), ignoreCase = true) }
-        if (renderEmptyState(items.size, files.size, searchText)) return
-
-        val numColumns = max(1, (availableWidth / ASSET_BROWSER_ITEM_WIDTH).toInt())
-
-        if (ImGui.beginTable("$label Table", numColumns, ImGuiTableFlags.SizingFixedFit)) {
-            for (file in files) {
-                ImGui.tableNextColumn()
-                renderFileItem(file)
+        content(label) {
+            val files = items.filter { it.name.contains(searchText.get(), ignoreCase = true) }
+            if (renderEmptyState(items.size, files.size, searchText)) return@content
+            val numColumns = max(1, (ImGui.getContentRegionAvailX() / ASSET_BROWSER_ITEM_WIDTH).toInt())
+            if (ImGui.beginTable("##${label}_table", numColumns, ImGuiTableFlags.SizingFixedFit)) {
+                for (file in files) {
+                    ImGui.tableNextColumn()
+                    renderFileItem(file)
+                }
+                ImGui.endTable()
             }
-            ImGui.endTable()
         }
+    }
+
+    /** Folder listed by this tab, or null when it is not a folder on disk (the prefab catalog). */
+    protected open val folder: File? get() = AssetDiscovery.root(assetsManager.paths.projectRoot)
+
+    /**
+     * Draws [body] in a child that fills the tab, with the right-click menu on its empty space (EDT-51 §2.3):
+     * Refresh, then Show folder and Copy folder path when the tab lists a folder.
+     */
+    protected fun content(label: String, body: () -> Unit) {
+        if (ImGui.beginChild("##${label}_content", 0f, 0f)) {
+            body()
+            val dir = folder
+            EmptySpaceMenu.render(stringManager, "##${label}_empty_space", EmptySpaceItem.assetTab(dir != null)) { item ->
+                when (item) {
+                    EmptySpaceItem.REFRESH -> refreshAssets()
+                    EmptySpaceItem.SHOW_FOLDER -> dir?.let(::openFolder)
+                    EmptySpaceItem.COPY_FOLDER_PATH -> dir?.let { ImGui.setClipboardText(it.absolutePath) }
+                    else -> Unit
+                }
+            }
+        }
+        ImGui.endChild()
+    }
+
+    private fun openFolder(dir: File) {
+        runCatching { if (Desktop.isDesktopSupported()) Desktop.getDesktop().open(dir) }
     }
 
     /** Rescans when a project is opened, created or closed after the tab was built (the tabs exist before it). */
@@ -64,37 +90,14 @@ abstract class AssetBrowserTab(
         runIO { items = AssetDiscovery.discover(root, type) }
     }
 
-    protected fun renderHeader(label: String, searchText: ImString) {
-        val availableWidth = ImGui.getContentRegionAvailX()
-        val refreshButtonWidth = 30f
-        val spacing = ImGui.getStyle().itemSpacingX
-
-        ImGui.pushItemWidth(availableWidth - refreshButtonWidth - spacing)
-        ImGui.inputTextWithHint("##Search$label", "${Icons.SEARCH} ${stringManager.getString("lbl.search")}...", searchText)
-        if (ImGui.isItemHovered()) {
-            ImGui.setTooltip(stringManager.getString("tooltip.search_assets"))
-        }
-        ImGui.popItemWidth()
-
-        ImGui.sameLine()
-        if (ImGui.button("${Icons.ARROW_ROTATE}##Refresh$label")) {
-            refreshAssets()
-        }
-        if (ImGui.isItemHovered()) {
-            ImGui.setTooltip(stringManager.getString("tooltip.refresh_assets"))
-        }
-        ImGui.separator()
-    }
-
     /**
      * Empty state (EDT-10) when the tab has no assets, or none matching the search; true when it was shown and the
      * tab has nothing else to draw.
      */
-    protected fun renderEmptyState(total: Int, shown: Int, searchText: ImString): Boolean {
-        if (shown > 0) return false
-        if (total == 0) EmptyState.render(stringManager, Icons.FOLDER, "empty.assets", "empty.assets.hint")
-        else EmptyState.render(stringManager, Icons.SEARCH, "empty.search", "empty.search.hint")
-        return true
+    protected fun renderEmptyState(total: Int, shown: Int, searchText: ImString): Boolean = when (BrowserEmptyState.of(total, shown)) {
+        BrowserEmptyState.NONE -> false
+        BrowserEmptyState.NOTHING_YET -> { EmptyState.nothingYet(stringManager, Icons.FOLDER, "empty.assets", "empty.assets.hint"); true }
+        BrowserEmptyState.NO_RESULTS -> { EmptyState.noResults(stringManager) { searchText.set("") }; true }
     }
 
     open fun renderFileItem(file: File) {}

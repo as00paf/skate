@@ -14,7 +14,6 @@ object Assets {
         const val SHADOW = "/shaders/shadow.glsl"
     }
     object Textures {
-        const val APP_ICON = "\\textures\\app_icon.png"
         const val SPLASH = "assets/textures/splash_screen.png"
 
         const val CAMERA = "assets/textures/camera.png"
@@ -50,6 +49,7 @@ object Assets {
         const val KINKED_RAIL = "assets/obj/kinked_rail.obj"
         const val STAIRS_3 = "assets/obj/stairs_3.obj"
         const val STAIRS_5 = "assets/obj/stairs_5.obj"
+        const val EURO_GAP = "assets/obj/euro_gap.obj"
         const val HALF_PIPE = "assets/obj/half_pipe.obj"
         const val BOWL = "assets/obj/bowl.obj"
         const val BENCH = "assets/obj/bench.obj"
@@ -135,6 +135,7 @@ object Assets {
         const val KINKED_RAIL = "EngineDefaults\\Models\\kinked_rail.obj"
         const val STAIRS_3 = "EngineDefaults\\Models\\stairs_3.obj"
         const val STAIRS_5 = "EngineDefaults\\Models\\stairs_5.obj"
+        const val EURO_GAP = "EngineDefaults\\Models\\euro_gap.obj"
         const val HALF_PIPE = "EngineDefaults\\Models\\half_pipe.obj"
         const val BOWL = "EngineDefaults\\Models\\bowl.obj"
         const val BENCH = "EngineDefaults\\Models\\bench.obj"
@@ -171,6 +172,8 @@ object Assets {
 
         const val SKY = "EngineDefaults\\Textures\\sky_hdri.png"
         const val APP_ICON = "/app_icon.png"
+        /** Where new projects get the app icon ([APP_ICON] is the jar resource), next to the other defaults (AST-14). */
+        const val PROJECT_APP_ICON = "EngineDefaults\\Textures\\app_icon.png"
 
         const val SPLASH = "EngineDefaults\\Shaders\\splash.glsl"
         const val SHADER_3D_DEFAULT = "EngineDefaults\\Shaders\\shader_3d_default.glsl"
@@ -224,6 +227,7 @@ object Assets {
             KINKED_RAIL to Models.KINKED_RAIL,
             STAIRS_3 to Models.STAIRS_3,
             STAIRS_5 to Models.STAIRS_5,
+            EURO_GAP to Models.EURO_GAP,
             HALF_PIPE to Models.HALF_PIPE,
             BOWL to Models.BOWL,
             BENCH to Models.BENCH,

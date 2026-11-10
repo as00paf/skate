@@ -19,6 +19,16 @@ globalThis.__skateWrap = function (c) {
         };
     }
 
+    // Seeded random (ECS-14): nextInt(until) or nextInt(from, until), nextFloat(), range(min, max), chance(p).
+    function randomStream(r) {
+        return {
+            nextInt: (a, b) => (b === undefined ? r.nextInt(a) : r.nextInt(a, b)),
+            nextFloat: () => r.nextFloat(),
+            range: (min, max) => r.range(min, max),
+            chance: (p) => r.chance(p),
+        };
+    }
+
     function entity(e) {
         const t = e.getTransform();
         return {
@@ -35,7 +45,7 @@ globalThis.__skateWrap = function (c) {
     }
 
     const scene = c.getScene(), input = c.getInput(), physics = c.getPhysics();
-    const events = c.getEvents(), time = c.getTime(), log = c.getLog();
+    const events = c.getEvents(), time = c.getTime(), log = c.getLog(), random = c.getRandom();
     const props = c.getProperties(), state = c.getState();
 
     return {
@@ -50,6 +60,10 @@ globalThis.__skateWrap = function (c) {
             isKeyReleased: (k) => input.isKeyReleased(k),
             isMouseButtonDown: (b) => input.isMouseButtonDown(b),
             action: (n) => input.action(n),
+            isActionDown: (n) => input.isActionDown(n),
+            wasActionPressed: (n) => input.wasActionPressed(n),
+            pushContext: (id, priority, blocking) => input.pushContext(id, priority === undefined ? 0 : priority, blocking === undefined ? 'consume' : blocking),
+            popContext: (h) => input.popContext(h),
         },
         physics: {
             get gravity() { return physics.getGravity(); },
@@ -73,6 +87,12 @@ globalThis.__skateWrap = function (c) {
         state: {
             get: (k) => state.get(k),
             set: (k, v) => { state.put(k, v); },
+        },
+        random: {
+            ...randomStream(random),
+            get seed() { return Number(random.getSeed()); },
+            stream: (name) => randomStream(random.stream(name)),
+            reseed: (seed) => { random.reseed(seed); },
         },
         get reloadCount() { return c.getReloadCount(); },
     };

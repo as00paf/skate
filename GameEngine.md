@@ -96,7 +96,7 @@ Round 27+ goals (human, 2026-11-06): post-processing quality, render-graph clari
   - Do: Add image-based lighting (prefiltered environment map + irradiance from the skybox, BRDF LUT) and/or reflection probes so metallic/smooth materials reflect their surroundings. Add a very shiny, reflective metallic object to the Feature Showcase Materials section.
   - Done when: The showcase metallic object clearly reflects the sky/scene; the IBL math/setup has unit tests; Vulkan parity follows in a VK task.
   - Deps: REN-26
-- [~] @skate-render **REN-28** `P2` Terrain and biomes: design note
+- [~] @skate-render **REN-28** `P2` Terrain and biomes: design note — human answered the open questions 2026-11-10 (streaming now; stamps yes; 8 layers; erosion later); revision for streaming pending
   - Do: Write `docs/design/REN-28.md`, reviewed by physics and assets: chunked heightmap terrain with LOD, splat materials (16 layers), a noise library (e.g. FastNoiseLite, MIT), biome maps driving materials and scatter, procedural or hand-painted (editor sculpt/paint tools), seeded through ECS-14, heightfield collider (PHY-15). Terrain must support **larger worlds** than the current park scale. Erosion filters are worth including. Split implementation tasks out after approval.
   - Done when: The human approves the note.
   - Deps: ECS-14
@@ -195,6 +195,18 @@ Round 27+ goals: the Asset Browser shows every asset type, one assets folder, ex
 - [x] **AST-25** `P2` Deleting a store asset updates the attribution ledger
   - Do: From AST-16a review item 11: `DeleteFileCommand` calls `AttributionLedger.removeAssetIds`, so credits stay correct.
   - Done when: Deleting an imported store asset removes it from the ledger and credits; undo restores it; tests.
+- [~] @skate-assets **AST-26** `P1` REWRITE Typed asset folders: design note — human answered 9 questions 2026-11-10 (Prefabs/, Fonts/, Data/; project-overridable shaders, basic shaders always copied; copy defaults on; engine repo reorganized; pack dedupe); revision pending
+  - Do: From the human (2026-11-10): `Assets/` holds one folder per type: `Models`, `Shaders`, `Sounds`, `Textures`, `Materials`, `Scripts`, `Animations`; Store imports go to their type folder instead of `Assets/Store`. New-project option to copy the engine defaults into the project or not. Human decisions 2026-11-10: **no `EngineDefaults` folder anywhere** — copied engine defaults go straight into `Assets/<Type>/`; a store model stays **together** in `Assets/Models/<asset>/` (`.gltf`, `.bin`, `textures/`), texture-only and material downloads go to `Textures/` and `Materials/`. Design note `docs/design/AST-26.md` covering: how not-copied engine defaults resolve in the editor (reference scheme) and are packed on export, telling engine files apart once copied (updates, name clashes), multi-file assets (texture sets, `.blend` imports) staying loadable under AST-22 path rules, the type a file lands in (FBX via AST-20), store `.meta`/attribution, **no migration or old-layout support** (human, 2026-11-10: new projects only), and changes to samples, CLI, `skate validate` and export. Reviewed by skate-online (store), skate-editor (Asset Browser), skate-tooling (wizard, samples).
+  - Done when: The human approves the note.
+  - Deps: AST-14
+- [ ] **AST-27** `P1` Typed asset folders: layout and engine defaults
+  - Do: Implement AST-26: project creation, EngineDefaults layout, copy/no-copy resolution and export packing, path resolution, samples and CLI. No migration of existing projects.
+  - Done when: New projects use the typed layout, open, play and export in both copy modes; tests cover the layout.
+  - Deps: AST-26
+- [ ] **AST-28** `P1` Asset store imports go to their type folder (owner: skate-online)
+  - Do: Per AST-26: Poly Haven, ambientCG and Kenney/Quaternius imports land in `Models`/`Textures`/`Materials`/`Sounds`… instead of `Assets/Store`; undo, re-import in place, the attribution ledger and `.meta` store keys keep working.
+  - Done when: Each provider's import lands in the right type folders and loads textured; tests on fixtures.
+  - Deps: AST-27, AST-16
 
 ### ECS — `ECS` (`skate-ecs`)
 
@@ -235,6 +247,10 @@ Round 27+ goals: a Jolt backend selectable per project, a terrain heightfield co
 - [x] **PHY-20** `P1` Ship Bullet's release native instead of SpDebug
   - Do: From the PHY-17 benchmark: `build.gradle.kts` uses libbulletjme's `SpDebug` classifier, so the editor and exported games run Bullet's debug build. Switch to the release single-precision classifier (keep debug only for tests if useful), update `verify-game-jar.sh`, re-run the benchmark.
   - Done when: Exports ship the release native; physics suite green; benchmark numbers updated in `docs/design/PHY-17.md`.
+- [ ] **PHY-21** `P1` Concurrent processes must not clobber the shared natives folder
+  - Do: From round 30 integration (skate-audio, skate-tooling): since PHY-18, `NativeLibraryLoader` extracts with `CLEAN_EXTRACTION` into the shared `%APPDATA%\Skate\natives`, so concurrent JVMs (parallel worktree test runs, a running editor next to an exported game) wipe or lock each other's DLLs and physics fails with `UnsatisfiedLinkError`. Use a per-version (content-hash) subfolder and skip extraction when an identical DLL is already present; never delete a DLL another process may hold.
+  - Done when: Two JVMs loading Bullet and Jolt at the same time both succeed; loader tests cover reuse and the versioned path.
+  - Deps: PHY-18
 
 ### Animation — `ANI` (`skate-animation`)
 
@@ -260,6 +276,10 @@ Round 27+ goals: an animation authoring tool and animation from video.
   - Do: ANI-12 §3: process runner, BVH writer, MediaPipe adapter script and position→rotation solver with filtering, foot contacts and optional root motion; "Import mocap file…" for BVH/FBX/glTF from any tool; "Check setup" in Editor Settings and a setup doc. Make the flow **easy**: pick a video, preview, one click to a clip that opens in the animation editor.
   - Done when: A local sample video produces a clip on the skater rig that opens in the animation editor; solver tested on synthetic landmarks.
   - Deps: ANI-13, ANI-16
+- [~] @skate-animation **ANI-18** `P0` Video to animation fails with current MediaPipe (`no attribute solutions`)
+  - Do: From the human testing PR #37 (2026-11-10): current MediaPipe releases dropped the legacy `mp.solutions` API, which `mediapipe_extract.py` uses by default. Default to the Tasks API (`PoseLandmarker`, video mode), get the `.task` model without manual steps (path override in Setup), keep `solutions` only as a fallback; Check setup reports the API in use.
+  - Done when: With the current MediaPipe from pip, Check setup reports Ready and Create animation produces a `.skanim` from a local video; docs and tests updated.
+  - Deps: ANI-17
 
 ### Audio — `AUD` (`skate-audio`)
 
@@ -360,7 +380,7 @@ Round 27+ goals (human, 2026-11-06): fix editor bugs, make every window, dialog 
   - Do: Apply EDT-51 in the chunks of `docs/design/EDT-51.md` §5: A (foundation, alone, first), then B scene, C project & assets, D debug, E settings dialogs, F modals & palette, G menus, H domain windows (AUD, SCR) in parallel, then I input-testing move (INP, after E). Chunk A: skate-editor.
   - Done when: Every item in the EDT-51 inventory meets the standard; a test checks windows register header icon, help and context menu.
   - Deps: EDT-51
-- [~] @skate-qa **EDT-53** `P1` Beginner help in every window — content as Markdown articles (skate-editor reviews)
+- [~] @skate-qa **EDT-53** `P1` Beginner help in every window — content as Markdown articles (skate-editor reviews) — 6 articles merged in round 30; still missing: console, profiler, render_graph, script_editor, project_settings, project_wizard, asset_browser, audio_inspector, keybindings; rename `getting-started.md` to `getting_started.md`
   - Do: Redirected by the human 2026-11-07 (see EDT-68): write the plain-language explanations (what it is, how to use it, related windows), written for someone who never used a 3D program, as **one Markdown file per window/topic** under `assets/help/en/**` and `assets/help/fr/**` (English fallback). The articles are consumed by the EDT-68 help window; no tooltip/popover text.
   - Done when: Every registered window has a Markdown article; a test checks coverage and that each article parses.
   - Deps: EDT-51
@@ -419,10 +439,18 @@ Round 27+ goals (human, 2026-11-06): fix editor bugs, make every window, dialog 
   - Do: From the human testing the window standard (2026-11-07): only **some** windows show the `?` help button, and on the ones that do the **button background is clipped at the top**. Give every registered window the control and fix the clipping (padding/rect/clip-space) at any DPI and window size. The fix must work with the pending EDT-52 chunk branches (C, E, F, G, H, I) and EDT-54, which the lead integrates before final verification.
   - Done when: Every registered window shows a correctly rendered `?` button; a test asserts coverage and the layout math is covered.
   - Deps: EDT-52
-- [ ] **EDT-68** `P1` Help window with Markdown articles and a Help menu item — design note `docs/design/EDT-68.md` (questions for the human)
+- [ ] **EDT-68** `P1` Help window with Markdown articles and a Help menu item — design approved 2026-11-10 (`docs/design/EDT-68.md`)
   - Do: From the human (2026-11-07): clicking `?` must open a **help window** showing the article for the selected topic — **not** a bigger tooltip/popover. The window is docked like other editor windows, lists the topics (table of contents) and renders the `.md` articles written by EDT-53. Add a **Help** menu item that opens the same window independently of any `?` button. Implement the approved design note.
   - Done when: `?` opens the window on the right topic, the Help menu item opens it with the topic list, articles are `.md` files under `assets/help/**`, and tests cover article discovery/loading, the menu entry and the `?` routing.
   - Deps: EDT-53
+- [ ] **EDT-69** `P1` Asset Browser: one tab per asset type
+  - Do: Per AST-26: tabs for Models, Shaders, Sounds, Textures, Materials, Scripts and Animations (current tabs: Prefabs, Animations, Textures, Sounds…; keep Prefabs unless AST-26 says otherwise), each with the shared search, empty states and context menu of EDT-52C; engine defaults shown whether copied or not.
+  - Done when: Every type folder has a tab listing its files; tests.
+  - Deps: AST-27
+- [ ] **EDT-70** `P1` New Project: copy the engine default assets or not
+  - Do: From the human (2026-11-10): a project-creation setting choosing whether `EngineDefaults` is copied into the project's assets folder; the behaviour of each mode comes from AST-26. Fold into the EDT-59 wizard design if it is approved first, otherwise add to the current wizard.
+  - Done when: Both choices create a project that opens, plays and exports; the choice is stored in project settings; tests.
+  - Deps: AST-27
 
 ### Tooling & samples — `TLG` (`skate-tooling`)
 
