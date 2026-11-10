@@ -3,6 +3,7 @@ package com.pafoid.skate.editor.animation.mocap
 import com.pafoid.skate.editor.settings.MocapSettings
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
@@ -46,37 +47,78 @@ class MocapProcessRunnerTest {
         assertFalse(r.ok)
     }
 
+    private fun backend(tool: ProcessLauncher, settings: MocapSettings = MocapSettings(), fetcher: FakeModelFetcher = FakeModelFetcher()) =
+        MediaPipeBackend(MocapProcessRunner(tool), { settings }, fakeModels(dir, fetcher), { File(dir, "s.py") })
+
     @Test
     fun `Backend_BuildsArgvWithoutAShell`() {
         val tool = FakeMocapTool()
         val script = File(dir, "my scripts/extract.py")
-        val backend = MediaPipeBackend(MocapProcessRunner(tool), { MocapSettings("C:/Py thon/python.exe", "C:/m/pose.task") }, { script })
-        backend.checkSetup()
-        assertEquals(listOf("C:/Py thon/python.exe", script.absolutePath, "check", "--model", "C:/m/pose.task"), tool.calls.single())
+        val model = File(dir, "my models/pose.task").apply { parentFile.mkdirs(); writeBytes(ByteArray(10)) }
+        val fetcher = FakeModelFetcher()
+        val backend = MediaPipeBackend(MocapProcessRunner(tool), { MocapSettings("C:/Py thon/python.exe", model.path) }, fakeModels(dir, fetcher), { script })
+        val check = backend.checkSetup()
+        assertEquals(listOf("C:/Py thon/python.exe", script.absolutePath, "check", "--model", model.absolutePath), tool.calls.single())
+        assertEquals(0, fetcher.fetches, "a model set in Setup is never downloaded over")
+        assertEquals("tasks", check.api)
+    }
+
+    @Test
+    fun `Backend_CheckSetup_DownloadsTheModelAndReportsTheTasksApi`() {
+        val tool = FakeMocapTool()
+        val fetcher = FakeModelFetcher()
+        val progress = ArrayList<Float>()
+        val ok = backend(tool, fetcher = fetcher).checkSetup { progress += it }
+        assertTrue(ok.ok, ok.problem)
+        assertEquals("tasks", ok.api, "the Tasks API is the default")
+        assertEquals("0.10.21", ok.mediapipe)
+        assertTrue(ok.model!!.endsWith(PoseModelStore.FILE_NAME))
+        assertNull(ok.fallback)
+        assertEquals(0f, progress.first()); assertTrue(0.5f in progress); assertEquals(1f, progress.last())
+        backend(tool, fetcher = fetcher).checkSetup()
+        assertEquals(1, fetcher.fetches, "downloaded once")
+    }
+
+    @Test
+    fun `Backend_CheckSetup_FallsBackToTheLegacyApiOnlyWhenTheTasksApiCannotRun`() {
+        val offline = FakeModelFetcher(failure = "UnknownHostException")
+        val legacy = backend(FakeMocapTool(mediapipe = "0.10.9", hasSolutions = true), fetcher = offline).checkSetup()
+        assertTrue(legacy.ok, legacy.problem)
+        assertEquals("solutions", legacy.api, "reports the API actually used")
+        assertTrue(legacy.fallback!!.contains("Could not download the pose model"), legacy.fallback)
+
+        val neither = backend(FakeMocapTool(), fetcher = offline).checkSetup()
+        assertFalse(neither.ok)
+        assertTrue(neither.problem!!.startsWith("Could not download the pose model"), "root cause first: ${neither.problem}")
+        assertTrue(neither.problem!!.contains(MediaPipeBackend.NO_API))
+        assertEquals(SetupHint.MODEL_FILE, neither.hint)
+
+        val broken = backend(FakeMocapTool(checkLine = """{"error":"${MediaPipeBackend.NO_API}. Tasks API (pose model): OSError: libGLESv2.so.2. Legacy solutions API: not in MediaPipe 0.10.21."}""")).checkSetup()
+        assertFalse(broken.ok)
+        assertEquals(SetupHint.UPDATE_MEDIAPIPE, broken.hint, "the model is there, so MediaPipe itself is the problem")
     }
 
     @Test
     fun `Backend_CheckSetupExplainsWhatIsMissing`() {
-        val tool = FakeMocapTool()
-        val backend = MediaPipeBackend(MocapProcessRunner(tool), { MocapSettings() }, { File(dir, "s.py") })
-        val ok = backend.checkSetup()
-        assertTrue(ok.ok); assertEquals("0.10.14", ok.mediapipe); assertEquals("solutions", ok.api)
-
         val store = MediaPipeBackend(MocapProcessRunner({ _, _ ->
             FakeProcess(emptyList(), listOf("Python was not found; run without arguments to install from the Microsoft Store"), exit = 9009)
-        }), { MocapSettings() }, { File(dir, "s.py") }).checkSetup()
+        }), { MocapSettings() }, fakeModels(dir), { File(dir, "s.py") }).checkSetup()
         assertFalse(store.ok); assertEquals(SetupHint.INSTALL_PYTHON, store.hint)
 
-        tool.checkLine = """{"error":"MediaPipe is not installed: pip install mediapipe"}"""
-        val missing = MediaPipeBackend(MocapProcessRunner({ a, d -> tool.launch(a, d).let { FakeProcess(listOf(tool.checkLine), exit = 1) } }), { MocapSettings() }, { File(dir, "s.py") }).checkSetup()
+        val missing = backend(FakeMocapTool(checkLine = """{"error":"MediaPipe is not installed: pip install mediapipe"}""")).checkSetup()
         assertEquals(SetupHint.INSTALL_MEDIAPIPE, missing.hint)
         assertEquals(SetupHint.MODEL_FILE, MediaPipeBackend.hintFor("Model file not found: x.task"))
+        assertEquals(SetupHint.INSTALL_PYTHON, MediaPipeBackend.hintFor("Could not download the pose model from u: x. Could not start python: error=2"))
+
+        val badOverride = backend(FakeMocapTool(), MocapSettings(modelPath = File(dir, "gone.task").path)).checkSetup()
+        assertFalse(badOverride.ok)
+        assertEquals(SetupHint.MODEL_FILE, badOverride.hint, badOverride.problem)
     }
 
     @Test
     fun `Backend_ProbeAndExtractParseTheToolOutput`() {
         val tool = FakeMocapTool(extractError = "Cannot open video: v.mp4")
-        val backend = MediaPipeBackend(MocapProcessRunner(tool), { MocapSettings() }, { File(dir, "s.py") })
+        val backend = backend(tool)
         val info = backend.probe(File(dir, "v.mp4"), File(dir, "t.png"))
         assertEquals(1280, info.width); assertEquals(3f, info.duration); assertTrue(info.thumbnail!!.isFile)
         val e = assertThrows<MocapException> { backend.extract(File(dir, "v.mp4"), File(dir, "out.json"), AtomicBoolean(false)) {} }
@@ -84,11 +126,36 @@ class MocapProcessRunnerTest {
     }
 
     @Test
+    fun `Backend_CancelDuringTheModelDownload_RunsNoDetection`() {
+        val tool = FakeMocapTool()
+        val cancel = AtomicBoolean(false)
+        val e = assertThrows<MocapException> {
+            backend(tool).extract(File(dir, "v.mp4"), File(dir, "out.json"), cancel, onModelProgress = { if (it >= 0.5f) cancel.set(true) }) {}
+        }
+        assertEquals("cancelled", e.message)
+        assertTrue(tool.calls.isEmpty())
+        assertFalse(File(dir, "models/${PoseModelStore.FILE_NAME}").exists(), "no half model is kept")
+    }
+
+    @Test
+    fun `ModelStore_KeepsOnlyCompleteDownloads`() {
+        val fetcher = FakeModelFetcher(size = 10)
+        val e = assertThrows<MocapException> { fakeModels(dir, fetcher).resolve(null) }
+        assertTrue(e.message!!.contains("incomplete"), e.message)
+        assertFalse(File(dir, "models").listFiles().orEmpty().any(), "neither the model nor the .part file is left")
+        fetcher.size = 2_000
+        assertEquals(2_000L, fakeModels(dir, fetcher).resolve(null).length())
+    }
+
+    @Test
     fun `Scripts_TheAdapterShipsWithTheEditor`() {
         val script = MocapScripts.mediaPipe()
         assertTrue(script.isFile)
         val text = script.readText()
-        listOf("def cmd_check", "def cmd_probe", "def cmd_extract", "\"version\": 1", "detect_for_video").forEach { assertTrue(it in text, it) }
+        listOf("def cmd_check", "def cmd_probe", "def cmd_extract", "\"version\": 1", "detect_for_video", "PoseLandmarker", MediaPipeBackend.NO_API)
+            .forEach { assertTrue(it in text, it) }
+        // ANI-18: the Tasks API is tried first; mp.solutions is only the fallback.
+        assertTrue(text.indexOf("TasksDetector(mp, model)") in 0 until text.indexOf("SolutionsDetector(mp)", text.indexOf("def open_detector")))
         assertFalse(Regex("""urllib|requests\.|http://|https://""").containsMatchIn(text), "the adapter never downloads anything")
     }
 }

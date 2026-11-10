@@ -141,11 +141,15 @@ class VideoToAnimationWindow(
 
     private fun createStep() {
         when (controller.phase) {
-            MocapPhase.EXTRACTING, MocapPhase.SOLVING -> {
-                val label = if (controller.phase == MocapPhase.SOLVING) strings.getString("lbl.mocap.solving")
-                else strings.getString("lbl.mocap.extracting", (controller.progress * 100).toInt())
+            MocapPhase.DOWNLOADING_MODEL, MocapPhase.EXTRACTING, MocapPhase.SOLVING -> {
+                val percent = (controller.progress * 100).toInt()
+                val label = when (controller.phase) {
+                    MocapPhase.SOLVING -> strings.getString("lbl.mocap.solving")
+                    MocapPhase.DOWNLOADING_MODEL -> strings.getString("lbl.mocap.downloading_model", percent)
+                    else -> strings.getString("lbl.mocap.extracting", percent)
+                }
                 ImGui.progressBar(controller.progress, ImGui.getContentRegionAvailX().coerceAtMost(420f), 0f, label)
-                if (controller.phase == MocapPhase.EXTRACTING && strings.tipped(ImGui.button(strings.getString("btn.mocap.cancel")), "btn.mocap.cancel")) controller.cancel()
+                if (controller.phase != MocapPhase.SOLVING && strings.tipped(ImGui.button(strings.getString("btn.mocap.cancel")), "btn.mocap.cancel")) controller.cancel()
                 return
             }
             else -> Unit
@@ -188,16 +192,25 @@ class VideoToAnimationWindow(
         ImGui.beginDisabled(controller.checkingSetup)
         if (strings.tipped(ImGui.button(strings.getString("btn.mocap.check_setup")), "btn.mocap.check_setup")) controller.checkSetup()
         ImGui.endDisabled()
-        if (controller.checkingSetup) { ImGui.sameLine(); MImGui.textDisabled(strings.getString("lbl.mocap.setup_checking")) }
+        if (controller.checkingSetup) {
+            ImGui.sameLine()
+            val download = controller.setupDownload
+            MImGui.textDisabled(if (download != null) strings.getString("lbl.mocap.downloading_model", (download * 100).toInt())
+            else strings.getString("lbl.mocap.setup_checking"))
+        }
         controller.setup?.let { s ->
             if (s.ok) {
-                MImGui.successText(strings.getString("lbl.mocap.setup_ok", s.python ?: "?", s.mediapipe ?: "?", s.api ?: "?"))
+                val api = strings.getString(if (s.api == "tasks") "lbl.mocap.api.tasks" else "lbl.mocap.api.solutions")
+                MImGui.successText(strings.getString("lbl.mocap.setup_ok", s.python ?: "?", s.mediapipe ?: "?", api))
+                s.model?.let { MImGui.textDisabled(strings.getString("lbl.mocap.setup_model", File(it).name)); Tooltips.always(it) }
+                s.fallback?.let { MImGui.warningText(strings.getString("lbl.mocap.setup_fallback", it)) }
             } else {
                 MImGui.errorText(s.problem ?: "")
                 val hint = when (s.hint) {
                     SetupHint.INSTALL_PYTHON -> "hint.mocap.install_python"
                     SetupHint.INSTALL_MEDIAPIPE -> "hint.mocap.install_mediapipe"
                     SetupHint.MODEL_FILE -> "hint.mocap.model_file"
+                    SetupHint.UPDATE_MEDIAPIPE -> "hint.mocap.update_mediapipe"
                     else -> "hint.mocap.other"
                 }
                 ImGui.textWrapped(strings.getString(hint))

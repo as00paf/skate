@@ -33,11 +33,12 @@ class VideoToAnimationControllerTest {
             "RightLeg" to Quaternionf().rotationX(SyntheticPose.deg(4f * f)),
         ))
     })))
+    private val fetcher = FakeModelFetcher()
     private val created = ArrayList<File>()
     private var project: File? = null
 
     private fun controller(rig: Skeleton? = skater) = VideoToAnimationController(
-        backend = MediaPipeBackend(MocapProcessRunner(tool), { MocapSettings() }, { File(dir, "extract.py") }),
+        backend = MediaPipeBackend(MocapProcessRunner(tool), { MocapSettings() }, fakeModels(dir, fetcher), { File(dir, "extract.py") }),
         workDir = { File(dir, "work") },
         animationsDir = { project?.let { File(it, "Assets/Animations") } },
         targetSkeleton = { rig },
@@ -89,6 +90,38 @@ class VideoToAnimationControllerTest {
         assertEquals("Cannot open video: corrupt", c.error)
         assertNull(c.result)
         assertTrue(c.canCreate, "the user can retry")
+    }
+
+    @Test
+    fun `VideoToAnimation_DownloadsThePoseModelOnceThenUsesTheTasksApi`() {
+        project = File(dir, "Game")
+        val c = controller()
+        c.selectVideo(video())
+        c.create()
+        assertEquals(MocapPhase.DONE, c.phase, "error: ${c.error}")
+        c.create()
+        assertEquals(1, fetcher.fetches, "the model is downloaded once and reused")
+        val extracts = tool.calls.filter { it[2] == "extract" }
+        assertEquals(2, extracts.size)
+        assertTrue(extracts.all { it.contains("--model") && it.last().endsWith(PoseModelStore.FILE_NAME) }, "extract gets the model: $extracts")
+    }
+
+    @Test
+    fun `VideoToAnimation_OfflineWithoutTheLegacyApi_SaysWhy`() {
+        project = File(dir, "Game")
+        fetcher.failure = "UnknownHostException: storage.googleapis.com"
+        val c = controller()
+        c.selectVideo(video())
+        c.create()
+        assertEquals(MocapPhase.FAILED, c.phase)
+        val error = c.error!!
+        assertTrue(error.startsWith("Could not download the pose model"), error)
+        assertTrue(error.contains(MediaPipeBackend.NO_API), error)
+        assertTrue(c.canCreate, "the user can retry once online")
+
+        tool.hasSolutions = true
+        c.create()
+        assertEquals(MocapPhase.DONE, c.phase, "an older MediaPipe still works offline through the legacy API: ${c.error}")
     }
 
     @Test
