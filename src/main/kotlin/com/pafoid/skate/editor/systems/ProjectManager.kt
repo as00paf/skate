@@ -68,9 +68,11 @@ class ProjectManager(
         folder: File,
         graphicsBackend: GraphicsBackend = GraphicsBackend.DEFAULT,
         preparedDir: File? = null,
+        /** Copy the engine defaults into the project (AST-26 §4.3); false references them (basic shaders still copied). */
+        copyDefaults: Boolean = true,
     ): Result<Project> {
         return try {
-            val projectDir = preparedDir ?: prepareProjectFolder(name, folder).getOrElse { return Result.failure(it) }
+            val projectDir = preparedDir ?: prepareProjectFolder(name, folder, copyDefaults).getOrElse { return Result.failure(it) }
             val projectFile = File(projectDir, "$name.skateproject")
 
             if (hasProject()) closeProject()
