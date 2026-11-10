@@ -1,8 +1,8 @@
 # AST-26: Typed asset folders (design note)
 
-Status: **revision 2, awaiting the human's approval.** The human answered the nine open questions of revision 1 on
-2026-11-10 (§0.2). No code until the note is approved.
-Implements in: AST-27 (skate-assets), AST-28 (skate-online), REN slice (skate-render, §5), EDT-69 (skate-editor),
+Status: **approved by the human (2026-11-10).** The human answered the nine open questions of revision 1 (§0.2) and
+the §12 questions of revision 2 (§0.3) on 2026-11-10.
+Implements in: AST-27 (skate-assets), AST-28 (skate-online), REN-31 (skate-render, §5), EDT-69 (skate-editor),
 EDT-70 (skate-tooling).
 
 ## 0. Decisions
@@ -37,6 +37,22 @@ EDT-70 (skate-tooling).
 7. Confirmed: no conversion of schema-1 attribution ledgers.
 8. Model textures hidden from the Textures tab by default, with a 'Show model textures' filter.
 9. Name clash when copying a default: copy as 'cube (engine).obj', which becomes the override.
+
+### 0.3 Answers to the §12 open questions (2026-11-10, verbatim; note approved)
+
+- NQ1: editor-only files (strings, themes, help) move into src/main/resources/editor/{strings,themes,help}, packaged in
+  the jar, loaded from the classpath and read from src/main/resources in dev runs. Engine default assets (models,
+  textures, sounds…) stay in the repo's assets/ folder, reorganised into typed folders. The game string tables go to
+  assets/Data/strings/game/.
+- NQ2: skater configs: follow-up task (now GPL-26), not AST-27.
+- NQ3: Assets/strings.properties stays at the root of Assets/.
+- NQ4: delete the Font Awesome desktop zip.
+- NQ7: accepted: unedited shader copies follow the engine on project open.
+- NQ8: accepted: custom material shaders affect the colour pass only in v1.
+
+The backlog now has REN-31 (the render slice, skate-render; was "REN-31") and GPL-26 (skater configs). skate-qa is
+writing help articles into `src/main/resources/editor/help/` (EDT-53): AST-27a moves only what is still under
+`assets/help/` and does not move those articles again.
 
 ## 1. Current state (what this changes)
 
@@ -154,8 +170,10 @@ assets/
   Sounds/       Music/, Motion/, Skate/
   Shaders/      the 19 *.glsl, moved from src/main/resources/shaders (REN-owned, §5.1)
   Fonts/        from fonts/
-  Data/         (empty for now; skater configs: NQ2)
-  Editor/       strings/, themes/, help/   (editor-only, never copied into projects; NQ1)
+  Data/         strings/game/ (the game string tables, NQ1); skater configs later (GPL-26, NQ2)
+
+src/main/resources/editor/
+  strings/, themes/, help/   (editor-only, in the jar, never copied into projects; NQ1, §0.3)
 ```
 
 - `skatelite_*.png` are renamed `wood_*.png`, the names projects already use.
@@ -185,8 +203,11 @@ assets/
   - Samples: `FeatureShowcase` and the CLI builders.
   - Docs: `.github/copilot-instructions.md`, `docs/`.
 - **Guard test (AST-27):** every literal `assets/<lowercase old folder>/` in `src/` or `tools/` fails the build.
-- `assets/fonts/fontawesome-free-7.1.0-desktop.zip` is a source archive, not an asset. It moves to
-  `tools/fonts/` (NQ4).
+- `assets/fonts/fontawesome-free-7.1.0-desktop.zip` is a source archive, not an asset. It is deleted (NQ4).
+- **Editor-only files (NQ1):** `assets/strings/editor`, `assets/themes` and `assets/help` move to
+  `src/main/resources/editor/{strings,themes,help}`. They are loaded from the classpath (`Assets.Strings`,
+  `Assets.Themes`, the help viewer and `EditorStrings` loaders), and dev runs read them from `src/main/resources` so
+  edits show without a rebuild. Help articles skate-qa already wrote there (EDT-53) stay where they are.
 - **Build and scripts:**
   - `build.gradle.kts` `processResources` copies `assets/Shaders/**` into the jar at `/shaders/`, so the editor and
     the game jar keep a classpath copy (`Assets.Fonts.FONTS_FILE` and `/textures/default.png` are classpath resources
@@ -295,7 +316,7 @@ A copy's `.meta` `settings` (`AssetMeta` stays at schema 1):
 - `ProjectExporter` resolves `iconPath` through `AssetPaths`.
 - Shaders are always packed (§5.5).
 
-## 5. Shaders (decision 3; REN slice, reviewed by skate-render, §11.1)
+## 5. Shaders (decision 3; REN-31, reviewed by skate-render, §11.1)
 
 ### 5.1 Engine shaders are engine defaults
 
@@ -405,7 +426,7 @@ A shader that compiles on GL may therefore fail only in a Vulkan export. So:
   `#if defined(X)` (text scan). For a draw needing a feature the shader does not handle, or a variant that fails to
   compile, the material falls back to the schema shader, logged once.
 - **Frame uniforms** (CR6, REN-internal): today `GeometryPass` uploads frame uniforms (matrices, camera, sun,
-  `LightBuffer`, shadow cascades, IBL via `EnvironmentProbe.bind`) only to the default shader. The REN slice uploads
+  `LightBuffer`, shadow cascades, IBL via `EnvironmentProbe.bind`) only to the default shader. REN-31 uploads
   them to each program on its first use in a frame, and fills the 16-bit shader field of `SortKey.build` (0 today),
   so draws group by program.
 - **Scope v1: the colour pass only** (CR7). Shadow, picking and instanced vegetation keep the engine shaders, so a
@@ -413,7 +434,7 @@ A shader that compiles on GL may therefore fail only in a Vulkan export. So:
   `shadowShader` is a later task.
 - **Editor:** the material inspector gets a "Shader" field (`.glsl` files in the project plus the basic engine
   shaders). The Asset Browser gets a "New Shader" action that creates a template compatible with the PBR schema in
-  the `#type` format. These are EDT widgets in the REN slice, with an EDT review.
+  the `#type` format. These are EDT widgets in REN-31, with an EDT review.
 - **Custom parameters** (NQ6, answered by skate-render): a later REN task. Parameters are declared in the GLSL file
   with annotations (`// @param float uWaveHeight = 0.5 "Wave height"`, `// @texture uFoam slot 6`). A GL-free parser
   turns them into a `MaterialSchema` with id `shader:<reference>`, registered through `MaterialSchemas.register`; this
@@ -478,7 +499,7 @@ A shader that compiles on GL may therefore fail only in a Vulkan export. So:
 |---|---|---|---|
 | **AST-27a** | skate-assets | Repo `assets/` reorganisation (§4.1) in its own commit: moves, path updates in main code, tests, samples, docs, guard test, `processResources` + `verify-game-jar.sh` (the shader move itself needs REN's OK, `NEEDS REN`). | AST-26 |
 | **AST-27b** | skate-assets | `ProjectLayout`/`AssetFolder`, `folderFor`, `EngineDefaults` catalog, `engine:` resolution in `AssetPaths` + `AssetRegistry`, copier (both modes, basic shaders, name clash, `engine.*` meta), update detection service, `ReferenceCollector`/`AssetsPacker` (`engine:` items, narrower companions, `SHADER` always packed), `PackBuilder` dedupe, `ProjectManager` creation flag, `PrefabsGenerator`/`PrefabCatalog`/`MaterialType`/`FeatureShowcase`/`PrefabThumbnailMaterial` on `engine:` references. | AST-27a |
-| **REN-xx** (new) | skate-render | §5: `@skate-contract` headers and the stale-override fallback, `ShaderSourceResolver` with includer-aware includes (`ShaderPreprocessor`), one reference-keyed `ShaderVariantCache` with same-reference fallback, line maps, `GlslToVulkan` subset validation on load + `docs/shaders.md`, dependency-based re-resolving `ShaderHotReloader`, `EngineDefaults.Shaders` in `RenderResourcesFactory`/`PickingRenderer`/`ThumbnailRenderer`, `MaterialAsset.shader` (version bump), uniform-contract check, feature opt-in scan and fallback, per-program frame uniforms and the `SortKey` shader field, colour pass only. EDT review for the material "Shader" field and the "New Shader" template. | AST-27b; coordinate with REN-28 task 1 |
+| **REN-31** (new) | skate-render | §5: `@skate-contract` headers and the stale-override fallback, `ShaderSourceResolver` with includer-aware includes (`ShaderPreprocessor`), one reference-keyed `ShaderVariantCache` with same-reference fallback, line maps, `GlslToVulkan` subset validation on load + `docs/shaders.md`, dependency-based re-resolving `ShaderHotReloader`, `EngineDefaults.Shaders` in `RenderResourcesFactory`/`PickingRenderer`/`ThumbnailRenderer`, `MaterialAsset.shader` (version bump), uniform-contract check, feature opt-in scan and fallback, per-program frame uniforms and the `SortKey` shader field, colour pass only. EDT review for the material "Shader" field and the "New Shader" template. | AST-27b; coordinate with REN-28 task 1 |
 | **AST-28** | skate-online | §6. | AST-27b, AST-16 |
 | **EDT-69** | skate-editor | §8. | AST-27b |
 | **EDT-70** | skate-tooling | §7. | AST-27b |
@@ -527,7 +548,7 @@ A shader that compiles on GL may therefore fail only in a Vulkan export. So:
 
 ## 11. Reviews
 
-- **skate-render:** reviewed §4.1, §5 and the REN-xx slice (§11.1); its changes are in this revision.
+- **skate-render:** reviewed §4.1, §5 and the REN-31 slice (§11.1); its changes are in this revision.
 - **skate-online:**
   - §6;
   - whether each provider's `ImportPlan` can say "model item", "texture set", "sound" or "font" without guessing;
@@ -563,7 +584,7 @@ Verdict (2026-11-10, against `ShaderLoader`, `ShaderPreprocessor`, `ShaderHotRel
 | CR3 | One cache keyed by `(reference, defines)`; fall back to the engine version of the same reference, never to `shader_3d_default` | §5.3 |
 | CR4 | Include resolver `(name, includerId)`; dependency set keyed by resolved id; explicit `engine:` includes | §5.3 |
 | CR5 | Reload re-resolves; drop `shaderDevRoot`; watch dependency files plus registry events, not all of `Assets/` | §5.5 |
-| CR6 | Per-program frame uniforms; fill the `SortKey` shader field | §5.6, REN-xx row |
+| CR6 | Per-program frame uniforms; fill the `SortKey` shader field | §5.6, REN-31 row |
 | CR7 | v1 changes the colour pass only; documented | §5.6 |
 | CR8 | Feature opt-in by `#ifdef` scan; fallback per draw | §5.6 |
 | CR9 | Line map for errors; "New Shader" template | §5.3, §5.6 |
@@ -572,7 +593,7 @@ Verdict (2026-11-10, against `ShaderLoader`, `ShaderPreprocessor`, `ShaderHotRel
 | NQ6 | Parameters as annotations in the GLSL file → a `MaterialSchema` `shader:<reference>` | §5.6 |
 | Missing | Uniform contract check on assignment; Vulkan start-up compile cost (SPIR-V cache later, VK) | §5.4, §5.6 |
 
-## 12. New open questions (with recommended answers)
+## 12. Open questions of revision 2 (all answered in §0.3)
 
 1. **NQ1 — editor-only resources in the repo:** `strings/`, `themes/` and `help/` are not project asset types.
    Recommended: `assets/Editor/{strings,themes,help}`, never copied into projects; the engine's **game** string tables
