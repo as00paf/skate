@@ -1,6 +1,6 @@
 # GPL-24: Game systems and character customization (design note)
 
-Status: **revision 2, awaiting human approval**. No code has been written.
+Status: **approved** by the human on 2026-11-10 (revision 2). The answers to §11 are recorded in §10.
 
 Revision 2 (2026-11-10) replaces the first draft, which the lead rejected because it was not grounded in this
 codebase. Changes:
@@ -378,7 +378,19 @@ Human decisions recorded on 2026-11-07:
 3. **Attachment points location**: Defined in skeleton config — shared across all characters.
 4. **Tattoo application**: Applied live at runtime (not baked into the mesh).
 
-## 11. Open questions for the human
+Human answers to §11, recorded on 2026-11-10 (revision 2 approved):
+
+1) tattoos baked into a per-character texture when the list changes
+2) same skeleton required, joint remap by bone name
+3) hide named body parts (hidesParts)
+4) slots: a DYNAMIC list with defaults (HEAD, EYES, NECK, TORSO, LEGS, FEET, HANDS), editable per skeleton config (add/rename/remove)
+5) damage applied synchronously in the HitEvent subscriber
+6) no combat in the skate demo
+7) items in Assets/Items/ (new type folder and Asset Browser tab), skeleton configs in Assets/Data/
+
+Backlog tasks: GPL-27 (24a,b,d,e), GPL-28 (24c,f,g), PHY-22, AST-33, REN-32, ANI-19, GUI-18, TLG-15.
+
+## 11. Open questions for the human (answered 2026-11-10, see §10)
 
 1. **How tattoos are drawn at runtime.** **Recommended: composite into a per-character texture whenever the tattoo
    list changes** (§6.4). It is cheap per frame, has no limit on layers and needs no shader change for OpenGL/Vulkan
