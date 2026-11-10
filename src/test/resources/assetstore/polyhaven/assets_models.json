@@ -1,0 +1,252 @@
+{
+ "ArmChair_01": {
+  "date_published": 1585605600,
+  "name": "Arm Chair 01",
+  "categories": [
+   "furniture",
+   "seating"
+  ],
+  "type": 2,
+  "tags": [
+   "gothic",
+   "vintage",
+   "chair",
+   "furniture",
+   "victorian",
+   "couch",
+   "wood",
+   "varnished",
+   "classic"
+  ],
+  "authors": {
+   "Kirill Sannikov": "All"
+  },
+  "sponsors": [
+   "66627515",
+   "4047949"
+  ],
+  "max_resolution": [
+   4096,
+   4096
+  ],
+  "polycount": 5626,
+  "texel_density": 1972.3631956341671,
+  "dimensions": [
+   848.4309017658234,
+   765.7602727413177,
+   1065.087635157397
+  ],
+  "files_hash": "8a04a102d4a1e1a480bc4288384d4a2dfd649608",
+  "description": "Free (CC0) vintage Victorian armchair 3D model - varnished carved wood frame, upholstered seat; gothic/classic styling ideal for interiors, period scenes, and renders.",
+  "category_id": "11261ec6-df2b-5150-9904-684d2558070d",
+  "category": "Furniture/Seating/Chairs",
+  "attributes": {
+   "condition": [
+    "worn"
+   ],
+   "material": [
+    "wood",
+    "fabric"
+   ]
+  },
+  "img_version": "abbc4732",
+  "download_count": 32791,
+  "thumbnail_url": "https://cdn.polyhaven.com/asset_img/thumbs/ArmChair_01.png?width=256&height=256&format=webp&v=abbc4732"
+ },
+ "GreenChair_01": {
+  "type": 2,
+  "tags": [
+   "vintage",
+   "wood",
+   "gothic",
+   "furniture",
+   "chair",
+   "fabric",
+   "decorative"
+  ],
+  "date_published": 1585605600,
+  "name": "Green Chair 01",
+  "categories": [
+   "furniture",
+   "seating"
+  ],
+  "authors": {
+   "Kirill Sannikov": "All"
+  },
+  "max_resolution": [
+   4096,
+   4096
+  ],
+  "polycount": 4213,
+  "texel_density": 2359.4248090455103,
+  "dimensions": [
+   673.0944514274597,
+   664.3875539302826,
+   1058.5118799936026
+  ],
+  "files_hash": "71a65e8de6b5547fb605a460c87f3d37c5b8fe5b",
+  "description": "Free 4K model of a vintage Gothic wooden armchair with carved decorative details, green fabric upholstery and elegant curved legs; ideal for period interiors.",
+  "category_id": "11261ec6-df2b-5150-9904-684d2558070d",
+  "category": "Furniture/Seating/Chairs",
+  "attributes": {
+   "condition": [
+    "worn"
+   ],
+   "material": [
+    "wood",
+    "fabric"
+   ]
+  },
+  "img_version": "1946911e",
+  "download_count": 42114,
+  "thumbnail_url": "https://cdn.polyhaven.com/asset_img/thumbs/GreenChair_01.png?width=256&height=256&format=webp&v=1946911e"
+ },
+ "WoodenChair_01": {
+  "type": 2,
+  "tags": [
+   "wood",
+   "prop",
+   "vintage",
+   "furniture",
+   "chair",
+   "gothic",
+   "victorian",
+   "decorative"
+  ],
+  "date_published": 1585605600,
+  "name": "Wooden Chair 01",
+  "categories": [
+   "furniture",
+   "seating"
+  ],
+  "authors": {
+   "Jake Mobley": "All"
+  },
+  "sponsors": [
+   "68131842"
+  ],
+  "max_resolution": [
+   4096,
+   4096
+  ],
+  "polycount": 19992,
+  "texel_density": 1907.9500506608497,
+  "dimensions": [
+   688.1728172302246,
+   658.4618389606476,
+   2273.514856118709
+  ],
+  "files_hash": "62044fc04038e8a8192783c6c0db8cb879935209",
+  "description": "Free 4K model: ornate Victorian Gothic wooden chair with pointed tracery back, carved floral motif, turned legs, armrests and worn dark-stained finish.",
+  "category_id": "11261ec6-df2b-5150-9904-684d2558070d",
+  "category": "Furniture/Seating/Chairs",
+  "attributes": {
+   "condition": [
+    "worn"
+   ],
+   "material": [
+    "wood"
+   ]
+  },
+  "img_version": "d6d73c04",
+  "download_count": 19434,
+  "thumbnail_url": "https://cdn.polyhaven.com/asset_img/thumbs/WoodenChair_01.png?width=256&height=256&format=webp&v=d6d73c04"
+ },
+ "SchoolChair_01": {
+  "type": 2,
+  "tags": [
+   "prop",
+   "furniture",
+   "metal",
+   "plastic",
+   "chair",
+   "school"
+  ],
+  "date_published": 1585605600,
+  "name": "School Chair 01",
+  "categories": [
+   "furniture",
+   "seating"
+  ],
+  "authors": {
+   "Ethan Place": "All"
+  },
+  "sponsors": [
+   "26820710"
+  ],
+  "max_resolution": [
+   4096,
+   4096
+  ],
+  "polycount": 5072,
+  "texel_density": 2914.068311021279,
+  "dimensions": [
+   565.8532977104187,
+   675.2548813819885,
+   1006.035539903678
+  ],
+  "files_hash": "f78668ddf3cabcf60afe57e8df1e1982a482617c",
+  "description": "Free 4K model of a classic navy plastic school chair with tubular black metal legs, three-slot molded back, visible scuffs, and realistic painted-metal wear.",
+  "category_id": "11261ec6-df2b-5150-9904-684d2558070d",
+  "category": "Furniture/Seating/Chairs",
+  "attributes": {
+   "condition": [
+    "worn"
+   ],
+   "material": [
+    "plastic",
+    "metal"
+   ]
+  },
+  "img_version": "d3979386",
+  "download_count": 28910,
+  "thumbnail_url": "https://cdn.polyhaven.com/asset_img/thumbs/SchoolChair_01.png?width=256&height=256&format=webp&v=d3979386"
+ },
+ "WoodenTable_01": {
+  "type": 2,
+  "tags": [
+   "vintage",
+   "wood",
+   "prop",
+   "table",
+   "school",
+   "desk",
+   "old",
+   "worn"
+  ],
+  "date_published": 1585605600,
+  "name": "Wooden Table 01",
+  "categories": [
+   "furniture"
+  ],
+  "authors": {
+   "Ethan Place": "All"
+  },
+  "max_resolution": [
+   4096,
+   4096
+  ],
+  "polycount": 952,
+  "texel_density": 1731.2816139937538,
+  "dimensions": [
+   1799.6479272842407,
+   657.1746468544006,
+   548.8492709302584
+  ],
+  "files_hash": "acee43a6468dd85f1da716a4c6d77793e6c7c02f",
+  "description": "Free 4K model: vintage wooden coffee table with warm worn patina, visible grain, rounded corners, stretcher base and scuffed edges.",
+  "category_id": "14a9e15a-6ae7-5665-8142-d5fbda6b6a75",
+  "category": "Furniture/Tables/Coffee Tables",
+  "attributes": {
+   "condition": [
+    "worn"
+   ],
+   "material": [
+    "wood"
+   ]
+  },
+  "img_version": "b5952517",
+  "download_count": 34612,
+  "thumbnail_url": "https://cdn.polyhaven.com/asset_img/thumbs/WoodenTable_01.png?width=256&height=256&format=webp&v=b5952517"
+ }
+}

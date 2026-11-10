@@ -1,5 +1,6 @@
 package com.pafoid.skate.engine.render.renderer.passes
 
+import com.pafoid.skate.engine.render.graph.RenderResourceIds
 import com.pafoid.skate.engine.ecs.components.DayNightCycleComponent
 import com.pafoid.skate.engine.render.lighting.EnvironmentProbe
 import com.pafoid.skate.engine.ecs.SceneSun
@@ -67,8 +68,12 @@ class GeometryPass(
 ) : BaseRenderPass() {
 
     override val name: String = "GeometryPass"
+    override val inputs: Set<String> = setOf(RenderResourceIds.SHADOW_MAP, RenderResourceIds.LOCAL_SHADOW_MAP)
+    override val outputs: Set<String> = setOf(RenderResourceIds.SCENE_COLOR, RenderResourceIds.SCENE_DEPTH)
+
+    /** Without geometry the viewport is just the clear colour, so the pass cannot be switched off (EDT-54). */
+    override val canDisable: Boolean = false
     override val description: String = "Renders all 3D geometry and sprites to the framebuffer"
-    override val inputs: Set<String> = setOf("ShadowMap")
 
     private val drawQueue = DrawQueue<DrawItem>()
 
@@ -103,7 +108,7 @@ class GeometryPass(
             defaultShader,
             directionalLight,
             environmentComponent,
-            shadowFrame?.takeIf { it.consume() },
+            shadowsThisFrame(shadowFrame),
         )
         environmentProbe?.bind(defaultShader) ?: defaultShader.uploadInt(Uniforms.ENV_ENABLED, 0)
 
@@ -189,5 +194,12 @@ class GeometryPass(
 
     companion object {
         val DEFAULT_SKY_COLOR = Vector3f(0.2f, 0.2f, 0.2f)
+
+        /**
+         * The shadow maps to use this frame: only what the shadow pass published this frame. With the shadow pass off
+         * (or `NoShadowPass`) nothing is published, so this is null and geometry renders unshadowed: no stale maps,
+         * nothing to clear (EDT-54).
+         */
+        internal fun shadowsThisFrame(frame: ShadowFrame?): ShadowFrame? = frame?.takeIf { it.consume() }
     }
 }

@@ -1,9 +1,11 @@
 package com.pafoid.skate.editor.scripting
 
+import com.pafoid.skate.engine.assets.ProjectLayout
+
 /** Template and file-name rules for new `.kts` scripts. */
 object ScriptTemplates {
     const val EXTENSION = "kts"
-    const val SCRIPTS_DIRECTORY = "Assets/Scripts"
+    const val SCRIPTS_DIRECTORY = "${ProjectLayout.ASSETS_DIR}/Scripts"
 
     /** Returns the file name with the `.kts` extension, or null when [input] is not a valid script name. */
     fun fileName(input: String): String? {

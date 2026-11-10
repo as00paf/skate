@@ -1,6 +1,7 @@
 package com.pafoid.skate.editor.project
 
 import com.pafoid.skate.engine.assets.Assets
+import com.pafoid.skate.engine.assets.ProjectLayout
 import java.io.File
 
 /**
@@ -16,10 +17,7 @@ class EngineAssetCopier(private val engineAssetsRoot: File = File(System.getProp
 
     fun copyBundledAssets(projectDir: File): Result<Int> {
         return try {
-            val assetsDir = File(projectDir, "Assets")
-            if (!assetsDir.exists()) {
-                assetsDir.mkdirs()
-            }
+            val assetsDir = ProjectLayout.assetsDir(projectDir).also { it.mkdirs() }
 
             var copiedCount = 0
             var skippedCount = 0
@@ -40,9 +38,8 @@ class EngineAssetCopier(private val engineAssetsRoot: File = File(System.getProp
                 copiedCount++
             }
 
-            // Copy bundled shaders
-            val shadersDir = File(assetsDir.absolutePath + "\\EngineDefaults")
-            shadersDir.mkdirs()
+            // Bundled shaders go to EngineDefaults/Shaders, like the Assets.Bundled shader paths (AST-14)
+            val shadersDir = File(ProjectLayout.engineDefaultsDir(projectDir), "Shaders").also { it.mkdirs() }
             listOf(
                 Assets.Shaders.SPLASH,
                 Assets.Shaders.SHADER_3D_DEFAULT,
@@ -55,8 +52,7 @@ class EngineAssetCopier(private val engineAssetsRoot: File = File(System.getProp
                 Assets.Shaders.SKY_DOME,
                 Assets.Shaders.SHADOW,
             ).forEach { path ->
-                val outputFile = File(shadersDir, path)
-                outputFile.parentFile?.mkdirs()
+                val outputFile = File(shadersDir, path.substringAfterLast('/'))
                 EngineAssetCopier::class.java.getResourceAsStream(path)?.use { input ->
                     outputFile.outputStream().use { input.copyTo(it) }
                 }
@@ -64,7 +60,7 @@ class EngineAssetCopier(private val engineAssetsRoot: File = File(System.getProp
             }
 
             // Copy assets bundled in jar
-            val outputFile = File(assetsDir, Assets.Textures.APP_ICON)
+            val outputFile = File(assetsDir, Assets.Bundled.PROJECT_APP_ICON)
             outputFile.parentFile?.mkdirs()
             EngineAssetCopier::class.java.getResourceAsStream(Assets.Bundled.APP_ICON)?.use { input ->
                 outputFile.outputStream().use { input.copyTo(it) }
@@ -82,6 +78,6 @@ class EngineAssetCopier(private val engineAssetsRoot: File = File(System.getProp
     }
 
     fun getEngineDefaultsRoot(projectDir: File): String {
-        return File(projectDir, "Assets/EngineDefaults").absolutePath
+        return ProjectLayout.engineDefaultsDir(projectDir).absolutePath
     }
 }

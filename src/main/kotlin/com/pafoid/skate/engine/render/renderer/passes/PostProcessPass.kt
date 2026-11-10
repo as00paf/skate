@@ -1,5 +1,6 @@
 package com.pafoid.skate.engine.render.renderer.passes
 
+import com.pafoid.skate.engine.render.graph.RenderResourceIds
 import com.pafoid.skate.engine.assets.data.Shader
 import com.pafoid.skate.engine.assets.data.models.MeshPart
 import com.pafoid.skate.engine.ecs.Scene
@@ -54,9 +55,13 @@ open class PostProcessPass(
     private val ssaoShader: Shader,
     private val vaoLoader: VAOLoader,
     private var settings: PostProcessSettings = PostProcessSettings(),
-) : BaseRenderPass() {
+) : BaseRenderPass(), StagedRenderPass {
 
     override val name: String = "PostProcessPass"
+
+    /** SSAO reads the depth; the ping-pong targets ([PostChain]) are internal and the result is blitted back. */
+    override val inputs: Set<String> = setOf(RenderResourceIds.SCENE_COLOR, RenderResourceIds.SCENE_DEPTH)
+    override val outputs: Set<String> = setOf(RenderResourceIds.SCENE_COLOR)
 
     override val description: String = "Applies the post-processing effect stack (bloom, tonemapping, gamma, FXAA, SSAO)"
 
@@ -165,6 +170,19 @@ open class PostProcessPass(
     /** Returns whether the given effect is currently enabled. */
     fun isEffectEnabled(effect: PostEffect): Boolean = settings.isEnabled(effect)
 
+    // Stages (EDT-54): every effect of the canonical pipeline, enabled or not, so tools can switch any back on.
+    override val stageCount: Int get() = STAGES.size
+    override fun stageId(index: Int): String = STAGES[index].name
+    override fun stageLabelKey(index: Int): String = STAGES[index].labelKey
+    override fun isStageEnabled(index: Int): Boolean = settings.isEnabled(STAGES[index])
+    override fun setStageEnabled(index: Int, enabled: Boolean): Boolean {
+        settings.setEnabled(STAGES[index], enabled)
+        return true
+    }
+
+    /** Without the scene framebuffer (exported games) the stack is skipped entirely. */
+    override val stagesActive: Boolean get() = useFbo
+
     fun destroy() {
         fullscreenQuad?.let { vaoLoader.deleteVAO(it.vaoId) }
         fullscreenQuad = null
@@ -198,5 +216,9 @@ open class PostProcessPass(
             )
         }
         return fullscreenQuad
+    }
+
+    private companion object {
+        val STAGES = PostEffect.DEFAULT_PIPELINE
     }
 }

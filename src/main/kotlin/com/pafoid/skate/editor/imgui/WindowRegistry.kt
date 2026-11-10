@@ -8,6 +8,7 @@ import com.pafoid.skate.editor.ui.windows.CommandHistoryWindow
 import com.pafoid.skate.editor.ui.windows.ConsoleWindow
 import com.pafoid.skate.editor.ui.windows.EditorSettingsWindow
 import com.pafoid.skate.editor.ui.windows.ExportWizardWindow
+import com.pafoid.skate.editor.ui.windows.VideoToAnimationWindow
 import com.pafoid.skate.editor.ui.windows.GameViewWindow
 import com.pafoid.skate.editor.ui.windows.KeyBindingsWindow
 import com.pafoid.skate.editor.ui.windows.ProfilerWindow
@@ -16,11 +17,12 @@ import com.pafoid.skate.editor.ui.windows.ProjectSwitcherDialog
 import com.pafoid.skate.editor.ui.windows.ProjectWindow
 import com.pafoid.skate.editor.ui.windows.ProjectWizardWindow
 import com.pafoid.skate.editor.ui.windows.PropertiesWindow
-import com.pafoid.skate.editor.ui.windows.RenderGraphWindow
+import com.pafoid.skate.editor.ui.windows.rendergraph.RenderGraphWindow
 import com.pafoid.skate.editor.ui.windows.SceneHierarchyWindow
 import com.pafoid.skate.editor.ui.windows.SearchEverywhereWindow
 import com.pafoid.skate.editor.ui.windows.ScriptEditorWindow
 import com.pafoid.skate.editor.ui.windows.ShellWindow
+import com.pafoid.skate.editor.ui.windows.assetStore.AssetStoreWindow
 import com.pafoid.skate.engine.core.Engine
 
 class WindowRegistry(
@@ -48,6 +50,8 @@ class WindowRegistry(
         ScriptEditorWindow(engine, projectManager, editor.settingsManager),
         ShellWindow(engine, projectManager),
         ExportWizardWindow(engine, projectManager, editor.settingsManager),
+        AssetStoreWindow(engine, projectManager),
+        VideoToAnimationWindow(engine, editor, projectManager),
     )
 
     /** Windows listed in View > Windows and stored in the layout; dialogs are excluded. */

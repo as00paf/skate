@@ -1,0 +1,198 @@
+{
+  "schema": 1,
+  "provider": "kenney",
+  "author": "Kenney",
+  "authorUrl": "https://kenney.nl",
+  "license": "CC0-1.0",
+  "curated": "2026-11-06",
+  "packs": [
+    {
+      "id": "city-kit-commercial",
+      "title": "City Kit (Commercial)",
+      "pageUrl": "https://kenney.nl/assets/city-kit-commercial",
+      "tags": [
+        "3d",
+        "city",
+        "buildings",
+        "shops"
+      ],
+      "formats": [],
+      "zipNames": [
+        "kenney_city-kit-commercial"
+      ]
+    },
+    {
+      "id": "city-kit-suburban",
+      "title": "City Kit (Suburban)",
+      "pageUrl": "https://kenney.nl/assets/city-kit-suburban",
+      "tags": [
+        "3d",
+        "city",
+        "houses"
+      ],
+      "formats": [],
+      "zipNames": [
+        "kenney_city-kit-suburban"
+      ]
+    },
+    {
+      "id": "city-kit-roads",
+      "title": "City Kit (Roads)",
+      "pageUrl": "https://kenney.nl/assets/city-kit-roads",
+      "tags": [
+        "3d",
+        "city",
+        "roads",
+        "streets"
+      ],
+      "formats": [],
+      "zipNames": [
+        "kenney_city-kit-roads"
+      ]
+    },
+    {
+      "id": "car-kit",
+      "title": "Car Kit",
+      "pageUrl": "https://kenney.nl/assets/car-kit",
+      "tags": [
+        "3d",
+        "vehicles",
+        "cars"
+      ],
+      "formats": [],
+      "zipNames": [
+        "kenney_car-kit"
+      ]
+    },
+    {
+      "id": "toy-car-kit",
+      "title": "Toy Car Kit",
+      "pageUrl": "https://kenney.nl/assets/toy-car-kit",
+      "tags": [
+        "3d",
+        "vehicles",
+        "cars",
+        "toy"
+      ],
+      "formats": [],
+      "zipNames": [
+        "kenney_toy-car-kit"
+      ]
+    },
+    {
+      "id": "racing-kit",
+      "title": "Racing Kit",
+      "pageUrl": "https://kenney.nl/assets/racing-kit",
+      "tags": [
+        "3d",
+        "vehicles",
+        "track",
+        "racing"
+      ],
+      "formats": [],
+      "zipNames": [
+        "kenney_racing-kit"
+      ]
+    },
+    {
+      "id": "mini-skate",
+      "title": "Mini Skate",
+      "pageUrl": "https://kenney.nl/assets/mini-skate",
+      "tags": [
+        "3d",
+        "skate",
+        "ramps",
+        "park"
+      ],
+      "formats": [],
+      "zipNames": [
+        "kenney_mini-skate"
+      ]
+    },
+    {
+      "id": "nature-kit",
+      "title": "Nature Kit",
+      "pageUrl": "https://kenney.nl/assets/nature-kit",
+      "tags": [
+        "3d",
+        "nature",
+        "trees",
+        "rocks"
+      ],
+      "formats": [],
+      "zipNames": [
+        "kenney_nature-kit"
+      ]
+    },
+    {
+      "id": "furniture-kit",
+      "title": "Furniture Kit",
+      "pageUrl": "https://kenney.nl/assets/furniture-kit",
+      "tags": [
+        "3d",
+        "interior",
+        "furniture"
+      ],
+      "formats": [],
+      "zipNames": [
+        "kenney_furniture-kit"
+      ]
+    },
+    {
+      "id": "platformer-kit",
+      "title": "Platformer Kit",
+      "pageUrl": "https://kenney.nl/assets/platformer-kit",
+      "tags": [
+        "3d",
+        "platformer",
+        "blocks"
+      ],
+      "formats": [],
+      "zipNames": [
+        "kenney_platformer-kit"
+      ]
+    },
+    {
+      "id": "survival-kit",
+      "title": "Survival Kit",
+      "pageUrl": "https://kenney.nl/assets/survival-kit",
+      "tags": [
+        "3d",
+        "survival",
+        "props"
+      ],
+      "formats": [],
+      "zipNames": [
+        "kenney_survival-kit"
+      ]
+    },
+    {
+      "id": "castle-kit",
+      "title": "Castle Kit",
+      "pageUrl": "https://kenney.nl/assets/castle-kit",
+      "tags": [
+        "3d",
+        "medieval",
+        "castle"
+      ],
+      "formats": [],
+      "zipNames": [
+        "kenney_castle-kit"
+      ]
+    },
+    {
+      "id": "food-kit",
+      "title": "Food Kit",
+      "pageUrl": "https://kenney.nl/assets/food-kit",
+      "tags": [
+        "3d",
+        "food",
+        "props"
+      ],
+      "formats": [],
+      "zipNames": [
+        "kenney_food-kit"
+      ]
+    }
+  ]
+}

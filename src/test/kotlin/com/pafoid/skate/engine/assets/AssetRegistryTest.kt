@@ -3,9 +3,11 @@ package com.pafoid.skate.engine.assets
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.Assumptions.assumeTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import java.io.File
+import java.nio.file.Files
 
 class AssetRegistryTest {
     @TempDir
@@ -102,5 +104,54 @@ class AssetRegistryTest {
         assertTrue(reg.delete(f))
         assertFalse(AssetMeta.sidecarOf(f).exists())
         assertEquals(0, reg.size)
+    }
+
+    @Test
+    fun AssetRegistry_ScanSkipsBlenderSideFiles() {
+        listOf("cap.blend", "cap.blend1", "cap.blend@", "cap.glb.part").forEach { File(dir, it).writeText("x") }
+        val reg = AssetRegistry(dir).also { it.scan() }
+
+        assertNotNull(reg.idOf("cap.blend"))
+        listOf("cap.blend1", "cap.blend@", "cap.glb.part").forEach {
+            assertNull(reg.idOf(it), it)
+            assertFalse(AssetMeta.sidecarOf(File(dir, it)).exists(), "no sidecar for $it")
+        }
+    }
+    /**
+     * A spelling of [real] whose `canonicalFile` differs from its `absoluteFile`, or null when this machine has none.
+     * Windows expands 8.3 short names (but not junctions) when canonicalising; other systems resolve symlinks.
+     */
+    private fun nonCanonicalSpellingOf(real: File): File? {
+        val short = File(real.parentFile, real.name.uppercase().take(6) + "~1")
+        if (short.isDirectory) return short
+        return runCatching { Files.createSymbolicLink(File(dir, "link").toPath(), real.toPath()).toFile() }.getOrNull()
+    }
+
+    /**
+     * Regression (round 30 CI): on GitHub's Windows runner the project root is an 8.3 short path (`RUNNER~1`) while the
+     * store resolves files with `canonicalFile` (long form). The registry must still map them inside the project.
+     * Reproduced portably with a root spelled by its 8.3 name (Windows) or a symlink (elsewhere) and files given in canonical form.
+     */
+    @Test
+    fun AssetRegistry_RootSpelledNonCanonically_StillMapsCanonicalFiles() {
+        val real = File(dir, "longprojectname").apply { mkdirs() }
+        val root = nonCanonicalSpellingOf(real)
+        assumeTrue(root != null && root.canonicalFile != root.absoluteFile, "no 8.3 names or symlinks on this machine")
+        val reg = AssetRegistry(root!!)
+        val canonical = File(real.canonicalFile, "Assets/Store/a.png").also { it.parentFile.mkdirs(); it.writeText("x") }
+
+        val id = reg.register(canonical)
+
+        assertEquals(id, reg.idOf("Assets/Store/a.png"))
+        assertEquals("Assets/Store/a.png", reg.pathOf(id))
+        assertTrue(reg.delete(canonical))
+        assertNull(reg.idOf("Assets/Store/a.png"))
+    }
+
+    @Test
+    fun AssetRegistry_RootWithDotDotSegments_MapsFilesInside() {
+        val reg = AssetRegistry(File(dir, "x/.."))
+        val id = reg.register(file("textures/b.png"))
+        assertEquals(id, reg.idOf("textures/b.png"))
     }
 }

@@ -10,6 +10,8 @@ import java.io.File
 class CreateProjectCommand(
     private val event: CreateProjectRequested,
     private val projectManager: ProjectManager,
+    /** Folder made and filled off the main thread by the loading screen (EDT-56); null does it here. */
+    private val preparedDir: File? = null,
 ) : ExecuteOnlyCommand, ReportsFailure {
     override val errorTitleKey = "error.create_project.title"
 
@@ -17,9 +19,9 @@ class CreateProjectCommand(
     private var failureReason: String? = null
 
     override fun execute() {
-        val result = projectManager.createProject(event.name, File(event.folderPath), event.graphicsBackend)
-            executeSucceeded = result.isSuccess
-            failureReason = result.exceptionOrNull()?.message
+        val result = projectManager.createProject(event.name, File(event.folderPath), event.graphicsBackend, preparedDir)
+        executeSucceeded = result.isSuccess
+        failureReason = result.exceptionOrNull()?.message
     }
 
     override fun undo() {

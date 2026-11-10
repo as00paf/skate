@@ -2,6 +2,7 @@ package com.pafoid.skate.cli
 
 import com.pafoid.skate.editor.project.Project
 import com.pafoid.skate.editor.project.ProjectWizard
+import com.pafoid.skate.engine.assets.ProjectLayout
 import com.pafoid.skate.engine.assets.serialization.FileKind
 import com.pafoid.skate.engine.assets.serialization.Serializer
 import com.pafoid.skate.engine.core.Engine
@@ -47,10 +48,9 @@ class SkateCliService(
         val projectFile = File(projectDir, "$name.skateproject")
         if (projectFile.exists()) throw CliException("Project '$name' already exists in ${parent.path}")
 
-        val assetsDir = File(projectDir, "Assets").also { it.mkdirs() }
-        val scenesDir = File(projectDir, "Scenes").also { it.mkdirs() }
-        File(projectDir, "Builds").mkdirs()
-        File(assetsDir, "strings.properties").writeText("project.name=$name")
+        val assetsDir = ProjectLayout.create(projectDir)
+        val scenesDir = ProjectLayout.scenesDir(projectDir)
+        File(assetsDir, ProjectLayout.STRINGS_FILE).writeText("project.name=$name")
         copyEngineAssets(projectDir)
 
         val files = ProjectFiles(serializer, projectDir)
@@ -95,7 +95,8 @@ class SkateCliService(
         val dir = project.getProjectDirectory()
 
         if (project.name.isBlank()) errors += "Project name is blank"
-        if (!File(dir, "Assets").isDirectory) warnings += "Missing Assets folder"
+        if (!ProjectLayout.assetsDir(dir).isDirectory) warnings += "Missing ${ProjectLayout.ASSETS_DIR} folder"
+        ProjectLayout.duplicateAssetFolders(dir).forEach { warnings += "Duplicate assets folder: ${it.relativeTo(dir).path}" }
         if (project.scenesPath.isEmpty()) errors += "Project has no scenes"
 
         val sceneFiles = project.scenesPath.map { locate(it, dir) }
@@ -201,6 +202,6 @@ class SkateCliService(
         if (direct.isAbsolute && direct.exists()) return direct
         File(projectDir, stored).takeIf { it.exists() }?.let { return it }
         val fileName = stored.substringAfterLast('\\').substringAfterLast('/')
-        return File(File(projectDir, "Scenes"), fileName)
+        return File(ProjectLayout.scenesDir(projectDir), fileName)
     }
 }

@@ -1,0 +1,177 @@
+{
+  "schema": 1,
+  "provider": "quaternius",
+  "author": "Quaternius",
+  "authorUrl": "https://quaternius.com",
+  "license": "CC0-1.0",
+  "curated": "2026-11-06",
+  "packs": [
+    {
+      "id": "downtowncitymegakit",
+      "title": "Downtown City MegaKit",
+      "pageUrl": "https://quaternius.com/packs/downtowncitymegakit.html",
+      "tags": [
+        "3d",
+        "city",
+        "buildings",
+        "streets"
+      ],
+      "formats": [
+        "FBX",
+        "OBJ",
+        "glTF",
+        "Blend"
+      ],
+      "zipNames": []
+    },
+    {
+      "id": "modularstreets",
+      "title": "Modular Streets Pack",
+      "pageUrl": "https://quaternius.com/packs/modularstreets.html",
+      "tags": [
+        "3d",
+        "city",
+        "streets",
+        "roads"
+      ],
+      "formats": [
+        "FBX",
+        "OBJ",
+        "Blend"
+      ],
+      "zipNames": []
+    },
+    {
+      "id": "cars",
+      "title": "Cars Pack",
+      "pageUrl": "https://quaternius.com/packs/cars.html",
+      "tags": [
+        "3d",
+        "vehicles",
+        "cars"
+      ],
+      "formats": [
+        "FBX",
+        "OBJ",
+        "Blend"
+      ],
+      "zipNames": []
+    },
+    {
+      "id": "buildings",
+      "title": "Buildings Pack",
+      "pageUrl": "https://quaternius.com/packs/buildings.html",
+      "tags": [
+        "3d",
+        "city",
+        "buildings"
+      ],
+      "formats": [
+        "FBX",
+        "OBJ",
+        "Blend"
+      ],
+      "zipNames": []
+    },
+    {
+      "id": "simplebuildings",
+      "title": "Simple Buildings Pack",
+      "pageUrl": "https://quaternius.com/packs/simplebuildings.html",
+      "tags": [
+        "3d",
+        "city",
+        "buildings"
+      ],
+      "formats": [
+        "FBX",
+        "OBJ",
+        "Blend"
+      ],
+      "zipNames": []
+    },
+    {
+      "id": "publictransport",
+      "title": "Public Transport Pack",
+      "pageUrl": "https://quaternius.com/packs/publictransport.html",
+      "tags": [
+        "3d",
+        "vehicles",
+        "bus",
+        "city"
+      ],
+      "formats": [
+        "FBX",
+        "OBJ",
+        "Blend"
+      ],
+      "zipNames": []
+    },
+    {
+      "id": "ultimatefurniture",
+      "title": "Ultimate Furniture Pack",
+      "pageUrl": "https://quaternius.com/packs/ultimatefurniture.html",
+      "tags": [
+        "3d",
+        "interior",
+        "furniture"
+      ],
+      "formats": [
+        "FBX",
+        "OBJ",
+        "Blend"
+      ],
+      "zipNames": []
+    },
+    {
+      "id": "ultimatehomeinterior",
+      "title": "Ultimate House Interior Pack",
+      "pageUrl": "https://quaternius.com/packs/ultimatehomeinterior.html",
+      "tags": [
+        "3d",
+        "interior",
+        "house"
+      ],
+      "formats": [
+        "FBX",
+        "OBJ",
+        "Blend"
+      ],
+      "zipNames": []
+    },
+    {
+      "id": "stylizednaturemegakit",
+      "title": "Stylized Nature MegaKit",
+      "pageUrl": "https://quaternius.com/packs/stylizednaturemegakit.html",
+      "tags": [
+        "3d",
+        "nature",
+        "trees",
+        "rocks"
+      ],
+      "formats": [
+        "FBX",
+        "OBJ",
+        "glTF",
+        "Blend"
+      ],
+      "zipNames": []
+    },
+    {
+      "id": "ultimatenature",
+      "title": "Ultimate Nature Pack",
+      "pageUrl": "https://quaternius.com/packs/ultimatenature.html",
+      "tags": [
+        "3d",
+        "nature",
+        "trees",
+        "rocks"
+      ],
+      "formats": [
+        "FBX",
+        "OBJ",
+        "Blend"
+      ],
+      "zipNames": []
+    }
+  ]
+}

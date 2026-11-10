@@ -1,5 +1,7 @@
 package com.pafoid.skate.editor.systems
 
+import com.pafoid.skate.editor.loading.LoadingRunner
+import com.pafoid.skate.editor.loading.StepExecutor
 import com.pafoid.skate.editor.events.ProjectEvent
 import com.pafoid.skate.editor.imgui.GraphicsBackendField
 import com.pafoid.skate.editor.project.ProjectFileReader
@@ -46,7 +48,12 @@ class GraphicsBackendSettingTest {
     private val undo = UndoRedoManager(events, mockk(relaxed = true))
 
     init {
-        ProjectActionHandler(engine, projects, settings, undo, mockk(relaxed = true))
+        // Loading steps run inline, so a create request has finished when publish returns (EDT-56).
+        val inline = object : StepExecutor {
+            override fun background(block: () -> Unit) = block()
+            override fun main(block: () -> Unit) = block()
+        }
+        ProjectActionHandler(engine, projects, settings, undo, mockk(relaxed = true), LoadingRunner(events, inline))
     }
 
     @AfterEach

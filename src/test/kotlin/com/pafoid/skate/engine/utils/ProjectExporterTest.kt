@@ -37,7 +37,7 @@ class ProjectExporterTest {
         val ok = ProjectExporter(mockk<LoggerService>(relaxed = true)) { GameJarSearch(jar, emptyList()) }.export(project())
         assertTrue(ok.success)
 
-        val builds = File(dir, "builds")
+        val builds = File(dir, "Builds")
         val manifest = Serializer().json.decodeFromString(PackManifest.serializer(), File(builds, "manifest.json").readText())
         val paths = manifest.entries.map { it.path }
         assertTrue("Textures/used.png" in paths)
@@ -90,7 +90,7 @@ class ProjectExporterTest {
         val jar = File(dir, "fake-game.jar").also { it.writeText("jar") }
         val stringsDir = File(Assets.Strings.GAME_STRINGS)
         assertTrue(ProjectExporter(mockk<LoggerService>(relaxed = true), stringsDir) { GameJarSearch(jar, emptyList()) }.export(project()).success)
-        val builds = File(dir, "builds")
+        val builds = File(dir, "Builds")
 
         val manifest = Serializer().json.decodeFromString(PackManifest.serializer(), File(builds, "manifest.json").readText())
         val shipped = manifest.entries.map { it.path }.filter(PackedStrings::isTable)
@@ -120,14 +120,14 @@ class ProjectExporterTest {
 
         val manifest = Serializer().json.decodeFromString(PackManifest.serializer(), File(dir, "builds/manifest.json").readText())
         assertEquals(1, manifest.entries.count { it.path == "strings/game/hud.properties" })
-        assertEquals("Project", packedStrings(File(dir, "builds"), "en").getString("pause.title"))
+        assertEquals("Project", packedStrings(File(dir, "Builds"), "en").getString("pause.title"))
     }
 
     @Test
     fun Export_WithoutGameStringsStillSucceeds() {
         val jar = File(dir, "fake-game.jar").also { it.writeText("jar") }
         assertTrue(ProjectExporter(mockk<LoggerService>(relaxed = true), File(dir, "none")) { GameJarSearch(jar, emptyList()) }.export(project()).success)
-        assertTrue(packedTables(File(dir, "builds")).isEmpty())
+        assertTrue(packedTables(File(dir, "Builds")).isEmpty())
     }
 
     private fun manifestPaths(builds: File): List<String> =
@@ -144,7 +144,7 @@ class ProjectExporterTest {
         val viaDetour = File(dir, "detour/../Game.skateproject")
         val options = ExportOptions(target = ExportTarget.PACK_ONLY)
         assertTrue(ProjectExporter(mockk<LoggerService>(relaxed = true)).export(p.copy(projectPath = viaDetour.path), options).success)
-        val paths = manifestPaths(File(dir, "builds"))
+        val paths = manifestPaths(File(dir, "Builds"))
         assertTrue("Textures/used.png" in paths && "Scenes/Main.scene" in paths, paths.toString())
         assertTrue(paths.none { it.startsWith("..") }, paths.toString())
     }
@@ -153,7 +153,7 @@ class ProjectExporterTest {
     fun Export_PackOnlyTargetNeedsNoJarAndWritesNoLauncher() {
         val result = ProjectExporter(mockk<LoggerService>(relaxed = true)) { GameJarSearch(null, emptyList()) }.export(project(), ExportOptions(target = ExportTarget.PACK_ONLY))
         assertTrue(result.success)
-        val builds = File(dir, "builds")
+        val builds = File(dir, "Builds")
         assertTrue(File(builds, "game.bin").isFile && File(builds, "manifest.json").isFile)
         assertFalse(File(builds, "skate-game.jar").exists())
         assertFalse(File(builds, "run-game.bat").exists())
@@ -167,7 +167,7 @@ class ProjectExporterTest {
         val excluded = setOf(File(dir, "Scenes/Extra.scene").absolutePath, p.defaultScene)
         val options = ExportOptions(target = ExportTarget.PACK_ONLY, excludedScenes = excluded)
         assertTrue(ProjectExporter(mockk<LoggerService>(relaxed = true)).export(p, options).success)
-        val paths = manifestPaths(File(dir, "builds"))
+        val paths = manifestPaths(File(dir, "Builds"))
         assertTrue("Scenes/Main.scene" in paths)
         assertFalse("Scenes/Extra.scene" in paths)
     }
@@ -181,7 +181,7 @@ class ProjectExporterTest {
         assertTrue(exporter.export(project(), options).success)
         assertTrue(exporter.export(project(), options).success)
         assertTrue(File(out, "run-game.bat").isFile)
-        assertFalse(File(dir, "builds").exists())
+        assertFalse(File(dir, "Builds").exists())
         assertTrue(manifestPaths(out).none { it.startsWith("dist/") })
     }
 
@@ -216,7 +216,7 @@ class ProjectExporterTest {
     @Test
     fun SceneFiles_ListsProjectScenesButNotTheOutputFolder() {
         val p = project()
-        File(dir, "builds").mkdirs()
+        File(dir, "Builds").mkdirs()
         File(dir, "builds/Old.scene").writeText("{}")
         val scenes = ProjectExporter(mockk<LoggerService>(relaxed = true)).sceneFiles(p).map { it.relativeTo(dir).invariantSeparatorsPath }
         assertEquals(listOf("Scenes/Main.scene"), scenes)
@@ -263,7 +263,7 @@ class ProjectExporterTest {
         val vulkan = com.pafoid.skate.engine.render.rhi.GraphicsBackend.VULKAN
         val p = project().apply { graphicsBackend = vulkan }
         File(p.projectPath).writeText(Serializer().encodeFile(com.pafoid.skate.engine.assets.serialization.FileKind.PROJECT, p))
-        val builds = File(dir, "builds").also { it.mkdirs() }
+        val builds = File(dir, "Builds").also { it.mkdirs() }
         // A player's earlier choice in this build folder is kept.
         File(builds, "game.settings.json").writeText("""{"locale":"fr"}""")
 

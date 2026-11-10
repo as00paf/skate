@@ -38,8 +38,12 @@ import com.pafoid.skate.editor.events.ProjectEvent.OpenProjectSucceeded
 import com.pafoid.skate.editor.events.ProjectEvent.RenameFileRequested
 import com.pafoid.skate.editor.events.ProjectEvent.SaveRequested
 import com.pafoid.skate.editor.events.WindowAction
+import com.pafoid.skate.editor.loading.LoadingOperation
+import com.pafoid.skate.editor.loading.LoadingRunner
+import com.pafoid.skate.editor.loading.StepExecutor
 import com.pafoid.skate.editor.project.ExportWizard
 import com.pafoid.skate.editor.systems.EditorSettingsManager
+import com.pafoid.skate.editor.systems.PreparedProject
 import com.pafoid.skate.editor.systems.ProjectManager
 import com.pafoid.skate.editor.systems.UndoRedoManager
 import com.pafoid.skate.engine.core.Engine
@@ -48,6 +52,7 @@ import com.pafoid.skate.engine.core.StringManager
 import com.pafoid.skate.engine.utils.ExportDetail
 import com.pafoid.skate.engine.utils.ExportFailure
 import com.pafoid.skate.engine.utils.ExportResult
+import com.pafoid.skate.engine.utils.ExportStep
 import com.pafoid.skate.engine.utils.ProjectExporter
 import java.io.File
 import javax.swing.JFileChooser
@@ -59,7 +64,9 @@ class ProjectActionHandler(
     private val projectManager: ProjectManager,
     private val settingsManager: EditorSettingsManager,
     private val undoRedoManager: UndoRedoManager,
-    private val stringManager: StringManager
+    private val stringManager: StringManager,
+    /** Runs project create / open with the loading screen (EDT-56); shared with the scene handler. */
+    private val loading: LoadingRunner = LoadingRunner(engine.eventSystem, StepExecutor.Jobs(engine.jobSystem)),
 ) {
     private val jobSystem = engine.jobSystem
     private val eventSystem = engine.eventSystem
@@ -71,33 +78,22 @@ class ProjectActionHandler(
 
     init {
         eventSystem.subscribe<OpenProjectRequested> { event ->
-            val command = OpenProjectFileCommand(projectManager, File(event.projectPath))
-            undoRedoManager.executeCommand(command)
-            if (command.wasSuccessful()) {
-                eventSystem.publish(WindowAction.Hide("project_switcher"))
-                eventSystem.publish(WindowAction.Hide("project_wizard"))
-                eventSystem.publish(WindowAction.ShowDefault)
-                eventSystem.publish(OpenProjectSucceeded(event.projectPath))
-            } else {
-                eventSystem.publish(OpenProjectFailed(event.projectPath, projectManager.lastError ?: "Failed to open project"))
+            executeOnMainThread {
+                val file = File(event.projectPath)
+                openWithLoading(file, { OpenProjectFileCommand(projectManager, file, it) }) { opened ->
+                    if (opened) {
+                        eventSystem.publish(WindowAction.Hide("project_switcher"))
+                        eventSystem.publish(WindowAction.Hide("project_wizard"))
+                        eventSystem.publish(WindowAction.ShowDefault)
+                        eventSystem.publish(OpenProjectSucceeded(event.projectPath))
+                    } else {
+                        eventSystem.publish(OpenProjectFailed(event.projectPath, projectManager.lastError ?: "Failed to open project"))
+                    }
+                }
             }
         }
         eventSystem.subscribe<CreateProjectRequested> { event ->
-            val command = CreateProjectCommand(event, projectManager)
-            undoRedoManager.executeCommand(command)
-            if (command.wasSuccessful()) {
-                eventSystem.publish(CreateProjectSucceeded(event.name, event.folderPath))
-                eventSystem.publish(WindowAction.Hide("window.project_wizard"))
-                eventSystem.publish(WindowAction.ShowDefault)
-            } else {
-                eventSystem.publish(
-                    CreateProjectFailed(
-                        event.name,
-                        event.folderPath,
-                        command.getFailureReason() ?: "Failed to create project"
-                    )
-                )
-            }
+            executeOnMainThread { createWithLoading(event) }
         }
         eventSystem.subscribe<ProjectEvent.SetGraphicsBackendRequested> { event ->
             val project = projectManager.currentProject ?: return@subscribe
@@ -194,8 +190,12 @@ class ProjectActionHandler(
         }
         eventSystem.subscribe<LoadLastProjectRequested> {
             executeOnMainThread {
-                val command = LoadLastProjectCommand(projectManager, settingsManager)
-                undoRedoManager.executeCommand(command)
+                val file = settingsManager.lastProjectFile()
+                if (file == null) {
+                    undoRedoManager.executeCommand(LoadLastProjectCommand(projectManager, settingsManager))
+                } else {
+                    openWithLoading(file, { LoadLastProjectCommand(projectManager, settingsManager, it) }) {}
+                }
             }
         }
 
@@ -241,12 +241,17 @@ class ProjectActionHandler(
                 return@subscribe
             }
             exportRunning = true
+            // Null while a project or scene is loading: the export still runs, the wizard shows its progress.
+            val tracker = loading.track("loading.export.title", project.name)
             jobSystem.runIO {
                 // Anything thrown (validation, I/O, OutOfMemoryError while packing) still ends the export.
                 val result = try {
                     val locator = ExportWizard.gameJarLocator { settingsManager.editorSettings.gameJarPath }
                     ProjectExporter(logger, gameJarSearch = locator::locate).export(project, event.options) { progress ->
-                        executeOnMainThread { eventSystem.publish(ProjectEvent.ExportProgressed(progress)) }
+                        executeOnMainThread {
+                            eventSystem.publish(ProjectEvent.ExportProgressed(progress))
+                            tracker?.progress(progress.overall, exportStepKey(progress.step), progress.detail)
+                        }
                     }
                 } catch (t: Throwable) {
                     logger.logEditor("Export failed: ${t.message}", LogLevel.ERROR)
@@ -254,9 +259,72 @@ class ProjectActionHandler(
                 }
                 executeOnMainThread {
                     exportRunning = false
+                    tracker?.finish()
                     eventSystem.publish(ProjectEvent.ExportFinished(result))
                 }
             }
+        }
+    }
+
+    /**
+     * Opens [file] behind the loading screen (EDT-56): the project file and its scenes are read in the background,
+     * then [command] opens them on the main thread. [onResult] gets whether the project opened.
+     */
+    private fun openWithLoading(
+        file: File,
+        command: (PreparedProject?) -> ExecutionTrackedCommand,
+        onResult: (Boolean) -> Unit,
+    ) {
+        var prepared: PreparedProject? = null
+        var opened = false
+        val operation = LoadingOperation.Builder("loading.open_project.title", file.nameWithoutExtension)
+            .background("loading.step.read_project", weight = 2f) { prepared = projectManager.prepareProject(file) }
+            .main("loading.step.open_scenes") {
+                // Without a prepared project the command reads the file again and reports why it failed.
+                val open = command(prepared)
+                undoRedoManager.executeCommand(open)
+                opened = open.wasSuccessful()
+            }
+            .build()
+        val started = loading.run(operation, onDone = { onResult(opened) }, onFailed = { error ->
+            logger.logEditor("Opening ${file.path} failed: ${error.message}", LogLevel.ERROR)
+            onResult(false)
+        })
+        if (!started) logger.logEditor("Busy loading; ignored opening ${file.path}", LogLevel.WARN)
+    }
+
+    /**
+     * Creates a project behind the loading screen (EDT-56): folders and the bundled assets are written in the
+     * background, then the default scenes (which load textures) are made and opened on the main thread.
+     */
+    private fun createWithLoading(event: CreateProjectRequested) {
+        var preparedDir: Result<File>? = null
+        var command: CreateProjectCommand? = null
+        val operation = LoadingOperation.Builder("loading.create_project.title", event.name)
+            .background("loading.step.copy_assets", weight = 3f) {
+                preparedDir = projectManager.prepareProjectFolder(event.name, File(event.folderPath))
+            }
+            .main("loading.step.create_scenes") {
+                val dir = preparedDir?.getOrNull()
+                // A failed folder step leaves dir null: the command retries it and reports the reason.
+                command = CreateProjectCommand(event, projectManager, dir).also { undoRedoManager.executeCommand(it) }
+            }
+            .build()
+        val started = loading.run(operation, onDone = { reportCreated(event, command) }, onFailed = { error ->
+            logger.logEditor("Could not create project: ${error.message}", LogLevel.ERROR)
+            reportCreated(event, null, error.message)
+        })
+        if (!started) logger.logEditor("Busy loading; ignored creating ${event.name}", LogLevel.WARN)
+    }
+
+    private fun reportCreated(event: CreateProjectRequested, command: CreateProjectCommand?, error: String? = null) {
+        if (command?.wasSuccessful() == true) {
+            eventSystem.publish(CreateProjectSucceeded(event.name, event.folderPath))
+            eventSystem.publish(WindowAction.Hide("window.project_wizard"))
+            eventSystem.publish(WindowAction.ShowDefault)
+        } else {
+            val reason = command?.getFailureReason() ?: error ?: "Failed to create project"
+            eventSystem.publish(CreateProjectFailed(event.name, event.folderPath, reason))
         }
     }
 
@@ -271,6 +339,11 @@ class ProjectActionHandler(
             return
         }
         eventSystem.publish(FileSystemEvent.FileSystemChangedEvent(affectedPath))
+    }
+
+    companion object {
+        /** The loading screen's label of an export step. */
+        fun exportStepKey(step: ExportStep): String = "loading.export.step.${step.name.lowercase()}"
     }
 
     private fun executeOnMainThread(block: () -> Unit) {
