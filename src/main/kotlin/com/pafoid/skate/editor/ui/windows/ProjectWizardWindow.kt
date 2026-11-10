@@ -51,6 +51,7 @@ class ProjectWizardWindow(
     private val modal = object : EditorModal(stringManager, Icons.PLUS, minWidth = UiConstants.DIALOG_WIDTH) {
         override val titleKey = "wizard.project.title"
         override val wantsOpen: Boolean get() = isOpen.get()
+        override val helpWindow: EditorWindow get() = this@ProjectWizardWindow
 
         override fun content() {
             // Hidden from outside this frame (the project was created or opened): close the popup with it.

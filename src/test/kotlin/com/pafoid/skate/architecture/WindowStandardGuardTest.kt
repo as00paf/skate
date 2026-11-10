@@ -17,7 +17,8 @@ import kotlin.io.path.readText
  * with `?` (`header(...)`, or `WindowHeader.helpButton` in its own toolbar), and has `help.<id>.what` / `.how` strings
  * in English and French. `EditorDialog` subclasses get beginWindow and the header from their base class. A modal host
  * (a window whose `imgui()` only renders an `EditorModal`: New Project, Switch Project) needs neither: a modal has no
- * tab or header strip (EDT-51 §2.1, EDT-64), but it still declares an icon and has help strings.
+ * tab or header strip (EDT-51 §2.1, EDT-64), but it still declares an icon and has help strings, and its modal names
+ * the host as `helpWindow` so the modal shows the host's `?` (EDT-67).
  *
  * [ALLOW_LIST] holds the windows not converted yet. Each EDT-52 chunk removes its windows; nobody adds any. EDT-52 is
  * done when it is empty.
@@ -127,7 +128,7 @@ class WindowStandardGuardTest {
             class Switcher(s: StringManager) : EditorWindow("window.switcher") {
                 override val icon = Icons.FOLDER_OPEN
                 override fun imgui() = modal.render()
-                private val modal = object : EditorModal(s, Icons.FOLDER_OPEN) { }
+                private val modal = object : EditorModal(s, Icons.FOLDER_OPEN) { override val helpWindow get() = this@Switcher }
             }
             class NotAHost(s: StringManager) : EditorWindow("window.not_a_host") {
                 override val icon = Icons.FOLDER_OPEN
@@ -139,6 +140,8 @@ class WindowStandardGuardTest {
         val keys = listOf("en", "fr").associateWith { setOf("help.switcher.what", "help.switcher.how", "help.not_a_host.what", "help.not_a_host.how") }
         assertEquals(emptyList<String>(), violations(host, keys))
         assertEquals(2, violations(notHost, keys).size, violations(notHost, keys).toString())
+        val withoutHelp = findWindows(src.replace("{ override val helpWindow get() = this@Switcher }", "{ }")).first()
+        assertEquals(listOf("modal host without a `?` (override val helpWindow in its EditorModal)"), violations(withoutHelp, keys))
     }
 
     /**
@@ -160,6 +163,48 @@ class WindowStandardGuardTest {
         assertTrue(missing.isEmpty(), "Windows missing from View > Windows; add them to WindowCategory.byWindow: $missing")
         val stale = NO_CATEGORY.filter { name -> name !in registered || byClass[name]?.windowName?.let { WindowCategory.of(it) } != null }
         assertTrue(stale.isEmpty(), "NO_CATEGORY entries that are not registered or have a category now: $stale")
+    }
+
+    /** EDT-67: the human found `?` on only some windows. Every registered window must draw one, with no exemption. */
+    @Test
+    fun EveryRegisteredWindow_HasAHelpButton() {
+        val byClass = windows.associateBy { it.className }
+        val registered = registeredWindowClasses(root.resolve(REGISTRY).readText())
+        assertTrue(registered.size >= 19, "found only $registered in $REGISTRY")
+        val missing = registered.filter { name -> byClass[name]?.let { helpButtonRoute(it) } == null }
+        assertTrue(missing.isEmpty(), "Registered windows without a `?` help button (EDT-67): $missing")
+        val dialog = root.resolve("src/main/kotlin/com/pafoid/skate/editor/imgui/EditorDialog.kt").readText()
+        assertTrue(Regex("""\bheader\s*\(""").containsMatchIn(dialog), "EditorDialog no longer draws the header with `?`")
+        val modal = root.resolve("src/main/kotlin/com/pafoid/skate/editor/imgui/EditorModal.kt").readText()
+        assertTrue("helpWindow?.let" in modal && "WindowHeader.helpRow" in modal, "EditorModal no longer draws its host's `?`")
+    }
+
+    @Test
+    fun Guard_FindsTheHelpButtonRoute() {
+        val src = """
+            class Docked(s: StringManager) : EditorWindow("window.docked") {
+                override fun imgui() { beginWindow(s); header(s) { tools() }; ImGui.end() }
+            }
+            class Viewport(s: StringManager) : EditorWindow("window.viewport") {
+                private val bar = Toolbar { WindowHeader.helpButton(s, this) }
+            }
+            class Settings(s: StringManager) : EditorDialog("window.settings", s) { }
+            class Host(s: StringManager) : EditorWindow("window.host") {
+                override fun imgui() = modal.render()
+                private val modal = object : EditorModal(s) { override val helpWindow: EditorWindow get() = this@Host }
+            }
+            class BareHost(s: StringManager) : EditorWindow("window.bare_host") {
+                override fun imgui() = modal.render()
+                private val modal = object : EditorModal(s) { }
+            }
+            class Bare(s: StringManager) : EditorWindow("window.bare") {
+                override fun imgui() { ImGui.begin("x"); ImGui.end() }
+            }
+        """.trimIndent()
+        assertEquals(
+            listOf("header", "helpButton", "EditorDialog header", "EditorModal.helpWindow", null, null),
+            findWindows(src).map { helpButtonRoute(it) },
+        )
     }
 
     @Test
@@ -238,6 +283,9 @@ class WindowStandardGuardTest {
         fun violations(window: WindowClass, helpKeys: Map<String, Set<String>>): List<String> {
             val out = mutableListOf<String>()
             if (!Regex("""override\s+val\s+icon\b""").containsMatchIn(window.source)) out += "no header icon (override val icon)"
+            if (isModalHost(window.source) && !HELP_WINDOW.containsMatchIn(window.source)) {
+                out += "modal host without a `?` (override val helpWindow in its EditorModal)"
+            }
             if (!window.isDialog && !isModalHost(window.source)) {
                 if (!Regex("""\bbeginWindow\s*\(""").containsMatchIn(window.source)) out += "does not open with beginWindow (tab menu, help)"
                 if (!Regex("""\bheader\s*\(|\bhelpButton\s*\(""").containsMatchIn(window.source)) out += "no header strip with ? (header(...))"
@@ -253,6 +301,21 @@ class WindowStandardGuardTest {
                 }
             }
             return out
+        }
+
+        private val HELP_WINDOW = Regex("""override\s+val\s+helpWindow\b""")
+
+        /**
+         * How a window shows its `?` (EDT-67), or null when it does not: dialogs through `EditorDialog`'s header,
+         * modal hosts through `EditorModal.helpWindow`, every other window through `header(...)` or
+         * `WindowHeader.helpButton` in its own toolbar.
+         */
+        fun helpButtonRoute(window: WindowClass): String? = when {
+            window.isDialog -> "EditorDialog header"
+            isModalHost(window.source) -> if (HELP_WINDOW.containsMatchIn(window.source)) "EditorModal.helpWindow" else null
+            Regex("""\bheader\s*\(""").containsMatchIn(window.source) -> "header"
+            Regex("""\bhelpButton\s*\(""").containsMatchIn(window.source) -> "helpButton"
+            else -> null
         }
 
         /** The window only renders an [EditorModal][com.pafoid.skate.editor.imgui.EditorModal] it owns. */
