@@ -26,6 +26,7 @@ object DefaultDockLayout {
         "window.command_history" to Zone.BOTTOM,
         "window.render_graph" to Zone.BOTTOM,
         "window.shell" to Zone.BOTTOM,
+        "window.version_control" to Zone.BOTTOM,
     )
 
     /**

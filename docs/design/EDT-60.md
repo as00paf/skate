@@ -264,3 +264,24 @@ a `file://` URL.
 3. **LFS off by default** with size warnings: OK?
 4. **Conflict handling:** whole-file Keep mine / Take theirs / Copy for now, structured merge later: OK?
 5. **Phase 0 goes to ECS/AST** before EDT starts phase 1: OK?
+
+## 10. Phase 1 as built (2026-11-10)
+
+- **Dependency:** JGit `7.1.0.202411261347-r` (Java 17). `build.gradle.kts` leaves `org.eclipse.jgit*` jars out of
+  the game jar (`isEditorOnlyLib`); `VcsLayeringGuardTest` keeps JGit imports in `editor/vcs/JGitVcsService.kt`.
+- **Code:** `editor/vcs/` (`VcsService`, `JGitVcsService`, `VcsStatusModel`, `VcsSession`, `GitIgnoreTemplate`,
+  `ConflictMarkers`), `editor/commands/vcs/VcsCommands.kt` (execute-only), `VcsActionHandler`, `VersionControlWindow`
+  (View > Windows > Project, docked at the bottom). Strings: `assets/strings/editor/vcs*.properties`.
+- **Choices made without a human decision (easy to change):**
+  - The commit author comes from Git's config, or else the OS user name (`<user>@users.noreply.skate`). The "ask
+    once" modal waits for phase 2, when an identity matters for pushes.
+  - A commit takes exactly the selected rows (and their `.meta`); the index is reset to HEAD first, except during a
+    merge, so the merge commit keeps both parents.
+  - A branch switch is refused while *tracked* files have changes; untracked files do not block it.
+  - Git actions are refused during Play. Switch, discard and resolve are also refused while a scene has unsaved edits.
+    After a switch, the project reloads. After a discard or resolve, it reloads only when scenes, prefabs or project
+    files changed.
+  - The repository must be `<project>/.git`. A project inside another repository (e.g. the engine checkout) counts as
+    not versioned.
+- **Conflict-safe loading:** the editor's scene decoders (`ProjectManager`, `OpenSceneFileCommand`) refuse files with
+  conflict markers, with a clear message. `PrefabStore` (engine, AST) does not check yet.

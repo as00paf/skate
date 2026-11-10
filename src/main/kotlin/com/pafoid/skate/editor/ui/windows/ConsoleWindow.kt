@@ -82,8 +82,8 @@ class ConsoleWindow(engine: Engine) : EditorWindow("window.console", true) {
         val clearBtnWidth = ImGui.calcTextSize(clearLabel).x + ImGui.getStyle().framePaddingX * 2f
         val autoScrollWidth = ImGui.calcTextSize(autoScrollLabel).x + 20f + ImGui.getStyle().framePaddingX * 2f
         val spacing = ImGui.getStyle().itemSpacingX
-        val helpWidth = ImGui.calcTextSize(Icons.QUESTION_CIRCLE).x + ImGui.getStyle().framePaddingX * 2f
-        val searchWidth = ImGui.getContentRegionAvailX() - clearBtnWidth - autoScrollWidth - helpWidth - spacing * 3f
+        // The header column already excludes the `?` (EDT-67).
+        val searchWidth = ImGui.getContentRegionAvailX() - clearBtnWidth - autoScrollWidth - spacing * 2f
 
         ImGui.pushItemWidth(searchWidth)
         ImGui.inputTextWithHint("##ConsoleSearch", "${Icons.SEARCH} ${stringManager.getString("lbl.search")}...", searchText)

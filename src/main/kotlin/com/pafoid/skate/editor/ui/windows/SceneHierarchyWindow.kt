@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.ui.windows
 
+import com.pafoid.skate.editor.imgui.WindowHeader
 import com.pafoid.skate.editor.imgui.Tooltips
 import com.pafoid.skate.editor.events.ViewportAction
 import com.pafoid.skate.editor.data.EditorShortcuts
@@ -159,7 +160,7 @@ class SceneHierarchyWindow(
 
     /** Search, add and link-selection: the header strip's tools (EDT-51 §2.2). */
     private fun toolbar(scene: Scene) {
-        ImGui.pushItemWidth(ImGui.getContentRegionAvailX() - 95f)
+        ImGui.pushItemWidth(ImGui.getContentRegionAvailX() - WindowHeader.trailingWidth(Icons.PLUS, Icons.LINK))
         ImGui.inputTextWithHint("##Search", "${Icons.SEARCH} ${stringManager.getString("lbl.hierarchy.search")}", searchQuery)
         ImGui.popItemWidth()
 

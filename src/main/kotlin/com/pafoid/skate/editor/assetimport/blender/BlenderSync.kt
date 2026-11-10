@@ -3,7 +3,9 @@ package com.pafoid.skate.editor.assetimport.blender
 import com.pafoid.skate.editor.events.FileSystemEvent
 import com.pafoid.skate.editor.settings.EditorSettings
 import com.pafoid.skate.editor.systems.ProjectManager
+import com.pafoid.skate.editor.tools.external.BlenderAvailability
 import com.pafoid.skate.editor.tools.external.BlenderLocator
+import com.pafoid.skate.editor.tools.external.BlenderTestResult
 import com.pafoid.skate.editor.tools.external.JdkProcessRunner
 import com.pafoid.skate.editor.tools.external.ProcessRunner
 import com.pafoid.skate.engine.assets.AssetMeta
@@ -18,6 +20,8 @@ import java.time.Duration
  * Keeps `.blend` files under the open project's `Assets/` imported (AST-19 §5): scans once a second on an IO worker,
  * imports new files and re-imports saved ones through [BlenderImportQueue], logs the result and announces the new
  * files (`FileSystemChangedEvent`, so the Asset Browser and Project window refresh; a loaded GLB hot-reloads).
+ * Also serves the `.blend` inspector and the Editor Settings Blender section (EDT-66): import settings, forced
+ * re-import ([reimport], also on [FileSystemEvent.ReimportRequested]), Blender availability and the Test button.
  * Call [update] every editor frame.
  */
 class BlenderSync(
@@ -39,7 +43,24 @@ class BlenderSync(
 
     private val logger get() = engine.logger
 
+    /** Last result of looking for Blender; checked again when the Blender path setting changes. */
+    var availability: BlenderAvailability = BlenderAvailability.Unknown
+        private set
+
+    init {
+        engine.eventSystem.subscribe<FileSystemEvent.ReimportRequested> { event ->
+            val file = File(event.path)
+            if (BlenderOutputs.isBlend(file)) reimport(file)
+        }
+    }
+
     fun update(nowNanos: Long = System.nanoTime()) {
+        if (settings().blenderPath != lastBlenderPath) {
+            lastBlenderPath = settings().blenderPath
+            locator.invalidate()
+            availability = BlenderAvailability.Unknown
+        }
+        if (availability == BlenderAvailability.Unknown) checkAvailability()
         val dir = projectManager.getProjectDirectory()?.absoluteFile
         if (dir != project) switchProject(dir)
         val root = dir ?: return
@@ -56,10 +77,6 @@ class BlenderSync(
     private fun onScan(root: File, stamps: Map<File, BlendWatch.Stamp>) {
         scanning = false
         if (root != project) return
-        if (settings().blenderPath != lastBlenderPath) {
-            lastBlenderPath = settings().blenderPath
-            locator.invalidate()
-        }
         if (firstScan) {
             firstScan = false
             if (!settings().blenderImportOnOpen) {
@@ -73,9 +90,54 @@ class BlenderSync(
         }
     }
 
-    /** Re-imports [blend] now, even when it has not changed (inspector button, menu). */
+    /** Re-imports [blend] now, even when it has not changed (inspector button, Project window menu). */
     fun reimport(blend: File) {
-        queue?.request(blend)
+        queue?.request(blend, force = true)
+    }
+
+    fun isImporting(blend: File): Boolean = queue?.isImporting(blend) == true
+
+    /** The import settings stored in [blend]'s sidecar (defaults when it has none yet). */
+    fun settingsOf(blend: File): BlenderImportSettings =
+        BlenderImportSettings.from(AssetMeta.read(blend)?.settings.orEmpty())
+
+    fun lastImport(blend: File): BlenderImportRecord? = BlenderImportRecord.from(AssetMeta.read(blend))
+
+    /** Writes [value] into [blend]'s sidecar (created with a GUID when missing). False when no project is open. */
+    fun saveSettings(blend: File, value: BlenderImportSettings): Boolean {
+        val registry = projectManager.assetRegistry() ?: return false
+        val meta = AssetMeta.read(blend) ?: run {
+            registry.register(blend)
+            AssetMeta.read(blend)
+        } ?: return false
+        AssetMeta.write(blend, value.applyTo(meta))
+        return true
+    }
+
+    /**
+     * Editor Settings "Test" (EDT-66): looks for Blender with [path] as the setting, on an IO worker (it runs
+     * `blender --version`), and hands the result to [onResult] on the main thread. Does not change the settings.
+     */
+    fun test(path: String?, onResult: (BlenderTestResult) -> Unit) {
+        engine.jobSystem.runIO {
+            val best = runCatching { BlenderLocator(runner, setting = { path }).best() }.getOrNull()
+            val result = BlenderTestResult.of(path, best)
+            engine.jobSystem.runOnMain { onResult(result) }
+        }
+    }
+
+    private fun checkAvailability() {
+        availability = BlenderAvailability.Checking
+        val path = settings().blenderPath
+        engine.jobSystem.runIO {
+            val best = runCatching { locator.best() }.getOrNull()
+            engine.jobSystem.runOnMain {
+                // A path change while probing restarts the check from update().
+                if (path == settings().blenderPath && availability == BlenderAvailability.Checking) {
+                    availability = best?.let(BlenderAvailability::Found) ?: BlenderAvailability.Missing
+                }
+            }
+        }
     }
 
     private fun switchProject(dir: File?) {
@@ -91,7 +153,7 @@ class BlenderSync(
             BlenderImportQueue(
                 io = { job -> engine.jobSystem.runIO { job() } },
                 main = { job -> engine.jobSystem.runOnMain { job() } },
-                convert = { importer.convert(it) },
+                convert = { blend, force -> importer.convert(blend, force) },
                 apply = importer::apply,
                 onOutcome = ::report,
             )
