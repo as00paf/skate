@@ -9,7 +9,6 @@ import com.pafoid.skate.editor.events.ProjectEvent.OpenProjectRequested
 import com.pafoid.skate.editor.imgui.EditorModal
 import com.pafoid.skate.editor.imgui.EditorWindow
 import com.pafoid.skate.editor.imgui.FooterButton
-import com.pafoid.skate.editor.imgui.WindowHeader
 import com.pafoid.skate.editor.imgui.MImGui
 import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.editor.imgui.data.UiConstants
@@ -59,8 +58,6 @@ class ProjectWizardWindow(
                 ImGui.closeCurrentPopup()
                 return
             }
-            WindowHeader.render(stringManager, this@ProjectWizardWindow)
-            help.render(stringManager)
             renderForm()
         }
 

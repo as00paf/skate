@@ -27,6 +27,7 @@ object Icons {
     const val ARROW_UP = "\uf062"
     const val ARROW_DOWN = "\uf063"
     const val ARROW_LEFT = "\uf060"
+    const val BOOK = "\uf02d"
     const val ARROW_RIGHT = "\uf061"
     const val ARROW_ROTATE = "\uf021"
     const val ATOM = "\uf5d2"

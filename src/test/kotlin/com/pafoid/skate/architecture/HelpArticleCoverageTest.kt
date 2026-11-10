@@ -1,11 +1,10 @@
 package com.pafoid.skate.architecture
 
+import com.pafoid.skate.editor.help.HelpArticleSource
+import com.pafoid.skate.editor.help.HelpMarkdown
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
-import java.nio.ByteBuffer
-import java.nio.charset.CharacterCodingException
-import java.nio.charset.CodingErrorAction
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
@@ -20,8 +19,7 @@ import kotlin.io.path.readText
  * The general topics (Getting started, Keyboard shortcuts) exist too, every article is well-formed Markdown in the
  * subset the Help window renders, and every `[text](topic.md)` link points to an existing article.
  *
- * The structural check below stands in for the EDT-68 parser until `editor/help/HelpMarkdown` exists; switch
- * [articleProblems] to it then.
+ * [articleProblems] runs the Help window's own parser (`editor/help/HelpMarkdown`).
  */
 class HelpArticleCoverageTest {
 
@@ -130,53 +128,14 @@ class HelpArticleCoverageTest {
         val LOCALES = listOf("en", "fr")
 
         /** Topics opened from the Help menu, not tied to a window (EDT-68 "Routing and menu"). */
-        val GENERAL_TOPICS = setOf("getting_started", "shortcuts")
+        val GENERAL_TOPICS = com.pafoid.skate.editor.help.HelpTopics.GENERAL.toSet()
 
         private const val REGISTRY = "src/main/kotlin/com/pafoid/skate/editor/imgui/WindowRegistry.kt"
 
-        private val HEADING = Regex("""^(#+)\s+\S""")
-        private val LINK = Regex("""\[[^\]]*]\(([^)]*)\)""")
-
-        /**
-         * Problems that would make the EDT-68 renderer show a broken article: not UTF-8, empty, no single leading
-         * `#` title, a heading level the subset does not support, an unclosed ``` fence, or a link to a missing topic.
-         */
+        /** The Help window's own checks (EDT-68): strict UTF-8, then [HelpMarkdown.problems]. */
         fun articleProblems(bytes: ByteArray, topics: Set<String>): List<String> {
-            val text = try {
-                Charsets.UTF_8.newDecoder()
-                    .onMalformedInput(CodingErrorAction.REPORT)
-                    .onUnmappableCharacter(CodingErrorAction.REPORT)
-                    .decode(ByteBuffer.wrap(bytes)).toString()
-            } catch (_: CharacterCodingException) {
-                return listOf("not valid UTF-8")
-            }
-            if (text.isBlank()) return listOf("empty article")
-            val out = mutableListOf<String>()
-            val lines = text.removePrefix("\uFEFF").lines()
-            if (!lines.first { it.isNotBlank() }.startsWith("# ")) out += "does not start with a '# ' title"
-            var inFence = false
-            var titles = 0
-            lines.forEachIndexed { i, line ->
-                val n = i + 1
-                if (line.trimStart().startsWith("```")) { inFence = !inFence; return@forEachIndexed }
-                if (inFence) return@forEachIndexed
-                HEADING.find(line)?.let { h ->
-                    val level = h.groupValues[1].length
-                    if (level == 1 && ++titles > 1) out += "more than one '# ' title (line $n)"
-                    if (level > 3) out += "heading deeper than ### (line $n)"
-                }
-                LINK.findAll(line).forEach { m ->
-                    val target = m.groupValues[1].trim()
-                    when {
-                        target.isEmpty() -> out += "empty link target (line $n)"
-                        target.startsWith("http://") || target.startsWith("https://") -> Unit
-                        target.removeSuffix(".md") !in topics || !target.endsWith(".md") ->
-                            out += "link to missing topic '$target' (line $n)"
-                    }
-                }
-            }
-            if (inFence) out += "unclosed code fence"
-            return out
+            val text = HelpArticleSource.decode(bytes) ?: return listOf("not valid UTF-8")
+            return HelpMarkdown.problems(text, topics)
         }
     }
 }

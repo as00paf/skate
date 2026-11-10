@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.imgui
 
+import com.pafoid.skate.editor.help.HelpRouter
 import com.pafoid.skate.engine.core.StringManager
 import imgui.ImGui
 import imgui.flag.ImGuiCol
@@ -124,10 +125,13 @@ abstract class EditorModal(
     protected abstract fun buttons(): List<FooterButton>
 
     /**
-     * The registered window this modal stands for (a modal host such as New Project), whose help the modal's `?`
-     * opens (EDT-67). Null for plain confirmations and errors, which have no help.
+     * The registered window this modal stands for (a modal host such as New Project), whose article the modal's `?`
+     * shows (EDT-67). Null for plain confirmations and errors, which have no help. A modal hides every other window,
+     * the Help window included, so the article shows inside the modal, below its `?` (EDT-68).
      */
     protected open val helpWindow: EditorWindow? = null
+
+    private var showHelp = false
 
     /** True while the modal must stay up whether or not [open] was called. */
     protected open val wantsOpen: Boolean get() = false
@@ -149,12 +153,21 @@ abstract class EditorModal(
         ImGui.setNextWindowSizeConstraints(minWidth, 0f, 720f, 600f)
         if (!ImGui.beginPopupModal(title, null, ImGuiWindowFlags.AlwaysAutoResize or ImGuiWindowFlags.NoSavedSettings)) return
         helpWindow?.let {
-            WindowHeader.helpRow(strings, it)
-            it.help.render(strings)
+            if (WindowHeader.helpRow(strings)) showHelp = !showHelp
+            if (showHelp) {
+                ImGui.beginChild("##modal_help", 0f, INLINE_HELP_HEIGHT, true)
+                HelpRouter.renderInline(it.helpId)
+                ImGui.endChild()
+            }
         }
         content()
         val clicked = DialogFooter.render(strings, buttons())
         if (clicked?.closes == true) ImGui.closeCurrentPopup()
         ImGui.endPopup()
+    }
+
+    private companion object {
+        /** Height of the article pane a modal's `?` opens; it scrolls. */
+        const val INLINE_HELP_HEIGHT = 260f
     }
 }
