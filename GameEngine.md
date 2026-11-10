@@ -155,7 +155,7 @@ Round 27+ goals: the Asset Browser shows every asset type, one assets folder, ex
   - Do: Also (from AST-13, lead-assigned editor change): add `jpg` to `FileType.TEXTURE` in `editor/data/FileType.kt` and drop the Asset Browser workaround. The default project hierarchy has two assets folders. Keep one, update project creation, export, path resolution and the default projects/CLI samples.
   - Done when: A new project has a single assets folder, everything still loads and exports; tests cover the layout.
   - Deps: AST-13
-- [~] @skate-assets **AST-15** `P2` Export UX and export settings: design note — draft written, awaiting the human's approval
+- [x] **AST-15** `P2` Export UX and export settings: design note — approved by the human 2026-11-10 (`docs/design/AST-15.md` rev 2)
   - Do: Write `docs/design/AST-15.md`: refined export wizard flow plus settings (splash image, icon, target platform, graphics backend, compression/packing, debug vs release, target FPS).
   - Done when: The human approves the note.
   - Deps: EDT-59
@@ -215,6 +215,18 @@ Round 27+ goals: the Asset Browser shows every asset type, one assets folder, ex
   - Do: From AST-26 NQ2 (human, 2026-11-10: follow-up): `skater.character.json` and `skater.controller.json` become `engine:Data/skater.character.json` and `engine:Animations/skater.controller.json`, overridable per project like other engine defaults (with skate-animation).
   - Done when: A project override changes the skater; without one the engine config is used; tests.
   - Deps: AST-27
+- [ ] **AST-29** `P2` Export settings and export dialog (AST-15)
+  - Do: Implement `docs/design/AST-15.md` rev 2: per-project export settings, the export dialog, icon mandatory with engine default, engine splash 2 s by default (or None/custom), gzip on/off, target FPS, debug/release; Windows only; `run-game.bat` stays.
+  - Done when: Each setting persists and changes the exported game; warnings for missing icon/splash; tests.
+  - Deps: AST-15, AST-27
+- [ ] **AST-30** `P3` Linux and macOS exports: per-platform natives
+  - Do: From AST-15 Q1 (human, 2026-11-10): add per-platform native classifiers (LWJGL, Bullet, Jolt) to `gameJar` and a platform choice in the export dialog (one export per platform).
+  - Done when: A Linux and a macOS export start with rendering and physics; `verify-game-jar.sh` covers each platform.
+  - Deps: AST-29
+- [ ] **AST-31** `P3` Native launcher with bundled runtime (jpackage)
+  - Do: From AST-15 Q5 (human, 2026-11-10): replace `run-game.bat` by a jpackage `.exe` with the project icon and a bundled Java runtime, so players need no Java install.
+  - Done when: The exported `.exe` shows the icon and starts on a machine without Java; tests for the packaging step.
+  - Deps: AST-29
 
 ### ECS — `ECS` (`skate-ecs`)
 
@@ -348,6 +360,11 @@ Round 27+ goals: menu parity between the editor and the game, and a map view.
 - [~] @skate-gameui **GUI-16** `P2` Reset ImGui capture hooks when the ImGui context is destroyed
   - Do: From the GUI-14 review: `ImGuiLayer.destroy()` must reset `captureKeyboard`/`captureMouse` to `{ false }` before destroying the context, so input read after shutdown cannot end the JVM.
   - Done when: Reading input after `destroy()` is safe; test.
+
+- [ ] **GUI-17** `P2` Player frame-rate option in the game's settings menu
+  - Do: From AST-15 Q4 (human, 2026-11-10, v1): a frame-rate option (project cap, 30, 60, 120, 144, uncapped) in the in-game settings menu, stored in `GameSettings` and overriding the project's target FPS.
+  - Done when: The option persists and changes the frame cap in the exported game; tests.
+  - Deps: AST-29
 
 ### Scripting — `SCR` (`skate-scripting`)
 
