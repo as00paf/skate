@@ -21,6 +21,9 @@ data class Collision(
 data class TriggerEntered(val trigger: GameObject, val other: GameObject) : PhysicsEvent("physics.trigger_entered")
 data class TriggerExited(val trigger: GameObject, val other: GameObject) : PhysicsEvent("physics.trigger_exited")
 
+/** A `MeshCollider3D.meshRef` model could not be loaded, so colliders using it were left out (PHY-24); once per reference. */
+data class CollisionMeshUnavailable(val reference: String, val reason: String) : PhysicsEvent("physics.collision_mesh_unavailable")
+
 /** The scene's physics world runs on [used] because [requested] could not start (e.g. missing Jolt natives), see PHY-17. */
 data class PhysicsBackendFellBack(
     val requested: PhysicsBackend,
