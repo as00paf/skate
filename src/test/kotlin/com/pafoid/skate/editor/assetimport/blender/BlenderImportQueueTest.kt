@@ -15,8 +15,8 @@ class BlenderImportQueueTest {
     private val queue = BlenderImportQueue(
         io = { io.addLast(it) },
         main = { it() },
-        convert = { blend ->
-            converted += blend.nameWithoutExtension
+        convert = { blend, force ->
+            converted += blend.nameWithoutExtension + if (force) "!" else ""
             if (fail) error("blender crashed") else BlenderConversion.Converted(blend, File("staging"), BlenderReport(outputs = listOf("x.glb")), "h", "5.2.3")
         },
         apply = { c -> BlenderImportResult(c.blend, emptyList(), emptyList(), emptyList()) },
@@ -64,5 +64,31 @@ class BlenderImportQueueTest {
         assertTrue(outcome is BlenderImportOutcome.Failed)
         assertTrue("crashed" in (outcome as BlenderImportOutcome.Failed).reason)
         assertFalse(queue.busy)
+    }
+
+    @Test
+    fun ForcedRequest_ReachesTheConverter() {
+        queue.request(f("cap"), force = true)
+        runOne()
+        assertEquals(listOf("cap!"), converted)
+    }
+
+    @Test
+    fun ForceSticksToAFollowUpRequestedDuringAnImport() {
+        queue.request(f("cap"))
+        queue.request(f("cap"), force = true)
+        queue.request(f("cap"))
+        runOne()
+        runOne()
+        assertEquals(listOf("cap", "cap!"), converted)
+    }
+
+    @Test
+    fun ForceSticksToAWaitingJob() {
+        listOf("a", "b").forEach { queue.request(f(it)) }
+        queue.request(f("c"))
+        queue.request(f("c"), force = true)
+        repeat(3) { runOne() }
+        assertEquals(listOf("a", "b", "c!"), converted)
     }
 }

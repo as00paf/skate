@@ -18,39 +18,41 @@ sealed interface BlenderImportOutcome {
 /**
  * Runs `.blend` imports (AST-19 §3, §5): [convert] on an IO worker, [apply] on the main thread. One job per `.blend`
  * at a time; saving again while it runs queues exactly one follow-up (the newest save wins); at most [maxJobs] Blender
- * processes run at once, the rest wait in order. Call [request] from the main thread.
+ * processes run at once, the rest wait in order. A forced request (Re-import) converts even an unchanged file; forcing
+ * sticks to a queued or follow-up job. Call [request] from the main thread.
  */
 class BlenderImportQueue(
     private val io: (() -> Unit) -> Unit,
     private val main: (() -> Unit) -> Unit,
-    private val convert: (File) -> BlenderConversion,
+    private val convert: (File, Boolean) -> BlenderConversion,
     private val apply: (BlenderConversion.Converted) -> BlenderImportResult,
     private val onOutcome: (BlenderImportOutcome) -> Unit,
     private val maxJobs: Int = 2,
 ) {
     private val running = LinkedHashSet<File>()
-    private val followUps = LinkedHashSet<File>()
-    private val waiting = ArrayDeque<File>()
+    /** Follow-up jobs per file, true when forced. */
+    private val followUps = LinkedHashMap<File, Boolean>()
+    private val waiting = LinkedHashMap<File, Boolean>()
 
     val busy: Boolean get() = running.isNotEmpty() || waiting.isNotEmpty()
 
     fun isImporting(blend: File): Boolean = key(blend) in running
 
-    fun request(blend: File) {
+    fun request(blend: File, force: Boolean = false) {
         val key = key(blend)
         when {
-            key in running -> followUps += key
-            key in waiting -> Unit
-            running.size >= maxJobs -> waiting.addLast(key)
-            else -> start(key)
+            key in running -> followUps[key] = force || followUps[key] == true
+            key in waiting -> waiting[key] = force || waiting[key] == true
+            running.size >= maxJobs -> waiting[key] = force
+            else -> start(key, force)
         }
     }
 
-    private fun start(blend: File) {
+    private fun start(blend: File, force: Boolean) {
         running += blend
         io {
             val conversion = try {
-                convert(blend)
+                convert(blend, force)
             } catch (e: Exception) {
                 BlenderConversion.Failed(blend, e.message ?: e.javaClass.simpleName)
             }
@@ -70,8 +72,12 @@ class BlenderImportQueue(
         }
         running -= blend
         onOutcome(outcome)
-        if (followUps.remove(blend)) request(blend)
-        while (running.size < maxJobs && waiting.isNotEmpty()) start(waiting.removeFirst())
+        followUps.remove(blend)?.let { force -> request(blend, force) }
+        while (running.size < maxJobs && waiting.isNotEmpty()) {
+            val next = waiting.entries.first()
+            waiting.remove(next.key)
+            start(next.key, next.value)
+        }
     }
 
     private fun key(blend: File): File = blend.absoluteFile.normalize()
