@@ -103,7 +103,7 @@ class StoreImporter(
                 files += dst
             }
             for (old in oldFiles) {
-                if (files.any { it.absoluteFile == old.absoluteFile }) continue
+                if (files.any { it.canonicalFile == old.canonicalFile }) continue  // dst comes canonical from resolveInside
                 backups[old] = backup(old, backupDir)
                 toRemove += old
             }
