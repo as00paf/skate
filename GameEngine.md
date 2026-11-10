@@ -108,6 +108,10 @@ Round 27+ goals (human, 2026-11-06): post-processing quality, render-graph clari
 - [x] **REN-30** `P1` Renderer honours overall quality, MSAA and texture quality
   - Do: From EDT-57: the Graphics settings for overall quality, MSAA and texture quality exist (`GraphicsSettings`) but the renderer ignores them. Apply them live (MSAA on the scene target, texture quality via mip bias/max size, quality preset driving shadows/post effects).
   - Done when: Changing each setting visibly changes rendering in the editor and exported game; tests.
+- [ ] **REN-32** `P3` Skinned child meshes, per-part visibility, skin texture compositing (GPL-24)
+  - Do: Per (`docs/design/GPL-24.md` §8): (1) skin a child mesh with the nearest ancestor's `SkeletonComponent` in the Geometry, Shadow and Picking passes; (2) per-part visibility and per-material overrides; (3) composite tattoo layers into a per-character texture on request. Vulkan parity with skate-vulkan.
+  - Done when: A skinned jacket follows the skater, hidden parts don't render, a composited tattoo shows; tests.
+  - Deps: GPL-24, AST-33
 
 ### Vulkan — `VK` (`skate-vulkan`)
 
@@ -200,7 +204,7 @@ Round 27+ goals: the Asset Browser shows every asset type, one assets folder, ex
   - Done when: The human approves the note.
   - Deps: AST-14
 - [ ] **AST-27** `P1` Typed asset folders: layout and engine defaults
-  - Do: Implement AST-26 (rev 2 decisions §0): project creation, typed layout (Prefabs, Fonts, Data too), editor strings/themes/help moved to `src/main/resources/editor/`, engine repo `assets/` reorganised into typed folders (delete the Font Awesome desktop zip), pack dedupe by content hash, copy/no-copy resolution and export packing, path resolution, samples and CLI. No migration of existing projects.
+  - Do: Implement AST-26 (rev 2 decisions §0): project creation, typed layout (Prefabs, Fonts, Data, and Items for GPL-24 too), editor strings/themes/help moved to `src/main/resources/editor/`, engine repo `assets/` reorganised into typed folders (delete the Font Awesome desktop zip), pack dedupe by content hash, copy/no-copy resolution and export packing, path resolution, samples and CLI. No migration of existing projects.
   - Done when: New projects use the typed layout, open, play and export in both copy modes; tests cover the layout.
   - Deps: AST-26
 - [ ] **AST-28** `P1` Asset store imports go to their type folder (owner: skate-online)
@@ -231,6 +235,10 @@ Round 27+ goals: the Asset Browser shows every asset type, one assets folder, ex
   - Do: Per `docs/design/AST-18.md` rev 2: measure the JSON atlas cost at game start-up; convert it to proto3 through `kotlinx-serialization-protobuf` only if it exceeds 5 %; otherwise keep JSON and add random-access pack reads. Editable files stay JSON; the network format is unchanged; no inspect command.
   - Done when: The measurement is recorded in the note, and the chosen path is implemented with tests.
   - Deps: AST-18, AST-27
+- [ ] **AST-33** `P3` Keep mesh part and material names on import (GPL-24)
+  - Do: Per (`docs/design/GPL-24.md` §8): keep Assimp mesh part names and material names on `MeshPart`/`Material`, including the packed/exported model path.
+  - Done when: Imported and exported models expose part and material names; tests.
+  - Deps: GPL-24
 
 ### ECS — `ECS` (`skate-ecs`)
 
@@ -275,6 +283,10 @@ Round 27+ goals: a Jolt backend selectable per project, a terrain heightfield co
   - Do: From round 30 integration (skate-audio, skate-tooling): since PHY-18, `NativeLibraryLoader` extracts with `CLEAN_EXTRACTION` into the shared `%APPDATA%\Skate\natives`, so concurrent JVMs (parallel worktree test runs, a running editor next to an exported game) wipe or lock each other's DLLs and physics fails with `UnsatisfiedLinkError`. Use a per-version (content-hash) subfolder and skip extraction when an identical DLL is already present; never delete a DLL another process may hold.
   - Done when: Two JVMs loading Bullet and Jolt at the same time both succeed; loader tests cover reuse and the versioned path.
   - Deps: PHY-18
+- [ ] **PHY-22** `P3` Scene query interface with overlap (GPL-24)
+  - Do: Per (`docs/design/GPL-24.md` §8): raycast, shapeCast and a new `overlap(shape, position, rotation, layerMask)` on `IPhysics3D`, exposed from `PhysicsSystem`, implemented for Bullet, Jolt and Simple.
+  - Done when: The same query tests pass on every backend.
+  - Deps: GPL-24
 
 ### Animation — `ANI` (`skate-animation`)
 
@@ -304,6 +316,10 @@ Round 27+ goals: an animation authoring tool and animation from video.
   - Do: From the human testing PR #37 (2026-11-10): current MediaPipe releases dropped the legacy `mp.solutions` API, which `mediapipe_extract.py` uses by default. Default to the Tasks API (`PoseLandmarker`, video mode), get the `.task` model without manual steps (path override in Setup), keep `solutions` only as a fallback; Check setup reports the API in use.
   - Done when: With the current MediaPipe from pip, Check setup reports Ready and Create animation produces a `.skanim` from a local video; docs and tests updated.
   - Deps: ANI-17
+- [ ] **ANI-19** `P3` Joint remap of skinned clothing by bone name (GPL-24)
+  - Do: Per (`docs/design/GPL-24.md` §8): remap a skinned clothing mesh onto a target skeleton by bone name; refuse items whose bones don't match.
+  - Done when: Pure remap function with tests, including the refusal case.
+  - Deps: GPL-24
 
 ### Audio — `AUD` (`skate-audio`)
 
@@ -336,9 +352,17 @@ Round 27+ goals: a fuller skate demo with camera modes and standard control sche
 - [~] @skate-gameplay **GPL-23** `P2` Fuller skate demo — design approved with changes 2026-11-06 (`docs/design/GPL-23.md`)
   - Do: Human decisions: 40 × 40 m park with the four zones and the new prefabs (Euro-gap deck); combo chaining (link window, manual linking, lose on bail) but **no points/score yet**; **Free skate only** (no Session mode, no timer, no goals yet); control hints on screen with a pause-menu switch; the third camera mode becomes spot cameras that **follow the skater** (no static fixed camera); one HUD for editor Play and the exported game.
   - Done when: MainScene is the new park, skateable end to end in both hosts; combos chain and break correctly; tests.
-- [~] @skate-gameplay **GPL-24** `P3` Game systems and character customization: design note — draft written, awaiting the human's approval
+- [x] **GPL-24** `P3` Game systems and character customization: design note — approved by the human 2026-11-10 (`docs/design/GPL-24.md` rev 2)
   - Do: Write `docs/design/GPL-24.md`: reusable inventory, combat, interaction/pickup systems, and character customization (clothes, tattoos, headwear, eyewear via attachment points, mesh swaps and material layers).
   - Done when: The human approves the note.
+- [ ] **GPL-27** `P3` Items, inventory, health, interaction and accessories (GPL-24 slices a, b, d, e)
+  - Do: Per (`docs/design/GPL-24.md` §8): 24a items and inventory (`*.item.json` in `Assets/Items/`), 24b health and damage (applied synchronously in the `HitEvent` subscriber), 24d interaction and pickup, 24e `SkeletonConfig` (in `Assets/Data/`) with a **dynamic slot list with defaults** (HEAD, EYES, NECK, TORSO, LEGS, FEET, HANDS; add/rename/remove per config) and rigid accessories on the skater. No combat in the skate demo (pickups and cosmetics only).
+  - Done when: Each slice's tests in the note pass; a hat and glasses equip on the skater.
+  - Deps: GPL-24, AST-27
+- [ ] **GPL-28** `P3` Combat, clothes and tattoos (GPL-24 slices c, f, g)
+  - Do: Per (`docs/design/GPL-24.md` §8): 24c `CombatSystem` through the PHY-22 query interface; 24f appearance, skinned clothes (same skeleton required, joint remap by bone name), covered body parts hidden by name; 24g tattoos baked into a per-character texture when the list changes.
+  - Done when: Combat works in the Feature Showcase; a jacket and a tattoo apply on the skater; tests.
+  - Deps: GPL-27, PHY-22, REN-32, ANI-19, AST-33
 
 ### In-game UI — `GUI` (`skate-gameui`)
 
@@ -369,6 +393,10 @@ Round 27+ goals: menu parity between the editor and the game, and a map view.
   - Do: From AST-15 Q4 (human, 2026-11-10, v1): a frame-rate option (project cap, 30, 60, 120, 144, uncapped) in the in-game settings menu, stored in `GameSettings` and overriding the project's target FPS.
   - Done when: The option persists and changes the frame cap in the exported game; tests.
   - Deps: AST-29
+- [ ] **GUI-18** `P3` Inventory and equipment screen (GPL-24)
+  - Do: Per (`docs/design/GPL-24.md` §8): inventory and equipment screen (move, equip, durability), gamepad navigable, driven only by the inventory request/result events.
+  - Done when: Items can be moved and equipped with mouse and gamepad; tests.
+  - Deps: GPL-27
 
 ### Scripting — `SCR` (`skate-scripting`)
 
@@ -473,7 +501,7 @@ Round 27+ goals (human, 2026-11-06): fix editor bugs, make every window, dialog 
   - Done when: `?` opens the window on the right topic, the Help menu item opens it with the topic list, articles are `.md` files under `assets/help/**`, and tests cover article discovery/loading, the menu entry and the `?` routing.
   - Deps: EDT-53
 - [ ] **EDT-69** `P1` Asset Browser: one tab per asset type
-  - Do: Per AST-26: tabs for Models, Shaders, Sounds, Textures, Materials, Scripts and Animations (current tabs: Prefabs, Animations, Textures, Sounds…; keep Prefabs unless AST-26 says otherwise), each with the shared search, empty states and context menu of EDT-52C; engine defaults shown whether copied or not.
+  - Do: Per AST-26: tabs for Models, Shaders, Sounds, Textures, Materials, Scripts, Animations, Prefabs, Fonts, Data and Items (current tabs: Prefabs, Animations, Textures, Sounds…; keep Prefabs unless AST-26 says otherwise), each with the shared search, empty states and context menu of EDT-52C; engine defaults shown whether copied or not.
   - Done when: Every type folder has a tab listing its files; tests.
   - Deps: AST-27
 - [ ] **EDT-70** `P1` New Project: copy the engine default assets or not
@@ -499,6 +527,10 @@ Round 27+ goals: tooling fixes, an Android feasibility study and new demo projec
 - [x] **TLG-14** `P1` Samples write absolute asset paths into generated projects
   - Do: From GUI-14: the skate sample writes absolute asset paths, so a CLI export of a sample cannot load its scene or assets. Make every sample/CLI path project-relative and check other export paths for absolute references.
   - Done when: A CLI-exported sample runs from another folder; test.
+- [ ] **TLG-15** `P3` Feature Showcase: items, chest, damage target, equip screen (GPL-24)
+  - Do: Per (`docs/design/GPL-24.md` §8): a showcase area with pickups, a chest, a damage target and the equip screen.
+  - Done when: The area plays end to end in the editor and an export.
+  - Deps: GPL-28, GUI-18
 
 ### Quality — `QA` (`skate-qa`)
 
