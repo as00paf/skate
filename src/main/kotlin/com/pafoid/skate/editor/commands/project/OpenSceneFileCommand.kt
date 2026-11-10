@@ -8,6 +8,7 @@ import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.events.SceneAction.OpenFailed
 import kotlinx.coroutines.Job
+import com.pafoid.skate.editor.vcs.ConflictMarkers
 import java.io.File
 
 class OpenSceneFileCommand(
@@ -58,6 +59,9 @@ class OpenSceneFileCommand(
     companion object {
         /** Reads and decodes [sceneFile]; touches no scene state, so it can run off the main thread. */
         fun decode(sceneFile: File, serializer: Serializer): Result<Scene?> =
-            runCatching { serializer.decodeFile<Scene?>(FileKind.SCENE, sceneFile.readText()) }
+            runCatching {
+                // EDT-60: a scene with Git conflict markers is refused with a clear message, not a JSON error
+                serializer.decodeFile<Scene?>(FileKind.SCENE, ConflictMarkers.requireClean(sceneFile.name, sceneFile.readText()))
+            }
     }
 }

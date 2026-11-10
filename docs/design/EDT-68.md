@@ -133,3 +133,5 @@ Answered by the human on 2026-11-10 (all as recommended):
 7. **Article ownership:** articles ship with the editor under `assets/help`; project-specific articles may come later.
 
 **Approved** by the human on 2026-11-10.
+
+**Path change (AST-26, human 2026-11-10):** articles live in `src/main/resources/editor/help/<locale>/<topic>.md`, loaded from the classpath (read from `src/main/resources` in dev runs), not `assets/help/`.

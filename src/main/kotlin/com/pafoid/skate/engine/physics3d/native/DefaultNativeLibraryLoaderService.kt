@@ -1,19 +1,13 @@
 package com.pafoid.skate.engine.physics3d.native
 
-import electrostatic4j.snaploader.LoadingCriterion
-import electrostatic4j.snaploader.NativeBinaryLoader
-import electrostatic4j.snaploader.platform.NativeDynamicLibrary
+import java.io.File
+import java.io.InputStream
 
 class DefaultNativeLibraryLoaderService : INativeLibraryLoaderService {
-    override fun registerNativeLibraries(loader: NativeBinaryLoader, libraries: Array<NativeDynamicLibrary?>): NativeBinaryLoader {
-        return loader.registerNativeLibraries(libraries)
-    }
+    override fun openResource(resourcePath: String): InputStream? =
+        NativeLibraryLoader::class.java.classLoader.getResourceAsStream(resourcePath)
 
-    override fun initPlatformLibrary(loader: NativeBinaryLoader): NativeBinaryLoader {
-        return loader.initPlatformLibrary()
-    }
-
-    override fun loadLibrary(loader: NativeBinaryLoader, criterion: LoadingCriterion): NativeBinaryLoader {
-        return loader.loadLibrary(criterion)
+    override fun load(file: File) {
+        System.load(file.absolutePath)
     }
 }

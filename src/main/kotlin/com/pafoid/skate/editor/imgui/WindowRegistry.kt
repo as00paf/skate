@@ -2,8 +2,10 @@ package com.pafoid.skate.editor.imgui
 
 import com.pafoid.skate.app.Editor
 import com.pafoid.skate.editor.systems.ProjectManager
+import com.pafoid.skate.editor.ui.windows.AnimationEditorWindow
 import com.pafoid.skate.editor.ui.windows.AssetBrowserWindow
 import com.pafoid.skate.editor.ui.windows.AudioInspectorWindow
+import com.pafoid.skate.editor.ui.windows.BlenderImportPanel
 import com.pafoid.skate.editor.ui.windows.CommandHistoryWindow
 import com.pafoid.skate.editor.ui.windows.ConsoleWindow
 import com.pafoid.skate.editor.ui.windows.EditorSettingsWindow
@@ -22,6 +24,7 @@ import com.pafoid.skate.editor.ui.windows.SceneHierarchyWindow
 import com.pafoid.skate.editor.ui.windows.SearchEverywhereWindow
 import com.pafoid.skate.editor.ui.windows.ScriptEditorWindow
 import com.pafoid.skate.editor.ui.windows.ShellWindow
+import com.pafoid.skate.editor.ui.windows.VersionControlWindow
 import com.pafoid.skate.editor.ui.windows.assetStore.AssetStoreWindow
 import com.pafoid.skate.engine.core.Engine
 
@@ -32,12 +35,12 @@ class WindowRegistry(
 ) {
     val windows: List<EditorWindow> = listOf(
         SceneHierarchyWindow(engine, editor.clipboardService, projectManager::hasProject),
-        PropertiesWindow(engine, projectManager::hasProject),
+        PropertiesWindow(engine, projectManager::hasProject, listOf(BlenderImportPanel(engine.stringManager, editor.blenderSync))),
         GameViewWindow(engine, editor, projectManager::hasProject, projectManager::getProjectDirectory),
         AssetBrowserWindow(engine, editor.undoRedoManager),
         ProfilerWindow(engine.stringManager),
         ConsoleWindow(engine),
-        EditorSettingsWindow(editor.settingsManager, engine.stringManager) { engine.eventSystem.publish(com.pafoid.skate.editor.events.WindowAction.Show("window.keybindings")) },
+        EditorSettingsWindow(editor.settingsManager, engine.stringManager, testBlender = editor.blenderSync::test) { engine.eventSystem.publish(com.pafoid.skate.editor.events.WindowAction.Show("window.keybindings")) },
         ProjectSettingsWindow(engine, editor.settingsManager, projectManager),
         KeyBindingsWindow(engine, editor.settingsManager, engine.stringManager, projectManager),
         CommandHistoryWindow(engine, editor.undoRedoManager),
@@ -49,9 +52,11 @@ class WindowRegistry(
         ProjectWindow(engine, projectManager),
         ScriptEditorWindow(engine, projectManager, editor.settingsManager),
         ShellWindow(engine, projectManager),
+        VersionControlWindow(engine, projectManager, editor.vcsSession),
         ExportWizardWindow(engine, projectManager, editor.settingsManager),
         AssetStoreWindow(engine, projectManager),
         VideoToAnimationWindow(engine, editor, projectManager),
+        AnimationEditorWindow(engine, editor, projectManager),
     )
 
     /** Windows listed in View > Windows and stored in the layout; dialogs are excluded. */
