@@ -10,8 +10,8 @@ import com.pafoid.skate.engine.assets.loaders.AssimpLoader
 import com.pafoid.skate.engine.assets.loaders.ShaderLoader
 import com.pafoid.skate.engine.render.shader.ShaderFeature
 import com.pafoid.skate.engine.render.shader.ShaderHotReloader
-import com.pafoid.skate.engine.render.shader.ShaderVariantCache
-import com.pafoid.skate.engine.render.shader.ShaderVariantKey
+import com.pafoid.skate.engine.render.shader.ShaderLibrary
+import com.pafoid.skate.engine.render.shader.ShaderSourceResolver
 import com.pafoid.skate.engine.assets.loaders.SoundLoader
 import com.pafoid.skate.engine.assets.loaders.TextureLoader
 import com.pafoid.skate.engine.assets.serialization.Serializer
@@ -42,27 +42,37 @@ class AssetsManager(
     /** Text of the asset at [path] from the pack or the project, or null. */
     fun readText(path: String): String? = paths.readText(path)
 
-    // Editor/dev runs from the repo: shader edits under assets/Shaders are picked up live (AST-27)
-    private val shaderDevRoot = File(ShaderLoader.REPO_DIR).takeIf { it.isDirectory }
-    private val shaderLoader = ShaderLoader(false, logger, shaderDevRoot)
-    private val shaderPaths = mutableMapOf<String, String>()
-    private val shaderVariants = ShaderVariantCache<Shader>(
-        compile = { shaderLoader.loadShader(it.path, it.defines) },
-        destroy = { it.destroy() },
+    // Shaders (AST-26 §5, REN-31): engine:Shaders/... with project overrides, includes resolved against their
+    // includer, one reference-keyed cache, and hot reload of the files each program was built from.
+    private val shaderSources = ShaderSourceResolver(
+        engineDefaults = { paths.engineDefaults },
+        readPacked = { path -> paths.pack?.takeIf { it.initialized && it.find(path) != null }?.resolveBytes(path) },
+        projectFile = { path -> File(paths.absolute(path)) },
+        onError = { logger.log(it, LogLevel.ERROR) },
     )
-    private val shaderReloader: ShaderHotReloader? = shaderDevRoot?.let { root ->
-        ShaderHotReloader(root) { changed ->
-            logger.log("Shader sources changed: ${changed.joinToString()}", LogLevel.INFO)
-            reloadShaders()
-        }
+    private val shaderLoader = ShaderLoader(false, logger, shaderSources)
+    private val shaders = ShaderLibrary<Shader>(
+        load = { ref, defines -> shaderLoader.load(ref, defines).let { ShaderLibrary.Loaded(it.shader, it.dependencies) } },
+        loadEngine = { ref, defines -> shaderLoader.loadEngine(ref, defines).let { ShaderLibrary.Loaded(it.shader, it.dependencies) } },
+        swap = { old, fresh -> old.replaceWith(fresh) },
+        destroy = { it.destroy() },
+        log = { logger.log(it, LogLevel.ERROR) },
+    )
+    private val shaderReloader = ShaderHotReloader(
+        fingerprint = shaderSources::fingerprint,
+        folderSignature = ::shaderOverrideFolderSignature,
+        onFolderChanged = { paths.engineDefaults.invalidate() },
+    ) { changed ->
+        logger.log("Shader sources changed: ${changed.joinToString()}", LogLevel.INFO)
+        shaders.reload(changed)
     }
+    private var watchedShaderVersion = -1
     private val textureLoader = TextureLoader()
     private val assimpLoader = AssimpLoader(textureLoader, vaoLoader)
     private val animationLoader = AnimationLoader()
     private val soundLoader = SoundLoader(logger)
 
     private val textures = ResourceCache<Texture> { textureLoader.delete(it) }
-    private val shaders = ResourceCache<Shader> { it.destroy() }
     private val models = ResourceCache<`3dModel`> { model -> model.mesh.forEach { vaoLoader.deleteVAO(it.vaoId) } }
     private val sounds = ResourceCache<SoundBuffer> { soundLoader.delete(it) }
     private val animations = ResourceCache<Animation> { }
@@ -283,69 +293,68 @@ class AssetsManager(
         sounds[key] ?: soundLoader.load(path).also { sounds[key] = it }
     }
 
-    fun loadShaderResult(path: String): AssetResult<Shader> = AssetResult.attempt(path) {
-        val key = File(path).absolutePath
-        shaders[key] ?: shaderLoader.loadShader(path).also { shaders[key] = it; shaderPaths[key] = path }
-    }
+    fun loadShaderResult(path: String): AssetResult<Shader> = AssetResult.attempt(path) { shaders.get(path) }
 
     // Unloading frees the native resources (GL textures/VAOs/programs, AL buffers).
     fun unloadTexture(path: String): Boolean = textures.unload(File(path).absolutePath) || textures.unload(path)
     fun unloadModel(path: String): Boolean = models.unload(File(path).absolutePath) || models.unload(path)
     fun unloadSound(path: String): Boolean = sounds.unload(File(path).absolutePath) || sounds.unload(path)
-    fun unloadShader(path: String): Boolean = shaders.unload(File(path).absolutePath) || shaders.unload(path)
+    fun unloadShader(path: String): Boolean = shaders.unload(path)
     fun unloadAnimation(path: String): Boolean = animations.unload(File(path).absolutePath) || animations.unload(path)
 
     /** Frees everything this manager owns. Call on shutdown or full project unload, on the GL/AL thread. */
     fun unloadAll() {
-        textures.clear(); models.clear(); sounds.clear(); shaders.clear(); animations.clear()
-        shaderVariants.disposeAll(); shaderPaths.clear()
+        textures.clear(); models.clear(); sounds.clear(); animations.clear()
+        shaders.disposeAll()
     }
 
     fun hasTexture(path: String): Boolean {
         return textures[path] != null
     }
 
-    /** Returns the permutation of [path] compiled with [features], compiling it on first use. */
-    fun getShaderVariant(path: String, features: Collection<ShaderFeature>): Shader {
-        if (features.isEmpty()) return getShader(path)
-        return shaderVariants.get(ShaderVariantKey.of(path, features))
+    /**
+     * The permutation of shader [path] compiled with [features], compiled on first use. [path] is an engine shader
+     * (`engine:Shaders/x.glsl`, or the legacy `/shaders/x.glsl`) or a project shader path (AST-26 §5.3).
+     */
+    fun getShaderVariant(path: String, features: Collection<ShaderFeature>): Shader =
+        shaders.get(path, features.mapTo(sortedSetOf()) { it.name })
+
+    /**
+     * Checks the files the loaded shaders were built from and recompiles, in place, the programs whose sources
+     * changed (AST-26 §5.5). Call once per frame on the GL thread; it does its file checks at most every 500 ms. An
+     * exported game reads its shaders from the pack and does not watch.
+     */
+    fun pollShaderChanges() {
+        if (paths.pack?.initialized == true) return
+        if (watchedShaderVersion != shaders.dependencyVersion) {
+            val ids = shaders.dependencies()
+            shaderReloader.retain(ids)
+            shaderReloader.watch(ids)
+            watchedShaderVersion = shaders.dependencyVersion
+        }
+        shaderReloader.poll()
     }
 
-    /** Polls shader sources for edits (dev runs only); call once per frame on the GL thread. */
-    fun pollShaderChanges() = shaderReloader?.poll()
-
-    /** Recompiles all loaded shaders and variants in place; a shader that fails to compile keeps its old program. */
+    /** Re-resolves and recompiles every loaded shader in place (a project was opened: its overrides changed). */
     fun reloadShaders() {
-        for ((key, path) in shaderPaths.toMap()) {
-            val old = shaders[key] ?: continue
-            try {
-                old.replaceWith(shaderLoader.loadShader(path))
-            } catch (e: Exception) {
-                logger.log("Shader reload failed for $path, keeping previous version: ${e.message}", LogLevel.ERROR)
-            }
-        }
-        for (path in shaderVariants.allPaths()) {
-            shaderVariants.reload(path) { old, fresh -> old.replaceWith(fresh) }
-                .forEach { (k, e) -> logger.log("Shader variant ${k.id} reload failed: ${e.message}", LogLevel.ERROR) }
-        }
+        paths.engineDefaults.invalidate()
+        shaders.reloadAll()
     }
 
-    fun getShader(path: String): Shader {
-        val file = File(path)
-        val absolutePath = file.absolutePath
-        shaders[absolutePath]?.let { return it }
+    /**
+     * The shader [path] (see [getShaderVariant]). A broken engine shader override falls back to the engine's version
+     * of the same shader, with an error in the log; a missing or broken project shader throws.
+     */
+    fun getShader(path: String): Shader = shaders.get(path)
 
-        return try {
-            val shader = shaderLoader.loadShader(path)
-            shaders[absolutePath] = shader
-            shaderPaths[absolutePath] = path
-            shader
-        } catch (e: Exception) {
-            logger.log("Failed to load shader: $path. Error: ${e.message}", LogLevel.ERROR)
-            if (path == Assets.Shaders.SHADER_3D_DEFAULT) throw RuntimeException("Critical Error: Default 3D shader not found!")
-            logger.log("Loading default 3D shader instead of $path", LogLevel.ERROR)
-            getShader(Assets.Shaders.SHADER_3D_DEFAULT)
-        }
+    /** True when engine shader [path] runs the engine's version because its project override failed or is stale. */
+    fun shaderUsesEngineFallback(path: String): Boolean = shaders.usesFallback(path)
+
+    /** `.meta` files in the project's `Assets/Shaders`: a new one may be a new override (no registry events yet). */
+    private fun shaderOverrideFolderSignature(): String {
+        val dir = paths.projectRoot?.let { File(ProjectLayout.assetsDir(it), ShaderSourceResolver.SHADERS_DIR) } ?: return ""
+        val metas = dir.listFiles { f -> f.isFile && AssetMeta.isSidecar(f) } ?: return ""
+        return metas.sortedBy { it.name }.joinToString("|") { "${it.name}@${it.lastModified()}" }
     }
 
     fun getSound(requested: String): SoundBuffer {
@@ -431,5 +440,5 @@ class AssetsManager(
     fun getTextures(): List<Texture> = textures.values.toList()
     fun getAnimations(): List<Animation> = animations.values.toList()
     fun get3dModels(): List<`3dModel`> = models.values.toList()
-    fun getShaders(): List<Shader> = shaders.values.toList()
+    fun getShaders(): List<Shader> = shaders.programs()
 }
