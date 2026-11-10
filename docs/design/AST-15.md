@@ -1,8 +1,8 @@
 # AST-15: Export UX and export settings (design note)
 
-Status: **revision 2, awaiting the human's approval.** Revision 1 was rejected as not grounded in this codebase (it
-assumed `project.json`/`config.json`, a Gradle build at export time and multi-platform natives). This revision starts
-from the export code that exists. No code has been written.
+Status: **revision 2, approved by the human (2026-11-10)**; the §8 answers are in §0.1. Revision 1 was rejected as not
+grounded in this codebase (it assumed `project.json`/`config.json`, a Gradle build at export time and multi-platform
+natives). This revision starts from the export code that exists. Implemented by **AST-29** (after AST-27).
 
 ## 0. Human decisions (recorded 2026-11-07, kept)
 
@@ -10,6 +10,17 @@ from the export code that exists. No code has been written.
    **optional**, with an engine-provided default. Warn if missing at export time.
 2. **Multi-platform single-export:** keep separate exports per platform (no multi-platform zip).
 3. **Custom JVM args field:** not needed for now (a follow-up only if requested).
+
+### 0.1 Answers to the §8 open questions (2026-11-10, verbatim; note approved)
+
+1) Windows only in AST-15; Linux/macOS natives = AST-30.
+2) gzip on/off only.
+3) Engine splash for 2 s by default unless 'None' or a custom image.
+4) Player frame-rate override in the game's settings menu IN V1 (GUI-17, skate-gameui; GameSettings.targetFps
+   overrides the project cap): add it to the note's model.
+5) Keep run-game.bat; jpackage launcher = AST-31.
+
+Implementation is AST-29 (after AST-27).
 
 ## 1. What exists today
 
@@ -50,6 +61,7 @@ shapes the build goes in `ExportOptions`**, remembered per project in the editor
 | Graphics backend | `Project` | `graphicsBackend` (exists, EDT-43) | as today |
 | Physics backend | `Project` | **`physicsBackend: PhysicsBackend = BULLET`** (the same field EDT-59 proposes; whichever lands first adds it) | `BULLET` |
 | Target FPS | `Project` | **`targetFps: Int = 0`** (0 = uncapped; else 15..240) | 0 |
+| Player frame-rate override | `GameSettings` (`game.settings.json`) | **`targetFps: Int? = null`** (null = use the project cap; 0 = uncapped; else 15..240). Set from the game's settings menu (GUI-17, skate-gameui; answer 4). | null |
 | Fullscreen, VSync, quality, MSAA, languages | `Project` | exist | as today |
 | Target | `ExportOptions` | `target` (exists; `WINDOWS`, `PACK_ONLY`) | `WINDOWS` |
 | Build mode | `ExportOptions` | **`mode: BuildMode = RELEASE`** (`RELEASE`, `DEBUG`) | `RELEASE` |
@@ -59,6 +71,9 @@ shapes the build goes in `ExportOptions`**, remembered per project in the editor
 - **Remembering `ExportOptions`:** `ExportWizard` keeps them per project for the session today. They are saved in
   `EditorSettings` keyed by project path, so they survive restarts without dirtying the `.skateproject`. They are build
   choices, not game data.
+- **Effective frame cap:** `GameSettings.targetFps ?: Project.targetFps` (one pure function,
+  `FrameCap.effective(project, settings)`, used by `GameMain` and by the settings menu when the player changes it, so
+  the new cap applies without a restart). Out-of-range player values are clamped to 15..240; 0 stays uncapped.
 - **Schema:** the new `Project` fields have defaults, so `.skateproject` files without them decode unchanged
   (`ignoreUnknownKeys`/defaults). No schema bump is needed: `Project` has no version field, and the fields are
   additive. The project file serializer's existing decode tests are extended to cover a file without the new fields.
@@ -97,7 +112,7 @@ Summary       N assets, ~X MB (estimated from AssetsPacker.selectFiles sizes), w
 - **New `ExportWizard.Issue`:** `ICON_UNREADABLE` (blocks export only when the default icon itself cannot be read: a
   broken engine install). Everything else is a warning, per decision 1.
 - **Platforms:** only "Windows game" and "Pack only" exist, matching `ExportTarget`. No Linux/macOS entries until the
-  natives exist (Q1). Decision 2 (one export per platform) holds trivially.
+  natives exist (AST-30, answer 1). Decision 2 (one export per platform) holds trivially.
 - **EDT-59** (new-project wizard) uses the same physics/graphics/FPS/splash fields. AST-15 does not depend on its
   layout, only on the fields.
 
@@ -115,7 +130,8 @@ Steps stay `ExportStep.COLLECTING → PACKING → VERIFYING → COPYING_JAR → 
 2. **Warnings:** `ExportResult` gets `warnings: List<ExportWarning>` (string keys like `ExportDetail`, so the wizard
    shows them translated). A successful export with warnings shows them in the result view.
 3. **`writeGameSettings`** is unchanged in shape. Game-side settings come from the packed `Project`. `game.settings.json`
-   stays the **player's** override file. `targetFps` and `physicsBackend` are not player settings in v1 (Q4).
+   stays the **player's** override file. The export does not write `targetFps` into it (null = the project cap); the
+   player sets it from the settings menu (GUI-17, answer 4). `physicsBackend` is not a player setting.
 4. **Build mode:**
    - **Release:** `run-game.bat` = `java -jar skate-game.jar` (today). `atlas_report.txt` is not written to the output
      folder (it lists every packed path); it goes to the editor log instead.
@@ -127,7 +143,7 @@ Steps stay `ExportStep.COLLECTING → PACKING → VERIFYING → COPYING_JAR → 
      line.
 5. **Compression:** keep gzip on/off (`PackBuilder.build(compress)`, ≥ 10 % gain rule, `alreadyCompressed` skip list).
    No zlib/lz4 choice: gzip is DEFLATE (the same family as zlib), and lz4 would add a dependency to the game jar for a
-   load-time gain nobody has measured (Q2).
+   load-time gain nobody has measured (answer 2: gzip on/off only).
    - AST-26's dedupe (identical files stored once) lands in `PackBuilder` before this.
 6. **Size estimate** for the summary: `AssetsPacker.selectFiles` + file sizes. `ExportResult.packedBytes` already gives
    the real figure afterwards.
@@ -137,7 +153,7 @@ Steps stay `ExportStep.COLLECTING → PACKING → VERIFYING → COPYING_JAR → 
 | Feature | Change | Owner |
 |---|---|---|
 | Splash | Before the first scene loads, `GameMain` draws `splashPath` (or the engine default) for `splashSeconds` with `SplashRenderer` (exists, `RenderResources.splash`), loading the image through `AssetPaths` from the pack. Skipped when `splashSeconds = 0`. Scene loading runs during it (the splash is not extra wait). | `GameMain`: TLG/GPL (game/); REN reviews the `SplashRenderer` use |
-| Target FPS | `Window.loop` gets an optional frame limiter: when `targetFps > 0`, sleep the rest of `1/targetFps` after `swapBuffers`, with a coarse `Thread.sleep` + short spin. It works with vsync on (the cap only lowers the rate). The editor's Play mode applies the project's cap too, so it plays like the export. | engine core (`engine/core/Window.kt`): lead assigns |
+| Target FPS | `Window.loop` gets an optional frame limiter fed by the effective cap (`GameSettings.targetFps ?: Project.targetFps`, §2), changeable at run time: when it is `> 0`, sleep the rest of `1/targetFps` after `swapBuffers`, with a coarse `Thread.sleep` + short spin. It works with vsync on (the cap only lowers the rate). The editor's Play mode applies the project's cap too, so it plays like the export. | engine core (`engine/core/Window.kt`): lead assigns |
 | Physics backend | `GameMain` sets `Physics3DFactory.defaultBackend = project.physicsBackend` before creating scenes. The fallback to Bullet is already handled (`PhysicsBackendFallback`) and logged. The editor's Play mode does the same. | `GameMain` + PHY review |
 | Debug mode | `skate.debug` → logger level, stack traces, overlay. | `GameMain` + engine core |
 
@@ -145,9 +161,12 @@ Steps stay `ExportStep.COLLECTING → PACKING → VERIFYING → COPYING_JAR → 
 
 | Slice | Owner | Contents |
 |---|---|---|
-| AST-15a | skate-assets | `Project.splashPath`, `splashSeconds`, `targetFps` (and `physicsBackend` if EDT-59 has not added it), `ExportOptions.mode`, `ExportResult.warnings` + `ExportWarning` keys, icon/splash fallback and pack roots, launcher per mode, `atlas_report.txt` per mode, size estimate helper, `EditorSettings` persistence of `ExportOptions`. |
+| AST-29 (was AST-15a) | skate-assets | `Project.splashPath`, `splashSeconds`, `targetFps` (and `physicsBackend` if EDT-59 has not added it), `ExportOptions.mode`, `ExportResult.warnings` + `ExportWarning` keys, icon/splash fallback and pack roots, launcher per mode, `atlas_report.txt` per mode, size estimate helper, `EditorSettings` persistence of `ExportOptions`. |
 | EDT | skate-editor | `ExportWizardWindow` sections of §3, the Game section through the Project Settings commands, summary and warnings view, translations (`assets/strings/editor/assets*.properties`). |
 | Run time | lead-assigned (TLG/GPL for `GameMain`, core for `Window`) | §5. |
+| GUI-17 | skate-gameui | The frame-rate option in the game's settings menu: writes `GameSettings.targetFps` (with "Project default" = null) and applies the effective cap live (answer 4). |
+| AST-30 | skate-assets (+ build) | Linux/macOS natives and export targets (answer 1). |
+| AST-31 | skate-assets | jpackage launcher and exe icon (answer 5). |
 
 Deps: AST-26/27 (`engine:` icon and splash defaults). EDT-59 shares `physicsBackend`, but AST-15 does not wait for it.
 
@@ -162,10 +181,12 @@ Deps: AST-26/27 (`engine:` icon and splash defaults). EDT-59 shares `physicsBack
   - `splashSeconds = 0` → no splash packed;
   - Release vs Debug launcher text;
   - `atlas_report.txt` only in Debug.
+- `GameSettings` decode: a `game.settings.json` without `targetFps` gets null; `FrameCap.effective` (player null →
+  project cap; player 0 → uncapped; player value wins and is clamped).
 - Frame limiter: pure timing function (`sleepFor(frameStart, now, targetFps)`) with a fake clock.
 - `GameMain` helpers: `physicsBackend` applied before scene creation (extracted function, fake factory).
 
-## 8. Open questions (with recommended answers)
+## 8. Open questions of revision 2 (all answered in §0.1)
 
 1. **Linux/macOS exports:** natives are Windows-only (`natives-windows`, the Bullet/Jolt Windows natives).
    Recommended: no other platform in AST-15. A separate task adds per-platform native classifiers to `gameJar`, and
