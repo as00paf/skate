@@ -47,6 +47,9 @@ class WindowManager(
     /** Failed user actions (EDT-10); drawn last so it sits above every window. */
     private val errorDialog = ErrorDialog(eventSystem, stringManager)
 
+    /** Long operations (EDT-56); before the error dialog, so an error from a failed load shows on top. */
+    private val loadingScreen = LoadingScreen(eventSystem, stringManager)
+
     /** Asks before deleting objects, from any path (EDT-62). */
     private val deleteDialog = DeleteObjectsDialog(eventSystem, stringManager)
 
@@ -60,6 +63,7 @@ class WindowManager(
         windowRegistry.menuBar.render()
         windowRegistry.statusBar.render()
         deleteDialog.render()
+        loadingScreen.render()
         errorDialog.render()
         EditorFocus.endFrame()
     }

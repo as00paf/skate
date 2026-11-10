@@ -147,8 +147,6 @@ class WindowStandardGuardTest {
         val ALLOW_LIST = setOf(
             // C: project & assets
             "ProjectWindow", "AssetBrowserWindow",
-            // H: domain windows
-            "AudioInspectorWindow", "ScriptEditorWindow",
             // EDT-54: the Render Graph rewrite adopts the standard
             "RenderGraphWindow",
         )
