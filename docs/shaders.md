@@ -98,7 +98,32 @@ Project shaders and overrides are checked against this subset when they load, al
 shader outside it still runs on OpenGL, but the console shows an error naming the file, because it would fail in a
 Vulkan export.
 
-## Scope (v1)
+## Custom shaders on materials
+
+A `.skmat` material can name its own shader in `"shader"`: a project shader (`Assets/Shaders/my_water.glsl`) or an
+engine one (`engine:Shaders/...`). Without it, the material uses its schema's shader, as before. The field was added
+in material version 2; older files read as no custom shader.
+
+- **Start from the template:** `ShaderTemplates.PBR_MATERIAL` (the Asset Browser's "New Shader"). It declares
+  everything the colour pass sets and lights through `#include "lighting.glsl"` (`sunLighting`, `localLighting`,
+  `ambientLighting`) and fog, so it renders like the default mesh shader until you change it.
+- **What the engine uploads to every program** (once per frame, on its first draw):
+  - `projectionMatrix`, `viewMatrix`, `uCameraPos`;
+  - sun, ambient, lights (the `LightBlock` buffer), shadows and image-based lighting: the uniforms in `lighting.glsl`.
+- **What it uploads per draw:**
+  - `transformationMatrix`, `uTextureScale`, `uSelected`, `u_HasSkin`;
+  - the material's schema uniforms and textures (`uBaseColor`, `u_BaseColorTexture`, ...).
+- **Missing material uniforms:** when the shader first loads, the console warns about schema uniforms it does not
+  declare, because those material settings would have no effect.
+- **Features:** a shader opts in to a feature define (`SKINNED`, `SHADOWED`, `FOG`, `ALPHA_TEST`, ...) by testing it
+  (`#ifdef SKINNED`, `#if defined(FOG)`). The colour pass compiles no feature variants today; the check is ready for
+  when it does.
+- **Fallback:** a material shader that is missing or fails to compile draws with the schema's shader. The error is
+  logged once, and the shader is retried when you save a fix.
+- **Draw order:** draws are grouped by program, then material, then mesh, so switching programs stays cheap.
+
+### Scope (v1)
 
 A material's custom shader only replaces the main colour pass. Shadows, picking and instanced vegetation keep the
-engine shaders, so a shader that moves vertices will not match its shadow or its clickable area.
+engine shaders, so a shader that moves vertices will not match its shadow or its clickable area. The template does
+not skin: use it on static meshes, or add skinning from `shader_3d_default.glsl`.

@@ -28,6 +28,7 @@ import com.pafoid.skate.engine.render.lighting.LightCulling
 import com.pafoid.skate.engine.render.lighting.LightData
 import com.pafoid.skate.engine.render.lighting.ModelBounds
 import com.pafoid.skate.engine.render.lighting.SceneLights
+import com.pafoid.skate.engine.render.material.FramePrograms
 import com.pafoid.skate.engine.render.renderer.LightingUniformsLoader
 import com.pafoid.skate.engine.render.renderer.ModelRenderer
 import com.pafoid.skate.engine.render.renderer.Renderer2D
@@ -52,6 +53,8 @@ import org.joml.Vector3f
  * @param lightingUniformsLoader Helper for uploading lighting uniforms
  * @param getUseFbo Lambda to get current FBO usage setting at render time
  * @param shadowFrame Shadow maps published by the shadow pass this frame (null: no shadows)
+ * @param materialShader The program of a material's custom shader reference, or null to use [defaultShader]
+ *   (AST-26 §5.6: custom material shaders replace the colour pass only; shadows and picking keep the engine shaders)
  */
 class GeometryPass(
     private val defaultShader: Shader,
@@ -65,6 +68,7 @@ class GeometryPass(
     private val cameraManager: CameraManager,
     private val shadowFrame: ShadowFrame? = null,
     private val environmentProbe: EnvironmentProbe? = null,
+    private val materialShader: (String) -> Shader? = { null },
 ) : BaseRenderPass() {
 
     override val name: String = "GeometryPass"
@@ -93,33 +97,27 @@ class GeometryPass(
         val camera = cameraManager.camera
         val cameraPosition = cameraManager.transform.worldMatrix.getTranslation(Vector3f())
 
-        // 3D Rendering Setup - Upload projection and view matrices
-        defaultShader.start()
-        defaultShader.uploadMat4f(Uniforms.PROJECTION_MATRIX, camera.projection)
-        defaultShader.uploadMat4f(Uniforms.VIEW_MATRIX, camera.view)
-        lightingUniformsLoader.loadCameraPosition(defaultShader, cameraPosition)
-
-        // Upload lighting uniforms
-        val directionalLight = SceneSun.of(scene)
+        // Frame data shared by every program this pass uses; uploaded to each on its first draw (REN-31)
+        frame.camera = camera
+        frame.cameraPosition = cameraPosition
+        frame.sun = SceneSun.of(scene)
+        frame.environment = environmentComponent
+        frame.shadows = shadowsThisFrame(shadowFrame) // consumed once per frame
         SceneLights.collect(scene, sceneLights)
         lightBuffer.upload(sceneLights)
-        lightBuffer.bind(defaultShader)
-        lightingUniformsLoader.loadLightingUniforms(
-            defaultShader,
-            directionalLight,
-            environmentComponent,
-            shadowsThisFrame(shadowFrame),
-        )
-        environmentProbe?.bind(defaultShader) ?: defaultShader.uploadInt(Uniforms.ENV_ENABLED, 0)
+        programs.beginFrame()
 
-        // Collect 3D draws and 2D sprites, then draw 3D sorted: opaque by material → mesh, transparent last in scene order
+        // Collect 3D draws and 2D sprites, then draw 3D sorted: opaque by program → material → mesh, transparent last
         drawQueue.clear()
         RenderTraversal.forEachRendered(scene) { go ->
             val renderComponent = go.getComponent<RenderComponent>()?.takeIf { it.enabled }
             val transform = go.getComponent<Transform>()?.takeIf { it.enabled }
             if (transform != null) {
                 if (renderComponent != null) {
-                    drawQueue.add(sortKeyOf(renderComponent), DrawItem(go, renderComponent, transform))
+                    val reference = renderComponent.material?.shader
+                    val program = reference?.let(materialShader)
+                    val programId = if (program == null) 0 else programs.idOf(reference)
+                    drawQueue.add(sortKeyOf(renderComponent, programId), DrawItem(go, renderComponent, transform, program ?: defaultShader))
                 }
                 go.getComponent<SpriteRenderer>()
                     ?.let { if (it.enabled) renderables.add(Renderable2D(it, transform.worldMatrix)) }
@@ -127,29 +125,36 @@ class GeometryPass(
         }
         drawQueue.sort()
 
+        var current: Shader? = null
         for (i in 0 until drawQueue.size) {
-            val (go, renderComponent, transform) = drawQueue.itemAt(i)
+            val (go, renderComponent, transform, program) = drawQueue.itemAt(i)
+            if (program !== current) {
+                current?.stop()
+                program.start()
+                if (programs.firstUse(program)) uploadFrame(program)
+                current = program
+            }
             // Hover & Selected states, inherited from ancestors so a mesh-less root highlights its children
-            defaultShader.uploadFloat(Uniforms.SELECTED, SelectionHighlight.stateOf(go, scene))
+            program.uploadFloat(Uniforms.SELECTED, SelectionHighlight.stateOf(go, scene))
 
             val model = renderComponent.model
             val lightCount = if (model == null || sceneLights.isEmpty()) 0 else {
                 val radius = ModelBounds.of(model).toWorld(transform.worldMatrix, boundsCenter)
                 LightCulling.select(sceneLights, boundsCenter, radius, objectLights, lightScores)
             }
-            lightBuffer.setObjectLights(defaultShader, objectLights, lightCount)
+            lightBuffer.setObjectLights(program, objectLights, lightCount)
 
             modelRenderer.render(
                 transform = transform,
                 renderComponent = renderComponent,
-                shader = defaultShader,
+                shader = program,
                 cameraPosition = cameraPosition,
                 skeletonComponent = go.getComponent<SkeletonComponent>()
             )
         }
         drawQueue.clear()
-
-        defaultShader.stop()
+        current?.stop()
+        frame.clear()
 
         // Render 2D sprites
         render2D(camera, renderables, batchShader)
@@ -174,14 +179,41 @@ class GeometryPass(
         environmentProbe?.destroy()
     }
 
-    private data class DrawItem(val go: GameObject, val renderComponent: RenderComponent, val transform: Transform)
+    private data class DrawItem(val go: GameObject, val renderComponent: RenderComponent, val transform: Transform, val program: Shader)
 
-    private fun sortKeyOf(renderComponent: RenderComponent): Long {
+    /** What every program needs once per frame: camera, sun, lights, shadows, IBL. */
+    private class FrameData {
+        var camera: CameraComponent? = null
+        var cameraPosition: Vector3f = Vector3f()
+        var sun: DirectionalLightComponent? = null
+        var environment: EnvironmentComponent? = null
+        var shadows: ShadowFrame? = null
+
+        fun clear() {
+            camera = null; sun = null; environment = null; shadows = null
+        }
+    }
+
+    private val frame = FrameData()
+    private val programs = FramePrograms<Shader>()
+
+    /** Uploads the frame's camera, lighting, shadow and IBL uniforms to [program] (bound). */
+    private fun uploadFrame(program: Shader) {
+        val camera = frame.camera ?: return
+        program.uploadMat4f(Uniforms.PROJECTION_MATRIX, camera.projection)
+        program.uploadMat4f(Uniforms.VIEW_MATRIX, camera.view)
+        lightingUniformsLoader.loadCameraPosition(program, frame.cameraPosition)
+        lightBuffer.bind(program)
+        lightingUniformsLoader.loadLightingUniforms(program, frame.sun, frame.environment, frame.shadows)
+        environmentProbe?.bind(program) ?: program.uploadInt(Uniforms.ENV_ENABLED, 0)
+    }
+
+    private fun sortKeyOf(renderComponent: RenderComponent, programId: Int): Long {
         val parts = renderComponent.model?.mesh
-        val first = parts?.firstOrNull() ?: return SortKey.build(false, 0, 0, 0)
+        val first = parts?.firstOrNull() ?: return SortKey.build(false, programId, 0, 0)
         val material = renderComponent.material ?: first.material
         if (material.alphaMode == AlphaMode.BLEND) return SortKey.build(true, 0, 0, 0)
-        return SortKey.build(false, 0, material.id, first.vaoId)
+        return SortKey.build(false, programId, material.id, first.vaoId)
     }
 
     private fun render2D(camera: CameraComponent, renderables: List<Renderable2D>, shader: Shader) {

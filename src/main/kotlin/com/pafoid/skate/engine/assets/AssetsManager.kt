@@ -10,7 +10,10 @@ import com.pafoid.skate.engine.assets.loaders.AssimpLoader
 import com.pafoid.skate.engine.assets.loaders.ShaderLoader
 import com.pafoid.skate.engine.render.shader.ShaderFeature
 import com.pafoid.skate.engine.render.shader.ShaderHotReloader
+import com.pafoid.skate.engine.render.material.MaterialSchema
+import com.pafoid.skate.engine.render.material.MaterialShaders
 import com.pafoid.skate.engine.render.shader.ShaderLibrary
+import com.pafoid.skate.engine.render.shader.ShaderLoadException
 import com.pafoid.skate.engine.render.shader.ShaderSourceResolver
 import com.pafoid.skate.engine.assets.loaders.SoundLoader
 import com.pafoid.skate.engine.assets.loaders.TextureLoader
@@ -65,8 +68,15 @@ class AssetsManager(
     ) { changed ->
         logger.log("Shader sources changed: ${changed.joinToString()}", LogLevel.INFO)
         shaders.reload(changed)
+        // A material shader that failed is tried again once one of its files changed
+        if (failedMaterialShaders.values.removeIf { deps -> deps.any { it in changed } }) failedVersion++
     }
     private var watchedShaderVersion = -1
+    private var watchedFailedVersion = -1
+    private var failedVersion = 0
+    /** Material shaders that failed to load, with the files they read (watched, so a fix retries them). */
+    private val failedMaterialShaders = HashMap<String, Set<String>>()
+    private val checkedMaterialShaders = HashSet<String>()
     private val textureLoader = TextureLoader()
     private val assimpLoader = AssimpLoader(textureLoader, vaoLoader)
     private val animationLoader = AnimationLoader()
@@ -326,11 +336,12 @@ class AssetsManager(
      */
     fun pollShaderChanges() {
         if (paths.pack?.initialized == true) return
-        if (watchedShaderVersion != shaders.dependencyVersion) {
-            val ids = shaders.dependencies()
+        if (watchedShaderVersion != shaders.dependencyVersion || watchedFailedVersion != failedVersion) {
+            val ids = shaders.dependencies() + failedMaterialShaders.values.flatten()
             shaderReloader.retain(ids)
             shaderReloader.watch(ids)
             watchedShaderVersion = shaders.dependencyVersion
+            watchedFailedVersion = failedVersion
         }
         shaderReloader.poll()
     }
@@ -346,6 +357,33 @@ class AssetsManager(
      * of the same shader, with an error in the log; a missing or broken project shader throws.
      */
     fun getShader(path: String): Shader = shaders.get(path)
+
+    /**
+     * The program of a material's custom shader [reference] (AST-26 §5.6), or null when it can't be used: the colour
+     * pass then draws with the schema's shader. Failures are logged once and retried when the shader's files change.
+     * The first successful load warns about schema uniforms the shader does not declare.
+     */
+    fun materialShader(reference: String, schema: MaterialSchema = MaterialSchema.PBR): Shader? {
+        if (reference in failedMaterialShaders) return null
+        val shader = try {
+            shaders.get(reference)
+        } catch (e: Exception) {
+            failedMaterialShaders[reference] = (e as? ShaderLoadException)?.dependencies ?: setOf(ShaderSourceResolver.canonical(reference))
+            failedVersion++
+            logger.log("Material shader $reference can't be used (${e.message}); drawing with the material's schema shader.", LogLevel.ERROR)
+            return null
+        }
+        if (checkedMaterialShaders.add(reference)) {
+            val desc = shader.rhi?.desc
+            if (desc != null) {
+                val missing = MaterialShaders.missingSchemaUniforms(schema, MaterialShaders.declaredUniforms(desc.vertexSource, desc.fragmentSource))
+                if (missing.isNotEmpty()) {
+                    logger.log("Material shader $reference does not declare the ${schema.id} uniforms ${missing.joinToString()}: those material settings have no effect.", LogLevel.WARN)
+                }
+            }
+        }
+        return shader
+    }
 
     /** True when engine shader [path] runs the engine's version because its project override failed or is stale. */
     fun shaderUsesEngineFallback(path: String): Boolean = shaders.usesFallback(path)

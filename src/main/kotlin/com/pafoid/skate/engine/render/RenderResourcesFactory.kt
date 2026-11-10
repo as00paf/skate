@@ -173,6 +173,8 @@ class RenderResourcesFactory(
             cameraManager = cameraManager,
             shadowFrame = shadowFrame,
             environmentProbe = EnvironmentProbe(assetsManager.getShader(EngineDefaults.Shaders.IBL_CAPTURE)),
+            // Custom material shaders (AST-26 §5.6): colour pass only; null falls back to the schema shader
+            materialShader = { reference -> assetsManager.materialShader(reference) },
         )
         // Debug visuals and the runtime UI draw into the presented target after post-processing
         val presentedViewport = PresentedViewport()

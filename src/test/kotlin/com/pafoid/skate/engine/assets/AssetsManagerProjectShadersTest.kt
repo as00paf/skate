@@ -137,4 +137,25 @@ class AssetsManagerProjectShadersTest {
         assertFalse(assets.shaderUsesEngineFallback(EngineDefaults.Shaders.POST_BLOOM))
         assertTrue(errors.isEmpty(), errors.toString())
     }
+
+    @Test
+    fun materialShader_FallsBackToTheSchemaShader_AndIsRetriedOnceFixed() {
+        val mine = File(ProjectLayout.assetsDir(project), "Shaders/mine.glsl").apply { parentFile.mkdirs(); writeText("broken") }
+        assertTrue(assets.materialShader("Assets/Shaders/mine.glsl") == null)
+        assertTrue(assets.materialShader("Assets/Shaders/mine.glsl") == null)
+        assertTrue(errors.count { it.contains("can't be used") } == 1, "logged once: $errors")
+        assets.pollShaderChanges()
+        edit(mine, com.pafoid.skate.engine.render.shader.ShaderTemplates.PBR_MATERIAL)
+        assertTrue(pollUntil { assets.materialShader("Assets/Shaders/mine.glsl") != null }, "retried after the fix")
+    }
+
+    @Test
+    fun materialShader_MissingSchemaUniforms_AreAWarning() {
+        val warnings = ArrayList<String>()
+        every { logger.log(any<String>(), LoggerService.LogLevel.WARN) } answers { warnings += firstArg<String>() }
+        File(ProjectLayout.assetsDir(project), "Shaders/plain.glsl").apply { parentFile.mkdirs(); writeText(bloom(1, "1.0")) }
+        assertTrue(assets.materialShader("Assets/Shaders/plain.glsl") != null)
+        assets.materialShader("Assets/Shaders/plain.glsl")
+        assertTrue(warnings.single().contains("u_MetallicFactor"), warnings.toString())
+    }
 }
