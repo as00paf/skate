@@ -59,6 +59,7 @@ fun main(args: Array<String>) {
 
     window.windowController.setFullscreen(project.fullscreen)
     engine.start(window.glfwWindow, window.device)
+    SkateGameplay.install(engine)
 
     // Apply the project's physics rate to the engine's fixed time step (GUI-15).
     if (project.physicsFPS > 0) {
