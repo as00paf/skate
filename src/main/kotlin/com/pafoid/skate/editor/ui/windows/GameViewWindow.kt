@@ -38,7 +38,7 @@ class GameViewWindow(
     private val viewportOverlays = ViewportOverlays(TrickUIWindow(engine.eventSystem), editor.settingsManager)
 
     private val viewportRenderer = ViewportRenderer(engine) { ScreenshotFolder.resolve(projectDir()) }
-    private val uiRectGizmo = UiRectGizmo(engine, editor.undoRedoManager, viewportRenderer).also { editor.gizmoSystem.uiGizmo = it }
+    private val uiRectGizmo = UiRectGizmo(engine, editor.undoRedoManager, viewportRenderer) { editor.gizmoSystem.uiSnap }.also { editor.gizmoSystem.uiGizmo = it }
     private val viewportContextMenu = ViewportContextMenu(stringManager, engine.eventSystem)
     private val viewportDragDropHandler =
         ViewportDragDropHandler(viewportRenderer, editor.editorCamera, engine.eventSystem, engine.inputProvider)
