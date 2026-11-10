@@ -4,6 +4,7 @@ import com.pafoid.skate.engine.core.LoggerService
 import com.pafoid.skate.engine.render.rhi.FakeRhiDevice
 import com.pafoid.skate.engine.render.rhi.ShaderCompileError
 import com.pafoid.skate.engine.render.rhi.ShaderStage
+import com.pafoid.skate.engine.render.shader.ShaderLoadException
 import io.mockk.mockk
 import io.mockk.verify
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -21,7 +22,7 @@ class ShaderLoaderRhiTest {
     fun LoadShader_PassesThePreprocessedStagesToTheDevice() {
         val shader = loader.loadShader("/shaders/post_gamma.glsl", setOf("TEST_DEFINE"))
         val desc = device.shaders.single().desc
-        assertEquals("/shaders/post_gamma.glsl", desc.name)
+        assertEquals("engine:Shaders/post_gamma.glsl", desc.name) // canonical reference (REN-31)
         assertTrue(desc.vertexSource.trimStart().startsWith("#version"))
         assertTrue(desc.fragmentSource.contains("#define TEST_DEFINE"))
         assertEquals(device.shaders.single(), shader.rhi)
@@ -30,10 +31,13 @@ class ShaderLoaderRhiTest {
     @Test
     fun CompileError_IsLoggedWithTheDriverLogAndRethrown() {
         device.shaderError = ShaderCompileError(ShaderStage.FRAGMENT, "0:12 syntax error")
-        val e = assertThrows<ShaderCompileException> { loader.loadShader("/shaders/post_gamma.glsl") }
-        assertEquals("Fragment compilation failed for '/shaders/post_gamma.glsl'", e.message)
+        // REN-31: wrapped with the files the load read, so hot reload can retry once one of them changes
+        val e = assertThrows<ShaderLoadException> { loader.loadShader("/shaders/post_gamma.glsl") }
+        assertTrue(e.cause is ShaderCompileException)
+        assertEquals("engine:Shaders/post_gamma.glsl" in e.dependencies, true)
+        assertEquals("Fragment compilation failed for 'engine:Shaders/post_gamma.glsl': 0:12 syntax error", e.message)
         verify {
-            logger.log("Fragment compilation failed for '/shaders/post_gamma.glsl': 0:12 syntax error", LoggerService.LogLevel.ERROR)
+            logger.log("Fragment compilation failed for 'engine:Shaders/post_gamma.glsl': 0:12 syntax error", LoggerService.LogLevel.ERROR)
         }
     }
 }

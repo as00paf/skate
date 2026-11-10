@@ -16,6 +16,23 @@ data class ShaderVariantKey(val path: String, val defines: Set<String>) {
     }
 }
 
+/** A shader source file found by an include resolver: [id] identifies it (dependencies, `#pragma once`). */
+data class ResolvedSource(val id: String, val text: String)
+
+/** Where one line of preprocessed GLSL came from: the source [id] and its 1-based [line]. */
+data class SourceLine(val id: String, val line: Int) {
+    override fun toString() = "${id.substringAfterLast('/').substringAfterLast(':')}:$line"
+}
+
+/**
+ * Preprocessed GLSL with a line map back to the files it was expanded from (AST-26 §5.3 CR9): [lines] has one entry
+ * per output line, null for lines the preprocessor injected (`#define`s). [dependencies] lists every file id read.
+ */
+class ProcessedSource(val text: String, val lines: List<SourceLine?>, val dependencies: Set<String>) {
+    /** The source of output line [line] (1-based), or null when it is out of range or injected. */
+    fun locate(line: Int): SourceLine? = lines.getOrNull(line - 1)
+}
+
 /** GL-free GLSL preprocessing: `#include "file"` expansion and `#define` injection. */
 object ShaderPreprocessor {
     private val includeRegex = Regex("""^\s*#include\s+"([^"]+)"\s*$""")
@@ -26,42 +43,56 @@ object ShaderPreprocessor {
      * the `#version` line, as GLSL requires `#version` to come first. [resolve] maps an include name to its source
      * or null when missing. Names containing `..` are rejected.
      */
-    fun process(source: String, defines: Set<String>, origin: String, resolve: (String) -> String?): String {
-        val included = mutableSetOf<String>()
-        val expanded = expand(source, origin, resolve, included, listOf(origin))
-        return injectDefines(expanded, defines)
+    fun process(source: String, defines: Set<String>, origin: String, resolve: (String) -> String?): String =
+        process(source, defines, origin, firstLine = 1) { name, _ -> resolve(name)?.let { ResolvedSource(name, it) } }.text
+
+    /**
+     * Like [process], with includes resolved relative to their **includer** (AST-26 §5.3 CR4): [resolve] gets the
+     * include name and the id of the file that includes it, and returns the resolved file. The once-only set, the
+     * cycle check and [ProcessedSource.dependencies] use the resolved ids, so `fog.glsl` included from two folders is
+     * two files, and one file reached by two names is included once. [origin] is the id of [source]; its first line
+     * is line [firstLine] of that file (a stage of a `#type` file starts mid-file).
+     */
+    fun process(
+        source: String, defines: Set<String>, origin: String, firstLine: Int = 1,
+        resolve: (name: String, includerId: String) -> ResolvedSource?,
+    ): ProcessedSource {
+        val included = linkedSetOf(origin)
+        val text = ArrayList<String>()
+        val lines = ArrayList<SourceLine?>()
+        expand(source, origin, firstLine, resolve, included, listOf(origin), text, lines)
+        injectDefines(defines, text, lines)
+        return ProcessedSource(text.joinToString("\n"), lines, included)
     }
 
     private fun expand(
-        source: String, origin: String, resolve: (String) -> String?,
-        included: MutableSet<String>, stack: List<String>,
-    ): String {
+        source: String, origin: String, firstLine: Int, resolve: (String, String) -> ResolvedSource?,
+        included: MutableSet<String>, stack: List<String>, out: MutableList<String>, map: MutableList<SourceLine?>,
+    ) {
         if (stack.size > MAX_DEPTH) throw ShaderPreprocessException("Include depth exceeded in $origin")
-        val out = mutableListOf<String>()
-        for (line in source.lines()) {
+        source.lines().forEachIndexed { index, line ->
             val match = includeRegex.matchEntire(line)
             if (match == null) {
                 out += line
-                continue
+                map += SourceLine(origin, firstLine + index)
+                return@forEachIndexed
             }
             val name = match.groupValues[1]
-            if (name.split('/').contains("..")) {
+            if (name.replace('\\', '/').split('/').contains("..")) {
                 throw ShaderPreprocessException("Illegal include '$name' in $origin")
             }
-            if (name in stack) throw ShaderPreprocessException("Circular include: ${(stack + name).joinToString(" -> ")}")
-            if (!included.add(name)) continue
-            val body = resolve(name) ?: throw ShaderPreprocessException("Include '$name' not found (from $origin)")
-            out += expand(body, name, resolve, included, stack + name)
+            val body = resolve(name, origin) ?: throw ShaderPreprocessException("Include '$name' not found (from $origin)")
+            if (body.id in stack) throw ShaderPreprocessException("Circular include: ${(stack + body.id).joinToString(" -> ")}")
+            if (!included.add(body.id)) return@forEachIndexed
+            expand(body.text, body.id, 1, resolve, included, stack + body.id, out, map)
         }
-        return out.joinToString("\n")
     }
 
-    private fun injectDefines(source: String, defines: Set<String>): String {
-        if (defines.isEmpty()) return source
-        val block = defines.sorted().joinToString("") { "#define $it\n" }
-        val lines = source.split('\n')
-        val versionIndex = lines.indexOfFirst { it.trimStart().startsWith("#version") }
-        return if (versionIndex < 0) block + source
-        else (lines.take(versionIndex + 1).joinToString("\n") + "\n" + block + lines.drop(versionIndex + 1).joinToString("\n"))
+    private fun injectDefines(defines: Set<String>, text: MutableList<String>, lines: MutableList<SourceLine?>) {
+        if (defines.isEmpty()) return
+        val block = defines.sorted().map { "#define $it" }
+        val at = text.indexOfFirst { it.trimStart().startsWith("#version") } + 1 // 0 when there is no #version
+        text.addAll(at, block)
+        lines.addAll(at, block.map { null })
     }
 }
