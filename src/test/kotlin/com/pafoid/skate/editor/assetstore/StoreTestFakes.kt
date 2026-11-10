@@ -60,3 +60,15 @@ fun cc0Details(sourceId: String = "WoodenTable_01", kind: StoreAssetKind = Store
         license = license,
         variants = listOf(StoreVariant("gltf-1k", SourceFormat.GLTF, "1k", 10)),
     )
+
+/**
+ * A project folder inside [tmp] spelled so that `canonicalFile != absoluteFile`, as on GitHub's Windows runner whose
+ * temp dir is an 8.3 short path (`RUNNER~1`): the 8.3 name on Windows, a symlink elsewhere, else `<dir>/x/..`.
+ */
+fun nonCanonicalProjectRoot(tmp: File): File {
+    val real = File(tmp, "longprojectname").apply { mkdirs() }
+    File(tmp, "LONGPR~1").takeIf { it.isDirectory }?.let { return it }
+    runCatching { java.nio.file.Files.createSymbolicLink(File(tmp, "link").toPath(), real.toPath()).toFile() }
+        .getOrNull()?.takeIf { it.canonicalFile != it.absoluteFile }?.let { return it }
+    return File(real, "x/..").also { File(real, "x").mkdirs() }
+}

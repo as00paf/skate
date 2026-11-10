@@ -59,10 +59,16 @@ class ImportOutcome(
  * `AssetRegistry.delete` and restores backed-up files and sidecars.
  */
 class StoreImporter(
-    private val projectDir: File,
+    projectDir: File,
     private val registry: AssetRegistry,
     private val clock: () -> Instant = Instant::now,
 ) {
+    /**
+     * Canonical once, so every path built here agrees with [StorePaths.resolveInside]'s canonical results (an 8.3
+     * short name such as `RUNNER~1`, `..` or a symlink in the project path would otherwise relativise to `../..`).
+     */
+    private val projectDir: File = projectDir.canonicalFile
+
     /** Both phases on the calling thread. */
     fun import(request: StoreImportRequest): ImportOutcome = commit(stage(request))
 
@@ -139,7 +145,7 @@ class StoreImporter(
                 license = LedgerLicense(details.license.spdx, details.license.url),
                 modifications = request.modifications + ndWarning(details.license, request.modifications),
                 retrievedAt = clock().toString(),
-                folder = staged.targetDir.relativeTo(projectDir).invariantSeparatorsPath,
+                folder = StorePaths.relativeInside(projectDir, staged.targetDir) ?: throw IOException("Import folder is outside the project: ${staged.targetDir.path}"),
             )
             AttributionLedger.save(projectDir, AttributionLedger.load(projectDir).upsert(entry))
         } catch (e: Exception) {
@@ -204,7 +210,7 @@ class StoreImporter(
 
     /** Copies [file] and its sidecar (when present) under [backupDir], keeping the project-relative layout. */
     private fun backup(file: File, backupDir: File): File {
-        val rel = file.relativeTo(projectDir).invariantSeparatorsPath
+        val rel = StorePaths.relativeInside(projectDir, file) ?: throw IOException("Backup source is outside the project: ${file.path}")
         val copy = File(backupDir, rel)
         copy.parentFile.mkdirs()
         file.copyTo(copy, overwrite = true)
