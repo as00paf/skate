@@ -9,7 +9,8 @@ enum class WindowCategory(val labelKey: String) {
     ASSETS("menu.view.windows.assets"),
     DEBUG("menu.view.windows.debug"),
     SCRIPTING("menu.view.windows.scripting"),
-    AUDIO("menu.view.windows.audio");
+    AUDIO("menu.view.windows.audio"),
+    PROJECT("menu.view.windows.project");
 
     companion object {
         private val byWindow = mapOf(
@@ -20,6 +21,7 @@ enum class WindowCategory(val labelKey: String) {
             "window.asset_browser" to ASSETS,
             "window.asset_store" to ASSETS,
             "window.video_to_animation" to ASSETS,
+            "window.animation_editor" to ASSETS,
             "window.console" to DEBUG,
             "window.profiler" to DEBUG,
             "window.command_history" to DEBUG,
@@ -27,6 +29,7 @@ enum class WindowCategory(val labelKey: String) {
             "window.shell" to DEBUG,
             "window.script_editor" to SCRIPTING,
             "window.audio_inspector" to AUDIO,
+            "window.version_control" to PROJECT,
         )
 
         fun of(window: EditorWindow): WindowCategory? = of(window.name)

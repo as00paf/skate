@@ -29,7 +29,7 @@ data class EditorSettings(
     /** `blender.exe` for `.blend` import (AST-19); null finds it on PATH, the file association or Program Files. */
     var blenderPath: String? = null,
     /** A `.blend` import is cancelled after this long. */
-    var blenderTimeoutSeconds: Int = 120,
+    var blenderTimeoutSeconds: Int = DEFAULT_BLENDER_TIMEOUT,
     /** Import `.blend` files that changed while the project was closed, when it opens. */
     var blenderImportOnOpen: Boolean = true,
     /** Video to animation (ANI-17): the Python and MediaPipe model used by the mocap adapter. Per machine. */
@@ -46,6 +46,9 @@ data class EditorSettings(
     companion object {
         const val MIN_UI_SCALE = 0.75f
         const val MAX_UI_SCALE = 2f
+        const val DEFAULT_BLENDER_TIMEOUT = 120
+        const val MIN_BLENDER_TIMEOUT = 10
+        const val MAX_BLENDER_TIMEOUT = 3600
     }
 
     fun addRecentProject(projectPath: String): EditorSettings {

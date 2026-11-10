@@ -1,6 +1,7 @@
 package com.pafoid.skate.game.ui
 
 import com.pafoid.skate.engine.core.EventSystem
+import com.pafoid.skate.engine.ecs.EcsChanges
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.components.PlayerController
@@ -35,12 +36,18 @@ class SkateHudSystem(
     private var rider: SkateBehavior? = null
     private var shownFor = 0f
 
+    private val riders = query(PlayerController::class)
+    private val trickTexts = mutableListOf<UITextComponent>()
+    private val scoreTexts = mutableListOf<UITextComponent>()
+    private var textsVersion = -1L
+
     override fun init(scene: Scene) {
         super.init(scene)
         score = 0
         trickKey = ""
         rider = null
         shownFor = 0f
+        textsVersion = -1L
     }
 
     override fun update(dt: Float) {
@@ -65,7 +72,7 @@ class SkateHudSystem(
                 if (shownFor >= showSec) trickKey = ""
             }
         }
-        writeTexts(scene)
+        writeTexts()
     }
 
     private fun landed(trick: TrickType) {
@@ -76,16 +83,30 @@ class SkateHudSystem(
         events?.publish(TrickCompleted(trick.nameKey, points, 1f))
     }
 
+    /** The first skate rider anywhere in the scene, e.g. a skater parented under its board (GPL-25). */
     private fun findRider(): SkateBehavior? =
-        scene.children.firstNotNullOfOrNull { it.getComponent<PlayerController>()?.behavior as? SkateBehavior }
+        riders.entities.firstNotNullOfOrNull { it.getComponent<PlayerController>()?.behavior as? SkateBehavior }
 
-    private fun writeTexts(root: GameObject) {
+    private fun writeTexts() {
+        if (textsVersion != EcsChanges.version) {
+            textsVersion = EcsChanges.version
+            trickTexts.clear()
+            scoreTexts.clear()
+            collectTexts(scene)
+        }
+        trickTexts.forEach { it.key = trickKey }
+        val args = listOf(score.toString())
+        scoreTexts.forEach { if (it.args != args) it.args = args }
+    }
+
+    /** Caches the HUD texts; walked again only after the scene tree changes (GPL-25). */
+    private fun collectTexts(root: GameObject) {
         for (child in root.children) {
             when (child.name) {
-                TRICK_TEXT -> child.getComponent<UITextComponent>()?.key = trickKey
-                SCORE_TEXT -> child.getComponent<UITextComponent>()?.args = listOf(score.toString())
+                TRICK_TEXT -> child.getComponent<UITextComponent>()?.let(trickTexts::add)
+                SCORE_TEXT -> child.getComponent<UITextComponent>()?.let(scoreTexts::add)
             }
-            writeTexts(child)
+            collectTexts(child)
         }
     }
 

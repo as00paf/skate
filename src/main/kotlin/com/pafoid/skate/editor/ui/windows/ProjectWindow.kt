@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.ui.windows
 
+import com.pafoid.skate.editor.imgui.WindowHeader
 import com.pafoid.skate.editor.imgui.EmptyState
 import com.pafoid.skate.editor.imgui.tippedWith
 import com.pafoid.skate.editor.imgui.tipped
@@ -167,11 +168,11 @@ class ProjectWindow(
 
     /** Header strip tools (EDT-51 §2.2): the filter box, then Refresh; `?` is drawn after them. */
     private fun renderHeaderTools() {
-        val buttonWidth = ImGui.getFrameHeight() + ImGui.getStyle().itemSpacingX
-        ImGui.setNextItemWidth((ImGui.getContentRegionAvailX() - buttonWidth * 2).coerceAtLeast(80f))
+        val refresh = "${Icons.ARROW_ROTATE}##project_refresh"
+        ImGui.setNextItemWidth((ImGui.getContentRegionAvailX() - WindowHeader.trailingWidth(refresh)).coerceAtLeast(80f))
         inputTextWithHint("##project_search", "${Icons.SEARCH} ${stringManager.getString("lbl.filter")}...", searchText)
         sameLine()
-        if (stringManager.tippedWith(ImGui.smallButton("${Icons.ARROW_ROTATE}##project_refresh"), "context.browser.refresh.tooltip")) {
+        if (stringManager.tippedWith(ImGui.button(refresh), "context.browser.refresh.tooltip")) {
             needsRefresh = true
         }
     }
@@ -264,7 +265,10 @@ class ProjectWindow(
         val isSelected = reveal.isSelected(item.path)
         val selectableFlags = ImGuiSelectableFlags.SpanAllColumns
 
-        if (selectable(label, isSelected, selectableFlags)) reveal.select(item.path)
+        if (selectable(label, isSelected, selectableFlags)) {
+            reveal.select(item.path)
+            eventSystem.publish(FileSystemEvent.FileSelected(item.path))
+        }
         if (reveal.isTarget(item.path)) ImGui.setScrollHereY(0.5f)
 
         if (isItemClicked(1)) {
@@ -449,10 +453,14 @@ class ProjectWindow(
         needsRefresh = true
     }
 
+    /** Only `.blend` files have a source to import from today (EDT-66, BlenderSync); other assets just log. */
     private fun reimportAsset(item: FileSystemItem) {
         val guid = item.assetGuid ?: return
-        // For now, just log — actual reimport would go through ImportPipeline
-        logger.logEditor("Reimport requested for: ${item.name} (GUID: ${guid.take(8)}...)")
+        if (item.file.extension.equals("blend", ignoreCase = true)) {
+            eventSystem.publish(FileSystemEvent.ReimportRequested(item.path))
+        } else {
+            logger.logEditor("Reimport requested for: ${item.name} (GUID: ${guid.take(8)}...): nothing to import it from")
+        }
         needsRefresh = true
     }
 

@@ -28,6 +28,18 @@ data class BlenderImportSettings(
 ) {
     enum class ActionMode { FILES, EMBEDDED }
 
+    /** The `blender.*` sidecar keys for these settings (all of them, so the sidecar shows what is used). */
+    fun toSettings(): Map<String, String> = mapOf(
+        APPLY_MODIFIERS to applyModifiers.toString(),
+        ONLY_VISIBLE to onlyVisible.toString(),
+        EXPORT_ACTIONS to exportActions.toString(),
+        ACTION_MODE to actionMode.name,
+        AUTO_REIMPORT to autoReimport.toString(),
+    )
+
+    /** [meta] with these settings written over its import settings; the import record and other keys are kept. */
+    fun applyTo(meta: AssetMeta): AssetMeta = meta.copy(settings = meta.settings + toSettings())
+
     companion object {
         const val APPLY_MODIFIERS = "blender.applyModifiers"
         const val ONLY_VISIBLE = "blender.onlyVisible"
@@ -42,6 +54,18 @@ data class BlenderImportSettings(
             actionMode = settings[ACTION_MODE]?.let { v -> ActionMode.entries.firstOrNull { it.name.equals(v, true) } } ?: ActionMode.FILES,
             autoReimport = settings[AUTO_REIMPORT]?.toBooleanStrictOrNull() ?: true,
         )
+    }
+}
+
+/** The last import of a `.blend`, as recorded in its sidecar by [BlenderImporter.apply] (shown in the inspector). */
+data class BlenderImportRecord(val blenderVersion: String, val importedAt: String, val outputs: List<String>) {
+    companion object {
+        /** Null when the file has never been imported. */
+        fun from(meta: AssetMeta?): BlenderImportRecord? {
+            val settings = meta?.settings ?: return null
+            val at = settings[BlenderImporter.IMPORTED_AT] ?: return null
+            return BlenderImportRecord(settings[BlenderImporter.BLENDER_VERSION].orEmpty(), at, BlenderOutputs.recorded(meta))
+        }
     }
 }
 

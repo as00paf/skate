@@ -24,6 +24,7 @@ import com.pafoid.skate.engine.ecs.systems.InputSystem
 import com.pafoid.skate.engine.events.EngineAction
 import com.pafoid.skate.engine.getComponent
 import com.pafoid.skate.engine.utils.Atlas
+import com.pafoid.skate.editor.vcs.ConflictMarkers
 import org.joml.Vector2i
 import java.io.File
 
@@ -297,7 +298,7 @@ class ProjectManager(
         val scenes = project.scenesPath.mapNotNull { path ->
             val file = File(path)
             try {
-                serializer.decodeFile<Scene?>(FileKind.SCENE, file.readText())
+                serializer.decodeFile<Scene?>(FileKind.SCENE, ConflictMarkers.requireClean(file.name, file.readText()))
             } catch (e: Exception) {
                 failed += "${file.absolutePath}: ${e.message ?: e.javaClass.simpleName}"
                 null

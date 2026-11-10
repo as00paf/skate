@@ -25,6 +25,7 @@ class UndoCoverageGuardTest {
      */
     private val executeOnlyAllowed = mapOf(
         "animation/CreateAnimationClipCommand.kt" to "writes a new .skanim clip file (ANI-17); undo never deletes files",
+        "animation/SaveAnimationClipCommand.kt" to "writes the edited .skanim file (ANI-14); undo never rewrites files, the edits stay undoable",
         "editor/ClearLogsCommand.kt" to "editor-only state (console)",
         "editor/CopyToClipboardCommand.kt" to "editor-only state (clipboard)",
         "editor/TogglePhysicsDebugCommand.kt" to "editor-only view toggle",
@@ -42,6 +43,7 @@ class UndoCoverageGuardTest {
         "project/SaveSceneAsCommand.kt" to "file write",
         "project/SaveProjectCommand.kt" to "file write",
         "scene/SwitchSceneCommand.kt" to "scene tab navigation",
+        "vcs/VcsCommands.kt" to "Git actions (EDT-60): history cannot be undone with Ctrl+Z; discard asks first",
     )
 
     @Test

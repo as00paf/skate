@@ -45,7 +45,8 @@ object VideoToAnimationWiring {
         )
     }
 
-    private fun skeletonFor(engine: Engine, rig: TargetRig) = when (rig) {
+    /** The rig for [rig]: the skater model, or the selected object's skeleton. Shared with the animation editor (ANI-14). */
+    internal fun skeletonFor(engine: Engine, rig: TargetRig) = when (rig) {
         TargetRig.SKATER -> (engine.assetsManager.getModel(Assets.Models.JAMES) ?: engine.assetsManager.loadModel(Assets.Models.JAMES)).skeleton
         TargetRig.SELECTED -> engine.sceneManager.currentScene?.selectedGameObject?.getComponent<SkeletonComponent>()?.pose?.skeleton
     }
