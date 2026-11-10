@@ -1,5 +1,6 @@
 package com.pafoid.skate.architecture
 
+import com.pafoid.skate.editor.imgui.WindowCategory
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
@@ -140,11 +141,80 @@ class WindowStandardGuardTest {
         assertEquals(2, violations(notHost, keys).size, violations(notHost, keys).toString())
     }
 
+    /**
+     * A registered window that is not a dialog must be reachable from View > Windows, i.e. have a [WindowCategory];
+     * otherwise nothing can open it (Video to Animation and Asset Store were missed this way). Exempt windows are
+     * listed, with the reason, in [NO_CATEGORY].
+     */
+    @Test
+    fun EveryRegisteredDockableWindow_HasAWindowCategory() {
+        val byClass = windows.associateBy { it.className }
+        val registered = registeredWindowClasses(root.resolve(REGISTRY).readText())
+        assertTrue(registered.size >= 19, "found only $registered in $REGISTRY")
+        val unknown = registered.filter { it !in byClass }
+        assertTrue(unknown.isEmpty(), "Registered windows the guard could not find: $unknown")
+        val missing = registered.mapNotNull { byClass[it] }
+            .filter { !it.isDialog && it.className !in NO_CATEGORY }
+            .filter { w -> w.windowName == null || WindowCategory.of(w.windowName) == null }
+            .map { "${it.className} (${it.windowName})" }
+        assertTrue(missing.isEmpty(), "Windows missing from View > Windows; add them to WindowCategory.byWindow: $missing")
+        val stale = NO_CATEGORY.filter { name -> name !in registered || byClass[name]?.windowName?.let { WindowCategory.of(it) } != null }
+        assertTrue(stale.isEmpty(), "NO_CATEGORY entries that are not registered or have a category now: $stale")
+    }
+
+    @Test
+    fun Guard_ReadsTheRegisteredWindowClasses() {
+        val src = """
+            class WindowRegistry(engine: Engine) {
+                val windows: List<EditorWindow> = listOf(
+                    SceneHierarchyWindow(engine, editor.clipboardService, projectManager::hasProject),
+                    EditorSettingsWindow(a, b) { engine.eventSystem.publish(WindowAction.Show("window.keybindings")) },
+                    VideoToAnimationWindow(engine, editor, projectManager),
+                )
+                val other = listOf(NotAWindow(1))
+            }
+        """.trimIndent()
+        assertEquals(listOf("SceneHierarchyWindow", "EditorSettingsWindow", "VideoToAnimationWindow"), registeredWindowClasses(src))
+    }
+
     class WindowClass(val className: String, val isDialog: Boolean, val windowName: String?, val source: String)
 
     companion object {
         /** Windows not converted to the standard yet, by EDT-52 chunk. Remove entries; never add any. */
         val ALLOW_LIST = emptySet<String>()
+
+        private const val REGISTRY = "src/main/kotlin/com/pafoid/skate/editor/imgui/WindowRegistry.kt"
+
+        /** Registered non-dialog windows deliberately absent from View > Windows. Keep each entry commented. */
+        val NO_CATEGORY = setOf(
+            // Search Anywhere palette: transient popup, opened from Edit > Search, its shortcut and the title-bar search.
+            "SearchEverywhereWindow",
+            // New Project modal host: opened from File > New Project, the no-project empty state and Switch Project.
+            "ProjectWizardWindow",
+            // Switch Project modal host: opened from the project name button in the menu bar.
+            "ProjectSwitcherDialog",
+        )
+
+        /** Class names constructed in `val windows ... = listOf(...)` of the registry source, in order. */
+        fun registeredWindowClasses(registrySource: String): List<String> {
+            val start = Regex("""val\s+windows\b[^=]*=\s*listOf\(""").find(registrySource) ?: return emptyList()
+            val open = start.range.last
+            val end = skipParens(registrySource, open) ?: return emptyList()
+            val body = registrySource.substring(open + 1, end - 1)
+            // Top-level entries only: split on commas at depth 0 of () and {}.
+            val entries = mutableListOf<String>()
+            var depth = 0
+            var from = 0
+            body.forEachIndexed { i, c ->
+                when (c) {
+                    '(', '{' -> depth++
+                    ')', '}' -> depth--
+                    ',' -> if (depth == 0) { entries += body.substring(from, i); from = i + 1 }
+                }
+            }
+            entries += body.substring(from)
+            return entries.mapNotNull { Regex("""^\s*(\w+)\s*\(""").find(it)?.groupValues?.get(1) }
+        }
 
         private val CLASS = Regex("""(?<![\w.])(abstract\s+|open\s+)?class\s+(\w+)""")
         private val BASE = Regex("""^\s*:\s*(EditorWindow|EditorDialog)\s*\(""")
