@@ -96,7 +96,7 @@ Round 27+ goals (human, 2026-11-06): post-processing quality, render-graph clari
   - Do: Add image-based lighting (prefiltered environment map + irradiance from the skybox, BRDF LUT) and/or reflection probes so metallic/smooth materials reflect their surroundings. Add a very shiny, reflective metallic object to the Feature Showcase Materials section.
   - Done when: The showcase metallic object clearly reflects the sky/scene; the IBL math/setup has unit tests; Vulkan parity follows in a VK task.
   - Deps: REN-26
-- [~] @skate-render **REN-28** `P2` Terrain and biomes: design note
+- [~] @skate-render **REN-28** `P2` Terrain and biomes: design note — human answered the open questions 2026-11-10 (streaming now; stamps yes; 8 layers; erosion later); revision for streaming pending
   - Do: Write `docs/design/REN-28.md`, reviewed by physics and assets: chunked heightmap terrain with LOD, splat materials (16 layers), a noise library (e.g. FastNoiseLite, MIT), biome maps driving materials and scatter, procedural or hand-painted (editor sculpt/paint tools), seeded through ECS-14, heightfield collider (PHY-15). Terrain must support **larger worlds** than the current park scale. Erosion filters are worth including. Split implementation tasks out after approval.
   - Done when: The human approves the note.
   - Deps: ECS-14

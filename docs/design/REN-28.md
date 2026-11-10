@@ -307,3 +307,13 @@ REN-29 (vegetation and water) builds on tasks 2 and 7 (instance batches, scatter
    under ramps and ledges)? Proposed as a recipe step `Stamp(prefab footprints)` in task 3.
 3. **Layer count:** is 8 enough? The texture arrays could go to 16 at more memory cost.
 4. **Erosion:** worth a task now for nicer mountains, or later?
+
+## 14. Decisions (recorded from the human, 2026-11-10)
+
+1. **World size:** bigger worlds (2 km+) are wanted soon: **design chunk streaming now** (load/unload around the camera, physics heightfield and scatter per chunk, asset layout). Revise §2–§12 and the task list accordingly.
+2. **Skatepark integration:** yes, flattened stamps under prefab footprints (recipe step `Stamp`).
+3. **Layer count:** 8 layers.
+4. **Erosion:** later, as an optional recipe step.
+
+Status after these answers: **revision needed for streaming**, then approval.
+
