@@ -41,8 +41,8 @@ class WindowRegistry(
         ProjectSettingsWindow(engine, editor.settingsManager, projectManager),
         KeyBindingsWindow(engine, editor.settingsManager, engine.stringManager, projectManager),
         CommandHistoryWindow(engine, editor.undoRedoManager),
-        RenderGraphWindow(engine, editor.settingsManager),
-        SearchEverywhereWindow(engine),
+        RenderGraphWindow(engine),
+        SearchEverywhereWindow(engine, projectManager::getProjectDirectory),
         ProjectWizardWindow(engine),
         ProjectSwitcherDialog(engine, editor.settingsManager),
         AudioInspectorWindow(engine, projectManager),
@@ -56,6 +56,11 @@ class WindowRegistry(
     val dockableWindows: List<EditorWindow> get() = dockable(windows)
 
     val inputTestingDialog: EditorDialog = windows.filterIsInstance<InputTestingWindow>().first()
+
+    init {
+        // The help popover's "Related windows" buttons (EDT-51 §2.4).
+        HelpPopover.openWindow = { name -> getWindow(name)?.isOpen?.set(true) }
+    }
 
     val menuBar = EditorMenuBar(engine, editor, this, projectManager)
     val statusBar = EditorStatusBar(engine)

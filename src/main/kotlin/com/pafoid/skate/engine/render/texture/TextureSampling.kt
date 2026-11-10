@@ -1,7 +1,28 @@
 package com.pafoid.skate.engine.render.texture
 
 /** Engine-side texture quality tiers (the editor maps its `TextureQuality` setting onto these). */
-enum class TextureQualityLevel { LOW, MEDIUM, HIGH }
+enum class TextureQualityLevel(
+    /** Minification filter for this tier. */
+    val minFilter: MinFilter,
+    /** Default anisotropy (clamped to hardware max at runtime). */
+    val defaultAnisotropy: Float,
+    /** Whether mipmaps are generated for this tier. */
+    val generateMipmaps: Boolean = true,
+) {
+    LOW(MinFilter.NEAREST_MIPMAP_LINEAR, 1f),
+    MEDIUM(MinFilter.LINEAR_MIPMAP_LINEAR, 4f),
+    HIGH(MinFilter.LINEAR_MIPMAP_LINEAR, 16f);
+
+    companion object {
+        val DEFAULT = MEDIUM
+
+        /** Maps a setting name (e.g. `TextureQuality.MEDIUM.name`) to a tier; unknown names give [DEFAULT]. */
+        fun fromName(name: String?): TextureQualityLevel = entries.firstOrNull { it.name.equals(name, ignoreCase = true) } ?: DEFAULT
+    }
+
+    /** The default anisotropy for this tier, clamped to hardware max at runtime. */
+    val maxAnisotropy: Float get() = defaultAnisotropy
+}
 
 enum class MinFilter { LINEAR, NEAREST_MIPMAP_LINEAR, LINEAR_MIPMAP_LINEAR }
 

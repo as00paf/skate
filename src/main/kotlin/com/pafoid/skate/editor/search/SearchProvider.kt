@@ -9,6 +9,9 @@ interface SearchProvider {
      */
     val category: SearchCategory
 
+    /** Every category this provider returns results in; [SearchEngine.navigate] routes results by it. */
+    val categories: Set<SearchCategory> get() = setOf(category)
+
     suspend fun search(query: String): List<SearchResult>
 
     fun navigate(result: SearchResult)

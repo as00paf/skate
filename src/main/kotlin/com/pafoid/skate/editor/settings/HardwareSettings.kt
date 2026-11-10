@@ -5,7 +5,7 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class HardwareSettings(
     val display: DisplaySettings = DisplaySettings(),
-    val graphics: GraphicsSettings = GraphicsSettings(),
+    // val graphics: GraphicsSettings = GraphicsSettings(), // Removed as per feedback
     val audio: AudioSettings = AudioSettings()
 ) {
 }

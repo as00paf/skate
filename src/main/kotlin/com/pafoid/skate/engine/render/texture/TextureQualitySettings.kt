@@ -10,10 +10,13 @@ import com.pafoid.skate.engine.assets.data.Texture
  * [applyTo] updates one texture. Main thread only.
  */
 object TextureQualitySettings {
+    @Volatile
     var level: TextureQualityLevel = TextureQualityLevel.HIGH
-        private set
 
-    fun sampling(): TextureSampling = TextureSampling.forQuality(level, RhiContext.require().caps.maxAnisotropy)
+    fun sampling(): TextureSampling {
+        val l = level
+        return TextureSampling(l.minFilter, l.maxAnisotropy, l.generateMipmaps)
+    }
 
     fun apply(newLevel: TextureQualityLevel, textures: Collection<Texture>) {
         level = newLevel

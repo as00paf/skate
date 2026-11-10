@@ -117,6 +117,7 @@ class WindowController(val glfwWindow: Long) {
         return glfwGetPrimaryMonitor()
     }
 
+    /** Set fullscreen mode (default: true) */
     fun setFullscreen(enabled: Boolean) {
         val monitor = glfwGetPrimaryMonitor()
         val vidMode = glfwGetVideoMode(monitor) ?: return
@@ -128,6 +129,7 @@ class WindowController(val glfwWindow: Long) {
         }
     }
 
+    /** Set V-Sync (default: false) */
     fun setVSync(enabled: Boolean) {
         glfwSwapInterval(if (enabled) 1 else 0)
     }
