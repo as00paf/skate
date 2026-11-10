@@ -6,6 +6,7 @@ import com.pafoid.skate.editor.imgui.tipped
 import com.pafoid.skate.editor.imgui.label
 import com.pafoid.skate.editor.events.ConsoleAction
 import com.pafoid.skate.editor.imgui.EditorWindow
+import com.pafoid.skate.editor.imgui.EmptyState
 import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.core.LoggerService.LogEntry
@@ -18,7 +19,6 @@ import imgui.type.ImString
 import org.lwjgl.glfw.GLFW
 
 class ConsoleWindow(engine: Engine) : EditorWindow("window.console", true) {
-    override val relatedWindows: List<String> = listOf("window.command_history")
 
     private val logger = engine.logger
     private val stringManager = engine.stringManager
@@ -33,13 +33,17 @@ class ConsoleWindow(engine: Engine) : EditorWindow("window.console", true) {
     private val autoScroll = ConsoleAutoScroll()
     private val autoScrollCheckbox = ImBoolean(true)
 
+    override val icon = Icons.LIST
+    override val relatedWindows = listOf("window.shell", "window.profiler")
+
     override fun imgui() {
-        if (!ImGui.begin(stringManager.label("window.console"), isOpen)) {
+        if (!beginWindow(stringManager)) {
             ImGui.end()
             return
         }
 
-        renderToolbar()
+        header(stringManager) { renderSearchRow() }
+        renderFilterRow()
 
         if (ImGui.beginTabBar("ConsoleTabs")) {
             if (ImGui.beginTabItem(stringManager.label("tab.console.engine", "${Icons.GEAR} "))) {
@@ -71,14 +75,15 @@ class ConsoleWindow(engine: Engine) : EditorWindow("window.console", true) {
         eventSystem.publish(ConsoleAction.CopyToClipboard(sb.toString()))
     }
 
-    private fun renderToolbar() {
-        // Row 1: search input + clear button + auto-scroll checkbox
+    /** Header tools: search input + clear button + auto-scroll checkbox (the `?` follows on the same line). */
+    private fun renderSearchRow() {
         val clearLabel = "${Icons.TRASH} ${stringManager.getString("lbl.clear")}"
         val autoScrollLabel = stringManager.getString("lbl.console.auto_scroll")
         val clearBtnWidth = ImGui.calcTextSize(clearLabel).x + ImGui.getStyle().framePaddingX * 2f
         val autoScrollWidth = ImGui.calcTextSize(autoScrollLabel).x + 20f + ImGui.getStyle().framePaddingX * 2f
         val spacing = ImGui.getStyle().itemSpacingX
-        val searchWidth = ImGui.getContentRegionAvailX() - clearBtnWidth - autoScrollWidth - spacing * 2f
+        val helpWidth = ImGui.calcTextSize(Icons.QUESTION_CIRCLE).x + ImGui.getStyle().framePaddingX * 2f
+        val searchWidth = ImGui.getContentRegionAvailX() - clearBtnWidth - autoScrollWidth - helpWidth - spacing * 3f
 
         ImGui.pushItemWidth(searchWidth)
         ImGui.inputTextWithHint("##ConsoleSearch", "${Icons.SEARCH} ${stringManager.getString("lbl.search")}...", searchText)
@@ -105,10 +110,10 @@ class ConsoleWindow(engine: Engine) : EditorWindow("window.console", true) {
         if (ImGui.isItemHovered()) {
             ImGui.setTooltip(stringManager.getString("tooltip.console.auto_scroll"))
         }
+    }
 
-        ImGui.separator()
-
-        // Row 2: log level filter buttons with per-level count badges
+    /** Log level filter buttons with per-level count badges, under the header. */
+    private fun renderFilterRow() {
         val allLogs = logger.logs.toList()
         val infoCount = allLogs.count { it.level == LogLevel.INFO }
         val warnCount = allLogs.count { it.level == LogLevel.WARN }
@@ -176,7 +181,14 @@ class ConsoleWindow(engine: Engine) : EditorWindow("window.console", true) {
         ImGui.beginChild("LogScrollingRegion$label", 0f, 0f, false, ImGuiWindowFlags.HorizontalScrollbar)
 
         if (filteredLogs.isEmpty()) {
-            ImGui.textColored(0.5f, 0.5f, 0.5f, 1f, stringManager.getString("lbl.console.empty"))
+            if (logs.isEmpty()) {
+                EmptyState.nothingYet(stringManager, Icons.LIST, "lbl.console.empty")
+            } else {
+                EmptyState.noResults(stringManager) {
+                    searchText.set("")
+                    logLevelFilter = null
+                }
+            }
         } else {
             filteredLogs.forEachIndexed { index, entry ->
                 val color = when (entry.level) {
@@ -222,18 +234,18 @@ class ConsoleWindow(engine: Engine) : EditorWindow("window.console", true) {
         if (ImGui.beginPopupContextWindow()) {
             if (stringManager.tipped(ImGui.menuItem(
                     "${Icons.COPY} ${stringManager.getString("context.console.copy_selected")}",
-                    stringManager.getString("shortcut.copy")
+                    stringManager.getString("shortcut.copy"), false, selectedLogs.isNotEmpty()
                 ), "context.console.copy_selected")
             ) {
                 publishCopySelected()
             }
-            if (stringManager.tipped(ImGui.menuItem("${Icons.COPY} ${stringManager.getString("context.console.copy_all")}"), "context.console.copy_all")) {
+            if (stringManager.tipped(ImGui.menuItem("${Icons.COPY} ${stringManager.getString("context.console.copy_all")}", "", false, logs.isNotEmpty()), "context.console.copy_all")) {
                 val sb = StringBuilder()
                 logs.forEach { sb.append("[${it.level}] ${it.message}\n") }
                 eventSystem.publish(ConsoleAction.CopyToClipboard(sb.toString()))
             }
             ImGui.separator()
-            if (stringManager.tipped(ImGui.menuItem(stringManager.getString("context.console.clear_selection")), "context.console.clear_selection")) {
+            if (stringManager.tipped(ImGui.menuItem(stringManager.getString("context.console.clear_selection"), "", false, selectedLogs.isNotEmpty()), "context.console.clear_selection")) {
                 selectedLogs.clear()
                 lastSelectedIndex = -1
             }

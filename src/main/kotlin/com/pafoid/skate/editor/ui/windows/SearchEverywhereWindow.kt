@@ -1,7 +1,7 @@
 package com.pafoid.skate.editor.ui.windows
 
-import com.pafoid.skate.editor.imgui.Tooltips
 import com.pafoid.skate.editor.events.WindowAction
+import com.pafoid.skate.editor.imgui.Tooltips
 import com.pafoid.skate.editor.imgui.EditorWindow
 import com.pafoid.skate.editor.imgui.EmptyState
 import com.pafoid.skate.editor.imgui.data.Icons

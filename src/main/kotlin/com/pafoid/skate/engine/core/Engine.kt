@@ -15,6 +15,9 @@ import com.pafoid.skate.engine.ecs.systems.ParticleSystem
 import com.pafoid.skate.engine.ecs.systems.DirectionalLightSystem
 import com.pafoid.skate.engine.ecs.systems.EnvironmentSystem
 import com.pafoid.skate.engine.ecs.systems.CameraControlSystem
+import com.pafoid.skate.engine.ecs.systems.CameraCycleSystem
+import com.pafoid.skate.engine.events.CameraAction
+import com.pafoid.skate.engine.gameplay.camera.CameraCycle
 import com.pafoid.skate.engine.net.LoopbackPredictionSystem
 import com.pafoid.skate.engine.ecs.components.RigidBody3D
 import com.pafoid.skate.engine.ecs.systems.CameraProbe
@@ -23,6 +26,9 @@ import com.pafoid.skate.engine.ecs.systems.FollowCameraSystem
 import com.pafoid.skate.engine.ecs.systems.GameObjectManager
 import com.pafoid.skate.engine.ecs.systems.ReaderFlyInputSource
 import com.pafoid.skate.engine.ecs.systems.InputSystem
+import com.pafoid.skate.engine.gameplay.ActionPresets
+import com.pafoid.skate.engine.gameplay.CharacterActions
+import com.pafoid.skate.engine.gameplay.CharacterInputSampler
 import com.pafoid.skate.engine.ecs.systems.PhysicsFrameSystem
 import com.pafoid.skate.engine.ecs.systems.PhysicsSystem
 import com.pafoid.skate.engine.ecs.systems.MountFollowSystem
@@ -37,9 +43,11 @@ import com.pafoid.skate.engine.scripting.runtime.ScriptServices
 import com.pafoid.skate.engine.render.ui.UiFont
 import com.pafoid.skate.engine.ui.ReaderUiInputSource
 import com.pafoid.skate.engine.ui.GameLocale
+import com.pafoid.skate.engine.ui.GameOptions
 import com.pafoid.skate.engine.ui.PauseMenuActions
 import com.pafoid.skate.engine.ui.PauseMenuSystem
 import com.pafoid.skate.engine.ui.UiActions
+import com.pafoid.skate.engine.ui.UiMapSystem
 import com.pafoid.skate.engine.render.ui.SdfFont
 import com.pafoid.skate.engine.ui.UiInputSystem
 import com.pafoid.skate.engine.ui.UiLayoutSystem
@@ -73,6 +81,9 @@ class Engine {
     /** Runtime UI text (pause menu, HUD, game widgets) with the game's own locale, never the editor's. */
     val gameStrings = StringManager(logger, logSource = "game")
     val gameLocale = GameLocale(gameStrings)
+
+    /** Game-defined pause menu options (GPL-21); hosts install the game's at startup. */
+    val gameOptions = GameOptions()
     init { assetsManager.attachAsyncLoading(jobSystem, eventSystem) }
     val audioEngine = AudioEngine(logger)
     val inputProvider = InputProvider(logger)
@@ -147,6 +158,10 @@ class Engine {
         val debugRenderer = renderer.renderResources.renderers.debug
         val physicsSystem = PhysicsSystem(debugRenderer, eventSystem)
         val inputSystem = InputSystem(inputProvider, eventSystem)
+        // Generic character preset and the game's presets (INP-10); registered before any project loads its binding
+        // profile. PlayerMotionSystem applies the presets again on scene load, for presets registered later.
+        CharacterActions.register(inputSystem.actionMap)
+        ActionPresets.applyTo(inputSystem.actionMap)
         val engineSystems = listOf(
             gameObjectManager, // Core
             TransformSystem(),
@@ -158,7 +173,10 @@ class Engine {
             PhysicsFrameSystem(physicsSystem),
             DayNightCycleSystem(),
             DirectionalLightSystem(cameraManager),
-            PlayerMotionSystem(cameraManager),
+            PlayerMotionSystem(
+                cameraManager,
+                CharacterInputSampler(inputSystem.reader, contexts = inputSystem.contexts, actionMap = inputSystem.actionMap),
+            ),
             MountFollowSystem(),
             FollowCameraSystem(
                 CameraProbe { from, to, radius, exclude -> physicsSystem.sphereCast(from, to, radius, exclude.getComponent<RigidBody3D>()) },
@@ -173,6 +191,10 @@ class Engine {
             LoopbackPredictionSystem(),
             // Look while a right-button press that started in the game view is held (INP-09 button rule).
             CameraControlSystem(ReaderFlyInputSource(inputSystem.reader)),
+            // GPL-22: HUD Camera button / camera.cycle action, and first-person cameras.
+            CameraCycleSystem(inputSystem.reader, { cameraManager.camera }) { camera, transform ->
+                eventSystem.publish(CameraAction.SetCamera(camera, transform))
+            },
             ScriptingSystem(
                 logger, eventSystem,
                 ScriptServices(input = ReaderScriptInput(inputSystem.reader)),
@@ -197,16 +219,24 @@ class Engine {
         volume = { systemManager.getSystem<AudioSystem>()?.masterVolume ?: 1f },
         setVolume = { v -> systemManager.getSystem<AudioSystem>()?.masterVolume = v },
         defer = defer,
+        // Game options (GPL-21) are saved next to the language choice.
+        options = gameOptions,
+        settings = { gameLocale.store },
     )
 
     private fun uiSystems(inputSystem: InputSystem): List<System> {
         val framebuffer = renderer.frameBuffer
         val geometry = renderer.renderResources.renderPasses.geometry
-        (inputSystem.reader as? ActionInputReader)?.let { UiActions.bindDefaults(it.actions) }
+        (inputSystem.reader as? ActionInputReader)?.let {
+            UiActions.bindDefaults(it.actions)
+            CameraCycle.bindDefaults(it.actions)
+        }
         var font: UiFont? = null
         val pauseMenu = createPauseMenu()
         return listOf(
             pauseMenu,
+            // Map markers are placed before layout (GUI-13).
+            UiMapSystem(),
             UiLayoutSystem(screen = { UiScreenSize(framebuffer.width, framebuffer.height) }),
             UiInputSystem(
                 // The reader's pointer: render-target pixels and game-view buttons, as for picking (INP-09).

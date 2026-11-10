@@ -3,6 +3,7 @@ package com.pafoid.skate.editor.ui.windows
 import com.pafoid.skate.editor.imgui.tipped
 import com.pafoid.skate.editor.systems.EditorPaths
 import com.pafoid.skate.editor.imgui.EditorWindow
+import com.pafoid.skate.editor.imgui.EmptyState
 import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.editor.imgui.label
 import com.pafoid.skate.editor.shell.ShellHistory
@@ -37,7 +38,6 @@ class ShellWindow(
     private val history: ShellHistory = ShellHistory(EditorPaths.file(HISTORY_FILE)).load(),
     private val workingDir: File = File(".").absoluteFile,
 ) : EditorWindow(NAME) {
-    override val relatedWindows: List<String> = listOf("window.console")
 
     companion object {
         const val NAME = "window.shell"
@@ -50,18 +50,20 @@ class ShellWindow(
     private val autoScroll = ImBoolean(true)
     private var focusInput = false
 
+    override val icon = Icons.TERMINAL
+    override val relatedWindows = listOf("window.console")
+
     init {
         Runtime.getRuntime().addShutdownHook(Thread({ session.shutdown() }, "shell-panel-shutdown"))
     }
 
     override fun imgui() {
         output.addAll(session.drain(2000))
-        if (!ImGui.begin(title(strings, "${Icons.FILE_CODE} "), isOpen)) {
+        if (!beginWindow(strings)) {
             ImGui.end()
             return
         }
-        toolbar()
-        ImGui.separator()
+        header(strings) { toolbar() }
         outputView()
         inputLine()
         ImGui.end()
@@ -119,6 +121,7 @@ class ShellWindow(
     private fun outputView() {
         val footer = ImGui.getFrameHeightWithSpacing() + ImGui.getStyle().itemSpacingY
         ImGui.beginChild("shell_output", 0f, -footer, true, ImGuiWindowFlags.HorizontalScrollbar)
+        if (output.size == 0) EmptyState.nothingYet(strings, Icons.TERMINAL, "empty.shell", "empty.shell.hint")
         ImGuiListClipper.forEach(output.size, object : ImListClipperCallback() {
             override fun accept(index: Int) {
                 val line = output[index]
@@ -134,8 +137,10 @@ class ShellWindow(
             }
         })
         if (ImGui.beginPopupContextWindow("shell_output_context")) {
-            if (strings.tipped(ImGui.menuItem(strings.label("context.console.copy_all")), "context.console.copy_all")) ImGui.setClipboardText(output.text())
-            if (strings.tipped(ImGui.menuItem(strings.label("shell.clear")), "shell.clear")) output.clear()
+            val hasOutput = output.size > 0
+            if (strings.tipped(ImGui.menuItem(strings.label("context.console.copy_all", "${Icons.COPY} "), "", false, hasOutput), "context.console.copy_all")) ImGui.setClipboardText(output.text())
+            ImGui.separator()
+            if (strings.tipped(ImGui.menuItem(strings.label("shell.clear", "${Icons.TRASH} "), "", false, hasOutput), "shell.clear")) output.clear()
             ImGui.endPopup()
         }
         if (autoScroll.get() && ImGui.getScrollY() >= ImGui.getScrollMaxY() - 1f) ImGui.setScrollHereY(1f)

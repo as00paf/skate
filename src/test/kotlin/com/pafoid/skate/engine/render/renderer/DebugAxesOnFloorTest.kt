@@ -11,7 +11,6 @@ import com.pafoid.skate.engine.render.renderer.passes.DebugPass
 import io.mockk.every
 import io.mockk.mockk
 import org.joml.Vector3f
-import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.AfterEach
@@ -21,7 +20,7 @@ import com.pafoid.skate.engine.render.rhi.FakeRhiDevice
 import com.pafoid.skate.engine.render.rhi.RhiContext
 
 /**
- * REN-19 follow-up: the origin axes lie on the floor and the debug shader never moves vertices. The blue Z axis
+ * REN-19 follow-up (REN-25: the X/Z axes moved into the grid shader): the origin axes lie on the floor and the debug shader never moves vertices. The blue Z axis
  * (and red X) drew far above the floor and over the skater because the depth pull shifted vertex positions.
  */
 class DebugAxesOnFloorTest {
@@ -39,16 +38,13 @@ class DebugAxesOnFloorTest {
     fun tearDown() { RhiContext.device = null }
 
     @Test
-    fun OriginAxes_XAndZRibbonsLieFlatOnTheFloorPlane() {
+    fun OriginAxes_OnlyTheYAxisIsARibbon_XAndZAreDrawnByTheGridShader() {
         val scene = Scene().also { it.addComponent(GridLines()) }
 
         DebugPass(renderer, cameras, targetHeight = { 720 }).execute(scene)
 
-        val vertices = renderer.groundTriangleVertices()
-        assertEquals(4 * 3, vertices.size, "two ribbons (red X, blue Z), two triangles each")
-        assertTrue(vertices.all { it.y == 0f }, "every ground ribbon vertex at y = 0: ${vertices.map { it.y }.distinct()}")
-        val xs = vertices.map { it.x }; val zs = vertices.map { it.z }
-        assertTrue(xs.max() > 1f && zs.max() > 1f, "one ribbon runs along X, the other along Z")
+        // REN-25: the red X and blue Z axes are part of the infinite grid shader, so no ground ribbons are queued
+        assertTrue(renderer.groundTriangleVertices().isEmpty())
     }
 
     @Test

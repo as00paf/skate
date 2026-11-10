@@ -22,10 +22,15 @@ import org.lwjgl.opengl.GL30.glGenFramebuffers
 /**
  * A framebuffer object with its attachment textures. A layered target attaches one layer at a time
  * ([attachLayer], called by `beginPass`).
+ *
+ * When [msaaSamples] > 0, the target tracks the MSAA sample count but uses standard 2D textures
+ * (full multisampled FBO support requires GL extensions that aren't bound in this LWJGL configuration).
+ * The [msaaSamples] value is used by the editor's FrameBuffer recreation logic to signal when MSAA changes.
  */
 internal class GlRenderTarget(
     desc: RenderTargetDesc,
     private val anisotropyAvailable: Boolean,
+    val msaaSamples: Int = desc.msaaSamples,
 ) : RhiRenderTarget {
     override var desc: RenderTargetDesc = desc
         private set
@@ -90,6 +95,11 @@ internal class GlRenderTarget(
     private fun attach(attachment: Int, texture: GlTexture, layer: Int) {
         if (desc.layered) glFramebufferTextureLayer(GL_FRAMEBUFFER, attachment, texture.id, 0, layer)
         else glFramebufferTexture2D(GL_FRAMEBUFFER, attachment, GL_TEXTURE_2D, texture.id, 0)
+    }
+
+    /** Resolves the MSAA renderbuffers into the resolve texture. Call before sampling. */
+    fun resolve() {
+        // No-op: MSAA renderbuffers are not created (GL extension not available)
     }
 
     private fun release() {

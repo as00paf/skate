@@ -147,8 +147,6 @@ class WindowStandardGuardTest {
         val ALLOW_LIST = setOf(
             // C: project & assets
             "ProjectWindow", "AssetBrowserWindow",
-            // D: debug
-            "ConsoleWindow", "ProfilerWindow", "CommandHistoryWindow", "ShellWindow",
             // H: domain windows
             "AudioInspectorWindow", "ScriptEditorWindow",
             // I: input testing move (the window is deleted)

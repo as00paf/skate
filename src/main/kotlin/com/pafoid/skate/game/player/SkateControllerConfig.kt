@@ -19,6 +19,8 @@ data class SkateControllerConfig(
     val grind: GrindTuning = GrindTuning(),
     val manual: ManualTuning = ManualTuning(),
     val bail: BailTuning = BailTuning(),
+    /** Air time and points of each trick of the core set (GPL-21). */
+    val tricks: TrickTuning = TrickTuning(),
     /** Kinematic network step (GPL-17, [com.pafoid.skate.game.net.SkaterPredictionStep]). */
     val prediction: PredictionTuning = PredictionTuning(),
     /** Animation clip per [SkateState] name. */
