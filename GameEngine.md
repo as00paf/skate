@@ -410,10 +410,10 @@ Round 27+ goals (human, 2026-11-06): fix editor bugs, make every window, dialog 
 - [x] **EDT-58** `P1` Remember the editor camera per scene
   - Do: Save the editor camera position/rotation/mode per scene (editor-only data, not in the exported game) and restore it when the scene opens.
   - Done when: Switching scenes and restarting restores each scene's camera; tests.
-- [~] @skate-tooling **EDT-59** `P1` REWRITE New Project wizard and templates — design draft written, awaiting the human's approval
+- [~] @skate-tooling **EDT-59** `P1` REWRITE New Project wizard and templates — design approved by the human 2026-11-10 (`docs/design/EDT-59.md` rev 2); implementation after AST-27
   - Do: Design note first. Templates (Empty, Skate game, Feature Showcase, Tetris, Marble Run, later demos), which separates the skate game from the showcase. Settings: target FPS/uncapped, physics backend (Bullet, Simple, Jolt once PHY-17 lands), graphics backend (exists), include AI agent/skill files, splash screen image. Templates come from skate-tooling.
   - Done when: The human approves the design; each template creates a project that opens and runs; tests for the template registry and settings.
-  - Deps: EDT-56, AST-14
+  - Deps: EDT-56, AST-14, AST-27
 - [~] @skate-ecs **EDT-60** `P2` Git version control (phase 0 done; phase 1: @skate-ecs) — approved 2026-11-06 (`docs/design/EDT-60.md`)
   - Do: Phase 0 (ECS/AST): persistent GameObject ids so an unchanged scene saves byte-identical; load→save→load→save test on MainScene and the Feature Showcase. Phase 1 (EDT): local repository panel with JGit (init, status, diff, commit, history, branches, discard, conflict-safe loading; no Git install needed). Conflicts: whole-file "Keep mine / Take theirs" for now (human). Human decisions for later phases: GitHub sign-in supports **both** browser sign-in (a registered "Skate" OAuth app, set up with the human when phase 2 starts) and pasting a personal access token; **Git LFS on by default** for new projects (models, textures, audio).
   - Done when: Phase 1 commits and diffs a project locally; tests.
@@ -457,7 +457,7 @@ Round 27+ goals (human, 2026-11-06): fix editor bugs, make every window, dialog 
   - Deps: AST-27
 - [ ] **EDT-70** `P1` New Project: copy the engine default assets or not
   - Do: From the human (2026-11-10): a project-creation setting choosing whether `EngineDefaults` is copied into the project's assets folder; the behaviour of each mode comes from AST-26. Fold into the EDT-59 wizard design if it is approved first, otherwise add to the current wizard.
-  - Done when: Both choices create a project that opens, plays and exports; the choice is stored in project settings; tests.
+  - Done when: Both choices create a project that opens, plays and exports; the choice is a creation-time action, not stored (EDT-59 Q2, human 2026-11-10); tests.
   - Deps: AST-27
 
 ### Tooling & samples — `TLG` (`skate-tooling`)
