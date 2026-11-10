@@ -222,6 +222,7 @@ class Engine {
         // Game options (GPL-21) are saved next to the language choice.
         options = gameOptions,
         settings = { gameLocale.store },
+        inputContexts = { systemManager.getSystem<InputSystem>()?.contexts },
     )
 
     private fun uiSystems(inputSystem: InputSystem): List<System> {

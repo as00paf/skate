@@ -64,8 +64,6 @@ class TooltipToggleGuardTest {
             "EditorMenuBar.kt", "WindowControlsRenderer.kt",
             // H: domain windows
             "AudioMixerPanel.kt", "ScriptEditorWindow.kt",
-            // I: input testing move (the window is deleted)
-            "InputTestingWindow.kt",
             // EDT-54: Render Graph rewrite
             "RenderGraphWindow.kt",
         )

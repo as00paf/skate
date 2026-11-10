@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.imgui
 
+import com.pafoid.skate.editor.ui.windows.KeyBindingsWindow
 import com.pafoid.skate.editor.data.EditorShortcuts
 import com.pafoid.skate.app.Editor
 import com.pafoid.skate.editor.events.EditorEvent
@@ -11,7 +12,6 @@ import com.pafoid.skate.editor.imgui.data.UiConstants.EDITOR_MENU_BAR_HEIGHT
 import com.pafoid.skate.editor.systems.ProjectManager
 import com.pafoid.skate.editor.ui.menus.EditMenuBuilder
 import com.pafoid.skate.editor.ui.menus.FileMenuBuilder
-import com.pafoid.skate.editor.ui.menus.InputMenuBuilder
 import com.pafoid.skate.editor.ui.menus.SettingsMenuBuilder
 import com.pafoid.skate.editor.ui.menus.ViewMenuBuilder
 import com.pafoid.skate.editor.ui.menus.WindowControlsRenderer
@@ -39,7 +39,6 @@ class EditorMenuBar(
     private val fileMenu = FileMenuBuilder(stringManager, eventSystem)
     private val editMenu = EditMenuBuilder(stringManager, sceneManager, eventSystem)
     private val settingsMenu = SettingsMenuBuilder(stringManager, settingsManager, eventSystem)
-    private val inputMenu = InputMenuBuilder(stringManager, eventSystem)
     private val viewMenu = ViewMenuBuilder(stringManager, eventSystem, windowRegistry)
     private val windowControls = WindowControlsRenderer(eventSystem, stringManager)
 
@@ -54,7 +53,7 @@ class EditorMenuBar(
     }
 
     fun render() {
-        inputMenu.handleShortcut()
+        handleTestInputShortcut()
         if (ImGui.beginMenuBar()) {
             renderAppIcon()
             renderHamburgerMenu()
@@ -62,6 +61,15 @@ class EditorMenuBar(
             windowControls.render()
 
             ImGui.endMenuBar()
+        }
+    }
+
+    /** Shift+I opens Key Bindings › Test (it opened the removed Input Testing window, EDT-52I). */
+    private fun handleTestInputShortcut() {
+        val io = ImGui.getIO()
+        val combo = EditorShortcuts.INPUT_TESTING.combo()
+        if (io.keyCtrl == combo.ctrl && io.keyShift == combo.shift && ImGui.isKeyPressed(combo.key, false)) {
+            eventSystem.publish(WindowAction.Show(KeyBindingsWindow.TEST_TAB))
         }
     }
 
@@ -87,7 +95,6 @@ class EditorMenuBar(
             fileMenu.render(sceneManager.currentScene)
             editMenu.render()
             settingsMenu.render()
-            inputMenu.render()
             viewMenu.render()
             ImGui.separator()
 

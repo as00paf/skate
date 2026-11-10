@@ -37,6 +37,7 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 import java.util.*
+import com.pafoid.skate.editor.ui.windows.input.DeadZonePanel
 
 class ProjectSettingsWindow(
     engine: Engine,
@@ -46,6 +47,11 @@ class ProjectSettingsWindow(
     private val eventSystem = engine.eventSystem
     private val stringManager: StringManager = engine.stringManager
     private val gameLocale = engine.gameLocale
+
+    /** Dead-zone tuning, moved here from Input Testing (EDT-52I). Edits the open project's settings. */
+    private val deadZonePanel = DeadZonePanel(stringManager, eventSystem, engine.inputProvider) {
+        projectManager.currentProject?.gameplaySettings?.inputMappings?.deadZones
+    }
 
     override val icon: String = Icons.CUBE
     override val relatedWindows = listOf("window.editor_settings", "window.export_wizard")
@@ -127,11 +133,9 @@ class ProjectSettingsWindow(
 
     /**
      * Project Settings › Input (EDT-51 §3.1): gamepad dead zones and trigger threshold with the live stick view.
-     * Empty until EDT-52 chunk I moves the tuning here from Input Testing.
+     * Each slider gesture is one undoable command, and the project is saved after it.
      */
-    private fun renderInput() {
-        EmptyState.nothingYet(stringManager, Icons.SLIDERS, "settings.project.input.empty", "settings.project.input.empty.hint")
-    }
+    private fun renderInput() = deadZonePanel.render()
 
     /** The scene the project opens with (EDT-57), among the project's scenes; an undoable command. */
     private fun renderDefaultScene() {

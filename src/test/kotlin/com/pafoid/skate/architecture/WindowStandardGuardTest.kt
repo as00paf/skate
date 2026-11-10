@@ -41,7 +41,7 @@ class WindowStandardGuardTest {
     @Test
     fun Guard_FindsTheEditorWindows() {
         val names = windows.map { it.className }
-        assertTrue(names.size >= 20, "found only $names")
+        assertTrue(names.size >= 19, "found only $names") // 19 since EDT-52I deleted Input Testing
         assertTrue("ExportWizardWindow" in names && "ShellWindow" in names, names.toString())
     }
 
@@ -149,8 +149,6 @@ class WindowStandardGuardTest {
             "ProjectWindow", "AssetBrowserWindow",
             // H: domain windows
             "AudioInspectorWindow", "ScriptEditorWindow",
-            // I: input testing move (the window is deleted)
-            "InputTestingWindow",
             // EDT-54: the Render Graph rewrite adopts the standard
             "RenderGraphWindow",
         )

@@ -51,6 +51,8 @@ class InputSystemTest {
     @Test
     fun InputSystem_PausedStillReadsUiCancel() {
         scene.isPaused = true
+        inputSystem.update(0.016f)
+        inputSystem.reader.wasActionPressed(UiActions.CANCEL) // watched before the press, as the pause menu does
         every { inputProvider.isKeyPressed(GLFW.GLFW_KEY_ESCAPE) } returns true
         every { inputProvider.keyBeginPress(GLFW.GLFW_KEY_ESCAPE) } returns true
 

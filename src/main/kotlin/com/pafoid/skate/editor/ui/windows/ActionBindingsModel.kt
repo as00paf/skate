@@ -2,6 +2,7 @@ package com.pafoid.skate.editor.ui.windows
 
 import com.pafoid.skate.engine.core.StringManager
 import com.pafoid.skate.engine.input.ActionBinding
+import com.pafoid.skate.engine.input.ActionConflict
 import com.pafoid.skate.engine.input.ActionDefinition
 import com.pafoid.skate.engine.input.ActionMap
 import com.pafoid.skate.engine.input.InputContext
@@ -41,6 +42,22 @@ object ActionBindingsModel {
         is ActionBinding.MouseButton -> "Mouse " + (listOf("Left", "Right", "Middle").getOrNull(binding.button) ?: "Button ${binding.button + 1}")
         is ActionBinding.GamepadButton -> GamepadLayout.buttonName(binding.button)
         is ActionBinding.GamepadAxis -> GamepadLayout.axisName(binding.axis) + if (binding.scale < 0f) " (-)" else ""
+    }
+
+    /** Label of [context]: its `lbl.keybindings.context.<id>` translation, or the raw id for game contexts without one. */
+    fun contextLabel(context: InputContext, translate: (String) -> String?): String =
+        translate("lbl.keybindings.context.${context.id}") ?: context.id
+
+    /**
+     * Actions of *other* contexts bound to the same physical input as [binding] of [actionId] (INP-10 shadowing):
+     * while the higher-priority context is active it takes that input. Not a conflict, so rebinding allows it.
+     */
+    fun sharedWith(map: ActionMap, actionId: String, binding: ActionBinding): List<ActionConflict> {
+        val context = map.definition(actionId)?.context ?: return emptyList()
+        val source = binding.physicalSourceId()
+        return map.definitions().filter { it.context != context }.flatMap { other ->
+            map.bindings(other.id).filter { it.physicalSourceId() == source }.map { ActionConflict(other.id, it) }
+        }
     }
 
     /** Groups the actions by context then category, keeping only rows that match [query] (name, id, category or binding). */

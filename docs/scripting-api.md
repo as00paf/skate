@@ -7,7 +7,7 @@ The editor's completion popup (EDT-26) shows these entries, generated from `Comp
 |---|---|
 | `ctx.entity` (`id`, `name`, `transform.position/rotation/scale`, `getComponent`, `hasComponent`) | The entity the script is attached to |
 | `ctx.scene.find(name)` / `findAll(name)` | Look up other entities |
-| `ctx.input` (`isKeyDown`, `isKeyPressed`, `isKeyReleased`, `isMouseButtonDown`, `action`) | Input; key codes are GLFW codes, e.g. Space = 32 |
+| `ctx.input` (`isKeyDown`, `isKeyPressed`, `isKeyReleased`, `isMouseButtonDown`, `action`, `isActionDown`, `wasActionPressed`, `pushContext`, `popContext`) | Input; key codes are GLFW codes, e.g. Space = 32. `pushContext(id, priority, blocking)` puts an input context on the stack (`blocking`: `"none"`, `"consume"` or `"all"`; Lua/TS default to `0, "consume"`) and returns a handle for `popContext`. The runtime pops a script's contexts when it is destroyed, hot reloaded or fails (INP-10). |
 | `ctx.physics` (`gravity`, `raycast`) | Physics queries |
 | `ctx.events` (`on`, `emit`) | Custom string-keyed events |
 | `ctx.time` (`deltaTime`, `fixedDeltaTime`, `elapsed`) | Timing |
