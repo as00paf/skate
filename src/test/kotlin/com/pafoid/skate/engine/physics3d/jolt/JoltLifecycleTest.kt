@@ -52,6 +52,16 @@ class JoltLifecycleTest {
         return bodies
     }
 
+    private fun memSnapshot(os: OperatingSystemMXBean, tag: String): String {
+        val mm = ManagementFactory.getMemoryMXBean()
+        val pools = ManagementFactory.getMemoryPoolMXBeans()
+        val detail = pools.joinToString(" ") { "${it.name.replace(" ", "")}=${it.usage.committed / (1024 * 1024)}" }
+        val threads = ManagementFactory.getThreadMXBean()
+        return "MEM[$tag] total=${os.committedVirtualMemorySize / (1024 * 1024)}MB " +
+            "heapC=${mm.heapMemoryUsage.committed / (1024 * 1024)}MB heapU=${mm.heapMemoryUsage.used / (1024 * 1024)}MB " +
+            "nonHeapC=${mm.nonHeapMemoryUsage.committed / (1024 * 1024)}MB threads=${threads.threadCount} :: $detail"
+    }
+
     @Test
     fun JoltLifecycle_FiftyWorlds_FreeEverythingTheyOwn() {
         val os = ManagementFactory.getOperatingSystemMXBean() as OperatingSystemMXBean
@@ -59,6 +69,7 @@ class JoltLifecycleTest {
         var memoryAfterWarmup = 0L
         var threadsAfterWarmup = 0
 
+        println(memSnapshot(os, "start"))
         repeat(50) { n ->
             val w = PhysicsBackends.create(PhysicsBackend.JOLT) as JoltPhysics3D
             populate(w)
@@ -74,11 +85,15 @@ class JoltLifecycleTest {
                 System.gc()
                 memoryAfterWarmup = os.committedVirtualMemorySize
                 threadsAfterWarmup = threads.threadCount
+                println(memSnapshot(os, "baseline-n9"))
             }
+            if (n % 10 == 4) println(memSnapshot(os, "n${n + 1}-preGC"))
         }
         System.gc()
+        println(memSnapshot(os, "end-postGC"))
         // Each world holds a 16 MB temp allocator and a thread pool: leaking them would grow by ~640 MB and 100+ threads
         val growthMb = (os.committedVirtualMemorySize - memoryAfterWarmup) / (1024 * 1024)
+        println("DIAG growth=$growthMb MB totalStart=${os.committedVirtualMemorySize / (1024 * 1024)}MB")
         assertTrue(growthMb < 128, "committed memory grew by $growthMb MB over 40 worlds")
         assertTrue(threads.threadCount - threadsAfterWarmup < 8, "threads grew from $threadsAfterWarmup to ${threads.threadCount}")
     }
