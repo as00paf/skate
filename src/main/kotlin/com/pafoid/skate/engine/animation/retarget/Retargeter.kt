@@ -39,6 +39,13 @@ object Retargeter {
         return Animation(animation.name, channels, animation.duration, animation.path)
     }
 
+    /**
+     * Retargets with rest-pose compensation: bones keep the source's world directions even when the rigs' rest poses
+     * (T-pose vs A-pose) or bone axes differ. Needs the [source] skeleton. See [RestPoseRetargeter].
+     */
+    fun retarget(animation: Animation, source: Skeleton, target: Skeleton, translationScale: Float? = null): Animation =
+        RestPoseRetargeter.retarget(animation, source, target, translationScale)
+
     /** Fraction of the clip's channels that found a target bone; useful to reject bad rig pairs. */
     fun coverage(animation: Animation, target: Skeleton): Float {
         if (animation.channels.isEmpty()) return 0f

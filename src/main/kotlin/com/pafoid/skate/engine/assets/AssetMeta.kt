@@ -36,6 +36,7 @@ data class AssetMeta(
         fun importerFor(file: File): String = when (file.extension.lowercase()) {
             "png", "jpg", "jpeg", "bmp", "tga", "hdr" -> "texture"
             "obj", "fbx", "gltf", "glb", "dae" -> "model"
+            "skanim" -> "animation"
             "wav", "ogg", "mp3" -> "sound"
             "glsl", "vert", "frag", "vs", "fs" -> "shader"
             "scene", "prefab", "json" -> "data"
