@@ -27,6 +27,7 @@ class UndoCoverageGuardTest {
         "editor/ClearLogsCommand.kt" to "editor-only state (console)",
         "editor/CopyToClipboardCommand.kt" to "editor-only state (clipboard)",
         "editor/TogglePhysicsDebugCommand.kt" to "editor-only view toggle",
+        "editor/SetRenderPassEnabledCommand.kt" to "editor-only debug view of the renderer, not scene data (EDT-54)",
         "objects/MaterialCommands.kt" to "SaveMaterialAssetCommand writes a file; undo never deletes or rewrites files",
         "project/CloseOtherScenesCommand.kt" to "scene tabs (session state, not scene data)",
         "project/CloseAllScenesCommand.kt" to "scene tabs (session state, not scene data)",

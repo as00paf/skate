@@ -24,6 +24,7 @@ class EditorActionHandler(
         ProjectActionHandler(engine, projectManager, settingsManager, undoRedoManager, stringManager, loading)
     val environmentActionHandler = EnvironmentActionHandler(undoRedoManager, engine.eventSystem)
     val consoleActionHandler = ConsoleActionHandler(engine.eventSystem, engine.logger, undoRedoManager)
+    val renderGraphActionHandler = RenderGraphActionHandler(engine.eventSystem, undoRedoManager) { engine.renderer.renderGraph }
     val inputSettingsActionHandler = InputSettingsActionHandler(engine.eventSystem, projectManager, undoRedoManager)
     val scriptEditorActionHandler = ScriptEditorActionHandler(engine.eventSystem, undoRedoManager, engine.logger)
     val jointActionHandler = JointActionHandler(engine.eventSystem, undoRedoManager)

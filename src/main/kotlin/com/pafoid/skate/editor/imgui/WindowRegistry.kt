@@ -16,7 +16,7 @@ import com.pafoid.skate.editor.ui.windows.ProjectSwitcherDialog
 import com.pafoid.skate.editor.ui.windows.ProjectWindow
 import com.pafoid.skate.editor.ui.windows.ProjectWizardWindow
 import com.pafoid.skate.editor.ui.windows.PropertiesWindow
-import com.pafoid.skate.editor.ui.windows.RenderGraphWindow
+import com.pafoid.skate.editor.ui.windows.rendergraph.RenderGraphWindow
 import com.pafoid.skate.editor.ui.windows.SceneHierarchyWindow
 import com.pafoid.skate.editor.ui.windows.SearchEverywhereWindow
 import com.pafoid.skate.editor.ui.windows.ScriptEditorWindow

@@ -144,10 +144,7 @@ class WindowStandardGuardTest {
 
     companion object {
         /** Windows not converted to the standard yet, by EDT-52 chunk. Remove entries; never add any. */
-        val ALLOW_LIST = setOf(
-            // EDT-54: the Render Graph rewrite adopts the standard
-            "RenderGraphWindow",
-        )
+        val ALLOW_LIST = emptySet<String>()
 
         private val CLASS = Regex("""(?<![\w.])(abstract\s+|open\s+)?class\s+(\w+)""")
         private val BASE = Regex("""^\s*:\s*(EditorWindow|EditorDialog)\s*\(""")
