@@ -1,8 +1,10 @@
 # REN-28: Terrain and biomes (design)
 
-Status: **proposal rev 2, awaiting approval.** Rev 2 records the human's answers to rev 1 §13 (2026-11-10, §14) and
-adds **chunk streaming** for 2 km+ worlds (§15). Owner: skate-render. Reviewers: skate-physics (§8, §15.5),
-skate-assets (§10, §15.6), skate-ecs (§3.1, §15.3), skate-gameui (§15.7 loading screen); skate-online later (§15.8).
+Status: **proposal rev 3, awaiting approval.** Rev 2 recorded the human's answers to rev 1 §13 (2026-11-10, §14) and
+added **chunk streaming** for 2 km+ worlds (§15). Rev 3 records the answers to rev 2 §13 (2026-11-10, §16): streamed
+scripted props **remember their state** (new §15.10), the freeze rule gets a physics API (§15.5), and the multiplayer
+split is clarified (§15.8). Owner: skate-render. Reviewers: skate-physics (§8, §15.5), skate-assets (§10, §15.6,
+§15.10.5), skate-ecs (§3.1, §15.3, §15.10.3), skate-gameui (§15.7 loading screen); skate-online later (§15.8).
 Depends on ECS-14 (seeded RNG, `RandomService`, `engine/ecs/random/RandomService.kt` on `integration/30g`). Feeds
 PHY-15 (heightfield collider) and REN-29 (vegetation, water), which reuses the scatter and noise parts.
 
@@ -31,9 +33,10 @@ that don't exist yet. Paths without a root are relative to `src/main/kotlin/com/
 
 **Non-goals (for now)**
 - Caves and overhangs (voxel terrain).
-- Worlds beyond 16 km × 16 km, and floating-origin rebasing. Positions stay within ±8 km, where a `Float` keeps
-  ≤ 1 mm precision.
-- Streaming hand-placed scene entities: only terrain-derived content streams. Open question 1.
+- Worlds beyond 16 km × 16 km, and floating-origin rebasing (human, §16). Positions stay within ±8 km, where a
+  `Float` keeps ≤ 1 mm precision.
+- Streaming hand-placed scene entities: they stay loaded with the scene; entity-cell streaming is a later ECS task
+  (human, §16). Only terrain-derived content streams.
 - Runtime deformation.
 - Hydraulic erosion: **later** (human, §14). It stays listed as a future recipe step (§5.3).
 - Water and vegetation rendering: those are REN-29. This note only defines the scatter hooks REN-29 uses.
@@ -264,7 +267,8 @@ so it can be re-run with a new seed.
   beyond `fadeStart`). Items whose prefab has components (scripts, lights) are spawned as entities under the terrain,
   capped per rule; they don't show in the hierarchy unless the user unpacks them.
   - Streamed entity spawns and despawns are budgeted per frame (§15.5).
-  - They are **stateless decoration**: their state is not kept when the chunk unloads (open question 2).
+  - They **remember their state** when their chunk unloads (human, §16): destroyed, moved, taken or changed props
+    come back as they were left, through per-chunk state deltas (§15.10).
 - **Colliders:** static colliders are added for rules with `collider = true`, from the prefab's collider. That covers
   rocks; grass never collides. They stream with the chunk's physics ring (§15.5).
 - **Editor:** a scatter paint brush adds/erases a per-rule density mask (R8 per rule, in the chunk records), plus
@@ -286,8 +290,8 @@ so it can be re-run with a new seed.
     mesh shapes today).
   - Neighbouring chunk shapes share their edge samples, so bodies cross seams without bumps. A unit test checks this
     with a sphere rolling across a seam.
-- **Streaming:** shapes are built on workers and added or removed on the physics step within a budget. Bodies over a
-  chunk without a collider are frozen until it arrives (§15.5).
+- **Streaming:** shapes are built on workers and added or removed on the physics step within a budget. Dynamic bodies
+  over a chunk without a collider are frozen (simulation suspended) until it arrives (human, §16; mechanism §15.5).
 - **Edits:** sculpting marks chunks dirty, and their collider is rebuilt at brush release, not every stroke frame.
 - **Queries:** `PhysicsQueries` raycasts hit terrain like any collider (layer `Terrain` for filtering). Gameplay that
   only needs height can call `TerrainQueries.heightAt(x, z)` without physics; it falls back to the overview far away.
@@ -394,42 +398,45 @@ so it can be re-run with a new seed.
 | 14 | Far field: `TerrainOverview`, quadtree tiles from the overview, macro colour shading, detail/far crack hiding | REN | 4, 6 |
 | 15 | Streaming core: `ChunkStreamingPlanner` (pure), `TerrainStreamer` state machine, priorities and prediction, memory budgets and LRU, `StreamingUploadQueue` (time-budgeted), `EngineStats` counters, debug overlay | REN | 4, 5, 8 |
 | 16 | Streaming focus: `StreamingFocus` component, `TerrainStreamingSystem`, editor-camera and active-camera focus, `prefetch` API | ECS (component, system review) + REN | 15 |
-| 17 | Streamed physics: worker shape build, budgeted add/remove per fixed step, freezing bodies over unloaded chunks, prefetch of the physics ring | PHY | 9, 16 |
-| 18 | Streamed scatter: per-chunk batches and budgeted entity spawn/despawn on load/unload | REN | 7, 15 |
+| 17 | Streamed physics: worker shape build, budgeted add/remove per fixed step, "collider present" bitset, freezing bodies over unloaded chunks (§15.5), prefetch of the physics ring, `StreamingProfile.SERVER` (physics only) | PHY + REN | 9, 16, 26 |
+| 18 | Streamed scatter: per-chunk batches and budgeted entity spawn/despawn on load/unload; stable rule ids | REN | 7, 15 |
 | 19 | Random-access pack reading: stream entries from `game.bin` through a `FileChannel` instead of `readBytes()` | AST | 8 |
 | 20 | Sparse edits: per-chunk bake on first edit of a procedural terrain, dirty-chunk pinning, region save, overview/macro refresh, reroll warning | REN + EDT | 10, 15 |
 | 21 | Exported game and Play: spawn prefetch behind the loading screen, quality-scaled radii from the graphics settings | GUI + REN | 16, 17, 19 |
-| 22 | *Big Island* large-world sample + streaming stats overlay, hitch and budget measurements | TLG + REN | 14–18, 21 |
+| 22 | *Big Island* large-world sample + streaming stats overlay, hitch and budget measurements; tune the accepted default radii and budgets (§16 decision 3) | TLG + REN | 14–18, 21 |
+| 23 | Scatter state deltas: `ScatterItemKey`, `ChunkStateDelta`, `ScatterStateStore`, capture on despawn/destroy/detach, restore on load (batch filtering, `CHANGED`/`FOREIGN` spawns), touched items kept as entities through the detail ring, fingerprints, budget, debug overlay (§15.10) | REN | 18, 24 |
+| 24 | Component state capture: side-effect-free `PrefabService.diff`, `@StreamTransient`, `ScatterItem` component (key, `detach()`, `randomStream()`, destroy hook), diff/instantiate round-trip guarantee (§15.10.5) | ECS | 18 |
+| 25 | Save-game container with named sections (ECS scene state, terrain sections, game data), atomic write, user data dir; `TerrainStateService.snapshot/restore` and the `SKSD` terrain section (§15.10.5) | AST (container) + REN (section) | 23; AST-18 decision |
+| 26 | `IRigidBodyHandle.simulationSuspended` on Bullet, Jolt and `SimplePhysics3D`, keeping and restoring velocities (§15.5) | PHY | — |
+| 27 | Stateful props in *Big Island*: a breakable-crate scatter rule, manual check of break, throw, fly away, save and load | TLG + REN | 22, 23, 25 |
 | — | Later (human: erosion later): offline erosion bake into data chunks | REN | 20 |
 
 REN-29 (vegetation and water) builds on tasks 2 and 7 (instance batches, scatter rules), and its vegetation cells
 stream with task 18. Without streaming (small terrains, `streaming = OFF`), tasks 1–13 stand alone; tasks 14–22 add
-big worlds.
+big worlds; tasks 23–27 add stateful props. Scatter state deltas also matter without streaming: a save game made on
+a small terrain uses the same store and section (tasks 23–25), so they don't depend on tasks 14–17.
+Later, outside this note: entity-cell streaming for hand-placed entities (ECS, §16 decision 1), scatter-state
+replication (NET, §15.8).
 
 ## 13. Open questions for the human
 
-Rev 1's four questions are answered (§14). Remaining questions from the streaming design:
+Rev 1's questions are answered in §14 and rev 2's in §16. Remaining questions from the scatter state design
+(§15.10):
 
-1. **Hand-placed entities in big worlds:** should scene entities placed by hand (buildings, ramps, NPCs) also
-   load and unload by area (level streaming), or stay loaded with the scene?
-   *Recommended:* keep them loaded for now (a few thousand entities are fine in memory), and design entity-cell
-   streaming as a separate ECS task when a real level needs it.
-2. **Streamed scripted props:** should scatter-spawned entities with behaviour (e.g. a breakable crate) remember their
-   state when their chunk unloads?
-   *Recommended:* no. They are stateless decoration that respawns fresh; anything with persistent state is
-   hand-placed.
-3. **Default radii and budgets:** physics 128 m, detail 512 m, far field to 4 km; 256 MB GPU and 256 MB CPU for
-   terrain plus scatter at High quality, halved at Low. Are these right for the target machines?
-   *Recommended:* yes, tuned with the *Big Island* measurements in task 22.
-4. **Unloaded ground under a body:** when a dynamic body reaches a chunk whose collider hasn't loaded (e.g. after a
-   fast teleport), should it freeze until the collider arrives, or fall through?
-   *Recommended:* freeze (sleep) dynamic bodies; the player is prefetched so it never happens to them.
-5. **World size cap:** is 16 km × 16 km enough? Bigger needs floating-origin rebasing across rendering, physics and
-   netcode.
-   *Recommended:* cap at 16 km for now.
-6. **Multiplayer:** the server streams physics around every player's focus, and each client streams rendering around
-   its own camera. Agree as the direction for NET when it gets there?
-   *Recommended:* yes; skate-online reviews when NET reaches terrain.
+1. **Respawning props:** should a scatter rule be able to bring destroyed or taken props back after a while (e.g.
+   crates refill after a day of game time), or do they stay gone forever?
+   *Recommended:* add an optional per-rule `respawnAfterSeconds` (default: never). A record older than that is
+   dropped when its chunk loads. It is a small addition to task 23, and it bounds the store in long sessions.
+2. **Saves after a game patch:** when an update changes a scatter rule or the terrain under it, records in old saves
+   that no longer match the new placement are dropped (destroyed crates may reappear), while thrown or carried props
+   (`FOREIGN`) are always kept (§15.10.4). Is that acceptable?
+   *Recommended:* yes. Keeping every record exactly would mean storing every placed item in the save, and patches that
+   change rules are rare. A rule's `id` doesn't change when its parameters are tuned, so tuning only affects the
+   chunks whose placement actually changed.
+3. **Removing instanced-only items:** should gameplay be able to remove decoration without behaviour (cut a bush,
+   flatten grass under a vehicle) through `TerrainScatter.remove`, with the same persistence?
+   *Recommended:* yes for scatter rules, as designed in §15.10.2; it costs only a `DESTROYED` record. REN-29 grass
+   would use a separate, non-persistent bend effect.
 
 ## 14. Human decisions (2026-11-10, answers to rev 1 §13)
 
@@ -451,7 +458,7 @@ chunk AABB.
 | Ring | Default radius | Resident per chunk |
 |---|---|---|
 | Physics | 128 m | Heightfield body, scatter colliders, scatter entities with behaviour |
-| Detail | 512 m | `TerrainChunkData` (CPU), mesh height stream, splat-atlas layer, scatter instance batches (and REN-29 vegetation cells) |
+| Detail | 512 m | `TerrainChunkData` (CPU), mesh height stream, splat-atlas layer, scatter instance batches (and REN-29 vegetation cells), **touched** scatter entities (§15.10.3) |
 | Far | `farDistance` 4 km (capped at the terrain size) | Nothing per chunk: the far field draws quadtree tiles from the always-resident `TerrainOverview` and `macro.png` (§15.4) |
 
 - **Ring order:** the physics ring is always inside the detail ring.
@@ -515,7 +522,8 @@ evictions. It runs every frame without allocation (reused arrays).
 | Editor, edit mode | Editor camera | Editor camera, only when physics debug draw or a scatter-collider preview is on; brushes use CPU heights, not colliders |
 | Editor, Play | The game camera and the editor scene camera, if its view is visible | `StreamingFocus` components |
 | Exported game | Active camera | `StreamingFocus` components |
-| Headless server (future NET) | None | `StreamingFocus` on every player |
+| Dedicated server (future NET, headless, no rendering) | None: no render rings, no GPU pools, no far field | `StreamingFocus` on every player |
+| Networked client (future NET) | Its active camera | `StreamingFocus` on its own player only (client-side prediction) |
 
 **`prefetch(position, rings)`:** returns a `Deferred` that completes when those rings are resident around a point.
 Callers:
@@ -571,8 +579,22 @@ The rule is that the main thread only does bounded copies.
 - **Physics adds:** at most `physicsAddsPerStep` (2) adds and removes per fixed step, in `TerrainStreamingSystem.fixedUpdate`.
   - Physics-ring chunks are first in priority and the ring is small (about 16–25 chunks), so the physics ring around
     a 15 m/s skater stays ahead.
-  - **Bodies over an unloaded collider:** dynamic bodies whose AABB lies over a physics-ring chunk without a collider
-    are put to sleep and woken when it arrives (open question 4). `StreamingFocus` bodies are prefetched.
+  - **Bodies over an unloaded collider (human, §16: freeze):**
+    - **Which bodies:** dynamic (non-kinematic, mass > 0) bodies whose AABB, in XZ, overlaps a chunk inside the
+      terrain bounds that has no collider yet. Checked in `TerrainStreamingSystem.fixedUpdate`, before the physics
+      step, against a per-terrain "collider present" bitset (one bit per chunk), so a check is O(1) per body.
+    - **How:** a new `IRigidBodyHandle.simulationSuspended: Boolean` (task 26, PHY). Bullet maps it to activation
+      state `DISABLE_SIMULATION`, Jolt to `DeactivateBody` plus a locked flag, `SimplePhysics3D` to skipping the body
+      in its integrator. The handle keeps the linear and angular velocity and restores them on resume. There is no
+      sleep API in `IRigidBodyHandle` today, and toggling `isKinematic` would lose the velocities and change the
+      collision response, so it is not used.
+    - **Resume:** on the fixed step after the chunk's collider is added. The body continues with its stored velocity,
+      so a thrown crate finishes its arc.
+    - **Prefetch:** `StreamingFocus` bodies get their physics ring loaded ahead along their velocity (lookahead,
+      §15.3), and `prefetch` runs before spawns, respawns and teleports (§15.3). If a focus body still reaches
+      unloaded ground (pathological speed or a stalled disk), it is frozen like any other body and
+      `EngineStats.terrainFrozenFocus` counts it, so task 22 can show it never happens at normal speeds.
+    - **Outside the terrain bounds** nothing is frozen: there is no terrain there to wait for.
 - **Scatter entities:** spawns and despawns are capped per frame (16) and spread across frames. Instance batches go
   through the upload queue like meshes.
 - **No allocation:**
@@ -622,9 +644,19 @@ The rule is that the main thread only does bounded copies.
 
 - **Precision:** positions within ±8 km keep ≤ 1 mm float precision. Chunk vertices are chunk-local, and the chunk
   origin is a uniform, so no camera-relative rendering is needed at this size (non-goal beyond 16 km).
-- **Networking (future, NET review):** the server runs physics rings around every player's `StreamingFocus`. Clients
-  run render rings around their camera, plus a physics ring around their own player for prediction. Determinism
-  holds because procedural chunks are pure functions of seed and position, and stored chunks ship in the pack.
+- **Precision (human, §16):** the world is capped at 16 km × 16 km, and there is no floating origin for now.
+  `TerrainComponent` validation rejects `sizeMetres > 16384`, and the editor shows the cap in the size field.
+- **Networking (human, §16; future, skate-online reviews when NET reaches terrain):**
+  - **Server** (headless, no rendering): streams **physics only**, with one physics ring around every player's
+    `StreamingFocus`. It creates no GPU pools, `SplatAtlas` or far field; `TerrainStreamer` runs with the render
+    stages switched off (`StreamingProfile.SERVER`, **new**), so a chunk goes `LOADING → BUILT → RESIDENT` with
+    `TerrainChunkData` and its shape only. The server owns the authoritative scatter state store (§15.10).
+  - **Client:** streams **rendering around its camera** and **physics around its own player**, for client-side
+    prediction (`StreamingProfile.CLIENT`). Other players' bodies are replicated, not simulated, so they need no
+    physics ring on the client.
+  - **Determinism:** procedural chunks are pure functions of seed and position, and stored chunks ship in the pack,
+    so server and client colliders are identical without sending terrain over the network. Scatter state deltas are
+    replicated by the server when a chunk enters a client's rings (NET task, later).
 
 ### 15.9 Streaming tests
 
@@ -637,6 +669,207 @@ The rule is that the main thread only does bounded copies.
   - Sparse edits: the first edit writes exactly one record; reload after save reproduces it.
   - Generated chunk equals the stored copy of the same chunk.
   - Overview incremental refresh.
-  - Physics: budgeted add/remove counts, bodies frozen and woken.
+  - Physics: budgeted add/remove counts; bodies over a chunk without a collider are suspended, keep their velocity
+    and resume on the step after the collider arrives; bodies outside the terrain bounds are never frozen; a
+    `StreamingFocus` body moving at 15 m/s is never frozen (fake clock, fake loader latency).
+  - Server profile: no GPU pool or atlas is touched; one physics ring per player focus.
   - Pack random-access read equals `extract`.
+  - Scatter state deltas: §15.10.7.
 - **Manual measurement:** task 22 on *Big Island* (worst frame time, memory against budget).
+
+### 15.10 Scatter state deltas (human, §16: streamed scripted props remember their state)
+
+Scatter items whose prefab has behaviour are spawned as entities (§7). When their chunk unloads, a broken crate must
+stay broken, and moved or picked-up props must stay where they were left. Untouched items cost nothing: they are
+regenerated from the seed. Only the **difference** from the deterministic placement is stored, per chunk.
+
+#### 15.10.1 Item identity (determinism with ECS-14)
+
+- **`ScatterItemKey`** (**new**, `engine/render/terrain/scatter/ScatterItemKey.kt`): `(ruleId, cx, cz, ordinal)`,
+  packed in a `Long` plus the rule id. `ordinal` is the item's index in the chunk's placement order for that rule.
+- **Stable rule ids:** each scatter rule gets a `id: String` generated once when the rule is created (not its index in
+  the list), so reordering or deleting other rules never renames items.
+- **Why the key is stable:** placement (§7) is already a pure function of the ECS-14 stream
+  `"$seedName/scatter/$rule/$cx,$cz"`, the rule, the density mask and the chunk heights. The same inputs give the same
+  items in the same order, on every load, on the server and on every client.
+- **Applying a delta never consumes randomness:** placement runs in full, then the delta filters and overrides the
+  result. A destroyed item doesn't shift its neighbours' ordinals.
+- **Per-item seeds:** scripts on a scatter prop that need randomness use `ScatterItem.randomStream()`, derived from
+  `"$seedName/scatter/$rule/$cx,$cz/#$ordinal"`, so a respawned untouched prop behaves the same as before.
+- **Placement fingerprint:** each `(chunk, rule)` delta stores a 64-bit hash of the inputs above (seed, rule
+  parameters, mask bytes, chunk content version: the region record crc or the recipe and stamps hash). It detects
+  deltas that no longer match their placement (§15.10.4).
+
+#### 15.10.2 What is recorded
+
+`ChunkStateDelta` (**new**, `engine/render/terrain/scatter/ChunkStateDelta.kt`), one per chunk that has any change,
+holding per rule:
+
+| Record | Meaning | Stored |
+|---|---|---|
+| `DESTROYED` | The entity was destroyed (crate broken and removed, item consumed) | ordinal (sorted, varint delta-coded) |
+| `TAKEN` | The entity left terrain management (`ScatterItem.detach()`: picked up into an inventory, parented to the player, made a normal scene object) | ordinal |
+| `MOVED_OUT` | The entity now lives in another chunk (thrown, pushed, carried away) | ordinal |
+| `CHANGED` | Still in its chunk, but its transform and/or component state differ from the spawn | ordinal, transform if moved (> 1 cm or > 0.5°), component overrides if any |
+| `FOREIGN` | An entity that originated in another chunk and now rests in this one | full `ScatterItemKey`, prefab GUID, transform, component overrides, origin position |
+
+- **Component state** is captured with the serializer, in the same form as prefab overrides: the map of
+  `nodePath|component|property → JsonElement` that differs from the prefab template.
+  - The engine already computes this map: `PrefabService.captureOverrides` *(30g)*
+    (`engine/ecs/prefab/PrefabService.kt`) diffs an instance against its `PrefabAsset.template`, and
+    `PrefabService.instantiate(asset, overrides)` rebuilds an instance from it. Task 24 (ECS) adds a
+    side-effect-free variant, `PrefabService.diff(instance, asset)`, which doesn't rewrite the `PrefabInstance`
+    marker, and the hooks below.
+  - **Excluded:** the `Transform` (recorded on its own, above), `PrefabInstance` and `ScatterItem` markers, ids
+    (`uId`, `guid`, as `OBJECT_IGNORED` already does), and properties of components marked
+    `@StreamTransient` (**new** ECS annotation) for caches and runtime-only fields.
+  - **Physics:** velocities aren't stored. A restored body starts at rest, and it is suspended until its ground
+    collider is in (§15.5).
+- **Instanced-only items** (no behaviour, drawn in batches) can be removed by gameplay too:
+  `TerrainScatter.remove(key)` writes a `DESTROYED` record, e.g. for a bush cut down. Their transform and state never
+  change, so that is the only record they have.
+
+#### 15.10.3 When it is captured and restored
+
+Capture runs on the main thread when a scatter entity goes away, and the diff runs on a worker:
+
+| Event | Captured |
+|---|---|
+| Entity destroyed (`ScatterItem` lifecycle hook on destroy, task 24) | `DESTROYED` immediately |
+| `ScatterItem.detach()` | `TAKEN` immediately; the entity becomes an ordinary scene object, owned by the scene and not by streaming (hand-placed rules, §16 decision 1) |
+| **Chunk evict** (the entity is despawned because its chunk leaves the ring that holds entities) | Transform and component diff → `CHANGED`, or `MOVED_OUT` in the origin chunk plus `FOREIGN` in the chunk the entity is in now, or nothing if untouched |
+| Save game (§15.10.5) | The same as an evict for every live scatter entity, **without** despawning |
+
+- **Which chunk owns a moved entity:** the chunk under its current position at capture time, clamped to the
+  terrain bounds. A `FOREIGN` item that comes back to its origin chunk is normalised back into a `CHANGED` record.
+- **Touched items stay entities further out:** an untouched entity despawns when its chunk leaves the physics ring
+  and falls back to the instance batch in the detail ring. A **touched** item (any record) can look different from
+  the prefab (a broken crate), so it stays an entity for as long as its chunk is in the **detail** ring and is
+  excluded from the batch. Touched items are few, so this costs little. Their bodies are suspended outside the
+  physics ring by the §15.5 rule.
+- **Cost:** capture is part of the despawn, so it is covered by the existing 16-per-frame despawn cap (§15.5). On the
+  main thread it is one `Serializer` encode of the entity, about 20–50 µs. The template diff runs on a worker, and its
+  result is written to the store with `JobSystem.runOnMain`.
+- **Restore** happens when a chunk loads:
+  - **Instance batches**, built on a worker: they skip every item with a record. The load job reads an immutable
+    copy of the chunk's delta taken at `QUEUED`. If the delta's version changed before upload (an item was thrown
+    into a loading chunk), the batch is rebuilt.
+  - **Entities**, spawned on the main thread under the existing spawn cap:
+    - `DESTROYED`, `TAKEN` and `MOVED_OUT` items are not spawned.
+    - `CHANGED` items spawn through `PrefabService.instantiate(asset, overrides)` at their recorded transform.
+    - `FOREIGN` items spawn the same way, with their own key and prefab, even though they don't come from this
+      chunk's placement.
+    - Untouched items spawn fresh.
+- **Runtime reseed and recipe edits during Play:** ECS-14 `RandomService.reseed`, or a recipe, rule or stamp edit,
+  makes a different world, so the store for that terrain is cleared, with one log line.
+
+#### 15.10.4 Where it lives, and the budget
+
+- **`ScatterStateStore`** (**new**, `engine/render/terrain/scatter/ScatterStateStore.kt`): one per terrain, a map
+  from packed `(cx, cz)` to `ChunkStateDelta`. It is written on the main thread only, and workers get copy-on-write
+  snapshots. It is independent of chunk residency: **deltas are never evicted**, because dropping them would break
+  the "remembers its state" guarantee.
+- **Lifetime by mode:**
+  - **Editor, edit mode:** no store. Scatter entities are previews, and to change one the user unpacks it into a
+    hand-placed object (§7).
+  - **Editor, Play:** the store starts empty, or from a loaded save game, and is discarded on Stop with the other
+    Play changes.
+  - **Exported game:** a new game starts empty, and loading a save restores the store before the spawn `prefetch`
+    (task 21), so the first chunks already use it.
+  - **Server:** authoritative; clients get the deltas of chunks entering their rings (NET, later).
+- **Never written to authored content:** deltas don't go into the scene JSON, `terrain.json` or region files. Those
+  are authored and read-only in the exported pack.
+- **Size:**
+  - A `DESTROYED`, `TAKEN` or `MOVED_OUT` record takes about 2 bytes, a moved transform 28 bytes, and component
+    overrides about 100–300 bytes (encoded JSON).
+  - 10,000 broken crates come to about 20 KB; 10,000 moved and changed props to about 3 MB.
+- **Budget:** the store counts against `cpuBudgetMB` (§15.4) under a `stateBudgetMB` line (8 MB High and Low,
+  because it is gameplay data and must not change with the quality preset).
+  - Past the budget, the engine logs a warning once and `EngineStats.terrainStateBytes` shows it. Nothing is dropped.
+  - The planner gives the excess back by shrinking the scatter radius first, as for any over-budget case.
+- **Fingerprint mismatch** (a game patch changed a rule or the terrain under a save):
+  - Each `CHANGED`, `DESTROYED`, `TAKEN` and `MOVED_OUT` record of the affected `(chunk, rule)` is matched to a placed
+    item by key **and** by its origin position (stored in the delta, within 0.25 m). Records that don't match are
+    dropped, with one log line per terrain.
+  - `FOREIGN` items are always kept, because they carry their full prefab, transform and state and don't depend on
+    placement.
+  - Open question 2 asks the human to confirm this policy.
+
+#### 15.10.5 Saving (with skate-assets and skate-ecs)
+
+There is no save-game system yet. AST-18 *(30g, proposal)* sketches a protobuf `SaveGame` message. This design does
+not pick the container format. It defines a **terrain section**, and the container belongs to skate-assets.
+
+- **API** (`TerrainStateService`, **new**, `engine/render/terrain/scatter/TerrainStateService.kt`):
+  - `snapshot(): TerrainStateSnapshot` captures live scatter entities on the main thread without despawning them
+    (§15.10.3). Encoding runs on a worker and returns `ByteArray` sections keyed by terrain GUID.
+  - `restore(sections)` replaces the stores before the scene's first `prefetch`.
+  - The capture of a few hundred live props takes about 5–15 ms on the main thread, which is acceptable for a save
+    (games save behind a UI). A later optimisation can spread it over frames with a version barrier.
+- **Section format** (`TerrainStateSnapshot`, versioned, deflated):
+  - **Header:** magic `SKSD`, format version, terrain GUID, world seed, recipe fingerprint.
+  - **Per chunk:** `cx`, `cz`, then per rule: rule id, placement fingerprint, and the record lists of §15.10.2.
+  - Component overrides are stored as UTF-8 JSON produced by `Serializer`, so they follow the scene schema rules
+    (no migrations, rule 8), just like prefab overrides in scenes.
+- **The container** (skate-assets, task 25):
+  - one save file holding named sections: ECS scene state (hand-placed entities, skate-ecs), terrain sections (this
+    design) and game data;
+  - written atomically (temp file then rename, as region files are in §15.6);
+  - stored in the user data directory, never in the pack;
+  - JSON or the AST-18 protobuf, whichever AST-18's approval decides. The terrain section is opaque bytes either way.
+- **Component capture (skate-ecs, task 24):**
+  - `PrefabService.diff`;
+  - `@StreamTransient`;
+  - the `ScatterItem` component (key, `detach()`, `randomStream()`, destroy hook);
+  - a guarantee that `PrefabService.instantiate(asset, overrides)` applied to `diff(...)` round-trips every serialized
+    component property.
+
+#### 15.10.6 Editor and debugging
+
+- The streaming debug overlay (task 15) shows touched chunks, tinted by record count, and the store size.
+- **"Clear terrain state"** in the Play toolbar's debug menu empties the store, for testing respawns.
+
+#### 15.10.7 Tests (no GL)
+
+- **Determinism:** the same seed and inputs give the same keys and ordinals; destroying item *n* doesn't change any
+  other item's key; the key is independent of other rules and chunks.
+- **Round-trip per record type:** destroy, take, move within the chunk, move across chunks (`MOVED_OUT` plus
+  `FOREIGN`), change a component property, and a foreign item moved back home normalises to `CHANGED`. Evict, reload,
+  and assert the entity set, transforms and component values (fake `PrefabService`, fake streamer clock).
+- **Instance batches** skip every item that has a record, and the batch is rebuilt when the delta version changes
+  during a load.
+- **Touched items** stay entities through the detail ring and despawn at the detail unload radius.
+- **Snapshot:** encode, decode and `restore` reproduce the store byte for byte; the header and version are checked.
+- **Fingerprint mismatch:** placement-dependent records that don't match are dropped, and `FOREIGN` items are kept.
+- **`@StreamTransient`** properties are not captured; `Transform` and markers are never in the overrides.
+- **Reseed** clears the store.
+- **Budget:** going past `stateBudgetMB` warns once and drops nothing.
+- **Capture cost:** the per-frame despawn cap includes capture.
+- **Manual (task 27):** on *Big Island*, break crates and throw one into the next chunk, fly 2 km away and back, then
+  save, quit, load and check again.
+
+## 16. Human decisions (2026-11-10, answers to rev 2 §13)
+
+Recorded verbatim:
+
+1. Hand-placed entities stay loaded with the scene; entity-cell streaming is a later ECS task.
+2. Streamed scripted props MUST REMEMBER their state when their chunk unloads (e.g. a broken crate stays broken;
+   moved/picked-up props too). Design per-chunk state deltas: what is recorded (destroyed, transform, component state
+   via the serializer), when it is captured (on evict) and restored (on load), where it lives (in memory during play,
+   and how it is saved with the scene/save game: coordinate with skate-assets for the on-disk part and skate-ecs for
+   component capture), determinism with the seeded scatter (ECS-14), budget, and tests. Add the tasks with owners to
+   §12.
+3. Defaults accepted (128 m / 512 m / 4 km; 256+256 MB High, halved Low), tuned with Big Island in task 22.
+4. Freeze dynamic bodies over unloaded ground until the collider arrives; prefetch StreamingFocus bodies.
+5. World cap 16 km x 16 km; no floating origin for now.
+6. Multiplayer direction agreed, clarified with the human: the server (headless, no rendering) streams physics around
+   every player; each client streams rendering around its camera AND physics around its own player for client-side
+   prediction. skate-online reviews when NET reaches terrain.
+
+Where each one landed:
+1. §1 non-goals, §15.10.3 (`detach()` hands a prop over to the scene); a later ECS task, noted under §12.
+2. §15.10 (identity, records, capture and restore, store and budget, saving, tests), §7; tasks 23–27.
+3. §15.1 and §15.4 unchanged; tuning in task 22.
+4. §15.5 (suspension rule and `IRigidBodyHandle.simulationSuspended`), §8; tasks 17 and 26.
+5. §1 non-goals, §15.8 (size validation).
+6. §15.3 driver table (server and client rows), §15.8 (`StreamingProfile.SERVER` / `CLIENT`).
