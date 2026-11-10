@@ -120,4 +120,16 @@ class GameLocaleTest {
         val broken = GameSettings.fileIn(dir).apply { writeText("{not json") }
         assertEquals(GameSettings.DEFAULT_LOCALE, GameSettingsStore(broken, logger).settings.locale)
     }
+
+    @Test
+    fun attachAndDetach_NotifyStoreListeners() {
+        val seen = mutableListOf<GameSettingsStore?>()
+        gameLocale.onStoreChanged { seen += it }
+        val store = GameSettingsStore(GameSettings.fileIn(dir), logger)
+
+        gameLocale.attach(store)
+        gameLocale.detach()
+
+        assertEquals(listOf(store, null), seen)
+    }
 }
