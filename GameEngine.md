@@ -263,7 +263,7 @@ Round 27+ goals: a Jolt backend selectable per project, a terrain heightfield co
 - [x] **PHY-18** `P2` Extract physics natives to a per-user folder
   - Do: From PHY-17: Bullet and Jolt natives extract to `USER_DIR`, which fails for games installed in read-only folders (Program Files). Extract to a per-user data folder instead.
   - Done when: An exported game in a read-only folder starts with physics; loader tests cover the path.
-- [~] @skate-physics **PHY-19** `P3` Jolt-native ragdolls, vehicles and character controller — design draft written, awaiting the human's approval
+- [~] @skate-physics **PHY-19** `P3` Jolt-native ragdolls, vehicles and character controller — rev 2 answered 2026-11-10 (POWERED state; drivetrain tuning and joint motors on ALL backends; bind-pose frames next; inner body; walker moves to CharacterBody3D now); rev 3 pending
   - Do: From PHY-17: optional Jolt `Ragdoll` (pose motors), `VehicleConstraint` and `CharacterVirtual` modes (the last one with GPL). Design note first.
   - Done when: The human approves the note.
   - Deps: PHY-17
