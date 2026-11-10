@@ -112,7 +112,7 @@ Round 27+ goals (human, 2026-11-06): post-processing quality, render-graph clari
   - Do: From ANI-14 (skate-animation): an offscreen viewport the Animation Editor feeds a bone pose to, drawing the skinned mesh instead of the skeleton lines.
   - Done when: The Animation Editor preview shows the skinned character following the scrubbed pose; tests for the viewport wiring.
   - Deps: ANI-14
-- [ ] **REN-34** `P2` World phase A: shared foundations (`docs/design/REN-28.md` §12, `docs/design/REN-29.md` §12)
+- [~] @skate-render **REN-34** `P2` World phase A: shared foundations (`docs/design/REN-28.md` §12, `docs/design/REN-29.md` §12)
   - Do: REN-28 tasks 1–2: extract `lighting.glsl` (GL/VK pixel parity), `engine/procedural` (FastNoiseLite, ECS-14 seeding). The lead dispatches the note's tasks one at a time, in the order of the tables.
   - Done when: Both tasks done with their tests; rendering unchanged.
   - Deps: REN-28, REN-29
@@ -323,7 +323,7 @@ Round 27+ goals: a Jolt backend selectable per project, a terrain heightfield co
   - Do: Per `docs/design/PHY-19.md` rev 3 §8: 19a joint motors (all backends; Bullet on New6Dof always), 19b POWERED ragdoll, then the bind-pose ragdoll frames task, 19c vehicle drivetrain on all backends (no migration of old fields), 19d inspector sections (EDT), 19e `CharacterBody3D` with inner body, 19f gameplay on the character body (GPL), 19g showcase walker with "Take control" only (TLG). Each project uses only its own backend.
   - Done when: Each slice's tests pass; cross-backend vehicle tests within the note's tolerances.
   - Deps: PHY-19
-- [ ] **PHY-24** `P2` `MeshCollider3D.meshRef` (AST-17 PHY-a)
+- [~] @skate-physics **PHY-24** `P2` `MeshCollider3D.meshRef` (AST-17 PHY-a)
   - Do: Load collider triangles from a model by GUID instead of inline vertices, on Bullet and Jolt.
   - Done when: A city chunk collides through a referenced model; tests.
   - Deps: AST-17
