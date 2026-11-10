@@ -159,7 +159,7 @@ Round 27+ goals: the Asset Browser shows every asset type, one assets folder, ex
   - Do: Write `docs/design/AST-15.md`: refined export wizard flow plus settings (splash image, icon, target platform, graphics backend, compression/packing, debug vs release, target FPS).
   - Done when: The human approves the note.
   - Deps: EDT-59
-- [~] @skate-online **AST-16** `P2` Asset store window — design approved 2026-11-06 (`docs/design/AST-16.md`, revised after the skate-assets review)
+- [~] @skate-online **AST-16** `P2` Asset store window — design approved 2026-11-06 (`docs/design/AST-16.md`, revised after the skate-assets review) — slices a, b, d (Kenney/Quaternius) and AST-25 merged in round 30; e (SimReady/USD) pending
   - Do: Human decisions: **no login, no credential management.** Slices in order: a) SPI, registry, HTTP seam, pipeline, window skeleton + Poly Haven, b) ambientCG + texture sets, c) Kenney/Quaternius catalogs + "Import downloaded pack" (manual download is fine), d) Poly Haven as the primary provider, e) SimReady via Hugging Face + USD→glTF through Blender (needs AST-19). **No Sketchfab** (requires login). **No license tracking** for now — skip attribution-ledger/credits work. If an asset is in an unsupported format, warn the user on import rather than blocking.
   - Done when: Each slice imports a real asset; tests on fixtures, no sockets.
 - [~] @skate-assets **AST-17** `P2` City generation from OpenStreetMap: design note — draft written, awaiting the human's approval
@@ -276,7 +276,7 @@ Round 27+ goals: an animation authoring tool and animation from video.
   - Do: ANI-12 §3: process runner, BVH writer, MediaPipe adapter script and position→rotation solver with filtering, foot contacts and optional root motion; "Import mocap file…" for BVH/FBX/glTF from any tool; "Check setup" in Editor Settings and a setup doc. Make the flow **easy**: pick a video, preview, one click to a clip that opens in the animation editor.
   - Done when: A local sample video produces a clip on the skater rig that opens in the animation editor; solver tested on synthetic landmarks.
   - Deps: ANI-13, ANI-16
-- [~] @skate-animation **ANI-18** `P0` Video to animation fails with current MediaPipe (`no attribute solutions`)
+- [x] **ANI-18** `P0` Video to animation fails with current MediaPipe (`no attribute solutions`)
   - Do: From the human testing PR #37 (2026-11-10): current MediaPipe releases dropped the legacy `mp.solutions` API, which `mediapipe_extract.py` uses by default. Default to the Tasks API (`PoseLandmarker`, video mode), get the `.task` model without manual steps (path override in Setup), keep `solutions` only as a fallback; Check setup reports the API in use.
   - Done when: With the current MediaPipe from pip, Check setup reports Ready and Create animation produces a `.skanim` from a local video; docs and tests updated.
   - Deps: ANI-17
@@ -331,13 +331,13 @@ Round 27+ goals: menu parity between the editor and the game, and a map view.
   - Do: Found by the human testing PR #29 (GUI-12 did not fix it). Find what closes the window on Esc in the exported game (e.g. `engine/core/WindowController.kt` `glfwSetWindowShouldClose`, a GLFW key callback, or `ui.cancel` with no handler) and route Esc to the pause menu exactly as in editor Play. Lead-assigned; skate-gameui reviews.
   - Done when: Esc in the exported game opens the pause menu and Esc again resumes; Quit is the only way to close from the menu; test on the key path.
 
-- [~] @skate-gameui **GPL-25** `P0` GPL-21 review fixes: saved control scheme applied at startup
+- [ ] **GPL-25** `P0` GPL-21 review fixes: saved control scheme applied at startup
   - Do: From the GUI review of GPL-21 (`/tmp/skate-gameui-reviews.md`): must fix — the saved option is applied before the settings store attaches, so the default scheme runs while the menu shows the saved one (re-apply when the store changes; test). Should fix — cap the pause panel height, apply options once, cache the HUD text components, find the rider recursively. Lead-assigned to skate-gameui; skate-gameplay reviews.
   - Done when: The saved scheme is active from the first frame in both hosts; tests.
 - [x] **GUI-15** `P1` Exported game reads the project's window and runtime settings
   - Do: From EDT-57: the exported game reads resolution, window title, fullscreen, supported languages, startup language and the project physics rate from the project settings.
   - Done when: Each setting changed in Project Settings takes effect in an exported game; tests.
-- [~] @skate-animation **GUI-16** `P2` Reset ImGui capture hooks when the ImGui context is destroyed
+- [ ] **GUI-16** `P2` Reset ImGui capture hooks when the ImGui context is destroyed
   - Do: From the GUI-14 review: `ImGuiLayer.destroy()` must reset `captureKeyboard`/`captureMouse` to `{ false }` before destroying the context, so input read after shutdown cannot end the JVM.
   - Done when: Reading input after `destroy()` is safe; test.
 
@@ -376,7 +376,7 @@ Round 27+ goals (human, 2026-11-06): fix editor bugs, make every window, dialog 
   - Do: Find hardcoded UI text and keys missing from `assets/strings/**` (all locales) and fix them. Extend the key test so any missing key or hardcoded label fails.
   - Done when: No raw keys or missing strings in the editor; the test enforces it.
 - [x] **EDT-51** `P1` Editor consistency audit: design note — approved 2026-11-06 (human decisions + lead approval of the chunk plan, `docs/design/EDT-51.md`)
-- [~] @skate-editor @skate-tooling @skate-qa @skate-ecs @skate-gameui @skate-scripting @skate-audio **EDT-52** `P1` Apply the editor consistency standard (A–F, H, I done; G in progress)
+- [x] **EDT-52** `P1` Apply the editor consistency standard (all chunks A–I done; allow-list empty, round 30)
   - Do: Apply EDT-51 in the chunks of `docs/design/EDT-51.md` §5: A (foundation, alone, first), then B scene, C project & assets, D debug, E settings dialogs, F modals & palette, G menus, H domain windows (AUD, SCR) in parallel, then I input-testing move (INP, after E). Chunk A: skate-editor.
   - Done when: Every item in the EDT-51 inventory meets the standard; a test checks windows register header icon, help and context menu.
   - Deps: EDT-51
@@ -395,7 +395,7 @@ Round 27+ goals (human, 2026-11-06): fix editor bugs, make every window, dialog 
   - Do: A modal progress/loading screen for creating and opening projects, loading scenes and exporting, without blocking the UI thread.
   - Done when: Each long operation shows progress and the UI stays responsive; tests for the progress model.
   - Deps: EDT-51
-- [~] @skate-editor **EDT-57** `P1` Missing project and editor settings; tooltip toggle
+- [x] **EDT-57** `P1` Missing project and editor settings; tooltip toggle
   - Do: Add the settings listed in EDT-51 to the project and editor settings windows, including "Show tooltips" (persisted, honored by every tooltip).
   - Done when: All listed settings exist and persist; the tooltip toggle works everywhere; tests.
   - Deps: EDT-51
@@ -431,11 +431,11 @@ Round 27+ goals (human, 2026-11-06): fix editor bugs, make every window, dialog 
   - Do: From EDT-57: convert the 14 files listed in `TooltipToggleGuardTest`'s allow-list (chunks C, D, G, H, I and EDT-54) to `Tooltips.text` (control help) or `Tooltips.always` (explanations, data), and empty the list.
   - Done when: The allow-list is empty; tests.
   - Deps: EDT-52, EDT-57
-- [~] @skate-assets **EDT-66** `P2` Blender import settings in the inspector and Editor Settings
+- [ ] **EDT-66** `P2` Blender import settings in the inspector and Editor Settings
   - Do: From AST-19: an inspector panel for `.blend` import settings (`blender.*` meta keys) with a Re-import button (`BlenderSync.reimport`), a "Needs Blender" badge, and a Blender section in Editor Settings (path, timeout, import on open, a Test button using `BlenderLocator`).
   - Done when: Settings edit and persist; Re-import works; tests.
   - Deps: AST-19
-- [~] @skate-editor **EDT-67** `P1` Help button on every window and unclipped button background
+- [ ] **EDT-67** `P1` Help button on every window and unclipped button background
   - Do: From the human testing the window standard (2026-11-07): only **some** windows show the `?` help button, and on the ones that do the **button background is clipped at the top**. Give every registered window the control and fix the clipping (padding/rect/clip-space) at any DPI and window size. The fix must work with the pending EDT-52 chunk branches (C, E, F, G, H, I) and EDT-54, which the lead integrates before final verification.
   - Done when: Every registered window shows a correctly rendered `?` button; a test asserts coverage and the layout math is covered.
   - Deps: EDT-52
