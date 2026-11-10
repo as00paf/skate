@@ -33,7 +33,7 @@ class WindowStandardGuardTest {
     }
 
     private val helpKeys: Map<String, Set<String>> by lazy {
-        val dir = root.resolve("assets/strings/editor")
+        val dir = root.resolve("src/main/resources/editor/strings")
         Files.list(dir).use { s -> s.filter { it.name.endsWith(".properties") }.toList() }
             .groupBy { if (it.name.removeSuffix(".properties").endsWith("_fr")) "fr" else "en" }
             .mapValues { (_, files) -> files.flatMap { keysOf(it.readText()) }.toSet() }

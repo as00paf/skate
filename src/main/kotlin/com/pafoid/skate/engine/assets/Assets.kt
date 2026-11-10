@@ -97,13 +97,19 @@ object Assets {
         const val SKATE_RIDING = "assets/Animations/skate riding.fbx"
     }
     object Themes {
-        /** Editor themes (EDT-07): one `<id>.theme.json` per theme. */
-        const val DIR = "assets/themes"
+        /**
+         * Editor themes (EDT-07): one `<id>.theme.json` per theme. In the jar under `/editor/themes` (AST-26 NQ1); the
+         * editor reads them through `EditorResources`. This is the source folder (dev runs, tests).
+         */
+        const val DIR = "src/main/resources/editor/themes"
     }
 
     object Strings {
-        /** Editor string tables, one file per area (`<area>.properties` + `<area>_fr.properties`). */
-        const val EDITOR_STRINGS = "assets/strings/editor"
+        /**
+         * Editor string tables, one file per area (`<area>.properties` + `<area>_fr.properties`). In the jar under
+         * `/editor/strings` (AST-26 NQ1); the editor reads them through `EditorResources`. This is the source folder.
+         */
+        const val EDITOR_STRINGS = "src/main/resources/editor/strings"
         /** Runtime/game string tables (HUD, showcase); the editor merges them too so the viewport shows game UI text. */
         const val GAME_STRINGS = "assets/Data/strings/game"
     }
