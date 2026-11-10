@@ -3,7 +3,9 @@ package com.pafoid.skate.editor.ui.windows
 import com.pafoid.skate.editor.imgui.tipped
 import com.pafoid.skate.editor.imgui.label
 import com.pafoid.skate.editor.data.EditorInputMappings
-import com.pafoid.skate.editor.imgui.EditorWindow
+import com.pafoid.skate.editor.imgui.EditorDialog
+import com.pafoid.skate.editor.imgui.FooterButton
+import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.editor.imgui.ImGuiStyleManager
 import com.pafoid.skate.editor.imgui.theme.EditorTheme
 import com.pafoid.skate.editor.imgui.MImGui
@@ -14,23 +16,17 @@ import com.pafoid.skate.engine.utils.UnitSystem
 import imgui.ImGui
 import imgui.ImVec2
 import imgui.flag.ImGuiCol
-import imgui.flag.ImGuiCond
 import imgui.flag.ImGuiSelectableFlags
-import imgui.flag.ImGuiWindowFlags
-import imgui.internal.ImGui.begin
 import imgui.internal.ImGui.beginChild
 import imgui.internal.ImGui.button
 import imgui.internal.ImGui.checkbox
 import imgui.internal.ImGui.combo
 import imgui.internal.ImGui.dragInt
-import imgui.internal.ImGui.end
 import imgui.internal.ImGui.endChild
 import imgui.internal.ImGui.inputText
 import imgui.internal.ImGui.isKeyPressed
 import imgui.internal.ImGui.sameLine
 import imgui.internal.ImGui.separator
-import imgui.internal.ImGui.setNextWindowPos
-import imgui.internal.ImGui.setNextWindowSize
 import imgui.internal.ImGui.sliderFloat
 import imgui.type.ImBoolean
 import imgui.type.ImInt
@@ -41,7 +37,10 @@ class EditorSettingsWindow(
     private val settingsManager: EditorSettingsManager,
     private val stringManager: StringManager,
     private val openKeyBindings: () -> Unit = {},
-) : EditorWindow("window.editor_settings") {
+) : EditorDialog("window.editor_settings", stringManager, 760f, 550f) {
+
+    override val icon: String = Icons.GEAR
+    override val relatedWindows = listOf("window.keybindings", "window.project_settings")
 
     private data class Category(
         val id: String,
@@ -79,78 +78,60 @@ class EditorSettingsWindow(
         )
     }
 
-    override fun imgui() {
-        if (!isOpen.get()) return
+    /** Standard footer (EDT-51 §2.6): [Cancel] [Apply] [OK]; Apply only while there are unsaved edits. */
+    override fun footerButtons(): List<FooterButton> = listOf(
+        FooterButton("btn.cancel", FooterButton.Role.CANCEL) {
+            ImGuiStyleManager.preview = null
+            hasPendingChanges = false
+            syncTempSettings()
+        },
+        FooterButton("btn.apply", FooterButton.Role.APPLY, enabled = hasPendingChanges, closes = false) { saveSettings() },
+        FooterButton("btn.ok", FooterButton.Role.PRIMARY) { saveSettings() },
+    )
+
+    override fun content() {
         if (!hasPendingChanges) syncTempSettings()
 
-        val viewport = ImGui.getMainViewport()
-        val defaultWidth = viewport.workSizeX * 0.5f
-        setNextWindowPos(viewport.centerX, viewport.centerY, ImGuiCond.FirstUseEver, 0.5f, 0.5f)
-        setNextWindowSize(defaultWidth, 550f, ImGuiCond.FirstUseEver)
+        val avail = ImVec2()
+        ImGui.getContentRegionAvail(avail)
+        val windowW = avail.x
+        val leftW = windowW * 0.3f
+        val rightW = (windowW - leftW) - ImGui.getStyle().itemSpacingX
+        val contentH = avail.y - dialogFooterHeight()
 
-        if (begin(stringManager.label("window.editor_settings"), isOpen, ImGuiWindowFlags.NoDocking)) {
-            val avail = ImVec2()
-            ImGui.getContentRegionAvail(avail)
-            val windowW = avail.x
-            val leftW = windowW * 0.3f
-            val rightW = (windowW - leftW) - ImGui.getStyle().itemSpacingX
-            val contentH = avail.y - 45f
+        beginChild("leftPane", leftW, contentH)
+        ImGui.pushItemWidth(-1f)
+        inputText(stringManager.getString("settings.search.placeholder"), searchBuffer)
+        ImGui.popItemWidth()
+        ImGui.spacing()
 
-            beginChild("leftPane", leftW, contentH)
-            ImGui.pushItemWidth(-1f)
-            inputText(stringManager.getString("settings.search.placeholder"), searchBuffer)
-            ImGui.popItemWidth()
-            ImGui.spacing()
-
-            val query = searchBuffer.get().lowercase()
-            val filtered = categories.filter { cat ->
-                matchesSearch(query, *cat.searchTerms)
-            }
-
-            for (cat in filtered) {
-                val isSelected = cat.id == selectedCategoryId
-                if (isSelected) {
-                    ImGui.pushStyleColor(ImGuiCol.Header, 0.25f, 0.45f, 0.75f, 1f)
-                }
-                val label = stringManager.getString(cat.labelKey)
-                if (ImGui.selectable(label, isSelected, ImGuiSelectableFlags.SpanAllColumns)) {
-                    // Pending edits (and the theme preview) survive switching category until OK/Apply/Cancel.
-                    selectedCategoryId = cat.id
-                }
-                if (isSelected) {
-                    ImGui.popStyleColor()
-                }
-            }
-            endChild()
-
-            sameLine()
-
-            beginChild("rightPane", rightW, contentH)
-            val selected = categories.find { it.id == selectedCategoryId }
-            selected?.render()
-            endChild()
-
-            ImGui.spacing()
-            val btnW = 100f
-            if (button(stringManager.getString("btn.ok"), btnW, 0f)) {
-                saveSettings()
-                isOpen.set(false)
-            }
-            sameLine()
-            if (button(stringManager.getString("btn.cancel"), btnW, 0f)) {
-                ImGuiStyleManager.preview = null
-                syncTempSettings()
-                hasPendingChanges = false
-                isOpen.set(false)
-            }
-            sameLine()
-            ImGui.beginDisabled(!hasPendingChanges)
-            if (button(stringManager.getString("btn.apply"), btnW, 0f)) {
-                saveSettings()
-            }
-            ImGui.endDisabled()
+        val query = searchBuffer.get().lowercase()
+        val filtered = categories.filter { cat ->
+            matchesSearch(query, *cat.searchTerms)
         }
-        end()
+
+        for (cat in filtered) {
+            val isSelected = cat.id == selectedCategoryId
+            if (isSelected) {
+                ImGui.pushStyleColor(ImGuiCol.Header, 0.25f, 0.45f, 0.75f, 1f)
+            }
+            val label = stringManager.getString(cat.labelKey)
+            if (ImGui.selectable(label, isSelected, ImGuiSelectableFlags.SpanAllColumns)) {
+                // Pending edits (and the theme preview) survive switching category until OK/Apply/Cancel.
+                selectedCategoryId = cat.id
+            }
+            if (isSelected) {
+                ImGui.popStyleColor()
+            }
+        }
+        endChild()
+
+        sameLine()
+
+        beginChild("rightPane", rightW, contentH)
+        val selected = categories.find { it.id == selectedCategoryId }
+        selected?.render()
+        endChild()
     }
 
     /** Closed without OK/Apply, by any path: drop the theme preview and unsaved edits (EDT-40). */
@@ -330,4 +311,13 @@ class EditorSettingsWindow(
             return terms.any { it.contains(query, ignoreCase = true) }
         }
     }
+}
+
+/**
+ * Height the standard dialog footer (spacing, separator, spacing, one row of buttons; `DialogFooter`) takes below the
+ * content, so two-pane dialogs can size their panes to end right above it.
+ */
+internal fun dialogFooterHeight(): Float {
+    val style = ImGui.getStyle()
+    return ImGui.getFrameHeightWithSpacing() + style.itemSpacingY * 4f + 1f
 }

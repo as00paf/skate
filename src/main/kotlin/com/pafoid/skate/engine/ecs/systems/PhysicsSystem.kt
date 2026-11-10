@@ -348,13 +348,13 @@ class PhysicsSystem(
 
     private fun createJoint(go: GameObject, joint: JointComponent) {
         val bodyA = go.getComponent<RigidBody3D>()?.rawBody ?: return
-        val bodyB = if (joint.connectedBodyId == -1) {
+        val bodyB = if (joint.connectedBodyGuid.isEmpty()) {
             // Static world anchor placed at this body's anchor point
             val worldAnchor = Vector3f(joint.anchor).add(bodyA.getLocation(Vector3f()))
             joint.connectedAnchor.set(0f, 0f, 0f)
             physics3d.createStaticAnchor(worldAnchor).also { jointAnchors[joint] = it }
         } else {
-            bodies.entities.firstOrNull { it.uId == joint.connectedBodyId }?.getComponent<RigidBody3D>()?.rawBody ?: return
+            bodies.entities.firstOrNull { it.guid == joint.connectedBodyGuid }?.getComponent<RigidBody3D>()?.rawBody ?: return
         }
         val constraint = joint.createConstraint(bodyA, bodyB)
         physics3d.addConstraint(constraint)

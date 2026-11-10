@@ -1,7 +1,5 @@
 package com.pafoid.skate.editor.ui.windows
 
-import com.pafoid.skate.editor.imgui.tipped
-import com.pafoid.skate.editor.imgui.label
 import com.pafoid.skate.editor.data.EditorInputMappings
 import com.pafoid.skate.editor.data.EditorShortcut
 import com.pafoid.skate.editor.data.EditorShortcuts
@@ -17,7 +15,10 @@ import imgui.internal.ImGui.tableHeadersRow
 import imgui.internal.ImGui.tableNextRow
 import imgui.internal.ImGui.tableSetColumnIndex
 import imgui.internal.ImGui.tableSetupColumn
-import com.pafoid.skate.editor.imgui.EditorWindow
+import com.pafoid.skate.editor.imgui.EditorDialog
+import com.pafoid.skate.editor.imgui.EmptyState
+import com.pafoid.skate.editor.imgui.FooterButton
+import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.editor.systems.EditorSettingsManager
 import com.pafoid.skate.editor.input.BindingProfileStore
 import com.pafoid.skate.editor.systems.ProjectManager
@@ -26,15 +27,11 @@ import com.pafoid.skate.engine.core.StringManager
 import com.pafoid.skate.engine.ecs.systems.InputSystem
 import com.pafoid.skate.engine.input.ProviderRawInput
 import java.io.File
-import imgui.flag.ImGuiWindowFlags
-import imgui.internal.ImGui.begin
-import imgui.internal.ImGui.button
 import imgui.internal.ImGui.combo
-import imgui.internal.ImGui.end
 import imgui.internal.ImGui.isKeyPressed
-import imgui.internal.ImGui.sameLine
 import imgui.internal.ImGui.separator
 import imgui.internal.ImGui.text
+import imgui.internal.ImGui.button
 import imgui.type.ImInt
 import org.lwjgl.glfw.GLFW
 
@@ -43,9 +40,15 @@ class KeyBindingsWindow(
     private val settingsManager: EditorSettingsManager,
     private val stringManager: StringManager,
     private val projectManager: ProjectManager
-) : EditorWindow("window.keybindings") {
+) : EditorDialog("window.keybindings", stringManager, 780f, 520f) {
 
-    private var keyBindingTab = 0  // 0=Game actions, 1=Editor, 2=Camera, 3=Hierarchy, 4=Fixed, 5=Gamepad
+    override val icon: String = Icons.KEYBOARD
+    override val relatedWindows = listOf("window.editor_settings", "window.project_settings")
+
+    private var keyBindingTab = TAB_ACTIONS  // 0=Game actions, 1=Editor, 2=Camera, 3=Hierarchy, 4=Fixed, 5=Gamepad, 6=Test
+
+    /** Esc pressed this frame to cancel a key capture: it must not also close the dialog through the footer. */
+    private var escapeUsedByCapture = false
 
     private val actionPanel = ActionBindingsPanel(
         stringManager,
@@ -61,57 +64,71 @@ class KeyBindingsWindow(
     /** The shortcut waiting for a key press, or null. */
     private var capturing: EditorShortcut? = null
 
-    override fun imgui() {
-        if (!isOpen.get()) return
+    /** Opens the dialog on the Test tab (Tools › Test Input…, EDT-51 §3.1). */
+    fun openTestTab() {
+        keyBindingTab = TAB_TEST
+        capturing = null
+        open()
+    }
 
-        imgui.ImGui.setNextWindowSize(780f, 520f, imgui.flag.ImGuiCond.FirstUseEver)
-        if (begin(stringManager.label("window.keybindings"), ImGuiWindowFlags.None)) {
-            val tabNames = arrayOf(
-                stringManager.getString("lbl.keybindings.tab_actions"),
-                stringManager.getString(ShortcutGroup.EDITOR.labelKey),
-                stringManager.getString(ShortcutGroup.CAMERA.labelKey),
-                stringManager.getString(ShortcutGroup.HIERARCHY.labelKey),
-                stringManager.getString("tab.keybindings.fixed"),
-                stringManager.getString("tab.keybindings.gamepad"),
-            )
-            val tabSelector = ImInt(keyBindingTab)
-            if (combo("##TabSelector", tabSelector, tabNames, tabNames.size)) {
-                keyBindingTab = tabSelector.get()
-                capturing = null
-            }
+    /**
+     * Standard footer (EDT-51 §2.6): [Reset to defaults] on the rebindable editor tabs, then [Close]. Close does not
+     * close on the Esc that cancelled a key capture.
+     */
+    override fun footerButtons(): List<FooterButton> = footer(
+        tab = keyBindingTab,
+        escapeUsedByCapture = escapeUsedByCapture,
+        onResetToDefaults = {
+            val mappings = inputMappings
+            mappings.resetToDefault()
+            settingsManager.updateInputMappings(mappings)
+            capturing = null
+        },
+        onClose = { capturing = null },
+    )
 
-            separator()
+    override fun content() {
+        escapeUsedByCapture = isKeyPressed(GLFW.GLFW_KEY_ESCAPE) && (capturing != null || actionPanel.isCapturing)
 
-            when (keyBindingTab) {
-                0 -> actionPanel.render()
-                1 -> renderGroup(ShortcutGroup.EDITOR)
-                2 -> {
-                    renderGroup(ShortcutGroup.CAMERA)
-                    MImGui.textDisabled(stringManager.getString("lbl.keybindings.camera_look_note"))
-                }
-                3 -> renderGroup(ShortcutGroup.HIERARCHY)
-                4 -> renderFixed()
-                5 -> text(stringManager.getString("lbl.keybindings.gamepad_moved"))
-            }
-
-            separator()
-            if (button(stringManager.getString("btn.close"))) {
-                isOpen.set(false)
-                capturing = null
-            }
-            if (keyBindingTab in 1..3) {
-                sameLine()
-                if (stringManager.tipped(button(stringManager.getString("btn.reset_to_defaults")), "btn.reset_to_defaults")) {
-                    val mappings = inputMappings
-                    mappings.resetToDefault()
-                    settingsManager.updateInputMappings(mappings)
-                    capturing = null
-                }
-            }
-
-            capture()
+        val tabNames = arrayOf(
+            stringManager.getString("lbl.keybindings.tab_actions"),
+            stringManager.getString(ShortcutGroup.EDITOR.labelKey),
+            stringManager.getString(ShortcutGroup.CAMERA.labelKey),
+            stringManager.getString(ShortcutGroup.HIERARCHY.labelKey),
+            stringManager.getString("tab.keybindings.fixed"),
+            stringManager.getString("tab.keybindings.gamepad"),
+            stringManager.getString("tab.keybindings.test"),
+        )
+        val tabSelector = ImInt(keyBindingTab)
+        if (combo("##TabSelector", tabSelector, tabNames, tabNames.size)) {
+            keyBindingTab = tabSelector.get()
+            capturing = null
         }
-        end()
+
+        separator()
+
+        when (keyBindingTab) {
+            TAB_ACTIONS -> actionPanel.render()
+            TAB_EDITOR -> renderGroup(ShortcutGroup.EDITOR)
+            TAB_CAMERA -> {
+                renderGroup(ShortcutGroup.CAMERA)
+                MImGui.textDisabled(stringManager.getString("lbl.keybindings.camera_look_note"))
+            }
+            TAB_HIERARCHY -> renderGroup(ShortcutGroup.HIERARCHY)
+            TAB_FIXED -> renderFixed()
+            TAB_GAMEPAD -> text(stringManager.getString("lbl.keybindings.gamepad_moved"))
+            TAB_TEST -> renderTest()
+        }
+
+        capture()
+    }
+
+    /**
+     * Key Bindings › Test (EDT-51 §3.1): live devices and the event log with the action each event fired.
+     * Empty until EDT-52 chunk I moves it here from Input Testing.
+     */
+    private fun renderTest() {
+        EmptyState.nothingYet(stringManager, Icons.KEYBOARD, "lbl.keybindings.test.empty", "lbl.keybindings.test.empty.hint")
     }
 
     override fun onClosed() {
@@ -178,5 +195,28 @@ class KeyBindingsWindow(
             text(shortcut.display())
         }
         endTable()
+    }
+
+    companion object {
+        const val TAB_ACTIONS = 0
+        const val TAB_EDITOR = 1
+        const val TAB_CAMERA = 2
+        const val TAB_HIERARCHY = 3
+        const val TAB_FIXED = 4
+        const val TAB_GAMEPAD = 5
+        const val TAB_TEST = 6
+
+        /** The footer for [tab]: Reset to defaults only on the rebindable editor tabs; Close ignores a capture's Esc. */
+        internal fun footer(
+            tab: Int,
+            escapeUsedByCapture: Boolean,
+            onResetToDefaults: () -> Unit = {},
+            onClose: () -> Unit = {},
+        ): List<FooterButton> = buildList {
+            if (tab in TAB_EDITOR..TAB_HIERARCHY) {
+                add(FooterButton("btn.reset_to_defaults", FooterButton.Role.SECONDARY, closes = false, onClick = onResetToDefaults))
+            }
+            add(FooterButton("btn.close", FooterButton.Role.CANCEL, closes = !escapeUsedByCapture, onClick = onClose))
+        }
     }
 }
