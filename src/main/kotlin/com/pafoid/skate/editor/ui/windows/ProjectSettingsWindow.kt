@@ -14,6 +14,8 @@ import com.pafoid.skate.editor.imgui.DialogFooter
 import com.pafoid.skate.editor.imgui.FooterButton
 import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.editor.imgui.MImGui
+import com.pafoid.skate.editor.imgui.Tooltips
+import com.pafoid.skate.engine.ecs.random.RandomService
 import com.pafoid.skate.editor.systems.EditorSettingsManager
 import com.pafoid.skate.editor.systems.ProjectManager
 import com.pafoid.skate.engine.core.Engine
@@ -23,6 +25,7 @@ import imgui.ImVec2
 import imgui.flag.ImGuiCol
 import imgui.flag.ImGuiSelectableFlags
 import imgui.internal.ImGui.beginChild
+import imgui.internal.ImGui.button
 import imgui.internal.ImGui.endChild
 import imgui.internal.ImGui.inputText
 import imgui.internal.ImGui.sameLine
@@ -37,6 +40,7 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 import java.util.*
+import com.pafoid.skate.editor.ui.windows.input.DeadZonePanel
 
 class ProjectSettingsWindow(
     engine: Engine,
@@ -46,6 +50,11 @@ class ProjectSettingsWindow(
     private val eventSystem = engine.eventSystem
     private val stringManager: StringManager = engine.stringManager
     private val gameLocale = engine.gameLocale
+
+    /** Dead-zone tuning, moved here from Input Testing (EDT-52I). Edits the open project's settings. */
+    private val deadZonePanel = DeadZonePanel(stringManager, eventSystem, engine.inputProvider) {
+        projectManager.currentProject?.gameplaySettings?.inputMappings?.deadZones
+    }
 
     override val icon: String = Icons.CUBE
     override val relatedWindows = listOf("window.editor_settings", "window.export_wizard")
@@ -67,6 +76,7 @@ class ProjectSettingsWindow(
             Category("game", "settings.project.game", arrayOf("game", "language", "locale", "english", "french")) { renderGame() },
             Category("physics", "settings.project.physics", arrayOf("physics", "rate", "fps", "step", "hz", "simulation")) { renderPhysics() },
             Category("graphics", "settings.project.graphics", arrayOf("graphics", "backend", "vulkan", "opengl", "render", "export")) { renderGraphics() },
+            Category("random", "settings.project.random", arrayOf("random", "seed", "rng", "deterministic", "procedural")) { renderRandom() },
             Category("input", "settings.project.input", arrayOf("input", "gamepad", "dead", "zone", "deadzone", "stick", "trigger", "threshold")) { renderInput() },
         )
     }
@@ -127,11 +137,9 @@ class ProjectSettingsWindow(
 
     /**
      * Project Settings › Input (EDT-51 §3.1): gamepad dead zones and trigger threshold with the live stick view.
-     * Empty until EDT-52 chunk I moves the tuning here from Input Testing.
+     * Each slider gesture is one undoable command, and the project is saved after it.
      */
-    private fun renderInput() {
-        EmptyState.nothingYet(stringManager, Icons.SLIDERS, "settings.project.input.empty", "settings.project.input.empty.hint")
-    }
+    private fun renderInput() = deadZonePanel.render()
 
     /** The scene the project opens with (EDT-57), among the project's scenes; an undoable command. */
     private fun renderDefaultScene() {
@@ -283,6 +291,31 @@ class ProjectSettingsWindow(
             if (combo("##vsync", vsyncSel, vsyncLabels, vsyncLabels.size)) {
                 eventSystem.publish(ProjectEvent.SetVsyncRequested(vsyncSel.get() == 1))
             }
+        }
+    }
+
+    private val seedBuffer = ImString("", 32)
+
+    /** The project's random seed (ECS-14): typed (decimal or 0x hex) or randomized; each change is undoable. */
+    private fun renderRandom() {
+        val project = projectManager.currentProject ?: return
+        MImGui.textDisabled(stringManager.getString("settings.project.random.description"))
+        ImGui.spacing()
+        val shown = project.randomSeed.toString()
+        if (!ImGui.isAnyItemActive() && seedBuffer.get() != shown) seedBuffer.set(shown)
+        ImGui.setNextItemWidth(220f)
+        ImGui.inputText(stringManager.label("settings.project.random.seed"), seedBuffer)
+        Tooltips.show(stringManager, "settings.project.random.seed.tooltip")
+        if (ImGui.isItemDeactivatedAfterEdit()) {
+            val parsed = RandomService.parse(seedBuffer.get())
+            if (parsed != null) eventSystem.publish(ProjectEvent.SetRandomSeedRequested(parsed)) else seedBuffer.set(shown)
+        }
+        sameLine()
+        if (stringManager.tipped(button(stringManager.getString("settings.project.random.randomize")), "settings.project.random.randomize")) {
+            eventSystem.publish(ProjectEvent.SetRandomSeedRequested(RandomService.newSeed()))
+        }
+        RandomService.parse(System.getProperty(RandomService.SYSTEM_PROPERTY))?.let {
+            MImGui.warningText(stringManager.getString("settings.project.random.overridden", it.toString()))
         }
     }
 

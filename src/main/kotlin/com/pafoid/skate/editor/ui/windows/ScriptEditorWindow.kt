@@ -28,6 +28,8 @@ import com.pafoid.skate.engine.scripting.completion.CompletionRequest
 import com.pafoid.skate.engine.scripting.completion.CompletionService
 import com.pafoid.skate.engine.scripting.host.ScriptHostRegistry
 import com.pafoid.skate.editor.imgui.EditorWindow
+import com.pafoid.skate.editor.imgui.EmptyState
+import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.scripting.host.KotlinScriptHost
 import com.pafoid.skate.engine.scripting.host.ScriptLoadResult
@@ -59,7 +61,8 @@ class ScriptEditorWindow(
     private val projectManager: ProjectManager,
     private val settingsManager: EditorSettingsManager,
 ) : EditorWindow("window.script_editor", true) {
-    override val relatedWindows: List<String> = listOf("window.console")
+    override val icon = Icons.EDIT
+    override val relatedWindows = listOf("window.project", "window.console")
 
     private val strings = engine.stringManager
     private val events = engine.eventSystem
@@ -198,12 +201,15 @@ class ScriptEditorWindow(
         drainPending()
         if (!isOpen.get()) return
         ImGui.setNextWindowSize(760f, 520f, imgui.flag.ImGuiCond.FirstUseEver)
-        if (ImGui.begin(title(strings), isOpen, ImGuiWindowFlags.MenuBar)) {
-            toolbar()
+        if (beginWindow(strings)) {
+            header(strings) { toolbar() }
             tabBar()
             val doc = active
             if (doc == null) {
-                ImGui.textDisabled(strings.getString("lbl.script_editor.empty"))
+                when (emptyState(projectManager.getProjectDirectory() != null)) {
+                    EmptyKind.NO_PROJECT -> EmptyState.noProject(strings, events)
+                    EmptyKind.NO_SCRIPT -> EmptyState.nothingYet(strings, Icons.FILE_CODE, "lbl.script_editor.no_script", "lbl.script_editor.empty")
+                }
             } else {
                 shortcuts(doc)
                 findBar(doc)
@@ -697,7 +703,13 @@ class ScriptEditorWindow(
         }
     }
 
+    /** What the editor shows with no tab open (EDT-51 §2.5). */
+    enum class EmptyKind { NO_PROJECT, NO_SCRIPT }
+
     companion object {
+        /** Scripts live in the project, so without one the editor offers to open a project first. */
+        fun emptyState(hasProject: Boolean): EmptyKind = if (hasProject) EmptyKind.NO_SCRIPT else EmptyKind.NO_PROJECT
+
         private const val BUFFER_SIZE = 1 shl 20
         private const val MAX_ROWS = 10
         private val CLAIMED = arrayOf(

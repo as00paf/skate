@@ -1,5 +1,6 @@
 package com.pafoid.skate.engine.render.renderer.passes
 
+import com.pafoid.skate.engine.render.graph.RenderResourceIds
 import com.pafoid.skate.engine.assets.data.Shader
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
@@ -57,6 +58,10 @@ class PickingPass(
 ) : BaseRenderPass() {
 
     override val name: String = "PickingPass"
+    override val outputs: Set<String> = setOf(RenderResourceIds.PICKING_IDS)
+
+    /** Renders only in frames after [requestPick] (REN-22). */
+    override val onDemand: Boolean = true
     override val description: String = "Renders object IDs for mouse picking and selection"
 
     /** Frees the GL objects owned by the picking renderer. */
@@ -70,6 +75,8 @@ class PickingPass(
 
     /** True when the picking texture was rendered in the last frame (or just now), i.e. it can be read as is. */
     val isFresh: Boolean get() = schedule.fresh
+
+    override val ranThisFrame: Boolean get() = isEnabled && schedule.fresh
 
     /** Asks for the picking texture to be rendered in the next frame. */
     fun requestPick() = schedule.request()

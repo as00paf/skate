@@ -51,7 +51,7 @@ Both components are driven by the engine's `CameraControlSystem`, in editor Play
 | `Netcode` (front row, centre) | Play: client-side prediction (NET-03) with the kinematic skater step (GPL-17). A server and two clients run in-process over a simulated link (120 ms one way). The rider pushes, carves a circle and ollies every 2.5 s. **Green ghost** = server state; **blue** = the owning client's prediction, which moves on its own inputs at once and stays just ahead of the ghost; **orange** = the copy another client interpolates, visibly behind. Select `[Netcode] Session` to change `Latency` or `Packet Loss` in Play (the session restarts) and read `Prediction Error` / `Interpolation Lag`. Under loss an input can be dropped in all its redundant copies; the blue box is then corrected and eased back onto the server path over 0.1 s. |
 | `Animation` (front row, right) | The bundled character looping the walking clip in place. |
 | `Fog` (front row, far right) | Eight orange `Post_*` pillars recede along the right edge of the floor. In Play, the overlay's **Cycle fog** button (top right) steps the scene fog through off, linear, exp, exp² and exp² with height fog. Models, the floor, the sky and particles fog alike. The sky fogs like geometry at the far plane, and height fog keeps the sky clear overhead. In the editor, set the same options on the scene's `EnvironmentComponent` (`renderFog`, `fogMode`, `fogDensity`, `fogStart`/`fogEnd`, `fogHeight`, `fogHeightFalloff`) (REN-09). |
-| `UI` (screen overlay) | In-game (non-ImGui) canvas: title and hint, the area legend (Overview plus one focus button per area), and bottom-right a tinted panel, formatted text ("Formatted text: 42"), a button with solid hover/press backgrounds (GUI-07), a 60% progress bar and a draggable slider. No `!!key!!` text; the layout keeps its corners when the window is resized. |
+| `UI` (screen overlay) | In-game (non-ImGui) canvas: title and hint, top right under **Cycle fog** the random seed and five dice rolls from the `showcase.dice` stream (filled in Play by `[UI] SeedController`, script `Assets/Scripts/ShowcaseSeed.kts`; same seed, same rolls on every Play: ECS-14), the area legend (Overview plus one focus button per area), and bottom-right a tinted panel, formatted text ("Formatted text: 42"), a button with solid hover/press backgrounds (GUI-07), a 60% progress bar and a draggable slider. No `!!key!!` text; the layout keeps its corners when the window is resized. |
 
 Overlay strings are `showcase.*` keys in the bundled `assets/strings/game/showcase` table (EN and FR), which the editor merges too; projects' own `Assets/strings.properties` are not loaded by the engine yet.
 
@@ -91,3 +91,11 @@ What to look for:
 - Pieces spawn, fall, rotate and lock inside the walls; each piece type has its own color and locked cells keep it.
 - A blip plays on lock, a higher one on line clear; the HUD shows score, lines and level; speed rises with the level.
 - When the stack reaches the top a low sound plays and the `GameOver` scene (title and hint) opens; R returns to `Game` and restarts.
+
+## Moving and exporting samples (TLG-14)
+
+Samples written by `skate sample` (and the MCP server) store every asset reference relative to the project folder,
+as the editor does (AST-09). A sample folder can be moved, and `skate export <project> --out <folder>` produces a
+`game.bin` that loads from any folder. The engine assets copied into a sample are read from the repository, so run the
+CLI from the repository root (`gradlew :tools:cli:run` does); elsewhere `skate sample` stops with an error instead of
+writing a sample with missing files. `SampleExportTest` builds, exports and reopens every sample from its pack alone.

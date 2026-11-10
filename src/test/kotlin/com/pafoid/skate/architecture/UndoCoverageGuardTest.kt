@@ -24,9 +24,11 @@ class UndoCoverageGuardTest {
      * Execute-only commands (never in the undo history), each with its reason. Any other command must be undoable.
      */
     private val executeOnlyAllowed = mapOf(
+        "animation/CreateAnimationClipCommand.kt" to "writes a new .skanim clip file (ANI-17); undo never deletes files",
         "editor/ClearLogsCommand.kt" to "editor-only state (console)",
         "editor/CopyToClipboardCommand.kt" to "editor-only state (clipboard)",
         "editor/TogglePhysicsDebugCommand.kt" to "editor-only view toggle",
+        "editor/SetRenderPassEnabledCommand.kt" to "editor-only debug view of the renderer, not scene data (EDT-54)",
         "objects/MaterialCommands.kt" to "SaveMaterialAssetCommand writes a file; undo never deletes or rewrites files",
         "project/CloseOtherScenesCommand.kt" to "scene tabs (session state, not scene data)",
         "project/CloseAllScenesCommand.kt" to "scene tabs (session state, not scene data)",

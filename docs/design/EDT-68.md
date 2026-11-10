@@ -1,6 +1,6 @@
 # EDT-68 — Help window with Markdown articles
 
-Status: **proposal, awaiting the human's decisions** · Owner: skate-editor · Deps: EDT-53 · Priority: P1
+Status: **approved 2026-11-10** · Owner: skate-editor · Deps: EDT-53 · Priority: P1
 
 ## Goal
 
@@ -122,4 +122,14 @@ The parser returns a list of blocks and is unit-tested without ImGui; the render
 
 ## Decisions (recorded from the human)
 
-_To be filled in as the questions are answered._
+Answered by the human on 2026-11-10 (all as recommended):
+
+1. **Help window kind:** a dockable editor window (topic list left, article right), saved in the layout.
+2. **Topic granularity:** one article per window, plus general topics (Getting started, Keyboard shortcuts).
+3. **Localized articles:** `assets/help/<locale>/<topic>.md` with English fallback.
+4. **Markdown:** a small in-house subset (headings, paragraphs, bold/italic, lists, inline code, code blocks, topic links); no new dependency.
+5. **Repeated `?`:** reuse the single Help window, switch topic and focus it; back/forward history.
+6. **Help menu:** **Help Window…** is the first item of ☰ Help; Getting started and Keyboard shortcuts open the same window on their topics; About Skate stays last.
+7. **Article ownership:** articles ship with the editor under `assets/help`; project-specific articles may come later.
+
+**Approved** by the human on 2026-11-10.

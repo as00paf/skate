@@ -27,6 +27,8 @@ dependencies {
 
 tasks.test {
     useJUnitPlatform()
+    // Like `run`: the bundled engine assets copied into generated samples resolve from the repository root (TLG-14)
+    workingDir = rootProject.projectDir
     maxHeapSize = "1G"
 }
 

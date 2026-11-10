@@ -1,5 +1,6 @@
 package com.pafoid.skate.engine.render.renderer.passes
 
+import com.pafoid.skate.engine.render.graph.RenderResourceIds
 import com.pafoid.skate.engine.assets.data.Shader
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.render.renderer.Renderer2D
@@ -25,6 +26,7 @@ class UiPass(
 ) : BaseRenderPass() {
 
     override val name: String = "UiPass"
+    override val outputs: Set<String> = setOf(RenderResourceIds.SCENE_COLOR)
     override val description: String = "Renders the runtime UI on top of the post-processed scene and debug visuals"
 
     override fun execute(scene: Scene) {

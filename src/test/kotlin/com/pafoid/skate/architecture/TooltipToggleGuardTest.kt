@@ -57,15 +57,13 @@ class TooltipToggleGuardTest {
         /** Files still reworked by other EDT-52 chunks; each removes its own when converted. */
         val ALLOW_LIST = setOf(
             // C: project & assets
-            "AssetBrowserTab.kt", "AnimationsTab.kt", "SoundsTab.kt", "TexturesTab.kt",
+            "AnimationsTab.kt", "SoundsTab.kt", "TexturesTab.kt",
             // D: debug
             "ConsoleWindow.kt", "ProfilerWindow.kt", "CommandHistoryWindow.kt", "ShellWindow.kt",
             // G: menus
-            "EditorMenuBar.kt", "WindowControlsRenderer.kt",
+            "EditorMenuBar.kt",
             // H: domain windows
             "AudioMixerPanel.kt", "ScriptEditorWindow.kt",
-            // I: input testing move (the window is deleted)
-            "InputTestingWindow.kt",
             // EDT-54: Render Graph rewrite
             "RenderGraphWindow.kt",
         )

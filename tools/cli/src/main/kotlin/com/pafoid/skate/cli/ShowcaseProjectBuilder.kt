@@ -1,7 +1,7 @@
 package com.pafoid.skate.cli
 
-import com.pafoid.skate.editor.project.EngineAssetCopier
 import com.pafoid.skate.editor.project.Project
+import com.pafoid.skate.engine.assets.ProjectLayout
 import com.pafoid.skate.engine.assets.PrefabsGenerator
 import com.pafoid.skate.engine.assets.serialization.Serializer
 import com.pafoid.skate.engine.core.Engine
@@ -25,17 +25,17 @@ class ShowcaseProjectBuilder(
     }
 
     fun build(parent: File): File {
-        val projectDir = File(parent, PROJECT_NAME).also { it.mkdirs() }
-        val assetsDir = File(projectDir, "Assets").also { it.mkdirs() }
-        val scenesDir = File(projectDir, "Scenes").also { it.mkdirs() }
-        File(projectDir, "Builds").mkdirs()
-        EngineAssetCopier().copyBundledAssets(projectDir)
+        val projectDir = File(parent, PROJECT_NAME).absoluteFile.also { it.mkdirs() }
+        val assetsDir = ProjectLayout.create(projectDir)
+        val scenesDir = ProjectLayout.scenesDir(projectDir)
+        copyEngineAssets(projectDir)
         File(assetsDir, "strings.properties").writeText("project.name=$PROJECT_NAME\n")
 
         // Path references only: the CLI is headless, and the editor reloads every model and texture on open.
         val prefabs = PrefabsGenerator(engine, loadAssets = false).also { it.projectAssetsDir = assetsDir.absolutePath + File.separator }
         val scene = FeatureShowcase(prefabs).populate(Scene(SCENE_NAME))
-        val scenePath = File(scenesDir, "$SCENE_NAME.scene").also { it.writeText(serializer.encode(scene)) }.path
+        val files = ProjectFiles(serializer, projectDir)
+        val scenePath = files.writeScene(scenesDir, SCENE_NAME, scene).path
 
         val projectFile = File(projectDir, "$PROJECT_NAME.skateproject")
         val project = Project(
@@ -46,7 +46,7 @@ class ShowcaseProjectBuilder(
             scenesPath = listOf(scenePath),
             resolution = Vector2i(1920, 1080),
         )
-        projectFile.writeText(serializer.encode(project))
+        files.writeProject(project)
         return projectFile
     }
 }

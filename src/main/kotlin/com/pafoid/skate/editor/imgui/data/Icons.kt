@@ -53,6 +53,7 @@ object Icons {
     const val STAR = "\uf005"
     const val FOLDER = "\uf07b"
     const val INFO = "\uf05a"
+    const val HOURGLASS_HALF = "\uf252"
     const val CHECK = "\uf00c"
     const val EXTERNAL_LINK = "\uf08e"
     const val FILM = "\uf008"

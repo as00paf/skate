@@ -15,6 +15,8 @@ object DefaultDockLayout {
         "window.properties" to Zone.RIGHT,
         "window.audio_inspector" to Zone.RIGHT,
         "window.asset_browser" to Zone.BOTTOM,
+        "window.asset_store" to Zone.BOTTOM,
+        "window.video_to_animation" to Zone.BOTTOM,
         // EDT-55: open by default as a bottom tab; the centre node has no tab bar, so a window docked there hides
         // behind the viewport.
         "window.script_editor" to Zone.BOTTOM,
@@ -24,6 +26,12 @@ object DefaultDockLayout {
         "window.render_graph" to Zone.BOTTOM,
         "window.shell" to Zone.BOTTOM,
     )
+
+    /**
+     * The tab shown in front of its zone after the layout is built (first run, Reset Layout). Other default windows of
+     * the zone, such as the Render Graph (EDT-54), join as background tabs.
+     */
+    val ACTIVE_TABS = listOf("window.console")
 
     /** Dialogs, popups and settings windows have no zone and stay floating. */
     fun zoneOf(windowName: String): Zone? = zones[windowName]

@@ -1,5 +1,6 @@
 package com.pafoid.skate.engine.render.renderer.passes
 
+import com.pafoid.skate.engine.render.graph.RenderResourceIds
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.components.GridLines
 import com.pafoid.skate.engine.ecs.systems.CameraManager
@@ -40,6 +41,8 @@ class DebugPass(
 ) : BaseRenderPass() {
 
     override val name: String = "DebugPass"
+    override val inputs: Set<String> = setOf(RenderResourceIds.SCENE_DEPTH)
+    override val outputs: Set<String> = setOf(RenderResourceIds.SCENE_COLOR)
     override val description: String = "Renders debug visualization (grid, physics, gizmos, etc.)"
 
     private val lineStart = Vector3f()

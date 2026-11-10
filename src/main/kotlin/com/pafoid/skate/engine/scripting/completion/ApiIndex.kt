@@ -9,6 +9,8 @@ import com.pafoid.skate.engine.scripting.api.ScriptPhysics
 import com.pafoid.skate.engine.scripting.api.ScriptRigidBody
 import com.pafoid.skate.engine.scripting.api.ScriptScene
 import com.pafoid.skate.engine.scripting.api.ScriptTime
+import com.pafoid.skate.engine.scripting.api.ScriptRandom
+import com.pafoid.skate.engine.scripting.api.ScriptRandomStream
 import com.pafoid.skate.engine.scripting.api.ScriptTransform
 import kotlin.reflect.KClass
 import kotlin.reflect.KFunction
@@ -51,7 +53,7 @@ class ApiIndex(types: Collection<ApiType>, val roots: Map<String, String> = mapO
         private val API: List<KClass<*>> = listOf(
             ScriptContext::class, ScriptTransform::class, ScriptEntity::class, ScriptRigidBody::class,
             ScriptScene::class, ScriptInput::class, ScriptPhysics::class, ScriptEvents::class,
-            ScriptTime::class, ScriptLog::class,
+            ScriptTime::class, ScriptLog::class, ScriptRandom::class, ScriptRandomStream::class,
         )
 
         private val PACKAGE_PREFIX = Regex("\\b(?:[a-z_][a-z0-9_]*\\.)+(?=[A-Z])")
@@ -149,6 +151,10 @@ internal object Docs {
         "ScriptInput.isKeyReleased" to "True on the frame the key was released.",
         "ScriptInput.isMouseButtonDown" to "True while the mouse button is held.",
         "ScriptInput.action" to "Value of a named input action in [-1, 1]; 0 when unknown.",
+        "ScriptInput.isActionDown" to "True while the named action is held.",
+        "ScriptInput.wasActionPressed" to "True on the frame the named action was pressed.",
+        "ScriptInput.pushContext" to "Pushes an input context (id, priority, \"none\"|\"consume\"|\"all\"); returns a handle. Popped when the script is destroyed or reloaded.",
+        "ScriptInput.popContext" to "Pops a context pushed by this script; false when already popped.",
         "ScriptPhysics.gravity" to "World gravity vector.",
         "ScriptPhysics.raycast" to "Distance to the closest hit along from->to, or null.",
         "ScriptEvents.on" to "Subscribes to a custom event; removed when the script is destroyed.",
@@ -156,6 +162,18 @@ internal object Docs {
         "ScriptTime.deltaTime" to "Seconds since the previous frame.",
         "ScriptTime.fixedDeltaTime" to "Fixed step length in seconds.",
         "ScriptTime.elapsed" to "Seconds since the script started.",
+        "ScriptRandomStream.nextInt" to "Random integer in [0, until), or in [from, until) with two arguments.",
+        "ScriptRandomStream.nextFloat" to "Random float in [0, 1).",
+        "ScriptRandomStream.range" to "Random float in [min, max).",
+        "ScriptRandomStream.chance" to "True with probability p (0 never, 1 always).",
+        "ScriptRandom.nextInt" to "Random integer in [0, until), or in [from, until) with two arguments.",
+        "ScriptRandom.nextFloat" to "Random float in [0, 1).",
+        "ScriptRandom.range" to "Random float in [min, max).",
+        "ScriptRandom.chance" to "True with probability p (0 never, 1 always).",
+        "ScriptContext.random" to "Seeded random numbers: this script's own stream; same seed, same values every Play.",
+        "ScriptRandom.seed" to "The game's random seed (project setting unless overridden).",
+        "ScriptRandom.stream" to "The named stream shared by every script using that name.",
+        "ScriptRandom.reseed" to "Switches the game to a new seed and rewinds every stream.",
         "ScriptLog.info" to "Logs an informational message.",
         "ScriptLog.warn" to "Logs a warning.",
         "ScriptLog.error" to "Logs an error.",

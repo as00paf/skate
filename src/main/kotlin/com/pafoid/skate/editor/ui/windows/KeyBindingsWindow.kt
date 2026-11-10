@@ -16,12 +16,12 @@ import imgui.internal.ImGui.tableNextRow
 import imgui.internal.ImGui.tableSetColumnIndex
 import imgui.internal.ImGui.tableSetupColumn
 import com.pafoid.skate.editor.imgui.EditorDialog
-import com.pafoid.skate.editor.imgui.EmptyState
 import com.pafoid.skate.editor.imgui.FooterButton
 import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.editor.systems.EditorSettingsManager
 import com.pafoid.skate.editor.input.BindingProfileStore
 import com.pafoid.skate.editor.systems.ProjectManager
+import com.pafoid.skate.editor.ui.windows.input.InputTestPanel
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.core.StringManager
 import com.pafoid.skate.engine.ecs.systems.InputSystem
@@ -56,6 +56,15 @@ class KeyBindingsWindow(
         { engine.systemManager.getSystem<InputSystem>()?.actionMap.takeIf { projectManager.hasProject() } },
         ProviderRawInput(engine.inputProvider),
         { projectManager.getProjectDirectory()?.let { BindingProfileStore(File(it, BindingProfileStore.DIRECTORY)) } },
+    )
+
+    /** Key Bindings › Test: devices, contexts and the event log with its Action column (EDT-52I). */
+    private val testPanel = InputTestPanel(
+        stringManager,
+        engine.eventSystem,
+        engine.inputProvider,
+        { engine.systemManager.getSystem<InputSystem>()?.actionMap },
+        { engine.systemManager.getSystem<InputSystem>()?.contexts },
     )
 
     /** Read live: settings load after start-up and replace the object. */
@@ -123,13 +132,8 @@ class KeyBindingsWindow(
         capture()
     }
 
-    /**
-     * Key Bindings › Test (EDT-51 §3.1): live devices and the event log with the action each event fired.
-     * Empty until EDT-52 chunk I moves it here from Input Testing.
-     */
-    private fun renderTest() {
-        EmptyState.nothingYet(stringManager, Icons.KEYBOARD, "lbl.keybindings.test.empty", "lbl.keybindings.test.empty.hint")
-    }
+    /** Key Bindings › Test (EDT-51 §3.1): live devices and the event log with the action each event fired. */
+    private fun renderTest() = testPanel.render()
 
     override fun onClosed() {
         capturing = null
@@ -205,6 +209,12 @@ class KeyBindingsWindow(
         const val TAB_FIXED = 4
         const val TAB_GAMEPAD = 5
         const val TAB_TEST = 6
+
+        /**
+         * Window target that opens this dialog on its Test tab ([openTestTab]): publish `WindowAction.Show(TEST_TAB)`.
+         * Used by Search Anywhere's Test Input command and the Shift+I shortcut (EDT-51 §3.1).
+         */
+        const val TEST_TAB = "window.keybindings#test"
 
         /** The footer for [tab]: Reset to defaults only on the rebindable editor tabs; Close ignores a capture's Esc. */
         internal fun footer(

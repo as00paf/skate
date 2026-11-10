@@ -2,8 +2,8 @@ package com.pafoid.skate.cli
 
 import com.pafoid.skate.engine.ecs.SceneSun
 import com.pafoid.skate.engine.ecs.components.EnvironmentComponent
-import com.pafoid.skate.editor.project.EngineAssetCopier
 import com.pafoid.skate.editor.project.Project
+import com.pafoid.skate.engine.assets.ProjectLayout
 import com.pafoid.skate.engine.addComponent
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.data.models.`3dModel`
@@ -45,12 +45,12 @@ class TetrisProjectBuilder(private val serializer: Serializer = Serializer()) {
     private lateinit var assetsPrefix: String
 
     fun build(parent: File): File {
-        val projectDir = File(parent, PROJECT_NAME).also { it.mkdirs() }
-        val assetsDir = File(projectDir, "Assets").also { it.mkdirs() }
-        val scenesDir = File(projectDir, "Scenes").also { it.mkdirs() }
-        File(projectDir, "Builds").mkdirs()
-        EngineAssetCopier().copyBundledAssets(projectDir)
+        val projectDir = File(parent, PROJECT_NAME).absoluteFile.also { it.mkdirs() }
+        val assetsDir = ProjectLayout.create(projectDir)
+        val scenesDir = ProjectLayout.scenesDir(projectDir)
+        copyEngineAssets(projectDir)
         assetsPrefix = assetsDir.absolutePath + File.separator
+        val files = ProjectFiles(serializer, projectDir)
 
         val scriptsDir = File(assetsDir, "Scripts").also { it.mkdirs() }
         val script = TetrisProjectBuilder::class.java.getResourceAsStream(SCRIPT_RESOURCE)
@@ -71,19 +71,17 @@ class TetrisProjectBuilder(private val serializer: Serializer = Serializer()) {
         val scenePaths = listOf(
             SCENE_NAME to game(File(scriptsDir, SCRIPT_FILE).absolutePath),
             GAME_OVER_SCENE to gameOver(File(scriptsDir, GAME_OVER_SCRIPT_FILE).absolutePath),
-        ).map { (name, scene) ->
-            File(scenesDir, "$name.scene").also { it.writeText(serializer.encode(scene)) }.path
-        }
+        ).map { (name, scene) -> files.writeScene(scenesDir, name, scene).path }
         val scenePath = scenePaths.first()
         val projectFile = File(projectDir, "$PROJECT_NAME.skateproject")
-        projectFile.writeText(serializer.encode(Project(
+        files.writeProject(Project(
             name = PROJECT_NAME,
             projectPath = projectFile.path,
             description = "Tetris driven by a Kotlin script",
             defaultScene = scenePath,
             scenesPath = scenePaths,
             resolution = Vector2i(1920, 1080),
-        )))
+        ))
         return projectFile
     }
 
