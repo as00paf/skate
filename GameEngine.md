@@ -108,7 +108,7 @@ Round 27+ goals (human, 2026-11-06): post-processing quality, render-graph clari
 - [x] **REN-30** `P1` Renderer honours overall quality, MSAA and texture quality
   - Do: From EDT-57: the Graphics settings for overall quality, MSAA and texture quality exist (`GraphicsSettings`) but the renderer ignores them. Apply them live (MSAA on the scene target, texture quality via mip bias/max size, quality preset driving shadows/post effects).
   - Done when: Changing each setting visibly changes rendering in the editor and exported game; tests.
-- [ ] **REN-33** `P1` Offscreen skinned-mesh preview viewport for the Animation Editor and Video to Animation
+- [~] @skate-render **REN-33** `P1` Offscreen skinned-mesh preview viewport for the Animation Editor and Video to Animation
   - Do: From ANI-14 (skate-animation) and the human (Discord 2026-11-10: show the animation preview on the character): an offscreen viewport, used by the Animation Editor and the Video to Animation result, the Animation Editor feeds a bone pose to, drawing the skinned mesh instead of the skeleton lines.
   - Done when: The Animation Editor preview shows the skinned character following the scrubbed pose; tests for the viewport wiring.
   - Deps: ANI-14
@@ -243,7 +243,7 @@ Round 27+ goals: the Asset Browser shows every asset type, one assets folder, ex
   - Do: Per AST-26 §5 (reviewed by skate-render): shaders resolve through `engine:Shaders/…` with project overrides in `Assets/Shaders/`, `@skate-contract` headers, includes, caches, hot reload of project shaders; basic shaders always copied; unedited copies follow the engine on project open (human, 2026-11-10); custom material shaders in the colour pass only for v1.
   - Done when: Editing a project shader changes rendering live; an incompatible edited override falls back with an error; tests.
   - Deps: AST-27
-- [ ] **GPL-26** `P1` Skater configs in the project assets, editable in the editor
+- [~] @skate-gameplay **GPL-26** `P1` Skater configs in the project assets, editable in the editor
   - Do: From AST-26 NQ2 (human, 2026-11-10: follow-up): `skater.character.json` and `skater.controller.json` become `engine:Data/skater.character.json` and `engine:Animations/skater.controller.json`, overridable per project like other engine defaults (with skate-animation). Human (Discord 2026-11-10): they live in the project's assets and are editable by users in the editor (panels, not hand-edited JSON).
   - Done when: A project override changes the skater; without one the engine config is used; tests.
   - Deps: AST-27
