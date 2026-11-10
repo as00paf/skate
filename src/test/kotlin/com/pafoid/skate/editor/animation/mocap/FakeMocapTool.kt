@@ -1,5 +1,8 @@
 package com.pafoid.skate.editor.animation.mocap
 
+import kotlinx.serialization.json.jsonArray
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import java.io.BufferedReader
 import java.io.File
 import java.io.StringReader
@@ -67,16 +70,38 @@ class FakeMocapTool(
                 File(arg("--thumbnail")).writeBytes(ByteArray(4))
                 FakeProcess(listOf("""{"fps":30.0,"frames":90,"width":1280,"height":720,"duration":3.0}"""))
             }
+            "frames" -> {
+                // Every 2nd frame, like the real script's step for long videos.
+                val dir = File(arg("--dir")).apply { mkdirs() }
+                val total = videoFrames
+                for (f in 0 until total step 2) File(dir, "f_%06d.jpg".format(f)).writeBytes(ByteArray(4))
+                FakeProcess(listOf("""{"progress":1.0}""", """{"done":true,"frames":$total,"step":2,"count":${(total + 1) / 2}}"""))
+            }
             "extract" -> {
                 val error = extractError ?: api(argv).second
                 if (error != null) FakeProcess(listOf(errorLine(error)), exit = 1)
                 else {
-                    File(arg("--output")).writeText(landmarkJson)
+                    val start = argv.indexOf("--start-frame").takeIf { it >= 0 }?.let { argv[it + 1].toInt() }
+                    val end = argv.indexOf("--end-frame").takeIf { it >= 0 }?.let { argv[it + 1].toInt() }
+                    File(arg("--output")).writeText(if (start == null) landmarkJson else slice(landmarkJson, start, end!!))
                     FakeProcess(listOf("""{"progress":0.5}""", "not json", """{"progress":1.0}""", """{"done":true,"frames":3,"detected":3}"""))
                 }
             }
             else -> FakeProcess(listOf("""{"error":"unknown command"}"""), exit = 2)
         }
+    }
+
+    /** Total frames the fake video has (probe estimate stays 90, like a real container header can be off). */
+    var videoFrames: Int = 12
+
+    /** Frames [start]..[end] of a landmark file, times rebased to 0: what the real script writes for a trim range. */
+    private fun slice(json: String, start: Int, end: Int): String {
+        val root = kotlinx.serialization.json.Json.parseToJsonElement(json).jsonObject
+        val fps = root["fps"]!!.jsonPrimitive.content.toFloat()
+        val frames = root["frames"]!!.jsonArray.drop(start).take(end - start + 1).mapIndexed { i, f ->
+            kotlinx.serialization.json.JsonObject(f.jsonObject + ("t" to kotlinx.serialization.json.JsonPrimitive(i / fps)))
+        }
+        return kotlinx.serialization.json.JsonObject(root + ("frames" to kotlinx.serialization.json.JsonArray(frames))).toString()
     }
 
     private fun quote(s: String) = kotlinx.serialization.json.JsonPrimitive(s).toString()

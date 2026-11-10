@@ -133,3 +133,17 @@ Answered by the human on 2026-11-10 (all as recommended):
 7. **Article ownership:** articles ship with the editor under `assets/help`; project-specific articles may come later.
 
 **Approved** by the human on 2026-11-10.
+
+**Path change (AST-26, human 2026-11-10):** articles live in `src/main/resources/editor/help/<locale>/<topic>.md`, loaded from the classpath (read from `src/main/resources` in dev runs), not `assets/help/`.
+
+## Implementation notes (2026-11-10)
+
+- **Path (lead's change):** articles live in `src/main/resources/editor/help/<locale>/<topic>.md` and ship in the
+  editor jar; topic ids use underscores (`asset_browser`), i.e. the window's help id. `HelpArticleSource.default()`
+  reads `src/main/resources/editor/help` directly when the editor runs from the source tree (edited articles show
+  without a rebuild), else the classpath (a directory or the jar).
+- **Modals:** a modal hides every other ImGui window, the Help window included, so in modal hosts (New Project,
+  Switch Project) the `?` toggles the article inside the modal (`EditorModal.helpWindow`, `HelpRouter.renderInline`).
+- **Related windows:** below an article, buttons open the topic's window and its `relatedWindows`.
+- **Fonts:** the editor has one font; headings are scaled, bold is overstruck by one pixel and italic is tinted.
+- **Help window article:** `help.md` (EN, FR) documents the Help window itself, as every registered window needs one.

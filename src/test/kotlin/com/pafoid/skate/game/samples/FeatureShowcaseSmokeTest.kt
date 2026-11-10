@@ -1,5 +1,6 @@
 package com.pafoid.skate.game.samples
 
+import com.pafoid.skate.engine.getAllChildren
 import com.pafoid.skate.editor.systems.ProjectManager
 import com.pafoid.skate.engine.assets.AssetsManager
 import com.pafoid.skate.engine.assets.PrefabsGenerator
@@ -340,7 +341,7 @@ class FeatureShowcaseSmokeTest {
         val keys = listOf(FeatureShowcase.OVERVIEW) + FeatureShowcase.AREAS.map { it.key }
         // Visit each area, then come back to the overview, so every click moves the camera.
         (keys.drop(1) + FeatureShowcase.OVERVIEW).forEach { key ->
-            val button = canvas.children.single { it.name == FeatureShowcase.focusButtonName(key) }
+            val button = canvas.getAllChildren().single { it.name == FeatureShowcase.focusButtonName(key) }
             assertNotNull(button.getComponent<UIButtonComponent>()!!.onClick, "${button.name} is not bound to a camera target")
             val target = focus.targets.single { it.buttonName == button.name }
             val rect = button.getComponent<UIElementComponent>()!!.rect
@@ -387,7 +388,7 @@ class FeatureShowcaseSmokeTest {
     fun Showcase_Map_ShowsTheCameraLive_AndOpensAndClosesTheFullMap() {
         val camera = obj("Camera").getComponent<Transform>()!!
         val canvas = overlay()
-        val minimap = canvas.children.single { it.name == FeatureShowcase.MINIMAP }
+        val minimap = canvas.getAllChildren().single { it.name == FeatureShowcase.MINIMAP }
         frame()
         val mini = minimap.rect()
         val youMini = minimap.children.single { it.name == "You" }.rect()
@@ -419,7 +420,7 @@ class FeatureShowcaseSmokeTest {
 
     private fun click(canvas: GameObject, name: String) {
         val scale = canvas.getComponent<UICanvasComponent>()!!.scale
-        val rect = canvas.children.single { it.name == name }.rect()
+        val rect = canvas.getAllChildren().single { it.name == name }.rect()
         val x = (rect.x + rect.w / 2f) * scale
         val y = (rect.y + rect.h / 2f) * scale
         frame(UiInputFrame(x, y))

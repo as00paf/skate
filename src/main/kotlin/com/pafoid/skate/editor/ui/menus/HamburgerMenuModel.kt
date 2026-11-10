@@ -134,7 +134,8 @@ object HamburgerMenuModel {
     val HELP = Menu(
         "help", "menu.help",
         listOf(
-            Item("getting_started", "menu.help.getting_started", Icons.QUESTION_CIRCLE),
+            Item("help_window", "menu.help.window", Icons.QUESTION_CIRCLE),
+            Item("getting_started", "menu.help.getting_started", Icons.BOOK),
             Item("shortcuts", "menu.help.shortcuts", Icons.KEYBOARD),
             Item("about", "menu.help.about", Icons.INFO),
         ),

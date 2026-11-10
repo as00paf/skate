@@ -21,7 +21,9 @@ data class ShapePart(val shape: ColliderShape, val offset: Vector3f)
  * @property motionType resolved type: a body with a static-only collider (triangle mesh) is [BodyType.Static]
  *   whatever its [RigidBody3D.bodyType].
  * @property mass kilograms; 0 for static bodies. A [BodyType.Dynamic] body with no mass is treated as static.
- * @property parts one entry per collider, in component order. Empty means "no collider" (backends use a unit box).
+ * @property parts one entry per available collider, in component order. Empty means "no collider" (backends use a
+ *   unit box). An object whose colliders are all unavailable (e.g. a `MeshCollider3D.meshRef` model that failed to
+ *   load) gets no body at all: [of] returns null.
  * @property rotation from the Transform's Euler XYZ degrees.
  * @property ccdRadius swept-sphere radius in metres when CCD is on, else null.
  * @property boxMargin margin of the object's [BoxCollider3D], if any (Bullet applies it to the whole body shape).
@@ -47,7 +49,7 @@ class BodyDescription(
     val isSingleCentredShape: Boolean get() = parts.size == 1 && parts[0].offset.lengthSquared() == 0f
 
     companion object {
-        /** Describes [go]'s body, or returns null when it has no [RigidBody3D]. */
+        /** Describes [go]'s body, or returns null when it has no [RigidBody3D] or none of its colliders is available. */
         fun of(go: GameObject): BodyDescription? {
             val rb = go.getComponent<RigidBody3D>() ?: return null
             val colliders = go.components.filterIsInstance<Collider3D>()
@@ -60,6 +62,7 @@ class BodyDescription(
                 else -> BodyType.Dynamic
             }
             val parts = parts(colliders)
+            if (colliders.isNotEmpty() && parts.isEmpty()) return null
             val scale = transform?.scale?.let { Vector3f(it) } ?: Vector3f(1f)
             return BodyDescription(
                 motionType = motionType,
@@ -80,8 +83,9 @@ class BodyDescription(
             )
         }
 
-        /** One [ShapePart] per collider, in order. */
-        fun parts(colliders: List<Collider3D>): List<ShapePart> = colliders.map { ShapePart(it.toShape(), Vector3f(it.offset)) }
+        /** One [ShapePart] per available collider, in order (see [Collider3D.toShapeOrNull]). */
+        fun parts(colliders: List<Collider3D>): List<ShapePart> =
+            colliders.mapNotNull { c -> c.toShapeOrNull()?.let { ShapePart(it, Vector3f(c.offset)) } }
 
         /** The Transform's Euler XYZ degrees as a quaternion. */
         fun rotationOf(transform: Transform): Quaternionf {

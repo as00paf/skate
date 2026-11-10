@@ -9,6 +9,7 @@ import com.pafoid.skate.editor.events.ViewportAction.TogglePhysicsDebug
 import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.editor.imgui.data.UiConstants.SEPARATOR_SPACING
 import com.pafoid.skate.editor.imgui.data.UiConstants.SEPARATOR_WIDTH
+import com.pafoid.skate.editor.imgui.HelpButtonLayout
 import com.pafoid.skate.editor.imgui.data.UiConstants.TOOLBAR_BUTTON_HEIGHT
 import com.pafoid.skate.editor.imgui.data.UiConstants.TOOLBAR_BUTTON_SPACING
 import com.pafoid.skate.editor.imgui.data.UiConstants.TOOLBAR_HEIGHT
@@ -32,8 +33,8 @@ class ViewportToolbar(
     private val stringManager: StringManager,
     private val gizmoSystem: GizmoSystem,
     private val playMode: PlayModeController,
-    /** Draws the window's `?` button (`WindowHeader.helpButton`), supplied by the Game Viewport. */
-    private val helpButton: () -> Unit = {},
+    /** Draws the window's `?` button as a square of the given size (`WindowHeader.helpButton`), supplied by the Game Viewport. */
+    private val helpButton: (Float) -> Unit = {},
 ) {
     private val eventSystem = engine.eventSystem
     private val logger = engine.logger
@@ -108,11 +109,8 @@ class ViewportToolbar(
                 }
                 if (on) ImGui.popStyleColor()
             }
-            ToolbarButton.HELP -> {
-                // The small `?` button, centred on the toolbar's row of square buttons.
-                ImGui.setCursorPosY(ImGui.getCursorPosY() + (TOOLBAR_BUTTON_HEIGHT - ImGui.getFrameHeight()) / 2f)
-                helpButton()
-            }
+            // A square like the other toolbar buttons, so it fills its slot of the toolbar width (EDT-67).
+            ToolbarButton.HELP -> helpButton(TOOLBAR_BUTTON_HEIGHT)
             ToolbarButton.SCREENSHOT -> {
                 if (stringManager.tippedWith(ImGui.button(Icons.CAMERA, TOOLBAR_BUTTON_HEIGHT, TOOLBAR_BUTTON_HEIGHT), "tooltip.viewport_toolbar.screenshot")) {
                     eventSystem.publish(ScreenshotRequested)
@@ -169,14 +167,18 @@ class ViewportToolbar(
 
         val toolbarPosX = TOOLBAR_BUTTON_SPACING / 2f + ImGui.getStyle().framePaddingX
 
-        ImGui.setCursorPos(toolbarPosX, toolbarPosY)
+        // The child starts a little above the buttons: they were drawn exactly on its clip top, which cut their top
+        // edge, the `?` included (EDT-72).
+        val margin = HelpButtonLayout.MIN_CLIP_CLEARANCE
+        ImGui.setCursorPos(toolbarPosX, toolbarPosY - margin)
         ImGui.beginChild(
             "GameViewportToolbar",
             totalButtonWidth,
-            TOOLBAR_HEIGHT,
+            TOOLBAR_HEIGHT + margin,
             false,
             ImGuiWindowFlags.NoBackground or ImGuiWindowFlags.NoDecoration
         )
+        ImGui.setCursorPosY(margin)
 
         groups.forEachIndexed { groupIndex, buttons ->
             if (groupIndex > 0) {

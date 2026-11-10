@@ -104,7 +104,8 @@ object EngineDefaults {
 
     /**
      * Engine shaders (AST-26 §5.1). The **basic** ones are copied into every project's `Assets/Shaders/` in both copy
-     * modes and can be overridden; the **internal** ones only live in the jar and are not in the catalog.
+     * modes and can be overridden; the **internal** ones only live in the jar and are not in the catalog. Include-only
+     * files (`fog`, `lighting` from REN-34) are basic too: overriding one changes every shader that includes it.
      */
     object Shaders {
         // Basic: copied into every project, overridable (REN-31)

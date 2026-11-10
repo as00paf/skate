@@ -48,7 +48,7 @@ class EditorMenuBar(
     private val playMenu = PlayMenuBuilder(stringManager, eventSystem, editor.playModeHandler.controller)
     private val settingsMenu = SettingsMenuBuilder(stringManager, settingsManager, eventSystem)
     private val toolsMenu = ToolsMenuBuilder(stringManager, eventSystem)
-    private val helpMenu = HelpMenuBuilder(stringManager, eventSystem, windowRegistry, aboutModal)
+    private val helpMenu = HelpMenuBuilder(stringManager, aboutModal)
     private val windowControls = WindowControlsRenderer(eventSystem, stringManager)
 
     init {

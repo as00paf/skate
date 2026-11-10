@@ -284,6 +284,10 @@ class EditorSettingsWindow(
             "settings.editor.scene_view.snap_scale", tempSnap.scale, GizmoSnapSettings.DEFAULT_SCALE,
             GizmoSnapSettings.MIN_STEP, GizmoSnapSettings.MAX_SCALE, "%.3f",
         ) { tempSnap = tempSnap.copy(scale = it) }
+        floatRow(
+            "settings.editor.scene_view.snap_ui", tempSnap.ui, GizmoSnapSettings.DEFAULT_UI,
+            GizmoSnapSettings.MIN_UI, GizmoSnapSettings.MAX_UI, "%.0f",
+        ) { tempSnap = tempSnap.copy(ui = it) }
 
         ImGui.spacing()
         ImGui.text(stringManager.getString("settings.editor.scene_view.camera"))

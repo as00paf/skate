@@ -13,11 +13,12 @@ import kotlin.io.path.readText
 
 /**
  * EDT-52 (standard in docs/design/EDT-51.md §2): every editor window and dialog declares a header icon, opens with
- * `beginWindow` (title with icon, tab menu with Help / Close / Reset position, help popover), draws the header strip
- * with `?` (`header(...)`, or `WindowHeader.helpButton` in its own toolbar), and has `help.<id>.what` / `.how` strings
- * in English and French. `EditorDialog` subclasses get beginWindow and the header from their base class. A modal host
+ * `beginWindow` (title with icon, tab menu with Help / Close / Reset position), draws the header strip with `?`
+ * (`header(...)`, or `WindowHeader.helpButton` in its own toolbar), and has a help article
+ * `editor/help/<locale>/<id>.md` in English and French (EDT-68; `HelpArticleCoverageTest` checks the articles). `EditorDialog` subclasses get beginWindow and the header from their base class. A modal host
  * (a window whose `imgui()` only renders an `EditorModal`: New Project, Switch Project) needs neither: a modal has no
- * tab or header strip (EDT-51 §2.1, EDT-64), but it still declares an icon and has help strings.
+ * tab or header strip (EDT-51 §2.1, EDT-64), but it still declares an icon and has help articles, and its modal names
+ * the host as `helpWindow` so the modal shows the host's `?` (EDT-67).
  *
  * [ALLOW_LIST] holds the windows not converted yet. Each EDT-52 chunk removes its windows; nobody adds any. EDT-52 is
  * done when it is empty.
@@ -32,11 +33,13 @@ class WindowStandardGuardTest {
         }.flatMap { findWindows(it.readText()) }
     }
 
-    private val helpKeys: Map<String, Set<String>> by lazy {
-        val dir = root.resolve("src/main/resources/editor/strings")
-        Files.list(dir).use { s -> s.filter { it.name.endsWith(".properties") }.toList() }
-            .groupBy { if (it.name.removeSuffix(".properties").endsWith("_fr")) "fr" else "en" }
-            .mapValues { (_, files) -> files.flatMap { keysOf(it.readText()) }.toSet() }
+    /** Help topics with an article, by locale (EDT-68). */
+    private val articles: Map<String, Set<String>> by lazy {
+        HelpArticleCoverageTest.LOCALES.associateWith { locale ->
+            val dir = root.resolve(HelpArticleCoverageTest.HELP_DIR).resolve(locale)
+            if (!Files.isDirectory(dir)) emptySet()
+            else Files.list(dir).use { s -> s.map { it.name }.filter { it.endsWith(".md") }.map { it.removeSuffix(".md") }.toList() }.toSet()
+        }
     }
 
     @Test
@@ -49,39 +52,17 @@ class WindowStandardGuardTest {
     @Test
     fun Windows_FollowTheStandard() {
         val failures = windows.filter { it.className !in ALLOW_LIST }
-            .associate { it.className to violations(it, helpKeys) }
+            .associate { it.className to violations(it, articles) }
             .filterValues { it.isNotEmpty() }
         assertTrue(failures.isEmpty(), "Windows not meeting the EDT-51 standard (see docs/design/EDT-51.md §2):\n" +
             failures.entries.joinToString("\n") { (name, v) -> "$name: ${v.joinToString("; ")}" })
     }
 
     @Test
-    fun EveryRegisteredWindow_HasBeginnerHelp() {
-        val failures = windows.mapNotNull { w ->
-            val helpId = w.windowName?.removePrefix("window.")
-            val missing = if (helpId == null) {
-                mutableListOf("${w.className}: window name not found")
-            } else {
-                val m = mutableListOf<String>()
-                listOf("en", "fr").forEach { locale ->
-                    listOf("what", "how").forEach { part ->
-                        val key = "help.$helpId.$part"
-                        if (key !in helpKeys[locale].orEmpty()) m += "${w.className}: missing $key in $locale"
-                    }
-                }
-                m
-            }
-            if (missing.isEmpty()) null else w.className to missing
-        }
-        val detail = failures.joinToString("\n") { (name, v) -> "$name: ${v.joinToString("; ")}" }
-        assertTrue(failures.isEmpty(), "Every registered editor window needs beginner help (what/how in English and French):\n" + detail)
-    }
-
-    @Test
     fun AllowList_OnlyHoldsWindowsThatStillNeedWork() {
         val byName = windows.associateBy { it.className }
         val unknown = ALLOW_LIST.filter { it !in byName }
-        val done = ALLOW_LIST.filter { name -> byName[name]?.let { violations(it, helpKeys).isEmpty() } == true }
+        val done = ALLOW_LIST.filter { name -> byName[name]?.let { violations(it, articles).isEmpty() } == true }
         assertTrue(unknown.isEmpty(), "Allow-listed windows that no longer exist: $unknown")
         assertTrue(done.isEmpty(), "These windows meet the standard now; remove them from ALLOW_LIST: $done")
     }
@@ -113,12 +94,12 @@ class WindowStandardGuardTest {
         assertEquals(listOf("Good", "Bad", "Popup"), found.map { it.className })
         assertEquals(listOf("window.good", "window.bad", "window.popup"), found.map { it.windowName })
         val keys = mapOf(
-            "en" to setOf("help.good.what", "help.good.how", "help.popup.what", "help.popup.how"),
-            "fr" to setOf("help.good.what", "help.good.how", "help.popup.what"),
+            "en" to setOf("good", "popup"),
+            "fr" to setOf("good"),
         )
         assertEquals(emptyList<String>(), violations(found[0], keys))
-        assertEquals(7, violations(found[1], keys).size, violations(found[1], keys).toString())
-        assertEquals(listOf("missing help.popup.how in fr"), violations(found[2], keys))
+        assertEquals(5, violations(found[1], keys).size, violations(found[1], keys).toString())
+        assertEquals(listOf("missing help article fr/popup.md"), violations(found[2], keys))
     }
 
     @Test
@@ -127,7 +108,7 @@ class WindowStandardGuardTest {
             class Switcher(s: StringManager) : EditorWindow("window.switcher") {
                 override val icon = Icons.FOLDER_OPEN
                 override fun imgui() = modal.render()
-                private val modal = object : EditorModal(s, Icons.FOLDER_OPEN) { }
+                private val modal = object : EditorModal(s, Icons.FOLDER_OPEN) { override val helpWindow get() = this@Switcher }
             }
             class NotAHost(s: StringManager) : EditorWindow("window.not_a_host") {
                 override val icon = Icons.FOLDER_OPEN
@@ -136,9 +117,11 @@ class WindowStandardGuardTest {
             }
         """.trimIndent()
         val (host, notHost) = findWindows(src)
-        val keys = listOf("en", "fr").associateWith { setOf("help.switcher.what", "help.switcher.how", "help.not_a_host.what", "help.not_a_host.how") }
+        val keys = listOf("en", "fr").associateWith { setOf("switcher", "not_a_host") }
         assertEquals(emptyList<String>(), violations(host, keys))
         assertEquals(2, violations(notHost, keys).size, violations(notHost, keys).toString())
+        val withoutHelp = findWindows(src.replace("{ override val helpWindow get() = this@Switcher }", "{ }")).first()
+        assertEquals(listOf("modal host without a `?` (override val helpWindow in its EditorModal)"), violations(withoutHelp, keys))
     }
 
     /**
@@ -160,6 +143,48 @@ class WindowStandardGuardTest {
         assertTrue(missing.isEmpty(), "Windows missing from View > Windows; add them to WindowCategory.byWindow: $missing")
         val stale = NO_CATEGORY.filter { name -> name !in registered || byClass[name]?.windowName?.let { WindowCategory.of(it) } != null }
         assertTrue(stale.isEmpty(), "NO_CATEGORY entries that are not registered or have a category now: $stale")
+    }
+
+    /** EDT-67: the human found `?` on only some windows. Every registered window must draw one, with no exemption. */
+    @Test
+    fun EveryRegisteredWindow_HasAHelpButton() {
+        val byClass = windows.associateBy { it.className }
+        val registered = registeredWindowClasses(root.resolve(REGISTRY).readText())
+        assertTrue(registered.size >= 19, "found only $registered in $REGISTRY")
+        val missing = registered.filter { name -> byClass[name]?.let { helpButtonRoute(it) } == null }
+        assertTrue(missing.isEmpty(), "Registered windows without a `?` help button (EDT-67): $missing")
+        val dialog = root.resolve("src/main/kotlin/com/pafoid/skate/editor/imgui/EditorDialog.kt").readText()
+        assertTrue(Regex("""\bheader\s*\(""").containsMatchIn(dialog), "EditorDialog no longer draws the header with `?`")
+        val modal = root.resolve("src/main/kotlin/com/pafoid/skate/editor/imgui/EditorModal.kt").readText()
+        assertTrue("helpWindow?.let" in modal && "WindowHeader.helpRow" in modal, "EditorModal no longer draws its host's `?`")
+    }
+
+    @Test
+    fun Guard_FindsTheHelpButtonRoute() {
+        val src = """
+            class Docked(s: StringManager) : EditorWindow("window.docked") {
+                override fun imgui() { beginWindow(s); header(s) { tools() }; ImGui.end() }
+            }
+            class Viewport(s: StringManager) : EditorWindow("window.viewport") {
+                private val bar = Toolbar { WindowHeader.helpButton(s, this) }
+            }
+            class Settings(s: StringManager) : EditorDialog("window.settings", s) { }
+            class Host(s: StringManager) : EditorWindow("window.host") {
+                override fun imgui() = modal.render()
+                private val modal = object : EditorModal(s) { override val helpWindow: EditorWindow get() = this@Host }
+            }
+            class BareHost(s: StringManager) : EditorWindow("window.bare_host") {
+                override fun imgui() = modal.render()
+                private val modal = object : EditorModal(s) { }
+            }
+            class Bare(s: StringManager) : EditorWindow("window.bare") {
+                override fun imgui() { ImGui.begin("x"); ImGui.end() }
+            }
+        """.trimIndent()
+        assertEquals(
+            listOf("header", "helpButton", "EditorDialog header", "EditorModal.helpWindow", null, null),
+            findWindows(src).map { helpButtonRoute(it) },
+        )
     }
 
     @Test
@@ -235,9 +260,13 @@ class WindowStandardGuardTest {
             WindowClass(m.groupValues[2], base.groupValues[1] == "EditorDialog", windowName, classBody(source, i))
         }.toList()
 
-        fun violations(window: WindowClass, helpKeys: Map<String, Set<String>>): List<String> {
+        /** What [window] lacks; [articles] holds the help topics with an article, by locale. */
+        fun violations(window: WindowClass, articles: Map<String, Set<String>>): List<String> {
             val out = mutableListOf<String>()
             if (!Regex("""override\s+val\s+icon\b""").containsMatchIn(window.source)) out += "no header icon (override val icon)"
+            if (isModalHost(window.source) && !HELP_WINDOW.containsMatchIn(window.source)) {
+                out += "modal host without a `?` (override val helpWindow in its EditorModal)"
+            }
             if (!window.isDialog && !isModalHost(window.source)) {
                 if (!Regex("""\bbeginWindow\s*\(""").containsMatchIn(window.source)) out += "does not open with beginWindow (tab menu, help)"
                 if (!Regex("""\bheader\s*\(|\bhelpButton\s*\(""").containsMatchIn(window.source)) out += "no header strip with ? (header(...))"
@@ -246,24 +275,31 @@ class WindowStandardGuardTest {
             if (helpId == null) {
                 out += "window name not found"
             } else {
-                listOf("en", "fr").forEach { locale ->
-                    listOf("what", "how").map { "help.$helpId.$it" }
-                        .filter { it !in helpKeys[locale].orEmpty() }
-                        .forEach { out += "missing $it in $locale" }
-                }
+                listOf("en", "fr").filter { helpId !in articles[it].orEmpty() }
+                    .forEach { out += "missing help article $it/$helpId.md" }
             }
             return out
+        }
+
+        private val HELP_WINDOW = Regex("""override\s+val\s+helpWindow\b""")
+
+        /**
+         * How a window shows its `?` (EDT-67), or null when it does not: dialogs through `EditorDialog`'s header,
+         * modal hosts through `EditorModal.helpWindow`, every other window through `header(...)` or
+         * `WindowHeader.helpButton` in its own toolbar.
+         */
+        fun helpButtonRoute(window: WindowClass): String? = when {
+            window.isDialog -> "EditorDialog header"
+            isModalHost(window.source) -> if (HELP_WINDOW.containsMatchIn(window.source)) "EditorModal.helpWindow" else null
+            Regex("""\bheader\s*\(""").containsMatchIn(window.source) -> "header"
+            Regex("""\bhelpButton\s*\(""").containsMatchIn(window.source) -> "helpButton"
+            else -> null
         }
 
         /** The window only renders an [EditorModal][com.pafoid.skate.editor.imgui.EditorModal] it owns. */
         fun isModalHost(source: String): Boolean =
             Regex(""":\s*EditorModal\s*\(""").containsMatchIn(source) &&
                 Regex("""override\s+fun\s+imgui\s*\(\s*\)\s*(=\s*\w+\.render\(\)|\{\s*\w+\.render\(\)\s*})""").containsMatchIn(source)
-
-        private fun keysOf(text: String): List<String> = text.lines()
-            .map { it.trim() }
-            .filter { it.isNotEmpty() && !it.startsWith("#") && it.contains('=') }
-            .map { it.substringBefore('=').trim() }
 
         private fun skipParens(src: String, open: Int): Int? {
             var depth = 0

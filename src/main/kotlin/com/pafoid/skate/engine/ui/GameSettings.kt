@@ -80,16 +80,28 @@ class GameLocale(val strings: com.pafoid.skate.engine.core.StringManager) {
     var store: GameSettingsStore? = null
         private set
 
+    private val storeListeners = java.util.concurrent.CopyOnWriteArrayList<(GameSettingsStore?) -> Unit>()
+
+    /**
+     * Calls [listener] each time [store] is attached or detached, so settings saved in it (e.g. the game options of
+     * GPL-21) take effect at once instead of only on the next scene load (GPL-25).
+     */
+    fun onStoreChanged(listener: (GameSettingsStore?) -> Unit) {
+        storeListeners += listener
+    }
+
     /** Uses [store]'s saved locale from now on (project opened in the editor, or the exported game started). */
     fun attach(store: GameSettingsStore) {
         this.store = store
         strings.setLocale(store.settings.locale)
+        storeListeners.forEach { it(store) }
     }
 
     /** No project: forget the store (later changes are not saved anywhere) and go back to the default locale. */
     fun detach() {
         store = null
         strings.setLocale(GameSettings.DEFAULT_LOCALE)
+        storeListeners.forEach { it(null) }
     }
 
     fun set(locale: String) {

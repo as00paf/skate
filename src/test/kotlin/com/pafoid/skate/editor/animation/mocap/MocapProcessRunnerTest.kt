@@ -148,11 +148,37 @@ class MocapProcessRunnerTest {
     }
 
     @Test
+    fun `Backend_Extract_PassesTheTrimRange`() {
+        val tool = FakeMocapTool(landmarkJson = """{"version":1,"fps":30,"frames":[]}""")
+        val backend = backend(tool)
+        backend.extract(File(dir, "v.mp4"), File(dir, "a.json"), AtomicBoolean(false), range = 15..44) {}
+        val argv = tool.calls.last()
+        assertEquals(listOf("--start-frame", "15", "--end-frame", "44"), argv.subList(argv.indexOf("--start-frame"), argv.indexOf("--start-frame") + 4))
+        backend.extract(File(dir, "v.mp4"), File(dir, "b.json"), AtomicBoolean(false)) {}
+        assertFalse("--start-frame" in tool.calls.last(), "no range: the whole video")
+        assertThrows<IllegalArgumentException> { backend.extract(File(dir, "v.mp4"), File(dir, "c.json"), AtomicBoolean(false), range = 10..5) {} }
+    }
+
+    @Test
+    fun `Backend_PreviewFrames_AreMadeOnceAndListed`() {
+        val tool = FakeMocapTool().apply { videoFrames = 7 }
+        val backend = backend(tool)
+        val out = File(dir, "preview")
+        val p = backend.previewFrames(File(dir, "v.mp4"), out, AtomicBoolean(false))
+        assertEquals(7, p.totalFrames)
+        assertEquals(listOf(0, 2, 4, 6), p.frames.toList())
+        assertTrue(p.file(4).isFile)
+        backend.previewFrames(File(dir, "v.mp4"), out, AtomicBoolean(false))
+        assertEquals(1, tool.calls.count { it[2] == "frames" }, "cached: the script runs once per video")
+        assertTrue(tool.calls.single { it[2] == "frames" }.containsAll(listOf("--max-frames", "900")))
+    }
+
+    @Test
     fun `Scripts_TheAdapterShipsWithTheEditor`() {
         val script = MocapScripts.mediaPipe()
         assertTrue(script.isFile)
         val text = script.readText()
-        listOf("def cmd_check", "def cmd_probe", "def cmd_extract", "\"version\": 1", "detect_for_video", "PoseLandmarker", MediaPipeBackend.NO_API)
+        listOf("def cmd_check", "def cmd_probe", "def cmd_extract", "def cmd_frames", "--start-frame", "--end-frame", "\"version\": 1", "detect_for_video", "PoseLandmarker", MediaPipeBackend.NO_API)
             .forEach { assertTrue(it in text, it) }
         // ANI-18: the Tasks API is tried first; mp.solutions is only the fallback.
         assertTrue(text.indexOf("TasksDetector(mp, model)") in 0 until text.indexOf("SolutionsDetector(mp)", text.indexOf("def open_detector")))

@@ -64,4 +64,4 @@ Open [Key Bindings](keybindings.md) to choose another key for an action. If two 
 
 - [Key Bindings](keybindings.md)
 - [Game Viewport](game_viewport.md)
-- [Getting started](getting-started.md)
+- [Getting started](getting_started.md)

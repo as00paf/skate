@@ -7,8 +7,15 @@ import java.lang.reflect.Field
 
 /** Edits from the generic (reflected) component inspector; handled with undoable commands. */
 sealed class ComponentFieldAction(eventName: String) : Event(eventName) {
-    /** A finished inspector gesture on [component] (EDT-10). */
-    data class Edited(val component: Component, val changes: Map<Field, EditComponentFieldsCommand.Change>) : ComponentFieldAction("component.fields.edited")
+    /**
+     * A finished inspector gesture on [component] (EDT-10). [mirrors] copy it to the same component type on the other
+     * objects of a multi-selection (EDT-74); all of it is one undo step.
+     */
+    data class Edited(
+        val component: Component,
+        val changes: Map<Field, EditComponentFieldsCommand.Change>,
+        val mirrors: List<Pair<Component, Map<Field, EditComponentFieldsCommand.Change>>> = emptyList(),
+    ) : ComponentFieldAction("component.fields.edited")
 
     /** Reset to default from the inspector's context menu. */
     data class Reset(val component: Component) : ComponentFieldAction("component.reset")

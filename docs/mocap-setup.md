@@ -38,7 +38,11 @@ the error names `libGLESv2.so.2`. Windows and macOS need nothing extra.
 ## Use
 
 1. **Choose video...** and pick a local file (mp4, mov, avi, mkv, webm). A preview frame and the video's size,
-   frame rate and length appear.
+   frame rate and length appear. After a few seconds ("Preparing playback…") the video can be played (Space),
+   stepped frame by frame (arrow keys) and scrubbed on the bar under it.
+   - To keep only part of the video, go to its first frame and click **Set start** (I), then to its last frame and
+     click **Set end** (O). The blue part of the bar is what becomes the animation; the label shows its frames and
+     length. **Whole video** removes the markers. Playback loops inside the marked part.
 2. Optional: **Options** (character rig, smoothing, root motion, foot lock). The defaults suit most videos.
 3. **Create animation**. The pose is detected in every frame (progress bar, Cancel), solved onto a humanoid,
    retargeted onto the character (rest-pose compensated) and saved as `Assets/Animations/<video name>.skanim`.
@@ -60,7 +64,8 @@ Tips for good results: one person, whole body in view, steady camera, good light
 
 ## Landmark file format (version 1)
 
-`mediapipe_extract.py extract` writes JSON:
+`mediapipe_extract.py extract` writes JSON (with `--start-frame S --end-frame E`, only those frames, `t` starting at 0
+on frame S, and `"start_frame": S`):
 
 ```json
 { "version": 1, "source": "mediapipe 1.2.2", "api": "tasks", "fps": 30.0, "width": 1280, "height": 720,

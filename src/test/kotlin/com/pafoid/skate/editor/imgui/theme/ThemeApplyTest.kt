@@ -66,6 +66,19 @@ class ThemeApplyTest {
     }
 
     @Test
+    fun Spacing_ReachesImGui() {
+        // EDT-72: imgui-java's ImVec2 style getters return copies; the theme's padding must use the setters.
+        ImGuiStyleManager.sync("high_contrast")
+        val s = ImGuiStyleManager.library.resolve("high_contrast").style
+        val style = ImGui.getStyle()
+        assertEquals(s.framePadding.x, style.framePaddingX); assertEquals(s.framePadding.y, style.framePaddingY)
+        assertEquals(s.windowPadding.x, style.windowPaddingX); assertEquals(s.windowPadding.y, style.windowPaddingY)
+        assertEquals(s.itemSpacing.x, style.itemSpacingX); assertEquals(s.itemSpacing.y, style.itemSpacingY)
+        assertEquals(s.itemInnerSpacing.x, style.itemInnerSpacingX)
+        assertEquals(s.touchExtraPadding.y, style.touchExtraPaddingY)
+    }
+
+    @Test
     fun TablesDockingAndNavHighlight_FollowTheTheme() {
         ImGuiStyleManager.sync("light")
         val t = ImGuiStyleManager.library.resolve("light").style.theme

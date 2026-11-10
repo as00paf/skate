@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.ui.windows
 
+import com.pafoid.skate.editor.imgui.WindowHeader
 import com.pafoid.skate.editor.imgui.label
 import com.pafoid.skate.editor.imgui.EditorWindow
 import com.pafoid.skate.editor.imgui.Tooltips
@@ -73,13 +74,12 @@ class AssetBrowserWindow(
 
     /** Header strip tools (EDT-51 §2.2): the search shared by every tab, then Refresh; `?` is drawn after them. */
     private fun renderHeaderTools() {
-        val style = ImGui.getStyle()
-        val buttonWidth = ImGui.getFrameHeight() + style.itemSpacingX
-        ImGui.setNextItemWidth((ImGui.getContentRegionAvailX() - buttonWidth * 2).coerceAtLeast(80f))
+        val refresh = "${Icons.ARROW_ROTATE}##asset_browser_refresh"
+        ImGui.setNextItemWidth((ImGui.getContentRegionAvailX() - WindowHeader.trailingWidth(refresh)).coerceAtLeast(80f))
         ImGui.inputTextWithHint("##asset_browser_search", "${Icons.SEARCH} ${stringManager.getString("lbl.search")}...", searchText)
         Tooltips.show(stringManager, "tooltip.search_assets")
         ImGui.sameLine()
-        if (stringManager.tippedWith(ImGui.smallButton("${Icons.ARROW_ROTATE}##asset_browser_refresh"), "tooltip.refresh_assets")) {
+        if (stringManager.tippedWith(ImGui.button(refresh), "tooltip.refresh_assets")) {
             refreshAssets()
         }
     }

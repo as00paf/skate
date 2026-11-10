@@ -1,6 +1,10 @@
 package com.pafoid.skate.game.samples
 
 import com.pafoid.skate.engine.assets.EngineDefaults
+import com.pafoid.skate.engine.ui.UiRectF
+import com.pafoid.skate.engine.ui.UiTree
+import com.pafoid.skate.engine.ui.UiLayout
+import com.pafoid.skate.engine.getAllChildren
 import com.pafoid.skate.engine.ecs.components.EnvironmentComponent
 import com.pafoid.skate.engine.ecs.SceneSun
 import com.pafoid.skate.engine.assets.AssetsManager
@@ -127,12 +131,53 @@ class FeatureShowcaseTest {
     @Test
     fun `UI overlay has a focus button per area plus overview, a slider and formatted text`() {
         val canvas = withComponent<UICanvasComponent>().single { it.name != FeatureShowcase.MAP_CANVAS }
-        val buttons = canvas.children.filter { it.getComponent<UIButtonComponent>() != null }.map { it.name }
+        val buttons = canvas.getAllChildren().filter { it.getComponent<UIButtonComponent>() != null }.map { it.name }
         val expected = listOf(FeatureShowcase.OVERVIEW) + FeatureShowcase.AREAS.map { it.key }
         assertTrue(buttons.containsAll(expected.map { FeatureShowcase.focusButtonName(it) }), buttons.toString())
-        val widgets = canvas.children.flatMap { it.components }
+        val widgets = canvas.getAllChildren().flatMap { it.components }
         assertTrue(widgets.any { it is UISliderComponent })
         assertTrue(widgets.filterIsInstance<UITextComponent>().any { it.args.isNotEmpty() })
+    }
+
+    @Test
+    fun `UI overlay is grouped by screen region, with the legend items under the legend panel`() {
+        val canvas = withComponent<UICanvasComponent>().single { it.name != FeatureShowcase.MAP_CANVAS }
+        assertEquals(
+            listOf(FeatureShowcase.HEADER, FeatureShowcase.LEGEND_PANEL, FeatureShowcase.TOOLBAR, FeatureShowcase.WIDGET_PANEL, FeatureShowcase.MAP_CORNER),
+            canvas.children.map { it.name },
+        )
+        fun group(name: String) = canvas.children.single { it.name == name }.children.map { it.name }
+        val legendButtons = (listOf(FeatureShowcase.OVERVIEW) + FeatureShowcase.AREAS.map { it.key }).map { FeatureShowcase.focusButtonName(it) }
+        assertEquals(listOf("LegendTitle") + legendButtons, group(FeatureShowcase.LEGEND_PANEL))
+        assertEquals(listOf("Title", "Hint"), group(FeatureShowcase.HEADER))
+        assertEquals(listOf(FeatureShowcase.FOG_TOGGLE_BUTTON, FeatureShowcase.SEED_LABEL), group(FeatureShowcase.TOOLBAR))
+        assertEquals(listOf("FormattedText", "Button", "Progress", "Slider"), group(FeatureShowcase.WIDGET_PANEL))
+        assertEquals(listOf(FeatureShowcase.MINIMAP, FeatureShowcase.MAP_BUTTON), group(FeatureShowcase.MAP_CORNER))
+        val map = withComponent<UICanvasComponent>().single { it.name == FeatureShowcase.MAP_CANVAS }
+        assertEquals(listOf("Dim", FeatureShowcase.HEADER, "FullMap", FeatureShowcase.MAP_CLOSE), map.children.map { it.name })
+    }
+
+    /** Grouping only re-parents the items: on screen they stay where the flat overlay put them (canvas-anchored). */
+    @Test
+    fun `grouped UI items keep their screen positions`() {
+        val canvas = withComponent<UICanvasComponent>().single { it.name != FeatureShowcase.MAP_CANVAS }
+        val (w, h) = 1920f to 1080f
+        val rects = UiLayout.resolve(UiTree.spec(canvas), w, h)
+        fun rect(name: String) = rects.getValue(canvas.getAllChildren().single { it.name == name }.uId)
+        // A flat item placed with placed(anchorX, anchorY, x, y, width, height) directly on the canvas.
+        fun flat(ax: Float, ay: Float, x: Float, y: Float, rw: Float, rh: Float) = UiRectF(ax * w + x - ax * rw, ay * h + y - ay * rh, rw, rh)
+        assertEquals(flat(0f, 0f, 40f, 150f, 520f, 44f), rect("LegendTitle"))
+        val keys = listOf(FeatureShowcase.OVERVIEW) + FeatureShowcase.AREAS.map { it.key }
+        keys.forEachIndexed { i, key ->
+            assertEquals(flat(0f, 0f, 30f, 200f + i * 46f, 540f, 40f), rect(FeatureShowcase.focusButtonName(key)), key)
+        }
+        assertEquals(flat(0.5f, 0f, 0f, 20f, 1000f, 60f), rect("Title"))
+        assertEquals(flat(1f, 0f, -20f, 96f, 520f, 36f), rect(FeatureShowcase.SEED_LABEL))
+        assertEquals(flat(1f, 1f, -40f, -280f, 440f, 44f), rect("FormattedText"))
+        assertEquals(flat(1f, 1f, -110f, -180f, 300f, 76f), rect("Button"))
+        assertEquals(flat(1f, 1f, -60f, -110f, 400f, 30f), rect("Progress"))
+        assertEquals(flat(1f, 1f, -60f, -50f, 400f, 30f), rect("Slider"))
+        assertEquals(flat(0f, 1f, 20f, -20f, FeatureShowcase.MINIMAP_SIZE, FeatureShowcase.MINIMAP_SIZE), rect(FeatureShowcase.MINIMAP))
     }
 
     @Test

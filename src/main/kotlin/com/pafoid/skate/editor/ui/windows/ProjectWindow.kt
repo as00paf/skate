@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.ui.windows
 
+import com.pafoid.skate.editor.imgui.WindowHeader
 import com.pafoid.skate.editor.imgui.EmptyState
 import com.pafoid.skate.editor.imgui.tippedWith
 import com.pafoid.skate.editor.imgui.tipped
@@ -8,6 +9,7 @@ import com.pafoid.skate.editor.events.WindowAction
 import com.pafoid.skate.editor.scripting.ScriptTemplates
 import com.pafoid.skate.editor.ui.handlers.ScriptEditorActionHandler
 import com.pafoid.skate.editor.data.FileSystemItem
+import com.pafoid.skate.editor.animation.clipeditor.OpenAnimationClip
 import com.pafoid.skate.editor.data.FileType
 import com.pafoid.skate.editor.events.FileSystemEvent
 import com.pafoid.skate.editor.events.ProjectEvent.CreateFileRequested
@@ -167,11 +169,11 @@ class ProjectWindow(
 
     /** Header strip tools (EDT-51 §2.2): the filter box, then Refresh; `?` is drawn after them. */
     private fun renderHeaderTools() {
-        val buttonWidth = ImGui.getFrameHeight() + ImGui.getStyle().itemSpacingX
-        ImGui.setNextItemWidth((ImGui.getContentRegionAvailX() - buttonWidth * 2).coerceAtLeast(80f))
+        val refresh = "${Icons.ARROW_ROTATE}##project_refresh"
+        ImGui.setNextItemWidth((ImGui.getContentRegionAvailX() - WindowHeader.trailingWidth(refresh)).coerceAtLeast(80f))
         inputTextWithHint("##project_search", "${Icons.SEARCH} ${stringManager.getString("lbl.filter")}...", searchText)
         sameLine()
-        if (stringManager.tippedWith(ImGui.smallButton("${Icons.ARROW_ROTATE}##project_refresh"), "context.browser.refresh.tooltip")) {
+        if (stringManager.tippedWith(ImGui.button(refresh), "context.browser.refresh.tooltip")) {
             needsRefresh = true
         }
     }
@@ -298,6 +300,11 @@ class ProjectWindow(
 
     private fun handleDoubleClick(item: FileSystemItem) {
         when (item.type) {
+            // ANI-14: a .skanim clip opens in the Animation Editor; other animation files go to the system.
+            FileType.ANIMATION -> {
+                if (opensInAnimationEditor(item.file)) eventSystem.publish(OpenAnimationClip(item.file.path))
+                else openInExternalEditor(item.file)
+            }
             FileType.SCENE -> {
                 logger.logEditor("Opening scene: ${item.file.name}")
                 eventSystem.publish(SceneAction.OpenSceneFile(item.file))
@@ -424,8 +431,11 @@ class ProjectWindow(
         }
     }
 
-    private companion object {
-        const val ITEM_MENU = "##project_item_menu"
+    companion object {
+        private const val ITEM_MENU = "##project_item_menu"
+
+        /** A double-click opens [file] in the Animation Editor (ANI-14): `.skanim` clips only. */
+        fun opensInAnimationEditor(file: File): Boolean = file.extension.equals("skanim", ignoreCase = true)
     }
 
     private fun showCreateDialog(isDirectory: Boolean, parent: FileSystemItem? = null) {
