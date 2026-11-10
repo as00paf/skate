@@ -52,7 +52,7 @@ dependencies {
     implementation(libs.lwjgl.vma) { artifact { classifier = lwjglNatives } }
     
     // Bullet Physics
-    implementation(libs.libbulletjme) { exclude(group = "com.github.stephengold", module = "Libbulletjme-Windows64-SpDebug") }
+    implementation(libs.libbulletjme)
     // Release native (PHY-20): the debug build was several times slower; see docs/design/PHY-17.md
     runtimeOnly(libs.libbulletjme) { artifact { classifier = "SpRelease" } }
 

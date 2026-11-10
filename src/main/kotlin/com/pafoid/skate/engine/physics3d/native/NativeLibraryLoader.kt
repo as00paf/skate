@@ -45,24 +45,26 @@ class NativeLibraryLoader(
 
         internal fun resetForTests() = synchronized(loaded) { loaded.clear() }
 
-        /** Per-user data directory for physics natives (EDT-18 safety). */
+        /** Per-user data directory for physics natives (EDT-18 safety), created if missing. */
         fun nativesDir(): DirectoryPath {
-            val osName = System.getProperty("os.name").orEmpty()
-            val home = System.getProperty("user.home").orEmpty()
-            val path = when {
-                osName.startsWith("windows") ->
-                    System.getenv("APPDATA")?.let { File(it, "Skate/natives") }
-                        ?: File(home, "AppData/Roaming/Skate/natives")
-                osName.startsWith("mac") ->
-                    File(home, "Library/Application Support/Skate/natives")
-                else ->
-                    File(
-                        System.getenv("XDG_CONFIG_HOME")
-                            ?: File(home, ".config").path,
-                        "skate/natives",
-                    )
+            val dir = nativesDirFor(
+                System.getProperty("os.name").orEmpty(),
+                System.getProperty("user.home").orEmpty(),
+                System.getenv("APPDATA"),
+                System.getenv("XDG_CONFIG_HOME"),
+            )
+            dir.mkdirs()
+            return DirectoryPath(dir.path)
+        }
+
+        /** `os.name` is e.g. "Windows 11" or "Mac OS X", so it is compared case-insensitively. */
+        internal fun nativesDirFor(osName: String, home: String, appData: String?, xdgConfigHome: String?): File {
+            val os = osName.lowercase()
+            return when {
+                os.startsWith("windows") -> File(appData ?: File(home, "AppData/Roaming").path, "Skate/natives")
+                os.startsWith("mac") -> File(home, "Library/Application Support/Skate/natives")
+                else -> File(xdgConfigHome ?: File(home, ".config").path, "skate/natives")
             }
-            return DirectoryPath(path.path)
         }
     }
 

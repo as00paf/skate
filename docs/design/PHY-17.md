@@ -408,7 +408,6 @@ excluded on both.
 | 20 raycast vehicles | Bullet | 0.01 | 0.01 | 0.02 | 0.04 | 20 / 21 |
 | 20 raycast vehicles | Jolt | 0.04 | 0.03 | 0.06 | 0.15 | 20 / 21 |
 
-
 Reading:
 - **Box pile:** Bullet's mean and median are lower because its pile falls asleep (0 active at the end) while Jolt's
   stays mostly awake (one large island has to be still as a whole before it sleeps). During the collapse, Bullet's
