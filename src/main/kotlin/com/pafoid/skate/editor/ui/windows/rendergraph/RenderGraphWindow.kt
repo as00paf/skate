@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.ui.windows.rendergraph
 
+import com.pafoid.skate.editor.events.ProjectEvent
 import com.pafoid.skate.editor.events.RenderGraphAction
 import com.pafoid.skate.editor.imgui.EditorWindow
 import com.pafoid.skate.editor.imgui.EmptyState
@@ -9,13 +10,12 @@ import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.editor.imgui.tipped
 import com.pafoid.skate.editor.imgui.tippedWith
 import com.pafoid.skate.editor.settings.ShadowQuality
-import com.pafoid.skate.editor.systems.EditorSettingsManager
-import com.pafoid.skate.editor.ui.windows.EditorSettingsWindow
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.render.graph.PassInfo
 import com.pafoid.skate.engine.render.graph.PassTimings
 import com.pafoid.skate.engine.render.graph.RenderGraph
 import com.pafoid.skate.engine.render.graph.RenderGraphInfo
+import com.pafoid.skate.engine.render.shadow.ShadowSettings
 import imgui.ImDrawList
 import imgui.ImGui
 import imgui.flag.ImGuiButtonFlags
@@ -35,7 +35,6 @@ import kotlin.math.pow
  */
 class RenderGraphWindow(
     private val engine: Engine,
-    private val settingsManager: EditorSettingsManager,
 ) : EditorWindow(NAME, true) {
     private val strings = engine.stringManager
     private val graph: RenderGraph get() = engine.renderer.renderGraph
@@ -413,13 +412,13 @@ class RenderGraphWindow(
         }
     }
 
-    /** LOW/MEDIUM/HIGH selector; writes the editor graphics setting, which applies and persists it. */
+    /** LOW/MEDIUM/HIGH selector; sets the project's shadow quality (REN-30). */
     private fun shadowQuality() {
-        val labels = ShadowQuality.entries.map { strings.getString(EditorSettingsWindow.shadowQualityKey(it)) }.toTypedArray()
-        val current = ImInt(settingsManager.editorSettings.graphics.shadowQuality.ordinal)
+        val labels = ShadowQuality.entries.map { strings.getString("settings.graphics.shadow_quality.${it.name.lowercase()}") }.toTypedArray()
+        val current = ImInt(ShadowSettings.quality.ordinal)
         ImGui.setNextItemWidth(fontPx * 8f)
         if (ImGui.combo("${strings.getString("lbl.render_graph.shadow_quality")}###rg_shadow_quality", current, labels, labels.size)) {
-            settingsManager.updateShadowQuality(ShadowQuality.entries[current.get()])
+            engine.eventSystem.publish(ProjectEvent.SetShadowQualityRequested(ShadowQuality.entries[current.get()]))
         }
         if (ImGui.isItemHovered()) ImGui.setTooltip(strings.getString("tooltip.render_graph.shadow_quality"))
     }
