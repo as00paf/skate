@@ -46,7 +46,8 @@ class HamburgerMenuModelTest {
         assertEquals(listOf("windows>", "open_all", "close_all", "reset_layout"), shape(HamburgerMenuModel.VIEW.entries))
         assertEquals(listOf("play_pause", "stop", "reset"), shape(HamburgerMenuModel.PLAY.entries))
         assertEquals(listOf("test_input", "shell"), shape(HamburgerMenuModel.TOOLS.entries))
-        assertEquals(listOf("getting_started", "shortcuts", "about"), shape(HamburgerMenuModel.HELP.entries))
+        // EDT-68 decision 6: Help Window… first, About last.
+        assertEquals(listOf("help_window", "getting_started", "shortcuts", "about"), shape(HamburgerMenuModel.HELP.entries))
     }
 
     @Test

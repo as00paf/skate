@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.imgui
 
+import com.pafoid.skate.editor.help.HelpRouter
 import com.pafoid.skate.engine.core.StringManager
 import imgui.ImGui
 import imgui.type.ImBoolean
@@ -20,14 +21,14 @@ abstract class EditorWindow(
     /** The icon in front of the title (EDT-51 §2.2). Null for windows not converted yet (EDT-52). */
     open val icon: String? = null
 
-    /** Windows the help popover links to ("Related windows"), by [name]. */
+    /** Windows the Help window offers to open below this window's article ("Related windows"), by [name]. */
     open val relatedWindows: List<String> = emptyList()
 
-    /** Help string id: `help.<helpId>.what/how/related` (EDT-53 writes the text). */
-    val helpId: String get() = HelpPopover.helpIdOf(name)
+    /** Help topic: the article `editor/help/<locale>/<helpId>.md` (EDT-53, EDT-68); `window.console` -> `console`. */
+    val helpId: String get() = helpIdOf(name)
 
-    /** The `?` popover of this window. */
-    val help = HelpPopover(this)
+    /** Opens the Help window on this window's article (the `?` and the tab menu's Help, EDT-68). */
+    fun openHelp() = HelpRouter.open(helpId)
 
     /** Set by the tab menu's Reset position; applied before the next `begin`. */
     internal var resetPositionRequested = false
@@ -44,8 +45,8 @@ abstract class EditorWindow(
         ImGuiIds.stable(prefix + (icon?.let { "$it " } ?: "") + strings.getString(textKey), name)
 
     /**
-     * The standard `begin` (EDT-51): the title with its icon, the tab / title-bar right-click menu (Help, Close,
-     * Reset position) and the help popover. As with `ImGui.begin`, call `ImGui.end()` whatever this returns.
+     * The standard `begin` (EDT-51): the title with its icon and the tab / title-bar right-click menu (Help, Close,
+     * Reset position). As with `ImGui.begin`, call `ImGui.end()` whatever this returns.
      * Draw [header] first in the content.
      */
     protected fun beginWindow(strings: StringManager, flags: Int = 0, closable: Boolean = true): Boolean {
@@ -56,10 +57,14 @@ abstract class EditorWindow(
         val visible = if (closable) ImGui.begin(title(strings), isOpen, flags) else ImGui.begin(title(strings), flags)
         if (!isDialog) DefaultDockLayout.docks.record(name, ImGui.getWindowDockID())
         WindowHeader.tabMenu(strings, this)
-        if (visible) help.render(strings)
         return visible
     }
 
     /** The one-line header strip: the window's own [tools] on the left, `?` on the right (EDT-51 §2.2). */
     protected fun header(strings: StringManager, tools: () -> Unit = {}) = WindowHeader.render(strings, this, tools)
+
+    companion object {
+        /** `window.console` -> `console`. */
+        fun helpIdOf(windowName: String): String = windowName.removePrefix("window.")
+    }
 }

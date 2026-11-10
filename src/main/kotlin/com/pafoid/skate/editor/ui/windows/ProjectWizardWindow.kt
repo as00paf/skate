@@ -9,7 +9,6 @@ import com.pafoid.skate.editor.events.ProjectEvent.OpenProjectRequested
 import com.pafoid.skate.editor.imgui.EditorModal
 import com.pafoid.skate.editor.imgui.EditorWindow
 import com.pafoid.skate.editor.imgui.FooterButton
-import com.pafoid.skate.editor.imgui.WindowHeader
 import com.pafoid.skate.editor.imgui.MImGui
 import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.editor.imgui.data.UiConstants
@@ -51,6 +50,7 @@ class ProjectWizardWindow(
     private val modal = object : EditorModal(stringManager, Icons.PLUS, minWidth = UiConstants.DIALOG_WIDTH) {
         override val titleKey = "wizard.project.title"
         override val wantsOpen: Boolean get() = isOpen.get()
+        override val helpWindow: EditorWindow get() = this@ProjectWizardWindow
 
         override fun content() {
             // Hidden from outside this frame (the project was created or opened): close the popup with it.
@@ -58,8 +58,6 @@ class ProjectWizardWindow(
                 ImGui.closeCurrentPopup()
                 return
             }
-            WindowHeader.render(stringManager, this@ProjectWizardWindow)
-            help.render(stringManager)
             renderForm()
         }
 
