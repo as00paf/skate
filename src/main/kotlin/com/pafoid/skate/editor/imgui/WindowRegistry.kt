@@ -11,7 +11,12 @@ import com.pafoid.skate.editor.ui.windows.ConsoleWindow
 import com.pafoid.skate.editor.ui.windows.EditorSettingsWindow
 import com.pafoid.skate.editor.ui.windows.ExportWizardWindow
 import com.pafoid.skate.editor.ui.windows.VideoToAnimationWindow
+import com.pafoid.skate.editor.events.WindowAction
+import com.pafoid.skate.editor.help.HelpArticleLoader
+import com.pafoid.skate.editor.help.HelpArticleSource
+import com.pafoid.skate.editor.help.HelpRouter
 import com.pafoid.skate.editor.ui.windows.GameViewWindow
+import com.pafoid.skate.editor.ui.windows.HelpWindow
 import com.pafoid.skate.editor.ui.windows.KeyBindingsWindow
 import com.pafoid.skate.editor.ui.windows.ProfilerWindow
 import com.pafoid.skate.editor.ui.windows.ProjectSettingsWindow
@@ -57,14 +62,23 @@ class WindowRegistry(
         AssetStoreWindow(engine, projectManager),
         VideoToAnimationWindow(engine, editor, projectManager),
         AnimationEditorWindow(engine, editor, projectManager),
+        HelpWindow(
+            engine.stringManager,
+            HelpArticleLoader(HelpArticleSource.default()),
+            windowFor = { topic -> getWindow("window.$topic") },
+            openWindow = { name -> engine.eventSystem.publish(WindowAction.Show(name)) },
+        ),
     )
+
+    val helpWindow: HelpWindow get() = windows.filterIsInstance<HelpWindow>().first()
 
     /** Windows listed in View > Windows and stored in the layout; dialogs are excluded. */
     val dockableWindows: List<EditorWindow> get() = dockable(windows)
 
     init {
-        // The help popover's "Related windows" buttons (EDT-51 §2.4).
-        HelpPopover.openWindow = { name -> getWindow(name)?.isOpen?.set(true) }
+        // Every `?`, tab-menu Help and Help menu item opens the one Help window (EDT-68).
+        HelpRouter.open = { topic -> helpWindow.openTopic(topic) }
+        HelpRouter.renderInline = { topic -> helpWindow.renderInline(topic) }
     }
 
     val menuBar = EditorMenuBar(engine, editor, this, projectManager)

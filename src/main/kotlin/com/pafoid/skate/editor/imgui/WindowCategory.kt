@@ -10,6 +10,7 @@ enum class WindowCategory(val labelKey: String) {
     DEBUG("menu.view.windows.debug"),
     SCRIPTING("menu.view.windows.scripting"),
     AUDIO("menu.view.windows.audio"),
+    HELP("menu.view.windows.help"),
     PROJECT("menu.view.windows.project");
 
     companion object {
@@ -29,6 +30,7 @@ enum class WindowCategory(val labelKey: String) {
             "window.shell" to DEBUG,
             "window.script_editor" to SCRIPTING,
             "window.audio_inspector" to AUDIO,
+            "window.help" to HELP,
             "window.version_control" to PROJECT,
         )
 
