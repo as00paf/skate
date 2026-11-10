@@ -1,13 +1,22 @@
 # AST-18: Protocol Buffers (design note)
 
-Status: **revision 2, awaiting the human's approval.** Revision 1 was rejected as not grounded in this codebase. It
-assumed a `skate-core` module, a JSON+base64 export bundle and JSON network messages, none of which exist. It also
-left open questions 3 and 4 below a "no remaining open questions" line. No code has been written.
+Status: **revision 2, approved by the human (2026-11-10)**; the §8 answers are in §0.1. Implemented by **AST-32**
+(after AST-27). Revision 1 was rejected as not grounded in this codebase (it assumed a `skate-core` module, a
+JSON+base64 export bundle and JSON network messages, none of which exist).
 
 ## 0. Human decisions (recorded 2026-11-07, kept)
 
 1. **Protobuf version:** use protobuf 3.x (stability over newer Kotlin support in 4.x).
 2. **Save game versioning:** per engine version, no migration logic for now.
+
+### 0.1 Answers to the §8 open questions (2026-11-10, verbatim; note approved)
+
+1) proto3 wire format through kotlinx-serialization-protobuf, no protoc/codegen;
+2) convert the pack atlas only if it costs more than 5 % of start-up, otherwise keep JSON + random-access reads;
+3) NO inspect command;
+4) all editable files stay JSON, the network format stays NetWriter binary.
+
+Implementation is AST-32 (after AST-27).
 
 Backlog scope (unchanged): protobuf only for runtime data (packed exports, network messages). Scenes, prefabs and
 settings stay JSON so git diffs and merges (EDT-60) stay readable. Measure load time and size gains first.
@@ -33,7 +42,7 @@ What this means for revision 1's claims:
 
 ## 2. Measure first (as the backlog asks)
 
-Before any adoption, AST-18a measures on the Feature Showcase export and a synthetic 10 000-entry pack:
+Before any adoption, AST-32a measures on the Feature Showcase export and a synthetic 10 000-entry pack:
 
 | Metric | How |
 |---|---|
@@ -72,8 +81,8 @@ Before any adoption, AST-18a measures on the Feature Showcase export and a synth
 | **`kotlinx-serialization-protobuf`** (same version line as the JSON one, 1.7.3) | One dependency, **no `protoc`, no codegen, no Gradle plugin**. Uses the existing `@Serializable` classes with `@ProtoNumber`. `ProtoBufSchemaGenerator` writes `.proto` files for outside tools. | **Recommended.** It writes the proto3-compatible wire format. |
 | Google `protobuf-java` 3.x + `com.google.protobuf` Gradle plugin + `protoc` | Plugin and `protoc` download in a Windows-only Gradle build, generated sources under `build/`, Java builder classes beside our Kotlin data classes | Heavier for no measured need. |
 
-Decision 1 says "protobuf 3.x". Both options produce **proto3 wire format**. Whether 3.x meant the Google 3.x library
-or the proto3 format is Q1.
+Decision 1 says "protobuf 3.x"; answer 1 settles it as the **proto3 wire format through
+`kotlinx-serialization-protobuf`**, with no `protoc` and no codegen.
 
 ## 4. If adopted: rules
 
@@ -82,9 +91,8 @@ or the proto3 format is Q1.
 - **Versioning:** every binary format keeps a schema/version number next to it (`PackManifest.SCHEMA`; a save header).
   Decision 2: saves are tied to the engine version, with no migration code. A save from another engine version is
   refused with a clear message.
-- **Debugging:** any protobuf payload has a JSON view through the same `@Serializable` class (decode protobuf, encode
-  JSON). A `skate inspect <file>` CLI command (TLG) prints it. That replaces revision 1's proposed `proto-decode` tool
-  and needs no `protoc`.
+- **Debugging:** any protobuf payload can be turned into JSON in a unit test or debugger through the same
+  `@Serializable` class (decode protobuf, encode JSON). There is **no** `skate inspect` command (answer 3).
 - **Architecture guard:** protobuf encoding stays out of the scene/prefab/project serializers. A guard test in
   `src/test/kotlin/com/pafoid/skate/architecture/` fails if `ProtoBuf` is used by `Serializer` for
   `FileKind.SCENE`/`PREFAB`/project files.
@@ -93,25 +101,25 @@ or the proto3 format is Q1.
 
 | Task | Owner | Contents | Deps |
 |---|---|---|---|
-| AST-18a | skate-assets (+ TLG for the CLI flag) | The §2 measurements, `skate pack --stats`, results written into §6 of this note. | approval |
-| AST-18b (conditional) | skate-assets | Protobuf atlas, only if §2 crosses the 5 % threshold: `kotlinx-serialization-protobuf` dependency, header flag, schema bump, `AssetsResolver`/`GameMain` read path, round-trip tests. | AST-18a |
+| AST-32a (was AST-18a) | skate-assets (+ TLG for the CLI flag) | The §2 measurements, `skate pack --stats`, results written into §6 of this note. | AST-27 |
+| AST-32b (conditional, was AST-18b) | skate-assets | Protobuf atlas, only if §2 crosses the 5 % threshold: `kotlinx-serialization-protobuf` dependency, header flag, schema bump, `AssetsResolver`/`GameMain` read path, round-trip tests. | AST-32a |
 | Random-access pack reads | skate-assets (REN-28 task 19) | Already planned in REN-28 rev 2; listed here because it is the real start-up fix. | REN-28 approval |
 | Save format | owner of the future save system | Use §3/§4 rules. | a save-system design |
 
 ## 6. Measurements
 
-(to be filled by AST-18a)
+(to be filled by AST-32a)
 
 ## 7. Tests (unit only)
 
 - Stats formatting for `skate pack --stats`.
-- If AST-18b happens:
+- If AST-32b happens:
   - atlas round trip JSON ↔ protobuf with the same `AssetInfo` values;
   - a pack written with a protobuf atlas reads through `AssetsResolver.find`/`read`;
   - an unknown added field is skipped by an older reader (forward compatibility);
   - the architecture guard (no protobuf for scenes, prefabs, project files).
 
-## 8. Open questions (with recommended answers)
+## 8. Open questions of revision 2 (all answered in §0.1)
 
 1. **"Protobuf 3.x" (decision 1):** did it mean Google's `protobuf-java` 3.x library, or the proto3 wire format?
    Recommended: the wire format, through `kotlinx-serialization-protobuf` (no `protoc`, no codegen, existing
