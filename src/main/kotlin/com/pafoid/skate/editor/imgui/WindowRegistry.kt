@@ -2,6 +2,7 @@ package com.pafoid.skate.editor.imgui
 
 import com.pafoid.skate.app.Editor
 import com.pafoid.skate.editor.systems.ProjectManager
+import com.pafoid.skate.editor.ui.windows.AnimationEditorWindow
 import com.pafoid.skate.editor.ui.windows.AssetBrowserWindow
 import com.pafoid.skate.editor.ui.windows.AudioInspectorWindow
 import com.pafoid.skate.editor.ui.windows.CommandHistoryWindow
@@ -54,6 +55,7 @@ class WindowRegistry(
         ExportWizardWindow(engine, projectManager, editor.settingsManager),
         AssetStoreWindow(engine, projectManager),
         VideoToAnimationWindow(engine, editor, projectManager),
+        AnimationEditorWindow(engine, editor, projectManager),
     )
 
     /** Windows listed in View > Windows and stored in the layout; dialogs are excluded. */
