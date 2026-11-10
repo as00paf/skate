@@ -53,7 +53,10 @@ import com.pafoid.skate.editor.events.ViewportAction.ToggleLock
 import com.pafoid.skate.editor.events.ViewportAction.TogglePhysicsDebug
 import com.pafoid.skate.editor.events.ViewportAction.ToggleVisibility
 import com.pafoid.skate.editor.gizmos.EditorCamera
+import com.pafoid.skate.editor.commands.Command
+import com.pafoid.skate.editor.commands.CompositeCommand
 import com.pafoid.skate.editor.systems.ClipboardService
+import com.pafoid.skate.editor.systems.SelectionLogic
 import com.pafoid.skate.editor.systems.GizmoSystem
 import com.pafoid.skate.editor.systems.UndoRedoManager
 import com.pafoid.skate.editor.ui.windows.viewport.ViewportRenderer
@@ -103,6 +106,10 @@ class ViewportActionHandler(
             sceneManager.currentScene?.selectedGameObject = event.gameObject
         }
 
+        eventSystem.subscribe<ViewportAction.MultiSelectionChanged> { event ->
+            sceneManager.currentScene?.setSelection(event.selectedObjects)
+        }
+
         eventSystem.subscribe<SelectionCleared> {
             sceneManager.currentScene?.selectedGameObject = null
         }
@@ -146,10 +153,10 @@ class ViewportActionHandler(
         }
         // A user delete asks first (DeleteObjectsDialog, EDT-62); Cut deletes right away.
         eventSystem.subscribe<Delete> { event ->
-            if (!event.confirm) handleDelete(event.gameObject, event.scene)
+            if (!event.confirm) handleDelete(SelectionLogic.targets(event.scene, event.gameObject), event.scene)
         }
         eventSystem.subscribe<ViewportAction.DeleteConfirmed> { event ->
-            handleDelete(event.gameObject, event.scene)
+            handleDelete(event.gameObjects, event.scene)
         }
         eventSystem.subscribe<RenameGameObject> { event ->
             handleRename(event.gameObject, event.newName)
@@ -180,9 +187,7 @@ class ViewportActionHandler(
         }
         eventSystem.subscribe<Reparent> { event ->
             val scene = sceneManager.currentScene ?: return@subscribe
-            if (!ReparentGameObjectCommand.isValid(event.child, event.newParent)) return@subscribe
-            undoRedoManager.executeCommand(ReparentGameObjectCommand(event.child, event.newParent, scene))
-            scene.isDirty = true
+            handleReparent(SelectionLogic.targets(scene, event.child), event.newParent, scene)
         }
         eventSystem.subscribe<ViewportAction.CreateUi> { event ->
             val scene = sceneManager.currentScene ?: return@subscribe
@@ -195,7 +200,7 @@ class ViewportActionHandler(
             handleCutClipboard(event.gameObject)
         }
         eventSystem.subscribe<ViewportAction.CopyClipboard> { event ->
-            clipboardService.copy(event.gameObject)
+            clipboardService.copy(SelectionLogic.targets(sceneManager.currentScene, event.gameObject))
         }
         eventSystem.subscribe<PasteClipboard> { event ->
             handlePasteClipboard(event.parent)
@@ -271,17 +276,45 @@ class ViewportActionHandler(
         applyAnimationToObject(targetObject, animation)
     }
 
-    private fun handleDuplicate(gameObject: GameObject) {
-        val scene = sceneManager.currentScene ?: return
-        val command = DuplicateGameObjectCommand(gameObject, scene, gameObjectManager)
+    /** One command for one object; a [CompositeCommand] (one undo step) for several (EDT-74). */
+    private fun executeAll(
+        key: String,
+        name: String,
+        objects: List<GameObject>,
+        scene: Scene,
+        selectAfter: ((List<Command>) -> List<GameObject>)? = null,
+        step: (GameObject) -> Command?,
+    ) {
+        if (objects.isEmpty()) return
+        val single = objects.singleOrNull()
+        val command = if (single != null) step(single) ?: return
+        else CompositeCommand(key, name, objects.map { go -> { step(go) } }, scene, selectAfter)
         undoRedoManager.executeCommand(command)
-        logger.logEditor("Duplicated GameObject: ${gameObject.name}")
     }
 
-    private fun handleDelete(gameObject: GameObject, scene: Scene) {
-        undoRedoManager.executeCommand(DeleteGameObjectCommand(gameObject, scene, gameObjectManager))
+    private fun handleDuplicate(gameObject: GameObject) {
+        val scene = sceneManager.currentScene ?: return
+        val targets = SelectionLogic.targets(scene, gameObject)
+        executeAll("command.CompositeCommand.duplicate", "Duplicate", targets, scene, selectAfter = { cmds ->
+            cmds.mapNotNull { (it as? DuplicateGameObjectCommand)?.gameObject }
+        }) { DuplicateGameObjectCommand(it, scene, gameObjectManager) }
+        logger.logEditor("Duplicated ${targets.joinToString { it.name }}")
+    }
+
+    private fun handleDelete(gameObjects: List<GameObject>, scene: Scene) {
+        executeAll("command.CompositeCommand.delete", "Delete", gameObjects, scene) { DeleteGameObjectCommand(it, scene, gameObjectManager) }
         eventSystem.publish(SelectionCleared)
-        logger.logEditor("Deleted GameObject: ${gameObject.name}")
+        logger.logEditor("Deleted ${gameObjects.joinToString { it.name }}")
+    }
+
+    /** Moves [children] under [newParent] as one step; moves that would do nothing or make a cycle are skipped. */
+    private fun handleReparent(children: List<GameObject>, newParent: GameObject, scene: Scene) {
+        val valid = children.filter { ReparentGameObjectCommand.isValid(it, newParent) }
+        // Built when it runs, so each move sees where the previous moves left its siblings (CompositeCommand).
+        executeAll("command.CompositeCommand.reparent", "Reparent", valid, scene, selectAfter = { _ -> scene.selectedGameObjects }) {
+            if (ReparentGameObjectCommand.isValid(it, newParent)) ReparentGameObjectCommand(it, newParent, scene) else null
+        }
+        if (valid.isNotEmpty()) scene.isDirty = true
     }
 
     private fun handleRename(gameObject: GameObject, newName: String) {
@@ -299,15 +332,24 @@ class ViewportActionHandler(
 
     private fun handleCutClipboard(go: GameObject) {
         val scene = sceneManager.currentScene ?: return
-        clipboardService.cut(go)
-        undoRedoManager.executeCommand(DeleteGameObjectCommand(go, scene, gameObjectManager))
+        val targets = SelectionLogic.targets(scene, go)
+        clipboardService.copy(targets)
+        handleDelete(targets, scene)
     }
 
+    /**
+     * Pastes every copied object under [parent]. The first lands at the origin, as before (EDT-74); the others keep
+     * their offsets from it, so a pasted group keeps its layout. All pasted objects end up selected.
+     */
     private fun handlePasteClipboard(parent: GameObject?) {
         val scene = sceneManager.currentScene ?: return
-        val cloned = clipboardService.paste() ?: return
-        cloned.getComponent<Transform>()?.translation?.set(0f, 0f, 0f)
-        undoRedoManager.executeCommand(CreateGameObjectCommand(cloned, scene, gameObjectManager, parent ?: scene))
+        val pasted = clipboardService.pasteAll()
+        if (pasted.isEmpty()) return
+        val offset = pasted.first().getComponent<Transform>()?.translation?.let { Vector3f(it).negate() } ?: Vector3f()
+        pasted.forEach { it.getComponent<Transform>()?.translation?.add(offset) }
+        executeAll("command.CompositeCommand.paste", "Paste", pasted, scene, selectAfter = { pasted }) {
+            CreateGameObjectCommand(it, scene, gameObjectManager, parent ?: scene)
+        }
     }
 
     /** Camera and play speed follow Play; the pre-play snapshot is [PlayModeHandler]'s (EDT-45). */

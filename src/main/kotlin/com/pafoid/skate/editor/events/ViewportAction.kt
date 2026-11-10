@@ -28,8 +28,10 @@ sealed class ViewportAction(eventName: String) : Event(eventName) {
      * (EDT-62, `DeleteObjectsDialog`); Cut passes false, since the object goes to the clipboard.
      */
     data class Delete(val gameObject: GameObject, val scene: Scene, val confirm: Boolean = true) : ViewportAction("viewport.delete")
-    /** The user confirmed deleting [gameObject]: run the undoable delete. */
-    data class DeleteConfirmed(val gameObject: GameObject, val scene: Scene) : ViewportAction("viewport.delete_confirmed")
+    /** The user confirmed deleting [gameObjects]: run the undoable delete, one undo step for all of them (EDT-74). */
+    data class DeleteConfirmed(val gameObjects: List<GameObject>, val scene: Scene) : ViewportAction("viewport.delete_confirmed") {
+        constructor(gameObject: GameObject, scene: Scene) : this(listOf(gameObject), scene)
+    }
     data class RenameGameObject(val gameObject: GameObject, val newName: String) : ViewportAction("viewport.rename_gameobject")
     data class Reparent(val child: GameObject, val newParent: GameObject) : ViewportAction("viewport.reparent")
     data class SetGameObjectEnabled(val gameObject: GameObject, val enabled: Boolean) : ViewportAction("viewport.set_gameobject_enabled")
@@ -85,6 +87,7 @@ sealed class ViewportAction(eventName: String) : Event(eventName) {
 
     // Selection
     data class GameObjectSelected(val gameObject: GameObject) : ViewportAction("editor.gameobject_selected")
+    /** Replaces the selection with [selectedObjects]; the last one is the primary object (EDT-74). */
     data class MultiSelectionChanged(val selectedObjects: List<GameObject>) : ViewportAction("editor.multi_selection_changed")
     object SelectionCleared : ViewportAction("editor.selection_cleared")
 

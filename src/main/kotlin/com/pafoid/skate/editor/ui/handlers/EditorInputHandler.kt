@@ -143,11 +143,9 @@ class EditorInputHandler(
     private fun handleClipboardAndUndo(scene: Scene) {
         val selected = scene.selectedGameObject
         when {
-            pressed(EditorShortcuts.COPY) -> selected?.let { clipboardService.copy(it) }
-            pressed(EditorShortcuts.CUT) -> selected?.let {
-                clipboardService.copy(it)
-                eventSystem.publish(ViewportAction.Delete(it, scene, confirm = false))
-            }
+            // Copy and Cut take the whole selection (EDT-74, ViewportActionHandler).
+            pressed(EditorShortcuts.COPY) -> selected?.let { eventSystem.publish(ViewportAction.CopyClipboard(it)) }
+            pressed(EditorShortcuts.CUT) -> selected?.let { eventSystem.publish(ViewportAction.CutClipboard(it)) }
             pressed(EditorShortcuts.PASTE) -> eventSystem.publish(ViewportAction.PasteClipboard())
             pressed(EditorShortcuts.UNDO) -> undoRedoManager.undo()
             pressed(EditorShortcuts.REDO) || pressed(EditorShortcuts.REDO_ALT) -> undoRedoManager.redo()
