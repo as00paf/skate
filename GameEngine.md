@@ -235,6 +235,10 @@ Round 27+ goals: a Jolt backend selectable per project, a terrain heightfield co
 - [x] **PHY-20** `P1` Ship Bullet's release native instead of SpDebug
   - Do: From the PHY-17 benchmark: `build.gradle.kts` uses libbulletjme's `SpDebug` classifier, so the editor and exported games run Bullet's debug build. Switch to the release single-precision classifier (keep debug only for tests if useful), update `verify-game-jar.sh`, re-run the benchmark.
   - Done when: Exports ship the release native; physics suite green; benchmark numbers updated in `docs/design/PHY-17.md`.
+- [ ] **PHY-21** `P1` Concurrent processes must not clobber the shared natives folder
+  - Do: From round 30 integration (skate-audio, skate-tooling): since PHY-18, `NativeLibraryLoader` extracts with `CLEAN_EXTRACTION` into the shared `%APPDATA%\Skate\natives`, so concurrent JVMs (parallel worktree test runs, a running editor next to an exported game) wipe or lock each other's DLLs and physics fails with `UnsatisfiedLinkError`. Use a per-version (content-hash) subfolder and skip extraction when an identical DLL is already present; never delete a DLL another process may hold.
+  - Done when: Two JVMs loading Bullet and Jolt at the same time both succeed; loader tests cover reuse and the versioned path.
+  - Deps: PHY-18
 
 ### Animation — `ANI` (`skate-animation`)
 
@@ -360,7 +364,7 @@ Round 27+ goals (human, 2026-11-06): fix editor bugs, make every window, dialog 
   - Do: Apply EDT-51 in the chunks of `docs/design/EDT-51.md` §5: A (foundation, alone, first), then B scene, C project & assets, D debug, E settings dialogs, F modals & palette, G menus, H domain windows (AUD, SCR) in parallel, then I input-testing move (INP, after E). Chunk A: skate-editor.
   - Done when: Every item in the EDT-51 inventory meets the standard; a test checks windows register header icon, help and context menu.
   - Deps: EDT-51
-- [~] @skate-qa **EDT-53** `P1` Beginner help in every window — content as Markdown articles (skate-editor reviews)
+- [~] @skate-qa **EDT-53** `P1` Beginner help in every window — content as Markdown articles (skate-editor reviews) — 6 articles merged in round 30; still missing: console, profiler, render_graph, script_editor, project_settings, project_wizard, asset_browser, audio_inspector, keybindings; rename `getting-started.md` to `getting_started.md`
   - Do: Redirected by the human 2026-11-07 (see EDT-68): write the plain-language explanations (what it is, how to use it, related windows), written for someone who never used a 3D program, as **one Markdown file per window/topic** under `assets/help/en/**` and `assets/help/fr/**` (English fallback). The articles are consumed by the EDT-68 help window; no tooltip/popover text.
   - Done when: Every registered window has a Markdown article; a test checks coverage and that each article parses.
   - Deps: EDT-51
