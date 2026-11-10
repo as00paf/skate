@@ -56,9 +56,9 @@ class EditorMenuBar(
             appIconTexId = assetsManager.getTexture(event.project.iconPath).texId
         }
         eventSystem.subscribe<ProjectEvent.Closed> {
-            appIconTexId = assetsManager.getBundledTexture(Assets.Bundled.APP_ICON).texId
+            appIconTexId = assetsManager.getBundledTexture(Assets.Classpath.APP_ICON).texId
         }
-        appIconTexId = assetsManager.getBundledTexture(Assets.Bundled.APP_ICON).texId
+        appIconTexId = assetsManager.getBundledTexture(Assets.Classpath.APP_ICON).texId
     }
 
     fun render() {

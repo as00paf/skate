@@ -8,7 +8,7 @@ import java.io.File
 
 /** EDT-56: every export step has a loading-screen label in English and French. */
 class LoadingStringsTest {
-    private fun keys(file: String): Set<String> = File("assets/strings/editor/$file").readLines(Charsets.UTF_8)
+    private fun keys(file: String): Set<String> = File("src/main/resources/editor/strings/$file").readLines(Charsets.UTF_8)
         .map { it.trim() }
         .filter { it.isNotEmpty() && !it.startsWith("#") && '=' in it }
         .map { it.substringBefore('=').trim() }

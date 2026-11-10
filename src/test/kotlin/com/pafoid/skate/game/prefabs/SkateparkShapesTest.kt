@@ -1,5 +1,6 @@
 package com.pafoid.skate.game.prefabs
 
+import com.pafoid.skate.engine.assets.EngineDefaults
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.core.StringTables
 import org.joml.Vector3f
@@ -16,7 +17,7 @@ class SkateparkShapesTest {
     private val obstacles = PrefabType.entries.mapNotNull { type -> PrefabCatalog.shape(type)?.let { type to it } }
 
     /**
-     * The OBJs in assets/obj are the generator's output. After changing a shape, regenerate them with
+     * The OBJs in assets/Models are the generator's output. After changing a shape, regenerate them with
      * `cmd.exe /c "set SKATE_REGEN_OBSTACLES=1&& gradlew.bat :test --tests *SkateparkShapesTest*"`.
      */
     @Test
@@ -110,13 +111,13 @@ class SkateparkShapesTest {
 
     @Test
     fun PrefabCatalog_EveryTypeHasABundledModelAndATranslatedName() {
-        val bundled = Assets.Bundled.bundledAssets.toMap()
         val en = StringTables.merged(File(Assets.Strings.EDITOR_STRINGS))
         val fr = StringTables.merged(File(Assets.Strings.EDITOR_STRINGS), "fr")
         PrefabType.entries.forEach { type ->
             val entry = PrefabCatalog.entry(type)
             assertTrue(File(entry.modelPath).exists(), "$type model ${entry.modelPath} missing")
-            assertEquals(entry.modelPath, bundled[entry.bundledModelPath], "$type model not copied into projects")
+            assertEquals(entry.modelPath, "assets/" + EngineDefaults.logicalPath(entry.bundledModelPath), "$type model is not its engine default")
+            assertTrue(entry.bundledModelPath in EngineDefaults.CATALOG, "$type model not in the engine defaults catalog")
             assertTrue(en.containsKey(type.nameKey) && fr.containsKey(type.nameKey), "${type.nameKey} missing")
         }
         PrefabCategory.entries.forEach { category ->

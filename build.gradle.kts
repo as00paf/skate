@@ -109,6 +109,12 @@ dependencies {
     testImplementation(libs.mockk)
 }
 
+// AST-27 (AST-26 §4.1): the engine shaders live in the repo's assets/Shaders (engine:Shaders/...) and are also put in
+// the jar under /shaders/, so the editor, the tests and the exported game keep a classpath copy.
+tasks.processResources {
+    from("assets/Shaders") { into("shaders") }
+}
+
 tasks.test {
     useJUnitPlatform()
     maxHeapSize = "2G"

@@ -14,6 +14,8 @@ import com.pafoid.skate.editor.settings.EditorCameraSettings
 import com.pafoid.skate.editor.settings.EditorSettings
 import com.pafoid.skate.editor.settings.GizmoSnapSettings
 import com.pafoid.skate.editor.systems.EditorSettingsManager
+import com.pafoid.skate.editor.tools.external.BlenderTestResult
+import com.pafoid.skate.editor.tools.external.BlenderVersion
 import com.pafoid.skate.engine.core.StringManager
 import com.pafoid.skate.engine.utils.UnitSystem
 import imgui.ImGui
@@ -39,6 +41,8 @@ import org.lwjgl.glfw.GLFW
 class EditorSettingsWindow(
     private val settingsManager: EditorSettingsManager,
     private val stringManager: StringManager,
+    /** Looks for Blender with the typed path (EDT-66; `BlenderSync.test`); the result arrives on the main thread. */
+    private val testBlender: (String?, (BlenderTestResult) -> Unit) -> Unit = { _, _ -> },
     private val openKeyBindings: () -> Unit = {},
 ) : EditorDialog("window.editor_settings", stringManager, 760f, 550f) {
 
@@ -72,6 +76,11 @@ class EditorSettingsWindow(
     private var tempLoadLastProject = true
     private var tempSnap = GizmoSnapSettings()
     private var tempCamera = EditorCameraSettings()
+    private val tempBlenderPath = ImString("", 512)
+    private var tempBlenderTimeout = 120
+    private var tempBlenderImportOnOpen = true
+    private var blenderTest: BlenderTestResult? = null
+    private var blenderTesting = false
 
     private val tempShowOverlayBool = ImBoolean(true)
 
@@ -83,7 +92,8 @@ class EditorSettingsWindow(
             Category("interface", "settings.editor.interface", arrayOf("interface", "theme", "tooltip", "scale", "font", "size")) { renderInterface() },
             Category("scene_view", "settings.editor.scene_view", arrayOf("scene", "view", "snap", "gizmo", "grid", "camera", "speed", "sensitivity", "mouse")) { renderSceneView() },
             Category("autosave", "settings.editor.autosave", arrayOf("auto", "save", "autosave", "interval")) { renderAutoSave() },
-            Category("script_editor", "settings.editor.script_editor", arrayOf("script", "completion", "popup", "delay", "autocomplete")) { renderScriptEditor() }
+            Category("script_editor", "settings.editor.script_editor", arrayOf("script", "completion", "popup", "delay", "autocomplete")) { renderScriptEditor() },
+            Category("blender", "settings.editor.blender", arrayOf("blender", "blend", "import", "model", "path", "timeout")) { renderBlender() },
         )
     }
 
@@ -167,6 +177,9 @@ class EditorSettingsWindow(
             tempLoadLastProject = editor.loadLastProjectOnStartup
             tempSnap = editor.gizmoSnap
             tempCamera = editor.camera
+            tempBlenderPath.set(editor.blenderPath.orEmpty())
+            tempBlenderTimeout = editor.blenderTimeoutSeconds
+            tempBlenderImportOnOpen = editor.blenderImportOnOpen
         }
     }
 
@@ -232,7 +245,7 @@ class EditorSettingsWindow(
     }
 
     private fun renderInterface() {
-        // EDT-07: the themes shipped in assets/themes; picking one previews it live until OK/Apply or Cancel.
+        // EDT-07: the themes shipped in src/main/resources/editor/themes; picking one previews it live until OK/Apply or Cancel.
         val themes = ImGuiStyleManager.library.themes
         val themeOptions = themes.map { stringManager.getString(it.nameKey) }.toTypedArray()
         val themeValues = themes.map { it.id }.toTypedArray()
@@ -369,6 +382,64 @@ class EditorSettingsWindow(
         }
     }
 
+    /** `.blend` import (AST-19, EDT-66): Blender's path with Browse and Test, the timeout and import on open. */
+    private fun renderBlender() {
+        MImGui.propertyRow(
+            label = stringManager.getString("settings.editor.blender.path"),
+            helpTooltip = stringManager.getString("settings.editor.blender.path.desc"),
+            onReset = { tempBlenderPath.set(""); blenderTest = null; hasPendingChanges = true },
+        ) {
+            if (ImGui.inputTextWithHint("##blender_path", stringManager.getString("settings.editor.blender.path.hint"), tempBlenderPath)) {
+                blenderTest = null
+                hasPendingChanges = true
+            }
+        }
+        if (stringManager.tipped(button(stringManager.label("btn.blender.browse", "${Icons.FOLDER_OPEN} ")), "btn.blender.browse")) browseBlender()
+        sameLine()
+        ImGui.beginDisabled(blenderTesting)
+        if (stringManager.tipped(button(stringManager.label("btn.blender.test", "${Icons.PLAY} ")), "btn.blender.test")) {
+            blenderTesting = true
+            blenderTest = null
+            testBlender(tempBlenderPath.get().trim().ifBlank { null }) { result ->
+                blenderTesting = false
+                blenderTest = result
+            }
+        }
+        ImGui.endDisabled()
+        when {
+            blenderTesting -> MImGui.textDisabled(stringManager.getString("settings.editor.blender.testing"))
+            else -> blenderTest?.let { result ->
+                val (text, ok) = BlenderTestMessage.of(result)
+                val message = stringManager.getString(text.first, *text.second.toTypedArray())
+                if (ok) MImGui.textDisabled("${Icons.CHECK} $message") else MImGui.warningText("${Icons.INFO} $message")
+            }
+        }
+        ImGui.spacing()
+
+        val timeout = intArrayOf(tempBlenderTimeout)
+        MImGui.propertyRow(
+            label = stringManager.getString("settings.editor.blender.timeout"),
+            helpTooltip = stringManager.getString("settings.editor.blender.timeout.desc"),
+            onReset = { tempBlenderTimeout = EditorSettings.DEFAULT_BLENDER_TIMEOUT; hasPendingChanges = true },
+        ) {
+            if (dragInt("##blender_timeout", timeout, 1f, EditorSettings.MIN_BLENDER_TIMEOUT, EditorSettings.MAX_BLENDER_TIMEOUT, "%d s")) {
+                tempBlenderTimeout = timeout[0].coerceIn(EditorSettings.MIN_BLENDER_TIMEOUT, EditorSettings.MAX_BLENDER_TIMEOUT)
+                hasPendingChanges = true
+            }
+        }
+        boolRow("settings.editor.blender.import_on_open", tempBlenderImportOnOpen, default = true) { tempBlenderImportOnOpen = it }
+    }
+
+    private fun browseBlender() {
+        val chooser = javax.swing.JFileChooser(tempBlenderPath.get().takeIf { it.isNotBlank() }?.let { java.io.File(it).parentFile })
+        chooser.fileSelectionMode = javax.swing.JFileChooser.FILES_ONLY
+        if (chooser.showOpenDialog(null) == javax.swing.JFileChooser.APPROVE_OPTION) {
+            tempBlenderPath.set(chooser.selectedFile.absolutePath)
+            blenderTest = null
+            hasPendingChanges = true
+        }
+    }
+
     private fun saveSettings() {
         if (tempLanguage != settingsManager.editorSettings.language) {
             settingsManager.updateEditorSettings(language = tempLanguage)
@@ -388,6 +459,9 @@ class EditorSettingsWindow(
                 loadLastProjectOnStartup = tempLoadLastProject,
                 gizmoSnap = tempSnap,
                 camera = tempCamera,
+                blenderPath = tempBlenderPath.get().trim().ifBlank { null },
+                blenderTimeoutSeconds = tempBlenderTimeout,
+                blenderImportOnOpen = tempBlenderImportOnOpen,
             )
         }
         ImGuiStyleManager.preview = null
@@ -399,5 +473,17 @@ class EditorSettingsWindow(
             if (query.isBlank()) return true
             return terms.any { it.contains(query, ignoreCase = true) }
         }
+    }
+}
+
+/** The Editor Settings line for a Blender Test result (EDT-66): (string key, format args) and whether it is good news. */
+object BlenderTestMessage {
+    fun of(result: BlenderTestResult): Pair<Pair<String, List<String>>, Boolean> = when (result) {
+        is BlenderTestResult.Found ->
+            ("settings.editor.blender.test.found" to listOf(result.install.version.toString(), result.install.executable.path)) to true
+        is BlenderTestResult.PathUnusable ->
+            ("settings.editor.blender.test.path_unusable" to listOf(result.path, BlenderVersion.MINIMUM.toString(), result.install.executable.path)) to false
+        is BlenderTestResult.NotFound ->
+            ("settings.editor.blender.test.not_found" to listOf(BlenderVersion.MINIMUM.toString())) to false
     }
 }

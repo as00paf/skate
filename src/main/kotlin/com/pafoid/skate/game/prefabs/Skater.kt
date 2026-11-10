@@ -1,5 +1,6 @@
 package com.pafoid.skate.game.prefabs
 
+import com.pafoid.skate.engine.assets.EngineDefaults
 import com.pafoid.skate.engine.addComponent
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.data.models.`3dModel`
@@ -76,21 +77,21 @@ class Skater(
         const val CONTROLLER_PATH = Assets.Configs.SKATER_CONTROLLER
 
         val DEFAULT_ANIMATIONS = listOf(
-            Assets.Bundled.IDLE_0,
-            Assets.Bundled.IDLE_1,
-            Assets.Bundled.FALLING_IDLE,
-            Assets.Bundled.JUMP,
-            Assets.Bundled.WALKING,
-            Assets.Bundled.RUNNING,
-            Assets.Bundled.LEFT_TURN,
-            Assets.Bundled.LEFT_TURN_90,
-            Assets.Bundled.LEFT_STRAFE,
-            Assets.Bundled.LEFT_STRAFE_WALKING,
-            Assets.Bundled.RIGHT_TURN,
-            Assets.Bundled.RIGHT_TURN_90,
-            Assets.Bundled.RIGHT_STRAFE,
-            Assets.Bundled.RIGHT_STRAFE_WALKING,
-            Assets.Bundled.SKATE_RIDING,
+            EngineDefaults.Animations.IDLE_0,
+            EngineDefaults.Animations.IDLE_1,
+            EngineDefaults.Animations.FALLING_IDLE,
+            EngineDefaults.Animations.JUMP,
+            EngineDefaults.Animations.WALKING,
+            EngineDefaults.Animations.RUNNING,
+            EngineDefaults.Animations.LEFT_TURN,
+            EngineDefaults.Animations.LEFT_TURN_90,
+            EngineDefaults.Animations.LEFT_STRAFE,
+            EngineDefaults.Animations.LEFT_STRAFE_WALKING,
+            EngineDefaults.Animations.RIGHT_TURN,
+            EngineDefaults.Animations.RIGHT_TURN_90,
+            EngineDefaults.Animations.RIGHT_STRAFE,
+            EngineDefaults.Animations.RIGHT_STRAFE_WALKING,
+            EngineDefaults.Animations.SKATE_RIDING,
         )
     }
 }

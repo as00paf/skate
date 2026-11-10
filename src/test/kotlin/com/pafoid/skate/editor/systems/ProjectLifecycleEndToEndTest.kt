@@ -1,5 +1,7 @@
 package com.pafoid.skate.editor.systems
 
+import com.pafoid.skate.engine.assets.pack.PackBuilder
+import com.pafoid.skate.engine.assets.EngineDefaults
 import com.pafoid.skate.editor.commands.project.LoadLastProjectCommand
 import com.pafoid.skate.editor.commands.project.OpenProjectFileCommand
 import com.pafoid.skate.editor.events.ProjectEvent
@@ -434,9 +436,13 @@ class ProjectLifecycleEndToEndTest {
     @Order(9)
     fun Lifecycle_9_VulkanProjectSavesReopensAndExportsWithItsBackend() {
         // New Project wizard with "Graphics backend: Vulkan" (EDT-43), saved, closed and reopened from Recent Projects.
-        val created = projects.createProject(VK_PROJECT, workspace, GraphicsBackend.VULKAN)
+        // AST-27: this one references the engine defaults instead of copying them (only the basic shaders are copied).
+        val created = projects.createProject(VK_PROJECT, workspace, GraphicsBackend.VULKAN, copyDefaults = false)
         assertTrue(created.isSuccess, created.exceptionOrNull()?.toString())
         vkProjectFile = File(workspace, "$VK_PROJECT/$VK_PROJECT.skateproject").absoluteFile
+        val vkAssets = File(vkProjectFile.parentFile, "Assets")
+        assertFalse(File(vkAssets, "Models/james.glb").exists(), "reference mode copies no models")
+        assertTrue(File(vkAssets, "Shaders/shader_3d_default.glsl").isFile, "basic shaders are always copied")
         assertTrue(projects.saveProject())
         projects.closeProject()
         val recent = restartedSettings().recentProjects.first()
@@ -450,6 +456,13 @@ class ProjectLifecycleEndToEndTest {
         val (atlas, headerSize) = readFileHeader(bin)
         val (packed, _) = loadProjectAndIcon(bin, atlas!!, headerSize)
         assertEquals(GraphicsBackend.VULKAN, packed!!.graphicsBackend, "packed project")
+        // Every engine default the scenes reference ships in the pack under its `engine:` reference (AST-26 §4.6).
+        val entries = atlas.values.flatten().associateBy { it.path }
+        fun packedText(path: String) = entries.getValue(path).let { PackBuilder.extract(bin, it.position + headerSize, it.size, it.compressed) }.toString(Charsets.UTF_8)
+        val sceneRefs = packed.scenesPath.flatMap { path -> Regex("\"(engine:[^\"]+)\"").findAll(packedText(path)).map { it.groupValues[1] }.toList() }.toSet()
+        val packedPaths = entries.keys
+        assertTrue(EngineDefaults.Models.JAMES in sceneRefs, "scenes reference engine defaults: $sceneRefs")
+        assertEquals(emptyList<String>(), (sceneRefs - packedPaths).sorted(), "engine defaults missing from the reference-mode pack")
         val store = GameSettingsStore(GameSettings.fileIn(vkExportDir), logger)
         assertEquals(GraphicsBackend.VULKAN, store.settings.graphicsBackend, "game.settings.json")
         // GameMain's choice: no -D override, the player's settings file, then the packed project.

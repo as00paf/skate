@@ -19,7 +19,7 @@ class ShaderCompileException(message: String) : RuntimeException(message)
 class ShaderLoader(
     private var verbose: Boolean = false,
     private val logger: LoggerService? = null,
-    /** Directory holding the editable shader resources (e.g. `src/main/resources`); null disables live sources. */
+    /** Directory holding the editable engine shaders (the repo's `assets/Shaders`); null disables live sources. */
     private val devSourceRoot: File? = null,
     /** Device that compiles the programs; resolved at load time, so the loader can be built before the window. */
     private val device: () -> RhiDevice = RhiContext::require,
@@ -40,9 +40,12 @@ class ShaderLoader(
         return loadShader(src, filePath, defines)
     }
 
-    /** Reads a classpath shader resource, preferring the live file under [devSourceRoot] so edits show up without a rebuild. */
+    /**
+     * Reads a classpath shader resource (`/shaders/<name>`), preferring the live file `<name>` under [devSourceRoot] so
+     * edits show up without a rebuild.
+     */
     fun readSource(resourcePath: String): String? {
-        devSourceRoot?.resolve(resourcePath.trimStart('/'))?.takeIf { it.isFile }?.let { return it.readText() }
+        devSourceRoot?.resolve(resourcePath.trimStart('/').removePrefix(CLASSPATH_DIR))?.takeIf { it.isFile }?.let { return it.readText() }
         return this.javaClass.getResourceAsStream(resourcePath)?.readAllBytes()?.toString(Charsets.UTF_8)
     }
 
@@ -101,5 +104,13 @@ class ShaderLoader(
         }
         log("$what for '$filePath': ${e.log}", LoggerService.LogLevel.ERROR)
         throw ShaderCompileException("$what for '$filePath'")
+    }
+
+    companion object {
+        /** Classpath folder of the engine shaders (filled from the repo's `assets/Shaders` by `processResources`). */
+        const val CLASSPATH_DIR = "shaders/"
+
+        /** The repo's engine shader folder (AST-26 §4.1), read live in dev runs. */
+        const val REPO_DIR = "assets/Shaders"
     }
 }
