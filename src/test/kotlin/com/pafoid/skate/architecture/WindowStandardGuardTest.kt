@@ -145,8 +145,6 @@ class WindowStandardGuardTest {
     companion object {
         /** Windows not converted to the standard yet, by EDT-52 chunk. Remove entries; never add any. */
         val ALLOW_LIST = setOf(
-            // C: project & assets
-            "ProjectWindow", "AssetBrowserWindow",
             // EDT-54: the Render Graph rewrite adopts the standard
             "RenderGraphWindow",
         )

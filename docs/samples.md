@@ -91,3 +91,11 @@ What to look for:
 - Pieces spawn, fall, rotate and lock inside the walls; each piece type has its own color and locked cells keep it.
 - A blip plays on lock, a higher one on line clear; the HUD shows score, lines and level; speed rises with the level.
 - When the stack reaches the top a low sound plays and the `GameOver` scene (title and hint) opens; R returns to `Game` and restarts.
+
+## Moving and exporting samples (TLG-14)
+
+Samples written by `skate sample` (and the MCP server) store every asset reference relative to the project folder,
+as the editor does (AST-09). A sample folder can be moved, and `skate export <project> --out <folder>` produces a
+`game.bin` that loads from any folder. The engine assets copied into a sample are read from the repository, so run the
+CLI from the repository root (`gradlew :tools:cli:run` does); elsewhere `skate sample` stops with an error instead of
+writing a sample with missing files. `SampleExportTest` builds, exports and reopens every sample from its pack alone.
