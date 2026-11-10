@@ -28,7 +28,7 @@ class ShowcaseProjectBuilder(
         val projectDir = File(parent, PROJECT_NAME).absoluteFile.also { it.mkdirs() }
         val assetsDir = ProjectLayout.create(projectDir)
         val scenesDir = ProjectLayout.scenesDir(projectDir)
-        copyEngineAssets(projectDir)
+        copyEngineAssets(projectDir, copyAll = false) // samples use reference mode (AST-26 §7)
         File(assetsDir, "strings.properties").writeText("project.name=$PROJECT_NAME\n")
 
         // Path references only: the CLI is headless, and the editor reloads every model and texture on open.

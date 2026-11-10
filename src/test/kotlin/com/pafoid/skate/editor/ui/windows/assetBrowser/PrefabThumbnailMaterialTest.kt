@@ -1,6 +1,8 @@
 package com.pafoid.skate.editor.ui.windows.assetBrowser
 
-import com.pafoid.skate.engine.assets.Assets
+import com.pafoid.skate.engine.assets.AssetId
+import com.pafoid.skate.engine.assets.AssetMeta
+import com.pafoid.skate.engine.assets.EngineDefaults
 import com.pafoid.skate.engine.assets.data.Texture
 import com.pafoid.skate.engine.assets.data.models.MeshPart
 import com.pafoid.skate.engine.assets.data.models.`3dModel`
@@ -12,6 +14,7 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertNull
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
@@ -25,8 +28,13 @@ class PrefabThumbnailMaterialTest {
     private val project get() = File(dir, "Game")
     private val engine get() = File(dir, "engine")
 
-    private fun bundledCopy(surface: MaterialType) =
-        File(File(project, "Assets"), surface.texturePath.replace('\\', File.separatorChar)).apply { parentFile.mkdirs(); writeText("x") }
+    /** A project copy of [surface]'s engine texture (an override: its `.meta` names the engine source). */
+    private fun projectCopy(surface: MaterialType): File {
+        val logical = EngineDefaults.logicalPath(surface.texturePath)!!
+        val file = File(File(project, "Assets"), logical).apply { parentFile.mkdirs(); writeText("x") }
+        AssetMeta.write(file, AssetMeta(guid = AssetId.generate(), settings = mapOf(EngineDefaults.META_SOURCE to logical)))
+        return file
+    }
 
     @Test
     fun surfaceFor_ObstaclesAndTexturedGenericsHaveTheirDefault() {
@@ -48,18 +56,18 @@ class PrefabThumbnailMaterialTest {
 
     @Test
     fun texturePath_PrefersTheProjectCopy() {
-        val copy = bundledCopy(MaterialType.CONCRETE)
+        val copy = projectCopy(MaterialType.CONCRETE)
 
-        assertEquals(copy.path, PrefabThumbnailMaterial.texturePath(MaterialType.CONCRETE, project, engine))
+        assertEquals(copy.absolutePath, PrefabThumbnailMaterial.texturePath(MaterialType.CONCRETE, project, engine))
     }
 
     @Test
     fun texturePath_FallsBackToTheEngineSource() {
-        val source = Assets.Bundled.bundledAssets.first { it.first == MaterialType.WOOD_DARK.texturePath }.second
-        val file = File(engine, source).apply { parentFile.mkdirs(); writeText("x") }
+        val logical = EngineDefaults.logicalPath(MaterialType.WOOD_DARK.texturePath)!!
+        val file = File(File(engine, "assets"), logical).apply { parentFile.mkdirs(); writeText("x") }
 
-        assertEquals(file.path, PrefabThumbnailMaterial.texturePath(MaterialType.WOOD_DARK, project, engine))
-        assertEquals(file.path, PrefabThumbnailMaterial.texturePath(MaterialType.WOOD_DARK, null, engine))
+        assertEquals(file.absolutePath, PrefabThumbnailMaterial.texturePath(MaterialType.WOOD_DARK, project, engine))
+        assertEquals(file.absolutePath, PrefabThumbnailMaterial.texturePath(MaterialType.WOOD_DARK, null, engine))
     }
 
     @Test
@@ -70,7 +78,7 @@ class PrefabThumbnailMaterialTest {
     @Test
     fun everySurfaceHasAnEngineSource() {
         MaterialType.entries.forEach { surface ->
-            assertNotNull(Assets.Bundled.bundledAssets.firstOrNull { it.first == surface.texturePath }, "$surface is not bundled")
+            assertTrue(surface.texturePath in EngineDefaults.CATALOG, "$surface is not an engine default")
         }
     }
 

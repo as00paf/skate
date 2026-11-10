@@ -1,12 +1,13 @@
 package com.pafoid.skate.game.prefabs
 
+import com.pafoid.skate.engine.assets.EngineDefaults
 import com.pafoid.skate.engine.assets.Assets
 
 enum class MaterialType(val displayName: String, val texturePath: String) {
-    CONCRETE("Concrete", Assets.Bundled.CONCRETE_SIMPLE),
-    WOOD_BROWN("Wood (Brown)", Assets.Bundled.WOOD_BROWN),
-    WOOD_LIGHT("Wood (Light)", Assets.Bundled.WOOD_LIGHT),
-    WOOD_TAN("Wood (Tan)", Assets.Bundled.WOOD_TAN),
-    WOOD_DARK("Wood (Dark)", Assets.Bundled.WOOD_DARK),
-    METAL("Metal", Assets.Bundled.METAL) // Fallback
+    CONCRETE("Concrete", EngineDefaults.Textures.CONCRETE_SIMPLE),
+    WOOD_BROWN("Wood (Brown)", EngineDefaults.Textures.WOOD_BROWN),
+    WOOD_LIGHT("Wood (Light)", EngineDefaults.Textures.WOOD_LIGHT),
+    WOOD_TAN("Wood (Tan)", EngineDefaults.Textures.WOOD_TAN),
+    WOOD_DARK("Wood (Dark)", EngineDefaults.Textures.WOOD_DARK),
+    METAL("Metal", EngineDefaults.Textures.METAL) // Fallback
 }
