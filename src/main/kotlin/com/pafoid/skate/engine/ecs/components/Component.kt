@@ -47,6 +47,8 @@ abstract class Component {
         }
     }
 
+    /** Session id (ImGui ids, runtime lookups): assigned on [init], never saved, so files carry no session counters. */
+    @Transient
     var uId = -1
     var enabled = true
     var name: String = this.javaClass.simpleName

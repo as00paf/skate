@@ -15,6 +15,7 @@ import imgui.ImGui
 
 /** The selected object's audio source (same inspector as the Properties window) and the project mixer (EDT-14). */
 class AudioInspectorWindow(private val engine: Engine, projectManager: ProjectManager) : EditorWindow("window.audio_inspector") {
+    override val relatedWindows: List<String> = listOf("window.game_viewport")
 
     private val stringManager = engine.stringManager
     private val sceneManager = engine.sceneManager

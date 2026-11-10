@@ -25,6 +25,8 @@ class EditorScreen(private val window: Window, private val engine: Engine) : Scr
     }
 
     fun loadLastProject(): Boolean {
+        // EDT-57: "Open the last project on startup" off starts on the project wizard.
+        if (!editor.settingsManager.editorSettings.loadLastProjectOnStartup) return false
         val projectFile = editor.settingsManager.lastProjectFile() ?: return false
         if (projectManager.openProjectFile(projectFile)) return true
         // EDT-10: say why instead of silently showing the wizard.

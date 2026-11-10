@@ -99,4 +99,10 @@ class WindowStandardPartsTest {
         assertNull(DefaultDockLayout.zoneOf("window.environment"))
         assertNull(DefaultDockLayout.zoneOf("window.physics_tuner"))
     }
+
+    @Test
+    fun Footer_HeightIsSpacingSeparatorSpacingAndOneButtonRow() {
+        // 26 (button row with spacing) + 4 × 4 (item spacings) + 1 (separator) = 43.
+        assertEquals(43f, DialogFooter.height(frameHeightWithSpacing = 26f, itemSpacingY = 4f))
+    }
 }

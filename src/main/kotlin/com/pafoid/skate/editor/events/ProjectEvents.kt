@@ -29,6 +29,15 @@ sealed class ProjectEvent(eventName: String) : Event(eventName) {
 
     /** Change the open project's graphics backend (EDT-43), as an undoable command. */
     data class SetGraphicsBackendRequested(val backend: GraphicsBackend) : ProjectEvent("project.action.set_graphics_backend")
+
+    /** Change the open project's random seed (ECS-14), as an undoable command. */
+    data class SetRandomSeedRequested(val seed: Long) : ProjectEvent("project.action.set_random_seed")
+    /** Project Settings (EDT-57): the scene the project opens with, as an undoable command. */
+    data class SetDefaultSceneRequested(val scenePath: String) : ProjectEvent("project.action.set_default_scene")
+    /** Project Settings (EDT-57): physics steps per second, as an undoable command applied to the engine. */
+    data class SetPhysicsRateRequested(val stepsPerSecond: Int) : ProjectEvent("project.action.set_physics_rate")
+    /** Project Settings (EDT-57): the language the game starts in, as an undoable command. */
+    data class SetGameLanguageRequested(val locale: String) : ProjectEvent("project.action.set_game_language")
     /** Change the open project's overall graphics quality preset (REN-30). */
     data class SetGraphicsQualityRequested(val quality: com.pafoid.skate.editor.settings.GraphicsQuality) : ProjectEvent("project.action.set_graphics_quality")
     /** Change the open project's MSAA sample count (REN-30). */

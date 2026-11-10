@@ -9,6 +9,7 @@ import com.pafoid.skate.editor.animation.mocap.VideoToAnimationWiring
 import com.pafoid.skate.editor.events.FileSystemEvent
 import com.pafoid.skate.editor.imgui.EditorWindow
 import com.pafoid.skate.editor.imgui.MImGui
+import com.pafoid.skate.editor.imgui.Tooltips
 import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.editor.imgui.label
 import com.pafoid.skate.editor.imgui.tipped
@@ -205,7 +206,7 @@ class VideoToAnimationWindow(
     }
 
     private fun tooltip(key: String) {
-        if (ImGui.isItemHovered()) ImGui.setTooltip(strings.getString("$key.tooltip"))
+        Tooltips.always(strings.getString("$key.tooltip"))
     }
 
     private fun thumbnailFor(file: File?): TextureThumbnail? {
