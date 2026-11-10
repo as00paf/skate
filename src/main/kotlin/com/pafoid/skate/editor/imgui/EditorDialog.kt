@@ -33,6 +33,12 @@ abstract class EditorDialog(
 
     final override fun imgui() {
         ImGui.setNextWindowSize(defaultWidth, defaultHeight, ImGuiCond.FirstUseEver)
+        // First use: centred on the editor (EDT-64); later ImGui remembers where it was left.
+        val viewport = ImGui.getMainViewport()
+        ImGui.setNextWindowPos(
+            viewport.workPosX + viewport.workSizeX / 2f, viewport.workPosY + viewport.workSizeY / 2f,
+            ImGuiCond.FirstUseEver, 0.5f, 0.5f,
+        )
         if (beginWindow(stringManager, ImGuiWindowFlags.NoDocking or ImGuiWindowFlags.NoCollapse)) {
             header(stringManager)
             content()

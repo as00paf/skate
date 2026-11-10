@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.ui.windows
 
+import com.pafoid.skate.editor.imgui.Tooltips
 import com.pafoid.skate.editor.imgui.tipped
 import com.pafoid.skate.editor.commands.input.BindingOperation
 import com.pafoid.skate.editor.events.ConsoleAction
@@ -50,7 +51,7 @@ class ActionBindingsPanel(
     private fun translated(key: String): String? = s(key).takeUnless { it.startsWith("!!") }
 
     private fun tip(key: String) {
-        if (ImGui.isItemHovered()) ImGui.setTooltip(s(key))
+        Tooltips.text(s(key))
     }
 
     private fun send(operation: BindingOperation) = events.publish(KeyBindingsAction.Apply(operation))
@@ -165,7 +166,7 @@ class ActionBindingsPanel(
     private fun renderRow(row: ActionRow) {
         val id = row.definition.id
         ImGui.text(row.name + if (row.customized) " *" else "")
-        if (row.customized && ImGui.isItemHovered()) ImGui.setTooltip(s("tip.keybindings.customized"))
+        if (row.customized) Tooltips.text(s("tip.keybindings.customized"))
         ImGui.sameLine(220f)
         row.bindings.forEachIndexed { i, binding ->
             val active = capturing?.let { it.actionId == id && it.index == i } == true
@@ -209,7 +210,7 @@ class ActionBindingsPanel(
                 val name = def?.let { translated(it.displayKey) } ?: other
                 def?.let { "$name (${contextLabel(it.context)})" } ?: name
             }
-            ImGui.setTooltip(strings.getString("tip.keybindings.shared", names))
+            Tooltips.always(strings.getString("tip.keybindings.shared", names))
         }
         ImGui.sameLine()
     }

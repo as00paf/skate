@@ -24,18 +24,17 @@ class GizmoSystem(
     var uiGizmo: com.pafoid.skate.editor.gizmos.UiRectGizmo? = null
 
     var localSpace = false
-    /** Translation snap step in world units; 0 disables snapping. */
-    var translateSnap = 0f
-    var rotateSnapDegrees = 0f
-    var scaleSnap = 0f
+    /** The toolbar's Snap toggle; the steps come from Editor Settings › Scene view (EDT-57), read live. */
+    var snapEnabled = false
+        private set
 
-    val snapEnabled get() = translateSnap > 0f || rotateSnapDegrees > 0f || scaleSnap > 0f
+    /** Translation snap step in world units; 0 while snapping is off. */
+    val translateSnap: Float get() = if (snapEnabled) settingsManager.editorSettings.gizmoSnap.translate else 0f
+    val rotateSnapDegrees: Float get() = if (snapEnabled) settingsManager.editorSettings.gizmoSnap.rotateDegrees else 0f
+    val scaleSnap: Float get() = if (snapEnabled) settingsManager.editorSettings.gizmoSnap.scale else 0f
 
     fun toggleSnap() {
-        val on = !snapEnabled
-        translateSnap = if (on) DEFAULT_TRANSLATE_SNAP else 0f
-        rotateSnapDegrees = if (on) DEFAULT_ROTATE_SNAP else 0f
-        scaleSnap = if (on) DEFAULT_SCALE_SNAP else 0f
+        snapEnabled = !snapEnabled
     }
 
     fun toggleSpace() {
@@ -144,9 +143,6 @@ class GizmoSystem(
 
     companion object {
         const val ICON_SCREEN_FRACTION = 0.03f
-        const val DEFAULT_TRANSLATE_SNAP = 0.5f
-        const val DEFAULT_ROTATE_SNAP = 15f
-        const val DEFAULT_SCALE_SNAP = 0.1f
         const val NONE = -1
         const val TRANSLATE_GIZMO = 0
         const val ROTATION_GIZMO = 1

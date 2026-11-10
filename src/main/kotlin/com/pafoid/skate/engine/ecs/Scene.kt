@@ -92,6 +92,8 @@ class Scene(@SerialName("sceneName") override var name: String = "MainScene") : 
     /** In Play but paused (pause menu); set by [com.pafoid.skate.engine.ecs.systems.SystemManager.paused]. */
     @Transient
     var isPaused: Boolean = false
+    /** Unsaved changes. Editor state, never saved: a file must not differ by whether it was dirty when saved. */
+    @Transient
     var isDirty: Boolean = false
 
     override fun start() {

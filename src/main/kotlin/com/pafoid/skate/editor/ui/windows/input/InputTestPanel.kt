@@ -2,6 +2,7 @@ package com.pafoid.skate.editor.ui.windows.input
 
 import com.pafoid.skate.editor.events.ConsoleAction
 import com.pafoid.skate.editor.imgui.ImGuiIds
+import com.pafoid.skate.editor.imgui.Tooltips
 import com.pafoid.skate.editor.imgui.MImGui
 import com.pafoid.skate.editor.imgui.tipped
 import com.pafoid.skate.editor.ui.windows.ActionBindingsModel
@@ -44,7 +45,7 @@ class InputTestPanel(
     private fun translated(key: String): String? = s(key).takeUnless { it.startsWith("!!") }
 
     private fun tip(key: String) {
-        if (ImGui.isItemHovered()) ImGui.setTooltip(s(key))
+        Tooltips.text(s(key))
     }
 
     fun render() {

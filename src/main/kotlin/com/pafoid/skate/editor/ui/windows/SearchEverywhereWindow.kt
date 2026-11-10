@@ -1,6 +1,7 @@
 package com.pafoid.skate.editor.ui.windows
 
 import com.pafoid.skate.editor.events.WindowAction
+import com.pafoid.skate.editor.imgui.Tooltips
 import com.pafoid.skate.editor.imgui.EditorWindow
 import com.pafoid.skate.editor.imgui.EmptyState
 import com.pafoid.skate.editor.imgui.data.Icons
@@ -188,9 +189,7 @@ class SearchEverywhereWindow(
         ImGui.sameLine()
 
         if (ImGui.button(Icons.WINDOW_CLOSE, buttonSize, buttonSize)) clearQuery()
-        if (ImGui.isItemHovered()) {
-            ImGui.setTooltip(stringManager.getString("lbl.clear"))
-        }
+        Tooltips.text(stringManager.getString("lbl.clear"))
 
         if (inputEdited) {
             triggerSearch()
@@ -240,9 +239,7 @@ class SearchEverywhereWindow(
         if (isActive) {
             ImGui.popStyleColor(2)
         }
-        if (ImGui.isItemHovered()) {
-            ImGui.setTooltip(tooltip)
-        }
+        Tooltips.text(tooltip)
     }
 
     private fun getFilteredResults(): Map<SearchCategory, List<SearchResult>> {

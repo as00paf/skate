@@ -3,6 +3,7 @@ package com.pafoid.skate.editor.ui.windows.input
 import com.pafoid.skate.editor.commands.input.snapshot
 import com.pafoid.skate.editor.events.InputSettingsAction
 import com.pafoid.skate.editor.imgui.ImGuiIds
+import com.pafoid.skate.editor.imgui.Tooltips
 import com.pafoid.skate.editor.imgui.MImGui
 import com.pafoid.skate.editor.ui.windows.GamepadLayout
 import com.pafoid.skate.editor.ui.windows.InputTestingModel
@@ -60,7 +61,7 @@ class DeadZonePanel(
     private fun s(key: String) = strings.getString(key)
 
     private fun tip(key: String) {
-        if (ImGui.isItemHovered()) ImGui.setTooltip(s(key))
+        Tooltips.always(s(key))
     }
 
     fun render() {

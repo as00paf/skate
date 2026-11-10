@@ -14,8 +14,16 @@ class WindowCategoryTest {
         val grouped = WindowCategory.grouped(
             listOf(W("window.console"), W("window.hierarchy"), W("window.script_editor"), W("window.search"), W("window.keybindings")),
         )
-        assertEquals(listOf(WindowCategory.SCENE, WindowCategory.DEBUG, WindowCategory.INPUT, WindowCategory.SCRIPTING), grouped.keys.toList())
-        assertEquals("window.keybindings", grouped.getValue(WindowCategory.INPUT).single().name)
+        assertEquals(listOf(WindowCategory.SCENE, WindowCategory.DEBUG, WindowCategory.SCRIPTING), grouped.keys.toList())
         assertFalse(grouped.values.flatten().any { it.name == "window.search" })
+        // Dialogs open from the gear and Settings menus, not View > Windows (EDT-64).
+        assertFalse(grouped.values.flatten().any { it.name == "window.keybindings" })
+    }
+
+    @Test
+    fun WindowCategory_SettingsDialogsHaveNoCategory() {
+        listOf("window.keybindings", "window.editor_settings", "window.project_settings").forEach {
+            assertEquals(null, WindowCategory.of(W(it)), it)
+        }
     }
 }
