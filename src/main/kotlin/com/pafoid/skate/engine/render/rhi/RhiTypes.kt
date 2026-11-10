@@ -146,6 +146,7 @@ data class TextureDesc(
  * Color attachments plus an optional depth attachment. A [layered] target's attachments are 2D arrays of [layers]
  * layers and [RhiCommandList.beginPass] picks the layer to render (shadow cascades, spot lights, cube faces).
  * [colorSampler] and [depthSampler] are how the attachments are sampled when read as textures.
+ * [msaaSamples] is the MSAA sample count (0 = no multisampling; only meaningful for the editor's scene target).
  */
 data class RenderTargetDesc(
     val width: Int,
@@ -156,6 +157,7 @@ data class RenderTargetDesc(
     val layered: Boolean = layers > 1,
     val colorSampler: SamplerDesc = SamplerDesc(),
     val depthSampler: SamplerDesc = SamplerDesc(Filter.NEAREST, Filter.NEAREST),
+    val msaaSamples: Int = 0,
 ) {
     init {
         require(width > 0 && height > 0) { "Render target size must be positive, got ${width}x$height" }

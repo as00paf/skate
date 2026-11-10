@@ -69,6 +69,8 @@ fun main(args: Array<String>) {
     if (projectManager.openProject(project, binFile, header, headerSize)) {
         // The project's mixer (bus volumes and mutes set in the editor) applies to the exported game too (EDT-14).
         engine.audioEngine.applyConfig(project.gameplaySettings.audio.toConfig())
+        // Apply game-side graphics settings from game.settings.json (overrides project defaults).
+        applyGameGraphicsSettings(settings.settings, project)
         engine.runtimePlaying = true
         installGameUi(window, settings, project)
         window.show(onClose = {
@@ -107,6 +109,16 @@ private fun installGameUi(window: Window, settings: GameSettingsStore, project: 
         hud.resetState()
     }
     engine.pauseActions.quit = { GLFW.glfwSetWindowShouldClose(window.glfwWindow, true) }
+    // Apply the post-processing quality preset from game settings (if any).
+    applyPostProcessQuality(settings.settings.graphicsQuality)
+}
+
+/** Applies the post-processing quality preset to the game's post-process pass. */
+private fun applyPostProcessQuality(qualityName: String?) {
+    if (qualityName == null) return
+    val quality = com.pafoid.skate.engine.render.renderer.passes.PostProcessQuality.fromGraphicsQuality(qualityName)
+    val settings = engine.renderer.renderResources.renderPasses.postProcess.getSettings()
+    com.pafoid.skate.engine.render.renderer.passes.PostProcessQualityPreset.apply(quality, settings)
 }
 
 /** Game UI text ships only inside game.bin (AST-07); nothing is read from the working directory. */
@@ -176,3 +188,45 @@ fun loadProjectAndIcon(binFile: ByteArray, atlas: Atlas, offset: Int): Pair<Proj
 
     return project to icon
 }
+
+/**
+ * Applies graphics settings from [gameSettings] to the engine's static settings.
+ *
+ * This allows the player to override the project's graphics settings via game.settings.json.
+ * When a setting is null, the project's value (or engine default) is kept.
+ */
+private fun applyGameGraphicsSettings(gameSettings: GameSettings, project: Project?) {
+    // Project defaults (only when no game.settings.json override exists)
+    if (gameSettings.graphicsQuality == null && project != null) {
+        val quality = com.pafoid.skate.editor.settings.GraphicsQuality.valueOf(project.graphicsQuality.name)
+        com.pafoid.skate.engine.render.shadow.ShadowSettings.quality = quality.shadowQualityLevel
+        com.pafoid.skate.engine.render.renderer.passes.PostProcessQualityPreset.apply(
+            com.pafoid.skate.engine.render.renderer.passes.PostProcessQuality.fromGraphicsQuality(quality.name),
+            engine.renderer.renderResources.renderPasses.postProcess.getSettings()
+        )
+    }
+    if (gameSettings.msaaSamples == null && project != null) {
+        com.pafoid.skate.engine.render.MsaaSettings.samples = project.msaaSamples.coerceIn(0, 8)
+    }
+    if (gameSettings.textureQuality == null && project != null) {
+        val level = com.pafoid.skate.engine.render.texture.TextureQualityLevel.fromName(project.textureQuality.name)
+        com.pafoid.skate.engine.render.texture.TextureQualitySettings.apply(level, emptyList())
+    }
+
+    // Game settings overrides (when explicitly set in game.settings.json)
+    gameSettings.msaaSamples?.let {
+        com.pafoid.skate.engine.render.MsaaSettings.samples = it.coerceIn(0, 8)
+    }
+    gameSettings.textureQuality?.let {
+        val level = com.pafoid.skate.engine.render.texture.TextureQualityLevel.fromName(it)
+        com.pafoid.skate.engine.render.texture.TextureQualitySettings.apply(level, emptyList())
+    }
+    gameSettings.graphicsQuality?.let {
+        val quality = com.pafoid.skate.editor.settings.GraphicsQuality.valueOf(it)
+        com.pafoid.skate.engine.render.shadow.ShadowSettings.quality = quality.shadowQualityLevel
+        applyPostProcessQuality(it)
+    }
+}
+
+private val com.pafoid.skate.editor.settings.GraphicsQuality.shadowQualityLevel: com.pafoid.skate.engine.render.shadow.ShadowQualityLevel
+    get() = com.pafoid.skate.engine.render.shadow.ShadowQualityLevel.fromName(name)

@@ -33,8 +33,6 @@ class SceneVisualsGizmo(private val debugRenderer: DebugRenderer) {
             if (go !== scene && hasCameraOrLight(go)) out.add(go)
             go.children.forEach { walk(it) }
         }
-        // Scene-level components (e.g. the default directional light of a scene) live on the scene itself.
-        if (hasCameraOrLight(scene)) out.add(scene)
         walk(scene)
         return out
     }

@@ -1,5 +1,7 @@
 package com.pafoid.skate.game.samples
 
+import com.pafoid.skate.engine.ecs.components.EnvironmentComponent
+import com.pafoid.skate.engine.ecs.SceneSun
 import com.pafoid.skate.engine.assets.AssetsManager
 import com.pafoid.skate.engine.assets.PrefabsGenerator
 import com.pafoid.skate.engine.assets.data.Texture
@@ -20,7 +22,6 @@ import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.ecs.systems.CameraManager
 import org.joml.Vector3f
 import org.joml.Vector4f
-import com.pafoid.skate.engine.ecs.components.DirectionalLightComponent
 import com.pafoid.skate.engine.ecs.components.JointComponent
 import com.pafoid.skate.engine.ecs.components.JointType
 import com.pafoid.skate.engine.ecs.components.ParticleEmitter
@@ -72,13 +73,14 @@ class FeatureShowcaseTest {
             assertNotNull(scene.children.firstOrNull { it.name == "[${area.label}] Area" }, "pad for ${area.key}")
             assertTrue(scene.children.count { it.name.startsWith("[${area.label}] ") } > 1, "objects in ${area.key}")
         }
-        val unlabelled = scene.children.map { it.name }.filterNot { it.startsWith("[") || it == "Camera" || it == "Floor" }
+        val unlabelled = scene.children.map { it.name }.filterNot { it.startsWith("[") || it == "Camera" || it == "Floor" || it == SceneSun.NAME }
         assertEquals(emptyList<String>(), unlabelled)
     }
 
     @Test
     fun `scene has camera, sun, physics settings and no sprites`() {
-        assertNotNull(scene.getComponent<DirectionalLightComponent>())
+        assertNotNull(SceneSun.of(scene), "a Sun entity")
+        assertNotNull(scene.getComponent<EnvironmentComponent>(), "ambient light lives in the environment")
         assertNotNull(scene.getComponent<ScenePhysicsComponent>())
         assertEquals(1, withComponent<CameraComponent>().size)
         assertTrue(withComponent<SpriteRenderer>().isEmpty())

@@ -12,10 +12,14 @@ import com.pafoid.skate.engine.render.rhi.Wrap
 /**
  * The scene's render target: RGBA8 color (sampled by post-processing and shown in the editor viewport) plus a
  * DEPTH32F depth attachment (read by SSAO). Allocated by [initialize].
+ *
+ * @param msaaSamples Multisampling level (0 = disabled, 1–8 = number of samples). Defaults to [MsaaSettings.samples]
+ *   so the editor's graphics settings are picked up at creation time.
  */
 class FrameBuffer(
     width: Int,
     height: Int,
+    private val msaaSamples: Int = MsaaSettings.samples,
     private val device: () -> RhiDevice = RhiContext::require,
 ) {
     var width: Int = width
@@ -30,7 +34,7 @@ class FrameBuffer(
 
     fun initialize() {
         renderTarget?.close()
-        renderTarget = device().createRenderTarget(desc(width, height))
+        renderTarget = device().createRenderTarget(desc(width, height, msaaSamples))
     }
 
     /** Resizes the attachments (new contents); no-op when the size is unchanged. */
@@ -39,6 +43,17 @@ class FrameBuffer(
         this.width = width
         this.height = height
         renderTarget?.resize(width, height) ?: initialize()
+    }
+
+    /**
+     * Re-initializes the target with a new MSAA sample count. Closes the old target and creates a new one.
+     * Returns true when the sample count actually changed (and the target was recreated).
+     */
+    fun setMsaaSamples(samples: Int): Boolean {
+        if (samples == msaaSamples) return false
+        renderTarget?.close()
+        renderTarget = device().createRenderTarget(desc(width, height, samples))
+        return true
     }
 
     /** Native handle of the color texture (ImGui and draw code not yet on the RHI). */
@@ -52,12 +67,13 @@ class FrameBuffer(
     }
 
     companion object {
-        fun desc(width: Int, height: Int) = RenderTargetDesc(
+        fun desc(width: Int, height: Int, msaaSamples: Int = 0) = RenderTargetDesc(
             width, height,
             colors = listOf(PixelFormat.RGBA8),
             depth = PixelFormat.DEPTH32F,
             colorSampler = SamplerDesc(Filter.LINEAR, Filter.LINEAR, Wrap.REPEAT),
             depthSampler = SamplerDesc(Filter.NEAREST, Filter.NEAREST, Wrap.REPEAT),
+            msaaSamples = msaaSamples,
         )
     }
 }

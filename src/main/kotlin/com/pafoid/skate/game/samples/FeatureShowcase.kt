@@ -1,5 +1,6 @@
 package com.pafoid.skate.game.samples
 
+import com.pafoid.skate.engine.ecs.SceneSun
 import com.pafoid.skate.engine.addComponent
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.PrefabsGenerator
@@ -12,7 +13,6 @@ import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.animation.graph.AnimatorMaskDef
 import com.pafoid.skate.engine.animation.graph.MaskPreset
-import com.pafoid.skate.engine.ecs.components.AmbientLightComponent
 import com.pafoid.skate.engine.ecs.components.Animator
 import com.pafoid.skate.engine.getComponent
 import com.pafoid.skate.engine.ecs.components.AudioComponent
@@ -22,7 +22,6 @@ import com.pafoid.skate.engine.ecs.components.CameraFocusComponent
 import com.pafoid.skate.engine.ecs.components.CameraFocusTarget
 import com.pafoid.skate.engine.ecs.components.CapsuleCollider3D
 import com.pafoid.skate.engine.ecs.components.Collider3D
-import com.pafoid.skate.engine.ecs.components.DirectionalLightComponent
 import com.pafoid.skate.engine.ecs.components.EmissionShape
 import com.pafoid.skate.engine.ecs.components.EnvironmentComponent
 import com.pafoid.skate.engine.ecs.components.FreeFlyCameraComponent
@@ -182,8 +181,8 @@ class FeatureShowcase(private val prefabs: PrefabsGenerator) {
         scene.addComponent(ScenePhysicsComponent())
             .addComponent(GridLines())
             .addComponent(EnvironmentComponent(skyTexture = Texture(filePath = assets + Assets.Bundled.SKY), fogColor = Vector3f(0.75f, 0.78f, 0.82f), renderFog = false, fogCycleButton = FOG_TOGGLE_BUTTON))
-            .addComponent(AmbientLightComponent(intensity = 0.25f))
-            .addComponent(DirectionalLightComponent())
+        // Ambient light in the environment, a "Sun" entity linked to the day/night cycle (REN-26)
+        SceneSun.addDefaults(scene)
         val overview = overviewTarget()
         add(GameObject("Camera")
             .addComponent(CameraComponent(isDefault = true))
@@ -262,6 +261,9 @@ class FeatureShowcase(private val prefabs: PrefabsGenerator) {
             Material(baseColorTexture = Texture(filePath = assets + Assets.Bundled.ASPHALT))))
         add(mesh("[Materials] Transparent", Assets.Bundled.CUBE, at("materials", 3f, 0.7f, -2f), Vector3f(0.7f),
             Material(baseColor = Vector4f(0.2f, 0.6f, 1f, 0.4f), alphaMode = AlphaMode.BLEND)))
+        // REN-27: a polished chrome sphere mirrors the sky and its surroundings (image-based lighting)
+        add(mesh("[Materials] Mirror", Assets.Bundled.SPHERE, at("materials", -5f, 0.95f, -2f), Vector3f(1.35f),
+            Material(baseColor = Vector4f(0.95f, 0.95f, 0.95f, 1f), metallicFactor = 1f, roughnessFactor = 0.02f)))
         // EDT-17: material saved as a .skmat asset and linked; loading the scene reads it back from the file
         val asset = ASSET_MATERIAL
         val file = File(File(assets, ASSET_MATERIAL_DIR), "$ASSET_MATERIAL_NAME.${MaterialAsset.EXTENSION}")

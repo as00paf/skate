@@ -150,16 +150,19 @@ class ProjectExporter(
         assetsPacker.sceneFiles(project, outputDir(project, options))
 
     /**
-     * Writes the project's graphics backend, window and runtime settings into `game.settings.json` next to `game.bin` (AST-12), keeping anything
-     * else already saved there (the player's locale from an earlier run of this build).
+     * Writes the project's graphics backend, quality, window and runtime settings into `game.settings.json` next to
+     * `game.bin` (AST-12, REN-30, GUI-15), merging into any existing player choices (locale, etc.) rather than overwriting them.
      */
     private fun writeGameSettings(project: Project, outputDir: File) {
-        GameSettingsStore(GameSettings.fileIn(outputDir), logger).update { 
+        GameSettingsStore(GameSettings.fileIn(outputDir), logger).update {
             it.copy(
                 graphicsBackend = project.graphicsBackend,
+                graphicsQuality = project.graphicsQuality.name,
+                msaaSamples = project.msaaSamples,
+                textureQuality = project.textureQuality.name,
                 supportedLanguages = project.supportedLanguages,
-                startupLanguage = project.startupLanguage
-            ) 
+                startupLanguage = project.startupLanguage,
+            )
         }
     }
 
