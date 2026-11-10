@@ -1,5 +1,7 @@
 package com.pafoid.skate.cli
 
+import com.pafoid.skate.engine.ecs.SceneSun
+import com.pafoid.skate.engine.ecs.components.EnvironmentComponent
 import com.pafoid.skate.editor.project.EngineAssetCopier
 import com.pafoid.skate.editor.project.Project
 import com.pafoid.skate.engine.assets.ProjectLayout
@@ -127,7 +129,9 @@ class TetrisProjectBuilder(private val serializer: Serializer = Serializer()) {
 
     private fun game(scriptPath: String): Scene {
         val scene = Scene(SCENE_NAME)
-        scene.addComponent(AmbientLightComponent(intensity = 0.4f)).addComponent(DirectionalLightComponent())
+        // Ambient lives in the environment and the sun is an entity (REN-26); no sky or fog, as before
+        scene.addComponent(EnvironmentComponent(renderSky = false, renderFog = false, ambientIntensity = 0.4f))
+        scene.children.add(SceneSun.create())
         scene.children.add(
             GameObject("Camera").addComponent(CameraComponent(isDefault = true))
                 .addComponent(Transform(Vector3f(0f, 9.5f, 30f)))

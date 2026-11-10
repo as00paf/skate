@@ -35,6 +35,24 @@ object MotionMath {
     fun yawOfRotation(q: Quaternionf): Float =
         atan2(2f * (q.w * q.y + q.x * q.z), 1f - 2f * (q.y * q.y + q.z * q.z))
 
+    /**
+     * Euler angles in radians of [q] in the engine's order (`Transform` builds Rx·Ry·Rz), stable at the ±90° middle
+     * angle where JOML's `getEulerAnglesXYZ` loses the outer angles (e.g. a board heading 90° while it flips).
+     */
+    fun eulerXYZ(q: Quaternionf, dest: Vector3f = Vector3f()): Vector3f {
+        val m = org.joml.Matrix3f().set(q)
+        // JOML names fields column first: m20 is column 2, row 0 (sin of the middle angle for Rx·Ry·Rz).
+        // cos of the middle angle from the other terms of its row: atan2 keeps precision where asin(≈1) does not.
+        val cosY = kotlin.math.sqrt(m.m00 * m.m00 + m.m10 * m.m10)
+        val y = atan2(m.m20, cosY)
+        return if (cosY > 1e-6f) {
+            dest.set(atan2(-m.m21, m.m22), y, atan2(-m.m10, m.m00))
+        } else {
+            // Gimbal lock: only x ± z is defined; put it all in x.
+            dest.set(atan2(m.m12, m.m11), y, 0f)
+        }
+    }
+
     /** Wraps an angle in radians to (-PI, PI]. */
     fun wrapAngle(angle: Float): Float {
         var a = angle

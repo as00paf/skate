@@ -134,3 +134,48 @@ class PostProcessSettings {
         val DEFAULT: PostProcessSettings = PostProcessSettings()
     }
 }
+
+/**
+ * Maps [PostProcessQuality] presets to post-processing effect configurations.
+ *
+ * These presets define which effects are enabled at each quality tier:
+ * - **LOW**: no post-processing (FXAA handled by MSAA or disabled)
+ * - **MEDIUM**: bloom only
+ * - **HIGH**: bloom + SSAO (FXAA always enabled as the last pass)
+ * - **ULTRA**: same as HIGH but with tuned parameters
+ */
+object PostProcessQualityPreset {
+
+    /** Applies the post-processing configuration for [quality] to [settings]. */
+    fun apply(quality: PostProcessQuality, settings: PostProcessSettings) {
+        when (quality) {
+            PostProcessQuality.LOW -> {
+                settings.bloomEnabled = false
+                settings.ssaoEnabled = false
+                settings.fxaaEnabled = false
+            }
+            PostProcessQuality.MEDIUM -> {
+                settings.bloomEnabled = true
+                settings.bloomIntensity = 0.05f
+                settings.ssaoEnabled = false
+                settings.fxaaEnabled = true
+            }
+            PostProcessQuality.HIGH -> {
+                settings.bloomEnabled = true
+                settings.bloomIntensity = 0.05f
+                settings.ssaoEnabled = true
+                settings.ssaoRadius = 1.5f
+                settings.ssaoIntensity = 0.8f
+                settings.fxaaEnabled = true
+            }
+            PostProcessQuality.ULTRA -> {
+                settings.bloomEnabled = true
+                settings.bloomIntensity = 0.1f
+                settings.ssaoEnabled = true
+                settings.ssaoRadius = 2.0f
+                settings.ssaoIntensity = 1.0f
+                settings.fxaaEnabled = true
+            }
+        }
+    }
+}

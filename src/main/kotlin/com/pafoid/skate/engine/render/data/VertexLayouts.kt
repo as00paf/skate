@@ -48,6 +48,11 @@ object VertexLayouts {
         )),
     ))
 
+    /** Full-screen quads given as NDC xy at location 0 (`editor_grid`). */
+    val FULLSCREEN_2D = VertexLayoutDesc(listOf(
+        VertexBinding(2 * Float.SIZE_BYTES, listOf(VertexAttribute(0, AttributeType.VEC2, 0))),
+    ))
+
     /** Floats per particle instance: position+size, colour, uv rect. */
     const val PARTICLE_FLOATS_PER_INSTANCE = 12
 

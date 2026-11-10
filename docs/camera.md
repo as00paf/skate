@@ -5,6 +5,8 @@
 | `FollowCameraComponent` (GPL-05) | Third-person game camera: follow, orbit, spring-arm collision, shake. Driven by `FollowCameraSystem` while the scene runs. |
 | `FreeFlyCameraComponent` (TLG-09) | Fly the camera with WASD/E/Q and right-drag look while the scene runs. |
 | `CameraFocusComponent` (TLG-09) | Fly the camera to named viewpoints, optionally from runtime UI buttons. |
+| `FirstPersonCameraComponent` (GPL-22) | Camera at a target's eyes, looking the way it faces. Driven by `CameraCycleSystem` while the scene runs. |
+| `CameraCycleComponent` (GPL-22) | Switch the active camera between several scene cameras from an input action and/or a runtime UI button. |
 
 ## Follow camera
 
@@ -25,3 +27,19 @@ behind the target.
 
 The maths is in `engine/gameplay/camera` (`FollowCameraRig`, `SpringArm`, `CameraShake`) and runs without GL or
 physics, behind a `SphereProbe`; see `FollowCameraRigTest`, `FollowCameraSystemTest` and `FollowCameraFromDiskTest`.
+
+## Camera cycle and first-person camera
+
+Add **CAMERA_CYCLE** to any object (the default project puts it on `Camera`). While the scene runs, each press of
+`actionId` (default `camera.cycle`: C, gamepad Back/View; rebind it under Gameplay > Camera in the key bindings) or
+click on the runtime UI button named `buttonName` makes the next camera of `cameraNames` (comma-separated object
+names) the active one. The position in the cycle comes from the active camera, so Restart and Stop/Play, which go
+back to the scene's default camera, start the cycle over. The action is added by `CameraCycle.bindDefaults`, next to
+the UI actions, so the input domain's `DefaultActions` are unchanged.
+
+Add **FIRST_PERSON_CAMERA** to a camera object for an eye view of `targetName`: `eyeHeight` above its origin,
+`forwardOffset` ahead of it (so the head mesh does not block the view), tilted down by `pitch` degrees and eased at
+`followSharpness`. A fixed camera needs no extra component: place a plain camera and aim it.
+
+The maths is in `CameraCycle` and `FirstPersonCameraRig` (`engine/gameplay/camera`); see `CameraCycleTest` and
+`CameraCycleSystemTest`.

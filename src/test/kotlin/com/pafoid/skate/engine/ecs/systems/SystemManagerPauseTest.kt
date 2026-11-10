@@ -120,6 +120,7 @@ class SystemManagerPauseTest {
             ScriptingSystem(),
             CameraControlSystem { mockk(relaxed = true) },
             FollowCameraSystem(),
+            CameraCycleSystem(null, { null }) { _, _ -> },
             DayNightCycleSystem(),
             RagdollSystem(),
             MountFollowSystem(),

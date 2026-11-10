@@ -1,5 +1,6 @@
 package com.pafoid.skate.engine.ecs.systems
 
+import com.pafoid.skate.engine.ecs.SceneSun
 import com.pafoid.skate.engine.ecs.components.DirectionalLightComponent
 import com.pafoid.skate.engine.ecs.systems.SystemManager.ExecutionPriority
 import com.pafoid.skate.engine.getComponent
@@ -25,7 +26,7 @@ class DirectionalLightSystem(private val cameraManager: CameraManager) : System(
     private val lightPosition = Vector3f()
 
     override fun update(dt: Float) {
-        config = scene.getComponent<DirectionalLightComponent>()?.takeIf { it.enabled } ?: return
+        config = SceneSun.of(scene) ?: return
 
         // Compute light space matrix for shadow mapping
         if (config?.castShadows == true) {

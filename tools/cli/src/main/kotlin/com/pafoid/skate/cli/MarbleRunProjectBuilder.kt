@@ -1,5 +1,7 @@
 package com.pafoid.skate.cli
 
+import com.pafoid.skate.engine.ecs.SceneSun
+import com.pafoid.skate.engine.ecs.components.EnvironmentComponent
 import com.pafoid.skate.editor.project.EngineAssetCopier
 import com.pafoid.skate.editor.project.Project
 import com.pafoid.skate.engine.assets.ProjectLayout
@@ -66,9 +68,10 @@ class MarbleRunProjectBuilder(private val serializer: Serializer = Serializer())
     private fun run(): Scene {
         val scene = Scene(SCENE_NAME)
         scene.addComponent(GridLines())
-            .addComponent(AmbientLightComponent(intensity = 0.3f))
-            .addComponent(DirectionalLightComponent())
+            // Ambient lives in the environment and the sun is an entity (REN-26); no sky or fog, as before
+            .addComponent(EnvironmentComponent(renderSky = false, renderFog = false, ambientIntensity = 0.3f))
             .addComponent(ScenePhysicsComponent())
+        scene.children.add(SceneSun.create())
         // Built with lookAt: the camera's +pitch looks down (see Transform.lookAt).
         val view = CameraFocusTarget.lookingAt("start", Vector3f(0f, 8f, 28f), Vector3f(0f, 6f, 0f))
         scene.children.add(

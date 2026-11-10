@@ -87,7 +87,7 @@ Rules (all pure, all tested):
   - This lets a `vehicle` context take over the gamepad A button from `gameplay.jump` without anyone unbinding anything.
 - The consumed-source set is cached per stack/map `revision`, so the per-frame cost stays a hash lookup per binding.
 - Edges: when a context is popped or blocked, its held actions report released. The next frame they do not report `wasActionPressed` for a source that was already held when the context appeared. This avoids a "jump fires when the pause menu closes" glitch: a press that was held carries over, but a new press is required.
-- Base stack built by `InputSystem`: `gameplay` (priority 0) and `ui` (priority 0, `NONE`). This matches today's `{GAMEPLAY, UI}` default, so nothing changes until something pushes.
+- Base stack built by `InputSystem`: `gameplay` (priority 0) and `ui` (`InputContextStack.UI_PRIORITY` = 1000, `NONE`). This matches today's `{GAMEPLAY, UI}` default, so nothing changes until something pushes. `ui` sits above game contexts, because a context consumes sources only from the contexts below it. A ride context (priority 10) therefore never takes gamepad A or the left stick away from the pause menu. A modal that must silence everything pushes above 1000. (Changed in GPL-21: with `ui` at 0, riding hid `ui.confirm` on A.)
 - The editor pushes `editor` itself (`EditorInputHandler`). The engine never pushes it.
 
 Public API:
@@ -161,6 +161,13 @@ class InputHistory(capacity: Int = 60) {
 
 GPL-21 (control schemes) then builds on this: each scheme is a set of `ActionDefinition` defaults plus recognizer settings. The engine needs no further change.
 
+**As built (step 5).** Three small generic pieces in `engine/gameplay` carry the table above. None of them uses skate vocabulary.
+- `ActionQuery` is passed as `CharacterInput.actions`, so a behavior reads its own actions and asks for contexts with `holdContexts`. `ActionQuery.NONE` is the default for tests and replays.
+- `InputContextLeases` is owned by `CharacterInputSampler`. `PlayerMotionSystem` releases every lease on scene load and when play stops, so a context never outlives editor Stop or a restart.
+- `ActionPresets` lets game code add action sets without the engine importing `game/**`. `SkateGameplay.register()` adds `SkateActions`, and the engine applies presets at start and on scene load. This replaces "registered in `GameMain` and the skate prefab".
+
+The skate defaults copy the sprint, crouch and jump defaults exactly (Shift/LT, Ctrl/LB, Space/A; axis 4 is the left trigger, not RT). `SkateIntent` is read every frame, so a key held while stepping on is not a new press.
+
 ### 8. Scripts and runtime UI
 
 - `ScriptInput` (SCR) gains:
@@ -196,7 +203,7 @@ Each step builds, passes `gradlew test`, and leaves the skate demo playable. Ste
 4. **GPL: character sampler.**
    - Add `CharacterActions` and `CharacterInputSampler` in `engine/gameplay`, called by `PlayerMotionSystem`.
    - Tests: the sampler on a fake `InputReader` (jump edge per entity, look sensitivity from config).
-5. **GPL: skate layer.** Add `game/input/*` from §7. `SkateBehavior` reads skate actions. Mount/dismount pushes and pops the `skate` context. Tests: `FlickRecognizerTest` and `SkateInputContextTest`.
+5. **GPL: skate layer** (done, see *As built* in §7). Add `game/input/*` from §7. `SkateBehavior` reads skate actions. Mount/dismount pushes and pops the `skate` context. Tests: `FlickRecognizerTest` and `SkateInputContextTest`.
 6. **INP + QA: guard.**
    - Add the architecture guard (below).
    - Remove the `activeContexts` shim.
