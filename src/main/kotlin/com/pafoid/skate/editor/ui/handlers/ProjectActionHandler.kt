@@ -105,7 +105,10 @@ class ProjectActionHandler(
         eventSystem.subscribe<ProjectEvent.SetMsaaSamplesRequested> { event ->
             val project = projectManager.currentProject ?: return@subscribe
             val command = SetProjectMsaaSamplesCommand(project, event.samples)
-            if (!command.isNoOp) undoRedoManager.executeCommand(command)
+            if (!command.isNoOp) {
+                undoRedoManager.executeCommand(command)
+                settingsManager.onMsaaChanged?.invoke(event.samples)
+            }
         }
         eventSystem.subscribe<ProjectEvent.SetTextureQualityRequested> { event ->
             val project = projectManager.currentProject ?: return@subscribe
@@ -114,8 +117,8 @@ class ProjectActionHandler(
         }
         eventSystem.subscribe<ProjectEvent.SetShadowQualityRequested> { event ->
             val project = projectManager.currentProject ?: return@subscribe
-            project.shadowQuality = event.quality
-            undoRedoManager.executeCommand(SetProjectShadowQualityCommand(project, event.quality))
+            val command = SetProjectShadowQualityCommand(project, event.quality)
+            if (!command.isNoOp) undoRedoManager.executeCommand(command)
         }
         eventSystem.subscribe<ProjectEvent.SetFullscreenRequested> { event ->
             val project = projectManager.currentProject ?: return@subscribe

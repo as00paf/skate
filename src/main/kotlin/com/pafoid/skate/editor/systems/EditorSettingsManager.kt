@@ -5,7 +5,7 @@ import com.pafoid.skate.editor.events.ProjectEvent
 import com.pafoid.skate.editor.project.Project
 import com.pafoid.skate.editor.project.ProjectFileReader
 import com.pafoid.skate.editor.settings.EditorSettings
-import com.pafoid.skate.editor.settings.ShadowQuality
+import com.pafoid.skate.editor.settings.GraphicsSettings
 import com.pafoid.skate.engine.assets.serialization.Serializer
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.core.LoggerService
@@ -54,7 +54,7 @@ class EditorSettingsManager(
             logger.logEditor("Error loading engine settings: ${e.message}", LogLevel.ERROR)
             editorSettings = EditorSettings()
         }
-        editorSettings.graphics.applyToEngine()
+        GraphicsSettings().applyToEngine()
     }
 
     fun saveSettings(): Boolean {
@@ -122,35 +122,6 @@ class EditorSettingsManager(
         } catch (e: Exception) {
             logger.logEditor("Error saving input mappings: ${e.message}", LogLevel.ERROR)
         }
-    }
-
-    /** Stores [quality], applies it to the renderer right away and saves it to the settings file. */
-    fun updateShadowQuality(quality: ShadowQuality) {
-        editorSettings = editorSettings.copy(graphics = editorSettings.graphics.copy(shadowQuality = quality))
-        editorSettings.graphics.applyToEngine()
-        saveSettings()
-    }
-
-    /** Stores [msaa], applies it to the renderer right away and saves it to the settings file. */
-    fun updateMsaa(samples: Int) {
-        editorSettings = editorSettings.copy(graphics = editorSettings.graphics.copy(msaa = samples))
-        editorSettings.graphics.applyToEngine()
-        onMsaaChanged?.invoke(samples)
-        saveSettings()
-    }
-
-    /** Stores [textureQuality], applies it to the renderer right away and saves it to the settings file. */
-    fun updateTextureQuality(textureQuality: com.pafoid.skate.editor.settings.TextureQuality) {
-        editorSettings = editorSettings.copy(graphics = editorSettings.graphics.copy(textureQuality = textureQuality))
-        editorSettings.graphics.applyToEngine()
-        saveSettings()
-    }
-
-    /** Stores the overall [quality] preset, applies all derived settings and saves. */
-    fun updateGraphicsQuality(preset: com.pafoid.skate.editor.settings.GraphicsQuality) {
-        editorSettings = editorSettings.copy(graphics = editorSettings.graphics.copy(quality = preset))
-        editorSettings.graphics.applyToEngine()
-        saveSettings()
     }
 
     /** Stores the export's game jar override ([EditorSettings.gameJarPath]); blank clears it. */

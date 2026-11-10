@@ -105,7 +105,7 @@ Round 27+ goals (human, 2026-11-06): post-processing quality, render-graph clari
   - Done when: The human approves the note.
   - Deps: REN-27
 
-- [~] @skate-render **REN-30** `P1` Renderer honours overall quality, MSAA and texture quality
+- [x] **REN-30** `P1` Renderer honours overall quality, MSAA and texture quality
   - Do: From EDT-57: the Graphics settings for overall quality, MSAA and texture quality exist (`GraphicsSettings`) but the renderer ignores them. Apply them live (MSAA on the scene target, texture quality via mip bias/max size, quality preset driving shadows/post effects).
   - Done when: Changing each setting visibly changes rendering in the editor and exported game; tests.
 
@@ -113,33 +113,33 @@ Round 27+ goals (human, 2026-11-06): post-processing quality, render-graph clari
 
 Goal (human, after REN-13): full Vulkan support for **exported games**, chosen per project at creation (OpenGL stays the default; the editor always uses OpenGL). Builds on the REN-12 RHI and the REN-13 spike (`docs/design/REN-13.md`). `skate-render` helps with explicitly assigned VK tasks.
 
-**Scheduled last** (human, 2026-11-06): the validation proof (VK-07, then closing VK-01..06) runs after all other planned work, once the LunarG Vulkan SDK is installed.
+**Deferred indefinitely** (human, 2026-11-09): the human will not install the LunarG Vulkan SDK in the near future. VK-01..06 are closed on their merged code and parity tests; the validation proof (VK-07) is parked as a P3 and is not scheduled. No agent works on it until the human reopens it.
 
-- [~] @skate-vulkan **VK-01** `P1` Windowed Vulkan runtime: surface, swapchain, frames in flight — code merged (round 23); zero-validation-error run pending the human installing the LunarG Vulkan SDK
+- [x] **VK-01** `P1` Windowed Vulkan runtime: surface, swapchain, frames in flight — code merged (round 23); validation proof deferred to VK-07
   - Do: Turn the offscreen spike into a presenting backend for the game runtime: GLFW no-API window, surface, swapchain (create/recreate on resize and minimize, present modes for vsync), frames in flight (fences/semaphores, per-frame command buffers and transient resources, deferred destruction), backbuffer as the RHI default target, validation layers in debug/test runs.
   - Done when: A test harness window presents frames with Vulkan, survives resize/minimize, zero validation errors; frame-in-flight bookkeeping unit-tested.
   - Deps: REN-13
-- [~] @skate-render **VK-02** `P1` Vulkan resources: memory, uploads, descriptors, samplers — code merged (round 23); zero-validation-error run pending the human installing the LunarG Vulkan SDK
+- [x] **VK-02** `P1` Vulkan resources: memory, uploads, descriptors, samplers — code merged (round 23); validation proof deferred to VK-07
   - Do: Memory allocator (e.g. lwjgl-vma), staging uploads for buffers/textures (mips, arrays, cube maps, depth/compare formats), sampler objects, descriptor set layouts/pools derived from SPIR-V reflection, and the `ShaderParams` named-uniform mapping to per-draw UBO data (ring buffer per frame in flight).
   - Done when: Every `RhiDevice.create*` used by the passes works on Vulkan; reflection/layout/ring logic unit-tested; zero validation errors.
   - Deps: REN-13
-- [~] @skate-vulkan **VK-03** `P1` Geometry pass parity on Vulkan — code merged (round 24); validation run pending the SDK
+- [x] **VK-03** `P1` Geometry pass parity on Vulkan — code merged (round 24); validation proof deferred to VK-07
   - Do: Port the geometry pass with materials (PBR inputs, alpha modes), UBO lights and culling, skinning, sky dome/skybox and fog to Vulkan.
   - Done when: MainScene's lit, textured, skinned frame matches OpenGL within a documented tolerance (GpuTest); zero validation errors.
   - Deps: VK-01, VK-02
-- [~] @skate-render **VK-04** `P2` Shadows on Vulkan — code merged (round 25); validation run pending the SDK
+- [x] **VK-04** `P2` Shadows on Vulkan — code merged (round 25); validation proof deferred to VK-07
   - Do: Cascaded sun shadows and spot/point shadow maps (depth arrays, compare samplers, depth bias/clamp) with the backend depth-range fix-up; REN-22 caching behaviour preserved.
   - Done when: Showcase shadow area matches OpenGL within tolerance at each quality level (GpuTest).
   - Deps: VK-03
-- [~] @skate-vulkan **VK-05** `P2` Post-processing on Vulkan — code merged (round 25); validation run pending the SDK
+- [x] **VK-05** `P2` Post-processing on Vulkan — code merged (round 25); validation proof deferred to VK-07
   - Do: PostChain ping-pong, blits, bloom/FXAA/tonemap/gamma with a documented texture-orientation (Y-flip) convention.
   - Done when: Showcase post-effects area matches OpenGL within tolerance (GpuTest).
   - Deps: VK-03
-- [~] @skate-gameui **VK-06** `P2` Runtime UI, particles and debug lines on Vulkan — code merged (round 25); validation run pending the SDK
+- [x] **VK-06** `P2` Runtime UI, particles and debug lines on Vulkan — code merged (round 25); validation proof deferred to VK-07
   - Do: UiPass (batches, SDF text, scissor, blending), instanced particles and debug lines on Vulkan.
   - Done when: Showcase UI/particles areas match OpenGL within tolerance (GpuTest).
   - Deps: VK-03
-- [!] **VK-07** `P1` Zero-validation-error proof for the Vulkan backend — blocked: the human must install the official LunarG Vulkan SDK (do not load downloaded nightly layers)
+- [ ] **VK-07** `P3` Zero-validation-error proof for the Vulkan backend — deferred indefinitely (2026-11-09): needs the official LunarG Vulkan SDK, which the human will not install for now (do not load downloaded nightly layers)
   - Do: With the SDK's Khronos validation layer enabled, run every Vulkan GpuTest (VK-01..06 harnesses, QA-16 parity suite, exported Vulkan game) and fix every validation message; then close VK-01..06.
   - Done when: All Vulkan GpuTests pass with validation on and zero messages; VK-01..06 marked done.
   - Deps: QA-16
@@ -171,7 +171,7 @@ Round 27+ goals: the Asset Browser shows every asset type, one assets folder, ex
 - [x] **AST-19** `P2` Full Blender support — design approved 2026-11-06 (`docs/design/AST-19.md`)
   - Do: Implement the note. Human decisions: commit the generated GLBs; minimum Blender **4.2 LTS**; an action deleted in Blender keeps its generated clip and warns; "Send to Skate" add-on later. Lead: action mode default `FILES`. Blender is installed on the dev machine; test file `assets/obj/baseball-cap.blend`.
   - Done when: Dropping `baseball-cap.blend` into a project's Assets gives a textured model that re-imports when the .blend is saved; GUIDs survive; tests.
-- [~] @skate-assets **AST-20** `P2` Classify FBX files as model or animation by content
+- [x] **AST-20** `P2` Classify FBX files as model or animation by content
   - Do: From AST-16: `.fbx` is always classed as `FileType.ANIMATION`, so FBX models show up in the Animations tab and store packs with FBX models cannot be imported as models. Inspect the file (meshes vs. animations only) and classify it accordingly; a file with both counts as a model with clips.
   - Done when: FBX models appear as models, animation-only FBX as animations; tests with fixture files.
 
@@ -224,7 +224,7 @@ Round 27+ goals: a Jolt backend selectable per project, a terrain heightfield co
   - Do: Implement the approved slices in order: a) preparation (`BodyDescription`, per-spec native loader, `ShapeWireframe` move, test helper), b) Jolt core (bodies, shapes, layers, queries, factory + fallback), c) contacts and triggers, d) joints/ragdoll/vehicle parity, e) debug draw, stats, leak/determinism tests, benchmark, f) per-project selection plumbing with EDT/AST/TLG. Decisions: physical centre of mass, ship both natives now (AST-15 strips the unused one), Bullet stays the default.
   - Done when: The physics test suite passes on Jolt as well as Bullet; the showcase runs on Jolt.
 
-- [ ] **PHY-18** `P2` Extract physics natives to a per-user folder
+- [x] **PHY-18** `P2` Extract physics natives to a per-user folder
   - Do: From PHY-17: Bullet and Jolt natives extract to `USER_DIR`, which fails for games installed in read-only folders (Program Files). Extract to a per-user data folder instead.
   - Done when: An exported game in a read-only folder starts with physics; loader tests cover the path.
 - [~] @skate-physics **PHY-19** `P3` Jolt-native ragdolls, vehicles and character controller — design draft written, awaiting the human's approval
@@ -314,7 +314,7 @@ Round 27+ goals: menu parity between the editor and the game, and a map view.
 - [~] @skate-gameui **GPL-25** `P0` GPL-21 review fixes: saved control scheme applied at startup
   - Do: From the GUI review of GPL-21 (`/tmp/skate-gameui-reviews.md`): must fix — the saved option is applied before the settings store attaches, so the default scheme runs while the menu shows the saved one (re-apply when the store changes; test). Should fix — cap the pause panel height, apply options once, cache the HUD text components, find the rider recursively. Lead-assigned to skate-gameui; skate-gameplay reviews.
   - Done when: The saved scheme is active from the first frame in both hosts; tests.
-- [ ] **GUI-15** `P1` Exported game reads the project's window and runtime settings
+- [x] **GUI-15** `P1` Exported game reads the project's window and runtime settings
   - Do: From EDT-57: the exported game reads resolution, window title, fullscreen, supported languages, startup language and the project physics rate from the project settings.
   - Done when: Each setting changed in Project Settings takes effect in an exported game; tests.
 - [~] @skate-animation **GUI-16** `P2` Reset ImGui capture hooks when the ImGui context is destroyed

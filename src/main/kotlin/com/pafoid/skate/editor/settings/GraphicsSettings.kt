@@ -38,3 +38,7 @@ fun ShadowQuality.toLevel(): ShadowQualityLevel = ShadowQualityLevel.fromName(na
 
 /** Engine tier -> editor setting (inverse of [toLevel]). */
 fun ShadowQualityLevel.toSetting(): ShadowQuality = ShadowQuality.valueOf(name)
+
+/** The project's graphics settings (REN-30); the editor viewport follows them live. */
+fun com.pafoid.skate.editor.project.Project.graphicsSettings(): GraphicsSettings =
+    GraphicsSettings(graphicsQuality, msaaSamples, shadowQuality, textureQuality)
