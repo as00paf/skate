@@ -105,6 +105,37 @@ class BlenderLocator(
     }
 }
 
+/** Whether a usable Blender is installed, as last checked (the inspector's "Needs Blender" badge, EDT-66). */
+sealed interface BlenderAvailability {
+    data object Unknown : BlenderAvailability
+    data object Checking : BlenderAvailability
+    data class Found(val install: BlenderInstall) : BlenderAvailability
+    data object Missing : BlenderAvailability
+}
+
+/** What the Editor Settings "Test" button found for a typed [path] (blank: automatic search). */
+sealed interface BlenderTestResult {
+    /** [install] is the typed path, or the best automatic find when no path was typed. */
+    data class Found(val install: BlenderInstall) : BlenderTestResult
+
+    /** [path] is not Blender [BlenderVersion.MINIMUM]+; imports would use [install] instead. */
+    data class PathUnusable(val path: String, val install: BlenderInstall) : BlenderTestResult
+
+    data class NotFound(val path: String?) : BlenderTestResult
+
+    companion object {
+        /** [best] is what a [BlenderLocator] whose setting is [path] returns. */
+        fun of(path: String?, best: BlenderInstall?): BlenderTestResult {
+            val typed = path?.takeIf { it.isNotBlank() }
+            return when {
+                best == null -> NotFound(typed)
+                typed != null && best.source != BlenderSource.SETTING -> PathUnusable(typed, best)
+                else -> Found(best)
+            }
+        }
+    }
+}
+
 /**
  * The Blender command line (AST-19 §3): background, factory settings (no user add-ons or preferences), Python errors
  * become a non-zero exit. Never `-y`/`--enable-autoexec`: a `.blend` can embed Python, and only our script may run.

@@ -5,6 +5,12 @@ import imgui.ImGuiIO
 import imgui.ImGuiStyle
 import org.joml.Vector4f
 
+/** Pixel size of ImGui's default font, the editor's text font. */
+const val BASE_FONT_SIZE = 13f
+
+/** Pixel size of the icon font merged into it: icon glyphs are taller than a text line. */
+const val ICON_FONT_SIZE = 14f
+
 fun ImGuiIO.loadFonts(fontsFile:String) {
     val fontAtlas = fonts
     val fontConfig = ImFontConfig()
@@ -13,10 +19,10 @@ fun ImGuiIO.loadFonts(fontsFile:String) {
 
     fontConfig.mergeMode = true
     fontConfig.pixelSnapH = true
-    fontConfig.glyphMinAdvanceX = 14f
+    fontConfig.glyphMinAdvanceX = ICON_FONT_SIZE
 
     val iconRanges = shortArrayOf(0xe000.toShort(), 0xf8ff.toShort(), 0)
-    fontAtlas.addFontFromFileTTF(fontsFile, 14f, fontConfig, iconRanges)
+    fontAtlas.addFontFromFileTTF(fontsFile, ICON_FONT_SIZE, fontConfig, iconRanges)
 
     fontAtlas.build()
     fontConfig.destroy()
@@ -30,10 +36,10 @@ fun ImGuiIO.loadFonts(fontsByteArray: ByteArray) {
 
     fontConfig.mergeMode = true
     fontConfig.pixelSnapH = true
-    fontConfig.glyphMinAdvanceX = 14f
+    fontConfig.glyphMinAdvanceX = ICON_FONT_SIZE
 
     val iconRanges = shortArrayOf(0xe000.toShort(), 0xf8ff.toShort(), 0)
-    fontAtlas.addFontFromMemoryTTF(fontsByteArray, 14f, fontConfig, iconRanges)
+    fontAtlas.addFontFromMemoryTTF(fontsByteArray, ICON_FONT_SIZE, fontConfig, iconRanges)
 
     fontAtlas.build()
     fontConfig.destroy()

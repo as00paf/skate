@@ -79,4 +79,26 @@ class PauseMenuOptionsTest {
         assertEquals("mode.a", row(system).labelKey)
         assertEquals("a", applied.last())
     }
+
+    @Test
+    fun sceneLoad_AppliesEachOptionOnce() {
+        menu()
+        assertEquals(listOf("a"), applied)
+    }
+
+    @Test
+    fun storeAttachedAfterSceneLoad_AppliesTheSavedChoice() {
+        // GPL-25, exported game order: the scene loads (and applies options) before game.settings.json is attached.
+        var attached: GameSettingsStore? = null
+        val system = PauseMenuSystem(setFrozen = {}, options = GameOptions().also { it.register(mode) }, settings = { attached })
+        system.init(Scene("Level"))
+        assertEquals("a", applied.last())
+
+        store.update { it.copy(options = mapOf(mode.id to "c")) }
+        attached = store
+        system.settingsChanged()
+
+        assertEquals("c", applied.last(), "the saved choice runs, not only the label")
+        assertEquals("mode.c", row(system).labelKey)
+    }
 }
