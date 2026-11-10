@@ -21,6 +21,7 @@ enum class WindowCategory(val labelKey: String) {
             "window.asset_browser" to ASSETS,
             "window.asset_store" to ASSETS,
             "window.video_to_animation" to ASSETS,
+            "window.animation_editor" to ASSETS,
             "window.console" to DEBUG,
             "window.profiler" to DEBUG,
             "window.command_history" to DEBUG,

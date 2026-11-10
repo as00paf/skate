@@ -41,7 +41,7 @@ class GameViewWindow(
         ViewportDragDropHandler(viewportRenderer, editor.editorCamera, engine.eventSystem, engine.inputProvider)
     private val viewportToolbar = ViewportToolbar(
         engine, stringManager, editor.gizmoSystem, editor.playModeHandler.controller,
-        helpButton = { WindowHeader.helpButton(stringManager, this) },
+        helpButton = { size -> WindowHeader.helpButton(stringManager, this, size) },
     )
 
     override val icon: String = Icons.CUBE
