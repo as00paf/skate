@@ -18,11 +18,13 @@ import com.pafoid.skate.engine.ecs.systems.SystemManager.ExecutionPriority
 import com.pafoid.skate.engine.getComponent
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.events.Collision
+import com.pafoid.skate.engine.events.CollisionMeshUnavailable
 import com.pafoid.skate.engine.events.PhysicsBackendFellBack
 import com.pafoid.skate.engine.events.TriggerEntered
 import com.pafoid.skate.engine.events.TriggerExited
 import com.pafoid.skate.engine.physics3d.ALL_LAYERS
 import com.pafoid.skate.engine.physics3d.ColliderShape
+import com.pafoid.skate.engine.physics3d.CollisionMeshes
 import com.pafoid.skate.engine.physics3d.IPhysics3D
 import com.pafoid.skate.engine.physics3d.IPhysicsBody3D
 import com.pafoid.skate.engine.physics3d.IRigidBodyHandle
@@ -79,6 +81,7 @@ class PhysicsSystem(
         // Adds new bodies; bodies kept from a previous load restart from the loaded pose
         bodies.forEach { teleport(it) }
         simulating = false
+        publishCollisionMeshFailures()
 
         scene.getComponent<ScenePhysicsComponent>()?.let { component ->
             physics3d.debugEnabled = component.debugEnabled
@@ -202,6 +205,12 @@ class PhysicsSystem(
             body.rawBody?.let { state.restartAt(it) }
         }
         if (stateList.size != liveCount) removeStaleBodies(stamp)
+        publishCollisionMeshFailures()
+    }
+
+    /** Reports `meshRef` models that could not be loaded (each once; see [CollisionMeshes]). */
+    private fun publishCollisionMeshFailures() {
+        CollisionMeshes.drainFailures().forEach { eventSystem?.publish(CollisionMeshUnavailable(it.reference, it.reason)) }
     }
 
     /**
@@ -263,6 +272,7 @@ class PhysicsSystem(
 
         syncJoints()
         syncRagdolls()
+        publishCollisionMeshFailures()
     }
 
     /**
