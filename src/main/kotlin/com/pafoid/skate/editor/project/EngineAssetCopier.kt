@@ -80,6 +80,34 @@ class EngineAssetCopier(
         }
     }
 
+    /** How a project copy of an engine default compares with its copy-time hash and the engine's file now (AST-26 §4.5). */
+    enum class CopyState { UNCHANGED, MODIFIED, UPDATE_AVAILABLE, MODIFIED_AND_UPDATED }
+
+    data class CopyStatus(val reference: String, val file: File, val state: CopyState)
+
+    /**
+     * Every engine copy in [projectDir] with its state, for the Asset Browser badges and the "N engine defaults have
+     * newer versions" notification (EDT-69). Unchanged shader copies never show UPDATE_AVAILABLE for long: they are
+     * refreshed on open ([refreshUnchangedShaders]).
+     */
+    fun copyStatuses(projectDir: File): List<CopyStatus> {
+        val projectResolver = EngineDefaultResolver(engineRoot) { projectDir }
+        return (EngineDefaults.CATALOG).mapNotNull { ref ->
+            val logical = EngineDefaults.logicalPath(ref) ?: return@mapNotNull null
+            val copy = projectResolver.overrideFile(logical) ?: return@mapNotNull null
+            val copiedHash = AssetMeta.read(copy)?.settings?.get(EngineDefaults.META_SHA256) ?: return@mapNotNull null
+            val modified = EngineDefaultResolver.sha256(copy) != copiedHash
+            val updated = resolver.engineFile(logical)?.let { EngineDefaultResolver.sha256(it) != copiedHash } ?: false
+            val state = when {
+                modified && updated -> CopyState.MODIFIED_AND_UPDATED
+                modified -> CopyState.MODIFIED
+                updated -> CopyState.UPDATE_AVAILABLE
+                else -> CopyState.UNCHANGED
+            }
+            CopyStatus(ref, copy, state)
+        }
+    }
+
     /** [target], or `<name> (engine).<ext>` (then ` (engine 2)`...) when a file of the user's is already there. */
     private fun freeTarget(target: File): File {
         if (!target.exists()) return target

@@ -112,4 +112,27 @@ class EngineAssetCopierTest {
         assertEquals(EngineDefaultResolver.sha256(skybox), AssetMeta.read(skybox)!!.settings[EngineDefaults.META_SHA256])
         assertEquals("// my bloom", bloom.readText())
     }
+
+    @Test
+    fun CopyStatus_UnchangedModifiedAndUpdateAvailable() {
+        val engine = File(dir, "engine")
+        listOf("Models/cube.obj", "Models/sphere.obj", "Models/bank.obj", "Models/bench.obj").forEach {
+            File(engine, "assets/$it").apply { parentFile.mkdirs(); writeText("v1 $it") }
+        }
+        val copier = EngineAssetCopier(engine)
+        listOf(EngineDefaults.Models.CUBE, EngineDefaults.Models.SPHERE, EngineDefaults.Models.BANK, EngineDefaults.Models.BENCH)
+            .forEach { copier.copy(project, it)!! }
+        File(assets, "Models/sphere.obj").writeText("mine")
+        File(engine, "assets/Models/bank.obj").writeText("v2")
+        File(assets, "Models/bench.obj").writeText("mine")
+        File(engine, "assets/Models/bench.obj").writeText("v2")
+
+        val states = copier.copyStatuses(project).associate { it.reference to it.state }
+
+        assertEquals(EngineAssetCopier.CopyState.UNCHANGED, states[EngineDefaults.Models.CUBE])
+        assertEquals(EngineAssetCopier.CopyState.MODIFIED, states[EngineDefaults.Models.SPHERE])
+        assertEquals(EngineAssetCopier.CopyState.UPDATE_AVAILABLE, states[EngineDefaults.Models.BANK])
+        assertEquals(EngineAssetCopier.CopyState.MODIFIED_AND_UPDATED, states[EngineDefaults.Models.BENCH])
+        assertEquals(4, states.size, "only copies are listed")
+    }
 }
