@@ -96,11 +96,11 @@ Round 27+ goals (human, 2026-11-06): post-processing quality, render-graph clari
   - Do: Add image-based lighting (prefiltered environment map + irradiance from the skybox, BRDF LUT) and/or reflection probes so metallic/smooth materials reflect their surroundings. Add a very shiny, reflective metallic object to the Feature Showcase Materials section.
   - Done when: The showcase metallic object clearly reflects the sky/scene; the IBL math/setup has unit tests; Vulkan parity follows in a VK task.
   - Deps: REN-26
-- [~] @skate-render **REN-28** `P2` Terrain and biomes: design note — human answered the open questions 2026-11-10 (streaming now; stamps yes; 8 layers; erosion later); revision for streaming pending
+- [~] @skate-render **REN-28** `P2` Terrain and biomes: design note — rev 2 answered 2026-11-10 (placed objects stay loaded; streamed props REMEMBER state; default budgets; freeze bodies over unloaded ground; 16 km cap; multiplayer direction agreed); rev 3 pending
   - Do: Write `docs/design/REN-28.md`, reviewed by physics and assets: chunked heightmap terrain with LOD, splat materials (16 layers), a noise library (e.g. FastNoiseLite, MIT), biome maps driving materials and scatter, procedural or hand-painted (editor sculpt/paint tools), seeded through ECS-14, heightfield collider (PHY-15). Terrain must support **larger worlds** than the current park scale. Erosion filters are worth including. Split implementation tasks out after approval.
   - Done when: The human approves the note.
   - Deps: ECS-14
-- [~] @skate-render **REN-29** `P2` Vegetation and water: design note — draft written, awaiting the human's approval
+- [~] @skate-render **REN-29** `P2` Vegetation and water: design note — rev 2 answered 2026-11-10 (SSR+IBL; underwater later; infinite ocean too; bail now, swimming later; CC0 trees; foliage on meshes now); rev 3 pending. Build order (lead): foundations → water + wind → REN-28 terrain → streaming → vegetation → infinite ocean
   - Do: Write `docs/design/REN-29.md`: instanced trees/grass with LOD and wind, a water surface shader (reflection/refraction, foam), water volumes for buoyancy (PHY-16), and the Feature Showcase demo area.
   - Done when: The human approves the note.
   - Deps: REN-27
