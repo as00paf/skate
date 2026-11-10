@@ -1,4 +1,4 @@
-# Procedural brushed-steel texture for assets/textures/metal.png (AST-10). Deterministic, no third-party source.
+# Procedural brushed-steel texture for assets/Textures/metal.png (AST-10). Deterministic, no third-party source.
 import random, sys
 from PIL import Image, ImageFilter
 N = 1024

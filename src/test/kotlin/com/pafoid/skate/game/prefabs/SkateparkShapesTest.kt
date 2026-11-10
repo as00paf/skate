@@ -16,7 +16,7 @@ class SkateparkShapesTest {
     private val obstacles = PrefabType.entries.mapNotNull { type -> PrefabCatalog.shape(type)?.let { type to it } }
 
     /**
-     * The OBJs in assets/obj are the generator's output. After changing a shape, regenerate them with
+     * The OBJs in assets/Models are the generator's output. After changing a shape, regenerate them with
      * `cmd.exe /c "set SKATE_REGEN_OBSTACLES=1&& gradlew.bat :test --tests *SkateparkShapesTest*"`.
      */
     @Test

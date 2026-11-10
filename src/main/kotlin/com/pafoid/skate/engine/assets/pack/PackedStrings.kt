@@ -4,7 +4,7 @@ import com.pafoid.skate.engine.core.StringSource
 import java.io.File
 
 /**
- * The game's string tables (`assets/strings/game`: HUD, menus, showcase) shipped inside a pack. They are stored
+ * The game's string tables (`assets/Data/strings/game`: HUD, menus, showcase) shipped inside a pack. They are stored
  * under [PACK_DIR] with their file names, translations included, and read back as a [StringSource].
  */
 object PackedStrings {
