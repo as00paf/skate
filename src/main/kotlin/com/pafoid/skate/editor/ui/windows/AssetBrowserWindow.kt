@@ -15,6 +15,8 @@ class AssetBrowserWindow(
     engine: Engine,
     private val undoRedoManager: UndoRedoManager,
 ) : EditorWindow("window.asset_browser", true) {
+    override val relatedWindows: List<String> = listOf("window.project")
+
     private val stringManager = engine.stringManager
 
     private val animationsTab: AnimationsTab = AnimationsTab(engine, stringManager)

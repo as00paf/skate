@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.imgui.components
 
+import com.pafoid.skate.editor.imgui.Tooltips
 import com.pafoid.skate.editor.events.ComponentFieldAction
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.core.EventSystem
@@ -119,7 +120,7 @@ object StringFields {
         if (!isRef) return
 
         acceptHierarchyDrop(engine, component, field)
-        if (ImGui.isItemHovered()) ImGui.setTooltip(strings.getString("inspector.string_field.drop_hint"))
+        Tooltips.text(strings.getString("inspector.string_field.drop_hint"))
 
         ImGui.sameLine()
         ImGui.setNextItemWidth(-1f)
