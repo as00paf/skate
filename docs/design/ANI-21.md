@@ -1,6 +1,6 @@
 # ANI-21 — Animator window: build and edit state machines (design note)
 
-Status: **proposal, awaiting human approval.** No implementation code has been written.
+Status: **approved by the human (2026-11-10)**, with the answers recorded in §11. Implementation follows §9.
 Task: ANI-21 (`P1`, REWRITE), human request (Discord 2026-11-10): "a user-friendly Animator window (state graph): add,
 rename, duplicate and delete states, assign clips, edit transitions, conditions and parameters, with undo; writes the
 animator controller asset."
@@ -344,7 +344,7 @@ lands, the window uses the "save a copy and point the Animator at it" fallback (
 ## 10. Out of scope
 
 - **Blend-tree editing.** States can point at an existing blend tree (shown read-only, "Blend 1D on speed: 3 clips"),
-  but creating and editing trees is a follow-up task (Q6).
+  but creating and editing trees is the follow-up task ANI-23 (Q6).
 - **Editing procedural poses and clip fits.** They are shown read-only.
 - **Sub-state machines, layers and per-layer masks.** The mask stays on the Animator (ANI-03).
 - **A rendered character preview inside the window.** The scene view or game view shows the character; ANI-14's
@@ -353,7 +353,23 @@ lands, the window uses the "save a copy and point the Animator at it" fallback (
 
 ---
 
-## 11. Open questions (with my recommendation)
+## 11. Open questions (with my recommendation) and the human's answers
+
+The human approved the note on 2026-11-10. Decisions:
+
+| Q | Decision |
+|---|---|
+| 1 | Draw the graph ourselves with the draw list. |
+| 2 | Layout inside the controller file. |
+| 3 | Plain Duplicate without transitions, plus a "Duplicate with transitions" item. |
+| 4 | Declared parameters optional in the file. **And:** controller files must be fully editable in the editor through a user-friendly interface (states, transitions, conditions, parameters); nobody should need to edit the file by hand. |
+| 5 | Apply on Save, rebuilding the animators, even in play mode. |
+| 6 | No blend trees here; the follow-up is **ANI-23** (ANI-22 is the Video to Animation scroll fix). |
+| 7 | Parameter names from gameplay later: **GPL-31**. |
+| 8 | Copy/paste within the window. |
+| 9 | Same as ANI-14 for now, plus the shared prompt: **EDT-82**. |
+
+The recommendations as proposed:
 
 1. **Draw the graph ourselves, or use imnodes / imgui-node-editor from the imgui-java jar?**
    *Recommendation: draw it ourselves with the draw list, as ANI-14 does.*
@@ -377,7 +393,7 @@ lands, the window uses the "save a copy and point the Animator at it" fallback (
    restarts at the default, which is clear and safe. Rebuilding on every edit (no save) would surprise people and lose
    the "saved = what runs" rule.
 6. **Blend trees in this task?**
-   *Recommendation: no.* The skater controller has none. A follow-up task (ANI-22, "Blend tree editor") adds a tree
+   *Recommendation: no.* The skater controller has none. A follow-up task (ANI-23, "Blend tree editor") adds a tree
    editor in the state inspector, once the basic window is in use.
 7. **Should gameplay publish the names of the parameters it writes**, so the window can suggest `speed`, `airTime`, …?
    *Recommendation: yes, later, as a small skate-gameplay task.* `CharacterBehavior` exposes the list, and the
@@ -397,10 +413,10 @@ lands, the window uses the "save a copy and point the Animator at it" fallback (
 - **skate-editor:**
   - the double-click open from the Project window (§5.3);
   - review of ANI-21b/c;
-  - the editor-wide unsaved-assets prompt (Q9).
+  - the editor-wide unsaved-assets prompt (Q9, now EDT-82).
 - **skate-assets:** a small API to "make the project override of an engine default" (copy + `.meta` `engine.source`)
   that the window can call. I could not find the `engine:` resolver or the override copy on `integration/32`, so
   please confirm whether AST-27 landed elsewhere. GPL-26 depends on it too.
 - **skate-gameplay:**
   - GPL-26 as planned;
-  - later, the list of parameters a behavior writes (Q7).
+  - later, the list of parameters a behavior writes (Q7, now GPL-31).
