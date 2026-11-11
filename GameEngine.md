@@ -637,11 +637,11 @@ Round 27+ goals (human, 2026-11-06): fix editor bugs, make every window, dialog 
   - Do: (human, round 33 testing): texture Delete buttons clipped at the end; the Animator component's Edit/Refresh buttons sometimes have no room. Shared trailing-button layout sized from the current style.
   - Done when: Trailing buttons fit at every density preset and narrow widths; guard test.
   - Deps: EDT-76
-- [~] @skate-editor **EDT-87** `P0` Expanding the Input State component crashes the editor
+- [x] **EDT-87** `P0` Expanding the Input State component crashes the editor
   - Do: (human, round 33 testing): expanding Input State in the Properties window crashes the editor. Fix it, and add a guard test that draws every registered component inspector expanded (default and populated data) with no ImGui stack imbalance or exception.
   - Done when: Input State expands without crashing; the all-inspectors guard passes.
   - Deps: EDT-86
-- [ ] **EDT-88** `P1` Maximize editor tool windows over the Game Viewport, or full screen
+- [~] @skate-editor **EDT-88** `P1` Maximize editor tool windows over the Game Viewport, or full screen
   - Do: (human, 2026-11-11): the Script Editor, Animation Editor and Video to Animation windows can be maximized: a "Maximize" button in the standard window header (and a shortcut, e.g. Shift+Space, plus double-click on the tab) that either docks the window over the Game Viewport's node as a tab, or fills the whole editor (hiding the other panels until restored). Today docking over the viewport doesn't work because the Game Viewport's dock node hides its tab bar, so nothing can be tabbed into it: show the Game Viewport tab (or allow docking into its node) without breaking its toolbar layout. Restore returns the previous layout exactly. Generalize to every window using the standard header if it costs nothing extra. Short design note first (layout save/restore, interaction with play mode and the viewport's input focus from EDT-73).
   - Done when: Each of the three windows can be maximized and restored, both over the viewport and full editor; the layout is restored exactly; tests for the layout save/restore.
   - Deps: EDT-67
