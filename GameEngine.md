@@ -386,6 +386,14 @@ Audio needs a more complete implementation.
 
 Round 27+ goals: input is too tightly coupled with skateboarding; it needs a game-agnostic abstraction.
 
+- [x] **ANI-22** `P0` Video to Animation window: scrolling is broken
+  - Do: (human, round 32 testing): the Video to Animation window does not scroll (after ANI-20 added playback and trim). Fix the window's child/scroll layout so the whole content scrolls with the mouse wheel and scrollbar.
+  - Done when: All controls are reachable by scrolling at a small window size; a test or guard for the layout if practical.
+  - Deps: ANI-20
+- [ ] **ANI-23** `P2` Animator window: blend tree editor in the state inspector
+  - Do: (ANI-21 design answer, 2026-11-10): edit 1D/2D blend trees of a state in the Animator window's state inspector, with live preview.
+  - Done when: A blend tree can be created and edited from the window and saved in the controller file; tests.
+  - Deps: ANI-21
 - [x] **INP-10** `P1` REWRITE Decouple input from skateboarding
   - Do: Design note `docs/design/INP-10.md` first. Generic action maps and input contexts (gameplay/UI/vehicle/...) with push/pop priority in the engine; skate-specific actions, bindings and gesture/flick logic move to the game layer (`game/**`, owned by gameplay). Scripts and in-game UI use the generic API.
   - Done when: The design is approved and implemented, `engine/input/**` has no skateboarding concepts (architecture-guard test), and the skate game plays as before.
@@ -431,6 +439,10 @@ Round 27+ goals: a fuller skate demo with camera modes and standard control sche
 
 Round 27+ goals: menu parity between the editor and the game, and a map view.
 
+- [ ] **GPL-31** `P2` Publish the animator parameter names the character writes
+  - Do: (ANI-21 design answer, 2026-11-10): `CharacterBehavior` exposes the names of the animator parameters it writes (speed, airTime, …) so the Animator window's Parameters panel can suggest them under "Written by the character".
+  - Done when: The Animator window lists the character's parameters; tests.
+  - Deps: ANI-21
 - [x] **GUI-12** `P0` Esc in the exported game shows the same menu as editor Play
   - Do: Reproduce on master first. Find the remaining differences between the exported game's Esc menu and the editor Play pause menu (GUI-09) and make them identical (items, layout, behaviour).
   - Done when: Both show the same menu; a test compares the menu definitions used in both paths.
@@ -605,6 +617,26 @@ Round 27+ goals (human, 2026-11-06): fix editor bugs, make every window, dialog 
   - Do: From REN-31 (skate-render): a material inspector "Shader" field listing the project `.glsl` files plus the basic engine shaders (writes `MaterialAsset.shader`/`Material.shader`); an Asset Browser "New Shader" action writing `ShaderTemplates.PBR_MATERIAL` to `Assets/Shaders/<name>.glsl`; copy `shader` in `MaterialState` (`MaterialCommands.kt`) so material undo keeps it.
   - Done when: A new project shader can be created, assigned to a material and undone; tests.
   - Deps: REN-31
+- [x] **EDT-81** `P0` Select tool cannot pick runtime UI elements in the viewport
+  - Do: (human, round 32 testing): with the Select tool, clicking a UI element (e.g. the Map button in the Feature Showcase) does not select it, so EDT-75's UI gizmo never appears. Make viewport picking hit-test canvas children (top-most first) before 3D objects.
+  - Done when: Clicking the Feature Showcase Map button selects it and shows the UI gizmo; tests for the UI hit-test order.
+  - Deps: EDT-75
+- [x] **EDT-85** `P0` Window header clamp breaks scrolling in every window
+  - Do: (from ANI-22, round 32 testing): EDT-72's clamp in `HelpButtonLayout.row` keeps the header 2px below the window top even when the window is scrolled, so windows that scroll their whole body below `header()` snap back. Apply the clamp relative to the scroll position.
+  - Done when: A window using `header()` scrolls at a small size and the `?` stays unclipped at 100 %/150 %; guard test.
+  - Deps: EDT-72
+- [ ] **EDT-82** `P2` Editor-wide "unsaved assets" prompt on close
+  - Do: (ANI-21 design answer, 2026-11-10): one prompt when the project or editor closes, listing the unsaved scene, animation clips and animator controllers, with Save all / Discard / Cancel.
+  - Done when: Closing with unsaved assets asks first; tests for the dirty-document registry.
+  - Deps: ANI-21
+- [ ] **EDT-83** `P2` Git: "Merge into current" in the branch menu
+  - Do: (EDT-79 design answer, 2026-11-10): merge another branch into the current one from the status-bar branch popup, using EDT-79's Conflicts dialog; needs its own design review (risk of losing work).
+  - Done when: A clean merge and a conflicting merge both work from the popup; tests.
+  - Deps: EDT-79
+- [ ] **EDT-84** `P1` IntelliJ-style tool window bars on the left and right
+  - Do: (human, EDT-79 design answers, 2026-11-10): vertical bars on the left and right edges of the editor with one button per tool window, as in IntelliJ, to open, close and focus windows (Hierarchy, Inspector, Asset Browser, Version Control, …). Design note first.
+  - Done when: Every registered window can be toggled from a side bar, and its position is saved with the layout; tests.
+  - Deps: none
 
 ### Tooling & samples — `TLG` (`skate-tooling`)
 
