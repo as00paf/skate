@@ -410,7 +410,28 @@ The recommendations as proposed:
 
 ---
 
-## 12. Cross-domain requests (for the lead)
+## 12. As built (ANI-21a to d)
+
+| Commit | Slice |
+|---|---|
+| `129c8b55` | 21a: format (`version`, `parameters`, `layout`, `clips`), `RestMotion`, warnings, runtime defaults, clip loading |
+| `a3d5d6bc` | 21b: `ControllerEditor` operations, document, commands, `AnimatorWindowController`, `ControllerGraphView`, acceptance test |
+| `294069e0` | 21c + 21d: the window, Edit button in the Animator inspector, reload on save, play-mode view, help, strings |
+
+Differences from the proposal:
+
+- `layout` stores `{ "x", "y" }` objects; `clips` is a list of paths (§4.3).
+- Inferred parameters (Q4) are not written on save: they stay undeclared until the user edits one, which declares
+  it. The file keeps only what the user chose; the window always lists both, tagged "from conditions".
+- A new transition from a state waits for the end of the clip by default, so it does something as soon as it exists;
+  one from Any State starts with no condition and shows the "never happens" warning until it gets one.
+- Event times are entered in percent of the clip (0 to 100), stored normalized as before.
+- "Make a project copy" uses the fallback of §5.2 (copy in `Assets/Animations` + "Use on <object>"), since the
+  `engine:` override API is not on `integration/32`.
+- The Project window double-click on `*.controller.json` is left to the editor team: it only needs to publish
+  `OpenAnimatorController(path)` (`editor/animation/controllereditor/AnimatorWindowWiring.kt`).
+
+## 13. Cross-domain requests (for the lead)
 
 - **skate-editor:**
   - the double-click open from the Project window (§5.3);
