@@ -75,6 +75,8 @@ object EditorShortcuts {
     val SAVE_SCENE_AS = fixed("save_scene_as", "menu.file.save_scene_as", GLFW.GLFW_KEY_S, shift = true)
     val OPEN_PROJECT = fixed("open_project", "menu.file.open_project_menu", GLFW.GLFW_KEY_O)
     val INPUT_TESTING = fixed("input_testing", "menu.input.testing", GLFW.GLFW_KEY_I, shift = true)
+    /** EDT-79: opens the Commit dialog, as in IntelliJ. */
+    val VCS_COMMIT = fixed("vcs_commit", "vcs.popup.commit", GLFW.GLFW_KEY_K)
 
     // Rebindable shortcuts.
     val SEARCH = key("search", "lbl.keybindings.search", ShortcutGroup.EDITOR, EditorInputMappings::openSearchWindow, ctrl = true)
@@ -107,7 +109,7 @@ object EditorShortcuts {
     val SELECT_FIRST = key("select_first", "lbl.hierarchy.select_first", ShortcutGroup.HIERARCHY, EditorInputMappings::hierarchySelectFirst, scope = ShortcutScope.HIERARCHY)
     val SELECT_LAST = key("select_last", "lbl.hierarchy.select_last", ShortcutGroup.HIERARCHY, EditorInputMappings::hierarchySelectLast, scope = ShortcutScope.HIERARCHY)
 
-    val fixedShortcuts: List<EditorShortcut> = listOf(UNDO, REDO, REDO_ALT, CUT, COPY, PASTE, NEW_SCENE, SAVE_SCENE, SAVE_SCENE_AS, OPEN_PROJECT, INPUT_TESTING)
+    val fixedShortcuts: List<EditorShortcut> = listOf(UNDO, REDO, REDO_ALT, CUT, COPY, PASTE, NEW_SCENE, SAVE_SCENE, SAVE_SCENE_AS, OPEN_PROJECT, INPUT_TESTING, VCS_COMMIT)
 
     val rebindable: List<EditorShortcut> = listOf(
         SEARCH, PLAY_TOGGLE, FULLSCREEN, GIZMO_SELECT, GIZMO_TRANSLATE, GIZMO_ROTATE, GIZMO_SCALE, MEASURE, DESELECT, FOCUS,

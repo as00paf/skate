@@ -45,7 +45,12 @@ class JGitVcsServiceTest {
         assertTrue("Scenes/MainScene.scene" in first.files)
         assertTrue(first.files.none { it.startsWith("Builds/") || it.startsWith(".skate/") }, first.files.toString())
         assertEquals(emptyList<FileChange>(), vcs.status())
-        assertEquals(VcsBranches("main", listOf("main")), vcs.branches())
+        val branches = vcs.branches()
+        assertEquals("main", branches.current)
+        assertEquals(listOf("main"), branches.local)
+        assertEquals(mapOf("main" to first.id), branches.tips)
+        assertEquals(first.id, branches.head)
+        assertFalse(branches.detached)
     }
 
     @Test
@@ -135,7 +140,7 @@ class JGitVcsServiceTest {
     fun Branches_CreateSwitchAndDeleteMerged() {
         project()
         vcs.createBranch("feature")
-        assertEquals(VcsBranches("feature", listOf("feature", "main")), vcs.branches())
+        vcs.branches().let { assertEquals("feature", it.current); assertEquals(listOf("feature", "main"), it.local) }
         write("Scenes/MainScene.scene", "feature\n")
         vcs.commit("feature work", listOf("Scenes/MainScene.scene"), author)
         vcs.checkout("main")
@@ -218,6 +223,59 @@ class JGitVcsServiceTest {
         vcs.resolve("Scenes/MainScene.scene", Resolution.THEIRS)
         assertEquals("theirs\n", File(dir, "Scenes/MainScene.scene").readText())
         assertEquals("vcs.error.not_conflicted", assertThrows<VcsException> { vcs.resolve("Scenes/MainScene.scene", Resolution.MINE) }.messageKey)
+    }
+
+    @Test
+    fun ConflictDiff_ShowsMineAgainstTheirs() {
+        conflict()
+        val diff = vcs.conflictDiff("Scenes/MainScene.scene") as FileDiff.Text
+        assertEquals(listOf(DiffLine(DiffLine.Kind.REMOVED, "mine"), DiffLine(DiffLine.Kind.ADDED, "theirs")), diff.lines.filter { it.kind != DiffLine.Kind.HUNK })
+        vcs.resolve("Scenes/MainScene.scene", Resolution.MINE)
+        assertEquals("vcs.error.not_conflicted", assertThrows<VcsException> { vcs.conflictDiff("Scenes/MainScene.scene") }.messageKey)
+    }
+
+    @Test
+    fun CreateBranch_FromAnotherBranchWithoutSwitching() {
+        project()
+        vcs.createBranch("feature")
+        write("Scenes/MainScene.scene", "feature\n")
+        val featureTip = vcs.commit("on feature", listOf("Scenes/MainScene.scene"), author)
+        vcs.checkout("main")
+        vcs.createBranch("copy", from = "feature", checkout = false)
+        val branches = vcs.branches()
+        assertEquals("main", branches.current)
+        assertEquals(featureTip, branches.tips["copy"])
+        assertEquals("vcs.error.unknown_branch", assertThrows<VcsException> { vcs.createBranch("x", from = "nope") }.messageKey)
+        // From a commit id (New Branch from Here in the Git log).
+        val root = vcs.log(10).last().id
+        vcs.createBranch("old", from = root, checkout = false)
+        assertEquals(root, vcs.branches().tips["old"])
+    }
+
+    @Test
+    fun Log_AllBranchesHasEveryBranchWithParents() {
+        project()
+        val root = vcs.log(10).single()
+        vcs.createBranch("feature")
+        write("Scenes/MainScene.scene", "feature\n")
+        val feature = vcs.commit("on feature", listOf("Scenes/MainScene.scene"), author)
+        vcs.checkout("main")
+        assertEquals(listOf(root.id), vcs.log(10).map { it.id })
+        val all = vcs.log(10, allBranches = true)
+        assertEquals(setOf(root.id, feature), all.map { it.id }.toSet())
+        assertEquals(listOf(root.id), all.first { it.id == feature }.parents)
+        assertEquals(emptyList<String>(), all.first { it.id == root.id }.parents)
+    }
+
+    @Test
+    fun Branches_DetachedHeadHasNoCurrentBranch() {
+        project()
+        val id = vcs.log(1).single().id
+        Git.open(dir).use { it.checkout().setName(id).call() }
+        val branches = vcs.branches()
+        assertEquals(null, branches.current)
+        assertEquals(id, branches.head)
+        assertTrue(branches.detached)
     }
 
     @Test

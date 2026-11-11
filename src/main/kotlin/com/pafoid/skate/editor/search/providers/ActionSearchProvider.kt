@@ -1,6 +1,8 @@
 package com.pafoid.skate.editor.search.providers
 
 import com.pafoid.skate.game.prefabs.PrefabType
+import com.pafoid.skate.editor.vcs.VcsWindows
+import com.pafoid.skate.editor.events.WindowAction
 import com.pafoid.skate.editor.events.ViewportAction.CreateEmpty
 import com.pafoid.skate.editor.events.ViewportAction.CreateLight
 import com.pafoid.skate.editor.events.ViewportAction.Delete
@@ -164,6 +166,23 @@ class ActionSearchProvider(
             descriptionKey = "search.action.delete_scene.desc",
             icon = Icons.TRASH,
             execute = { deleteScene() }
+        ),
+        // EDT-79: the Git workflow, also reachable from the status-bar branch button.
+        EditorAction(
+            actionId = "vcs_commit",
+            displayNameKey = "search.action.vcs_commit",
+            keywords = listOf("git", "commit", "changes", "vcs", "version", "diff"),
+            descriptionKey = "search.action.vcs_commit.desc",
+            icon = Icons.CHECK,
+            execute = { eventSystem.publish(WindowAction.Show(VcsWindows.COMMIT)) }
+        ),
+        EditorAction(
+            actionId = "vcs_history",
+            displayNameKey = "search.action.vcs_history",
+            keywords = listOf("git", "log", "history", "commits", "branches", "vcs", "version"),
+            descriptionKey = "search.action.vcs_history.desc",
+            icon = Icons.HISTORY,
+            execute = { eventSystem.publish(WindowAction.Show(VcsWindows.LOG)) }
         )
     )
 
