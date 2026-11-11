@@ -1,3 +1,4 @@
+// @skate-contract 1
 #type vertex
 #version 330 core
 layout (location = 0) in vec3 aPos;      // Local space sphere coordinates

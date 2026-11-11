@@ -1,3 +1,4 @@
+// @skate-contract 1
 // ----------------------------------------------------------------------------
 // Shared scene lighting (REN-28 task 1): sun with cascaded shadows, point/spot lights from the LightBlock UBO with
 // local shadow maps, image-based lighting (REN-27) and the Cook-Torrance BRDF.

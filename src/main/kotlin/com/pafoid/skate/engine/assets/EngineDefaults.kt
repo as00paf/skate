@@ -108,13 +108,37 @@ object EngineDefaults {
      * files (`fog`, `lighting` from REN-34) are basic too: overriding one changes every shader that includes it.
      */
     object Shaders {
-        val BASIC = listOf(
-            "shader_3d_default", "shader_3d_texture", "shader_2d_batch", "shadow", "skybox", "skydome", "particles",
-            "fog", "lighting", "post_bloom", "post_tonemap", "post_gamma", "post_fxaa", "post_ssao",
-        ).map { "${PREFIX}Shaders/$it.glsl" }
+        // Basic: copied into every project, overridable (REN-31)
+        const val DEFAULT_3D = "engine:Shaders/shader_3d_default.glsl"
+        const val TEXTURE_3D = "engine:Shaders/shader_3d_texture.glsl"
+        const val BATCH_2D = "engine:Shaders/shader_2d_batch.glsl"
+        const val SHADOW = "engine:Shaders/shadow.glsl"
+        const val SKYBOX = "engine:Shaders/skybox.glsl"
+        const val SKY_DOME = "engine:Shaders/skydome.glsl"
+        const val PARTICLES = "engine:Shaders/particles.glsl"
+        const val FOG = "engine:Shaders/fog.glsl"
+        /** Shared scene lighting include (REN-28 task 1). */
+        const val LIGHTING = "engine:Shaders/lighting.glsl"
+        const val POST_BLOOM = "engine:Shaders/post_bloom.glsl"
+        const val POST_TONEMAP = "engine:Shaders/post_tonemap.glsl"
+        const val POST_GAMMA = "engine:Shaders/post_gamma.glsl"
+        const val POST_FXAA = "engine:Shaders/post_fxaa.glsl"
+        const val POST_SSAO = "engine:Shaders/post_ssao.glsl"
 
-        val INTERNAL = listOf("editor_grid", "picking", "shader_3d_picking", "debugLine2D", "splash", "ibl_capture")
-            .map { "${PREFIX}Shaders/$it.glsl" }
+        // Internal: only in the jar, never copied or overridden
+        const val EDITOR_GRID = "engine:Shaders/editor_grid.glsl"
+        const val PICKING = "engine:Shaders/picking.glsl"
+        const val PICKING_3D = "engine:Shaders/shader_3d_picking.glsl"
+        const val DEBUG_LINES_2D = "engine:Shaders/debugLine2D.glsl"
+        const val SPLASH = "engine:Shaders/splash.glsl"
+        const val IBL_CAPTURE = "engine:Shaders/ibl_capture.glsl"
+
+        val BASIC = listOf(
+            DEFAULT_3D, TEXTURE_3D, BATCH_2D, SHADOW, SKYBOX, SKY_DOME, PARTICLES, FOG, LIGHTING,
+            POST_BLOOM, POST_TONEMAP, POST_GAMMA, POST_FXAA, POST_SSAO,
+        )
+
+        val INTERNAL = listOf(EDITOR_GRID, PICKING, PICKING_3D, DEBUG_LINES_2D, SPLASH, IBL_CAPTURE)
     }
 
     /** Every engine default a project can copy or reference, in copy order. */

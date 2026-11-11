@@ -24,7 +24,9 @@ data class Material(
     @Contextual val emissiveFactor: Vector3f = Vector3f(0f),
     var doubleSided: Boolean = false,
     var alphaMode: AlphaMode = AlphaMode.OPAQUE,
-    var alphaCutoff: Float = 0.5f
+    var alphaCutoff: Float = 0.5f,
+    /** Custom colour-pass shader reference from the material's `.skmat` (REN-31); null: the schema's shader. */
+    var shader: String? = null,
 ) {
     /** Runtime id used for draw sorting; not persisted. */
     @Transient

@@ -1,3 +1,4 @@
+// @skate-contract 1
 #type vertex
 #version 330 core
 // Per-vertex: unit quad corner in [-0.5, 0.5]
