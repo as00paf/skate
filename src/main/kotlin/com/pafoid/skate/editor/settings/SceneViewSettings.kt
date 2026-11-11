@@ -2,18 +2,23 @@ package com.pafoid.skate.editor.settings
 
 import kotlinx.serialization.Serializable
 
-/** Snap steps used while the toolbar's Snap toggle is on (EDT-57); each in the editor's world units. */
+/**
+ * Snap steps used while the toolbar's Snap toggle is on (EDT-57); each in the editor's world units, except [ui]
+ * which is in canvas units for the UI rect gizmo (EDT-75).
+ */
 @Serializable
 data class GizmoSnapSettings(
     val translate: Float = DEFAULT_TRANSLATE,
     val rotateDegrees: Float = DEFAULT_ROTATE_DEGREES,
     val scale: Float = DEFAULT_SCALE,
+    val ui: Float = DEFAULT_UI,
 ) {
     /** Steps clamped to their editable ranges (a hand-edited config can hold anything). */
     fun sanitized() = GizmoSnapSettings(
         translate.coerceIn(MIN_STEP, MAX_TRANSLATE),
         rotateDegrees.coerceIn(MIN_STEP, MAX_ROTATE_DEGREES),
         scale.coerceIn(MIN_STEP, MAX_SCALE),
+        ui.coerceIn(MIN_UI, MAX_UI),
     )
 
     companion object {
@@ -24,6 +29,9 @@ data class GizmoSnapSettings(
         const val MAX_TRANSLATE = 100f
         const val MAX_ROTATE_DEGREES = 180f
         const val MAX_SCALE = 10f
+        const val DEFAULT_UI = 10f
+        const val MIN_UI = 1f
+        const val MAX_UI = 200f
     }
 }
 

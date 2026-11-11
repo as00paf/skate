@@ -299,23 +299,41 @@ class ProjectSettingsWindow(
     /** The project's random seed (ECS-14): typed (decimal or 0x hex) or randomized; each change is undoable. */
     private fun renderRandom() {
         val project = projectManager.currentProject ?: return
+        // Wrap at the content edge: plain text lines would otherwise run past a narrow dialog (EDT-77).
+        ImGui.pushTextWrapPos(0f)
         MImGui.textDisabled(stringManager.getString("settings.project.random.description"))
+        ImGui.popTextWrapPos()
         ImGui.spacing()
         val shown = project.randomSeed.toString()
         if (!ImGui.isAnyItemActive() && seedBuffer.get() != shown) seedBuffer.set(shown)
-        ImGui.setNextItemWidth(220f)
-        ImGui.inputText(stringManager.label("settings.project.random.seed"), seedBuffer)
-        Tooltips.show(stringManager, "settings.project.random.seed.tooltip")
-        if (ImGui.isItemDeactivatedAfterEdit()) {
-            val parsed = RandomService.parse(seedBuffer.get())
-            if (parsed != null) eventSystem.publish(ProjectEvent.SetRandomSeedRequested(parsed)) else seedBuffer.set(shown)
-        }
-        sameLine()
-        if (stringManager.tipped(button(stringManager.getString("settings.project.random.randomize")), "settings.project.random.randomize")) {
-            eventSystem.publish(ProjectEvent.SetRandomSeedRequested(RandomService.newSeed()))
+        // Same label/control row as the other settings; the field fills what Randomize leaves (EDT-77).
+        MImGui.propertyRow(
+            label = stringManager.getString("settings.project.random.seed"),
+            helpTooltip = stringManager.getString("settings.project.random.seed.tooltip"),
+        ) {
+            val randomize = stringManager.getString("settings.project.random.randomize")
+            val style = ImGui.getStyle()
+            val layout = SeedRowLayout.compute(
+                available = ImGui.getContentRegionAvailX(),
+                buttonWidth = ImGui.calcTextSize(randomize).x + style.framePaddingX * 2,
+                spacing = style.itemSpacingX,
+            )
+            ImGui.setNextItemWidth(layout.fieldWidth)
+            ImGui.inputText("##seed", seedBuffer)
+            Tooltips.show(stringManager, "settings.project.random.seed.tooltip")
+            if (ImGui.isItemDeactivatedAfterEdit()) {
+                val parsed = RandomService.parse(seedBuffer.get())
+                if (parsed != null) eventSystem.publish(ProjectEvent.SetRandomSeedRequested(parsed)) else seedBuffer.set(shown)
+            }
+            if (layout.buttonOnSameLine) sameLine()
+            if (stringManager.tipped(button(randomize), "settings.project.random.randomize")) {
+                eventSystem.publish(ProjectEvent.SetRandomSeedRequested(RandomService.newSeed()))
+            }
         }
         RandomService.parse(System.getProperty(RandomService.SYSTEM_PROPERTY))?.let {
+            ImGui.pushTextWrapPos(0f)
             MImGui.warningText(stringManager.getString("settings.project.random.overridden", it.toString()))
+            ImGui.popTextWrapPos()
         }
     }
 

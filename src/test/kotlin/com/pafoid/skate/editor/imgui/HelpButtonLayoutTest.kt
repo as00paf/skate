@@ -45,22 +45,49 @@ class HelpButtonLayoutTest {
     }
 
     @Test
-    fun ColumnWidth_IsTheButtonPlusOneItemSpacing() {
-        assertEquals(32f, HelpButtonLayout.columnWidth(buttonWidth = 24f, itemSpacingX = 8f))
+    fun Row_KeepsTheButtonClearOfTheClipTop() {
+        // EDT-72: the header starts right at the clip top (no window padding): the row moves down to clear it.
+        val row = HelpButtonLayout.row(startX = 100f, startY = 50f, contentMaxX = 500f, clipTop = 50f, buttonWidth = 24f, itemSpacingX = 8f)
+        assertEquals(50f + HelpButtonLayout.MIN_CLIP_CLEARANCE, row.top)
+        // With the theme's 8 px window padding the row stays where the cursor is.
+        assertEquals(58f, HelpButtonLayout.row(100f, 58f, 500f, 50f, 24f, 8f).top)
     }
 
     @Test
-    fun ButtonX_IsFlushRightInItsCell() {
-        // Column of 32 px starting at x = 400: the 24 px button ends exactly at the cell's right edge.
-        val x = HelpButtonLayout.buttonX(cellStartX = 400f, cellAvailX = 32f, buttonWidth = 24f)
-        assertEquals(408f, x)
-        assertEquals(432f, x + 24f)
+    fun Row_Scrolled_MovesUpWithTheContent() {
+        // EDT-85: the clearance applies to the unscrolled row; scrolled by 40 the row is 40 px higher, past the clip top.
+        val unscrolled = HelpButtonLayout.row(100f, 50f, 500f, clipTop = 50f, buttonWidth = 24f, itemSpacingX = 8f, scrollY = 0f)
+        val scrolled = HelpButtonLayout.row(100f, 10f, 500f, clipTop = 50f, buttonWidth = 24f, itemSpacingX = 8f, scrollY = 40f)
+        assertEquals(unscrolled.top - 40f, scrolled.top)
+        // With window padding nothing is pushed, scrolled or not.
+        assertEquals(18f, HelpButtonLayout.row(100f, 18f, 500f, 50f, 24f, 8f, scrollY = 40f).top)
     }
 
     @Test
-    fun ButtonX_NarrowCell_NeverMovesLeftOfTheCell() {
-        assertEquals(400f, HelpButtonLayout.buttonX(cellStartX = 400f, cellAvailX = 10f, buttonWidth = 24f))
-        assertEquals(400f, HelpButtonLayout.buttonX(cellStartX = 400f, cellAvailX = 0f, buttonWidth = 24f))
+    fun Row_IsOnWholePixelsAt150Percent() {
+        // 150 %: a 19.5 px line height leaves fractional cursor and clip positions.
+        val row = HelpButtonLayout.row(startX = 100.5f, startY = 102.5f, contentMaxX = 592.25f, clipTop = 101f, buttonWidth = 29f, itemSpacingX = 8f)
+        assertEquals(103f, row.top)
+        assertEquals(563f, row.buttonX)
+        assertTrue(row.buttonX + 29f <= 592.25f)
+        assertTrue(row.top >= 101f + HelpButtonLayout.MIN_CLIP_CLEARANCE)
+    }
+
+    @Test
+    fun Row_ToolsGetTheWidthLeftOfTheButton() {
+        val row = HelpButtonLayout.row(startX = 400f, startY = 60f, contentMaxX = 800f, clipTop = 50f, buttonWidth = 24f, itemSpacingX = 8f)
+        assertEquals(776f, row.buttonX)
+        assertEquals(368f, row.toolsWidth) // 776 - 8 - 400
+        // Narrower than the button: the button stays at the start, the tools get nothing.
+        val narrow = HelpButtonLayout.row(400f, 60f, 410f, 50f, 24f, 8f)
+        assertEquals(400f, narrow.buttonX)
+        assertEquals(0f, narrow.toolsWidth)
+    }
+
+    @Test
+    fun NextLine_IsBelowTheTallerOfToolsAndButton() {
+        assertEquals(80f, HelpButtonLayout.nextLineY(rowTop = 52f, buttonHeight = 24f, toolsNextLineY = 70f, itemSpacingY = 4f))
+        assertEquals(90f, HelpButtonLayout.nextLineY(rowTop = 52f, buttonHeight = 24f, toolsNextLineY = 90f, itemSpacingY = 4f))
     }
 
     @Test
