@@ -1,17 +1,18 @@
 package com.pafoid.skate.engine.assets
 
 object Assets {
+    /** Engine shader references (AST-26 §5): aliases of [EngineDefaults.Shaders], kept for existing callers. */
     object Shaders {
-        const val SPLASH = "/shaders/splash.glsl"
-        const val SHADER_3D_DEFAULT = "/shaders/shader_3d_default.glsl"
-        const val SHADER_3D_TEXTURE = "/shaders/shader_3d_texture.glsl"
-        const val SHADER_2D_BATCH = "/shaders/shader_2d_batch.glsl"
-        const val PICKING = "/shaders/picking.glsl"
-        const val PICKING_3D = "/shaders/shader_3d_picking.glsl"
-        const val SKYBOX = "/shaders/skybox.glsl"
-        const val DEBUG = "/shaders/debugLine2D.glsl"
-        const val SKY_DOME = "/shaders/skydome.glsl"
-        const val SHADOW = "/shaders/shadow.glsl"
+        const val SPLASH = EngineDefaults.Shaders.SPLASH
+        const val SHADER_3D_DEFAULT = EngineDefaults.Shaders.DEFAULT_3D
+        const val SHADER_3D_TEXTURE = EngineDefaults.Shaders.TEXTURE_3D
+        const val SHADER_2D_BATCH = EngineDefaults.Shaders.BATCH_2D
+        const val PICKING = EngineDefaults.Shaders.PICKING
+        const val PICKING_3D = EngineDefaults.Shaders.PICKING_3D
+        const val SKYBOX = EngineDefaults.Shaders.SKYBOX
+        const val DEBUG = EngineDefaults.Shaders.DEBUG_LINES_2D
+        const val SKY_DOME = EngineDefaults.Shaders.SKY_DOME
+        const val SHADOW = EngineDefaults.Shaders.SHADOW
     }
     object Textures {
         const val SPLASH = "assets/Textures/splash_screen.png"

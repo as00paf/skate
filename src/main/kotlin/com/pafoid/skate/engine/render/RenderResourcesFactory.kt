@@ -1,6 +1,7 @@
 package com.pafoid.skate.engine.render
 
 import com.pafoid.skate.engine.assets.Assets
+import com.pafoid.skate.engine.assets.EngineDefaults
 import com.pafoid.skate.engine.assets.AssetsManager
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.core.LoggerService
@@ -171,7 +172,9 @@ class RenderResourcesFactory(
             useFbo = useFbo,
             cameraManager = cameraManager,
             shadowFrame = shadowFrame,
-            environmentProbe = EnvironmentProbe(assetsManager.getShader("/shaders/ibl_capture.glsl")),
+            environmentProbe = EnvironmentProbe(assetsManager.getShader(EngineDefaults.Shaders.IBL_CAPTURE)),
+            // Custom material shaders (AST-26 §5.6): colour pass only; null falls back to the schema shader
+            materialShader = { reference -> assetsManager.materialShader(reference) },
         )
         // Debug visuals and the runtime UI draw into the presented target after post-processing
         val presentedViewport = PresentedViewport()
@@ -183,7 +186,7 @@ class RenderResourcesFactory(
         val debugPass = DebugPass(
             renderers.debug, cameraManager,
             bindTarget = bindPresentedTarget, targetHeight = { frameBuffer.height }, endTarget = endPresentedTarget,
-            grid = GridRenderer(assetsManager.getShader("/shaders/editor_grid.glsl"), cameraManager),
+            grid = GridRenderer(assetsManager.getShader(EngineDefaults.Shaders.EDITOR_GRID), cameraManager),
         )
         val uiPass = UiPass(
             renderer2D = renderer2D,
@@ -193,7 +196,7 @@ class RenderResourcesFactory(
             endTarget = endPresentedTarget,
         )
         val particlePass = ParticlePass(
-            shader = assetsManager.getShader("/shaders/particles.glsl"),
+            shader = assetsManager.getShader(EngineDefaults.Shaders.PARTICLES),
             frameBuffer = frameBuffer,
             useFbo = useFbo,
             cameraManager = cameraManager,
@@ -203,11 +206,11 @@ class RenderResourcesFactory(
         val postProcessPass = PostProcessPass(
             frameBuffer = frameBuffer,
             useFbo = useFbo,
-            bloomShader = assetsManager.getShader("/shaders/post_bloom.glsl"),
-            tonemapShader = assetsManager.getShader("/shaders/post_tonemap.glsl"),
-            gammaShader = assetsManager.getShader("/shaders/post_gamma.glsl"),
-            fxaaShader = assetsManager.getShader("/shaders/post_fxaa.glsl"),
-            ssaoShader = assetsManager.getShader("/shaders/post_ssao.glsl"),
+            bloomShader = assetsManager.getShader(EngineDefaults.Shaders.POST_BLOOM),
+            tonemapShader = assetsManager.getShader(EngineDefaults.Shaders.POST_TONEMAP),
+            gammaShader = assetsManager.getShader(EngineDefaults.Shaders.POST_GAMMA),
+            fxaaShader = assetsManager.getShader(EngineDefaults.Shaders.POST_FXAA),
+            ssaoShader = assetsManager.getShader(EngineDefaults.Shaders.POST_SSAO),
             vaoLoader = assetsManager.vaoLoader
         )
 

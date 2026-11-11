@@ -54,6 +54,16 @@ class HelpButtonLayoutTest {
     }
 
     @Test
+    fun Row_Scrolled_MovesUpWithTheContent() {
+        // EDT-85: the clearance applies to the unscrolled row; scrolled by 40 the row is 40 px higher, past the clip top.
+        val unscrolled = HelpButtonLayout.row(100f, 50f, 500f, clipTop = 50f, buttonWidth = 24f, itemSpacingX = 8f, scrollY = 0f)
+        val scrolled = HelpButtonLayout.row(100f, 10f, 500f, clipTop = 50f, buttonWidth = 24f, itemSpacingX = 8f, scrollY = 40f)
+        assertEquals(unscrolled.top - 40f, scrolled.top)
+        // With window padding nothing is pushed, scrolled or not.
+        assertEquals(18f, HelpButtonLayout.row(100f, 18f, 500f, 50f, 24f, 8f, scrollY = 40f).top)
+    }
+
+    @Test
     fun Row_IsOnWholePixelsAt150Percent() {
         // 150 %: a 19.5 px line height leaves fractional cursor and clip positions.
         val row = HelpButtonLayout.row(startX = 100.5f, startY = 102.5f, contentMaxX = 592.25f, clipTop = 101f, buttonWidth = 29f, itemSpacingX = 8f)
