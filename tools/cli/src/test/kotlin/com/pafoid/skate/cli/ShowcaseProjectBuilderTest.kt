@@ -1,5 +1,6 @@
 package com.pafoid.skate.cli
 
+import com.pafoid.skate.engine.getAllChildren
 import com.pafoid.skate.engine.ecs.components.JointComponent
 import com.pafoid.skate.engine.ecs.components.JointType
 import com.pafoid.skate.game.samples.FeatureShowcase
@@ -35,9 +36,13 @@ class ShowcaseProjectBuilderTest {
             val service = SkateCliService(out = {})
             val scene = service.loadScenes(service.loadProject(project.path)).single()
             FeatureShowcase.AREAS.forEach { area -> assertTrue(scene.children.any { it.name == "[${area.label}] Area" }, area.key) }
-            val types = scene.children.first { it.name == "[UI] Canvas" }.children.flatMap { it.components }.map { it::class.simpleName }
+            val canvas = scene.children.first { it.name == "[UI] Canvas" }
+            val types = canvas.getAllChildren().flatMap { it.components }.map { it::class.simpleName }
             listOf("UITextComponent", "UIImageComponent", "UIButtonComponent", "UIProgressBarComponent", "UISliderComponent")
                 .forEach { assertTrue(it in types, "missing $it") }
+            // TLG-16: the grouping survives the save/load round trip (legend buttons stay under the legend panel).
+            val legend = canvas.children.single { it.name == FeatureShowcase.LEGEND_PANEL }.children.map { it.name }
+            assertTrue(FeatureShowcase.focusButtonName("vehicle") in legend, legend.toString())
             val music = scene.children.single { it.name == "[Audio] Emitter3D" }.components
                 .filterIsInstance<com.pafoid.skate.engine.ecs.components.AudioComponent>().single()
             assertTrue(music.soundFilePath.endsWith(com.pafoid.skate.engine.assets.Assets.Bundled.MUSIC))

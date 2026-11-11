@@ -1,6 +1,7 @@
 # PHY-19 — Jolt-native ragdolls, vehicles and character controller (design note)
 
-Status: **revision 3, awaiting human approval**. No implementation code has been written.
+Status: **revision 3, APPROVED by the human on 2026-11-10** (answers to the open questions in §9). Implementation is
+PHY-23 (P3), later. No implementation code has been written.
 
 Task (GameEngine.md, Physics): "From PHY-17: optional Jolt `Ragdoll` (pose motors), `VehicleConstraint` and
 `CharacterVirtual` modes (the last one with GPL). Design note first." Deps: PHY-17 (slices a–e done).
@@ -87,7 +88,7 @@ APIs, checked in the jars:
   - Frames are `pivotA/B` and `rotA/B`, with `RotationOrder.XYZ`.
   - Twist (X) is limited to ±`twistSpan`, and the swing axes (Y, Z) to ±`swingSpan1` / ±`swingSpan2`. Translation
     is locked.
-  - This applies to limp joints too, so ragdolls have one joint type on Bullet (open question 2).
+  - This applies to limp joints too, so ragdolls have one joint type on Bullet (approval answer 2).
 - With a `motor`: on each rotation axis, `setMotorEnabled(true)`, `setServoEnabled(true)`, `setSpringEnabled(true)`.
   Stiffness and damping come from `frequency` / `damping` and the joint's effective inertia
   (k = I·(2πf)², c = 2ζ·I·2πf), and `MaxMotorForce = maxTorque`.
@@ -145,12 +146,11 @@ Defaults describe the current 4-wheel car (rear-wheel drive via one rear differe
 5 forward gears), so a new `VehicleComponent()` drives out of the box.
 
 Fields removed: `maxEngineForce`, `maxBrakeForce`, `springStiffness`, `springDamping`, `maxSuspensionForce`,
-`suspensionRestLength`, `tyreFriction`. Scenes saved with them are migrated on load (open question 3; the
-serializer uses `ignoreUnknownKeys = true`, so without a migration the old tuning would be silently dropped).
+`suspensionRestLength`, `tyreFriction`. They are dropped with **no migration** (approval answer 3): the serializer
+uses `ignoreUnknownKeys = true`, so scenes saved with them load with the new defaults.
 
 The `VehicleMode` from revision 2 is dropped: the backend decides. Jolt uses `VehicleConstraint`; Bullet and Simple
-use the engine solver. Tests can force the engine solver on Jolt through an internal `PhysicsSystem` switch, but there
-is no user-facing mode (open question 4).
+use the engine solver. There is no switch (approval answer 4): each project runs only on its own backend.
 
 ### 4.2 Jolt (**NEW** `engine/physics3d/jolt/JoltVehicle.kt`)
 
@@ -196,7 +196,7 @@ editors and curve editors are slice PHY-19d (EDT).
   wheel).
 - Solver unit tests: torque curve lookup; RPM from wheel speed and gear; auto shift points; differential split and
   limited slip; anti-roll force sign; tyre force vs slip from the curves.
-- **Cross-backend scenarios**, each on Bullet (solver), Jolt (native) and Jolt (forced solver), compared within §8:
+- **Cross-backend scenarios**, each on Bullet (solver) and Jolt (native), compared within §8:
   - settle ride height and level
   - 0→50 km/h time on flat ground
   - top speed in 2nd gear
@@ -206,7 +206,7 @@ editors and curve editors are slice PHY-19d (EDT).
   - handbrake locks the rear wheels
 - Simple runs the solver scenarios too (same code path as Bullet; checks that it works with ray-only queries).
 - `RaycastVehicleTest` and `PhysicsBenchmarkTest` (vehicle scene) are updated to the new fields.
-- Migration: a scene JSON with the old fields loads into the equivalent drivetrain (open question 3).
+- A scene JSON with the old fields still loads (they are ignored) and gets the new defaults.
 
 ## 5. Character controller — `CharacterBody3D` (decision 3 of 2026-11-07; 5 and 6 of 2026-11-10)
 
@@ -263,7 +263,8 @@ There is no walker in the showcase today (§1), so this adds one. Adding a **NEW
 - a small course next to it: a 0.3 m step, a 30° ramp, a 60° slope it cannot climb, a crouch tunnel, a pushable box
   and a trigger pad.
 
-How it receives input is open question 1, because the showcase camera is "you" and has no possessed character.
+It gets input through a **"Take control" toggle only, with no autopilot** (approval answer 1). The toggle hands
+WASD to the walker and switches to a follow camera; toggling again gives the free camera back.
 
 ### 5.6 Tests
 
@@ -289,7 +290,7 @@ How it receives input is open question 1, because the showcase camera is "you" a
 | `engine/physics3d/bullet/BulletPhysics3D.kt` | PHY | `New6Dof` joints with servos |
 | `engine/physics3d/jolt/JoltPhysics3D.kt`, `JoltJoints.kt`, `JoltContacts.kt`, `JoltDebugDraw.kt`, **NEW** `JoltVehicle.kt`, **NEW** `JoltCharacter.kt` | PHY | Jolt implementation |
 | `engine/ecs/systems/PhysicsSystem.kt`, `RagdollSystem.kt`, `engine/ecs/components/RagdollComponent.kt`, `RagdollState.kt`, `VehicleComponent.kt` (+ **NEW** `VehicleDrivetrain.kt`), **NEW** `CharacterBody3D.kt`, `engine/physics3d/RagdollBuilder.kt` | PHY | Engine glue |
-| `engine/ecs/components/ComponentType.kt`, `Component.kt`, `engine/EngineExtensions.kt`, `engine/assets/serialization/Serializer.kt` (+ the vehicle field migration hook) | ECS / AST | Register `CharacterBody3D`; old-vehicle-field migration |
+| `engine/ecs/components/ComponentType.kt`, `Component.kt`, `engine/EngineExtensions.kt`, `engine/assets/serialization/Serializer.kt` | ECS / AST | Register `CharacterBody3D` |
 | `engine/ecs/systems/PlayerMotionSystem.kt` | GPL | Drive `CharacterBody3D` |
 | `editor/imgui/components/` | EDT | Vehicle and character inspector sections |
 | `game/samples/FeatureShowcase.kt`, `src/test/.../game/samples/FeatureShowcaseTest.kt` | TLG (GPL reviews the walker) | Showcase walker, course, powered ragdoll, vehicle |
@@ -305,7 +306,7 @@ Each slice is one task with its own tests and lands green on its own.
 | **New PHY task** (ID from the lead) Ragdoll bind-pose frames | PHY | Joint frames and pivots from the skeleton bind pose, capsule sizes from bone lengths (decision 4 of 2026-11-10) | 19a; done right after it |
 | **PHY-19b** Powered ragdoll | PHY (ANI reviews the pose maths) | `RagdollState.POWERED`, `motorStrength`, targets in `RagdollSystem`, default motors, Simple fallback (§3.5) | 19a, the bind-pose task |
 | **Separate ANI+PHY task** (ID from the lead) Ragdoll blending | ANI + PHY | `BLENDING` with motors: animation↔physics cross-fade (decision 1 of 2026-11-10) | 19b |
-| **PHY-19c** Vehicle drivetrain | PHY (ECS/AST for the migration hook) | New `VehicleComponent` fields and types, `JoltVehicle`, rewritten `RaycastVehicleSolver`, read-back, old-field migration, cross-backend tests (§4.1–4.3, 4.5) | — |
+| **PHY-19c** Vehicle drivetrain | PHY | New `VehicleComponent` fields and types, `JoltVehicle`, rewritten `RaycastVehicleSolver`, read-back, cross-backend tests (§4.1–4.3, 4.5) | — |
 | **PHY-19d** Inspector sections | EDT | Vehicle groups with list and curve editors; `CharacterBody3D` capsule section (decisions 2 and 3 of 2026-11-07) | 19c, 19e |
 | **PHY-19e** Character body | PHY (ECS/AST one-line registrations) | `CharacterBody3D`, `ICharacterHandle`, `CharacterDescription`, `JoltCharacter` with inner body, `RigidBodyCharacter`, triggers, debug draw, `probeGround` (§5.1–5.3) | — |
 | **PHY-19f** Gameplay on the character body | GPL | `PlayerMotionSystem` drives `CharacterBody3D` (§5.4) | 19e |
@@ -316,7 +317,7 @@ Suggested order: 19a → bind-pose task → 19b; 19c in parallel; 19e → 19f �
 
 ## 8. Tolerances and risks
 
-Proposed cross-backend tolerances (open question 5):
+Cross-backend tolerances (approval answer 5: start with these, tighten later):
 
 | Measure | Tolerance |
 |---|---|
@@ -332,7 +333,7 @@ Risks:
   approximated. Mitigation: the per-component solver tests are written against Jolt's own numbers for single-wheel
   setups first, then the whole-car scenarios.
 - **Bullet `New6Dof` limits differ from a cone**: XYZ Euler limits make a box-shaped swing range, not a cone. Limp
-  ragdolls on Bullet will move slightly differently than today (open question 2).
+  ragdolls on Bullet will move slightly differently than today (approval answer 2).
 - **Motor stability**: 3.5 kg forearms with stiff motors can jitter. Defaults are a 20 Hz, critically damped motor
   scaled by `motorStrength`. Bullet's servos are sensitive to the effective-inertia estimate.
 - **Character and networking**: `CharacterVirtual` is not in the rigid-body state that net prediction replays. The
@@ -357,33 +358,15 @@ Human decisions recorded on 2026-11-10 (answers to revision 2's open questions):
 5. CharacterVirtual gets an inner rigid body (visible to raycasts, triggers, AI line of sight).
 6. MOVE THE SHOWCASE WALKER to CharacterBody3D now (in PHY-19, with the gameplay side reviewed by skate-gameplay); the skater keeps RigidBody3D.
 
+Human answers recorded on 2026-11-10 to revision 3's open questions (approval of revision 3):
+
+1) showcase walker: 'Take control' only, no autopilot; 2) Bullet ragdolls on New6Dof always; 3) DROP the old vehicle fields, no migration; 4) no switch: each project uses only its own backend (Bullet projects Bullet only, same for Jolt and Simple); 5) start with the §8 tolerances, tighten later.
+
+Implementation is PHY-23 (P3), later.
+
 Already decided elsewhere and assumed here: Bullet stays the default backend, and per-project selection is PHY-17
 slice f, which waits on EDT-59 (PHY-17 "Decisions after review" 3).
 
-## 10. Open questions for the human
+## 10. Open questions
 
-1. **How the showcase walker gets input.** The showcase has no walker today, and its camera is "you" (free camera
-   with its own input). Options:
-   - (a) an autopilot: a scripted input feed walks the course in a loop, jumps the step and crouches through the
-     tunnel
-   - (b) a "Take control" toggle that hands WASD to the walker and switches to a follow camera
-   - (c) both
-
-   *Recommended:* (c), autopilot by default so the feature is visible without interaction, plus the toggle.
-2. **Bullet limp ragdolls on `New6Dof`.** Decision 3 rebuilds Bullet's ragdoll joints as `New6Dof`. Should limp
-   (non-powered) ragdolls also use it, or keep `ConeJoint` and switch only when a motor is set? *Recommended:*
-   `New6Dof` always. Then there is one joint type and switching `RAGDOLL` ↔ `POWERED` never rebuilds joints. The
-   swing range becomes box-shaped instead of a cone, which is invisible at today's spans (≤ 0.5 rad).
-3. **Old vehicle fields in saved scenes.** Migrate `maxEngineForce` / `springStiffness` / … on load into an
-   equivalent drivetrain, or drop them (scenes fall back to the new defaults)? *Recommended:* migrate:
-   - engine torque = force × rear wheel radius ÷ (first gear × differential)
-   - spring frequency and damping ratio from stiffness/damping and the mass share
-   - friction curves flat at `tyreFriction`
-
-   The migration hook goes in the serializer, owned by AST, and a test loads a pre-PHY-19 scene.
-4. **No user-facing vehicle mode.** The backend decides: native on Jolt, engine solver elsewhere. Should a Jolt
-   project be able to force the engine solver (for example to match a Bullet-tuned feel)? *Recommended:* no
-   user-facing switch; only an internal test switch. Decision 2 already requires both paths to behave the same within
-   tolerance.
-5. **Cross-backend tolerances.** Are the values in §8 acceptable? *Recommended:* yes as a starting point, tightened
-   per scenario once the tests run.
+None. Revision 3's five open questions were answered on 2026-11-10 (§9).

@@ -31,6 +31,11 @@ data class SetupCheck(
 /** Which help text to show when setup fails (string keys in `editor/animation`). */
 enum class SetupHint { INSTALL_PYTHON, INSTALL_MEDIAPIPE, MODEL_FILE, UPDATE_MEDIAPIPE, OTHER }
 
+/** Preview images of a video (ANI-20): `f_<frame>.jpg` files in [dir] for the source frames in [frames]. */
+data class PreviewFrames(val dir: File, val totalFrames: Int, val frames: IntArray) {
+    fun file(frame: Int) = File(dir, "f_%06d.jpg".format(frame))
+}
+
 data class VideoInfo(val fps: Float, val frames: Int, val width: Int, val height: Int, val duration: Float, val thumbnail: File?)
 
 /**
@@ -75,18 +80,42 @@ class MediaPipeBackend(
     }
 
     /**
-     * Runs the pose estimator over [video]; [output] receives the landmark JSON. [onModelProgress] reports the model
-     * download, when one is needed, before detection starts.
+     * Writes small preview images of [video] into [dir] for playback in the window (ANI-20): at most [maxFrames]
+     * images, every k-th frame of long videos. Images already there from an earlier run are reused.
+     */
+    fun previewFrames(video: File, dir: File, cancel: AtomicBoolean, maxFrames: Int = 900, onProgress: (Float) -> Unit = {}): PreviewFrames {
+        val done = File(dir, DONE_MARKER)
+        if (!done.isFile) {
+            dir.deleteRecursively()
+            dir.mkdirs()
+            val result = runner.run(
+                argv("frames", listOf("--input", video.absolutePath, "--dir", dir.absolutePath, "--max-frames", maxFrames.toString())),
+                cancel = cancel, onProgress = onProgress,
+            )
+            if (result.cancelled) throw MocapException("cancelled")
+            if (!result.ok) throw MocapException(result.errorSummary())
+            val total = result.messages.lastOrNull()?.get("frames")?.jsonPrimitive?.intOrNull ?: 0
+            done.writeText(total.toString())
+        }
+        val frames = dir.listFiles().orEmpty().mapNotNull { FRAME_FILE.matchEntire(it.name)?.groupValues?.get(1)?.toInt() }.sorted().toIntArray()
+        val total = done.readText().trim().toIntOrNull()?.takeIf { it > 0 } ?: ((frames.lastOrNull() ?: 0) + 1)
+        return PreviewFrames(dir, total, frames)
+    }
+
+    /**
+     * Runs the pose estimator over [video]; [output] receives the landmark JSON. [range] (source frames, both ends
+     * included) limits it to part of the video (ANI-20); landmark times then start at 0 on the range's first frame.
+     * [onModelProgress] reports the model download, when one is needed, before detection starts.
      */
     fun extract(
         video: File, output: File, cancel: AtomicBoolean,
-        onModelProgress: (Float) -> Unit = {}, onProgress: (Float) -> Unit,
+        onModelProgress: (Float) -> Unit = {}, range: IntRange? = null, onProgress: (Float) -> Unit,
     ): LandmarkSequence {
         output.parentFile?.mkdirs()
         val (model, modelError) = model(cancel, onModelProgress)
         if (cancel.get()) throw MocapException("cancelled")
         val result = runner.run(
-            argv("extract", listOf("--input", video.absolutePath, "--output", output.absolutePath) + modelArgs(model)),
+            argv("extract", listOf("--input", video.absolutePath, "--output", output.absolutePath) + modelArgs(model) + rangeArgs(range)),
             cancel = cancel, onProgress = onProgress,
         )
         if (result.cancelled) throw MocapException("cancelled")
@@ -97,6 +126,11 @@ class MediaPipeBackend(
 
     internal fun argv(command: String, args: List<String>): List<String> =
         listOf(settings().pythonPath, script().absolutePath, command) + args
+
+    private fun rangeArgs(range: IntRange?) = range?.let {
+        require(it.first >= 0 && it.last >= it.first) { "Invalid trim range $it" }
+        listOf("--start-frame", it.first.toString(), "--end-frame", it.last.toString())
+    } ?: emptyList()
 
     private fun modelArgs(model: File?) = model?.let { listOf("--model", it.absolutePath) } ?: emptyList()
 
@@ -115,6 +149,8 @@ class MediaPipeBackend(
     companion object {
         /** Start of the adapter's error when neither the Tasks nor the legacy pose API works. */
         const val NO_API = "No MediaPipe pose API works"
+        private const val DONE_MARKER = "done.txt"
+        private val FRAME_FILE = Regex("""f_(\d+)\.jpg""")
         private val MODEL_PROBLEMS = listOf("download the pose model", "model file not found", "no pose_landmarker model")
 
         fun hintFor(problem: String): SetupHint = when {
