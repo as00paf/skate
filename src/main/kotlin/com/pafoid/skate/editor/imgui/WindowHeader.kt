@@ -56,9 +56,17 @@ object HelpButtonLayout {
      * whose clip rectangle starts at [clipTop]. The `?` sits on whole pixels, flush right, and at least
      * [MIN_CLIP_CLEARANCE] below the clip top, so neither its border, its focus outline nor a truncated scissor cut
      * it (it was drawn exactly on a table cell's clip edge before).
+     *
+     * The clearance applies to the unscrolled position (EDT-85): [scrollY] is the window's scroll, so a scrolled
+     * header moves up with the content instead of being pushed back below the clip top, which pinned the content
+     * and snapped the scroll back.
      */
-    fun row(startX: Float, startY: Float, contentMaxX: Float, clipTop: Float, buttonWidth: Float, itemSpacingX: Float): Row {
-        val top = kotlin.math.ceil(maxOf(startY, clipTop + MIN_CLIP_CLEARANCE))
+    fun row(
+        startX: Float, startY: Float, contentMaxX: Float, clipTop: Float, buttonWidth: Float, itemSpacingX: Float,
+        scrollY: Float = 0f,
+    ): Row {
+        val push = (clipTop + MIN_CLIP_CLEARANCE - (startY + scrollY)).coerceAtLeast(0f)
+        val top = kotlin.math.ceil(startY + push)
         val buttonX = kotlin.math.floor(maxOf(startX, contentMaxX - buttonWidth))
         return Row(top, buttonX, (buttonX - itemSpacingX - startX).coerceAtLeast(0f))
     }
@@ -94,7 +102,7 @@ object WindowHeader {
         val startX = ImGui.getCursorScreenPosX()
         val row = HelpButtonLayout.row(
             startX, ImGui.getCursorScreenPosY(), ImGui.getWindowPosX() + ImGui.getWindowContentRegionMaxX(),
-            ImGui.getWindowDrawList().clipRectMinY, size.width, style.itemSpacingX,
+            ImGui.getWindowDrawList().clipRectMinY, size.width, style.itemSpacingX, ImGui.getScrollY(),
         )
         val clearance = HelpButtonLayout.MIN_CLIP_CLEARANCE
         // The table starts `clearance` above the row with as much cell padding, so the tools have the same margin
@@ -133,7 +141,7 @@ object WindowHeader {
         val startX = ImGui.getCursorScreenPosX()
         val row = HelpButtonLayout.row(
             startX, ImGui.getCursorScreenPosY(), ImGui.getWindowPosX() + ImGui.getWindowContentRegionMaxX(),
-            ImGui.getWindowDrawList().clipRectMinY, size.width, style.itemSpacingX,
+            ImGui.getWindowDrawList().clipRectMinY, size.width, style.itemSpacingX, ImGui.getScrollY(),
         )
         ImGui.setCursorScreenPos(row.buttonX, row.top)
         val clicked = clicked(strings, size.width, size.height)
