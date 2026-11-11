@@ -80,4 +80,28 @@ class PrefabStoreTest {
         assertEquals(setOf("ok"), all.keys)
         assertEquals(listOf("bad.prefab"), bad)
     }
+
+    /** EDT-60 §7.2: a prefab left mid-merge is refused with a clear error, not a JSON parse error. */
+    @Test
+    fun PrefabStore_RefusesFilesWithGitConflictMarkers() {
+        val file = File(dir, "rail.prefab")
+        store.save(service.createAsset("rail", source()), file)
+        val clean = file.readText()
+        file.writeText("<<<<<<< ours\n$clean\n=======\n$clean\n>>>>>>> theirs\n")
+
+        val e = assertThrows(PrefabConflictException::class.java) { store.load(file) }
+        assertTrue(e.message!!.contains("rail.prefab") && e.message!!.contains("conflict markers"), e.message)
+
+        val errors = mutableListOf<Throwable>()
+        assertTrue(store.loadAll(dir) { _, t -> errors += t }.isEmpty())
+        assertTrue(errors.single() is PrefabConflictException)
+    }
+
+    @Test
+    fun ConflictMarkers_OnlyAtTheStartOfALine() {
+        assertTrue(PrefabStore.hasConflictMarkers(">>>>>>> theirs"))
+        assertTrue(PrefabStore.hasConflictMarkers("{\n<<<<<<<\n}"))
+        assertFalse(PrefabStore.hasConflictMarkers("{\"name\":\"<<<<<<< not a marker\"}"))
+        assertFalse(PrefabStore.hasConflictMarkers("=======\n<<<<<<<<< eight"))
+    }
 }

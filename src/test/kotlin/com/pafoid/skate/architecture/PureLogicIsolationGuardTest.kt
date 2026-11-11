@@ -69,7 +69,12 @@ class PureLogicIsolationGuardTest {
         }.map { sourceRoot.relativize(it).invariantSeparatorsPathString }
         val files = netFiles + listOf(
             "engine/render/shader/ShaderPreprocessor.kt",
-            "engine/render/shader/ShaderVariantCache.kt",
+            // REN-31: ShaderVariantCache became ShaderLibrary (one reference-keyed cache)
+            "engine/render/shader/ShaderLibrary.kt",
+            "engine/render/shader/ShaderSourceResolver.kt",
+            "engine/render/shader/ShaderHotReloader.kt",
+            "engine/render/shader/ShaderContract.kt",
+            "engine/render/shader/ShaderErrorLines.kt",
             "engine/gameplay/ik/FootIk.kt",
             "engine/input/TextInputBuffer.kt",
             "engine/assets/PrefabStore.kt",

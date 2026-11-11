@@ -100,7 +100,7 @@ class Round16ReviewFixesTest {
         val got = mutableListOf<AudioAction.EditComponent>()
         events.subscribe<AudioAction.EditComponent> { got += it }
         val audio = AudioComponent()
-        val changed = AudioComponentSettings.of(audio).copy(soundFilePath = "assets/sounds/x.ogg")
+        val changed = AudioComponentSettings.of(audio).copy(soundFilePath = "assets/Sounds/x.ogg")
         trackAudioDraft(audio, changed, frame = 5)
         flushAudioDrafts(events, frame = 5)
         assertTrue(got.isEmpty())

@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.commands.scene
 
+import com.pafoid.skate.engine.assets.EngineDefaults
 import com.pafoid.skate.editor.data.PrimitiveType
 import com.pafoid.skate.engine.addComponent
 import com.pafoid.skate.engine.assets.Assets
@@ -29,10 +30,10 @@ class CreatePrimitiveCommand(
         primitive.addComponent(transform)
         val material = Material(baseColorFactor = 1f)
         val baseModel = when (type) {
-            PrimitiveType.PLANE -> assetsManager.loadModel(Assets.Models.CUBE)
-            PrimitiveType.CUBE -> assetsManager.loadModel(Assets.Models.CUBE)
-            PrimitiveType.CYLINDER -> assetsManager.loadModel(Assets.Models.CYLINDER)
-            PrimitiveType.SPHERE -> assetsManager.loadModel(Assets.Models.SPHERE)
+            PrimitiveType.PLANE -> assetsManager.loadModel(EngineDefaults.Models.CUBE)
+            PrimitiveType.CUBE -> assetsManager.loadModel(EngineDefaults.Models.CUBE)
+            PrimitiveType.CYLINDER -> assetsManager.loadModel(EngineDefaults.Models.CYLINDER)
+            PrimitiveType.SPHERE -> assetsManager.loadModel(EngineDefaults.Models.SPHERE)
         }
         val model = `3dModel`(path = baseModel.path, mesh = baseModel.mesh)
         val renderComponent = RenderComponent(model, material = material)

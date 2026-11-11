@@ -1,5 +1,6 @@
 package com.pafoid.skate.cli
 
+import com.pafoid.skate.engine.assets.EngineDefaults
 import com.pafoid.skate.engine.getAllChildren
 import com.pafoid.skate.engine.ecs.components.JointComponent
 import com.pafoid.skate.engine.ecs.components.JointType
@@ -45,7 +46,7 @@ class ShowcaseProjectBuilderTest {
             assertTrue(FeatureShowcase.focusButtonName("vehicle") in legend, legend.toString())
             val music = scene.children.single { it.name == "[Audio] Emitter3D" }.components
                 .filterIsInstance<com.pafoid.skate.engine.ecs.components.AudioComponent>().single()
-            assertTrue(music.soundFilePath.endsWith(com.pafoid.skate.engine.assets.Assets.Bundled.MUSIC))
+            assertTrue(music.soundFilePath.replace('\\', '/').endsWith(com.pafoid.skate.engine.assets.EngineDefaults.logicalPath(com.pafoid.skate.engine.assets.EngineDefaults.Sounds.MUSIC)!!), music.soundFilePath)
             // The camera's focus targets survive the save/load round trip, so legend buttons work after reopening.
             val focus = scene.children.single { it.name == "Camera" }.components
                 .filterIsInstance<com.pafoid.skate.engine.ecs.components.CameraFocusComponent>().single()

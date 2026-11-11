@@ -20,11 +20,24 @@ import java.util.concurrent.ConcurrentHashMap
  *
  * Only values under [PATH_KEYS] are rewritten in saved JSON; a guard test keeps that list in sync with the
  * serializable path fields.
+ *
+ * Engine defaults (AST-26 §4.4) are saved as `engine:<logical path>`: [absolute] resolves them through
+ * [engineDefaults] (project override, engine file, classpath copy) and [relativize] turns those files back into the
+ * reference, so a load → save round trip keeps `engine:`. An exported game reads them from the pack, where the entry
+ * is stored under the reference itself.
  */
 class AssetPaths {
     /** Folder of the open project, or null (no project, or an exported game). */
     @Volatile
     var projectRoot: File? = null
+        set(value) {
+            field = value
+            engineDefaults.invalidate()
+        }
+
+    /** Resolves `engine:` references; replaced in tests to point at another engine root. */
+    @Volatile
+    var engineDefaults: EngineDefaultResolver = EngineDefaultResolver(projectRoot = { projectRoot })
 
     /** The exported game's pack, once opened. */
     @Volatile
@@ -33,15 +46,27 @@ class AssetPaths {
     private val extracted = ConcurrentHashMap<String, File>()
     private val cacheDir: File by lazy { Files.createTempDirectory("skate-assets").toFile().also { it.deleteOnExit() } }
 
-    fun relativize(path: String): String = relativize(path, projectRoot)
+    /**
+     * [path] as saved: an engine default file (an override or the engine's own file) becomes its `engine:` reference,
+     * a project file becomes project-relative, anything else is unchanged.
+     */
+    fun relativize(path: String): String {
+        if (path.isBlank() || EngineDefaults.isReference(path)) return path
+        if (isAbsolute(path)) engineDefaults.referenceFor(File(path))?.let { return it }
+        return relativize(path, projectRoot)
+    }
 
-    fun absolute(path: String): String = absolute(path, projectRoot)
+    /** [path] as a file path: `engine:` references resolve through [engineDefaults], project-relative paths in [projectRoot]. */
+    fun absolute(path: String): String {
+        if (EngineDefaults.isReference(path)) return engineDefaults.resolve(path)?.path ?: path
+        return absolute(path, projectRoot)
+    }
 
     /** [path] rewritten in every saved field of [element] (see [PATH_KEYS]) to be project-relative. */
-    fun relativizeJson(element: JsonElement): JsonElement = projectRoot?.let { root -> rewrite(element) { relativize(it, root) } } ?: element
+    fun relativizeJson(element: JsonElement): JsonElement = if (projectRoot != null) rewrite(element) { relativize(it) } else element
 
     /** The reverse of [relativizeJson]: project-relative references become absolute paths in [projectRoot]. */
-    fun absoluteJson(element: JsonElement): JsonElement = projectRoot?.let { root -> rewrite(element) { absolute(it, root) } } ?: element
+    fun absoluteJson(element: JsonElement): JsonElement = if (projectRoot != null) rewrite(element) { absolute(it) } else element
 
     private fun packed(path: String): Boolean = pack?.let { it.initialized && it.find(path) != null } == true
 
@@ -49,6 +74,7 @@ class AssetPaths {
     fun readBytes(path: String): ByteArray? {
         if (path.isBlank()) return null
         if (packed(path)) return pack?.resolveBytes(path)
+        if (EngineDefaults.isReference(path)) return engineDefaults.resolve(path)?.readBytes()
         return File(absolute(path)).takeIf { it.isFile }?.readBytes()
     }
 
@@ -60,8 +86,10 @@ class AssetPaths {
      */
     fun localPath(path: String): String {
         if (path.isBlank()) return path
-        val local = absolute(path)
-        if (File(local).isFile || !packed(path)) return local
+        // An engine default: the packed entry (it may be the project's override) before the engine's own copy.
+        if (EngineDefaults.isReference(path) && !packed(path)) return engineDefaults.resolve(path)?.path ?: path
+        val local = if (EngineDefaults.isReference(path)) "" else absolute(path)
+        if ((local.isNotEmpty() && File(local).isFile) || !packed(path)) return local
         val target = extract(path)
         // Model files load their companions (.mtl, .bin, textures) from the same folder.
         if (path.substringAfterLast('.').lowercase() in MODEL_EXTENSIONS) siblingsInPack(path).forEach(::extract)

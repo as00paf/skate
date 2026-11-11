@@ -1,5 +1,6 @@
 package com.pafoid.skate.game.samples
 
+import com.pafoid.skate.engine.assets.EngineDefaults
 import com.pafoid.skate.engine.ecs.SceneSun
 import com.pafoid.skate.engine.addComponent
 import com.pafoid.skate.engine.assets.Assets
@@ -71,8 +72,9 @@ import java.io.File
  * Objects are top-level (physics and animation only drive top-level objects) and named `[Area] Name`; each area also
  * has a coloured ground pad named `[Area] Area`.
  *
- * @param prefabs spawns the prefab library pieces and the animated character; its `projectAssetsDir` must point at the
- *   project's `Assets` folder (with the trailing separator) holding the bundled `EngineDefaults`.
+ * @param prefabs spawns the prefab library pieces and the animated character. Engine defaults are referenced as
+ *   `engine:` paths (AST-26); its `projectAssetsDir` is the project's `Assets` folder (with the trailing separator),
+ *   where the showcase writes its own scripts and material.
  */
 class FeatureShowcase(private val prefabs: PrefabsGenerator) {
 
@@ -207,7 +209,7 @@ class FeatureShowcase(private val prefabs: PrefabsGenerator) {
         scene = target
         scene.addComponent(ScenePhysicsComponent())
             .addComponent(GridLines())
-            .addComponent(EnvironmentComponent(skyTexture = Texture(filePath = assets + Assets.Bundled.SKY), fogColor = Vector3f(0.75f, 0.78f, 0.82f), renderFog = false, fogCycleButton = FOG_TOGGLE_BUTTON))
+            .addComponent(EnvironmentComponent(skyTexture = Texture(filePath = EngineDefaults.Textures.SKY_HDRI), fogColor = Vector3f(0.75f, 0.78f, 0.82f), renderFog = false, fogCycleButton = FOG_TOGGLE_BUTTON))
         // Ambient light in the environment, a "Sun" entity linked to the day/night cycle (REN-26)
         SceneSun.addDefaults(scene)
         val overview = overviewTarget()
@@ -218,7 +220,7 @@ class FeatureShowcase(private val prefabs: PrefabsGenerator) {
             .addComponent(FreeFlyCameraComponent()))
         add(staticBox("Floor", Vector3f(0f, -0.5f, 0f), Vector3f(30f, 0.5f, 20f), Vector4f(0.5f, 0.5f, 0.5f, 1f)))
         AREAS.forEach { area ->
-            add(mesh("[${area.label}] Area", Assets.Bundled.CUBE, Vector3f(area.center).add(0f, 0.01f, 0f),
+            add(mesh("[${area.label}] Area", EngineDefaults.Models.CUBE, Vector3f(area.center).add(0f, 0.01f, 0f),
                 Vector3f(area.size.x, 0.01f, area.size.z), Material(baseColor = area.color), castShadow = false))
         }
         lights(); shadows(); materials(); particles()
@@ -240,18 +242,18 @@ class FeatureShowcase(private val prefabs: PrefabsGenerator) {
         material: Material = Material(), castShadow: Boolean = true, rotation: Vector3f = Vector3f(),
     ) = GameObject(name)
         .addComponent(Transform(pos, scale, rotation))
-        .addComponent(RenderComponent(`3dModel`(assets + model), material, castShadow = castShadow))
+        .addComponent(RenderComponent(`3dModel`(model), material, castShadow = castShadow))
 
     // The unit cube spans -1..1 and Bullet scales box colliders with the transform, so the collider stays unit-sized.
     private fun staticBox(name: String, pos: Vector3f, half: Vector3f, color: Vector4f) =
-        mesh(name, Assets.Bundled.CUBE, pos, half, Material(baseColor = color), castShadow = false)
+        mesh(name, EngineDefaults.Models.CUBE, pos, half, Material(baseColor = color), castShadow = false)
             .addComponent(RigidBody3D(0f, BodyType.Static))
             .addComponent(BoxCollider3D(Vector3f(1f)))
 
     private fun node(name: String, pos: Vector3f) = GameObject(name).addComponent(Transform(pos))
 
     private fun lights() {
-        add(mesh("[Lights] Sphere", Assets.Bundled.SPHERE, at("lights", 0f, 1.5f, 0f), Vector3f(1.2f)))
+        add(mesh("[Lights] Sphere", EngineDefaults.Models.SPHERE, at("lights", 0f, 1.5f, 0f), Vector3f(1.2f)))
         add(node("[Lights] PointRed", at("lights", -4f, 2.5f, 0f))
             .addComponent(PointLightComponent(color = Vector3f(1f, 0.1f, 0.1f), intensity = 4f)))
         add(node("[Lights] PointBlue", at("lights", 4f, 2.5f, 0f))
@@ -262,10 +264,10 @@ class FeatureShowcase(private val prefabs: PrefabsGenerator) {
 
     private fun shadows() {
         // The sun (scene DirectionalLight) gives cascaded shadows; the spot and point lights each get a shadow map.
-        add(mesh("[Shadows] Caster", Assets.Bundled.CUBE, at("shadows", -3f, 1f, 0f), Vector3f(0.6f, 1f, 0.6f)))
-        add(mesh("[Shadows] TallPillar", Assets.Bundled.CUBE, at("shadows", 0f, 2.5f, -2f), Vector3f(0.3f, 2.5f, 0.3f)))
-        add(mesh("[Shadows] NoCaster", Assets.Bundled.CUBE, at("shadows", 3.5f, 0.6f, 2f), Vector3f(0.6f), castShadow = false))
-        add(mesh("[Shadows] SpotTarget", Assets.Bundled.SPHERE, at("shadows", 3f, 0.8f, -1f), Vector3f(0.8f)))
+        add(mesh("[Shadows] Caster", EngineDefaults.Models.CUBE, at("shadows", -3f, 1f, 0f), Vector3f(0.6f, 1f, 0.6f)))
+        add(mesh("[Shadows] TallPillar", EngineDefaults.Models.CUBE, at("shadows", 0f, 2.5f, -2f), Vector3f(0.3f, 2.5f, 0.3f)))
+        add(mesh("[Shadows] NoCaster", EngineDefaults.Models.CUBE, at("shadows", 3.5f, 0.6f, 2f), Vector3f(0.6f), castShadow = false))
+        add(mesh("[Shadows] SpotTarget", EngineDefaults.Models.SPHERE, at("shadows", 3f, 0.8f, -1f), Vector3f(0.8f)))
         add(node("[Shadows] Spot", at("shadows", 3f, 5f, -1f))
             .addComponent(SpotLightComponent(direction = Vector3f(0f, -1f, 0f), intensity = 6f, cutOff = 25f, outerCutOff = 32f)))
         add(node("[Shadows] Point", at("shadows", -1.5f, 1.5f, 2f))
@@ -273,8 +275,8 @@ class FeatureShowcase(private val prefabs: PrefabsGenerator) {
         // REN-20: a mesh-less parent whose child and grandchild models cast (like the skateboard's visual child).
         // Moving the parent moves both shadows.
         val group = node("[Shadows] Group", at("shadows", -4.5f, 0f, 3f))
-        val child = mesh("[Shadows] GroupChild", Assets.Bundled.CUBE, Vector3f(0f, 0.4f, 0f), Vector3f(0.4f))
-        child.addChild(mesh("[Shadows] GroupGrandchild", Assets.Bundled.SPHERE, Vector3f(0f, 2.5f, 0f), Vector3f(1f)))
+        val child = mesh("[Shadows] GroupChild", EngineDefaults.Models.CUBE, Vector3f(0f, 0.4f, 0f), Vector3f(0.4f))
+        child.addChild(mesh("[Shadows] GroupGrandchild", EngineDefaults.Models.SPHERE, Vector3f(0f, 2.5f, 0f), Vector3f(1f)))
         group.addChild(child)
         add(group)
     }
@@ -282,23 +284,23 @@ class FeatureShowcase(private val prefabs: PrefabsGenerator) {
     private fun materials() {
         (0..4).forEach { i ->
             val t = i / 4f
-            add(mesh("[Materials] Metal_$i", Assets.Bundled.SPHERE, at("materials", -4f + i * 2f, 0.8f, 2f), Vector3f(0.8f),
+            add(mesh("[Materials] Metal_$i", EngineDefaults.Models.SPHERE, at("materials", -4f + i * 2f, 0.8f, 2f), Vector3f(0.8f),
                 Material(baseColor = Vector4f(0.9f, 0.7f, 0.2f, 1f), metallicFactor = t, roughnessFactor = 1f - t)))
         }
-        add(mesh("[Materials] Emissive", Assets.Bundled.CUBE, at("materials", -3f, 0.7f, -2f), Vector3f(0.7f),
+        add(mesh("[Materials] Emissive", EngineDefaults.Models.CUBE, at("materials", -3f, 0.7f, -2f), Vector3f(0.7f),
             Material(emissiveFactor = Vector3f(2f, 0.5f, 0f))))
-        add(mesh("[Materials] Textured", Assets.Bundled.CUBE, at("materials", 0f, 0.7f, -2f), Vector3f(0.7f),
-            Material(baseColorTexture = Texture(filePath = assets + Assets.Bundled.ASPHALT))))
-        add(mesh("[Materials] Transparent", Assets.Bundled.CUBE, at("materials", 3f, 0.7f, -2f), Vector3f(0.7f),
+        add(mesh("[Materials] Textured", EngineDefaults.Models.CUBE, at("materials", 0f, 0.7f, -2f), Vector3f(0.7f),
+            Material(baseColorTexture = Texture(filePath = EngineDefaults.Textures.ASPHALT))))
+        add(mesh("[Materials] Transparent", EngineDefaults.Models.CUBE, at("materials", 3f, 0.7f, -2f), Vector3f(0.7f),
             Material(baseColor = Vector4f(0.2f, 0.6f, 1f, 0.4f), alphaMode = AlphaMode.BLEND)))
         // REN-27: a polished chrome sphere mirrors the sky and its surroundings (image-based lighting)
-        add(mesh("[Materials] Mirror", Assets.Bundled.SPHERE, at("materials", -5f, 0.95f, -2f), Vector3f(1.35f),
+        add(mesh("[Materials] Mirror", EngineDefaults.Models.SPHERE, at("materials", -5f, 0.95f, -2f), Vector3f(1.35f),
             Material(baseColor = Vector4f(0.95f, 0.95f, 0.95f, 1f), metallicFactor = 1f, roughnessFactor = 0.02f)))
         // EDT-17: material saved as a .skmat asset and linked; loading the scene reads it back from the file
         val asset = ASSET_MATERIAL
         val file = File(File(assets, ASSET_MATERIAL_DIR), "$ASSET_MATERIAL_NAME.${MaterialAsset.EXTENSION}")
         if (File(assets).isDirectory) runCatching { file.parentFile.mkdirs(); asset.save(file) }
-        add(mesh("[Materials] Asset", Assets.Bundled.SPHERE, at("materials", 5f, 0.8f, -2f), Vector3f(0.7f),
+        add(mesh("[Materials] Asset", EngineDefaults.Models.SPHERE, at("materials", 5f, 0.8f, -2f), Vector3f(0.7f),
             asset.toMaterial { Texture(filePath = it) }).also { it.getComponent<RenderComponent>()!!.materialPath = file.path })
     }
 
@@ -328,12 +330,12 @@ class FeatureShowcase(private val prefabs: PrefabsGenerator) {
 
     private fun physics() {
         (0 until 5).forEach { i ->
-            add(mesh("[Physics] Box_$i", Assets.Bundled.CUBE, at("physics", -1.5f, 0.5f + i * 1.1f, 0f), Vector3f(0.5f),
+            add(mesh("[Physics] Box_$i", EngineDefaults.Models.CUBE, at("physics", -1.5f, 0.5f + i * 1.1f, 0f), Vector3f(0.5f),
                 Material(baseColor = Vector4f(0.8f, 0.5f, 0.3f, 1f)))
                 .addComponent(RigidBody3D(1f)).addComponent(BoxCollider3D(Vector3f(1f))))
         }
         // Capsules only take a uniform scale; sphere.obj has radius 0.7.
-        add(mesh("[Physics] Ball", Assets.Bundled.SPHERE, at("physics", 2f, 6f, 0f), Vector3f(0.5f))
+        add(mesh("[Physics] Ball", EngineDefaults.Models.SPHERE, at("physics", 2f, 6f, 0f), Vector3f(0.5f))
             .addComponent(RigidBody3D(2f)).addComponent(CapsuleCollider3D(0.7f, 0.01f)))
         add(prefabs.spawn(PrefabType.CRATE, at("physics", 2f, 0f, 2f)).labelled("Physics"))
         add(prefabs.spawn(PrefabType.BARREL, at("physics", -2f, 0f, -2f)).labelled("Physics"))
@@ -349,7 +351,7 @@ class FeatureShowcase(private val prefabs: PrefabsGenerator) {
             components.removeAll { it is Collider3D }
         }.addComponent(meshCollider))
         listOf("hull" to -4f, "mesh" to 4f).forEach { (kind, x) ->
-            add(mesh("[Physics] Ball on $kind bank", Assets.Bundled.SPHERE, at("physics", x, 2.5f, 3.2f), Vector3f(0.3f),
+            add(mesh("[Physics] Ball on $kind bank", EngineDefaults.Models.SPHERE, at("physics", x, 2.5f, 3.2f), Vector3f(0.3f),
                 Material(baseColor = Vector4f(0.3f, 0.6f, 0.9f, 1f)))
                 .addComponent(RigidBody3D(1f)).addComponent(CapsuleCollider3D(0.7f, 0.01f)))
         }
@@ -359,7 +361,7 @@ class FeatureShowcase(private val prefabs: PrefabsGenerator) {
         val red = Material(baseColor = Vector4f(0.9f, 0.3f, 0.2f, 1f))
         // Hinge anchored to the world, released 45 degrees off vertical so it swings.
         val hingePivot = at("joints", 3f, 4.5f, 0f)
-        add(mesh("[Joints] HingePendulum", Assets.Bundled.CUBE, Vector3f(hingePivot).add(1.06f, -1.06f, 0f),
+        add(mesh("[Joints] HingePendulum", EngineDefaults.Models.CUBE, Vector3f(hingePivot).add(1.06f, -1.06f, 0f),
             Vector3f(0.15f, 1.5f, 0.15f), red, rotation = Vector3f(0f, 0f, 45f))
             .addComponent(RigidBody3D(2f)).addComponent(BoxCollider3D(Vector3f(1f)))
             .addComponent(JointComponent(
@@ -368,7 +370,7 @@ class FeatureShowcase(private val prefabs: PrefabsGenerator) {
             )))
         // Cone-twist anchored to the world, released 40 degrees off vertical around X.
         val conePivot = at("joints", -3f, 4.5f, 0f)
-        add(mesh("[Joints] ConeTwistLamp", Assets.Bundled.CUBE, Vector3f(conePivot).add(0f, -0.766f, -0.643f),
+        add(mesh("[Joints] ConeTwistLamp", EngineDefaults.Models.CUBE, Vector3f(conePivot).add(0f, -0.766f, -0.643f),
             Vector3f(0.25f, 1f, 0.25f), Material(baseColor = Vector4f(0.3f, 0.6f, 0.9f, 1f)), rotation = Vector3f(40f, 0f, 0f))
             .addComponent(RigidBody3D(1f)).addComponent(BoxCollider3D(Vector3f(1f)))
             .addComponent(JointComponent(
@@ -377,7 +379,7 @@ class FeatureShowcase(private val prefabs: PrefabsGenerator) {
             )))
         // Slider anchored to the world along Y: the block drops 2 m along its rail and stops at the lower limit.
         val sliderStart = at("joints", 0f, 3.5f, 2f)
-        add(mesh("[Joints] SliderBlock", Assets.Bundled.CUBE, sliderStart, Vector3f(0.4f), red)
+        add(mesh("[Joints] SliderBlock", EngineDefaults.Models.CUBE, sliderStart, Vector3f(0.4f), red)
             .addComponent(RigidBody3D(3f)).addComponent(BoxCollider3D(Vector3f(1f)))
             .addComponent(JointComponent(
                 jointType = JointType.SLIDER, anchor = Vector3f(), connectedAnchor = sliderStart,
@@ -387,7 +389,7 @@ class FeatureShowcase(private val prefabs: PrefabsGenerator) {
 
     private fun vehicle() {
         // Raycast vehicle (PHY-09) with the default 4-wheel layout: it drops and settles on its suspension rays.
-        add(mesh("[Vehicle] Car", Assets.Bundled.CUBE, at("vehicle", 0f, 1.5f, 0f), Vector3f(0.9f, 0.3f, 1.8f),
+        add(mesh("[Vehicle] Car", EngineDefaults.Models.CUBE, at("vehicle", 0f, 1.5f, 0f), Vector3f(0.9f, 0.3f, 1.8f),
             Material(baseColor = Vector4f(0.2f, 0.4f, 0.9f, 1f)))
             .addComponent(RigidBody3D(800f)).addComponent(BoxCollider3D(Vector3f(1f)))
             .addComponent(VehicleComponent()))
@@ -397,10 +399,10 @@ class FeatureShowcase(private val prefabs: PrefabsGenerator) {
         // The bundled MP3 (AUD-10) as a positional source: streamed (music bus) and downmixed to mono so it pans; it gets
         // louder from maxDistance (25 m, where attenuation stops) down to minDistance (1 m) as the camera approaches.
         // No Doppler: music must not change pitch when the camera glides to an area (AUD-11).
-        add(mesh("[Audio] Emitter3D", Assets.Bundled.SPHERE, at("audio", 0f, 1f, 0f), Vector3f(0.6f),
+        add(mesh("[Audio] Emitter3D", EngineDefaults.Models.SPHERE, at("audio", 0f, 1f, 0f), Vector3f(0.6f),
             Material(emissiveFactor = Vector3f(0.2f, 0.8f, 0.8f)))
             .addComponent(AudioComponent(
-                assets + Assets.Bundled.MUSIC, is3D = true, loops = true, volume = 0.6f, bus = BusId.MUSIC,
+                EngineDefaults.Sounds.MUSIC, is3D = true, loops = true, volume = 0.6f, bus = BusId.MUSIC,
                 maxDistance = 25f, dopplerFactor = 0f, playOnAwake = true,
             )))
     }
@@ -421,11 +423,11 @@ class FeatureShowcase(private val prefabs: PrefabsGenerator) {
         // step. Green ghost = server, blue = the owner's prediction (just ahead of the ghost: its newest inputs are still in
         // flight), orange = what other players see (interpolated, behind).
         val half = Vector3f(0.2f, VIEW_HALF_HEIGHT, 0.4f)
-        add(mesh(NETCODE_SERVER, Assets.Bundled.CUBE, at("netcode", 0f, VIEW_HALF_HEIGHT, 0f), Vector3f(half).mul(1.25f),
+        add(mesh(NETCODE_SERVER, EngineDefaults.Models.CUBE, at("netcode", 0f, VIEW_HALF_HEIGHT, 0f), Vector3f(half).mul(1.25f),
             Material(baseColor = Vector4f(0.2f, 0.9f, 0.3f, 0.35f), alphaMode = AlphaMode.BLEND), castShadow = false))
-        add(mesh(NETCODE_PREDICTED, Assets.Bundled.CUBE, at("netcode", 0f, VIEW_HALF_HEIGHT, 0f), half,
+        add(mesh(NETCODE_PREDICTED, EngineDefaults.Models.CUBE, at("netcode", 0f, VIEW_HALF_HEIGHT, 0f), half,
             Material(baseColor = Vector4f(0.2f, 0.45f, 1f, 1f))))
-        add(mesh(NETCODE_INTERPOLATED, Assets.Bundled.CUBE, at("netcode", 0f, VIEW_HALF_HEIGHT, 0f), half,
+        add(mesh(NETCODE_INTERPOLATED, EngineDefaults.Models.CUBE, at("netcode", 0f, VIEW_HALF_HEIGHT, 0f), half,
             Material(baseColor = Vector4f(1f, 0.55f, 0.15f, 1f))))
         add(node("[Netcode] Session", at("netcode", 0f, VIEW_HALF_HEIGHT, 0f)).addComponent(LoopbackPredictionComponent(
             modelId = SkaterPredictionModel.ID, latencyMs = NETCODE_LATENCY_MS,
@@ -434,10 +436,10 @@ class FeatureShowcase(private val prefabs: PrefabsGenerator) {
     }
 
     private fun animation() {
-        add(prefabs.spawnAnimatedCharacter("[Animation] Character", at("animation", 0f, 0f, 0f), Assets.Bundled.WALKING))
+        add(prefabs.spawnAnimatedCharacter("[Animation] Character", at("animation", 0f, 0f, 0f), EngineDefaults.Animations.WALKING))
         // EDT-16: the walking clip drives the legs; the skater controller (default state: idle) only the upper body.
         add(prefabs.spawnAnimatedCharacter(
-            "[Animation] Upper-body mask", at("animation", 1.5f, 0f, 0f), Assets.Bundled.WALKING, Skater.DEFAULT_ANIMATIONS,
+            "[Animation] Upper-body mask", at("animation", 1.5f, 0f, 0f), EngineDefaults.Animations.WALKING, Skater.DEFAULT_ANIMATIONS,
         ).apply {
             getComponent<Animator>()?.apply {
                 controllerPath = Skater.CONTROLLER_PATH
@@ -450,10 +452,10 @@ class FeatureShowcase(private val prefabs: PrefabsGenerator) {
         // REN-09: posts receding along the right edge of the floor (about 4 m to 34 m from the Fog focus view), so each
         // fog curve (Cycle fog button in Play, or the scene's EnvironmentComponent) is easy to compare.
         (0 until 8).forEach { i ->
-            add(mesh("[Fog] Post_$i", Assets.Bundled.CUBE, Vector3f(29f, 1.5f, 17f - i * 5f), Vector3f(0.3f, 1.5f, 0.3f),
+            add(mesh("[Fog] Post_$i", EngineDefaults.Models.CUBE, Vector3f(29f, 1.5f, 17f - i * 5f), Vector3f(0.3f, 1.5f, 0.3f),
                 Material(baseColor = Vector4f(0.85f, 0.35f, 0.2f, 1f))))
         }
-        add(mesh("[Fog] Tower", Assets.Bundled.CUBE, at("fog", 0f, 4f, 0f), Vector3f(0.5f, 4f, 0.5f)))
+        add(mesh("[Fog] Tower", EngineDefaults.Models.CUBE, at("fog", 0f, 4f, 0f), Vector3f(0.5f, 4f, 0.5f)))
     }
 
     private fun GameObject.labelled(area: String) = apply { name = "[$area] $name" }

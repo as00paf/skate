@@ -9,7 +9,7 @@ class SkeletonJointTest {
     @Test
     fun `list all bones in james model`() {
         val loader = AssimpLoader(mockk(), mockk())
-        val filePath = "assets/characters/james.glb"
+        val filePath = "assets/Models/james.glb"
         try {
             val preLoaded = loader.loadModel(filePath)
 
