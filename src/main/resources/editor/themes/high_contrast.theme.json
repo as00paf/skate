@@ -39,6 +39,9 @@
     "navHighlight": "#FFD900FF",
     "navWindowingHighlight": "#FFFFFFE6",
     "navWindowingDimBg": "#00000099",
-    "modalDimBg": "#000000BF"
+    "modalDimBg": "#000000BF",
+    "success": "#5CFF5CFF",
+    "warning": "#FFD000FF",
+    "danger": "#FF5050FF"
   }
 }

@@ -11,6 +11,8 @@ import com.pafoid.skate.editor.events.EditorEvent
 import com.pafoid.skate.editor.events.ProjectEvent
 import com.pafoid.skate.editor.events.PlayModeAction
 import com.pafoid.skate.editor.events.ViewportAction
+import com.pafoid.skate.editor.events.WindowAction
+import com.pafoid.skate.editor.vcs.VcsWindows
 import com.pafoid.skate.editor.systems.ClipboardService
 import com.pafoid.skate.editor.systems.EditorSettingsManager
 import com.pafoid.skate.editor.systems.PlayModeGuards
@@ -116,6 +118,7 @@ class EditorInputHandler(
     private fun handleProjectShortcuts() {
         if (pressed(EditorShortcuts.SEARCH)) eventSystem.publish(EditorEvent.OpenSearch)
         if (pressed(EditorShortcuts.OPEN_PROJECT)) eventSystem.publish(ProjectEvent.OpenProjectFileRequested)
+        if (pressed(EditorShortcuts.VCS_COMMIT)) eventSystem.publish(WindowAction.Show(VcsWindows.COMMIT))
         if (pressed(EditorShortcuts.FULLSCREEN)) eventSystem.publish(ViewportAction.ToggleFullScreen)
     }
 

@@ -32,6 +32,10 @@ import com.pafoid.skate.editor.ui.windows.SearchEverywhereWindow
 import com.pafoid.skate.editor.ui.windows.ScriptEditorWindow
 import com.pafoid.skate.editor.ui.windows.ShellWindow
 import com.pafoid.skate.editor.ui.windows.VersionControlWindow
+import com.pafoid.skate.editor.ui.windows.vcs.BranchStatusButton
+import com.pafoid.skate.editor.ui.windows.vcs.CommitDialog
+import com.pafoid.skate.editor.ui.windows.vcs.ConflictsDialog
+import com.pafoid.skate.editor.ui.windows.vcs.VcsModals
 import com.pafoid.skate.editor.ui.windows.assetStore.AssetStoreWindow
 import com.pafoid.skate.engine.core.Engine
 
@@ -40,6 +44,9 @@ class WindowRegistry(
     editor: Editor,
     projectManager: ProjectManager,
 ) {
+    /** The Git confirmations (EDT-79), shared by the branch button, the Commit dialog and the Git log. */
+    private val vcsModals = VcsModals(engine.stringManager, engine.eventSystem, editor.vcsSession)
+
     val windows: List<EditorWindow> = listOf(
         SceneHierarchyWindow(engine, editor.clipboardService, projectManager::hasProject),
         PropertiesWindow(engine, projectManager::hasProject, listOf(BlenderImportPanel(engine.stringManager, editor.blenderSync), ConfigFileInspector(engine.stringManager, editor.undoRedoManager::executeCommand))),
@@ -59,7 +66,9 @@ class WindowRegistry(
         ProjectWindow(engine, projectManager),
         ScriptEditorWindow(engine, projectManager, editor.settingsManager),
         ShellWindow(engine, projectManager),
-        VersionControlWindow(engine, projectManager, editor.vcsSession),
+        VersionControlWindow(engine, projectManager, editor.vcsSession, vcsModals),
+        CommitDialog(engine, editor.vcsSession, vcsModals, projectManager::hasProject),
+        ConflictsDialog(engine, editor.vcsSession),
         ExportWizardWindow(engine, projectManager, editor.settingsManager),
         AssetStoreWindow(engine, projectManager),
         VideoToAnimationWindow(engine, editor, projectManager),
@@ -85,7 +94,16 @@ class WindowRegistry(
     }
 
     val menuBar = EditorMenuBar(engine, editor, this, projectManager)
-    val statusBar = EditorStatusBar(engine)
+    val statusBar = EditorStatusBar(
+        engine,
+        BranchStatusButton(
+            engine.stringManager, engine.eventSystem, editor.vcsSession, vcsModals,
+            hasProject = projectManager::hasProject,
+            playing = { engine.runtimePlaying },
+            unsavedScenes = { engine.sceneManager.openScenes.any { it.isDirty } },
+        ),
+        vcsModals,
+    )
 
     fun getWindow(key: String): EditorWindow? {
         return windows.find { it.name == key }

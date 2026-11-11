@@ -108,7 +108,7 @@ Round 27+ goals (human, 2026-11-06): post-processing quality, render-graph clari
 - [x] **REN-30** `P1` Renderer honours overall quality, MSAA and texture quality
   - Do: From EDT-57: the Graphics settings for overall quality, MSAA and texture quality exist (`GraphicsSettings`) but the renderer ignores them. Apply them live (MSAA on the scene target, texture quality via mip bias/max size, quality preset driving shadows/post effects).
   - Done when: Changing each setting visibly changes rendering in the editor and exported game; tests.
-- [~] @skate-render **REN-33** `P1` Offscreen skinned-mesh preview viewport for the Animation Editor and Video to Animation
+- [x] **REN-33** `P1` Offscreen skinned-mesh preview viewport for the Animation Editor and Video to Animation
   - Do: From ANI-14 (skate-animation) and the human (Discord 2026-11-10: show the animation preview on the character): an offscreen viewport, used by the Animation Editor and the Video to Animation result, the Animation Editor feeds a bone pose to, drawing the skinned mesh instead of the skeleton lines.
   - Done when: The Animation Editor preview shows the skinned character following the scrubbed pose; tests for the viewport wiring.
   - Deps: ANI-14
@@ -243,7 +243,7 @@ Round 27+ goals: the Asset Browser shows every asset type, one assets folder, ex
   - Do: Per AST-26 §5 (reviewed by skate-render): shaders resolve through `engine:Shaders/…` with project overrides in `Assets/Shaders/`, `@skate-contract` headers, includes, caches, hot reload of project shaders; basic shaders always copied; unedited copies follow the engine on project open (human, 2026-11-10); custom material shaders in the colour pass only for v1.
   - Done when: Editing a project shader changes rendering live; an incompatible edited override falls back with an error; tests.
   - Deps: AST-27
-- [~] @skate-gameplay **GPL-26** `P1` Skater configs in the project assets, editable in the editor
+- [x] **GPL-26** `P1` Skater configs in the project assets, editable in the editor
   - Do: From AST-26 NQ2 (human, 2026-11-10: follow-up): `skater.character.json` and `skater.controller.json` become `engine:Data/skater.character.json` and `engine:Animations/skater.controller.json`, overridable per project like other engine defaults (with skate-animation). Human (Discord 2026-11-10): they live in the project's assets and are editable by users in the editor (panels, not hand-edited JSON).
   - Done when: A project override changes the skater; without one the engine config is used; tests.
   - Deps: AST-27
@@ -372,7 +372,7 @@ Round 27+ goals: an animation authoring tool and animation from video.
   - Do: (human, Discord 2026-11-10): play/pause, scrub and frame step in the video preview, and in/out markers so only a portion of the video becomes the animation.
   - Done when: A trimmed range produces a clip of that length only; tests for the range maths and the extractor arguments.
   - Deps: ANI-18
-- [~] @skate-animation **ANI-21** `P1` REWRITE Animator window: create, edit, remove and duplicate states
+- [x] **ANI-21** `P1` REWRITE Animator window: create, edit, remove and duplicate states
   - Do: (human, Discord 2026-11-10): a user-friendly Animator window (state graph): add, rename, duplicate and delete states, assign clips, edit transitions, conditions and parameters, with undo; writes the animator controller asset. Design note first.
   - Done when: The human approves the note; then a controller can be built from scratch in the window and drives a character; tests.
   - Deps: ANI-14
@@ -390,6 +390,14 @@ Round 27+ goals: input is too tightly coupled with skateboarding; it needs a gam
   - Do: (human, round 32 testing): the Video to Animation window does not scroll (after ANI-20 added playback and trim). Fix the window's child/scroll layout so the whole content scrolls with the mouse wheel and scrollbar.
   - Done when: All controls are reachable by scrolling at a small window size; a test or guard for the layout if practical.
   - Deps: ANI-20
+- [x] **ANI-24** `P0` Animator: clipped icon buttons; inspector Play/Reset do nothing
+  - Do: (human, round 33 testing): the Animator window's parameter delete button is too short for its icon; the Animator component's Play and Reset buttons have no effect. Play previews in edit mode and pauses/resumes the controller in play mode; Reset returns to the default state.
+  - Done when: Icons fit; Play/Reset change the pose in both modes; tests.
+  - Deps: ANI-21
+- [x] **ANI-25** `P0` Animator: items without room; inspector playback overridden by the player state
+  - Do: (human, round 33 re-testing): some Animator window items don't render for lack of room; inspector Play still doesn't play the skater's animations properly, likely because the player/character state drives the animator every frame. Size rows from the style; inspector playback wins while active and hands back on stop/Reset.
+  - Done when: All items visible at every density and small sizes (headless test); inspector Play works on the real skater in edit and play mode; tests.
+  - Deps: ANI-24
 - [ ] **ANI-23** `P2` Animator window: blend tree editor in the state inspector
   - Do: (ANI-21 design answer, 2026-11-10): edit 1D/2D blend trees of a state in the Animator window's state inspector, with live preview.
   - Done when: A blend tree can be created and edited from the window and saved in the controller file; tests.
@@ -600,20 +608,20 @@ Round 27+ goals (human, 2026-11-06): fix editor bugs, make every window, dialog 
 - [x] **EDT-75** `P1` Gizmos for UI items
   - Do: (human, Discord 2026-11-10): select a runtime UI element (canvas child) in the viewport and move/resize it with a 2D gizmo (anchors, pivot, rect), with snapping and undo; skate-gameui reviews.
   - Done when: UI elements can be moved and resized in the viewport with undo; tests for the rect maths.
-- [~] @skate-editor **EDT-76** `P1` Menu and button padding; Interface settings review
+- [x] **EDT-76** `P1` Menu and button padding; Interface settings review
   - Do: (human, Discord 2026-11-10): menu items and some editor buttons have no padding. Review Editor Settings › Interface and add appearance options (item/frame padding, spacing, rounding, font size, density presets), applied everywhere through the theme, persisted.
   - Done when: Menus and buttons have padding by default; each new option visibly changes the editor and persists; tests.
 - [x] **EDT-77** `P1` Project Settings › Random: seed field too wide
   - Do: (human, Discord 2026-11-10): the seed text field overflows the window; size it like the other rows.
   - Done when: The Random page fits at any dialog width; a layout test.
-- [~] @skate-scripting **EDT-78** `P2` Viewport toolbar: World and Snap at the end, before `?`
+- [x] **EDT-78** `P2` Viewport toolbar: World and Snap at the end, before `?`
   - Do: (human, Discord 2026-11-10): move the World/Local and Snap controls to the end of the Game Viewport toolbar, just before the `?` button.
   - Done when: The toolbar order matches; toolbar tests updated.
-- [~] @skate-ecs **EDT-79** `P2` REWRITE Git branch button in the status bar, replacing the Version Control window
+- [x] **EDT-79** `P2` REWRITE Git branch button in the status bar, replacing the Version Control window
   - Do: (human, Discord 2026-11-10): an IntelliJ-like branch button in the bottom status bar (current branch; popup with branches, new/checkout/delete, update, commit and changes entries) replaces the EDT-60 Version Control window. Design note first: where changes, diffs, commit and conflict resolution live once the window is gone.
   - Done when: The human approves the note; then the status-bar workflow covers every EDT-60 phase 1 action and the window is removed; tests.
   - Deps: EDT-60
-- [~] @skate-gameui **EDT-80** `P1` Shader field in the material inspector and a "New Shader" action
+- [x] **EDT-80** `P1` Shader field in the material inspector and a "New Shader" action
   - Do: From REN-31 (skate-render): a material inspector "Shader" field listing the project `.glsl` files plus the basic engine shaders (writes `MaterialAsset.shader`/`Material.shader`); an Asset Browser "New Shader" action writing `ShaderTemplates.PBR_MATERIAL` to `Assets/Shaders/<name>.glsl`; copy `shader` in `MaterialState` (`MaterialCommands.kt`) so material undo keeps it.
   - Done when: A new project shader can be created, assigned to a material and undone; tests.
   - Deps: REN-31
@@ -625,6 +633,18 @@ Round 27+ goals (human, 2026-11-06): fix editor bugs, make every window, dialog 
   - Do: (from ANI-22, round 32 testing): EDT-72's clamp in `HelpButtonLayout.row` keeps the header 2px below the window top even when the window is scrolled, so windows that scroll their whole body below `header()` snap back. Apply the clamp relative to the scroll position.
   - Done when: A window using `header()` scrolls at a small size and the `?` stays unclipped at 100 %/150 %; guard test.
   - Deps: EDT-72
+- [x] **EDT-86** `P0` Inspector buttons after a field are clipped or pushed out
+  - Do: (human, round 33 testing): texture Delete buttons clipped at the end; the Animator component's Edit/Refresh buttons sometimes have no room. Shared trailing-button layout sized from the current style.
+  - Done when: Trailing buttons fit at every density preset and narrow widths; guard test.
+  - Deps: EDT-76
+- [x] **EDT-87** `P0` Expanding the Input State component crashes the editor
+  - Do: (human, round 33 testing): expanding Input State in the Properties window crashes the editor. Fix it, and add a guard test that draws every registered component inspector expanded (default and populated data) with no ImGui stack imbalance or exception.
+  - Done when: Input State expands without crashing; the all-inspectors guard passes.
+  - Deps: EDT-86
+- [~] @skate-editor **EDT-88** `P1` Maximize editor tool windows over the Game Viewport, or full screen
+  - Do: (human, 2026-11-11): the Script Editor, Animation Editor and Video to Animation windows can be maximized: a "Maximize" button in the standard window header (and a shortcut, e.g. Shift+Space, plus double-click on the tab) that either docks the window over the Game Viewport's node as a tab, or fills the whole editor (hiding the other panels until restored). Today docking over the viewport doesn't work because the Game Viewport's dock node hides its tab bar, so nothing can be tabbed into it: show the Game Viewport tab (or allow docking into its node) without breaking its toolbar layout. Restore returns the previous layout exactly. Generalize to every window using the standard header if it costs nothing extra. Short design note first (layout save/restore, interaction with play mode and the viewport's input focus from EDT-73).
+  - Done when: Each of the three windows can be maximized and restored, both over the viewport and full editor; the layout is restored exactly; tests for the layout save/restore.
+  - Deps: EDT-67
 - [ ] **EDT-82** `P2` Editor-wide "unsaved assets" prompt on close
   - Do: (ANI-21 design answer, 2026-11-10): one prompt when the project or editor closes, listing the unsaved scene, animation clips and animator controllers, with Save all / Discard / Cancel.
   - Done when: Closing with unsaved assets asks first; tests for the dirty-document registry.
