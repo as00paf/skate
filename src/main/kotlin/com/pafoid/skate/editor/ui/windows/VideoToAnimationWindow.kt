@@ -24,7 +24,9 @@ import com.pafoid.skate.engine.animation.mocap.Smoothing
 import com.pafoid.skate.engine.assets.loaders.TextureLoader
 import com.pafoid.skate.engine.core.Engine
 import imgui.ImGui
+import imgui.flag.ImGuiFocusedFlags
 import imgui.flag.ImGuiKey
+import imgui.flag.ImGuiWindowFlags
 import imgui.type.ImInt
 import imgui.type.ImString
 import org.lwjgl.system.MemoryUtil
@@ -57,20 +59,28 @@ class VideoToAnimationWindow(
     override fun imgui() {
         if (beginWindow(strings)) {
             header(strings)
-            if (projectManager.getProjectDirectory() == null) {
-                MImGui.textDisabled(strings.getString("lbl.mocap.no_project"))
-            } else {
-                videoStep()
-                ImGui.separator()
-                optionsStep()
-                ImGui.separator()
-                createStep()
-                ImGui.separator()
-                if (strings.tipped(ImGui.button(strings.getString("btn.mocap.import")), "btn.mocap.import")) pickImportFile()?.let(controller::importFile)
-            }
-            setupSection()
+            // ANI-22: the body scrolls in its own child. Scrolling the window itself does not work below the header:
+            // the header keeps its row inside the clip rectangle (HelpButtonLayout.row), so it moved back down with
+            // everything after it and the scroll snapped back.
+            if (ImGui.beginChild(BODY_ID, 0f, 0f, false, ImGuiWindowFlags.HorizontalScrollbar)) body()
+            ImGui.endChild()
         }
         ImGui.end()
+    }
+
+    private fun body() {
+        if (projectManager.getProjectDirectory() == null) {
+            MImGui.textDisabled(strings.getString("lbl.mocap.no_project"))
+        } else {
+            videoStep()
+            ImGui.separator()
+            optionsStep()
+            ImGui.separator()
+            createStep()
+            ImGui.separator()
+            if (strings.tipped(ImGui.button(strings.getString("btn.mocap.import")), "btn.mocap.import")) pickImportFile()?.let(controller::importFile)
+        }
+        setupSection()
     }
 
     override fun onClosed() {
@@ -156,7 +166,7 @@ class VideoToAnimationWindow(
         ImGui.sameLine()
         ImGui.text(strings.getString("lbl.mocap.range", player.inFrame, player.outFrame, player.rangeSeconds))
 
-        if (ImGui.isWindowFocused() && !ImGui.getIO().wantTextInput) {
+        if (ImGui.isWindowFocused(ImGuiFocusedFlags.RootAndChildWindows) && !ImGui.getIO().wantTextInput) {
             when {
                 ImGui.isKeyPressed(ImGuiKey.Space) && !busy -> player.togglePlay()
                 ImGui.isKeyPressed(ImGuiKey.LeftArrow) -> player.step(-1)
@@ -315,6 +325,7 @@ class VideoToAnimationWindow(
     }
 
     private companion object {
+        const val BODY_ID = "##mocap_body"
         const val PREVIEW_SIZE = 512
         const val PREVIEW_WIDTH = 420f
         val VIDEO_PATTERNS = listOf("*.mp4", "*.mov", "*.avi", "*.mkv", "*.webm", "*.m4v")
