@@ -192,6 +192,8 @@ because the serializer already has `ignoreUnknownKeys = true` and every new fiel
 - `Animator.resolveController` loads the listed clips that are not already on the animator, through
   `AssetsManager.loadAnimationSync`. A clip already on the animator with the same name wins, which matches the rule
   for procedural `poses`.
+- *As built:* `clips` is a list of asset paths, not a name → path map. The clip name is the one stored in the file,
+  and `AssetPaths.PATH_KEYS` already treats a `clips` string array as asset references (a map would not be).
 - Export packing already follows `*Path`/`clips` fields through `AssetPaths` (`"clips"` is in its key list), so the
   files are packed. This needs a check in ANI-21a, plus a test.
 
