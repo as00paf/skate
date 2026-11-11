@@ -3,9 +3,12 @@ package com.pafoid.skate.editor.assets
 import com.pafoid.skate.editor.commands.objects.EditMaterialCommand
 import com.pafoid.skate.editor.commands.objects.MaterialState
 import com.pafoid.skate.editor.commands.project.CreateFileCommand
+import com.pafoid.skate.editor.events.FileSystemEvent
+import com.pafoid.skate.editor.events.ProjectEvent
 import com.pafoid.skate.editor.imgui.components.MaterialEditSession
 import com.pafoid.skate.engine.assets.EngineDefaults
 import com.pafoid.skate.engine.assets.data.models.Material
+import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.render.material.MaterialAsset
 import com.pafoid.skate.engine.render.shader.ShaderTemplates
 import io.mockk.mockk
@@ -96,6 +99,53 @@ class ProjectShadersTest {
 
         create.undo()
         assertFalse(file.exists())
+    }
+
+    @Test
+    fun optionsCache_ScansOncePerOpeningAndIsKeyedByMaterial() {
+        var scans = 0
+        val cache = ProjectShaders.OptionsCache { _, _ -> scans++; listOf("scan$scans") }
+        val a = Any()
+        val b = Any()
+
+        assertEquals(emptyList<String>(), cache.frame(a, open = false, projectRoot = null, current = null))
+        assertEquals(0, scans)
+        repeat(5) {
+            assertEquals(listOf("scan1"), cache.frame(a, open = true, projectRoot = null, current = null))
+            cache.frame(b, open = false, projectRoot = null, current = null) // another inspector, closed
+        }
+        assertEquals(1, scans, "one scan while the combo stays open")
+
+        cache.frame(a, open = false, projectRoot = null, current = null)
+        assertEquals(listOf("scan2"), cache.frame(a, open = true, projectRoot = null, current = null))
+        assertEquals(2, scans, "reopening scans again, so new shaders appear")
+    }
+
+    @Test
+    fun requestNewShader_CreatesTheTemplateThenRevealsIt() {
+        val events = EventSystem()
+        val order = mutableListOf<String>()
+        events.subscribe<ProjectEvent.CreateFileRequested> {
+            order += "create"
+            CreateFileCommand(it.path, it.isDirectory, mockk(relaxed = true), it.content).execute()
+        }
+        events.subscribe<FileSystemEvent.RevealInProject> { order += "reveal:" + File(it.path).name }
+
+        val file = ProjectShaders.requestNewShader(project, events)
+
+        assertEquals(File(project, "Assets/Shaders/NewShader.glsl").absoluteFile, file?.absoluteFile)
+        assertEquals(ShaderTemplates.PBR_MATERIAL, file?.readText())
+        assertEquals(listOf("create", "reveal:NewShader.glsl"), order)
+    }
+
+    @Test
+    fun requestNewShader_RevealsNothingWhenTheCreateFails() {
+        val events = EventSystem()
+        var revealed = false
+        events.subscribe<FileSystemEvent.RevealInProject> { revealed = true }
+
+        assertNull(ProjectShaders.requestNewShader(project, events)) // nobody creates the file
+        assertFalse(revealed)
     }
 
     @Test

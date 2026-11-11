@@ -10,6 +10,8 @@ class CreateFileCommand(
     private val logger: LoggerService,
     /** Initial text of a new file (e.g. a shader template, EDT-80); null leaves it empty. Ignored for folders. */
     private val content: String? = null,
+    /** Writes [content]; replaceable so tests can make the write fail. */
+    private val write: (File, String) -> Unit = { f, text -> f.writeText(text) },
 ) : ExecutionTrackedCommand {
 
     private val file = File(filePath)
@@ -72,7 +74,15 @@ class CreateFileCommand(
                 return
             }
 
-            if (!isDirectory && content != null) file.writeText(content)
+            if (!isDirectory && content != null) {
+                try {
+                    write(file, content)
+                } catch (e: Exception) {
+                    // Don't leave an empty file behind: undo would not run, since the command failed
+                    if (!file.delete()) logger.logEditor("Failed to remove partly created file: ${file.absolutePath}")
+                    throw e
+                }
+            }
 
             executeSucceeded = true
             logger.logEditor("Created: ${file.name}")

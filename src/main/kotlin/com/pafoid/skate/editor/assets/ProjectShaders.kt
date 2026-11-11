@@ -1,8 +1,12 @@
 package com.pafoid.skate.editor.assets
 
+import com.pafoid.skate.editor.events.FileSystemEvent
+import com.pafoid.skate.editor.events.ProjectEvent
 import com.pafoid.skate.engine.assets.AssetFolder
 import com.pafoid.skate.engine.assets.EngineDefaults
 import com.pafoid.skate.engine.assets.ProjectLayout
+import com.pafoid.skate.engine.core.EventSystem
+import com.pafoid.skate.engine.render.shader.ShaderTemplates
 import java.io.File
 
 /**
@@ -14,6 +18,28 @@ import java.io.File
  * are modified.
  */
 object ProjectShaders {
+    /**
+     * Caches the option list while one Shader combo is open (scanning `Assets/` once per opening, not every frame).
+     * Keyed by the material, so another material's closed combo drawn in the same frame does not clear it.
+     */
+    class OptionsCache(private val scan: (File?, String?) -> List<String> = ::options) {
+        private var openKey: Any? = null
+        private var cached: List<String> = emptyList()
+
+        /** Call every frame for [key]'s combo: the list while it is [open] (scanned when it opens), else empty. */
+        fun frame(key: Any, open: Boolean, projectRoot: File?, current: String?): List<String> {
+            if (!open) {
+                if (openKey === key) { openKey = null; cached = emptyList() }
+                return emptyList()
+            }
+            if (openKey !== key) {
+                openKey = key
+                cached = scan(projectRoot, current)
+            }
+            return cached
+        }
+    }
+
     const val EXTENSION = "glsl"
     const val NEW_SHADER_NAME = "NewShader"
 
@@ -61,6 +87,19 @@ object ProjectShaders {
             if (!file.exists()) return file
             n++
         }
+    }
+
+    /**
+     * New Shader: asks for the template at [newShaderFile] (an undoable create), then reveals the file in the Project
+     * window so the user sees where it went. A failed create is reported by the handler; nothing is revealed then.
+     * Returns the file when it was created.
+     */
+    fun requestNewShader(projectRoot: File, events: EventSystem): File? {
+        val file = newShaderFile(projectRoot)
+        events.publish(ProjectEvent.CreateFileRequested(file.absolutePath, false, ShaderTemplates.PBR_MATERIAL))
+        if (!file.isFile) return null
+        events.publish(FileSystemEvent.RevealInProject(file.absolutePath))
+        return file
     }
 
     private fun reference(projectRoot: File, file: File): String =

@@ -42,6 +42,9 @@ fun RenderComponent.imgui(engine: Engine) {
     materialInspector(engine)
 }
 
+/** The Shader combo's choices, scanned once per opening (EDT-80). */
+private val shaderOptions = ProjectShaders.OptionsCache()
+
 /** Shared by every material inspector so a gesture survives redraws; see [MaterialEditSession]. */
 private val materialSession = MaterialEditSession()
 
@@ -154,13 +157,15 @@ private fun materialFields(mat: Material, engine: Engine, target: String?, s: (S
         if (ImGui.checkbox("##value", d.doubleSided)) preview(d.copy(doubleSided = !d.doubleSided))
     }
     row("shader", s("shader"), "material.shader.tooltip") {
-        // EDT-80: null is the schema's shader; the list is scanned only while the combo is open
+        // EDT-80: null is the schema's shader
         val engineTag = s("shader.engine")
         val none = s("shader.none")
         val current = d.shader
-        if (ImGui.beginCombo("##value", current?.let { ProjectShaders.label(it, engineTag) } ?: none)) {
+        val open = ImGui.beginCombo("##value", current?.let { ProjectShaders.label(it, engineTag) } ?: none)
+        val options = shaderOptions.frame(mat, open, engine.assetsManager.paths.projectRoot, current)
+        if (open) {
             if (ImGui.selectable(none, current == null) && current != null) preview(d.copy(shader = null))
-            for (ref in ProjectShaders.options(engine.assetsManager.paths.projectRoot, current)) {
+            for (ref in options) {
                 if (ImGui.selectable("${ProjectShaders.label(ref, engineTag)}##$ref", ref == current) && ref != current) {
                     preview(d.copy(shader = ref))
                 }
