@@ -122,11 +122,19 @@ class JGitVcsService(private val root: File) : VcsService {
         }
     }
 
-    override fun log(limit: Int): List<VcsCommit> = git { g ->
+    override fun log(limit: Int, allBranches: Boolean): List<VcsCommit> = git { g ->
         val repo = g.repository
         if (repo.resolve(Constants.HEAD) == null) return@git emptyList()
-        g.log().setMaxCount(limit).call().map { c ->
-            VcsCommit(c.name, c.fullMessage.trim(), c.authorIdent.name, c.authorIdent.whenAsInstant.toEpochMilli(), changedFiles(repo, c))
+        val command = g.log().setMaxCount(limit)
+        if (allBranches) {
+            repo.refDatabase.getRefsByPrefix(Constants.R_HEADS).forEach { ref -> ref.objectId?.let { command.add(it) } }
+            command.add(repo.resolve(Constants.HEAD))
+        }
+        command.call().map { c ->
+            VcsCommit(
+                c.name, c.fullMessage.trim(), c.authorIdent.name, c.authorIdent.whenAsInstant.toEpochMilli(),
+                changedFiles(repo, c), c.parents.map { it.name },
+            )
         }
     }
 
@@ -145,19 +153,33 @@ class JGitVcsService(private val root: File) : VcsService {
     }
 
     override fun branches(): VcsBranches = git { g ->
-        val current = g.repository.branch
-        VcsBranches(current, g.branchList().call().map { Repository.shortenRefName(it.name) }.sorted())
+        val repo = g.repository
+        val refs = g.branchList().call()
+        val onBranch = repo.fullBranch?.startsWith(Constants.R_HEADS) == true
+        VcsBranches(
+            current = if (onBranch) repo.branch else null,
+            local = refs.map { Repository.shortenRefName(it.name) }.sorted(),
+            tips = refs.mapNotNull { ref -> ref.objectId?.let { Repository.shortenRefName(ref.name) to it.name } }.toMap(),
+            head = repo.resolve(Constants.HEAD)?.name,
+        )
     }
 
-    override fun createBranch(name: String) {
+    override fun createBranch(name: String, from: String?, checkout: Boolean) {
         val trimmed = name.trim()
         if (trimmed.isEmpty() || !Repository.isValidRefName(Constants.R_HEADS + trimmed)) {
             throw VcsException("vcs.error.invalid_branch_name", trimmed)
         }
         git { g ->
-            if (g.repository.resolve(Constants.HEAD) == null) throw VcsException("vcs.error.no_commits")
+            val repo = g.repository
+            if (repo.resolve(Constants.HEAD) == null) throw VcsException("vcs.error.no_commits")
+            if (from != null && repo.findRef(Constants.R_HEADS + from) == null) throw VcsException("vcs.error.unknown_branch", from)
+            val start = from?.let { Constants.R_HEADS + it }
             try {
-                g.checkout().setCreateBranch(true).setName(trimmed).call()
+                if (checkout) {
+                    g.checkout().setCreateBranch(true).setName(trimmed).apply { start?.let { setStartPoint(it) } }.call()
+                } else {
+                    g.branchCreate().setName(trimmed).apply { start?.let { setStartPoint(it) } }.call()
+                }
             } catch (e: RefAlreadyExistsException) {
                 throw VcsException("vcs.error.branch_exists", trimmed, cause = e)
             }
@@ -225,10 +247,20 @@ class JGitVcsService(private val root: File) : VcsService {
         Unit
     }
 
-    private fun stageExists(g: Git, path: String, stage: CheckoutCommand.Stage): Boolean {
-        val cache = g.repository.readDirCache()
-        val wanted = if (stage == CheckoutCommand.Stage.OURS) 2 else 3
-        return (0 until cache.entryCount).any { i -> cache.getEntry(i).let { it.pathString == path && it.stage == wanted } }
+    private fun stageExists(g: Git, path: String, stage: CheckoutCommand.Stage): Boolean =
+        stageBytes(g, path, if (stage == CheckoutCommand.Stage.OURS) 2 else 3) != null
+
+    /** The blob of [path] at index [stage] (2 = ours, 3 = theirs), or null when that side has no such file. */
+    private fun stageBytes(g: Git, path: String, stage: Int): ByteArray? {
+        val repo = g.repository
+        val cache = repo.readDirCache()
+        val entry = (0 until cache.entryCount).map { cache.getEntry(it) }.firstOrNull { it.pathString == path && it.stage == stage }
+        return entry?.let { repo.open(it.objectId).bytes }
+    }
+
+    override fun conflictDiff(path: String): FileDiff = git { g ->
+        if (path !in g.status().call().conflicting) throw VcsException("vcs.error.not_conflicted", path)
+        TextDiff.of(path, stageBytes(g, path, 2), stageBytes(g, path, 3))
     }
 
     override fun configuredAuthor(): VcsAuthor? {

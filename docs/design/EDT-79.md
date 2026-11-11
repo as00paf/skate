@@ -381,3 +381,28 @@ calls and the handler paths.
 10. **Who implements it?** The lead gave EDT-79 to skate-ecs, but the code is editor-domain (`editor/ui`, status bar,
     dialogs). Recommend keeping it with skate-ecs for continuity with EDT-60, with skate-editor reviewing the status
     bar and dialog look (EDT-51/52 conformance).
+
+## 10. Implementation notes (2026-11-10)
+
+How the build differs from the sections above, and why:
+
+- **Conflict preview:** the service call is `conflictDiff(path): FileDiff` (stage 2 against stage 3) instead of
+  `conflictSides`. The text diff lives next to JGit (`TextDiff`), which only `JGitVcsService` may import.
+- **Resolve several files:** `VcsAction.Resolve` takes a list of paths and resolves them in one Git action. One action
+  per file would be refused as "busy" after the first one.
+- **Per-view diffs:** each view owns a `DiffSlot` (Commit dialog, Conflicts dialog, Git log), so an open dialog and the
+  window never overwrite each other's diff. A slot ignores a result that arrives after the view asked for another file.
+- **Errors (Q9):** every refused or failed action, from any place, goes through `VcsSession.onActionFailed` to an
+  `EditorError` (with `messageArgs`, a new defaulted field). `state.error` keeps only read errors (button ⚠ + tooltip).
+  Successes become toasts through the handler's `notify`.
+- **Refresh triggers (§6):** `requestRefresh()` is coalesced to one read per second in `followProject()` (run every
+  frame by the branch button). Triggers: popup or dialog opened, the Git log window focused, the OS window regaining
+  focus (ImGui's `appFocusLost`, so no GLFW hook was needed), the last unsaved scene saved, `SceneAction.Saved`,
+  `ProjectEvent.Saved`, `FileSystemChangedEvent` and `ScriptEditorAction.Saved`.
+- **Git log graph:** `CommitGraph` gives each row its dot lane plus the lanes coming in from above, going out below
+  and passing through. The first parent always continues in the commit's lane, so the main line stays straight. With a
+  text filter on, the kept rows are no longer adjacent, so the graph column is hidden.
+- **Search Anywhere:** "Commit..." and "Git History". Checkout and New Branch stay in the popup, which has the branch
+  list and the name modal.
+- **Status-bar labels** avoid glyphs missing from the editor font (`●`, `⚠`): `main · 3`, `main · 2 conflict(s)`,
+  `main · !`, after the branch icon.

@@ -2,7 +2,9 @@ package com.pafoid.skate.editor.ui.handlers
 
 import com.pafoid.skate.editor.commands.vcs.CommitChangesCommand
 import com.pafoid.skate.editor.commands.vcs.SwitchBranchCommand
+import com.pafoid.skate.editor.events.EditorError
 import com.pafoid.skate.editor.events.ProjectEvent
+import com.pafoid.skate.editor.events.VcsCommitted
 import com.pafoid.skate.editor.events.VcsAction
 import com.pafoid.skate.editor.systems.UndoRedoManager
 import com.pafoid.skate.editor.vcs.VcsAuthor
@@ -29,7 +31,13 @@ class VcsActionHandlerTest {
     private var unsaved = false
     private val session by lazy { VcsSession({ dir }, VcsRunner.Immediate) }
 
-    private fun handler() = VcsActionHandler(events, undo, session, { playing }, { unsaved }, { "C:/p/Game.skateproject" })
+    private val toasts = mutableListOf<String>()
+    private val errors = mutableListOf<EditorError>()
+
+    private fun handler(): VcsActionHandler {
+        events.subscribe<EditorError> { errors += it }
+        return VcsActionHandler(events, undo, session, { playing }, { unsaved }, { "C:/p/Game.skateproject" }) { key, args -> toasts += "$key$args" }
+    }
 
     private fun repo() {
         session.followProject()
@@ -46,6 +54,53 @@ class VcsActionHandlerTest {
         events.publish(VcsAction.Commit("Edit A", listOf("Scenes/A.scene")))
         assertEquals(listOf("Edit A", "first"), session.state.history.map { it.message })
         assertTrue(session.state.changes.isEmpty())
+        val id = session.state.history.first().id
+        assertEquals("vcs.toast.committed[${id.take(7)}, 1]", toasts.last())
+    }
+
+    @Test
+    fun Commit_PublishesTheNewCommitId() {
+        handler()
+        repo()
+        val committed = mutableListOf<String>()
+        events.subscribe<VcsCommitted> { committed += it.commitId }
+        File(dir, "Scenes/A.scene").writeText("{\"a\":1}\n")
+        events.publish(VcsAction.Commit("Edit A", listOf("Scenes/A.scene")))
+        assertEquals(listOf(session.state.history.first().id), committed)
+    }
+
+    @Test
+    fun CreateBranch_FromAnotherBranchWithoutCheckout() {
+        handler()
+        repo()
+        events.publish(VcsAction.CreateBranch("side", from = "main", checkout = false))
+        assertEquals("main", session.state.branches?.current)
+        assertTrue("side" in session.state.branches?.local.orEmpty())
+        assertEquals("vcs.toast.branch_created[side]", toasts.last())
+    }
+
+    @Test
+    fun AFailedAction_ShowsAnEditorError() {
+        handler()
+        repo()
+        events.publish(VcsAction.DeleteBranch("main"))
+        val error = errors.single()
+        assertEquals(VcsActionHandler.ERROR_TITLE, error.titleKey)
+        assertEquals("vcs.error.delete_current", error.messageKey)
+        assertEquals(listOf<Any>("main"), error.messageArgs)
+    }
+
+    @Test
+    fun SavesAndFileChanges_RequestARefresh() {
+        var now = 0L
+        val s = VcsSession({ dir }, VcsRunner.Immediate, clock = { now })
+        VcsActionHandler(events, undo, s, { false }, { false }, { null })
+        s.followProject()
+        val v = s.state.version
+        events.publish(com.pafoid.skate.editor.events.FileSystemEvent.FileSystemChangedEvent(null))
+        now += VcsSession.REFRESH_INTERVAL_MS
+        s.followProject()
+        assertEquals(v + 1, s.state.version)
     }
 
     @Test
@@ -55,7 +110,7 @@ class VcsActionHandlerTest {
         playing = true
         File(dir, "Scenes/A.scene").writeText("{\"a\":1}\n")
         events.publish(VcsAction.Commit("Edit A", listOf("Scenes/A.scene")))
-        assertEquals("vcs.error.playing", session.state.error?.messageKey)
+        assertEquals("vcs.error.playing", errors.single().messageKey)
         assertEquals(1, session.state.history.size)
     }
 
@@ -69,12 +124,13 @@ class VcsActionHandlerTest {
         events.subscribe<ProjectEvent.OpenProjectRequested> { reloads += it.projectPath }
         unsaved = true
         events.publish(VcsAction.SwitchBranch("main"))
-        assertEquals("vcs.error.unsaved_scenes", session.state.error?.messageKey)
+        assertEquals("vcs.error.unsaved_scenes", errors.single().messageKey)
         assertEquals("other", session.state.branches?.current)
         unsaved = false
         events.publish(VcsAction.SwitchBranch("main"))
         assertEquals("main", session.state.branches?.current)
         assertEquals(listOf("C:/p/Game.skateproject"), reloads)
+        assertEquals("vcs.toast.switched[main]", toasts.last())
     }
 
     @Test
