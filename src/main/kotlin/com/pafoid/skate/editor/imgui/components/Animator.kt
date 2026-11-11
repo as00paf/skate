@@ -38,21 +38,20 @@ fun Animator.imgui(engine: Engine) {
     ImGui.separator()
 
     ImGui.beginGroup()
-    if (ImGui.beginCombo(
-            engine.stringManager.label("lbl.animator.animations"),
-            currentAnimation?.name
-                ?: if (animations.isEmpty()) engine.stringManager.getString("lbl.animator.drop_animations") else engine.stringManager.getString(
-                    "lbl.animator.select"
-                )
-        )
-    ) {
+    val running = engine.sceneManager.currentScene?.isRunning == true
+    val shown = inspectorClip ?: currentAnimation.takeIf { stateMachine == null }
+    val comboPreview = shown?.name
+        ?: if (animations.isEmpty()) engine.stringManager.getString("lbl.animator.drop_animations") else engine.stringManager.getString("lbl.animator.select")
+    if (ImGui.beginCombo(engine.stringManager.label("lbl.animator.animations"), comboPreview)) {
         for (anim in animations) {
-            if (ImGui.selectable("${anim.name} (${String.format("%.2f", anim.duration)}s)", currentAnimation == anim)) {
-                play(anim)
+            // ANI-25: on a character with a controller the clip plays over it (and over gameplay) until Stop/Reset.
+            if (ImGui.selectable("${anim.name} (${String.format("%.2f", anim.duration)}s)###clip:${anim.name}", shown == anim)) {
+                AnimatorControls.selectClip(this, anim, skeletonComponent, running)
             }
         }
         ImGui.endCombo()
     }
+    Tooltips.showIfPresent(engine.stringManager, "lbl.animator.animations.tooltip")
     ImGui.endGroup()
 
     if (ImGui.beginDragDropTarget()) {
@@ -73,14 +72,12 @@ fun Animator.imgui(engine: Engine) {
 private fun Animator.playbackSection(engine: Engine, skeletonComponent: SkeletonComponent?) {
     val strings = engine.stringManager
     val running = engine.sceneManager.currentScene?.isRunning == true
-    val anim = currentAnimation
-    val timeline = AnimatorControls.showsClipTimeline(this)
-    if (!timeline && stateMachine == null) return
-    if (timeline) {
-        anim ?: return
-        ImGui.text(strings.getString("lbl.animator.duration", anim.duration))
-        val timeArr = floatArrayOf(currentTime.coerceIn(0f, anim.duration))
-        if (ImGui.sliderFloat(strings.label("lbl.animator.timeline"), timeArr, 0f, anim.duration)) {
+    val timelineClip = AnimatorControls.timelineClip(this)
+    if (timelineClip == null && stateMachine == null) return
+    if (timelineClip != null) {
+        ImGui.text(strings.getString("lbl.animator.duration", timelineClip.duration))
+        val timeArr = floatArrayOf(AnimatorControls.timelineTime(this).coerceIn(0f, timelineClip.duration))
+        if (ImGui.sliderFloat(strings.label("lbl.animator.timeline"), timeArr, 0f, timelineClip.duration)) {
             AnimatorControls.scrub(this, skeletonComponent, timeArr[0], running)
         }
         Tooltips.showIfPresent(strings, "lbl.animator.timeline.tooltip")
@@ -93,6 +90,13 @@ private fun Animator.playbackSection(engine: Engine, skeletonComponent: Skeleton
     ImGui.sameLine()
     if (strings.tippedWith(ImGui.button("${strings.getString("btn.reset")}##animator_reset"), "lbl.animator.reset.tooltip")) {
         AnimatorControls.reset(this, skeletonComponent)
+    }
+    if (AnimatorControls.overridesController(this)) {
+        ImGui.sameLine()
+        if (strings.tipped(ImGui.button("${strings.getString("btn.animator.stop_clip")}##animator_stop"), "btn.animator.stop_clip")) {
+            AnimatorControls.stop(this, skeletonComponent)
+        }
+        MImGui.warningText(strings.getString("lbl.animator.clip_over_controller", inspectorClip?.name ?: ""))
     }
     if (!running) {
         ImGui.sameLine()

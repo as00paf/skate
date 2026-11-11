@@ -138,6 +138,15 @@ class AnimationSystem(
         val pose = ago.skeleton.pose
         val skeleton = pose.skeleton
 
+        // The inspector plays a clip over the controller (ANI-25): it wins until Stop/Reset, gameplay's writes wait.
+        animator.inspectorClip?.let { clip ->
+            if ((editMode || !animator.controllerPaused) && clip.duration > 0f) {
+                animator.inspectorTime = (animator.inspectorTime + dt) % clip.duration
+            }
+            animator.applyPose(ago.skeleton)
+            return
+        }
+
         val machine = animator.stateMachine
         if (machine != null) {
             // Paused from the inspector while playing (ANI-24): the controller holds its pose.
