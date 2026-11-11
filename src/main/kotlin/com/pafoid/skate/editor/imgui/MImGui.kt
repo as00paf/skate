@@ -9,6 +9,7 @@ import imgui.flag.ImGuiCol
 import imgui.flag.ImGuiCond
 import imgui.flag.ImGuiKey
 import imgui.flag.ImGuiStyleVar
+import imgui.flag.ImGuiTableColumnFlags
 import imgui.flag.ImGuiWindowFlags
 import imgui.type.ImInt
 import org.joml.Vector2f
@@ -36,7 +37,8 @@ object MImGui {
         ImGui.pushID(label)
 
         if (ImGui.beginTable("##${label}_table", 2, 0, 2f)) {
-            ImGui.tableSetupColumn("##Label", 0, columnWidth)
+            // EDT-87: a width needs an explicit sizing policy; without one ImGui asserts and the editor aborts.
+            ImGui.tableSetupColumn("##Label", ImGuiTableColumnFlags.WidthFixed, columnWidth)
             ImGui.tableSetupColumn("##Control")
             ImGui.tableNextRow()
             ImGui.tableSetColumnIndex(0)
@@ -469,7 +471,7 @@ object MImGui {
         ImGui.pushID(label)
 
         if (ImGui.beginTable("##${label}_table", 2, 0, 2f)) {
-            ImGui.tableSetupColumn("##Label", 0, DEFAULT_COLUMN_WIDTH)
+            ImGui.tableSetupColumn("##Label", ImGuiTableColumnFlags.WidthFixed, DEFAULT_COLUMN_WIDTH)
             ImGui.tableSetupColumn("##Control")
             ImGui.tableNextRow()
             ImGui.tableSetColumnIndex(0)
