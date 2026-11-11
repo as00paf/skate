@@ -56,6 +56,9 @@ class VideoToAnimationWindow(
     private var thumbnailFile: File? = null
     private var settingsLoaded = false
 
+    /** Uploads a preview frame; replaced by tests (no GPU). */
+    internal var uploadPreview: (File) -> TextureThumbnail = { ThumbnailScaler.upload(decode(it)) }
+
     override fun imgui() {
         if (beginWindow(strings)) {
             header(strings)
@@ -287,7 +290,7 @@ class VideoToAnimationWindow(
         if (file == null || !file.isFile) return null
         if (file != thumbnailFile) {
             thumbnail?.texture?.close()
-            thumbnail = runCatching { ThumbnailScaler.upload(decode(file)) }.getOrNull()
+            thumbnail = runCatching { uploadPreview(file) }.getOrNull()
             thumbnailFile = file
         }
         return thumbnail

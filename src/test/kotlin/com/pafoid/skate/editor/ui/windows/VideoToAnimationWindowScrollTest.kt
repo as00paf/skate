@@ -4,6 +4,10 @@ import com.pafoid.skate.app.Editor
 import com.pafoid.skate.editor.animation.mocap.MocapPhase
 import com.pafoid.skate.editor.animation.mocap.VideoMocapOptions
 import com.pafoid.skate.editor.animation.mocap.VideoToAnimationController
+import com.pafoid.skate.editor.animation.mocap.VideoInfo
+import com.pafoid.skate.editor.animation.mocap.VideoPlayer
+import com.pafoid.skate.editor.ui.windows.assetBrowser.TextureThumbnail
+import com.pafoid.skate.engine.render.rhi.RhiTexture
 import com.pafoid.skate.editor.imgui.ImGuiStyleManager
 import com.pafoid.skate.editor.imgui.loadFonts
 import com.pafoid.skate.editor.imgui.theme.ThemeLibrary
@@ -54,7 +58,16 @@ class VideoToAnimationWindowScrollTest {
         ImGui.destroyContext()
     }
 
-    private fun window(): VideoToAnimationWindow {
+    private val frameFiles = (0..1).map { kotlin.io.path.createTempFile("mocap_frame$it", ".png").toFile().apply { deleteOnExit() } }
+
+    /**
+     * The window as the human sees it after choosing a video (when [loaded]): video info, the preview frame (a fake
+     * texture, no GPU), the playback buttons, the scrub bar with the in/out range and the range buttons. [playing]
+     * plays the video, so the preview frame changes every frame.
+     */
+    private fun window(loaded: Boolean = false, playing: Boolean = false): VideoToAnimationWindow {
+        val fakePlayer = if (loaded) VideoPlayer(30f, 300).apply { markIn(30); markOut(200); seek(90); if (playing) togglePlay() } else null
+        var shown = 0
         val strings = mockk<StringManager>(relaxed = true)
         every { strings.getString(any()) } answers { firstArg() }
         every { strings.getString(any(), *anyVararg()) } answers { firstArg() }
@@ -64,9 +77,13 @@ class VideoToAnimationWindowScrollTest {
         val projects = mockk<ProjectManager>(relaxed = true) { every { getProjectDirectory() } returns File("project") }
         val controller = mockk<VideoToAnimationController>(relaxed = true) {
             every { phase } returns MocapPhase.IDLE
-            every { video } returns null
-            every { info } returns null
-            every { player } returns null
+            every { video } returns if (loaded) File("clip.mp4") else null
+            every { info } returns if (loaded) VideoInfo(30f, 300, 1920, 1080, 10f, frameFiles[0]) else null
+            every { player } returns fakePlayer
+            every { tick(any()) } answers { fakePlayer?.tick(firstArg()) }
+            every { previewImage() } answers { if (loaded) frameFiles[(shown++ / 2) % 2] else null }
+            every { previewProgress } returns null
+            every { landmarks } returns null
             every { busy } returns false
             every { canCreate } returns false
             every { options } returns VideoMocapOptions()
@@ -75,7 +92,10 @@ class VideoToAnimationWindowScrollTest {
             every { setup } returns null
             every { checkingSetup } returns false
         }
-        return VideoToAnimationWindow(engine, editor, projects, controller).also { it.isOpen.set(true) }
+        return VideoToAnimationWindow(engine, editor, projects, controller).also {
+            it.isOpen.set(true)
+            it.uploadPreview = { _ -> TextureThumbnail(mockk<RhiTexture>(relaxed = true) { every { nativeHandle } returns 1L }, 512, 288, 1920, 1080) }
+        }
     }
 
     private fun frame(window: VideoToAnimationWindow, wheel: Float = 0f) {
@@ -89,22 +109,36 @@ class VideoToAnimationWindowScrollTest {
         ImGui.render()
     }
 
-    @Test
-    fun SmallWindow_ScrollsToItsLastControl() {
-        val window = window()
+    /** Scrolls [window] to the end with the mouse wheel; the Setup header must end up fully visible and stay put. */
+    private fun assertScrollsToTheEnd(window: VideoToAnimationWindow, case: String) {
         repeat(3) { frame(window) }
         val bottom = winY + winH
         val before = setupY
-        assertTrue(before > bottom, "the Setup header starts below a $winH px window (y=$before, bottom=$bottom)")
+        assertTrue(before > bottom, "$case: the Setup header starts below a $winH px window (y=$before, bottom=$bottom)")
 
-        repeat(20) { frame(window, wheel = -5f) }
+        repeat(40) { frame(window, wheel = -5f) }
         repeat(3) { frame(window) }
         val after = setupY
         val headerHeight = ImGui.getFrameHeight()
-        assertTrue(after + headerHeight <= bottom, "scrolled to the end, the Setup header is fully visible (y=$after, bottom=$bottom)")
-        assertTrue(after < before, "the content moved up")
+        assertTrue(after + headerHeight <= bottom, "$case: scrolled to the end, the Setup header is fully visible (y=$after, bottom=$bottom)")
+        assertTrue(after < before, "$case: the content moved up")
 
-        frame(window)
-        assertEquals(after, setupY, "the scroll position holds (no snapping back)")
+        repeat(3) { frame(window) }
+        assertEquals(after, setupY, "$case: the scroll position holds (no snapping back)")
+    }
+
+    @Test
+    fun SmallWindow_ScrollsToItsLastControl() {
+        assertScrollsToTheEnd(window(), "no video")
+    }
+
+    @Test
+    fun SmallWindow_WithAVideoChosen_ScrollsToItsLastControl() {
+        assertScrollsToTheEnd(window(loaded = true), "video chosen")
+    }
+
+    @Test
+    fun SmallWindow_WhileTheVideoPlays_ScrollsToItsLastControl() {
+        assertScrollsToTheEnd(window(loaded = true, playing = true), "video playing")
     }
 }
