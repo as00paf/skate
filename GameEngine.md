@@ -390,6 +390,10 @@ Round 27+ goals: input is too tightly coupled with skateboarding; it needs a gam
   - Do: (human, round 32 testing): the Video to Animation window does not scroll (after ANI-20 added playback and trim). Fix the window's child/scroll layout so the whole content scrolls with the mouse wheel and scrollbar.
   - Done when: All controls are reachable by scrolling at a small window size; a test or guard for the layout if practical.
   - Deps: ANI-20
+- [x] **ANI-24** `P0` Animator: clipped icon buttons; inspector Play/Reset do nothing
+  - Do: (human, round 33 testing): the Animator window's parameter delete button is too short for its icon; the Animator component's Play and Reset buttons have no effect. Play previews in edit mode and pauses/resumes the controller in play mode; Reset returns to the default state.
+  - Done when: Icons fit; Play/Reset change the pose in both modes; tests.
+  - Deps: ANI-21
 - [ ] **ANI-23** `P2` Animator window: blend tree editor in the state inspector
   - Do: (ANI-21 design answer, 2026-11-10): edit 1D/2D blend trees of a state in the Animator window's state inspector, with live preview.
   - Done when: A blend tree can be created and edited from the window and saved in the controller file; tests.
@@ -625,6 +629,10 @@ Round 27+ goals (human, 2026-11-06): fix editor bugs, make every window, dialog 
   - Do: (from ANI-22, round 32 testing): EDT-72's clamp in `HelpButtonLayout.row` keeps the header 2px below the window top even when the window is scrolled, so windows that scroll their whole body below `header()` snap back. Apply the clamp relative to the scroll position.
   - Done when: A window using `header()` scrolls at a small size and the `?` stays unclipped at 100 %/150 %; guard test.
   - Deps: EDT-72
+- [x] **EDT-86** `P0` Inspector buttons after a field are clipped or pushed out
+  - Do: (human, round 33 testing): texture Delete buttons clipped at the end; the Animator component's Edit/Refresh buttons sometimes have no room. Shared trailing-button layout sized from the current style.
+  - Done when: Trailing buttons fit at every density preset and narrow widths; guard test.
+  - Deps: EDT-76
 - [ ] **EDT-82** `P2` Editor-wide "unsaved assets" prompt on close
   - Do: (ANI-21 design answer, 2026-11-10): one prompt when the project or editor closes, listing the unsaved scene, animation clips and animator controllers, with Save all / Discard / Cancel.
   - Done when: Closing with unsaved assets asks first; tests for the dirty-document registry.
