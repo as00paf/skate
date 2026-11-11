@@ -5,7 +5,9 @@ import com.pafoid.skate.editor.events.WindowAction
 import com.pafoid.skate.editor.imgui.DialogFooter
 import com.pafoid.skate.editor.imgui.EditorDialog
 import com.pafoid.skate.editor.imgui.EmptyState
-import com.pafoid.skate.editor.imgui.FooterButton
+import com.pafoid.skate.editor.imgui.label
+import com.pafoid.skate.editor.imgui.theme.ThemeColors
+import com.pafoid.skate.editor.imgui.tipped
 import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.editor.vcs.BranchButtonModel
 import com.pafoid.skate.editor.vcs.DiffSlot
@@ -37,7 +39,7 @@ class ConflictsDialog(
     private val diff = DiffSlot()
     private var focusedPath: String? = null
 
-    override val icon = Icons.QUESTION_CIRCLE
+    override val icon = Icons.WARNING
     override val relatedWindows = listOf(VcsWindows.COMMIT, VcsWindows.LOG)
 
     override fun content() {
@@ -56,6 +58,7 @@ class ConflictsDialog(
             return
         }
         ImGui.textWrapped(strings.getString("vcs.conflicts.message", conflicts.size))
+        resolveBar(state.busy)
         val bottom = DialogFooter.height()
         val width = ImGui.getContentRegionAvailX()
         ImGui.beginChild("vcs_conflict_files", width * 0.38f, -bottom, true)
@@ -67,10 +70,10 @@ class ConflictsDialog(
         conflicts.forEach { path ->
             if (ImGui.checkbox("##tick_$path", path in ticked)) if (!ticked.remove(path)) ticked += path
             ImGui.sameLine()
-            if (ImGui.selectable("! $path##conflict_$path", focusedPath == path)) {
-                focusedPath = path
-                session.showConflictDiff(diff, path)
-            }
+            textColored(ThemeColors.danger, Icons.WARNING)
+            ImGui.sameLine()
+            if (ImGui.selectable("$path##conflict_$path", focusedPath == path)) focus(path)
+            fileMenu(path, state.busy)
         }
         ImGui.endChild()
         ImGui.sameLine()
@@ -80,22 +83,44 @@ class ConflictsDialog(
         ImGui.endChild()
     }
 
+    private fun focus(path: String) {
+        focusedPath = path
+        session.showConflictDiff(diff, path)
+    }
+
+    /**
+     * Keep mine / Take theirs on the ticked files (else the focused one). They sit above the lists, not in the footer:
+     * neither is the dialog's one main action, and the footer keeps the standard [Close] (EDT-51 §2.6).
+     */
+    private fun resolveBar(busy: Boolean) {
+        val targets = targets()
+        ImGui.beginDisabled(targets.isEmpty() || busy)
+        if (strings.tipped(ImGui.button(strings.label("vcs.resolve.mine", "${Icons.CHECK} ")), "vcs.resolve.mine")) resolve(targets, Resolution.MINE)
+        ImGui.sameLine()
+        if (strings.tipped(ImGui.button(strings.label("vcs.resolve.theirs", "${Icons.ARROW_LEFT} ")), "vcs.resolve.theirs")) resolve(targets, Resolution.THEIRS)
+        ImGui.endDisabled()
+        ImGui.sameLine()
+        ImGui.textDisabled(strings.getString("vcs.selected_count", targets.size))
+    }
+
+    /** Right-click on a file (EDT-51 §2.3): resolve just that file, or copy its path. */
+    private fun fileMenu(path: String, busy: Boolean) {
+        if (!ImGui.beginPopupContextItem("vcs_conflict_menu_$path")) return
+        if (strings.tipped(ImGui.menuItem(strings.label("vcs.resolve.mine", "${Icons.CHECK} "), null, false, !busy), "vcs.resolve.mine")) {
+            resolve(listOf(path), Resolution.MINE)
+        }
+        if (strings.tipped(ImGui.menuItem(strings.label("vcs.resolve.theirs", "${Icons.ARROW_LEFT} "), null, false, !busy), "vcs.resolve.theirs")) {
+            resolve(listOf(path), Resolution.THEIRS)
+        }
+        ImGui.separator()
+        if (strings.tipped(ImGui.menuItem(strings.label("vcs.menu.copy_path", "${Icons.COPY} ")), "vcs.menu.copy_path")) ImGui.setClipboardText(path)
+        ImGui.endPopup()
+    }
+
+    private fun resolve(paths: List<String>, resolution: Resolution) {
+        eventSystem.publish(VcsAction.Resolve(paths, resolution))
+    }
+
     /** The files Keep mine / Take theirs act on: the ticked ones, else the focused one. */
     private fun targets(): List<String> = ticked.toList().ifEmpty { listOfNotNull(focusedPath) }
-
-    override fun footerButtons(): List<FooterButton> {
-        val state = session.state
-        if (state.conflicts.isEmpty()) return super.footerButtons()
-        val targets = targets()
-        val enabled = targets.isNotEmpty() && !state.busy
-        return listOf(
-            FooterButton("vcs.resolve.mine", FooterButton.Role.SECONDARY, enabled, closes = false) {
-                eventSystem.publish(VcsAction.Resolve(targets, Resolution.MINE))
-            },
-            FooterButton("vcs.resolve.theirs", FooterButton.Role.SECONDARY, enabled, closes = false) {
-                eventSystem.publish(VcsAction.Resolve(targets, Resolution.THEIRS))
-            },
-            FooterButton("btn.close", FooterButton.Role.CANCEL),
-        )
-    }
 }

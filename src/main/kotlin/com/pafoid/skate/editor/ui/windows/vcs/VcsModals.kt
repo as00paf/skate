@@ -4,12 +4,12 @@ import com.pafoid.skate.editor.events.VcsAction
 import com.pafoid.skate.editor.imgui.EditorModal
 import com.pafoid.skate.editor.imgui.FooterButton
 import com.pafoid.skate.editor.imgui.data.Icons
+import com.pafoid.skate.editor.imgui.theme.ThemeColors
 import com.pafoid.skate.editor.vcs.BranchNames
 import com.pafoid.skate.editor.vcs.VcsSession
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.core.StringManager
 import imgui.ImGui
-import imgui.flag.ImGuiCol
 import imgui.type.ImBoolean
 import imgui.type.ImString
 
@@ -98,7 +98,7 @@ class NewBranchModal(
 
     override val titleKey = "vcs.new_branch.title"
 
-    /** Opens the modal for a branch from [fromBranch] (null: the current commit). */
+    /** Opens the modal for a branch from [fromBranch], a branch or commit id (null: the current commit). */
     fun show(fromBranch: String?) {
         from = fromBranch
         name.set("")
@@ -110,7 +110,8 @@ class NewBranchModal(
     private fun problem(): String? = BranchNames.problem(name.get(), session.state.branches?.local.orEmpty())
 
     override fun content() {
-        val source = from ?: session.state.branches?.current ?: session.state.branches?.head?.take(7) ?: "?"
+        val source = from?.let { if (it.length == 40 && it.all { c -> c in "0123456789abcdef" }) it.take(7) else it }
+            ?: session.state.branches?.current ?: session.state.branches?.head?.take(7) ?: "?"
         ImGui.textDisabled(strings.getString("vcs.new_branch.from", source))
         if (focusName) {
             ImGui.setKeyboardFocusHere()
@@ -120,9 +121,7 @@ class NewBranchModal(
         ImGui.inputTextWithHint("##vcs_new_branch_name", strings.getString("vcs.branch.name_hint"), name)
         val problem = problem()
         if (problem != null && name.get().isNotEmpty()) {
-            ImGui.pushStyleColor(ImGuiCol.Text, 1f, 0.45f, 0.4f, 1f)
-            ImGui.textUnformatted(strings.getString(problem))
-            ImGui.popStyleColor()
+            textColored(ThemeColors.danger, strings.getString(problem))
         }
         ImGui.checkbox(strings.getString("vcs.new_branch.checkout") + "##vcs_new_branch_checkout", checkout)
     }

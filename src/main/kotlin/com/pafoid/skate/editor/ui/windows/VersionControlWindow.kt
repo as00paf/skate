@@ -6,19 +6,23 @@ import com.pafoid.skate.editor.imgui.EmptyState
 import com.pafoid.skate.editor.imgui.Tooltips
 import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.editor.imgui.label
+import com.pafoid.skate.editor.imgui.theme.ThemeColors
 import com.pafoid.skate.editor.imgui.tipped
+import com.pafoid.skate.editor.data.EditorShortcuts
 import com.pafoid.skate.editor.systems.ProjectManager
 import com.pafoid.skate.editor.ui.windows.vcs.DiffView
 import com.pafoid.skate.editor.ui.windows.vcs.VcsModals
 import com.pafoid.skate.editor.vcs.CommitGraph
 import com.pafoid.skate.editor.vcs.DiffSlot
 import com.pafoid.skate.editor.vcs.GitLogFilter
+import com.pafoid.skate.editor.vcs.GraphStyle
 import com.pafoid.skate.editor.vcs.VcsCommit
 import com.pafoid.skate.editor.vcs.VcsSession
 import com.pafoid.skate.editor.vcs.VcsWindows
 import com.pafoid.skate.engine.core.Engine
 import imgui.ImGui
 import imgui.flag.ImGuiFocusedFlags
+import imgui.flag.ImGuiPopupFlags
 import imgui.flag.ImGuiSelectableFlags
 import imgui.flag.ImGuiStyleVar
 import imgui.flag.ImGuiTableColumnFlags
@@ -44,8 +48,18 @@ class VersionControlWindow(
 
     companion object {
         const val NAME = "window.version_control"
-        private const val LANE_WIDTH = 14f
+
+        // Sizes in font heights (em), so the window follows the UI scale.
+        private const val LANE_EM = 0.9f
+        private const val DOT_EM = 0.26f
+        private const val BRANCH_COMBO_EM = 11f
+        private const val FILTER_EM = 15f
+        private const val AUTHOR_EM = 7.5f
+        private const val DATE_EM = 8.5f
+        private const val MAX_LANES = 12
     }
+
+    private val em: Float get() = ImGui.getFontSize().toFloat()
 
     private val strings = engine.stringManager
     private val eventSystem = engine.eventSystem
@@ -91,7 +105,7 @@ class VersionControlWindow(
 
     private fun toolbar() {
         val state = session.state
-        ImGui.setNextItemWidth(160f)
+        ImGui.setNextItemWidth(BRANCH_COMBO_EM * em)
         val allLabel = strings.getString("vcs.log.all_branches")
         if (ImGui.beginCombo(strings.label("vcs.log.branch"), branchFilter ?: allLabel)) {
             if (ImGui.selectable("$allLabel##vcs_log_all", branchFilter == null)) branchFilter = null
@@ -103,7 +117,7 @@ class VersionControlWindow(
         Tooltips.show(strings, "vcs.log.branch.tooltip")
         if (branchFilter != null && branchFilter !in state.branches?.local.orEmpty()) branchFilter = null
         ImGui.sameLine()
-        ImGui.setNextItemWidth(220f)
+        ImGui.setNextItemWidth(FILTER_EM * em)
         ImGui.inputTextWithHint("##vcs_log_text", "${Icons.SEARCH} " + strings.getString("vcs.log.filter_hint"), textFilter)
         Tooltips.show(strings, "vcs.log.filter.tooltip")
         ImGui.sameLine()
@@ -154,13 +168,17 @@ class VersionControlWindow(
 
     private fun commitTable() {
         if (shown.isEmpty()) {
-            EmptyState.nothingYet(strings, Icons.SEARCH, "vcs.log.no_match")
+            // EDT-51 §2.5: no results while a filter is on, so offer to clear it.
+            EmptyState.render(
+                strings, Icons.SEARCH, "vcs.log.no_match", null,
+                listOf(EmptyState.Action("vcs.log.reset_filters", Icons.ARROW_ROTATE) { resetFilters() }),
+            )
             return
         }
         val state = session.state
         val labels = GitLogFilter.labels(state.branches)
         val current = state.branches?.current
-        val graphWidth = ((rows.maxOfOrNull { it.width } ?: 1).coerceAtMost(12)) * LANE_WIDTH + 6f
+        val graphWidth = ((rows.maxOfOrNull { it.width } ?: 1).coerceAtMost(MAX_LANES)) * LANE_EM * em + ImGui.getStyle().cellPaddingX * 2f
         val flags = ImGuiTableFlags.Resizable or ImGuiTableFlags.RowBg or ImGuiTableFlags.ScrollY or
             ImGuiTableFlags.BordersInnerV or ImGuiTableFlags.SizingFixedFit
         ImGui.pushStyleVar(ImGuiStyleVar.CellPadding, ImGui.getStyle().cellPaddingX, 0f)
@@ -168,8 +186,8 @@ class VersionControlWindow(
             ImGui.tableSetupScrollFreeze(0, 1)
             ImGui.tableSetupColumn(strings.label("vcs.log.column.graph"), ImGuiTableColumnFlags.WidthFixed, graphWidth)
             ImGui.tableSetupColumn(strings.label("vcs.log.column.message"), ImGuiTableColumnFlags.WidthStretch)
-            ImGui.tableSetupColumn(strings.label("vcs.log.column.author"), ImGuiTableColumnFlags.WidthFixed, 110f)
-            ImGui.tableSetupColumn(strings.label("vcs.log.column.date"), ImGuiTableColumnFlags.WidthFixed, 120f)
+            ImGui.tableSetupColumn(strings.label("vcs.log.column.author"), ImGuiTableColumnFlags.WidthFixed, AUTHOR_EM * em)
+            ImGui.tableSetupColumn(strings.label("vcs.log.column.date"), ImGuiTableColumnFlags.WidthFixed, DATE_EM * em)
             ImGui.tableHeadersRow()
             val rowHeight = ImGui.getFrameHeight()
             val dates = DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT)
@@ -180,16 +198,15 @@ class VersionControlWindow(
                 val y = ImGui.getCursorScreenPosY()
                 val selected = selectedCommit == commit.id
                 if (ImGui.selectable("##c_${commit.id}", selected, ImGuiSelectableFlags.SpanAllColumns or ImGuiSelectableFlags.AllowOverlap, 0f, rowHeight)) {
-                    selectedCommit = commit.id
-                    selectedFile = null
-                    diff.clear()
+                    select(commit)
                 }
+                commitMenu(commit)
                 rows.getOrNull(i)?.let { drawGraph(it, x, y, rowHeight, labels[commit.id].orEmpty().contains(current)) }
                 ImGui.tableSetColumnIndex(1)
                 ImGui.alignTextToFramePadding()
                 labels[commit.id]?.forEach { name ->
-                    val color = if (name == current) floatArrayOf(1f, 0.8f, 0.35f, 1f) else floatArrayOf(0.45f, 0.75f, 1f, 1f)
-                    ImGui.textColored(color[0], color[1], color[2], color[3], "[$name]")
+                    val c = GraphStyle.tagColor(name == current, ThemeColors.current)
+                    ImGui.textColored(c.x, c.y, c.z, c.w, "[$name]")
                     ImGui.sameLine()
                 }
                 ImGui.textUnformatted(commit.message.lineSequence().first())
@@ -204,31 +221,83 @@ class VersionControlWindow(
             ImGui.endTable()
         }
         ImGui.popStyleVar()
+        listMenu()
+    }
+
+    private fun select(commit: VcsCommit) {
+        selectedCommit = commit.id
+        selectedFile = null
+        diff.clear()
+    }
+
+    private fun resetFilters() {
+        branchFilter = null
+        textFilter.set("")
+    }
+
+    /** Right-click on a commit (EDT-51 §2.3): branch from it, copy its id or message. */
+    private fun commitMenu(commit: VcsCommit) {
+        if (!ImGui.beginPopupContextItem("vcs_log_commit_${commit.id}")) return
+        select(commit)
+        val busy = session.state.busy
+        if (strings.tipped(ImGui.menuItem(strings.label("vcs.log.menu.new_branch", "${Icons.PLUS} "), null, false, !busy), "vcs.log.menu.new_branch")) {
+            modals.newBranch.show(commit.id)
+        }
+        ImGui.separator()
+        if (strings.tipped(ImGui.menuItem(strings.label("vcs.log.menu.copy_id", "${Icons.COPY} ")), "vcs.log.menu.copy_id")) ImGui.setClipboardText(commit.id)
+        if (strings.tipped(ImGui.menuItem(strings.label("vcs.log.menu.copy_message", "${Icons.COPY} ")), "vcs.log.menu.copy_message")) {
+            ImGui.setClipboardText(commit.message)
+        }
+        ImGui.endPopup()
+    }
+
+    /** Right-click on empty space in the list: the window's own actions. */
+    private fun listMenu() {
+        if (!ImGui.beginPopupContextWindow("##vcs_log_space", ImGuiPopupFlags.MouseButtonRight or ImGuiPopupFlags.NoOpenOverItems)) return
+        if (strings.tipped(ImGui.menuItem(strings.label("vcs.popup.commit", "${Icons.CHECK} "), EditorShortcuts.VCS_COMMIT.display(), false, true), "vcs.popup.commit", EditorShortcuts.VCS_COMMIT)) {
+            eventSystem.publish(WindowAction.Show(VcsWindows.COMMIT))
+        }
+        if (strings.tipped(ImGui.menuItem(strings.label("vcs.refresh", "${Icons.ROTATE} "), null, false, !session.state.busy), "vcs.refresh")) session.refresh()
+        val filtered = branchFilter != null || textFilter.get().isNotBlank()
+        if (strings.tipped(ImGui.menuItem(strings.label("vcs.log.reset_filters", "${Icons.ARROW_ROTATE} "), null, false, filtered), "vcs.log.reset_filters")) {
+            resetFilters()
+        }
+        ImGui.endPopup()
+    }
+
+    /** Right-click on a file of the selected commit: show its diff, copy its path. */
+    private fun fileMenu(commit: VcsCommit, path: String) {
+        if (!ImGui.beginPopupContextItem("vcs_log_file_$path")) return
+        if (strings.tipped(ImGui.menuItem(strings.label("vcs.log.menu.show_diff", "${Icons.FILE_TEXT} ")), "vcs.log.menu.show_diff")) showFile(commit, path)
+        ImGui.separator()
+        if (strings.tipped(ImGui.menuItem(strings.label("vcs.menu.copy_path", "${Icons.COPY} ")), "vcs.menu.copy_path")) ImGui.setClipboardText(path)
+        ImGui.endPopup()
+    }
+
+    private fun showFile(commit: VcsCommit, path: String) {
+        selectedFile = path
+        session.showCommitDiff(diff, commit.id, path)
     }
 
     /** One row of the graph: straight lines for passing lanes, lines into and out of the dot, then the dot. */
     private fun drawGraph(row: CommitGraph.Row, x: Float, top: Float, height: Float, onCurrent: Boolean) {
         val draw = ImGui.getWindowDrawList()
-        fun laneX(lane: Int) = x + LANE_WIDTH * (lane.coerceAtMost(11) + 0.5f)
+        val lane = LANE_EM * em
+        val lineWidth = maxOf(1f, em * 0.1f)
+        fun laneX(index: Int) = x + ImGui.getStyle().cellPaddingX + lane * (index.coerceAtMost(MAX_LANES - 1) + 0.5f)
         val mid = top + height / 2f
         val bottom = top + height
         val dotX = laneX(row.lane)
-        row.through.forEach { draw.addLine(laneX(it), top, laneX(it), bottom, laneColor(it), 1.5f) }
-        row.up.forEach { draw.addLine(laneX(it), top, dotX, mid, laneColor(it), 1.5f) }
-        row.down.forEach { draw.addLine(dotX, mid, laneX(it), bottom, laneColor(it), 1.5f) }
-        val dot = if (onCurrent) ImGui.getColorU32(1f, 0.8f, 0.35f, 1f) else laneColor(row.lane)
-        draw.addCircleFilled(dotX, mid, 4f, dot)
+        row.through.forEach { draw.addLine(laneX(it), top, laneX(it), bottom, laneColor(it), lineWidth) }
+        row.up.forEach { draw.addLine(laneX(it), top, dotX, mid, laneColor(it), lineWidth) }
+        row.down.forEach { draw.addLine(dotX, mid, laneX(it), bottom, laneColor(it), lineWidth) }
+        val dot = if (onCurrent) u32(GraphStyle.tagColor(true, ThemeColors.current)) else laneColor(row.lane)
+        draw.addCircleFilled(dotX, mid, DOT_EM * em, dot)
     }
 
-    private fun laneColor(lane: Int): Int {
-        val c = LANE_COLORS[lane % LANE_COLORS.size]
-        return ImGui.getColorU32(c[0], c[1], c[2], 1f)
-    }
+    private fun laneColor(lane: Int): Int = u32(GraphStyle.laneColor(lane, ThemeColors.current))
 
-    private val LANE_COLORS = listOf(
-        floatArrayOf(0.45f, 0.75f, 1f), floatArrayOf(0.55f, 0.85f, 0.5f), floatArrayOf(0.85f, 0.55f, 0.9f),
-        floatArrayOf(0.95f, 0.6f, 0.4f), floatArrayOf(0.4f, 0.85f, 0.8f), floatArrayOf(0.9f, 0.85f, 0.45f),
-    )
+    private fun u32(c: org.joml.Vector4f): Int = ImGui.getColorU32(c.x, c.y, c.z, c.w)
 
     private fun commitDetail() {
         val commit = shown.firstOrNull { it.id == selectedCommit }
@@ -245,10 +314,8 @@ class VersionControlWindow(
         val filesHeight = (ImGui.getTextLineHeightWithSpacing() * (commit.files.size.coerceIn(1, 8) + 0.5f))
         ImGui.beginChild("vcs_log_files", 0f, filesHeight, false)
         commit.files.forEach { f ->
-            if (ImGui.selectable("$f##cf_${commit.id}_$f", selectedFile == f)) {
-                selectedFile = f
-                session.showCommitDiff(diff, commit.id, f)
-            }
+            if (ImGui.selectable("$f##cf_${commit.id}_$f", selectedFile == f)) showFile(commit, f)
+            fileMenu(commit, f)
         }
         ImGui.endChild()
         ImGui.separator()

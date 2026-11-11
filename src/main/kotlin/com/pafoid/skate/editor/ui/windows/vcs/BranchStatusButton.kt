@@ -9,6 +9,7 @@ import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.editor.imgui.label
 import com.pafoid.skate.editor.imgui.tipped
 import com.pafoid.skate.editor.imgui.tippedWith
+import com.pafoid.skate.editor.imgui.theme.ThemeColors
 import com.pafoid.skate.editor.vcs.BranchButtonModel
 import com.pafoid.skate.editor.vcs.BranchPopupModel
 import com.pafoid.skate.editor.vcs.BranchPopupModel.Action
@@ -78,12 +79,12 @@ class BranchStatusButton(
         val label = currentLabel() ?: return
         val color = when (label.tone) {
             BranchButtonModel.Tone.NORMAL -> null
-            BranchButtonModel.Tone.DIM -> ImGui.getStyle().getColor(ImGuiCol.TextDisabled).let { floatArrayOf(it.x, it.y, it.z, it.w) }
-            BranchButtonModel.Tone.WARNING -> floatArrayOf(1f, 0.75f, 0.3f, 1f)
-            BranchButtonModel.Tone.DANGER -> floatArrayOf(1f, 0.42f, 0.38f, 1f)
+            BranchButtonModel.Tone.DIM -> ThemeColors.textDisabled
+            BranchButtonModel.Tone.WARNING -> ThemeColors.warning
+            BranchButtonModel.Tone.DANGER -> ThemeColors.danger
         }
         ImGui.pushStyleColor(ImGuiCol.Button, 0f, 0f, 0f, 0f)
-        color?.let { ImGui.pushStyleColor(ImGuiCol.Text, it[0], it[1], it[2], it[3]) }
+        color?.let { ImGui.pushStyleColor(ImGuiCol.Text, it.x, it.y, it.z, it.w) }
         val clicked = ImGui.smallButton(text(label) + BUTTON_ID)
         color?.let { ImGui.popStyleColor() }
         ImGui.popStyleColor()
@@ -99,7 +100,9 @@ class BranchStatusButton(
             clicked || rightClicked -> openPopup()
         }
         ImGui.setNextWindowPos(anchorX, anchorY, ImGuiCond.Appearing, 1f, 1f)
-        ImGui.setNextWindowSizeConstraints(POPUP_WIDTH, 0f, POPUP_WIDTH * 1.6f, 560f)
+        // Sizes in font heights, so the popup follows the UI scale.
+        val em = ImGui.getFontSize()
+        ImGui.setNextWindowSizeConstraints(POPUP_WIDTH_EM * em, 0f, POPUP_WIDTH_EM * 1.6f * em, POPUP_MAX_HEIGHT_EM * em)
         if (ImGui.beginPopup(POPUP_ID)) {
             popup()
             ImGui.endPopup()
@@ -138,7 +141,7 @@ class BranchStatusButton(
             Action.UPDATE -> "vcs.popup.update" to Icons.ARROW_DOWN
             Action.COMMIT -> "vcs.popup.commit" to Icons.CHECK
             Action.CHANGES -> "vcs.popup.changes" to Icons.LIST
-            Action.RESOLVE -> "vcs.popup.resolve" to Icons.QUESTION_CIRCLE
+            Action.RESOLVE -> "vcs.popup.resolve" to Icons.WARNING
             Action.HISTORY -> "vcs.popup.history" to Icons.HISTORY
             Action.NEW_BRANCH -> "vcs.popup.new_branch" to Icons.PLUS
             Action.INITIALIZE -> "vcs.popup.initialize" to Icons.CODE_BRANCH
@@ -168,13 +171,13 @@ class BranchStatusButton(
         if (!ImGui.beginMenu("$mark${row.name}##vcs_branch_${row.name}")) return
         if (!row.current) {
             val refusal = BranchPopupModel.checkoutRefusal(state, playing(), unsavedScenes())
-            if (strings.tipped(ImGui.menuItem(strings.label("vcs.popup.checkout"), null, false, refusal == null), "vcs.popup.checkout")) {
+            if (strings.tipped(ImGui.menuItem(strings.label("vcs.popup.checkout", "${Icons.CODE_BRANCH} "), null, false, refusal == null), "vcs.popup.checkout")) {
                 checkout(row.name)
             }
             refusal?.let { Tooltips.always(strings.getString(it)) }
         }
         val newRefusal = if (state.busy) "vcs.busy" else null
-        val fromLabel = strings.getString("vcs.popup.new_from", row.name)
+        val fromLabel = "${Icons.PLUS} " + strings.getString("vcs.popup.new_from", row.name)
         if (strings.tippedWith(ImGui.menuItem("$fromLabel##vcs_new_from", null, false, newRefusal == null), "vcs.popup.new_from.tooltip")) {
             modals.newBranch.show(row.name)
         }
@@ -202,6 +205,7 @@ class BranchStatusButton(
     private companion object {
         const val POPUP_ID = "##vcs_branch_popup"
         const val BUTTON_ID = "###vcs_branch_button"
-        const val POPUP_WIDTH = 320f
+        const val POPUP_WIDTH_EM = 22f
+        const val POPUP_MAX_HEIGHT_EM = 38f
     }
 }

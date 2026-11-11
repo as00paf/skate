@@ -79,4 +79,6 @@ object Icons {
     const val TERMINAL = "\uf120"
     const val CODE_BRANCH = "\uf126"
     const val QUESTION_CIRCLE = "\uf059"
+    /** Triangle with "!": conflicts and other warnings (EDT-79). */
+    const val WARNING = "\uf071"
 }

@@ -172,8 +172,14 @@ class JGitVcsService(private val root: File) : VcsService {
         git { g ->
             val repo = g.repository
             if (repo.resolve(Constants.HEAD) == null) throw VcsException("vcs.error.no_commits")
-            if (from != null && repo.findRef(Constants.R_HEADS + from) == null) throw VcsException("vcs.error.unknown_branch", from)
-            val start = from?.let { Constants.R_HEADS + it }
+            // [from] is a branch, else a commit id (New Branch from a commit in the Git log).
+            val start = from?.let {
+                when {
+                    repo.findRef(Constants.R_HEADS + it) != null -> Constants.R_HEADS + it
+                    repo.resolve("$it^{commit}") != null -> repo.resolve("$it^{commit}").name
+                    else -> throw VcsException("vcs.error.unknown_branch", it)
+                }
+            }
             try {
                 if (checkout) {
                     g.checkout().setCreateBranch(true).setName(trimmed).apply { start?.let { setStartPoint(it) } }.call()

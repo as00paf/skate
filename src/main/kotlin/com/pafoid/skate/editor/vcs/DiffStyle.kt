@@ -1,5 +1,8 @@
 package com.pafoid.skate.editor.vcs
 
+import com.pafoid.skate.editor.imgui.data.Theme
+import org.joml.Vector4f
+
 /** EDT-79 §4.4: how the shared diff view draws each line kind, free of ImGui. */
 object DiffStyle {
     enum class Role { HUNK, ADDED, REMOVED, PLAIN }
@@ -13,11 +16,11 @@ object DiffStyle {
         DiffLine.Kind.CONTEXT -> Style("  ", Role.PLAIN)
     }
 
-    /** RGBA of a [Role]; null keeps the theme's text colour. */
-    fun color(role: Role): FloatArray? = when (role) {
-        Role.HUNK -> floatArrayOf(0.45f, 0.7f, 1f, 1f)
-        Role.ADDED -> floatArrayOf(0.45f, 0.9f, 0.45f, 1f)
-        Role.REMOVED -> floatArrayOf(1f, 0.45f, 0.45f, 1f)
+    /** The [theme] colour of a [Role]; null keeps the text colour. */
+    fun color(role: Role, theme: Theme): Vector4f? = when (role) {
+        Role.HUNK -> theme.accent
+        Role.ADDED -> theme.success
+        Role.REMOVED -> theme.danger
         Role.PLAIN -> null
     }
 

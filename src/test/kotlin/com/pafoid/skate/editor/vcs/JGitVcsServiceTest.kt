@@ -246,6 +246,10 @@ class JGitVcsServiceTest {
         assertEquals("main", branches.current)
         assertEquals(featureTip, branches.tips["copy"])
         assertEquals("vcs.error.unknown_branch", assertThrows<VcsException> { vcs.createBranch("x", from = "nope") }.messageKey)
+        // From a commit id (New Branch from Here in the Git log).
+        val root = vcs.log(10).last().id
+        vcs.createBranch("old", from = root, checkout = false)
+        assertEquals(root, vcs.branches().tips["old"])
     }
 
     @Test

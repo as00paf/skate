@@ -67,6 +67,17 @@ class CommitGraphTest {
     }
 
     @Test
+    fun GraphStyle_UsesThemeColours() {
+        val theme = com.pafoid.skate.editor.imgui.data.Theme()
+        val palette = GraphStyle.palette(theme)
+        assertEquals(theme.accent, GraphStyle.laneColor(0, theme))
+        assertEquals(palette[1], GraphStyle.laneColor(palette.size + 1, theme), "lanes cycle through the palette")
+        assertEquals(theme.warning, GraphStyle.tagColor(true, theme))
+        assertEquals(theme.accent, GraphStyle.tagColor(false, theme))
+        assertEquals(false, theme.warning in palette, "the current-branch colour is not a lane colour")
+    }
+
+    @Test
     fun Labels_GroupBranchesByCommit() {
         val branches = VcsBranches("main", listOf("main", "b", "a"), mapOf("main" to "x", "b" to "x", "a" to "y"))
         assertEquals(mapOf("x" to listOf("b", "main"), "y" to listOf("a")), GitLogFilter.labels(branches))

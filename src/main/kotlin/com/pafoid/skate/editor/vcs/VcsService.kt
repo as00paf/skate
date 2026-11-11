@@ -82,7 +82,7 @@ interface VcsService {
 
     fun branches(): VcsBranches
 
-    /** Creates [name] from branch [from] (null: the current commit) and, with [checkout], switches to it. */
+    /** Creates [name] from [from], a branch or commit id (null: the current commit); with [checkout], switches to it. */
     fun createBranch(name: String, from: String? = null, checkout: Boolean = true)
 
     /** Switches to [name]; refused while tracked files have uncommitted changes. */

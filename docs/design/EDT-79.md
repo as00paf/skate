@@ -406,3 +406,10 @@ How the build differs from the sections above, and why:
   list and the name modal.
 - **Status-bar labels** avoid glyphs missing from the editor font (`●`, `⚠`): `main · 3`, `main · 2 conflict(s)`,
   `main · !`, after the branch icon.
+- **skate-editor review fixes:** the theme gained `success`, `warning` and `danger` colours (all three shipped themes,
+  read through `ThemeColors`). Diff lines, status text, the button and the graph use them, and the lane palette comes
+  from `GraphStyle`. Sizes in the Git log and the popup are in font heights. Conflicts use a new `Icons.WARNING`.
+  Keep mine / Take theirs moved from the footer to a bar above the lists, so the footer is the standard [Close].
+  Right-click menus: a commit (New Branch from Here, which `createBranch` now accepts as a commit id; Copy Commit ID;
+  Copy Message), empty list space (Commit, Refresh, Clear filters), a commit's file (Show Diff, Copy Path) and a
+  conflicted file (Keep mine, Take theirs, Copy Path). No filter results offer Clear filters.

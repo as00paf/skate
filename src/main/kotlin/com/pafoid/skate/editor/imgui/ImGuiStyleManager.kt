@@ -2,6 +2,7 @@ package com.pafoid.skate.editor.imgui
 
 import com.pafoid.skate.editor.imgui.data.Style
 import com.pafoid.skate.editor.imgui.theme.EditorTheme
+import com.pafoid.skate.editor.imgui.theme.ThemeColors
 import com.pafoid.skate.editor.imgui.theme.ThemeLibrary
 import imgui.ImGui
 import imgui.flag.ImGuiCol.Border
@@ -107,6 +108,7 @@ object ImGuiStyleManager {
 
     fun setupStyle(s: Style = Style()) {
         val t = s.theme
+        ThemeColors.current = t
         with(ImGui.getStyle()){
             windowRounding = s.rounding
             childRounding = s.rounding

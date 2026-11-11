@@ -1,5 +1,8 @@
 package com.pafoid.skate.editor.vcs
 
+import com.pafoid.skate.editor.imgui.data.Theme
+import org.joml.Vector4f
+
 /**
  * EDT-79 Q7: the graph column of the Git log. Commits come newest first (as `git log --all`). For each row the layout
  * gives the lane of the commit's dot and three sets of lanes, so the window only draws a circle and straight lines:
@@ -51,6 +54,16 @@ object CommitGraph {
         while (size <= index) add(null)
         this[index] = value
     }
+}
+
+/** EDT-79: the Git log graph's colours, all from the theme (lanes cycle through a theme palette). */
+object GraphStyle {
+    fun palette(theme: Theme): List<Vector4f> = listOf(theme.accent, theme.success, theme.danger, theme.accentHover, theme.textDisabled)
+
+    fun laneColor(lane: Int, theme: Theme): Vector4f = palette(theme).let { it[Math.floorMod(lane, it.size)] }
+
+    /** A `[branch]` tag (and the dot of the commit it points at): the current branch stands out. */
+    fun tagColor(current: Boolean, theme: Theme): Vector4f = if (current) theme.warning else theme.accent
 }
 
 /** EDT-79 Q7: the Git log's filters, a branch and a text, free of ImGui. */

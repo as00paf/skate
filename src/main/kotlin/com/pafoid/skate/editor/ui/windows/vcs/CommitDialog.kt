@@ -10,6 +10,7 @@ import com.pafoid.skate.editor.imgui.FooterButton
 import com.pafoid.skate.editor.imgui.Tooltips
 import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.editor.imgui.label
+import com.pafoid.skate.editor.imgui.theme.ThemeColors
 import com.pafoid.skate.editor.imgui.tipped
 import com.pafoid.skate.editor.vcs.BranchButtonModel
 import com.pafoid.skate.editor.vcs.ChangeEntry
@@ -88,9 +89,9 @@ class CommitDialog(
         }
         unsavedNotice()
         if (state.hasConflicts) {
-            ImGui.textColored(1f, 0.55f, 0.45f, 1f, strings.getString("vcs.commit.conflicts_banner", state.conflicts.size))
+            textColored(ThemeColors.danger, "${Icons.WARNING} " + strings.getString("vcs.commit.conflicts_banner", state.conflicts.size))
             ImGui.sameLine()
-            if (strings.tipped(ImGui.smallButton(strings.label("vcs.popup.resolve")), "vcs.popup.resolve")) {
+            if (strings.tipped(ImGui.smallButton(strings.label("vcs.popup.resolve", "${Icons.WARNING} ")), "vcs.popup.resolve")) {
                 eventSystem.publish(WindowAction.Show(VcsWindows.CONFLICTS))
             }
         }
@@ -100,7 +101,7 @@ class CommitDialog(
     private fun unsavedNotice() {
         val dirty = engine.sceneManager.openScenes.filter { it.isDirty }
         if (dirty.isEmpty()) return
-        ImGui.textColored(1f, 0.75f, 0.3f, 1f, strings.getString("vcs.commit.unsaved", dirty.joinToString { it.name }))
+        textColored(ThemeColors.warning, strings.getString("vcs.commit.unsaved", dirty.joinToString { it.name }))
         ImGui.sameLine()
         if (strings.tipped(ImGui.smallButton(strings.label("vcs.commit.save_all", "${Icons.SAVE} ")), "vcs.commit.save_all")) {
             dirty.forEach { eventSystem.publish(SceneAction.SaveRequested(it)) }
