@@ -394,7 +394,7 @@ Round 27+ goals: input is too tightly coupled with skateboarding; it needs a gam
   - Do: (human, round 33 testing): the Animator window's parameter delete button is too short for its icon; the Animator component's Play and Reset buttons have no effect. Play previews in edit mode and pauses/resumes the controller in play mode; Reset returns to the default state.
   - Done when: Icons fit; Play/Reset change the pose in both modes; tests.
   - Deps: ANI-21
-- [~] @skate-animation **ANI-25** `P0` Animator: items without room; inspector playback overridden by the player state
+- [x] **ANI-25** `P0` Animator: items without room; inspector playback overridden by the player state
   - Do: (human, round 33 re-testing): some Animator window items don't render for lack of room; inspector Play still doesn't play the skater's animations properly, likely because the player/character state drives the animator every frame. Size rows from the style; inspector playback wins while active and hands back on stop/Reset.
   - Done when: All items visible at every density and small sizes (headless test); inspector Play works on the real skater in edit and play mode; tests.
   - Deps: ANI-24
