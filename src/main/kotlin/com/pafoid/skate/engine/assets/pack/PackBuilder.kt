@@ -44,7 +44,11 @@ class PackResult(val data: ByteArray, val manifest: PackManifest)
 object PackBuilder {
     private val alreadyCompressed = setOf("png", "jpg", "jpeg", "gif", "ogg", "mp3", "glb")
 
-    /** Lays [inputs] out back to back. Entries are gzipped when that makes them clearly smaller. */
+    /**
+     * Lays [inputs] out back to back. Entries are gzipped when that makes them clearly smaller. Identical inputs
+     * (same SHA-256) are stored once: later entries reuse the first one's position, size and compression, so readers
+     * need no change (AST-26 §4.6).
+     */
     fun build(
         project: String,
         inputs: List<PackInput>,
@@ -52,14 +56,16 @@ object PackBuilder {
         graphicsBackend: GraphicsBackend = GraphicsBackend.DEFAULT,
     ): PackResult {
         val out = ByteArrayOutputStream()
+        val stored = HashMap<String, ManifestEntry>()
         val entries = inputs.map { input ->
+            val hash = sha256(input.bytes)
+            stored[hash]?.let { first -> return@map first.copy(path = input.relativePath, type = input.type) }
             val gz = if (compress && input.relativePath.substringAfterLast('.', "").lowercase() !in alreadyCompressed)
                 gzip(input.bytes).takeIf { it.size < input.bytes.size * 0.9 } else null
-            val stored = gz ?: input.bytes
-            val entry = ManifestEntry(
-                input.relativePath, input.type, out.size(), stored.size, input.bytes.size, gz != null, sha256(input.bytes)
-            )
-            out.write(stored)
+            val bytes = gz ?: input.bytes
+            val entry = ManifestEntry(input.relativePath, input.type, out.size(), bytes.size, input.bytes.size, gz != null, hash)
+            out.write(bytes)
+            stored[hash] = entry
             entry
         }
         val data = out.toByteArray()

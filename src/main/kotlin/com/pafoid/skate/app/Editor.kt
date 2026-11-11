@@ -15,10 +15,10 @@ import com.pafoid.skate.editor.ui.handlers.EditorActionHandler
 import com.pafoid.skate.editor.ui.handlers.EditorEventHandler
 import com.pafoid.skate.editor.ui.handlers.EditorInputHandler
 import com.pafoid.skate.editor.ui.handlers.PlayModeHandler
+import com.pafoid.skate.editor.systems.EditorResources
 import com.pafoid.skate.editor.ui.handlers.VcsActionHandler
 import com.pafoid.skate.editor.vcs.VcsRunner
 import com.pafoid.skate.editor.vcs.VcsSession
-import com.pafoid.skate.engine.assets.Assets.Strings.EDITOR_STRINGS
 import com.pafoid.skate.engine.assets.Assets.Strings.GAME_STRINGS
 import com.pafoid.skate.editor.assetimport.blender.BlenderSync
 import com.pafoid.skate.engine.core.Engine
@@ -107,7 +107,7 @@ class Editor(
             settingsManager.onMsaaChanged = { samples ->
                 engine.renderer.resizeFrameBufferWithMsaa(engine.renderer.frameBuffer.width, engine.renderer.frameBuffer.height, samples)
             }
-            engine.stringManager.loadStrings(EDITOR_STRINGS)
+            engine.stringManager.loadStrings(EditorResources.path("strings")) // jar or src/main/resources (AST-26 NQ1)
             // Runtime UI in the viewport (HUD, showcase, pause menu) has its own strings and locale (GUI-10).
             engine.gameStrings.addStrings(GAME_STRINGS)
             engine.stringManager.setLocale(settingsManager.editorSettings.language)

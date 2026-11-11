@@ -1,5 +1,6 @@
 package com.pafoid.skate.engine.assets
 
+import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
@@ -20,19 +21,25 @@ class ProjectLayoutTest {
     }
 
     @Test
-    fun engineDefaults_LiveInsideTheAssetsFolder() {
-        assertEquals(File(File(dir, "Assets"), "EngineDefaults"), ProjectLayout.engineDefaultsDir(dir))
+    fun create_MakesEveryTypeFolderAndNoEngineDefaultsFolder() {
+        val assets = ProjectLayout.create(dir)
+
+        assertEquals(
+            setOf("Models", "Animations", "Textures", "Materials", "Sounds", "Scripts", "Shaders", "Fonts", "Data", "Prefabs", "Items"),
+            assets.listFiles()!!.filter { it.isDirectory }.map { it.name }.toSet(),
+        )
+        assertEquals(File(assets, "Textures"), ProjectLayout.typeDir(dir, AssetFolder.TEXTURES))
+        assertFalse(File(assets, "EngineDefaults").exists())
     }
 
     @Test
     fun assetPath_IsProjectRelativeWithSlashes() {
-        assertEquals("Assets/EngineDefaults/Textures/metal.png", ProjectLayout.assetPath("EngineDefaults\\Textures\\metal.png"))
+        assertEquals("Assets/Textures/metal.png", ProjectLayout.assetPath("Textures\\metal.png"))
     }
 
     @Test
     fun duplicateAssetFolders_EmptyForTheStandardLayout() {
         ProjectLayout.create(dir)
-        File(ProjectLayout.engineDefaultsDir(dir), "Textures").mkdirs()
 
         assertTrue(ProjectLayout.duplicateAssetFolders(dir).isEmpty())
     }

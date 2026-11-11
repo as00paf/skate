@@ -240,7 +240,7 @@ class RenderGraphInfoTest {
         val keys = info.passes.flatMap { listOf(it.labelKey, it.descriptionKey) + it.stages.map { s -> s.labelKey } } +
             RenderResourceIds.ALL.map { RenderResourceIds.labelKey(it) }
         for (file in listOf("render.properties", "render_fr.properties")) {
-            val props = Properties().apply { File("assets/strings/editor/$file").reader(Charsets.UTF_8).use { load(it) } }
+            val props = Properties().apply { File("src/main/resources/editor/strings/$file").reader(Charsets.UTF_8).use { load(it) } }
             keys.forEach { assertTrue(!props.getProperty(it).isNullOrBlank(), "$file has no $it") }
         }
     }

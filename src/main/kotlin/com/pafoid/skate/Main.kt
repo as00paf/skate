@@ -9,7 +9,7 @@ import com.pafoid.skate.game.player.SkateGameplay
 fun main(args:Array<String>){
     SkateGameplay.register()
     val engine = Engine()
-    val icon = Engine::class.java.getResourceAsStream(Assets.Bundled.APP_ICON)?.readAllBytes()
+    val icon = Engine::class.java.getResourceAsStream(Assets.Classpath.APP_ICON)?.readAllBytes()
     val window = Window(title = "Skate Editor", icon = icon)
 
     engine.start(window.glfwWindow, window.device)

@@ -9,7 +9,7 @@ import java.util.Properties
 
 /** REN-24: every pass and post effect shows its own name in the Render Graph window (they all read "Effect"). */
 class RenderPassNamingTest {
-    private fun strings(file: String) = Properties().apply { File("assets/strings/editor/$file").reader(Charsets.UTF_8).use { load(it) } }
+    private fun strings(file: String) = Properties().apply { File("src/main/resources/editor/strings/$file").reader(Charsets.UTF_8).use { load(it) } }
 
     @Test
     fun postEffects_HaveDistinctLabelKeys() {

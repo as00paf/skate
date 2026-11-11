@@ -105,7 +105,7 @@ Conventions:
 
 Generated meshes:
 - `SkateparkShapes` (skate obstacles), `SkateboardShape` (the board) and the engine's `PropShapes` (bench, spawn
-  marker) build meshes with `engine/assets/procedural/MeshBuilder`. The meshes are committed as OBJ files in `assets/obj/` and copied into
+  marker) build meshes with `engine/assets/procedural/MeshBuilder`. The meshes are committed as OBJ files in `assets/Models/` and copied into
   every new project under `EngineDefaults/Models`.
 - `SkateparkShapesTest` fails when a committed OBJ no longer matches its generator. After changing a shape,
   regenerate the files with:
