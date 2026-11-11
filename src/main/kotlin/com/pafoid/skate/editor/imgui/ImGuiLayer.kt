@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.imgui
 
+import com.pafoid.skate.editor.systems.EditorResources
 import com.pafoid.skate.editor.systems.EditorPaths
 import com.pafoid.skate.app.Editor
 import com.pafoid.skate.editor.events.EditorEvent
@@ -187,7 +188,7 @@ class ImGuiLayer(
 
     /** EDT-07: reads the theme files and shows the saved theme. */
     private fun loadThemes() {
-        ImGuiStyleManager.library = ThemeLibrary.load(File(Assets.Themes.DIR))
+        ImGuiStyleManager.library = ThemeLibrary.load(File(EditorResources.path("themes")))
         ImGuiStyleManager.invalidate()
         ImGuiStyleManager.library.errors.forEach { logger.logEditor("Theme skipped: $it", LoggerService.LogLevel.WARN) }
         ImGuiStyleManager.sync(settingsManager.editorSettings.theme)

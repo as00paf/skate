@@ -22,7 +22,7 @@ class EngineShadersVulkanTest {
         assumeTrue(shaderc(), "shaderc native library unavailable")
         val device = FakeRhiDevice()
         val loader = ShaderLoader(device = { device })
-        val files = File("src/main/resources/shaders").listFiles { f -> f.extension == "glsl" && f.readText().contains("#type") }!!
+        val files = File("assets/Shaders").listFiles { f -> f.extension == "glsl" && f.readText().contains("#type") }!!
         assertTrue(files.size >= 15, "found ${files.size} shaders")
         for (f in files.sortedBy { it.name }) loader.loadShader("/shaders/${f.name}")
         loader.loadShader("/shaders/shadow.glsl", setOf(ShaderFeature.ALPHA_TEST.name))

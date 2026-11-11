@@ -59,7 +59,7 @@ enum class ExportFailure {
 }
 
 /**
- * Why an export failed, as a string key of the editor's `assets` area (`assets/strings/editor/assets.properties`)
+ * Why an export failed, as a string key of the editor's `assets` area (`src/main/resources/editor/strings/assets.properties`)
  * so the export wizard can show it in the editor language. [ExportResult.detailArgs] fill its `%s` placeholders.
  */
 enum class ExportDetail(val key: String) {

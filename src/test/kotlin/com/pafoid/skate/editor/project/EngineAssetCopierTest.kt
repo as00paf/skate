@@ -1,74 +1,153 @@
 package com.pafoid.skate.editor.project
 
-import com.pafoid.skate.engine.assets.Assets
+import com.pafoid.skate.engine.assets.AssetMeta
+import com.pafoid.skate.engine.assets.EngineDefaultResolver
+import com.pafoid.skate.engine.assets.EngineDefaults
 import com.pafoid.skate.engine.assets.ProjectLayout
-import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertNull
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import java.io.File
 
+/** AST-27 (AST-26 §4.3, §4.5, §5.2): the engine-default catalog and the copier's two modes. */
 class EngineAssetCopierTest {
     @TempDir
     lateinit var dir: File
 
+    private val project get() = File(dir, "Game").also { ProjectLayout.create(it) }
+    private val assets get() = ProjectLayout.assetsDir(project)
+
     @Test
-    fun BundledAssets_EverySourceExistsInTheRepo() {
-        val missing = Assets.Bundled.bundledAssets.map { it.second }.filterNot { File(it).isFile }
-        assertTrue(missing.isEmpty(), "bundled assets without a source file (new projects would log missing-asset errors): $missing")
+    fun Catalog_EverySourceExistsInTheRepo_AndLogicalPathsAreUnique() {
+        val missing = EngineDefaults.CATALOG.filterNot { File("assets/" + EngineDefaults.logicalPath(it)).isFile }
+        assertEquals(emptyList<String>(), missing, "catalog entries without a source in assets/")
+        val logical = EngineDefaults.CATALOG.map { EngineDefaults.logicalPath(it)!!.lowercase() }
+        assertEquals(logical.size, logical.toSet().size, "two catalog entries share a logical path")
     }
 
     @Test
-    fun BundledAssets_DestinationsAreUnique() {
-        val destinations = Assets.Bundled.bundledAssets.map { it.first.replace('\\', '/').lowercase() }
-        assertEquals(destinations.size, destinations.toSet().size, "two bundled assets copy to the same file")
+    fun Catalog_EveryRepoShaderIsBasicOrInternal() {
+        val repo = File("assets/Shaders").listFiles { f -> f.extension == "glsl" }!!.map { EngineDefaults.reference("Shaders/" + it.name) }.toSet()
+        val basic = EngineDefaults.Shaders.BASIC.toSet()
+        val internal = EngineDefaults.Shaders.INTERNAL.toSet()
+        assertTrue((basic intersect internal).isEmpty())
+        assertEquals(repo, basic + internal)
+        assertTrue(EngineDefaults.Shaders.INTERNAL.none { it in EngineDefaults.CATALOG }, "internal shaders are never copied")
     }
 
     @Test
-    fun BundledAssets_MetalTextureIsShippedForRails() {
-        assertTrue(Assets.Bundled.bundledAssets.any { it.first == Assets.Bundled.METAL && File(it.second).isFile })
+    fun CopyMode_CopiesEveryEntryWithItsEngineMeta() {
+        val report = EngineAssetCopier().copyEngineDefaults(project, copyAll = true).getOrThrow()
+
+        assertEquals(EngineDefaults.CATALOG.size, report.copied.size)
+        for (ref in EngineDefaults.CATALOG) {
+            val logical = EngineDefaults.logicalPath(ref)!!
+            val copy = File(assets, logical)
+            assertTrue(copy.isFile, "$logical copied")
+            val meta = AssetMeta.read(copy)!!
+            assertEquals(logical, meta.settings[EngineDefaults.META_SOURCE])
+            assertEquals(EngineDefaultResolver.sha256(copy), meta.settings[EngineDefaults.META_SHA256])
+        }
+        assertFalse(File(assets, "EngineDefaults").exists())
     }
 
     @Test
-    fun Copier_CopiesEverythingFromTheRepo() {
-        val result = EngineAssetCopier().copyBundledAssets(dir)
-        assertTrue(result.isSuccess, result.exceptionOrNull()?.message)
-        val metal = File(dir, "Assets/" + Assets.Bundled.METAL.replace('\\', '/'))
-        assertTrue(metal.isFile && metal.length() > 0)
+    fun ReferenceMode_CopiesOnlyTheBasicShaders() {
+        val report = EngineAssetCopier().copyEngineDefaults(project, copyAll = false).getOrThrow()
+
+        assertEquals(EngineDefaults.Shaders.BASIC.size, report.copied.size)
+        assertTrue(report.copied.all { it.parentFile.name == "Shaders" })
+        assertFalse(File(assets, "Models/cube.obj").exists())
     }
 
     @Test
-    fun Copier_FailsListingAMissingSourceButCopiesTheRest() {
-        val root = File(dir, "engine")
-        val (destination, source) = Assets.Bundled.bundledAssets.first { it.first == Assets.Bundled.METAL }
-        File(root, source).also { it.parentFile.mkdirs(); it.writeText("png") }
-        val copier = EngineAssetCopier(root)
-        val project = File(dir, "Game")
+    fun NameClash_KeepsTheUsersFile_AndTheEngineCopyBecomesTheOverride() {
+        val mine = File(assets, "Models/cube.obj").apply { parentFile.mkdirs(); writeText("my cube") }
 
-        val result = copier.copyBundledAssets(project)
+        val copy = EngineAssetCopier().copy(project, EngineDefaults.Models.CUBE)!!
+
+        assertEquals("cube (engine).obj", copy.name)
+        assertEquals("my cube", mine.readText())
+        assertEquals(copy.absoluteFile, EngineDefaultResolver { project }.resolve(EngineDefaults.Models.CUBE))
+    }
+
+    @Test
+    fun AnExistingOverride_IsNotCopiedAgain() {
+        EngineAssetCopier().copy(project, EngineDefaults.Models.CUBE)!!
+        assertNull(EngineAssetCopier().copy(project, EngineDefaults.Models.CUBE))
+        assertFalse(File(assets, "Models/cube (engine).obj").exists())
+    }
+
+    @Test
+    fun MissingSource_IsAFailureListingIt() {
+        val emptyEngine = File(dir, "engine").apply { mkdirs() }
+        val result = EngineAssetCopier(emptyEngine).copyEngineDefaults(project, copyAll = true)
 
         assertTrue(result.isFailure)
-        val message = result.exceptionOrNull()!!.message!!
-        assertTrue(Assets.Bundled.bundledAssets.filter { it.second != source }.all { it.second in message })
-        assertFalse(source in copier.missingSources())
-        assertTrue(File(project, "Assets/" + destination.replace('\\', '/')).isFile, "present sources are still copied")
+        assertTrue(result.exceptionOrNull()!!.message!!.contains("Models/cube.obj"))
+        // Shaders and the app icon still come from the classpath
+        assertTrue(File(assets, "Shaders/shader_3d_default.glsl").isFile)
+        assertTrue(File(assets, "Textures/app_icon.png").isFile)
     }
 
     @Test
-    fun CopyBundledAssets_EverythingLandsInEngineDefaults() {
-        assertTrue(EngineAssetCopier().copyBundledAssets(dir).isSuccess)
+    fun UnchangedShaderCopies_FollowTheEngine_ModifiedOnesAreKept() {
+        val engine = File(dir, "engine")
+        val engineShaders = File(engine, "assets/Shaders").apply { mkdirs() }
+        EngineDefaults.Shaders.BASIC.forEach { File(engineShaders, it.substringAfterLast('/')).writeText("// v1 $it") }
+        val copier = EngineAssetCopier(engine)
+        copier.copyEngineDefaults(project, copyAll = false).getOrThrow()
+        val skybox = File(assets, "Shaders/skybox.glsl")
+        val bloom = File(assets, "Shaders/post_bloom.glsl").apply { writeText("// my bloom") }
 
-        val assets = ProjectLayout.assetsDir(dir)
-        assertEquals(listOf(ProjectLayout.ENGINE_DEFAULTS_DIR), assets.listFiles()!!.filter { it.isDirectory }.map { it.name })
-        assertTrue(ProjectLayout.duplicateAssetFolders(dir).isEmpty(), "${ProjectLayout.duplicateAssetFolders(dir)}")
+        File(engineShaders, "skybox.glsl").writeText("// v2 skybox")
+        File(engineShaders, "post_bloom.glsl").writeText("// v2 bloom")
+        val refreshed = copier.refreshUnchangedShaders(project)
+
+        assertEquals(listOf(skybox.absoluteFile), refreshed.map { it.absoluteFile })
+        assertEquals("// v2 skybox", skybox.readText())
+        assertEquals(EngineDefaultResolver.sha256(skybox), AssetMeta.read(skybox)!!.settings[EngineDefaults.META_SHA256])
+        assertEquals("// my bloom", bloom.readText())
     }
 
     @Test
-    fun CopyBundledAssets_ShadersAndAppIconFollowTheBundledPaths() {
-        EngineAssetCopier().copyBundledAssets(dir)
-        val assets = ProjectLayout.assetsDir(dir)
+    fun CopyStatus_UnchangedModifiedAndUpdateAvailable() {
+        val engine = File(dir, "engine")
+        listOf("Models/cube.obj", "Models/sphere.obj", "Models/bank.obj", "Models/bench.obj").forEach {
+            File(engine, "assets/$it").apply { parentFile.mkdirs(); writeText("v1 $it") }
+        }
+        val copier = EngineAssetCopier(engine)
+        listOf(EngineDefaults.Models.CUBE, EngineDefaults.Models.SPHERE, EngineDefaults.Models.BANK, EngineDefaults.Models.BENCH)
+            .forEach { copier.copy(project, it)!! }
+        File(assets, "Models/sphere.obj").writeText("mine")
+        File(engine, "assets/Models/bank.obj").writeText("v2")
+        File(assets, "Models/bench.obj").writeText("mine")
+        File(engine, "assets/Models/bench.obj").writeText("v2")
 
-        assertTrue(File(assets, Assets.Bundled.PROJECT_APP_ICON.replace('\\', '/')).isFile, "app icon")
-        assertTrue(File(assets, Assets.Bundled.SHADER_3D_DEFAULT.replace('\\', '/')).isFile, "default shader")
-        assertTrue(File(assets, Assets.Bundled.SHADOW.replace('\\', '/')).isFile, "shadow shader")
+        val states = copier.copyStatuses(project).associate { it.reference to it.state }
+
+        assertEquals(EngineAssetCopier.CopyState.UNCHANGED, states[EngineDefaults.Models.CUBE])
+        assertEquals(EngineAssetCopier.CopyState.MODIFIED, states[EngineDefaults.Models.SPHERE])
+        assertEquals(EngineAssetCopier.CopyState.UPDATE_AVAILABLE, states[EngineDefaults.Models.BANK])
+        assertEquals(EngineAssetCopier.CopyState.MODIFIED_AND_UPDATED, states[EngineDefaults.Models.BENCH])
+        assertEquals(4, states.size, "only copies are listed")
+    }
+
+    /** AST-35 (REN-34): the shared lighting include is a basic shader: copied in both modes and overridable. */
+    @Test
+    fun LightingInclude_IsCopiedAndOverridable() {
+        assertTrue("engine:Shaders/lighting.glsl" in EngineDefaults.Shaders.BASIC)
+        EngineAssetCopier().copyEngineDefaults(project, copyAll = false).getOrThrow()
+        val copy = File(assets, "Shaders/lighting.glsl")
+        assertTrue(copy.isFile)
+        assertEquals("Shaders/lighting.glsl", AssetMeta.read(copy)!!.settings[EngineDefaults.META_SOURCE])
+
+        val resolver = EngineDefaultResolver { project }
+        assertEquals(File("assets/Shaders/lighting.glsl").absoluteFile, resolver.resolve("engine:Shaders/lighting.glsl"), "unchanged: the engine's")
+        copy.appendText("\n// my lighting tweak\n")
+        assertEquals(copy.absoluteFile, resolver.resolve("engine:Shaders/lighting.glsl"), "edited: the override")
     }
 }

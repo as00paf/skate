@@ -45,7 +45,7 @@ class GltfReferencesTest {
 
     @Test
     fun texturePath_FallsBackToTheUriAsWritten() {
-        assertEquals("assets/textures/a.png", GltfReferences.texturePath("C:\\p\\m.obj", "assets/textures/a.png") { false })
+        assertEquals("assets/Textures/a.png", GltfReferences.texturePath("C:\\p\\m.obj", "assets/Textures/a.png") { false })
     }
 
     @Test

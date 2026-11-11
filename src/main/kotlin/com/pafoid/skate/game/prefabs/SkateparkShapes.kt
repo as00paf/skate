@@ -15,7 +15,7 @@ class ObstacleShape(val mesh: MeshBuilder, val hulls: List<List<Vector3f>>)
  * Skatepark obstacle geometry (see docs/obstacles.md). Every shape is in metres with its footprint centred on the
  * origin, the bottom at y = 0 and the riding face toward +Z (the direction a rider spawned with GPL-14's
  * orientation rolls). Render meshes are written to OBJ files by [SkateparkShapesTest] (golden files in
- * `assets/obj/`); colliders are rebuilt from the same numbers when a prefab spawns.
+ * `assets/Models/`); colliders are rebuilt from the same numbers when a prefab spawns.
  */
 object SkateparkShapes {
 

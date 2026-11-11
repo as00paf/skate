@@ -32,7 +32,7 @@ import kotlin.io.path.isRegularFile
 import kotlin.io.path.readText
 
 /**
- * EDT-50: every string key the editor references exists in the editor tables (`assets/strings/editor`), so no
+ * EDT-50: every string key the editor references exists in the editor tables (`src/main/resources/editor/strings`), so no
  * `!!key!!` placeholder reaches the screen. French parity is enforced by `StringTablesTest`, so checking the English
  * tables covers every locale.
  *
@@ -59,7 +59,7 @@ class EditorStringKeysTest {
             val rel = root.relativize(file).invariantSeparatorsPathString
             referencedKeys(file.readText()).filterNot { (_, key) -> exists(key, editorKeys) }.map { (line, key) -> "$rel:$line -> $key" }
         }
-        assertTrue(missing.isEmpty(), "Keys missing from assets/strings/editor (add them to <area>.properties + _fr):\n" +
+        assertTrue(missing.isEmpty(), "Keys missing from src/main/resources/editor/strings (add them to <area>.properties + _fr):\n" +
             missing.joinToString("\n"))
     }
 

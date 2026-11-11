@@ -94,7 +94,7 @@ object FbxClassifier {
             if (hasMeshes) Classification.MODEL else Classification.ANIMATION
         } catch (_: Exception) {
             // File missing, unreadable, or any IO error: fall back to ANIMATION (the engine's bundled FBX
-            // files in `assets/characters/animations/` are all animation-only).
+            // files in `assets/Animations/` are all animation-only).
             Classification.ANIMATION
         }
 

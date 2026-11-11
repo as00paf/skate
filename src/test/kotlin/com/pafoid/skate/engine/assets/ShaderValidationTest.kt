@@ -59,7 +59,7 @@ class ShaderValidationTest {
     fun `validate all shaders compile successfully`() {
         // The engine loads shaders from the classpath (/shaders/...); this folder is their source.
         // Include-only files (e.g. fog.glsl) have no `#type` sections; they are compiled through the shaders using them.
-        val shaders = File("src/main/resources/shaders").listFiles { _, name -> name.endsWith(".glsl") }.orEmpty()
+        val shaders = File("assets/Shaders").listFiles { _, name -> name.endsWith(".glsl") }.orEmpty()
             .filter { it.readText().contains("#type") }
         assertTrue(shaders.size >= 10, "no shaders found to validate: ${shaders.map { it.name }}")
 

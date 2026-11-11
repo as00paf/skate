@@ -1,5 +1,6 @@
 package com.pafoid.skate.cli
 
+import com.pafoid.skate.engine.assets.EngineDefaults
 import com.pafoid.skate.engine.ecs.SceneSun
 import com.pafoid.skate.engine.ecs.components.EnvironmentComponent
 import com.pafoid.skate.editor.project.Project
@@ -48,7 +49,7 @@ class TetrisProjectBuilder(private val serializer: Serializer = Serializer()) {
         val projectDir = File(parent, PROJECT_NAME).absoluteFile.also { it.mkdirs() }
         val assetsDir = ProjectLayout.create(projectDir)
         val scenesDir = ProjectLayout.scenesDir(projectDir)
-        copyEngineAssets(projectDir)
+        copyEngineAssets(projectDir, copyAll = false) // samples use reference mode (AST-26 §7)
         assetsPrefix = assetsDir.absolutePath + File.separator
         val files = ProjectFiles(serializer, projectDir)
 
@@ -66,7 +67,7 @@ class TetrisProjectBuilder(private val serializer: Serializer = Serializer()) {
                 "tetris.gameover.title=GAME OVER\n" +
                 "tetris.gameover.hint=Press R to play again\n"
         )
-        SFX.forEach { (name, hz) -> writeTone(File(assetsDir, "$name.wav"), hz) }
+        SFX.forEach { (name, hz) -> writeTone(File(assetsDir, "Sounds/$name.wav").also { it.parentFile.mkdirs() }, hz) }
 
         val scenePaths = listOf(
             SCENE_NAME to game(File(scriptsDir, SCRIPT_FILE).absolutePath),
@@ -87,7 +88,7 @@ class TetrisProjectBuilder(private val serializer: Serializer = Serializer()) {
 
     private fun cube(name: String, pos: Vector3f, half: Vector3f, color: Vector4f) = GameObject(name)
         .addComponent(Transform(pos, half))
-        .addComponent(RenderComponent(`3dModel`(assetsPrefix + Assets.Bundled.CUBE), Material(baseColor = color)))
+        .addComponent(RenderComponent(`3dModel`(EngineDefaults.Models.CUBE), Material(baseColor = color)))
 
     private fun canvas(name: String) = GameObject(name).addComponent(UICanvasComponent())
 
@@ -145,7 +146,7 @@ class TetrisProjectBuilder(private val serializer: Serializer = Serializer()) {
         SFX.forEach { (name, _) ->
             scene.children.add(
                 GameObject(name).addComponent(Transform())
-                    .addComponent(AudioComponent(assetsPrefix + "$name.wav", is3D = false, volume = 0.6f, playOnAwake = false))
+                    .addComponent(AudioComponent(assetsPrefix + "Sounds/$name.wav", is3D = false, volume = 0.6f, playOnAwake = false))
             )
         }
         scene.children.add(hud())
