@@ -2,6 +2,7 @@ package com.pafoid.skate.editor.imgui.components
 
 import com.pafoid.skate.editor.events.ViewportAction
 import com.pafoid.skate.editor.imgui.Tooltips
+import com.pafoid.skate.editor.imgui.TrailingButtons
 import com.pafoid.skate.editor.imgui.tippedWith
 import com.pafoid.skate.editor.imgui.tipped
 import com.pafoid.skate.editor.animation.AnimatorControllerCatalog
@@ -114,7 +115,11 @@ private fun Animator.controllerSection(engine: Engine) {
     val catalog = AnimatorControllerCatalog.shared
     val none = strings.getString("lbl.animator.controller_none")
     val preview = controllerPath?.let { AnimatorControllerCatalog.displayName(it) } ?: none
-    if (ImGui.beginCombo(strings.label("lbl.animator.controller"), preview)) {
+    val comboLabel = strings.label("lbl.animator.controller")
+    val refreshLabel = "${strings.getString("lbl.animator.controller_refresh")}##controller_refresh"
+    // EDT-86: the combo shrinks (or the buttons wrap) so the buttons after it always show.
+    val row = TrailingButtons.begin(refreshLabel, fieldLabel = comboLabel)
+    if (ImGui.beginCombo(comboLabel, preview)) {
         if (ImGui.selectable("$none###controller_none", controllerPath == null)) {
             engine.eventSystem.publish(AnimatorAction.SetController(this, null))
         }
@@ -133,8 +138,8 @@ private fun Animator.controllerSection(engine: Engine) {
         }
         ImGui.endDragDropTarget()
     }
-    ImGui.sameLine()
-    if (ImGui.button("${strings.getString("lbl.animator.controller_refresh")}##controller_refresh")) catalog.refresh()
+    row.next()
+    if (ImGui.button(refreshLabel)) catalog.refresh()
     Tooltips.text(strings.getString("lbl.animator.controller_drop_hint"))
 
     val machine = stateMachine

@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.imgui.components
 
+import com.pafoid.skate.editor.imgui.TrailingButtons
 import com.pafoid.skate.editor.imgui.Tooltips
 import com.pafoid.skate.editor.imgui.tipped
 import com.pafoid.skate.editor.imgui.label
@@ -138,8 +139,9 @@ private fun stringList(target: Any, field: Field, label: String, engine: Engine,
     items.indices.forEach { i ->
         ImGui.pushID(i)
         val s = ImString(items[i], 256)
+        val row = TrailingButtons.begin(engine.stringManager.getString("ui.inspector.remove"))
         if (ImGui.inputText("##item", s)) { items[i] = s.get(); changed = true }
-        ImGui.sameLine()
+        row.next()
         if (engine.stringManager.tipped(ImGui.button(engine.stringManager.getString("ui.inspector.remove")), "ui.inspector.remove")) { items.removeAt(i); changed = true }
         ImGui.popID()
         if (changed) return@forEach
@@ -157,8 +159,9 @@ private fun UIListComponent.listItems(engine: Engine) {
     while (i < rows.size) {
         ImGui.pushID(i)
         val s = ImString(rows[i].key, 256)
+        val row = TrailingButtons.begin(engine.stringManager.getString("ui.inspector.remove"))
         if (ImGui.inputText("##key", s)) { rows[i] = UiListItem(s.get(), rows[i].args); changed = true }
-        ImGui.sameLine()
+        row.next()
         if (engine.stringManager.tipped(ImGui.button(engine.stringManager.getString("ui.inspector.remove")), "ui.inspector.remove")) { rows.removeAt(i); changed = true; ImGui.popID(); continue }
         ImGui.popID()
         i++

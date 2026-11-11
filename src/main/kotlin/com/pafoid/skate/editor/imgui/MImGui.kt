@@ -422,9 +422,12 @@ object MImGui {
             ImGui.text(label)
             ImGui.tableSetColumnIndex(1)
 
+            // EDT-86: the combo leaves room for Delete at the current style (it was cut off at the right end).
+            val remove = "${Icons.TRASH}##remove"
+            val row = TrailingButtons.begin(remove)
             val result = ImGui.combo("##$label", index, labels.toTypedArray(), labels.size)
-            ImGui.sameLine()
-            removed = ImGui.button(Icons.TRASH, 15f, 15f)
+            row.next()
+            removed = ImGui.button(remove)
             strings?.let { Tooltips.show(it, "lbl.texture.remove.tooltip") }
 
             ImGui.endTable()
@@ -777,12 +780,15 @@ object MImGui {
             // A settings field explanation: shown even with tooltips off (EDT-57).
             if (helpTooltip != null) Tooltips.always(helpTooltip)
             ImGui.tableSetColumnIndex(1)
-            ImGui.pushItemWidth(-1f)
+            val resetLabel = "↺##reset_$label"
+            // EDT-86: a reset button gets its room first; the widget takes the rest instead of pushing it out.
+            val row = onReset?.let { TrailingButtons.begin(resetLabel) }
+            ImGui.pushItemWidth(row?.layout?.fieldWidth ?: -1f)
             widget()
             ImGui.popItemWidth()
             if (onReset != null) {
-                ImGui.sameLine()
-                if (ImGui.button("↺##reset_$label")) {
+                row?.next()
+                if (ImGui.button(resetLabel)) {
                     onReset()
                 }
             }
