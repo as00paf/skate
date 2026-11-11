@@ -4,6 +4,7 @@ import com.pafoid.skate.app.Editor
 import com.pafoid.skate.editor.animation.AnimatorControllerCatalog
 import com.pafoid.skate.editor.animation.clipeditor.OpenAnimationClip
 import com.pafoid.skate.editor.animation.controllereditor.AnimatorWindowController
+import com.pafoid.skate.editor.animation.controllereditor.AnimatorLayout
 import com.pafoid.skate.editor.animation.controllereditor.AnimatorWindowWiring
 import com.pafoid.skate.editor.animation.controllereditor.ClipOption
 import com.pafoid.skate.editor.animation.controllereditor.ClipSource
@@ -13,6 +14,7 @@ import com.pafoid.skate.editor.animation.controllereditor.ControllerGraphView.Co
 import com.pafoid.skate.editor.imgui.EditorWindow
 import com.pafoid.skate.editor.imgui.MImGui
 import com.pafoid.skate.editor.imgui.Tooltips
+import com.pafoid.skate.editor.imgui.TrailingButtons
 import com.pafoid.skate.editor.imgui.WindowHeader
 import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.editor.imgui.label
@@ -39,6 +41,7 @@ import imgui.flag.ImGuiDragDropFlags
 import imgui.flag.ImGuiFocusedFlags
 import imgui.flag.ImGuiKey
 import imgui.flag.ImGuiMouseButton
+import imgui.flag.ImGuiSelectableFlags
 import imgui.flag.ImGuiWindowFlags
 import imgui.type.ImString
 import java.io.File
@@ -88,31 +91,37 @@ class AnimatorWindow(
     private val flashes = HashMap<String, Float>()
 
     override fun imgui() {
-        if (beginWindow(strings, ImGuiWindowFlags.NoScrollbar or ImGuiWindowFlags.NoScrollWithMouse)) {
+        // The window scrolls vertically (its scrollbar) when a small window cannot hold the panels; the wheel stays
+        // with the graph's zoom and the side panels' own scrolling.
+        if (beginWindow(strings, ImGuiWindowFlags.NoScrollWithMouse)) {
             header(strings)
             toolbar()
-            controller.message?.let { MImGui.errorText(it) }
+            controller.message?.let { wrapped { MImGui.errorText(it) } }
             val doc = controller.document
             if (doc == null) {
                 emptyPage()
             } else {
                 if (doc.readOnly) readOnlyBanner()
                 shortcuts()
-                val avail = ImGui.getContentRegionAvailY()
-                val leftW = 270f
-                val rightW = 320f
-                if (ImGui.beginChild("##animator_left", leftW, avail, true)) { parametersPanel(); statesList() }
-                ImGui.endChild()
-                ImGui.sameLine()
-                val canvasWidth = (ImGui.getContentRegionAvailX() - rightW - 8f).coerceAtLeast(120f)
-                if (ImGui.beginChild("##animator_canvas_area", canvasWidth, avail, true, ImGuiWindowFlags.NoScrollbar or ImGuiWindowFlags.NoScrollWithMouse)) canvas()
-                ImGui.endChild()
-                ImGui.sameLine()
-                if (ImGui.beginChild("##animator_inspector", 0f, avail, true)) inspector()
-                ImGui.endChild()
+                panels()
             }
+            probe(PANEL_WINDOW)
         }
         ImGui.end()
+    }
+
+    /** Parameters and states | graph | inspector, sized from the font and shared out of the window's width (ANI-25). */
+    private fun panels() {
+        val widths = AnimatorLayout.panelWidths(ImGui.getContentRegionAvailX(), ImGui.getFontSize().toFloat(), ImGui.getStyle().itemSpacingX)
+        val height = ImGui.getContentRegionAvailY().coerceAtLeast(ImGui.getFontSize() * AnimatorLayout.MIN_PANEL_HEIGHT_EMS)
+        if (ImGui.beginChild("##animator_left", widths.left, height, true)) { parametersPanel(); statesList(); probe(PANEL_LEFT) }
+        ImGui.endChild()
+        ImGui.sameLine()
+        if (ImGui.beginChild("##animator_canvas_area", widths.canvas, height, true, ImGuiWindowFlags.NoScrollbar or ImGuiWindowFlags.NoScrollWithMouse)) canvas()
+        ImGui.endChild()
+        ImGui.sameLine()
+        if (ImGui.beginChild("##animator_inspector", widths.right, height, true)) { inspector(); probe(PANEL_INSPECTOR) }
+        ImGui.endChild()
     }
 
     // ---- toolbar ----------------------------------------------------------------------------------------------
@@ -121,8 +130,12 @@ class AnimatorWindow(
         val doc = controller.document
         val current = doc?.let { (if (it.dirty) "* " else "") + AnimatorControllerCatalog.displayName(it.path) }
             ?: strings.getString("lbl.animator_window.choose")
-        ImGui.setNextItemWidth(200f)
-        if (ImGui.beginCombo(strings.label("lbl.animator_window.controller"), current)) {
+        val newLabel = fit("${Icons.PLUS} ${strings.getString("btn.animator_window.new")}")
+        val saveLabel = fit("${Icons.SAVE} ${strings.getString("btn.animator_window.save")}")
+        val buttons = if (doc == null) listOf(newLabel) else listOf(newLabel, saveLabel)
+        val comboLabel = strings.label("lbl.animator_window.controller")
+        val row = trailing(buttons.map(::buttonWidth), strings.getString("lbl.animator_window.controller"), maxField = em(14f))
+        if (ImGui.beginCombo(comboLabel, current)) {
             for (path in AnimatorControllerCatalog.shared.options(doc?.path)) {
                 if (ImGui.selectable("${AnimatorControllerCatalog.displayName(path)}###animator_open:$path", path == doc?.path)) controller.open(path)
                 Tooltips.always(path)
@@ -130,44 +143,47 @@ class AnimatorWindow(
             ImGui.endCombo()
         }
         Tooltips.always(strings.getString("lbl.animator_window.controller.tooltip"))
-        ImGui.sameLine()
-        if (strings.tipped(ImGui.button("${Icons.PLUS} ${strings.getString("btn.animator_window.new")}"), "btn.animator_window.new")) controller.newController()
+        row.next()
+        if (strings.tipped(ImGui.button(newLabel), "btn.animator_window.new")) controller.newController()
         if (doc == null) return
-        ImGui.sameLine()
+        row.next()
         ImGui.beginDisabled(!doc.dirty || doc.readOnly)
-        if (strings.tipped(ImGui.button("${Icons.SAVE} ${strings.getString("btn.animator_window.save")}"), "btn.animator_window.save")) controller.save()
+        if (strings.tipped(ImGui.button(saveLabel), "btn.animator_window.save")) controller.save()
         ImGui.endDisabled()
 
-        ImGui.sameLine(); ImGui.text("|"); ImGui.sameLine()
         val preview = controller.preview?.gameObject?.name ?: strings.getString("lbl.animator_window.preview_none")
-        ImGui.text(strings.getString("lbl.animator_window.preview", preview))
-        ImGui.sameLine()
-        if (strings.tipped(ImGui.button(strings.getString("btn.animator_window.use_selected")), "btn.animator_window.use_selected")) {
+        val previewText = strings.getString("lbl.animator_window.preview", preview)
+        flow(ImGui.calcTextSize(previewText).x)
+        ImGui.text(previewText)
+        val useSelected = fit(strings.getString("btn.animator_window.use_selected"))
+        flow(buttonWidth(useSelected))
+        if (strings.tipped(ImGui.button(useSelected), "btn.animator_window.use_selected")) {
             engine.sceneManager.currentScene?.selectedGameObject?.getComponent<Animator>()?.let { controller.preview = it }
         }
         if (controller.canUseOnPreview) {
-            ImGui.sameLine()
-            if (strings.tipped(ImGui.button(strings.getString("btn.animator_window.use_on_preview", preview)), "btn.animator_window.use_on_preview")) {
-                controller.usePreviewOnDocument()
-            }
+            val useOn = fit(strings.getString("btn.animator_window.use_on_preview", preview))
+            flow(buttonWidth(useOn))
+            if (strings.tipped(ImGui.button(useOn), "btn.animator_window.use_on_preview")) controller.usePreviewOnDocument()
         }
         if (controller.liveMachine != null) {
-            ImGui.sameLine()
-            MImGui.successText(strings.getString("lbl.animator_window.live"))
+            val live = strings.getString("lbl.animator_window.live")
+            flow(ImGui.calcTextSize(live).x)
+            MImGui.successText(live)
             Tooltips.always(strings.getString("lbl.animator_window.live.tooltip"))
         }
     }
 
     private fun emptyPage() {
         ImGui.spacing()
-        ImGui.textWrapped(strings.getString("lbl.animator_window.empty"))
-        if (strings.tipped(ImGui.button(strings.getString("btn.animator_window.new")), "btn.animator_window.new")) controller.newController()
+        textWrapped(strings.getString("lbl.animator_window.empty"))
+        if (strings.tipped(ImGui.button(fit(strings.getString("btn.animator_window.new"))), "btn.animator_window.new")) controller.newController()
     }
 
     private fun readOnlyBanner() {
-        MImGui.warningText(strings.getString("lbl.animator_window.read_only"))
-        ImGui.sameLine()
-        if (strings.tipped(ImGui.button(strings.getString("btn.animator_window.make_copy")), "btn.animator_window.make_copy")) controller.makeProjectCopy()
+        wrapped { MImGui.warningText(strings.getString("lbl.animator_window.read_only")) }
+        val copy = fit(strings.getString("btn.animator_window.make_copy"))
+        flow(buttonWidth(copy))
+        if (strings.tipped(ImGui.button(copy), "btn.animator_window.make_copy")) controller.makeProjectCopy()
     }
 
     private fun shortcuts() {
@@ -187,42 +203,50 @@ class AnimatorWindow(
 
     private fun parametersPanel() {
         val doc = controller.document ?: return
-        MImGui.labeledSeparator(strings.getString("lbl.animator_window.parameters"))
+        section(strings.getString("lbl.animator_window.parameters"))
         ImGui.beginDisabled(doc.readOnly)
-        for (type in ParameterType.entries) {
+        ParameterType.entries.forEachIndexed { i, type ->
             val key = "btn.animator_window.add_${type.name.lowercase()}"
-            if (strings.tipped(iconLabelButton("${Icons.PLUS} ${strings.getString(key)}"), key)) controller.addParameter(type)
-            if (type != ParameterType.TRIGGER) ImGui.sameLine()
+            val label = fit("${Icons.PLUS} ${strings.getString(key)}")
+            if (i > 0) flow(buttonWidth(label))
+            if (strings.tipped(iconLabelButton(label), key)) controller.addParameter(type)
         }
         ImGui.endDisabled()
         val params = controller.parameters()
-        if (params.isEmpty()) MImGui.textDisabled(strings.getString("lbl.animator_window.no_parameters"))
+        if (params.isEmpty()) wrapped { MImGui.textDisabled(strings.getString("lbl.animator_window.no_parameters")) }
         val live = controller.liveMachine != null
         for (p in params) {
             ImGui.pushID("param:${p.name}")
+            ImGui.separator()
             ImGui.beginDisabled(doc.readOnly)
-            textCommit("param_name:${p.name}", "##name", p.name, 150f)?.let { controller.renameParameter(p.name, it) }
+            val row = trailing(listOf(iconButtonWidth()))
+            textCommit("param_name:${p.name}", "##name", p.name)?.let { controller.renameParameter(p.name, it) }
             Tooltips.always(strings.getString("lbl.animator_window.parameter_name.tooltip"))
-            ImGui.sameLine()
+            row.next()
             if (strings.tippedWith(iconButton(Icons.TRASH), "btn.animator_window.remove_parameter.tooltip")) controller.removeParameter(p.name)
             ImGui.endDisabled()
-            if (controller.isRequest(p)) {
-                ImGui.sameLine(); MImGui.textDisabled(strings.getString("lbl.animator_window.request"))
-                Tooltips.always(strings.getString("lbl.animator_window.request.tooltip", p.name))
-            } else if (!controller.isDeclared(p.name)) {
-                ImGui.sameLine(); MImGui.textDisabled(strings.getString("lbl.animator_window.inferred"))
-                Tooltips.always(strings.getString("lbl.animator_window.inferred.tooltip"))
+            val tag = when {
+                controller.isRequest(p) -> "lbl.animator_window.request" to strings.getString("lbl.animator_window.request.tooltip", p.name)
+                !controller.isDeclared(p.name) -> "lbl.animator_window.inferred" to strings.getString("lbl.animator_window.inferred.tooltip")
+                else -> null
             }
             ImGui.beginDisabled(doc.readOnly)
-            ImGui.setNextItemWidth(80f)
+            val typeWidth = AnimatorLayout.share(ImGui.getContentRegionAvailX(), em(7f))
+            ImGui.setNextItemWidth(typeWidth)
             if (ImGui.beginCombo("##type", typeName(p.type))) {
                 for (t in ParameterType.entries) if (ImGui.selectable(typeName(t), t == p.type)) controller.setParameter(p.name, t, p.default)
                 ImGui.endCombo()
             }
             Tooltips.always(strings.getString("lbl.animator_window.parameter_type.tooltip"))
             ImGui.endDisabled()
-            ImGui.sameLine()
+            flow(em(AnimatorLayout.MIN_VALUE_EMS))
             if (live) liveValue(p) else defaultValue(p, doc.readOnly)
+            tag?.let { (key, tooltip) ->
+                val text = strings.getString(key)
+                flow(ImGui.calcTextSize(text).x)
+                MImGui.textDisabled(text)
+                Tooltips.always(tooltip)
+            }
             ImGui.popID()
         }
     }
@@ -231,7 +255,8 @@ class AnimatorWindow(
         ImGui.beginDisabled(readOnly)
         when (p.type) {
             ParameterType.FLOAT -> {
-                floatCommit("param_default:${p.name}", "##default", p.default, 0.05f, -1e6f, 1e6f, "%.2f", 90f)
+                ImGui.setNextItemWidth(ImGui.getContentRegionAvailX().coerceAtMost(em(6f)))
+                floatCommit("param_default:${p.name}", "##default", p.default, 0.05f, -1e6f, 1e6f, "%.2f")
                     ?.let { controller.setParameter(p.name, p.type, it) }
             }
             ParameterType.BOOL -> if (ImGui.checkbox("##default", p.default != 0f)) controller.setParameter(p.name, p.type, if (p.default != 0f) 0f else 1f)
@@ -246,7 +271,7 @@ class AnimatorWindow(
         when (p.type) {
             ParameterType.FLOAT -> {
                 val buf = floatArrayOf(value)
-                ImGui.setNextItemWidth(90f)
+                ImGui.setNextItemWidth(ImGui.getContentRegionAvailX().coerceAtMost(em(6f)))
                 if (ImGui.dragFloat("##live", buf, 0.05f)) controller.setLive(p, buf[0])
             }
             ParameterType.BOOL -> if (ImGui.checkbox("##live", value != 0f)) controller.setLive(p, if (value != 0f) 0f else 1f)
@@ -259,7 +284,7 @@ class AnimatorWindow(
         val doc = controller.document ?: return
         val asset = doc.asset
         ImGui.spacing()
-        MImGui.labeledSeparator(strings.getString("lbl.animator_window.states"))
+        section(strings.getString("lbl.animator_window.states"))
         ImGui.beginDisabled(doc.readOnly)
         if (strings.tipped(iconLabelButton("${Icons.PLUS} ${strings.getString("btn.animator_window.add_state")}"), "btn.animator_window.add_state")) {
             val (cx, cy) = view.toCanvas(canvasW / 2f, canvasH / 2f, 0f, 0f)
@@ -274,7 +299,7 @@ class AnimatorWindow(
                 if (s.motion.isEmpty()) append("  (${strings.getString("lbl.animator_window.no_clip")})")
                 if (s.name == active) append("  ${strings.getString("lbl.animator_window.active")}")
             }
-            if (ImGui.selectable("$marks###state:${s.name}", s.name in controller.selectedNodes)) {
+            if (wrappedSelectable("###state:${s.name}", marks, s.name in controller.selectedNodes)) {
                 controller.select(s.name, ImGui.getIO().keyCtrl)
             }
         }
@@ -554,7 +579,8 @@ class AnimatorWindow(
         val node = renaming
         if (node == null) { ImGui.closeCurrentPopup(); ImGui.endPopup(); return }
         if (ImGui.isWindowAppearing()) ImGui.setKeyboardFocusHere()
-        textCommit("rename:$node", strings.label("lbl.animator_window.name"), node, 180f)?.let {
+        ImGui.setNextItemWidth(em(12f))
+        textCommit("rename:$node", strings.label("lbl.animator_window.name"), node)?.let {
             controller.renameState(node, it)
             renaming = null
             ImGui.closeCurrentPopup()
@@ -573,7 +599,7 @@ class AnimatorWindow(
             transition != null -> transitionInspector(transition)
             state != null -> stateInspector(state)
             controller.selectedNodes.singleOrNull() == ANY_STATE_NODE -> anyStateInspector()
-            controller.selectedNodes.size > 1 -> MImGui.textDisabled(strings.getString("lbl.animator_window.multi", controller.selectedNodes.size))
+            controller.selectedNodes.size > 1 -> wrapped { MImGui.textDisabled(strings.getString("lbl.animator_window.multi", controller.selectedNodes.size)) }
             else -> controllerInspector()
         }
         ImGui.endDisabled()
@@ -581,49 +607,50 @@ class AnimatorWindow(
 
     private fun controllerInspector() {
         val asset = controller.asset ?: return
-        MImGui.labeledSeparator(strings.getString("lbl.animator_window.controller_settings"))
-        textCommit("controller_name", strings.label("lbl.animator_window.controller_name"), asset.name, -1f)?.let { controller.setControllerName(it) }
+        section(strings.getString("lbl.animator_window.controller_settings"))
+        textCommit("controller_name", labeled("lbl.animator_window.controller_name"), asset.name)?.let { controller.setControllerName(it) }
         Tooltips.always(strings.getString("lbl.animator_window.controller_name.tooltip"))
-        if (ImGui.beginCombo(strings.label("lbl.animator_window.default_state"), asset.defaultState)) {
+        if (ImGui.beginCombo(labeled("lbl.animator_window.default_state"), asset.defaultState)) {
             for (s in asset.states) if (ImGui.selectable("${s.name}###default:${s.name}", s.name == asset.defaultState)) controller.setDefault(s.name)
             ImGui.endCombo()
         }
         Tooltips.always(strings.getString("lbl.animator_window.default_state.tooltip"))
         problems()
         if (asset.clips.isNotEmpty()) {
-            MImGui.labeledSeparator(strings.getString("lbl.animator_window.clip_files"))
-            for (c in asset.clips) ImGui.bulletText(c)
+            section(strings.getString("lbl.animator_window.clip_files"))
+            for (c in asset.clips) textWrapped(c)
         }
         if (asset.poses.isNotEmpty() || asset.clipFits.isNotEmpty() || asset.motions.isNotEmpty()) {
-            MImGui.labeledSeparator(strings.getString("lbl.animator_window.read_only_parts"))
-            if (asset.poses.isNotEmpty()) ImGui.textWrapped(strings.getString("lbl.animator_window.poses", asset.poses.keys.joinToString()))
-            if (asset.motions.isNotEmpty()) ImGui.textWrapped(strings.getString("lbl.animator_window.blend_trees", asset.motions.keys.joinToString()))
-            if (asset.clipFits.isNotEmpty()) ImGui.textWrapped(strings.getString("lbl.animator_window.clip_fits", asset.clipFits.keys.joinToString()))
+            section(strings.getString("lbl.animator_window.read_only_parts"))
+            if (asset.poses.isNotEmpty()) textWrapped(strings.getString("lbl.animator_window.poses", asset.poses.keys.joinToString()))
+            if (asset.motions.isNotEmpty()) textWrapped(strings.getString("lbl.animator_window.blend_trees", asset.motions.keys.joinToString()))
+            if (asset.clipFits.isNotEmpty()) textWrapped(strings.getString("lbl.animator_window.clip_fits", asset.clipFits.keys.joinToString()))
         }
         ImGui.spacing()
-        ImGui.textWrapped(strings.getString("lbl.animator_window.how_to"))
+        textWrapped(strings.getString("lbl.animator_window.how_to"))
     }
 
     private fun problems() {
         val errors = controller.errors()
         val warnings = controller.warnings()
         if (errors.isEmpty() && warnings.isEmpty()) {
-            if (controller.preview != null) MImGui.successText(strings.getString("lbl.animator_window.no_problems"))
+            if (controller.preview != null) wrapped { MImGui.successText(strings.getString("lbl.animator_window.no_problems")) }
             return
         }
-        MImGui.labeledSeparator(strings.getString("lbl.animator_window.problems"))
-        errors.forEach { MImGui.errorText(it) }
-        warnings.forEach { MImGui.warningText(it) }
+        section(strings.getString("lbl.animator_window.problems"))
+        wrapped {
+            errors.forEach { MImGui.errorText(it) }
+            warnings.forEach { MImGui.warningText(it) }
+        }
     }
 
     private fun stateInspector(state: StateDef) {
         val asset = controller.asset ?: return
         ImGui.pushID("state:${state.name}")
-        MImGui.labeledSeparator(strings.getString("lbl.animator_window.state"))
-        textCommit("state_name:${state.name}", strings.label("lbl.animator_window.name"), state.name, -1f)?.let { controller.renameState(state.name, it) }
+        section(strings.getString("lbl.animator_window.state"))
+        textCommit("state_name:${state.name}", labeled("lbl.animator_window.name"), state.name)?.let { controller.renameState(state.name, it) }
         Tooltips.always(strings.getString("lbl.animator_window.name.tooltip"))
-        if (ImGui.checkbox(strings.label("lbl.animator_window.is_default"), state.name == asset.defaultState) && state.name != asset.defaultState) controller.setDefault(state.name)
-        Tooltips.always(strings.getString("lbl.animator_window.is_default.tooltip"))
+        if (labeledCheckbox("lbl.animator_window.is_default", state.name == asset.defaultState) && state.name != asset.defaultState) controller.setDefault(state.name)
 
         val options = controller.clipOptions()
         val clipLabel = when {
@@ -631,7 +658,10 @@ class AnimatorWindow(
             state.motion in asset.motions -> strings.getString("lbl.animator_window.blend_tree", state.motion)
             else -> state.motion
         }
-        if (ImGui.beginCombo(strings.label("lbl.animator_window.clip"), clipLabel)) {
+        val editPath = options.firstOrNull { it.name == state.motion }?.path
+        val clipRow = if (editPath != null) labeledWithButtons("lbl.animator_window.clip", listOf(iconButtonWidth())) else null
+        val clipCombo = if (clipRow != null) clipRow.second else labeled("lbl.animator_window.clip")
+        if (ImGui.beginCombo(clipCombo, clipLabel)) {
             if (ImGui.selectable("${strings.getString("lbl.animator_window.no_clip_rest")}###clip_none", state.motion.isEmpty())) controller.setClip(state.name, null)
             var group: ClipSource? = null
             for (o in options) {
@@ -645,31 +675,32 @@ class AnimatorWindow(
             ImGui.endCombo()
         }
         Tooltips.always(strings.getString("lbl.animator_window.clip.tooltip"))
-        options.firstOrNull { it.name == state.motion }?.path?.let { path ->
-            ImGui.sameLine()
-            if (strings.tippedWith(ImGui.button(Icons.EDIT), "btn.animator_window.edit_clip.tooltip")) {
-                val file = projectManager.getProjectDirectory()?.let { File(it, path) }?.takeIf { it.isFile } ?: File(path)
+        if (clipRow != null && editPath != null) {
+            clipRow.first.next()
+            if (strings.tippedWith(iconButton(Icons.EDIT), "btn.animator_window.edit_clip.tooltip")) {
+                val file = projectManager.getProjectDirectory()?.let { File(it, editPath) }?.takeIf { it.isFile } ?: File(editPath)
                 engine.eventSystem.publish(OpenAnimationClip(file.absolutePath))
             }
         }
-        if (state.motion.isEmpty()) MImGui.warningText(strings.getString("lbl.animator_window.no_clip_warning"))
+        if (state.motion.isEmpty()) wrapped { MImGui.warningText(strings.getString("lbl.animator_window.no_clip_warning")) }
 
-        floatCommit("state_speed:${state.name}", strings.label("lbl.animator_window.speed"), state.speed, 0.01f, -10f, 10f, "%.2f", -1f)
+        floatCommit("state_speed:${state.name}", labeled("lbl.animator_window.speed"), state.speed, 0.01f, -10f, 10f, "%.2f")
             ?.let { v -> controller.updateState(state.name) { it.copy(speed = v) } }
         Tooltips.always(strings.getString("lbl.animator_window.speed.tooltip"))
-        if (ImGui.checkbox(strings.label("lbl.animator_window.loop"), state.loop)) controller.updateState(state.name) { it.copy(loop = !it.loop) }
-        Tooltips.always(strings.getString("lbl.animator_window.loop.tooltip"))
+        if (labeledCheckbox("lbl.animator_window.loop", state.loop)) controller.updateState(state.name) { it.copy(loop = !it.loop) }
 
-        MImGui.labeledSeparator(strings.getString("lbl.animator_window.events"))
+        section(strings.getString("lbl.animator_window.events"))
         state.events.forEachIndexed { i, e ->
             ImGui.pushID(i)
-            textCommit("event_name:${state.name}:$i", "##event_name", e.name, 110f)?.let { controller.updateEvent(state.name, i, e.copy(name = it)) }
-            Tooltips.always(strings.getString("lbl.animator_window.event_name.tooltip"))
-            ImGui.sameLine()
-            floatCommit("event_time:${state.name}:$i", "##event_time", e.time * 100f, 0.5f, 0f, 100f, "%.0f %%", 70f)
+            ImGui.setNextItemWidth(AnimatorLayout.share(ImGui.getContentRegionAvailX(), em(AnimatorLayout.MIN_VALUE_EMS)))
+            floatCommit("event_time:${state.name}:$i", "##event_time", e.time * 100f, 0.5f, 0f, 100f, "%.0f %%")
                 ?.let { controller.updateEvent(state.name, i, e.copy(time = it / 100f)) }
             Tooltips.always(strings.getString("lbl.animator_window.event_time.tooltip"))
-            ImGui.sameLine()
+            flow(em(TrailingButtons.MIN_FIELD_EMS) + iconButtonWidth() + ImGui.getStyle().itemSpacingX)
+            val row = trailing(listOf(iconButtonWidth()))
+            textCommit("event_name:${state.name}:$i", "##event_name", e.name)?.let { controller.updateEvent(state.name, i, e.copy(name = it)) }
+            Tooltips.always(strings.getString("lbl.animator_window.event_name.tooltip"))
+            row.next()
             if (strings.tippedWith(iconButton(Icons.TRASH), "btn.animator_window.remove_event.tooltip")) controller.removeEvent(state.name, i)
             ImGui.popID()
         }
@@ -680,25 +711,25 @@ class AnimatorWindow(
         outgoing(state.name)
 
         ImGui.spacing()
-        if (strings.tipped(ImGui.button(strings.getString("btn.animator_window.make_transition")), "btn.animator_window.make_transition")) controller.startConnect(state.name)
-        ImGui.sameLine()
-        if (strings.tipped(ImGui.button(strings.getString("btn.animator_window.duplicate")), "btn.animator_window.duplicate")) controller.duplicateSelection()
-        ImGui.sameLine()
-        if (strings.tipped(ImGui.button(strings.getString("btn.animator_window.delete")), "btn.animator_window.delete")) controller.deleteSelection()
+        buttonRow(
+            "btn.animator_window.make_transition" to { controller.startConnect(state.name) },
+            "btn.animator_window.duplicate" to { controller.duplicateSelection() },
+            "btn.animator_window.delete" to { controller.deleteSelection() },
+        )
         ImGui.popID()
     }
 
     private fun anyStateInspector() {
-        MImGui.labeledSeparator(strings.getString("lbl.animator_window.any_state"))
-        ImGui.textWrapped(strings.getString("lbl.animator_window.any_state_help"))
+        section(strings.getString("lbl.animator_window.any_state"))
+        textWrapped(strings.getString("lbl.animator_window.any_state_help"))
         outgoing(ANY_STATE_NODE)
-        if (strings.tipped(ImGui.button(strings.getString("btn.animator_window.make_transition")), "btn.animator_window.make_transition")) controller.startConnect(ANY_STATE_NODE)
+        buttonRow("btn.animator_window.make_transition" to { controller.startConnect(ANY_STATE_NODE) })
     }
 
     /** Transitions leaving [node] in the order they are checked, with priority arrows. */
     private fun outgoing(node: String) {
         val asset = controller.asset ?: return
-        MImGui.labeledSeparator(strings.getString("lbl.animator_window.transitions_out"))
+        section(strings.getString("lbl.animator_window.transitions_out"))
         val list = controller.transitionsFrom(node)
         if (list.isEmpty()) MImGui.textDisabled(strings.getString("lbl.animator_window.no_transitions"))
         list.forEachIndexed { pos, index ->
@@ -706,12 +737,12 @@ class AnimatorWindow(
             ImGui.beginDisabled(pos == 0)
             if (strings.tippedWith(iconButton(Icons.ARROW_UP), "btn.animator_window.priority_up.tooltip")) controller.moveTransition(index, -1)
             ImGui.endDisabled()
-            ImGui.sameLine()
+            flow(iconButtonWidth())
             ImGui.beginDisabled(pos == list.lastIndex)
             if (strings.tippedWith(iconButton(Icons.ARROW_DOWN), "btn.animator_window.priority_down.tooltip")) controller.moveTransition(index, 1)
             ImGui.endDisabled()
-            ImGui.sameLine()
-            if (ImGui.selectable("${sentence(asset.transitions[index])}###sel", false)) controller.selectTransition(index)
+            flow(em(AnimatorLayout.MIN_TEXT_EMS))
+            if (wrappedSelectable("###sel", sentence(asset.transitions[index]), false)) controller.selectTransition(index)
             ImGui.popID()
         }
     }
@@ -721,75 +752,82 @@ class AnimatorWindow(
         val t = asset.transitions.getOrNull(index) ?: return
         ImGui.pushID("transition:$index")
         val from = t.from ?: strings.getString("lbl.animator_window.any_state")
-        MImGui.labeledSeparator(strings.getString("lbl.animator_window.transition", from, t.to))
+        section(strings.getString("lbl.animator_window.transition", from, t.to))
         val siblings = asset.transitions.indices.filter { asset.transitions[it].from == t.from && asset.transitions[it].to == t.to }
         if (siblings.size > 1) {
             siblings.forEachIndexed { n, i ->
-                if (n > 0) ImGui.sameLine()
-                if (ImGui.radioButton("${n + 1}###sib:$i", i == index)) controller.selectTransition(i)
+                val label = "${n + 1}"
+                if (n > 0) flow(ImGui.getFrameHeight() + ImGui.getStyle().itemInnerSpacingX + ImGui.calcTextSize(label).x)
+                if (ImGui.radioButton("$label###sib:$i", i == index)) controller.selectTransition(i)
             }
             Tooltips.always(strings.getString("lbl.animator_window.siblings.tooltip"))
         }
 
-        MImGui.labeledSeparator(strings.getString("lbl.animator_window.conditions"))
+        section(strings.getString("lbl.animator_window.conditions"))
         val params = controller.parameters()
         t.conditions.forEachIndexed { ci, c -> conditionRow(index, ci, c, params) }
         if (t.conditions.isEmpty()) MImGui.textDisabled(strings.getString("lbl.animator_window.no_conditions"))
         if (strings.tipped(iconLabelButton("${Icons.PLUS} ${strings.getString("btn.animator_window.add_condition")}"), "btn.animator_window.add_condition")) controller.addCondition(index)
 
-        MImGui.labeledSeparator(strings.getString("lbl.animator_window.timing"))
-        if (ImGui.checkbox(strings.label("lbl.animator_window.exit_time"), t.hasExitTime)) controller.updateTransition(index) { it.copy(hasExitTime = !it.hasExitTime) }
-        Tooltips.always(strings.getString("lbl.animator_window.exit_time.tooltip"))
+        section(strings.getString("lbl.animator_window.timing"))
+        if (labeledCheckbox("lbl.animator_window.exit_time", t.hasExitTime)) controller.updateTransition(index) { it.copy(hasExitTime = !it.hasExitTime) }
         if (t.hasExitTime) {
-            floatCommit("exit:$index", strings.label("lbl.animator_window.exit_at"), t.exitTime * 100f, 0.5f, 0f, 500f, "%.0f %%", -1f)
+            floatCommit("exit:$index", labeled("lbl.animator_window.exit_at"), t.exitTime * 100f, 0.5f, 0f, 500f, "%.0f %%")
                 ?.let { v -> controller.updateTransition(index) { it.copy(exitTime = v / 100f) } }
             Tooltips.always(strings.getString("lbl.animator_window.exit_at.tooltip"))
         }
-        floatCommit("blend:$index", strings.label("lbl.animator_window.blend"), t.duration, 0.01f, 0f, 10f, "%.2f s", -1f)
+        floatCommit("blend:$index", labeled("lbl.animator_window.blend"), t.duration, 0.01f, 0f, 10f, "%.2f s")
             ?.let { v -> controller.updateTransition(index) { it.copy(duration = v) } }
         Tooltips.always(strings.getString("lbl.animator_window.blend.tooltip"))
-        if (t.conditions.isEmpty() && !t.hasExitTime) MImGui.warningText(strings.getString("lbl.animator_window.never_fires"))
+        if (t.conditions.isEmpty() && !t.hasExitTime) wrapped { MImGui.warningText(strings.getString("lbl.animator_window.never_fires")) }
 
         if (t.from == null) {
-            MImGui.labeledSeparator(strings.getString("lbl.animator_window.except_from"))
+            section(strings.getString("lbl.animator_window.except_from"))
             for (s in asset.states) {
-                if (ImGui.checkbox("${s.name}###except:${s.name}", s.name in t.exceptFrom)) {
+                if (dataCheckbox("except:${s.name}", s.name, s.name in t.exceptFrom, "lbl.animator_window.except_from.tooltip")) {
                     controller.updateTransition(index) { it.copy(exceptFrom = if (s.name in it.exceptFrom) it.exceptFrom - s.name else it.exceptFrom + s.name) }
                 }
             }
-            Tooltips.always(strings.getString("lbl.animator_window.except_from.tooltip"))
         }
 
         ImGui.spacing()
-        if (strings.tipped(ImGui.button(strings.getString("btn.animator_window.delete_transition")), "btn.animator_window.delete_transition")) controller.removeTransition(index)
+        buttonRow("btn.animator_window.delete_transition" to { controller.removeTransition(index) })
         ImGui.popID()
     }
 
+    /** One condition: the parameter and Remove on the first line, then the test and the value (ANI-25: they wrap). */
     private fun conditionRow(index: Int, ci: Int, c: TransitionCondition, params: List<ParameterDef>) {
         ImGui.pushID("cond:$ci")
+        if (ci > 0) ImGui.separator()
         val type = params.firstOrNull { it.name == c.parameter }?.type
-        ImGui.setNextItemWidth(100f)
+        val row = trailing(listOf(iconButtonWidth()))
         if (ImGui.beginCombo("##param", c.parameter)) {
             for (p in params) if (ImGui.selectable("${p.name}###p:${p.name}", p.name == c.parameter)) controller.setCondition(index, ci, c.copy(parameter = p.name))
             ImGui.endCombo()
         }
         Tooltips.always(strings.getString("lbl.animator_window.condition_parameter.tooltip"))
-        ImGui.sameLine()
-        ImGui.setNextItemWidth(110f)
+        row.next()
+        if (strings.tippedWith(iconButton(Icons.TRASH), "btn.animator_window.remove_condition.tooltip")) controller.removeCondition(index, ci)
+        val numeric = c.op == ConditionOp.GREATER || c.op == ConditionOp.LESS || c.op == ConditionOp.EQUALS
+        val avail = ImGui.getContentRegionAvailX()
+        val valueWidth = em(AnimatorLayout.MIN_VALUE_EMS)
+        val opWidth = if (numeric && avail - valueWidth - ImGui.getStyle().itemSpacingX >= em(TrailingButtons.MIN_FIELD_EMS)) {
+            avail - valueWidth - ImGui.getStyle().itemSpacingX
+        } else avail
+        ImGui.setNextItemWidth(opWidth)
         if (ImGui.beginCombo("##op", opName(c.op))) {
             for (op in AnimatorWindowController.operatorsFor(type)) if (ImGui.selectable("${opName(op)}###op:${op.name}", op == c.op)) controller.setCondition(index, ci, c.copy(op = op))
             ImGui.endCombo()
         }
         Tooltips.always(strings.getString("lbl.animator_window.condition_op.tooltip"))
-        if (c.op == ConditionOp.GREATER || c.op == ConditionOp.LESS || c.op == ConditionOp.EQUALS) {
-            ImGui.sameLine()
-            floatCommit("threshold:$index:$ci", "##threshold", c.threshold, 0.05f, -1e6f, 1e6f, "%.2f", 60f)
+        if (numeric) {
+            flow(valueWidth)
+            ImGui.setNextItemWidth(ImGui.getContentRegionAvailX().coerceAtMost(valueWidth).coerceAtLeast(1f))
+            floatCommit("threshold:$index:$ci", "##threshold", c.threshold, 0.05f, -1e6f, 1e6f, "%.2f")
                 ?.let { controller.setCondition(index, ci, c.copy(threshold = it)) }
             Tooltips.always(strings.getString("lbl.animator_window.threshold.tooltip"))
         }
-        ImGui.sameLine()
-        if (strings.tippedWith(iconButton(Icons.TRASH), "btn.animator_window.remove_condition.tooltip")) controller.removeCondition(index, ci)
-        if (type != null && c.op !in AnimatorWindowController.operatorsFor(type)) MImGui.warningText(strings.getString("lbl.animator_window.op_mismatch"))
+        if (type != null && c.op !in AnimatorWindowController.operatorsFor(type)) wrapped { MImGui.warningText(strings.getString("lbl.animator_window.op_mismatch")) }
         ImGui.popID()
     }
 
@@ -811,7 +849,127 @@ class AnimatorWindow(
         return strings.getString("lbl.animator_window.sentence", from, t.to, condition, t.duration)
     }
 
-    // ---- buttons ----------------------------------------------------------------------------------------------
+    // ---- layout helpers (ANI-25: sized from the style, rows wrap instead of running off the panel) ---------------
+
+    private fun em(n: Float) = ImGui.getFontSize() * n
+
+    /** The right edge of the current panel's content, in screen pixels. */
+    private fun rowRight() = ImGui.getWindowPosX() + ImGui.getWindowContentRegionMaxX()
+
+    /**
+     * Before an item [width] pixels wide that follows another one: on the same line when it fits, else on the next
+     * (EDT-86's rule, [TrailingButtons.fitsOnLine]).
+     */
+    private fun flow(width: Float) {
+        if (TrailingButtons.fitsOnLine(ImGui.getItemRectMaxX(), width, ImGui.getStyle().itemSpacingX, rowRight())) ImGui.sameLine()
+    }
+
+    private fun buttonWidth(label: String) = TrailingButtons.buttonWidth(ImGui.calcTextSize(label, true).x, ImGui.getStyle().framePaddingX)
+
+    /**
+     * EDT-86's [TrailingButtons] for buttons of known [widths] (our icon buttons are wider than their glyph): sets the
+     * next field's width so they fit after it, or they wrap to the next line. [fieldLabel] is the field's visible label.
+     */
+    private fun trailing(widths: List<Float>, fieldLabel: String? = null, maxField: Float = Float.MAX_VALUE): TrailingButtons.Row {
+        val st = ImGui.getStyle()
+        val labelText = fieldLabel?.let { ImGui.calcTextSize(it, true).x } ?: 0f
+        val labelWidth = if (labelText > 0f) labelText + st.itemInnerSpacingX else 0f
+        val available = kotlin.math.floor(ImGui.getContentRegionAvailX())
+        val layout = TrailingButtons.layout(available, widths.map { kotlin.math.ceil(it) }, kotlin.math.ceil(labelWidth), st.itemSpacingX, em(TrailingButtons.MIN_FIELD_EMS))
+        val sized = layout.copy(fieldWidth = kotlin.math.floor(if (layout.wrapped) layout.fieldWidth else layout.fieldWidth.coerceAtMost(maxField)).coerceAtLeast(1f))
+        ImGui.setNextItemWidth(sized.fieldWidth)
+        return TrailingButtons.Row(widths, sized, ImGui.getCursorScreenPosX() + available)
+    }
+
+    /**
+     * The label to give the next field for the string [key]: beside the field when both fit, else on its own (wrapped)
+     * line above and the field takes the whole width. The ID stays `###key` either way.
+     */
+    private fun labeled(key: String): String {
+        val text = strings.getString(key)
+        val labelWidth = kotlin.math.ceil(ImGui.calcTextSize(text, true).x + ImGui.getStyle().itemInnerSpacingX)
+        val avail = kotlin.math.floor(ImGui.getContentRegionAvailX())
+        return if (avail - labelWidth >= em(TrailingButtons.MIN_FIELD_EMS)) {
+            ImGui.setNextItemWidth(avail - labelWidth)
+            "$text###$key"
+        } else {
+            textWrapped(text)
+            ImGui.setNextItemWidth(avail.coerceAtLeast(1f))
+            "###$key"
+        }
+    }
+
+    /** [labeled] with buttons of [widths] after the field: returns their row and the field's label. */
+    private fun labeledWithButtons(key: String, widths: List<Float>): Pair<TrailingButtons.Row, String> {
+        val text = strings.getString(key)
+        val st = ImGui.getStyle()
+        val labelWidth = ImGui.calcTextSize(text, true).x + st.itemInnerSpacingX
+        val buttons = widths.sumOf { (it + st.itemSpacingX).toDouble() }.toFloat()
+        return if (ImGui.getContentRegionAvailX() - labelWidth - buttons >= em(TrailingButtons.MIN_FIELD_EMS)) {
+            trailing(widths, text) to "$text###$key"
+        } else {
+            textWrapped(text)
+            trailing(widths) to "###$key"
+        }
+    }
+
+    /** A checkbox whose label (the string [key]) wraps next to the box; its tooltip is `[key].tooltip`. */
+    private fun labeledCheckbox(key: String, value: Boolean): Boolean = dataCheckbox(key, strings.getString(key), value, "$key.tooltip")
+
+    /** A checkbox with the label [text] (data or translated) wrapping next to the box. */
+    private fun dataCheckbox(id: String, text: String, value: Boolean, tooltipKey: String): Boolean {
+        val clicked = ImGui.checkbox("###$id", value)
+        Tooltips.always(strings.getString(tooltipKey))
+        ImGui.sameLine(0f, ImGui.getStyle().itemInnerSpacingX)
+        textWrapped(text)
+        Tooltips.always(strings.getString(tooltipKey))
+        if (ImGui.isItemClicked()) return true
+        return clicked
+    }
+
+    /** A section title: EDT's separator with text when it fits, else the wrapped text over a plain separator. */
+    private fun section(title: String) {
+        val needed = ImGui.calcTextSize(title).x + ImGui.getStyle().separatorTextPaddingX * 2f + em(1f)
+        if (needed <= ImGui.getContentRegionAvailX()) MImGui.labeledSeparator(title)
+        else { textWrapped(title); ImGui.separator() }
+    }
+
+    /**
+     * Text items in [block] (coloured or not) wrap at the panel's edge. One pixel short of it: ImGui rounds a text's
+     * width up, so a line wrapped exactly at the edge can end a pixel past it.
+     */
+    private inline fun wrapped(block: () -> Unit) {
+        ImGui.pushTextWrapPos(ImGui.getWindowContentRegionMaxX() - 1f)
+        block()
+        ImGui.popTextWrapPos()
+    }
+
+    private fun textWrapped(text: String) = wrapped { ImGui.textUnformatted(text) }
+
+    /** A full-width selectable row showing [text] wrapped onto as many lines as it needs. */
+    private fun wrappedSelectable(id: String, text: String, selected: Boolean): Boolean {
+        val width = kotlin.math.floor(ImGui.getContentRegionAvailX()).coerceAtLeast(1f)
+        val x = ImGui.getCursorPosX()
+        val y = ImGui.getCursorPosY()
+        val height = ImGui.calcTextSize(text, false, width - 1f).y
+        val clicked = ImGui.selectable(id, selected, ImGuiSelectableFlags.AllowOverlap, width, height)
+        val after = ImGui.getCursorPosY()
+        ImGui.setCursorPos(x, y)
+        ImGui.pushTextWrapPos(x + width - 1f)
+        ImGui.textUnformatted(text)
+        ImGui.popTextWrapPos()
+        ImGui.setCursorPosY(maxOf(after, ImGui.getCursorPosY()))
+        return clicked
+    }
+
+    /** Translated buttons that wrap as a row; each is `strings.tipped` with its key. */
+    private fun buttonRow(vararg buttons: Pair<String, () -> Unit>) {
+        buttons.forEachIndexed { i, (key, action) ->
+            val label = fit(strings.getString(key))
+            if (i > 0) flow(buttonWidth(label))
+            if (strings.tipped(ImGui.button(label), key)) action()
+        }
+    }
 
     /**
      * An icon-only button sized like the header's `?` (EDT-67/76): at least square and tall enough for the icon glyph
@@ -822,16 +980,31 @@ class AnimatorWindow(
         return ImGui.button(icon, size.width, size.height)
     }
 
-    /** A text button (with an icon) as tall as [iconButton], so rows of mixed buttons line up and nothing is cut. */
-    private fun iconLabelButton(label: String): Boolean = ImGui.button(label, 0f, WindowHeader.buttonSize().height)
+    private fun iconButtonWidth() = WindowHeader.buttonSize().width
+
+    /**
+     * A text button (with an icon) at least as tall as [iconButton], so rows of mixed buttons line up and nothing is
+     * cut; a label too wide for the panel goes on several lines ([fit]).
+     */
+    private fun iconLabelButton(label: String): Boolean {
+        val text = fit(label)
+        val height = maxOf(WindowHeader.buttonSize().height, ImGui.calcTextSize(text, true).y + ImGui.getStyle().framePaddingY * 2f)
+        return ImGui.button(text, 0f, height)
+    }
+
+    /** The panel's content width (a full line). */
+    private fun fullWidth() = ImGui.getWindowContentRegionMaxX() - ImGui.getWindowContentRegionMinX()
+
+    /** [label] broken onto several lines when the button would be wider than the panel ([AnimatorLayout.wrapWords]). */
+    private fun fit(label: String): String =
+        AnimatorLayout.wrapWords(label, fullWidth() - ImGui.getStyle().framePaddingX * 2f) { ImGui.calcTextSize(it, true).x }
 
     // ---- commit-on-release fields ----------------------------------------------------------------------------
 
-    /** A text field showing [current]; returns the new text once, when the edit is confirmed. */
-    private fun textCommit(key: String, label: String, current: String, width: Float): String? {
+    /** A text field showing [current] (its width set before); returns the new text once, when the edit is confirmed. */
+    private fun textCommit(key: String, label: String, current: String): String? {
         val buf = texts.getOrPut(key) { ImString(current, 256) }
         if (activeEdit != key && buf.get() != current) buf.set(current)
-        ImGui.setNextItemWidth(width)
         ImGui.inputText(label, buf)
         if (ImGui.isItemActivated()) activeEdit = key
         val done = ImGui.isItemDeactivatedAfterEdit()
@@ -839,11 +1012,10 @@ class AnimatorWindow(
         return if (done && buf.get() != current) buf.get() else null
     }
 
-    /** A drag field showing [current]; returns the value once, on release or Enter (one undo step per edit). */
-    private fun floatCommit(key: String, label: String, current: Float, speed: Float, min: Float, max: Float, format: String, width: Float): Float? {
+    /** A drag field showing [current] (its width set before); returns the value once, on release or Enter. */
+    private fun floatCommit(key: String, label: String, current: Float, speed: Float, min: Float, max: Float, format: String): Float? {
         val buf = numbers.getOrPut(key) { floatArrayOf(current) }
         if (activeEdit != key) buf[0] = current
-        ImGui.setNextItemWidth(width)
         ImGui.dragFloat(label, buf, speed, min, max, format)
         if (ImGui.isItemActivated()) activeEdit = key
         val done = ImGui.isItemDeactivatedAfterEdit()
@@ -851,7 +1023,18 @@ class AnimatorWindow(
         return if (done && buf[0] != current) buf[0] else null
     }
 
-    private companion object {
+    /**
+     * Test hook (ANI-25): at the end of each frame, how far each panel's laid-out content reaches past its visible
+     * width (`ImGui.getScrollMaxX`, pixels; 0 when everything fits). Nothing scrolls sideways, so more is unreachable.
+     */
+    internal var layoutProbe: ((panel: String, overflowX: Float) -> Unit)? = null
+
+    private fun probe(panel: String) { layoutProbe?.invoke(panel, ImGui.getScrollMaxX()) }
+
+    internal companion object {
+        const val PANEL_WINDOW = "window"
+        const val PANEL_LEFT = "left"
+        const val PANEL_INSPECTOR = "inspector"
         const val FLASH_SECONDS = 0.6f
     }
 }
