@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.imgui.components
 
+import com.pafoid.skate.editor.assets.ProjectShaders
 import com.pafoid.skate.editor.imgui.Tooltips
 import com.pafoid.skate.editor.imgui.EnumLabels
 import com.pafoid.skate.editor.commands.objects.MaterialState
@@ -151,6 +152,22 @@ private fun materialFields(mat: Material, engine: Engine, target: String?, s: (S
     }
     row("doubleSided", s("doubleSided"), "material.doubleSided.tooltip") {
         if (ImGui.checkbox("##value", d.doubleSided)) preview(d.copy(doubleSided = !d.doubleSided))
+    }
+    row("shader", s("shader"), "material.shader.tooltip") {
+        // EDT-80: null is the schema's shader; the list is scanned only while the combo is open
+        val engineTag = s("shader.engine")
+        val none = s("shader.none")
+        val current = d.shader
+        if (ImGui.beginCombo("##value", current?.let { ProjectShaders.label(it, engineTag) } ?: none)) {
+            if (ImGui.selectable(none, current == null) && current != null) preview(d.copy(shader = null))
+            for (ref in ProjectShaders.options(engine.assetsManager.paths.projectRoot, current)) {
+                if (ImGui.selectable("${ProjectShaders.label(ref, engineTag)}##$ref", ref == current) && ref != current) {
+                    preview(d.copy(shader = ref))
+                }
+                if (ImGui.isItemHovered()) Tooltips.text(ref)
+            }
+            ImGui.endCombo()
+        }
     }
 
     val none = s("texture.select")

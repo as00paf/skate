@@ -7,7 +7,9 @@ import java.io.File
 class CreateFileCommand(
     private val filePath: String,
     private val isDirectory: Boolean,
-    private val logger: LoggerService
+    private val logger: LoggerService,
+    /** Initial text of a new file (e.g. a shader template, EDT-80); null leaves it empty. Ignored for folders. */
+    private val content: String? = null,
 ) : ExecutionTrackedCommand {
 
     private val file = File(filePath)
@@ -69,6 +71,8 @@ class CreateFileCommand(
                 wasCreated = false
                 return
             }
+
+            if (!isDirectory && content != null) file.writeText(content)
 
             executeSucceeded = true
             logger.logEditor("Created: ${file.name}")

@@ -1,5 +1,7 @@
 package com.pafoid.skate.editor.ui.windows
 
+import com.pafoid.skate.editor.assets.ProjectShaders
+import com.pafoid.skate.editor.events.ProjectEvent
 import com.pafoid.skate.editor.imgui.WindowHeader
 import com.pafoid.skate.editor.imgui.label
 import com.pafoid.skate.editor.imgui.EditorWindow
@@ -13,6 +15,7 @@ import com.pafoid.skate.editor.ui.windows.assetBrowser.PrefabsTab
 import com.pafoid.skate.editor.ui.windows.assetBrowser.SoundsTab
 import com.pafoid.skate.editor.ui.windows.assetBrowser.TexturesTab
 import com.pafoid.skate.engine.core.Engine
+import com.pafoid.skate.engine.render.shader.ShaderTemplates
 import imgui.ImGui
 import imgui.type.ImString
 
@@ -30,6 +33,14 @@ class AssetBrowserWindow(
     private var searchText = ImString(256)
 
     init {
+        val newShader = {
+            engine.assetsManager.paths.projectRoot?.let { root ->
+                val file = ProjectShaders.newShaderFile(root)
+                engine.eventSystem.publish(ProjectEvent.CreateFileRequested(file.absolutePath, false, ShaderTemplates.PBR_MATERIAL))
+            }
+            Unit
+        }
+        listOf(animationsTab, texturesTab, soundsTab, prefabsTab).forEach { it.onNewShader = newShader }
         refreshAssets()
         AssetBrowserRefresh.subscribe(engine.eventSystem, ::refreshAssets)
     }
