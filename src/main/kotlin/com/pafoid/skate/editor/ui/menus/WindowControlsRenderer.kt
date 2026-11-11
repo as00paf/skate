@@ -47,14 +47,20 @@ class WindowControlsRenderer(
 
         popStyleColor(1)
         popStyleVar(2)
+
+        // After the pops: the popup's menu items must get the editor's padding, not the icon buttons' zero padding
+        // (EDT-76: they were drawn flush against each other).
+        renderSettingsPopup()
     }
 
     private fun renderSettingsButton() {
         if (stringManager.tippedWith(ImGui.button(Icons.GEAR, WINDOW_BTN_SIZE, WINDOW_BTN_SIZE), "tooltip.settings")) {
-            ImGui.openPopup("##SettingsPopup")
+            ImGui.openPopup(SETTINGS_POPUP)
         }
+    }
 
-        if (ImGui.beginPopup("##SettingsPopup")) {
+    private fun renderSettingsPopup() {
+        if (ImGui.beginPopup(SETTINGS_POPUP)) {
             if (stringManager.tipped(ImGui.menuItem("${Icons.GEAR} ${stringManager.getString("window.editor_settings")}"), "window.editor_settings")) {
                 eventSystem.publish(WindowAction.Show("window.editor_settings"))
             }
@@ -96,5 +102,9 @@ class WindowControlsRenderer(
             eventSystem.publish(EditorEvent.Exit)
         }
         popStyleColor(2)
+    }
+
+    private companion object {
+        const val SETTINGS_POPUP = "##SettingsPopup"
     }
 }
