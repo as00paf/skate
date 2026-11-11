@@ -1,28 +1,49 @@
 # EDT-79: Git branch button in the status bar (replaces the Version Control window)
 
-Status: **proposal, awaiting approval** · Owner: skate-ecs (assigned by the lead; editor code) · Priority: P2 · Deps: EDT-60
+Status: **approved 2026-11-10** (decisions below) · Owner: skate-ecs (assigned by the lead; editor code; skate-editor
+reviews the status bar and dialog look) · Priority: P2 · Deps: EDT-60
+
+## Decisions (human, 2026-11-10)
+
+The answers to §9. Where they differ from the proposal, they win over the rest of this note, and the sections below
+have been updated to match.
+
+| Q | Decision |
+|---|---|
+| 1 | The branch button is the **last item at the far right** of the status bar, after the scene name. |
+| 2 | **One dialog** for Commit… and Changes…. |
+| 3 | The Commit dialog **never closes by itself** after a commit; the user closes it. |
+| 4 | Commit and Conflicts dialogs (and the Git log window) are **non-modal**; real modals only for confirmations. |
+| 5 | Update Project is **shown but disabled**, tooltip "Needs a remote". |
+| 6 | Merge into current is a **separate follow-up: EDT-83**. |
+| 7 | **Keep the dockable Version Control window**, reworked to behave like IntelliJ's Git log tool window: a commit list with a graph/branch column, author, date and message; selecting a commit shows its changed files and their diffs; filter by branch and by text. It **replaces the planned History dialog**; the popup's *History…* opens it. |
+| 8 | UI in `editor/ui/windows/vcs/`, models in `editor/vcs/`. |
+| 9 | `EditorError` modal for refusals and failures, `EditorToast` for success. |
+| 10 | skate-ecs implements it. |
+
+Out of scope: IntelliJ-style left/right tool window bars (EDT-84).
 
 ## In short
 
-The human asked for an IntelliJ-style branch button in the status bar, replacing the dockable Version Control window
-from EDT-60 phase 1.
+The human asked for an IntelliJ-style branch button in the status bar. It takes over the everyday work of the EDT-60
+phase 1 Version Control window, which stays as an IntelliJ-style Git log (Q7).
 
 - **The button** sits in the bottom status bar and shows the current branch and how many files changed: `⎇ main ●3`.
 - **Its popup** lists the branches with Checkout, New and Delete, plus entries for Update, Commit…, Changes…, History…
   and Resolve Conflicts….
-- **Where the window's work goes** once it is removed:
+- **Where the window's work goes:**
 
   | Work | New home |
   |---|---|
   | Changes list, diff, commit, discard | A **Commit dialog** (Ctrl+K). It is also the "Changes" view. |
-  | History and per-commit diffs | A **History dialog** |
+  | History and per-commit diffs | The **Version Control window**, reworked into a Git log (graph, filters) |
   | Resolving conflicted files | A **Conflicts dialog**, which opens by itself when conflicts appear |
   | Initialize, new branch, delete branch, discard | Small confirmation modals |
 
 - **What is reused unchanged:** EDT-60's service layer, model, session, commands, handler, `.gitignore` template,
   conflict-marker guard and architecture guards. They are untouched except for one new read (§5.3, conflict sides) and
   a few refresh triggers (§6).
-- **Diff display** moves into one shared `DiffView`, so the three dialogs draw diffs the same way.
+- **Diff display** moves into one shared `DiffView`, so the dialogs and the Git log draw diffs the same way.
 
 Nothing new in this note needs a network or credentials. "Update" (pull) stays disabled until EDT-60 phase 2 adds
 remotes.
@@ -39,9 +60,9 @@ remotes.
 | Execute-only Git commands | `editor/commands/vcs/VcsCommands.kt` | **kept** (still listed in `UndoCoverageGuardTest`) |
 | `VcsAction` events → commands, Play/unsaved-scene refusals, reload after checkout | `editor/events/VcsAction.kt`, `ui/handlers/VcsActionHandler.kt` | **kept** |
 | `.gitignore` / `.gitattributes`, loader conflict-marker guard | `GitIgnoreTemplate.kt`, `ConflictMarkers.kt` | **kept** |
-| The dockable window (changes, diff, commit, history, branches, resolve) | `ui/windows/VersionControlWindow.kt` | **removed** (slice 5); its parts move as below |
-| View > Windows > *Project* category (only this window) | `imgui/WindowCategory.kt` | `PROJECT` removed with it |
-| Default dock zone | `imgui/DefaultDockLayout.kt` | entry removed |
+| The dockable window (changes, diff, commit, history, branches, resolve) | `ui/windows/VersionControlWindow.kt` | **reworked into the Git log** (slice 5, Q7); changes, commit, branches and resolve move out as below |
+| View > Windows > *Project* category (only this window) | `imgui/WindowCategory.kt` | kept |
+| Default dock zone | `imgui/DefaultDockLayout.kt` | kept |
 | Status bar: FPS, memory, toast, scene name | `imgui/EditorStatusBar.kt` (`STATUS_BAR_HEIGHT` 30 px) | gets the branch button |
 
 The status bar is drawn by `WindowManager` through `windowRegistry.statusBar`. It sits under `editor/imgui`, so the
@@ -51,11 +72,11 @@ commands or the service directly.
 ## 2. The status bar button
 
 ```
- 60 FPS | 812 / 2048 MB | Screenshot saved              ⎇ main ●3   Scene: MainScene
-                                                       └─ button ─┘
+ 60 FPS | 812 / 2048 MB | Screenshot saved              Scene: MainScene   ⎇ main ●3
+                                                                    └─ button ─┘
 ```
 
-- **Place:** on the right, just before the scene name, as in IntelliJ. It is a frameless `smallButton`, so the bar
+- **Place:** the last item at the far right, after the scene name (Q1). It is a frameless `smallButton`, so the bar
   keeps its height.
 - **Label states.** All label text comes from string keys; the label gets a stable ImGui ID (`###vcs_branch_button`)
   so it can change freely.
@@ -85,11 +106,11 @@ EDT-51 §2.3 menu order: actions first, then the list, destructive entries last.
 ```
 ┌──────────────────────────────────────┐
 │ 🔍 [ Search branches            ]    │
-│ ⟳  Update Project            (off)   │  ← disabled until phase 2 (remotes)
+│ ⟳  Update Project            (off)   │  ← disabled, tooltip "Needs a remote" (Q5)
 │ ✓  Commit…   3 files        Ctrl+K   │
 │ ≡  Changes…                          │  ← same dialog as Commit
 │ ⚠  Resolve Conflicts…   2            │  ← only while conflicts exist
-│ 🕘 History…                          │
+│ 🕘 History…                          │  ← opens the Version Control (Git log) window
 │ ＋ New Branch…                       │
 │ ───────── Local ─────────            │
 │ ★ main                    (current)  │
@@ -115,18 +136,19 @@ EDT-51 §2.3 menu order: actions first, then the list, destructive entries last.
 - **Enabling rules** live in the pure `BranchPopupModel`. They reuse `VcsStatusModel.actionRefusal` and
   `commitBlockedReason`, so the popup, the dialogs and the handler cannot disagree.
 
-**Reporting results:**
+**Reporting results (Q9):**
 - **Success:** an `EditorToast` in the status bar, e.g. "Switched to feature/rails" or "Committed a1b2c3d".
-- **Refusal or failure:** the standard `EditorError` modal (EDT-10). Today the window shows these as an inline red
-  line, and with the window gone there is no inline place left.
-  - The handler publishes the error when an action from the popup is refused.
-  - Inside an open dialog, errors stay inline (§4), as in the window today.
+- **Refusal or failure** of an action, wherever it came from (popup, dialog, window): the standard `EditorError`
+  modal (EDT-10), so one rule covers every place. `VcsSession` reports action failures through a callback that the
+  handler turns into `EditorError`; it no longer keeps them in `state.error`.
+- **Read errors** (a failed `git status` during a refresh) are not actions: they show as `⎇ main ⚠` on the button,
+  with the text in its tooltip, so a broken repository does not raise a modal every second.
 
 ## 4. Where the window's content goes
 
 ### 4.1 Commit dialog (also "Changes…")
 
-An `EditorDialog` named `dialog.vcs_commit`, resizable, size remembered, 900×600 on first use. It is **not modal**,
+An `EditorDialog` named `window.vcs_commit`, resizable, size remembered, 900×600 on first use. It is **not modal**,
 so you can keep editing scenes while it is open, like IntelliJ's commit tool window. Opened from Commit… and Changes…
 in the popup, from Ctrl+K and from Search Anywhere.
 
@@ -155,22 +177,43 @@ in the popup, from Ctrl+K and from Search Anywhere.
 - **Footer** (EDT-51 §2.6): *Discard…* is SECONDARY, *Cancel* closes, *Commit* is PRIMARY.
   - Commit stays disabled with a tooltip giving the reason (`commitBlockedReason`).
   - Ctrl+Enter in the message box commits.
-  - After a successful commit, the dialog closes and a toast reports the commit. With unselected changes left over,
-    it stays open instead. Recommended in Q3.
+  - After a successful commit, a toast reports it and the message is cleared. The dialog **never closes by itself**
+    (Q3); the user closes it.
 - **Unsaved scenes:** the dialog shows a notice "MainScene has unsaved changes" with a *Save all* button. EDT-60 §2
   said "unsaved scenes are offered for saving first", and the window never did this.
 - **Conflicts:** while any exist, the list shows only a banner "Resolve conflicts first" with a button that opens the
   Conflicts dialog. The commit rule stays as before.
 
-### 4.2 History dialog
+### 4.2 Version Control window = Git log (Q7)
 
-An `EditorDialog` named `dialog.vcs_history`, not modal. It holds the window's *History* tab: the commit list on the
-left (short id, first line, author, date), the selected commit's files below it, and `DiffView` on the right.
-Read-only, as in EDT-60. "Restore this file from here" stays out of scope (as in EDT-60 phase 1).
+The dockable `window.version_control` stays (View > Windows > Project, default dock zone) and becomes IntelliJ's Git
+log tool window. It replaces the History dialog the proposal had.
+
+```
+┌ ⎇ Version Control ──────────────────────────────────────────────────────── ? ┐
+│ Branch [All ▾]  🔍 [ text filter              ]  [⟳]                         │
+├──────────────────────────────────────────────────────┬───────────────────────┤
+│ ●  [main] Add the rail texture     Alex   10/11 14:02│ Scenes/Main.scene     │
+│ │ ● [feature] Grind tweaks         Alex   10/11 12:40│ Assets/rail.png       │
+│ ●─┘ Initial commit                 Alex   09/11 09:15├───────────────────────┤
+│                                                      │ DiffView of the file  │
+└──────────────────────────────────────────────────────┴───────────────────────┘
+```
+
+- **Commit list:** a table with a **graph column** (one lane per line of history, dots and connecting lines drawn
+  with the draw list, branch tips as `[name]` labels, the current branch highlighted), the message's first line,
+  author and date. It shows the history of **every local branch**, newest first.
+- **Selecting a commit** lists its changed files on the right; clicking a file shows its `DiffView` below them.
+- **Filters:** a branch combo (*All*, or one branch: only commits reachable from its tip) and a text field that
+  matches message, author or commit id (case-insensitive).
+- **Empty states:** no project, not a repository (button that opens the Initialize modal), no commits.
+- Read-only, as in EDT-60. "Restore this file from here" stays out of scope.
+- Pure models: `CommitGraph.layout(commits)` (lanes per row, parents from the commits) and `GitLogFilter` (branch
+  reachability, text match), both unit-tested. The service log gains parents and branch tips (§5.3).
 
 ### 4.3 Conflicts dialog
 
-An `EditorDialog` named `dialog.vcs_conflicts`.
+An `EditorDialog` named `window.vcs_conflicts`.
 
 **Opening:** it opens by itself when a refresh first sees conflicts. It does not reopen for the same set of files
 after the user closes it; the status bar button stays red. It can also be opened from the popup or the button.
@@ -202,7 +245,7 @@ A small renderer, `editor/ui/windows/vcs/DiffView.kt`, extracted from the window
 - binary files as "size before → after";
 - "No differences".
 
-The three dialogs use it. Its line-colour mapping is a pure function and gets a test.
+The dialogs and the Git log use it. Its line-colour mapping is a pure function and gets a test.
 
 ### 4.5 Small modals
 
@@ -223,10 +266,11 @@ All are `EditorModal`s with the standard footer:
 editor/vcs/                (pure, no ImGui)
   BranchButtonModel.kt     label key/args, colour role, tooltip, click target from VcsSession.State
   BranchPopupModel.kt      entries, enabled/disabled + reason, branch filter
+  CommitGraph.kt           graph lanes of the Git log
+  GitLogFilter.kt          branch and text filters of the Git log
 editor/ui/windows/vcs/     (already under the UI-mutation, tooltip, label and stable-ID guards)
   BranchStatusButton.kt    draws the button + popup inside EditorStatusBar; publishes VcsAction / opens dialogs
   CommitDialog.kt          EditorDialog: changes list, DiffView, message, Commit/Discard
-  VcsHistoryDialog.kt      EditorDialog: log, files, DiffView
   ConflictsDialog.kt       EditorDialog: conflicted files, mine/theirs preview, Keep mine / Take theirs
   VcsModals.kt             Initialize, New Branch, Delete Branch modals
   DiffView.kt              shared diff renderer
@@ -235,7 +279,7 @@ editor/ui/windows/vcs/     (already under the UI-mutation, tooltip, label and st
 - **Folder:** `editor/ui/windows/vcs/` already sits under the guard roots (`ui/windows`, `ui/menus`, `imgui`,
   `search/providers`), so no guard needs changing (open question Q8).
 - **Registration:** the dialogs are registered in `WindowRegistry` like the other `EditorDialog`s. They open through
-  `WindowAction.Show("dialog.vcs_commit")` and similar events, so the status bar, the shortcut and Search Anywhere use
+  `WindowAction.Show("window.vcs_commit")` and similar events, so the status bar, the shortcut and Search Anywhere use
   one path. Each needs `help.vcs_commit.what/how` (and so on) in EN and FR (`WindowStandardGuardTest`).
 
 ### 5.2 Wiring
@@ -257,6 +301,7 @@ editor/ui/windows/vcs/     (already under the UI-mutation, tooltip, label and st
 | `conflictSides(path): Pair<ByteArray?, ByteArray?>` (index stages 2 and 3) | Conflicts dialog preview |
 | `createBranch(name, from: String? = null, checkout: Boolean = true)` | "New branch from x" and "don't switch" |
 | `VcsSession.State.headDetached` / short id | button label in detached HEAD |
+| `log(limit, allBranches = true)` with `VcsCommit.parents`; `VcsBranches.tips` (branch → commit id) | Git log graph and branch filter (Q7) |
 
 Each gets unit tests in `JGitVcsServiceTest` (a conflict created by a real merge, as the existing tests already do).
 
@@ -272,15 +317,11 @@ The window refreshed when it gained focus. The button needs fresh counts without
 Refreshes are **debounced to one per second** (`VcsSession.requestRefresh()` coalesces). A large project does not
 re-run `git status` on every file event. Reads stay on `JobSystem.runIO`.
 
-## 7. Removing the window (slice 5)
+## 7. Reworking the window (slice 5, Q7)
 
-Removed:
-- `VersionControlWindow.kt` and its `WindowRegistry` entry;
-- the `WindowCategory.PROJECT` category (no window is left in it) and `menu.view.windows.project`;
-- the `DefaultDockLayout` entry;
-- `help.version_control.*`, plus window-only keys such as `vcs.tab.*`.
-
-Kept: the `vcs.*` keys the dialogs reuse.
+The window keeps its name, category, dock zone and help article (rewritten for the Git log). Removed from it: the
+Changes tab, the commit bar, the branch combo, the new-branch popup and the resolve buttons, which now live in the
+popup and dialogs. Window-only keys that are no longer used (`vcs.tab.*`, `vcs.branch.tooltip`, …) are deleted.
 
 `ImGuiStableIdGuardTest`, `WindowStandardGuardTest`, `DefaultDockLayoutTest`, `EditorStringKeysTest` and
 `StringTablesTest` must stay green. A saved `imgui.ini` that still names the old window is harmless, since ImGui
@@ -295,11 +336,12 @@ Each slice builds, passes all tests and is committed on its own.
 | 1 | `BranchButtonModel`, `BranchPopupModel`, `DiffView` extracted (the window uses it too), debounced refresh triggers | models, refresh debounce, DiffView colour mapping |
 | 2 | Status bar button + popup: branch list, search, checkout, new (from), delete; Initialize; toasts/errors; `createBranch(from, checkout)` | popup enabling rules, CreateBranch handler, service tests |
 | 3 | Commit dialog (changes, diff, discard, commit, unsaved-scene notice), Ctrl+K, Search Anywhere "Commit…" | handler/command tests, commit-dialog selection model |
-| 4 | History dialog; Conflicts dialog + `conflictSides`, auto-open once per conflict set | `conflictSides` on a real merge, auto-open rule |
-| 5 | Remove the window, category, dock entry, strings; Search Anywhere "Checkout Branch…", "New Branch…" | guards green, string tables |
+| 4 | Conflicts dialog + `conflictSides`, auto-open once per conflict set | `conflictSides` on a real merge, auto-open rule |
+| 5 | Version Control window reworked into the Git log: all-branch log with parents and tips, graph column, branch and text filters, commit files and diffs | `CommitGraph`, `GitLogFilter`, all-branch log service test |
 
-**Done when** (from the backlog): every EDT-60 phase 1 action is reachable from the status bar workflow, the window is
-removed, and tests cover the models, the new service calls and the handler paths.
+**Done when** (from the backlog, adjusted by Q7): every EDT-60 phase 1 action is reachable from the status bar
+workflow, the window no longer holds those actions and works as a Git log, and tests cover the models, the new service
+calls and the handler paths.
 
 | EDT-60 phase 1 action | New place |
 |---|---|
@@ -307,13 +349,13 @@ removed, and tests cover the models, the new service calls and the handler paths
 | Status | button count + Commit dialog |
 | Diff | Commit, History and Conflicts dialogs (`DiffView`) |
 | Commit | Commit dialog, Ctrl+K |
-| History | History dialog |
+| History | Version Control window (Git log) |
 | Branches: create / switch / delete | popup |
 | Discard | Commit dialog → modal |
 | Resolve conflicts | Conflicts dialog |
 | Conflict-safe loading | unchanged (`ConflictMarkers`) |
 
-## 9. Open questions (with my recommendation)
+## 9. Open questions (answered: see Decisions at the top)
 
 1. **Where does the button go?** Recommend **right side, before the scene name**, as in IntelliJ. The left side holds
    FPS, memory and toasts, which grow and shift.
