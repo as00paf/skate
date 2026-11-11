@@ -3,6 +3,7 @@ package com.pafoid.skate.editor.imgui
 import com.pafoid.skate.app.Editor
 import com.pafoid.skate.editor.systems.ProjectManager
 import com.pafoid.skate.editor.ui.windows.AnimationEditorWindow
+import com.pafoid.skate.editor.ui.windows.AnimatorWindow
 import com.pafoid.skate.editor.ui.windows.AssetBrowserWindow
 import com.pafoid.skate.editor.ui.windows.AudioInspectorWindow
 import com.pafoid.skate.editor.ui.windows.BlenderImportPanel
@@ -62,6 +63,7 @@ class WindowRegistry(
         AssetStoreWindow(engine, projectManager),
         VideoToAnimationWindow(engine, editor, projectManager),
         AnimationEditorWindow(engine, editor, projectManager),
+        AnimatorWindow(engine, editor, projectManager),
         HelpWindow(
             engine.stringManager,
             HelpArticleLoader(HelpArticleSource.default()),
