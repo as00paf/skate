@@ -6,6 +6,8 @@ import com.pafoid.skate.editor.imgui.TrailingButtons
 import com.pafoid.skate.editor.imgui.tippedWith
 import com.pafoid.skate.editor.imgui.tipped
 import com.pafoid.skate.editor.animation.AnimatorControllerCatalog
+import com.pafoid.skate.editor.animation.AnimatorControls
+import com.pafoid.skate.editor.imgui.MImGui
 import com.pafoid.skate.editor.animation.controllereditor.OpenAnimatorController
 import com.pafoid.skate.editor.events.AnimatorAction
 import com.pafoid.skate.editor.imgui.label
@@ -61,55 +63,43 @@ fun Animator.imgui(engine: Engine) {
         ImGui.endDragDropTarget()
     }
 
-    if (animations.isEmpty()) return
-    val anim = currentAnimation ?: return
+    playbackSection(engine, skeletonComponent)
+}
 
-    ImGui.text(engine.stringManager.getString("lbl.animator.duration", anim.duration))
-    val timeArr = floatArrayOf(currentTime)
-    if (ImGui.sliderFloat(engine.stringManager.getString("lbl.animator.timeline"), timeArr, 0f, anim.duration)) {
-        currentTime = timeArr[0]
-        isPlaying = false // Scrubbing pauses playback for precision
-
-        // Force update skeleton when scrubbing
-        skeletonComponent?.pose?.let { pose ->
-            val skeleton = pose.skeleton
-            anim.update(currentTime, skeleton)
-            // Copy to pose so AnimationSystem picks it up
-            skeleton.getAllBones().forEach { bone ->
-                if (bone.index in 0 until pose.localTransforms.size) {
-                    pose.localTransforms[bone.index].set(bone.localTransform)
-                }
-            }
+/**
+ * Play/Pause, Reset and the clip timeline (ANI-24). Without the game running they animate the object in the scene
+ * view; while it runs, Play/Pause freezes the controller (or the clip). See [AnimatorControls].
+ */
+private fun Animator.playbackSection(engine: Engine, skeletonComponent: SkeletonComponent?) {
+    val strings = engine.stringManager
+    val running = engine.sceneManager.currentScene?.isRunning == true
+    val anim = currentAnimation
+    val timeline = AnimatorControls.showsClipTimeline(this)
+    if (!timeline && stateMachine == null) return
+    if (timeline) {
+        anim ?: return
+        ImGui.text(strings.getString("lbl.animator.duration", anim.duration))
+        val timeArr = floatArrayOf(currentTime.coerceIn(0f, anim.duration))
+        if (ImGui.sliderFloat(strings.label("lbl.animator.timeline"), timeArr, 0f, anim.duration)) {
+            AnimatorControls.scrub(this, skeletonComponent, timeArr[0], running)
         }
+        Tooltips.showIfPresent(strings, "lbl.animator.timeline.tooltip")
     }
-    Tooltips.showIfPresent(engine.stringManager, "lbl.animator.timeline.tooltip")
-
-    if (engine.stringManager.tippedWith(
-        ImGui.button(
-            if (isPlaying) engine.stringManager.getString("lbl.animator.pause") else engine.stringManager.getString(
-                "lbl.animator.play"
-            )
-        ),
-        if (isPlaying) "lbl.animator.pause.tooltip" else "lbl.animator.play.tooltip",
-    )
-    ) {
-        isPlaying = !isPlaying
+    val playing = AnimatorControls.isPlaying(this, running)
+    val playKey = if (playing) "lbl.animator.pause" else "lbl.animator.play"
+    if (strings.tippedWith(ImGui.button("${strings.getString(playKey)}##animator_play"), "$playKey.tooltip")) {
+        AnimatorControls.togglePlay(this, running)
     }
     ImGui.sameLine()
-    if (engine.stringManager.tipped(ImGui.button(engine.stringManager.getString("btn.reset")), "btn.reset")) {
-        currentTime = 0f
-        skeletonComponent?.pose?.let { pose ->
-            val skeleton = pose.skeleton
-            anim.update(currentTime, skeleton)
-            // Copy to pose so AnimationSystem picks it up
-            skeleton.getAllBones().forEach { bone ->
-                if (bone.index in 0 until pose.localTransforms.size) {
-                    pose.localTransforms[bone.index].set(bone.localTransform)
-                }
-            }
-        }
+    if (strings.tippedWith(ImGui.button("${strings.getString("btn.reset")}##animator_reset"), "lbl.animator.reset.tooltip")) {
+        AnimatorControls.reset(this, skeletonComponent)
+    }
+    if (!running) {
+        ImGui.sameLine()
+        MImGui.textDisabled(strings.getString("lbl.animator.preview_hint"))
     }
 }
+
 /** Controller asset picker (bundled + project `*.controller.json`, or drop one from the Project window), EDT-16. */
 private fun Animator.controllerSection(engine: Engine) {
     val strings = engine.stringManager
