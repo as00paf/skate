@@ -17,6 +17,7 @@ import com.pafoid.skate.editor.ui.windows.viewport.ViewportRenderer
 import com.pafoid.skate.editor.ui.windows.viewport.ViewportToolbar
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.editor.gizmos.UiRectGizmo
+import com.pafoid.skate.editor.systems.GizmoSystem
 import imgui.ImGui
 import imgui.ImVec2
 import imgui.flag.ImGuiFocusedFlags
@@ -38,7 +39,11 @@ class GameViewWindow(
     private val viewportOverlays = ViewportOverlays(TrickUIWindow(engine.eventSystem), editor.settingsManager)
 
     private val viewportRenderer = ViewportRenderer(engine) { ScreenshotFolder.resolve(projectDir()) }
-    private val uiRectGizmo = UiRectGizmo(engine, editor.undoRedoManager, viewportRenderer) { editor.gizmoSystem.uiSnap }.also { editor.gizmoSystem.uiGizmo = it }
+    private val uiRectGizmo = UiRectGizmo(
+        engine, editor.undoRedoManager, viewportRenderer,
+        snap = { editor.gizmoSystem.uiSnap },
+        selectTool = { editor.gizmoSystem.usingGizmo == GizmoSystem.SELECTION_GIZMO },
+    ).also { editor.gizmoSystem.uiGizmo = it }
     private val viewportContextMenu = ViewportContextMenu(stringManager, engine.eventSystem)
     private val viewportDragDropHandler =
         ViewportDragDropHandler(viewportRenderer, editor.editorCamera, engine.eventSystem, engine.inputProvider)
