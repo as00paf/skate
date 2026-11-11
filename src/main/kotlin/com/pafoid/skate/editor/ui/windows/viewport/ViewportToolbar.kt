@@ -27,7 +27,7 @@ import imgui.ImVec2
 import imgui.flag.ImGuiCol
 import imgui.flag.ImGuiWindowFlags
 
-/** The viewport's toolbar: gizmos, Play/Pause/Stop, Reset and utilities, laid out by [ViewportToolbarLayout]. */
+/** The viewport's toolbar: gizmos, Play/Pause/Stop, Reset, utilities, then World/Local and Snap before `?`, laid out by [ViewportToolbarLayout]. */
 class ViewportToolbar(
     private val engine: Engine,
     private val stringManager: StringManager,
@@ -48,8 +48,24 @@ class ViewportToolbar(
         val groups = ViewportToolbarLayout.GROUPS.map { group ->
             group.map { button -> { renderSlot(button, ViewportToolbarLayout.isEnabled(button, mode, canReset), mode, scene) } }
         }
-        renderButtonGroups(toolbarPosY, groups)
+        val width = ViewportToolbarLayout.totalWidth(
+            ViewportToolbarLayout.GROUPS, TOOLBAR_BUTTON_SPACING, SEPARATOR_SPACING * 2 + SEPARATOR_WIDTH, ::slotWidth,
+        )
+        renderButtonGroups(toolbarPosY, width, groups)
     }
+
+    /** A slot's drawn width: square icon buttons, or a text button's label plus frame padding. */
+    private fun slotWidth(button: ToolbarButton): Float = when (button) {
+        ToolbarButton.GIZMO_SPACE -> textButtonWidth(spaceLabelKey())
+        ToolbarButton.SNAP -> textButtonWidth("lbl.viewport_toolbar.snap")
+        else -> TOOLBAR_BUTTON_HEIGHT
+    }
+
+    private fun textButtonWidth(key: String): Float =
+        ImGui.calcTextSize(stringManager.getString(key)).x + ImGui.getStyle().framePaddingX * 2f
+
+    private fun spaceLabelKey(): String =
+        if (gizmoSystem.localSpace) "lbl.viewport_toolbar.space_local" else "lbl.viewport_toolbar.space_world"
 
     private fun renderSlot(button: ToolbarButton, enabled: Boolean, mode: PlayMode, scene: Scene?) {
         ImGui.beginDisabled(!enabled)
@@ -64,8 +80,7 @@ class ViewportToolbar(
             ToolbarButton.ROTATE -> gizmoButton(GizmoSystem.ROTATION_GIZMO, Icons.ROTATE, "tooltip.viewport_toolbar.rotate_tool", EditorShortcuts.GIZMO_ROTATE)
             ToolbarButton.SCALE -> gizmoButton(GizmoSystem.SCALE_GIZMO, Icons.SCALE, "tooltip.viewport_toolbar.scale_tool", EditorShortcuts.GIZMO_SCALE)
             ToolbarButton.GIZMO_SPACE -> {
-                val key = if (gizmoSystem.localSpace) "lbl.viewport_toolbar.space_local" else "lbl.viewport_toolbar.space_world"
-                if (stringManager.tippedWith(ImGui.button(stringManager.getString(key) + "##gizmoSpace"), "tooltip.viewport_toolbar.gizmo_space")) {
+                if (stringManager.tippedWith(ImGui.button(stringManager.getString(spaceLabelKey()) + "##gizmoSpace"), "tooltip.viewport_toolbar.gizmo_space")) {
                     gizmoSystem.toggleSpace()
                 }
             }
@@ -156,15 +171,7 @@ class ViewportToolbar(
         }
     }
 
-    private fun renderButtonGroups(toolbarPosY: Float, groups: List<List<() -> Unit>>) {
-        val buttonCount = groups.sumOf { it.size }
-        val separatorCount = (groups.size - 1).coerceAtLeast(0)
-        // Only count intra-group spacings — inter-group gaps are part of separator width
-        val intraGroupSpacings = groups.sumOf { (it.size - 1).coerceAtLeast(0) }
-        val totalButtonWidth = (TOOLBAR_BUTTON_HEIGHT * buttonCount) +
-                (TOOLBAR_BUTTON_SPACING * intraGroupSpacings) +
-                (SEPARATOR_SPACING * 2 + SEPARATOR_WIDTH) * separatorCount
-
+    private fun renderButtonGroups(toolbarPosY: Float, totalButtonWidth: Float, groups: List<List<() -> Unit>>) {
         val toolbarPosX = TOOLBAR_BUTTON_SPACING / 2f + ImGui.getStyle().framePaddingX
 
         // The child starts a little above the buttons: they were drawn exactly on its clip top, which cut their top
