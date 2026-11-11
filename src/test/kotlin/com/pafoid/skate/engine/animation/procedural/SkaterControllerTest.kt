@@ -30,7 +30,8 @@ class SkaterControllerTest {
             controllerPath = Skater.CONTROLLER_PATH
         }
 
-    private fun resource(path: String) = javaClass.classLoader.getResource(path)!!.readText()
+    /** An engine default (`engine:Data/...`, GPL-26) or a plain path, read like the game reads it. */
+    private fun resource(path: String) = com.pafoid.skate.engine.gameplay.CharacterConfigs.readText(path)!!
 
     @Test
     fun `SkaterController_LoadsFromBundledResourceWithProceduralRidingPoses`() {

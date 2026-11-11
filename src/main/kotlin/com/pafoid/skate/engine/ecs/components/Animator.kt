@@ -11,6 +11,7 @@ import com.pafoid.skate.engine.animation.graph.ClipMotion
 import com.pafoid.skate.engine.animation.graph.Pose
 import com.pafoid.skate.engine.animation.graph.FittedMotion
 import com.pafoid.skate.engine.animation.graph.Motion
+import com.pafoid.skate.engine.animation.graph.RestMotion
 import com.pafoid.skate.engine.assets.AssetsManager
 import com.pafoid.skate.engine.assets.BoneNameMapper
 import com.pafoid.skate.engine.assets.data.models.animations.Animation
@@ -18,8 +19,11 @@ import com.pafoid.skate.engine.assets.data.models.animations.Skeleton
 import com.pafoid.skate.engine.core.LoggerService
 import com.pafoid.skate.engine.core.LoggerService.LogLevel
 import com.pafoid.skate.engine.getComponent
+import com.pafoid.skate.engine.utils.SkeletonMath
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
+import com.pafoid.skate.engine.assets.EngineDefaultResolver
+import com.pafoid.skate.engine.assets.EngineDefaults
 import java.io.File
 
 @Serializable
@@ -68,6 +72,57 @@ data class Animator(
         }
     }
 
+    /**
+     * Inspector Play while the game is not running (ANI-24): the AnimationSystem animates this Animator in the scene
+     * view (its controller, else the selected clip). Not saved.
+     */
+    @Transient
+    var editPreview: Boolean = false
+
+    /**
+     * A clip the inspector plays in place of the controller (ANI-25). While set it drives the pose; the controller
+     * is not advanced, so what gameplay writes meanwhile (parameters, `play(state)` requests) only waits in it, and
+     * it takes over again when this is cleared (inspector Stop or Reset). Not saved.
+     */
+    @Transient
+    var inspectorClip: Animation? = null
+
+    /** Playback time of [inspectorClip], in seconds. */
+    @Transient
+    var inspectorTime: Float = 0f
+
+    /** Inspector Pause while the game runs (ANI-24): the controller holds its pose. Not saved. */
+    @Transient
+    var controllerPaused: Boolean = false
+
+    /**
+     * Writes the current pose into [skeleton] and rebuilds its skin matrices, so the view updates at once (scrub,
+     * reset, ANI-24): the inspector's clip ([inspectorClip]), else the controller's pose, else the selected clip at [currentTime], else the bind pose.
+     */
+    fun applyPose(skeleton: SkeletonComponent) {
+        val pose = skeleton.pose
+        val machine = stateMachine
+        val override = inspectorClip
+        if (override != null) {
+            override.update(inspectorTime, pose.skeleton)
+            for (bone in pose.skeleton.getAllBones()) {
+                if (bone.index in pose.localTransforms.indices) pose.localTransforms[bone.index].set(bone.localTransform)
+            }
+        } else if (machine != null) {
+            for (i in 0 until minOf(machine.pose.boneCount, pose.localTransforms.size)) machine.pose.toMatrix(i, pose.localTransforms[i])
+        } else {
+            val clip = currentAnimation
+            clip?.update(currentTime, pose.skeleton)
+            for (bone in pose.skeleton.getAllBones()) {
+                if (bone.index in pose.localTransforms.indices) {
+                    pose.localTransforms[bone.index].set(if (clip != null) bone.localTransform else bone.bindLocalTransform)
+                }
+            }
+        }
+        SkeletonMath.buildSkinMatrices(pose, skeleton.matrixPalette)
+        skeleton.markPaletteDirty()
+    }
+
     /** Parameters of the active state machine (gameplay writes floats/bools/triggers here), or null without a controller. */
     val parameters: AnimParameters?
         get() = stateMachine?.parameters
@@ -75,6 +130,18 @@ data class Animator(
     /** Foot/hand/look-at IK applied after the pose is evaluated. */
     @Transient
     val ik: IkRig = IkRig()
+
+    /**
+     * Clips loaded from the controller's own `clips` list (ANI-21 §4.3). Not saved with the scene: the controller
+     * file lists them and [resolveController] reloads them.
+     */
+    @Transient
+    var controllerClips: List<Animation> = emptyList()
+        private set
+
+    /** Loads a clip by asset path; remembered by [resolveAnimationsFromPaths] for the controller's own clips. */
+    @Transient
+    private var clipLoader: ((String) -> Animation?)? = null
 
     /** The bool parameter set by the last [play] while a controller is active. */
     @Transient
@@ -90,7 +157,8 @@ data class Animator(
         skeleton: Skeleton,
         extraMotions: Map<String, Motion> = emptyMap(),
     ): AnimationStateMachine {
-        val clips = animations.associate { clip ->
+        // Clips the controller brings (ANI-21 §4.3) come first so a clip of the same name on the Animator wins.
+        val clips = (controllerClips + animations).associate { clip ->
             val motion: Motion = ClipMotion.of(clip, skeleton)
             clip.name to (asset.clipFits[clip.name]?.let { FittedMotion.of(motion, it, skeleton) } ?: motion)
         } + extraMotions
@@ -100,7 +168,7 @@ data class Animator(
         }
         val sources = clips + poses
         val trees = asset.motions.mapValues { (_, def) -> def.build { sources[it] } }
-        val motions = sources + trees
+        val motions = sources + trees + ("" to RestMotion.of(skeleton))
         requestedState = null
         return AnimationStateMachine(asset, motions, skeleton.boneCount).also { stateMachine = it }
     }
@@ -109,12 +177,14 @@ data class Animator(
      * Loads [controllerPath] and builds the state machine from the clips in [animations]. Problems are logged and
      * leave no state machine (so the legacy single-clip playback still works). Returns true when a controller is active.
      * [read] loads project-relative or packed controllers (`AssetsManager.readText`, AST-09); the file system and
-     * bundled resources are tried after it.
+     * bundled resources are tried after it. [loadClip] loads the clip files the controller lists (ANI-21 §4.3); by
+     * default the loader of the last [resolveAnimationsFromPaths].
      */
     fun resolveController(
         logger: LoggerService,
         skeleton: Skeleton? = gameObject?.getComponent<SkeletonComponent>()?.pose?.skeleton,
         read: (String) -> String? = { null },
+        loadClip: ((String) -> Animation?)? = clipLoader,
     ): Boolean {
         val path = controllerPath ?: return false
         stateMachine = null
@@ -126,7 +196,8 @@ data class Animator(
         }
         return try {
             val asset = AnimationControllerAsset.fromJson(text)
-            val problems = asset.issues(animations.map { it.name }.toSet())
+            controllerClips = loadControllerClips(asset, path, logger, loadClip)
+            val problems = asset.issues((animations + controllerClips).map { it.name }.toSet())
             if (problems.isNotEmpty()) {
                 problems.forEach { logger.log("Controller '$path': $it", LogLevel.ERROR) }
                 false
@@ -140,8 +211,27 @@ data class Animator(
         }
     }
 
-    /** A project file at [path], else a bundled classpath resource (e.g. `configs/skater.controller.json`). */
+    private fun loadControllerClips(asset: AnimationControllerAsset, path: String, logger: LoggerService, loadClip: ((String) -> Animation?)?): List<Animation> {
+        if (asset.clips.isEmpty()) return emptyList()
+        if (loadClip == null) {
+            logger.log("Controller '$path' lists clips but no clip loader is available", LogLevel.WARN)
+            return emptyList()
+        }
+        val have = animations.map { it.name }.toSet()
+        return asset.clips.mapNotNull { clipPath ->
+            val clip = try { loadClip(clipPath) } catch (e: Exception) { null }
+            if (clip == null) logger.log("Controller '$path': clip not found: $clipPath", LogLevel.ERROR)
+            clip?.takeIf { it.name !in have }
+        }
+    }
+
+    /**
+     * A project file at [path], else a bundled classpath resource. An `engine:` reference (GPL-26,
+     * `engine:Animations/skater.controller.json`) reads the engine's own file; its project override is read through
+     * the `read` of [resolveController] (the scene's asset paths).
+     */
     private fun readController(path: String): String? {
+        if (EngineDefaults.isReference(path)) return engineDefaults.resolve(path)?.takeIf { it.isFile }?.readText()
         val file = File(path)
         if (file.isFile) return file.readText()
         return Animator::class.java.classLoader.getResourceAsStream(path.replace('\\', '/').trimStart('/'))
@@ -158,6 +248,7 @@ data class Animator(
     fun clearController() {
         controllerPath = null
         stateMachine = null
+        controllerClips = emptyList()
     }
 
     val normalizedTime: Float
@@ -181,6 +272,7 @@ data class Animator(
      * Called by SceneSerializer after scene deserialization.
      */
     fun resolveAnimationsFromPaths(assetsManager: AssetsManager, logger: LoggerService) {
+        clipLoader = { assetsManager.loadAnimationSync(it) }
         val animationPaths = animations.map { it.path }
         animations.clear()
         currentAnimation = null
@@ -290,3 +382,6 @@ data class Animator(
         return criticalBonePatterns.any { lowerName.contains(it) }
     }
 }
+
+/** Resolves `engine:` controller references outside a project (GPL-26). */
+private val engineDefaults by lazy { EngineDefaultResolver() }

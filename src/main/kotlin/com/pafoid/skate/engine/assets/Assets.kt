@@ -116,9 +116,10 @@ object Assets {
     }
 
     /** Bundled config resources (classpath `configs/`); a file at the same path under the working directory overrides them. */
+    /** Engine-default configs (GPL-26): a project copy in `Assets/Data` or `Assets/Animations` overrides them. */
     object Configs {
-        const val SKATER_CHARACTER = "configs/skater.character.json"
-        const val SKATER_CONTROLLER = "configs/skater.controller.json"
+        const val SKATER_CHARACTER = EngineDefaults.Data.SKATER_CHARACTER
+        const val SKATER_CONTROLLER = EngineDefaults.Animations.SKATER_CONTROLLER
     }
 
     /** Jar resources the editor and the game use directly (the app icon also exists as [EngineDefaults.Textures.APP_ICON]). */
