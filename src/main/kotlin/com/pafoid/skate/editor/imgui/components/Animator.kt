@@ -5,6 +5,7 @@ import com.pafoid.skate.editor.imgui.Tooltips
 import com.pafoid.skate.editor.imgui.tippedWith
 import com.pafoid.skate.editor.imgui.tipped
 import com.pafoid.skate.editor.animation.AnimatorControllerCatalog
+import com.pafoid.skate.editor.animation.controllereditor.OpenAnimatorController
 import com.pafoid.skate.editor.events.AnimatorAction
 import com.pafoid.skate.editor.imgui.label
 import com.pafoid.skate.engine.animation.graph.MaskPreset
@@ -132,6 +133,11 @@ private fun Animator.controllerSection(engine: Engine) {
             engine.eventSystem.publish(AnimatorAction.SetController(this, File(dropped).absolutePath))
         }
         ImGui.endDragDropTarget()
+    }
+    ImGui.sameLine()
+    if (strings.tipped(ImGui.button("${strings.getString("btn.animator.edit_controller")}##controller_edit"), "btn.animator.edit_controller")) {
+        // Opens the Animator window (ANI-21) on this controller, previewing this object.
+        engine.eventSystem.publish(OpenAnimatorController(controllerPath, this))
     }
     ImGui.sameLine()
     if (ImGui.button("${strings.getString("lbl.animator.controller_refresh")}##controller_refresh")) catalog.refresh()

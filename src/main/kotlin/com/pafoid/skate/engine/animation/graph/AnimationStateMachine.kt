@@ -12,10 +12,13 @@ data class FiredEvent(val state: String, val name: String)
  */
 class AnimationStateMachine(
     private val asset: AnimationControllerAsset,
-    private val motions: Map<String, Motion>,
+    motions: Map<String, Motion>,
     boneCount: Int,
     val parameters: AnimParameters = AnimParameters(),
 ) {
+    // States without a clip play the rest pose (ANI-21 §4.4) unless the caller supplied one for "".
+    private val motions: Map<String, Motion> =
+        if (asset.states.any { it.motion.isEmpty() } && "" !in motions) motions + ("" to RestMotion()) else motions
     private val states = asset.states.associateBy { it.name }
     val pose = Pose(boneCount)
     private val fromPose = Pose(boneCount)
@@ -38,6 +41,12 @@ class AnimationStateMachine(
 
     val isTransitioning get() = nextState != null
 
+    /** Progress of the running crossfade, 0..1 (0 when none). Read by the Animator window in play mode (ANI-21 §6). */
+    val fadeProgress: Float get() = if (nextState == null || fadeDuration <= 0f) 0f else (fadeElapsed / fadeDuration).coerceIn(0f, 1f)
+
+    /** The asset this machine runs. */
+    val controller: AnimationControllerAsset get() = asset
+
     /** The motion [state] plays (for tools and tests). */
     fun motionOf(state: String): Motion = motions.getValue(states.getValue(state).motion)
 
@@ -51,7 +60,8 @@ class AnimationStateMachine(
     val firedEvents = mutableListOf<FiredEvent>()
 
     init {
-        asset.states.forEach { require(it.motion in motions) { "No motion '${it.motion}' for state '${it.name}'" } }
+        asset.states.forEach { require(it.motion in this.motions) { "No motion '${it.motion}' for state '${it.name}'" } }
+        ControllerParameters.seed(asset, parameters)
         evaluate()
     }
 
