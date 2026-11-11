@@ -1,3 +1,4 @@
+// @skate-contract 1
 // Shared fog (REN-09), included by every shader that draws scene colour: models and floors (shader_3d_default),
 // the sky dome and particles, so all of them fog alike. Evaluated per fragment from world positions.
 // Mirrors com.pafoid.skate.engine.render.fog.FogMath; keep the two in sync (FogMathTest covers the math).

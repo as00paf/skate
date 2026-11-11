@@ -108,7 +108,7 @@ Round 27+ goals (human, 2026-11-06): post-processing quality, render-graph clari
 - [x] **REN-30** `P1` Renderer honours overall quality, MSAA and texture quality
   - Do: From EDT-57: the Graphics settings for overall quality, MSAA and texture quality exist (`GraphicsSettings`) but the renderer ignores them. Apply them live (MSAA on the scene target, texture quality via mip bias/max size, quality preset driving shadows/post effects).
   - Done when: Changing each setting visibly changes rendering in the editor and exported game; tests.
-- [ ] **REN-33** `P1` Offscreen skinned-mesh preview viewport for the Animation Editor and Video to Animation
+- [~] @skate-render **REN-33** `P1` Offscreen skinned-mesh preview viewport for the Animation Editor and Video to Animation
   - Do: From ANI-14 (skate-animation) and the human (Discord 2026-11-10: show the animation preview on the character): an offscreen viewport, used by the Animation Editor and the Video to Animation result, the Animation Editor feeds a bone pose to, drawing the skinned mesh instead of the skeleton lines.
   - Done when: The Animation Editor preview shows the skinned character following the scrubbed pose; tests for the viewport wiring.
   - Deps: ANI-14
@@ -243,7 +243,7 @@ Round 27+ goals: the Asset Browser shows every asset type, one assets folder, ex
   - Do: Per AST-26 §5 (reviewed by skate-render): shaders resolve through `engine:Shaders/…` with project overrides in `Assets/Shaders/`, `@skate-contract` headers, includes, caches, hot reload of project shaders; basic shaders always copied; unedited copies follow the engine on project open (human, 2026-11-10); custom material shaders in the colour pass only for v1.
   - Done when: Editing a project shader changes rendering live; an incompatible edited override falls back with an error; tests.
   - Deps: AST-27
-- [ ] **GPL-26** `P1` Skater configs in the project assets, editable in the editor
+- [~] @skate-gameplay **GPL-26** `P1` Skater configs in the project assets, editable in the editor
   - Do: From AST-26 NQ2 (human, 2026-11-10: follow-up): `skater.character.json` and `skater.controller.json` become `engine:Data/skater.character.json` and `engine:Animations/skater.controller.json`, overridable per project like other engine defaults (with skate-animation). Human (Discord 2026-11-10): they live in the project's assets and are editable by users in the editor (panels, not hand-edited JSON).
   - Done when: A project override changes the skater; without one the engine config is used; tests.
   - Deps: AST-27
@@ -372,7 +372,7 @@ Round 27+ goals: an animation authoring tool and animation from video.
   - Do: (human, Discord 2026-11-10): play/pause, scrub and frame step in the video preview, and in/out markers so only a portion of the video becomes the animation.
   - Done when: A trimmed range produces a clip of that length only; tests for the range maths and the extractor arguments.
   - Deps: ANI-18
-- [ ] **ANI-21** `P1` REWRITE Animator window: create, edit, remove and duplicate states
+- [~] @skate-animation **ANI-21** `P1` REWRITE Animator window: create, edit, remove and duplicate states
   - Do: (human, Discord 2026-11-10): a user-friendly Animator window (state graph): add, rename, duplicate and delete states, assign clips, edit transitions, conditions and parameters, with undo; writes the animator controller asset. Design note first.
   - Done when: The human approves the note; then a controller can be built from scratch in the window and drives a character; tests.
   - Deps: ANI-14
@@ -588,19 +588,23 @@ Round 27+ goals (human, 2026-11-06): fix editor bugs, make every window, dialog 
 - [~] @skate-gameui **EDT-75** `P1` Gizmos for UI items
   - Do: (human, Discord 2026-11-10): select a runtime UI element (canvas child) in the viewport and move/resize it with a 2D gizmo (anchors, pivot, rect), with snapping and undo; skate-gameui reviews.
   - Done when: UI elements can be moved and resized in the viewport with undo; tests for the rect maths.
-- [ ] **EDT-76** `P1` Menu and button padding; Interface settings review
+- [~] @skate-editor **EDT-76** `P1` Menu and button padding; Interface settings review
   - Do: (human, Discord 2026-11-10): menu items and some editor buttons have no padding. Review Editor Settings › Interface and add appearance options (item/frame padding, spacing, rounding, font size, density presets), applied everywhere through the theme, persisted.
   - Done when: Menus and buttons have padding by default; each new option visibly changes the editor and persists; tests.
 - [~] @skate-qa **EDT-77** `P1` Project Settings › Random: seed field too wide
   - Do: (human, Discord 2026-11-10): the seed text field overflows the window; size it like the other rows.
   - Done when: The Random page fits at any dialog width; a layout test.
-- [ ] **EDT-78** `P2` Viewport toolbar: World and Snap at the end, before `?`
+- [~] @skate-scripting **EDT-78** `P2` Viewport toolbar: World and Snap at the end, before `?`
   - Do: (human, Discord 2026-11-10): move the World/Local and Snap controls to the end of the Game Viewport toolbar, just before the `?` button.
   - Done when: The toolbar order matches; toolbar tests updated.
-- [ ] **EDT-79** `P2` REWRITE Git branch button in the status bar, replacing the Version Control window
+- [~] @skate-ecs **EDT-79** `P2` REWRITE Git branch button in the status bar, replacing the Version Control window
   - Do: (human, Discord 2026-11-10): an IntelliJ-like branch button in the bottom status bar (current branch; popup with branches, new/checkout/delete, update, commit and changes entries) replaces the EDT-60 Version Control window. Design note first: where changes, diffs, commit and conflict resolution live once the window is gone.
   - Done when: The human approves the note; then the status-bar workflow covers every EDT-60 phase 1 action and the window is removed; tests.
   - Deps: EDT-60
+- [ ] **EDT-80** `P1` Shader field in the material inspector and a "New Shader" action
+  - Do: From REN-31 (skate-render): a material inspector "Shader" field listing the project `.glsl` files plus the basic engine shaders (writes `MaterialAsset.shader`/`Material.shader`); an Asset Browser "New Shader" action writing `ShaderTemplates.PBR_MATERIAL` to `Assets/Shaders/<name>.glsl`; copy `shader` in `MaterialState` (`MaterialCommands.kt`) so material undo keeps it.
+  - Done when: A new project shader can be created, assigned to a material and undone; tests.
+  - Deps: REN-31
 
 ### Tooling & samples — `TLG` (`skate-tooling`)
 
