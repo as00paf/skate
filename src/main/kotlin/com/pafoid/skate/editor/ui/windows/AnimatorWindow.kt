@@ -13,6 +13,7 @@ import com.pafoid.skate.editor.animation.controllereditor.ControllerGraphView.Co
 import com.pafoid.skate.editor.imgui.EditorWindow
 import com.pafoid.skate.editor.imgui.MImGui
 import com.pafoid.skate.editor.imgui.Tooltips
+import com.pafoid.skate.editor.imgui.WindowHeader
 import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.editor.imgui.label
 import com.pafoid.skate.editor.imgui.tipped
@@ -190,7 +191,7 @@ class AnimatorWindow(
         ImGui.beginDisabled(doc.readOnly)
         for (type in ParameterType.entries) {
             val key = "btn.animator_window.add_${type.name.lowercase()}"
-            if (strings.tipped(ImGui.smallButton("${Icons.PLUS} ${strings.getString(key)}"), key)) controller.addParameter(type)
+            if (strings.tipped(iconLabelButton("${Icons.PLUS} ${strings.getString(key)}"), key)) controller.addParameter(type)
             if (type != ParameterType.TRIGGER) ImGui.sameLine()
         }
         ImGui.endDisabled()
@@ -203,7 +204,7 @@ class AnimatorWindow(
             textCommit("param_name:${p.name}", "##name", p.name, 150f)?.let { controller.renameParameter(p.name, it) }
             Tooltips.always(strings.getString("lbl.animator_window.parameter_name.tooltip"))
             ImGui.sameLine()
-            if (strings.tippedWith(ImGui.smallButton(Icons.TRASH), "btn.animator_window.remove_parameter.tooltip")) controller.removeParameter(p.name)
+            if (strings.tippedWith(iconButton(Icons.TRASH), "btn.animator_window.remove_parameter.tooltip")) controller.removeParameter(p.name)
             ImGui.endDisabled()
             if (controller.isRequest(p)) {
                 ImGui.sameLine(); MImGui.textDisabled(strings.getString("lbl.animator_window.request"))
@@ -249,7 +250,7 @@ class AnimatorWindow(
                 if (ImGui.dragFloat("##live", buf, 0.05f)) controller.setLive(p, buf[0])
             }
             ParameterType.BOOL -> if (ImGui.checkbox("##live", value != 0f)) controller.setLive(p, if (value != 0f) 0f else 1f)
-            ParameterType.TRIGGER -> if (strings.tipped(ImGui.smallButton(strings.getString("btn.animator_window.fire")), "btn.animator_window.fire")) controller.setLive(p, 1f)
+            ParameterType.TRIGGER -> if (strings.tipped(iconLabelButton(strings.getString("btn.animator_window.fire")), "btn.animator_window.fire")) controller.setLive(p, 1f)
         }
         Tooltips.always(strings.getString("lbl.animator_window.live_value.tooltip"))
     }
@@ -260,7 +261,7 @@ class AnimatorWindow(
         ImGui.spacing()
         MImGui.labeledSeparator(strings.getString("lbl.animator_window.states"))
         ImGui.beginDisabled(doc.readOnly)
-        if (strings.tipped(ImGui.smallButton("${Icons.PLUS} ${strings.getString("btn.animator_window.add_state")}"), "btn.animator_window.add_state")) {
+        if (strings.tipped(iconLabelButton("${Icons.PLUS} ${strings.getString("btn.animator_window.add_state")}"), "btn.animator_window.add_state")) {
             val (cx, cy) = view.toCanvas(canvasW / 2f, canvasH / 2f, 0f, 0f)
             controller.addState(NodePos(cx - NODE_W / 2, cy - NODE_H / 2))
         }
@@ -669,10 +670,10 @@ class AnimatorWindow(
                 ?.let { controller.updateEvent(state.name, i, e.copy(time = it / 100f)) }
             Tooltips.always(strings.getString("lbl.animator_window.event_time.tooltip"))
             ImGui.sameLine()
-            if (strings.tippedWith(ImGui.smallButton(Icons.TRASH), "btn.animator_window.remove_event.tooltip")) controller.removeEvent(state.name, i)
+            if (strings.tippedWith(iconButton(Icons.TRASH), "btn.animator_window.remove_event.tooltip")) controller.removeEvent(state.name, i)
             ImGui.popID()
         }
-        if (strings.tipped(ImGui.smallButton("${Icons.PLUS} ${strings.getString("btn.animator_window.add_event")}"), "btn.animator_window.add_event")) {
+        if (strings.tipped(iconLabelButton("${Icons.PLUS} ${strings.getString("btn.animator_window.add_event")}"), "btn.animator_window.add_event")) {
             controller.addEvent(state.name, 0.5f, strings.getString("lbl.animator_window.new_event"))
         }
 
@@ -703,11 +704,11 @@ class AnimatorWindow(
         list.forEachIndexed { pos, index ->
             ImGui.pushID("out:$index")
             ImGui.beginDisabled(pos == 0)
-            if (strings.tippedWith(ImGui.smallButton(Icons.ARROW_UP), "btn.animator_window.priority_up.tooltip")) controller.moveTransition(index, -1)
+            if (strings.tippedWith(iconButton(Icons.ARROW_UP), "btn.animator_window.priority_up.tooltip")) controller.moveTransition(index, -1)
             ImGui.endDisabled()
             ImGui.sameLine()
             ImGui.beginDisabled(pos == list.lastIndex)
-            if (strings.tippedWith(ImGui.smallButton(Icons.ARROW_DOWN), "btn.animator_window.priority_down.tooltip")) controller.moveTransition(index, 1)
+            if (strings.tippedWith(iconButton(Icons.ARROW_DOWN), "btn.animator_window.priority_down.tooltip")) controller.moveTransition(index, 1)
             ImGui.endDisabled()
             ImGui.sameLine()
             if (ImGui.selectable("${sentence(asset.transitions[index])}###sel", false)) controller.selectTransition(index)
@@ -734,7 +735,7 @@ class AnimatorWindow(
         val params = controller.parameters()
         t.conditions.forEachIndexed { ci, c -> conditionRow(index, ci, c, params) }
         if (t.conditions.isEmpty()) MImGui.textDisabled(strings.getString("lbl.animator_window.no_conditions"))
-        if (strings.tipped(ImGui.smallButton("${Icons.PLUS} ${strings.getString("btn.animator_window.add_condition")}"), "btn.animator_window.add_condition")) controller.addCondition(index)
+        if (strings.tipped(iconLabelButton("${Icons.PLUS} ${strings.getString("btn.animator_window.add_condition")}"), "btn.animator_window.add_condition")) controller.addCondition(index)
 
         MImGui.labeledSeparator(strings.getString("lbl.animator_window.timing"))
         if (ImGui.checkbox(strings.label("lbl.animator_window.exit_time"), t.hasExitTime)) controller.updateTransition(index) { it.copy(hasExitTime = !it.hasExitTime) }
@@ -787,7 +788,7 @@ class AnimatorWindow(
             Tooltips.always(strings.getString("lbl.animator_window.threshold.tooltip"))
         }
         ImGui.sameLine()
-        if (strings.tippedWith(ImGui.smallButton(Icons.TRASH), "btn.animator_window.remove_condition.tooltip")) controller.removeCondition(index, ci)
+        if (strings.tippedWith(iconButton(Icons.TRASH), "btn.animator_window.remove_condition.tooltip")) controller.removeCondition(index, ci)
         if (type != null && c.op !in AnimatorWindowController.operatorsFor(type)) MImGui.warningText(strings.getString("lbl.animator_window.op_mismatch"))
         ImGui.popID()
     }
@@ -809,6 +810,20 @@ class AnimatorWindow(
         val condition = if (parts.isEmpty()) strings.getString("lbl.animator_window.never") else parts.joinToString(strings.getString("lbl.animator_window.and"))
         return strings.getString("lbl.animator_window.sentence", from, t.to, condition, t.duration)
     }
+
+    // ---- buttons ----------------------------------------------------------------------------------------------
+
+    /**
+     * An icon-only button sized like the header's `?` (EDT-67/76): at least square and tall enough for the icon glyph
+     * at any font scale or frame padding. `smallButton` has no vertical padding and cut the icon off (ANI-24).
+     */
+    private fun iconButton(icon: String): Boolean {
+        val size = WindowHeader.buttonSize()
+        return ImGui.button(icon, size.width, size.height)
+    }
+
+    /** A text button (with an icon) as tall as [iconButton], so rows of mixed buttons line up and nothing is cut. */
+    private fun iconLabelButton(label: String): Boolean = ImGui.button(label, 0f, WindowHeader.buttonSize().height)
 
     // ---- commit-on-release fields ----------------------------------------------------------------------------
 

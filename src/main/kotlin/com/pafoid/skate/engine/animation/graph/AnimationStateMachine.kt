@@ -65,6 +65,20 @@ class AnimationStateMachine(
         evaluate()
     }
 
+    /** Back to the default state at its start, without a crossfade (inspector Reset, ANI-24). Parameters are kept. */
+    fun reset() {
+        currentState = asset.defaultState
+        normalizedTime = 0f
+        nextState = null
+        nextTime = 0f
+        fadeElapsed = 0f
+        fadeDuration = 0f
+        fadeFromFrozen = false
+        sourceProgress = 0f
+        firedEvents.clear()
+        evaluate()
+    }
+
     fun update(dt: Float) {
         firedEvents.clear()
         normalizedTime = advance(states.getValue(currentState), normalizedTime, dt)

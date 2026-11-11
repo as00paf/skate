@@ -135,3 +135,13 @@ class AnimatorWindowRenderTest {
         assertEquals(0, undo.getUndoCount(), "drawing alone never edits")
     }
 }
+
+/** ANI-24: icon buttons in the Animator window use the header button size, never the clipped `smallButton`. */
+class AnimatorWindowIconButtonsTest {
+    @Test
+    fun NoIconInASmallButton() {
+        val src = File("src/main/kotlin/com/pafoid/skate/editor/ui/windows/AnimatorWindow.kt").readText()
+        assertTrue(!Regex("""smallButton\(\s*"?\$?\{?Icons\.""").containsMatchIn(src), "use iconButton/iconLabelButton for icons")
+        assertTrue(src.contains("WindowHeader.buttonSize()"))
+    }
+}
