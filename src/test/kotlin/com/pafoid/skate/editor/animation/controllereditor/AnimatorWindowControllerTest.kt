@@ -321,7 +321,7 @@ class AnimatorWindowControllerTest {
 
     @Test
     fun EveryAction_IsTranslated() {
-        val props = listOf("assets/strings/editor/animation.properties", "assets/strings/editor/animation_fr.properties").map { path ->
+        val props = listOf("src/main/resources/editor/strings/animation.properties", "src/main/resources/editor/strings/animation_fr.properties").map { path ->
             java.util.Properties().apply { File(path).reader(Charsets.UTF_8).use { load(it) } }
         }
         for (a in ControllerAction.entries) for (p in props) {

@@ -60,18 +60,22 @@ class PrefabsGenerator(
     private val assetsManager = engine.assetsManager
     private val sceneManager = engine.sceneManager
 
+    /**
+     * The open project's `Assets` folder with a trailing separator, where samples write project files (scripts,
+     * materials). Engine defaults are not read from here: they are `engine:` references (AST-26).
+     */
     var projectAssetsDir: String = ""
 
     fun spawnSkateboard(): GameObject {
-        val path = projectAssetsDir + Assets.Bundled.SKATEBOARD
+        val path = EngineDefaults.Models.SKATEBOARD
         return Skateboard(assetsManager.loadModel(path))
     }
 
     fun spawnSkater(skate: GameObject? = null): Skater {
-        val path = projectAssetsDir + Assets.Bundled.JAMES
+        val path = EngineDefaults.Models.JAMES
         val model = assetsManager.loadModel(path)
         val animations = Skater.DEFAULT_ANIMATIONS.map { path ->
-            assetsManager.loadAnimationSync(projectAssetsDir + path)
+            assetsManager.loadAnimationSync(path)
         }
         val skater = Skater("Skater", model, skate, animations = animations)
         skater.animator.resolveController(logger)
@@ -80,8 +84,8 @@ class PrefabsGenerator(
 
     /** Asphalt floor of [size] × [size] metres, its top at y = 0. */
     fun spawnFloor(size: Int = 20): GameObject {
-        val texturePath = projectAssetsDir + Assets.Bundled.ASPHALT
-        val modelPath = projectAssetsDir + Assets.Bundled.CUBE
+        val texturePath = EngineDefaults.Textures.ASPHALT
+        val modelPath = EngineDefaults.Models.CUBE
         val texture = assetsManager.getTexture(texturePath)
         val material = Material(texture)
         val baseModel = assetsManager.loadModel(modelPath)
@@ -91,7 +95,7 @@ class PrefabsGenerator(
 
     /**
      * A plain animated character (bundled James model, no controller or physics) looping [clipPath] (a bundled
-     * animation path such as [Assets.Bundled.WALKING]).
+     * animation path such as [EngineDefaults.Animations.WALKING]).
      */
     fun spawnAnimatedCharacter(
         name: String,
@@ -100,10 +104,10 @@ class PrefabsGenerator(
         /** More bundled clips for the Animator (e.g. the clips a controller needs); [clipPath] stays the one playing. */
         extraClips: List<String> = emptyList(),
     ): GameObject {
-        val modelPath = projectAssetsDir + Assets.Bundled.JAMES
+        val modelPath = EngineDefaults.Models.JAMES
         val model = if (loadAssets) assetsManager.loadModel(modelPath) else `3dModel`(modelPath)
-        fun load(path: String) = if (loadAssets) assetsManager.loadAnimationSync(projectAssetsDir + path)
-            else Animation(File(path).nameWithoutExtension, emptyList(), 0f, projectAssetsDir + path)
+        fun load(path: String) = if (loadAssets) assetsManager.loadAnimationSync(path)
+            else Animation(path.substringAfterLast('/').substringBeforeLast('.'), emptyList(), 0f, path)
         val clip = load(clipPath)
         val clips = (listOf(clip) + (extraClips - clipPath).map(::load)).toMutableList()
         val go = GameObject(name)
@@ -150,12 +154,12 @@ class PrefabsGenerator(
 
     /** Textured model of a catalog prefab, loaded from the project's bundled copy. */
     private fun surfaceModel(type: PrefabType, material: MaterialType?): Pair<`3dModel`, Material?> {
-        val modelPath = projectAssetsDir + PrefabCatalog.entry(type).bundledModelPath
+        val modelPath = PrefabCatalog.entry(type).bundledModelPath
         if (!loadAssets) {
-            return `3dModel`(modelPath) to material?.let { Material(Texture(filePath = projectAssetsDir + it.texturePath)) }
+            return `3dModel`(modelPath) to material?.let { Material(Texture(filePath = it.texturePath)) }
         }
         val baseModel = assetsManager.loadModel(modelPath)
-        val texture = material?.let { assetsManager.getTexture(projectAssetsDir + it.texturePath) }
+        val texture = material?.let { assetsManager.getTexture(it.texturePath) }
         val model = `3dModel`(
             path = modelPath,
             mesh = if (texture == null) baseModel.mesh else baseModel.mesh.map { it.copy(material = Material(texture)) },
@@ -252,7 +256,7 @@ class PrefabsGenerator(
      */
     fun createDefaultScenes(sceneDir: File): List<Scene> {
         val scene = sceneManager.createNewScene(DEFAULT_SCENE, sceneDir.path)
-        val skyTexture = assetsManager.getTexture(projectAssetsDir + Assets.Bundled.SKY)
+        val skyTexture = assetsManager.getTexture(EngineDefaults.Textures.SKY_HDRI)
         scene.addComponent(ScenePhysicsComponent())
             .addComponent(GridLines())
             .addComponent(EnvironmentComponent(skyTexture = skyTexture))

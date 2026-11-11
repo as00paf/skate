@@ -12,7 +12,7 @@ class AssimpLoaderTest {
     @Test
     fun `preLoadModel should load weights and joints from FBX`() {
         val loader = AssimpLoader(mockk(), mockk())
-        val path = "assets/characters/james.fbx"
+        val path = "assets/Models/james.fbx"
         
         if (!File(path).exists()) {
             println("Skipping test: File not found $path")

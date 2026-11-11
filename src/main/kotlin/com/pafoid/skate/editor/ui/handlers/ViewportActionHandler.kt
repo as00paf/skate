@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.ui.handlers
 
+import com.pafoid.skate.engine.assets.EngineDefaults
 import com.pafoid.skate.editor.commands.editor.TogglePhysicsDebugCommand
 import com.pafoid.skate.editor.commands.objects.AddAudioComponentCommand
 import com.pafoid.skate.editor.commands.objects.AddComponentCommand
@@ -441,8 +442,8 @@ class ViewportActionHandler(
             planeObj.addComponent(transform)
 
             val texture = engine.assetsManager.getTexture(texturePath)
-            val baseModel = engine.assetsManager.loadModel(Assets.Models.CUBE)
-            val model = `3dModel`(path = Assets.Models.CUBE, mesh = baseModel.mesh)
+            val baseModel = engine.assetsManager.loadModel(EngineDefaults.Models.CUBE)
+            val model = `3dModel`(path = EngineDefaults.Models.CUBE, mesh = baseModel.mesh)
 
             engine.jobSystem.runOnMain {
                 val renderComponent =

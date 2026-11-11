@@ -62,7 +62,7 @@ class EditorShortcutsTest {
 
     @Test
     fun EveryShortcut_HasALabelInBothLanguages() {
-        val files = File("assets/strings/editor").listFiles { f -> f.extension == "properties" }!!.toList()
+        val files = File("src/main/resources/editor/strings").listFiles { f -> f.extension == "properties" }!!.toList()
         files.partition { it.name.endsWith("_fr.properties") }.toList().forEach { group ->
             val props = Properties().apply { group.forEach { f -> f.reader(Charsets.UTF_8).use { load(it) } } }
             val missing = EditorShortcuts.all.map { it.labelKey }.filter { props.getProperty(it) == null }

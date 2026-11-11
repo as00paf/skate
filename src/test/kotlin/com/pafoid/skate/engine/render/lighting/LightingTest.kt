@@ -68,7 +68,7 @@ class LightingTest {
 
     @Test
     fun LightingShader_LimitsMatchKotlinConstants() {
-        val src = javaClass.getResource("/shaders/shader_3d_default.glsl")!!.readText()
+        val src = javaClass.getResource("/shaders/lighting.glsl")!!.readText() // REN-28 task 1: lights live in the include
         assertTrue("#define MAX_LIGHTS ${LightPacking.MAX_LIGHTS}\n" in src.replace("\r", ""))
         assertTrue("#define MAX_LIGHTS_PER_OBJECT ${LightCulling.MAX_LIGHTS_PER_OBJECT}\n" in src.replace("\r", ""))
     }

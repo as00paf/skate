@@ -1,5 +1,6 @@
 package com.pafoid.skate.cli
 
+import org.junit.jupiter.api.Assertions.assertFalse
 import com.pafoid.skate.engine.assets.ProjectLayout
 import java.io.File
 import java.nio.file.Files
@@ -50,7 +51,9 @@ class SkateCliServiceTest {
         try {
             val projectDir = SkateCliService(out = {}).createProject("Demo", dir).parentFile
             assertTrue(ProjectLayout.duplicateAssetFolders(projectDir).isEmpty())
-            assertTrue(ProjectLayout.engineDefaultsDir(projectDir).isDirectory)
+            assertTrue(File(ProjectLayout.assetsDir(projectDir), "Models/cube.obj").isFile, "copy mode by default")
+            assertTrue(File(ProjectLayout.assetsDir(projectDir), "Shaders/shader_3d_default.glsl").isFile)
+            assertFalse(File(ProjectLayout.assetsDir(projectDir), "EngineDefaults").exists())
             assertTrue(File(ProjectLayout.assetsDir(projectDir), ProjectLayout.STRINGS_FILE).isFile)
         } finally {
             dir.deleteRecursively()

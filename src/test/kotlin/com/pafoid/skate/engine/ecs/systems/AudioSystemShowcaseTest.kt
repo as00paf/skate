@@ -1,5 +1,8 @@
 package com.pafoid.skate.engine.ecs.systems
 
+import com.pafoid.skate.engine.assets.AssetPaths
+import com.pafoid.skate.engine.assets.EngineDefaultResolver
+import com.pafoid.skate.engine.assets.EngineDefaults
 import com.pafoid.skate.engine.addComponent
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.AssetsManager
@@ -58,7 +61,7 @@ class AudioSystemShowcaseTest {
         every { it.loadModel(any()) } returns `3dModel`(mesh = listOf(), skeleton = Skeleton(Bone(0, "root"), 1))
         every { it.loadAnimationSync(any()) } returns Animation("walking", emptyList(), 1f, "walking.fbx")
         every { it.getTexture(any()) } returns Texture()
-        // Like the real loader: the file must exist at the path stored in the scene.
+        // Like the real loader: the file must exist at the path stored in the scene (`engine:` references resolve).
         every { it.getSound(any()) } answers {
             val path = firstArg<String>()
             if (!File(path).isFile) throw FileNotFoundException(path)
@@ -72,10 +75,9 @@ class AudioSystemShowcaseTest {
         dir.deleteRecursively()
     }
 
-    /** The music file a new project gets from the bundled-asset table (what EngineAssetCopier copies). */
+    /** The engine's music file: the showcase references it as `engine:Sounds/...` (AST-26), resolved from the repo. */
     private fun copyBundledMusic() {
-        val (dest, source) = Assets.Bundled.bundledAssets.single { it.first == Assets.Bundled.MUSIC }
-        File(source).copyTo(File(assetsDir, dest))
+        assertTrue(File("assets/" + EngineDefaults.logicalPath(EngineDefaults.Sounds.MUSIC)).isFile)
     }
 
     /** What a new project does: generate and save the showcase, then load it back from disk. */
@@ -90,8 +92,12 @@ class AudioSystemShowcaseTest {
 
     private fun Scene.named(name: String): GameObject = children.single { it.name == name }
 
-    private fun system(scene: Scene) =
-        AudioSystem(AudioEngine(logger, al.backend), logger, assetsManager, cameraManager).also { it.init(scene) }
+    /** `engine:` sounds resolve in the repo's assets/, or nowhere when [engineMissing] (an install without the music). */
+    private fun localPath(engineMissing: Boolean = false): (String) -> String =
+        AssetPaths().apply { if (engineMissing) engineDefaults = EngineDefaultResolver(File(dir, "no-engine")) }::localPath
+
+    private fun system(scene: Scene, engineMissing: Boolean = false) =
+        AudioSystem(AudioEngine(logger, al.backend), logger, assetsManager, cameraManager, localPath(engineMissing)).also { it.init(scene) }
 
     private fun frame(system: AudioSystem, scene: Scene) {
         scene.children.forEach { go -> go.getComponent<Transform>()?.let { transforms.updateTransform(it) } }
@@ -104,7 +110,7 @@ class AudioSystemShowcaseTest {
         val sources = loadShowcaseFromDisk().children.filter { it.getComponent<AudioComponent>() != null }
         assertEquals(listOf("[Audio] Emitter3D"), sources.map { it.name })
         val emitter = sources.single().getComponent<AudioComponent>()!!
-        assertEquals(assetsDir.path + File.separator + Assets.Bundled.MUSIC, emitter.soundFilePath)
+        assertEquals(EngineDefaults.Sounds.MUSIC, emitter.soundFilePath)
         assertTrue(emitter.is3D && emitter.loops && emitter.playOnAwake)
         assertEquals(BusId.MUSIC, emitter.bus)
         assertEquals(25f, emitter.maxDistance)
@@ -259,7 +265,7 @@ class AudioSystemShowcaseTest {
         val scene = loadShowcaseFromDisk()
         val emitterPos = scene.named("[Audio] Emitter3D").getComponent<Transform>()!!.translation
         val engine = AudioEngine(logger, al.backend)
-        val system = AudioSystem(engine, logger, assetsManager, cameraManager).also { it.init(scene) }
+        val system = AudioSystem(engine, logger, assetsManager, cameraManager, localPath()).also { it.init(scene) }
         camera.translation.set(emitterPos).add(0f, 0f, 0.5f)
         scene.isRunning = true
         frame(system, scene)
@@ -283,7 +289,7 @@ class AudioSystemShowcaseTest {
     @Test
     fun Showcase_Audio_MissingMp3LogsOneWarningAndTheSceneKeepsRunning() {
         val scene = loadShowcaseFromDisk()
-        val system = system(scene)
+        val system = system(scene, engineMissing = true)
         scene.isRunning = true
         repeat(5) { frame(system, scene) }
         scene.isRunning = false

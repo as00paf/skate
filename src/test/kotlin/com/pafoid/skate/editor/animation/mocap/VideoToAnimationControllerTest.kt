@@ -191,7 +191,7 @@ class VideoToAnimationControllerTest {
     }
 
     private companion object {
-        const val JAMES = "assets/characters/james.glb"
+        const val JAMES = "assets/Models/james.glb"
     }
 }
 

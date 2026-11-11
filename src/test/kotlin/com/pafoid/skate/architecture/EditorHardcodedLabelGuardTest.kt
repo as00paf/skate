@@ -28,7 +28,7 @@ class EditorHardcodedLabelGuardTest {
             val rel = root.relativize(file).invariantSeparatorsPathString
             findViolations(file.readText()).map { (line, text) -> "$rel:$line -> \"$text\"" }
         }
-        assertTrue(violations.isEmpty(), "Hardcoded UI text (add a key to assets/strings/editor/<area>.properties + _fr):\n" +
+        assertTrue(violations.isEmpty(), "Hardcoded UI text (add a key to src/main/resources/editor/strings/<area>.properties + _fr):\n" +
             violations.joinToString("\n"))
     }
 

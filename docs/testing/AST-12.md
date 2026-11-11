@@ -23,7 +23,7 @@ No migration: project files without the field open as `OPENGL` (rule 8), and `ga
 ## API for EDT-43 (editor UI) and GPL-19 (game startup)
 
 - Enum: `com.pafoid.skate.engine.render.rhi.GraphicsBackend` (`OPENGL`, `VULKAN`), with `DEFAULT`, `experimental`, `labelKey` and `parse(String?)`.
-- **EDT-43**: edit `project.graphicsBackend` through a Command (undo/redo), then save the project. For labels, use `strings.getString(backend.labelKey)`: `lbl.graphics_backend.opengl` and `lbl.graphics_backend.vulkan` are already in `assets/strings/editor/assets*.properties`, so reuse them and don't duplicate the keys. Show a warning when `backend.experimental`. The editor must keep rendering with OpenGL.
+- **EDT-43**: edit `project.graphicsBackend` through a Command (undo/redo), then save the project. For labels, use `strings.getString(backend.labelKey)`: `lbl.graphics_backend.opengl` and `lbl.graphics_backend.vulkan` are already in `src/main/resources/editor/strings/assets*.properties`, so reuse them and don't duplicate the keys. Show a warning when `backend.experimental`. The editor must keep rendering with OpenGL.
 - **GPL-19**: in `GameMain`, after `loadProjectAndIcon` and before creating the `Window`, call:
   ```kotlin
   val settings = GameSettingsStore(GameSettings.fileIn(packDir), engine.logger).settings

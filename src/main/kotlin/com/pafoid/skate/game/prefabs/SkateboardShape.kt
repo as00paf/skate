@@ -13,7 +13,7 @@ import kotlin.math.sin
  * The skateboard model, built in metres: a 0.81 m deck with concave, kicktails and round nose and tail, two trucks
  * and four wheels, about 3K triangles. Same frame as [Skateboard]: origin at the wheels' ground contact, centred,
  * deck +Y up, nose toward +Z. Parts are told apart by vertex colour (grip tape, wood edge, graphic, metal, urethane).
- * Written to `assets/obj/skateboard.obj` by `SkateparkShapesTest` like the obstacles.
+ * Written to `assets/Models/skateboard.obj` by `SkateparkShapesTest` like the obstacles.
  */
 object SkateboardShape {
 

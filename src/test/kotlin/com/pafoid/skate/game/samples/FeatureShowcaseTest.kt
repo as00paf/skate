@@ -1,5 +1,6 @@
 package com.pafoid.skate.game.samples
 
+import com.pafoid.skate.engine.assets.EngineDefaults
 import com.pafoid.skate.engine.ui.UiRectF
 import com.pafoid.skate.engine.ui.UiTree
 import com.pafoid.skate.engine.ui.UiLayout
@@ -108,7 +109,7 @@ class FeatureShowcaseTest {
         val car = withComponent<VehicleComponent>().single()
         assertNotNull(car.getComponent<RigidBody3D>())
         val audio = withComponent<AudioComponent>().single().getComponent<AudioComponent>()!!
-        assertEquals("P\\Assets\\" + com.pafoid.skate.engine.assets.Assets.Bundled.MUSIC, audio.soundFilePath)
+        assertEquals(com.pafoid.skate.engine.assets.EngineDefaults.Sounds.MUSIC, audio.soundFilePath)
     }
 
     @Test

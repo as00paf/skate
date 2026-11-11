@@ -125,6 +125,6 @@ class SkaterControllerTest {
     @Test
     fun `ClipName_IsTheFileNameWithEitherSeparator`() {
         assertEquals("falling idle", AnimationLoader.clipName("C:\\proj\\Assets\\EngineDefaults\\Characters\\animations\\falling idle.fbx"))
-        assertEquals("idle_1", AnimationLoader.clipName("assets/characters/animations/idle_1.fbx"))
+        assertEquals("idle_1", AnimationLoader.clipName("assets/Animations/idle_1.fbx"))
     }
 }

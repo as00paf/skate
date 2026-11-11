@@ -3,8 +3,8 @@
 ## Tables
 
 - Strings live in `.properties` files read as UTF-8, one table per area (EDT-37):
-  - `assets/strings/editor/<area>.properties` for the editor.
-  - `assets/strings/game/<area>.properties` for runtime UI (HUD, pause menu, showcase).
+  - `src/main/resources/editor/strings/<area>.properties` for the editor.
+  - `assets/Data/strings/game/<area>.properties` for runtime UI (HUD, pause menu, showcase).
 - A translation sits next to its table as `<area>_<lang>.properties` (`core_fr.properties`). Area names must not end
   in `_xx`, which is reserved for the language suffix.
 - A key lives in exactly one area table, in both EN and FR. `StringTablesTest` enforces this.
