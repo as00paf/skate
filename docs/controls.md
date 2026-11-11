@@ -4,7 +4,7 @@ Pick a scheme in the pause menu (**Esc** → **Controls: …**). Each click pick
 
 ## Core trick set
 
-Every scheme can do all five tricks. A flip or shove-it needs air time to finish: land before the board is round (0.4 s flip, 0.3 s shove-it, 0.5 s 360 shove-it) and you bail. Landed tricks score points (ollie 100, shove-it 300, flip 500, 360 shove-it 800), and the HUD shows the trick's name. Times and points are in `configs/skater.character.json` under `tricks`.
+Every scheme can do all five tricks. A flip or shove-it needs air time to finish: land before the board is round (0.4 s flip, 0.3 s shove-it, 0.5 s 360 shove-it) and you bail. Landed tricks score points (ollie 100, shove-it 300, flip 500, 360 shove-it 800), and the HUD shows the trick's name. Times and points are in the skater config under `tricks`: `Assets/Data/skater.character.json` in a project (edit it in the Properties window), else the engine default `engine:Data/skater.character.json` (GPL-26).
 
 | Trick | EA Skate (default) | Session | Skater XL | THPS |
 |---|---|---|---|---|

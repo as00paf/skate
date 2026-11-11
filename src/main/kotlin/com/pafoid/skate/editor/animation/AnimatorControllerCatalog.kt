@@ -39,7 +39,7 @@ class AnimatorControllerCatalog(private val bundled: List<String> = BUNDLED) {
         /** The editor's catalog, read by the Animator inspector. */
         val shared by lazy { AnimatorControllerCatalog() }
 
-        const val SKATER = "configs/skater.controller.json"
+        const val SKATER = com.pafoid.skate.engine.assets.EngineDefaults.Animations.SKATER_CONTROLLER
         val BUNDLED = listOf(SKATER)
         private val SKIPPED_DIRS = setOf("Builds", ".git", "build")
 

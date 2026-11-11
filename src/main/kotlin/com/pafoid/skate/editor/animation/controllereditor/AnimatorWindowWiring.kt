@@ -7,6 +7,8 @@ import com.pafoid.skate.editor.events.WindowAction
 import com.pafoid.skate.editor.systems.ProjectManager
 import com.pafoid.skate.engine.animation.edit.SkAnimFormat
 import com.pafoid.skate.engine.assets.AssetPaths
+import com.pafoid.skate.engine.assets.EngineDefaultResolver
+import com.pafoid.skate.engine.assets.EngineDefaults
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.components.Animator
@@ -51,17 +53,28 @@ object AnimatorWindowWiring {
     }
 
     /**
-     * Finds the controller Animators call [path]: a file (absolute, or relative to the project), else a bundled
-     * resource, which is read-only (ANI-21 §5.2).
+     * Finds the controller Animators call [path]: a file (absolute, or relative to the project, or the project's
+     * override of an `engine:` default, GPL-26), else the engine's own file or a bundled resource, which are read-only
+     * (ANI-21 §5.2).
      */
     fun resolve(path: String, projectDir: File?): ResolvedController? {
         fileFor(path, projectDir)?.let { return ResolvedController(path, it, it.readText()) }
+        if (EngineDefaults.isReference(path)) {
+            val logical = EngineDefaults.logicalPath(path) ?: return null
+            val text = EngineDefaultResolver(projectRoot = { projectDir }).engineFile(logical)?.readText() ?: return null
+            return ResolvedController(path, null, text)
+        }
         val text = Animator::class.java.classLoader.getResourceAsStream(path.replace('\\', '/').trimStart('/'))
             ?.use { it.readBytes().toString(Charsets.UTF_8) } ?: return null
         return ResolvedController(path, null, text)
     }
 
+    /** The editable file behind [path]; for an `engine:` reference, the project's override copy (GPL-26), if any. */
     fun fileFor(path: String, projectDir: File?): File? {
+        if (EngineDefaults.isReference(path)) {
+            val logical = EngineDefaults.logicalPath(path) ?: return null
+            return projectDir?.let { dir -> EngineDefaultResolver(projectRoot = { dir }).override(logical) }
+        }
         val direct = File(path)
         if (direct.isAbsolute && direct.isFile) return direct
         if (projectDir != null) File(projectDir, path).takeIf { it.isFile }?.let { return it }

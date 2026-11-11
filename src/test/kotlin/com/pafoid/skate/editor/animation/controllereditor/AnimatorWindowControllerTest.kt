@@ -52,7 +52,7 @@ class AnimatorWindowControllerTest {
             when {
                 file.isFile -> ResolvedController(path, file, file.readText())
                 path == Assets.Configs.SKATER_CONTROLLER -> ResolvedController(
-                    path, null, javaClass.classLoader.getResourceAsStream(path)!!.readBytes().toString(Charsets.UTF_8),
+                    path, null, com.pafoid.skate.engine.gameplay.CharacterConfigs.readText(path)!!,
                 )
                 else -> null
             }

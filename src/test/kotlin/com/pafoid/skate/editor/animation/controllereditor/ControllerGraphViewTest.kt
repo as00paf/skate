@@ -29,7 +29,7 @@ class ControllerGraphViewTest {
 
     @Test
     fun AutoLayout_ColumnsByDistanceFromTheDefault_NoOverlaps() {
-        val skater = AnimationControllerAsset.fromJson(javaClass.classLoader.getResourceAsStream(Assets.Configs.SKATER_CONTROLLER)!!.readBytes().toString(Charsets.UTF_8))
+        val skater = AnimationControllerAsset.fromJson(com.pafoid.skate.engine.gameplay.CharacterConfigs.readText(Assets.Configs.SKATER_CONTROLLER)!!)
         for (a in listOf(asset, skater)) {
             val pos = ControllerGraphView.positions(a)
             assertEquals(a.states.size + (if (a.transitions.any { it.from == null }) 1 else 0), pos.size)

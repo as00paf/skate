@@ -98,7 +98,7 @@ class AnimatorWindowRenderTest {
             resolve = { p ->
                 when {
                     File(p).isFile -> ResolvedController(p, File(p), File(p).readText())
-                    p == Assets.Configs.SKATER_CONTROLLER -> ResolvedController(p, null, javaClass.classLoader.getResourceAsStream(p)!!.readBytes().toString(Charsets.UTF_8))
+                    p == Assets.Configs.SKATER_CONTROLLER -> ResolvedController(p, null, com.pafoid.skate.engine.gameplay.CharacterConfigs.readText(p)!!)
                     else -> null
                 }
             },

@@ -21,7 +21,7 @@ class ControllerFormatTest {
     private val skeleton = Skeleton(Bone(0, "root", Matrix4f().translation(0f, 2f, 0f)), 1)
     private val logger = LoggerService()
 
-    private fun skaterJson() = javaClass.classLoader.getResourceAsStream(Assets.Configs.SKATER_CONTROLLER)!!.readBytes().toString(Charsets.UTF_8)
+    private fun skaterJson() = com.pafoid.skate.engine.gameplay.CharacterConfigs.readText(Assets.Configs.SKATER_CONTROLLER)!!
 
     @Test
     fun NewFields_RoundTrip() {

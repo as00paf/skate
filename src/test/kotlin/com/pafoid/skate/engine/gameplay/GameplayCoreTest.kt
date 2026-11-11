@@ -165,6 +165,19 @@ class ConfigPropertiesTest {
     }
 
     @Test
+    fun ConfigProperties_ArrayElementsAreIndexedAndEditable() {
+        // GPL-26: animator controllers hold their states and transitions in arrays.
+        val root = Json.parseToJsonElement("""{"states":[{"name":"idle","loop":true},{"name":"jump","loop":false}],"n":null}""").jsonObject
+        val flat = ConfigProperties.flatten(root)
+        assertEquals(listOf("states.0.name", "states.0.loop", "states.1.name", "states.1.loop"), flat.keys.toList())
+
+        val updated = ConfigProperties.set(root, "states.1.loop", JsonPrimitive(true))
+        assertEquals("true", ConfigProperties.flatten(updated).getValue("states.1.loop").content)
+        assertEquals(root, ConfigProperties.set(root, "states.5.loop", JsonPrimitive(true)), "index out of range")
+        assertEquals(root, ConfigProperties.set(root, "states.0", JsonPrimitive(1)), "objects are not leaves")
+    }
+
+    @Test
     fun CharacterConfigs_InvalidTextFallsBackToDefaults() {
         val cfg = CharacterConfigs.decode("x", "{not json") { LocomotionConfig(walkSpeed = 99f) }
         assertEquals(99f, cfg.walkSpeed)
