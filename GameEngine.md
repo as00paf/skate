@@ -394,6 +394,10 @@ Round 27+ goals: input is too tightly coupled with skateboarding; it needs a gam
   - Do: (human, round 33 testing): the Animator window's parameter delete button is too short for its icon; the Animator component's Play and Reset buttons have no effect. Play previews in edit mode and pauses/resumes the controller in play mode; Reset returns to the default state.
   - Done when: Icons fit; Play/Reset change the pose in both modes; tests.
   - Deps: ANI-21
+- [~] @skate-animation **ANI-25** `P0` Animator: items without room; inspector playback overridden by the player state
+  - Do: (human, round 33 re-testing): some Animator window items don't render for lack of room; inspector Play still doesn't play the skater's animations properly, likely because the player/character state drives the animator every frame. Size rows from the style; inspector playback wins while active and hands back on stop/Reset.
+  - Done when: All items visible at every density and small sizes (headless test); inspector Play works on the real skater in edit and play mode; tests.
+  - Deps: ANI-24
 - [ ] **ANI-23** `P2` Animator window: blend tree editor in the state inspector
   - Do: (ANI-21 design answer, 2026-11-10): edit 1D/2D blend trees of a state in the Animator window's state inspector, with live preview.
   - Done when: A blend tree can be created and edited from the window and saved in the controller file; tests.
@@ -633,6 +637,14 @@ Round 27+ goals (human, 2026-11-06): fix editor bugs, make every window, dialog 
   - Do: (human, round 33 testing): texture Delete buttons clipped at the end; the Animator component's Edit/Refresh buttons sometimes have no room. Shared trailing-button layout sized from the current style.
   - Done when: Trailing buttons fit at every density preset and narrow widths; guard test.
   - Deps: EDT-76
+- [~] @skate-editor **EDT-87** `P0` Expanding the Input State component crashes the editor
+  - Do: (human, round 33 testing): expanding Input State in the Properties window crashes the editor. Fix it, and add a guard test that draws every registered component inspector expanded (default and populated data) with no ImGui stack imbalance or exception.
+  - Done when: Input State expands without crashing; the all-inspectors guard passes.
+  - Deps: EDT-86
+- [ ] **EDT-88** `P1` Maximize editor tool windows over the Game Viewport, or full screen
+  - Do: (human, 2026-11-11): the Script Editor, Animation Editor and Video to Animation windows can be maximized: a "Maximize" button in the standard window header (and a shortcut, e.g. Shift+Space, plus double-click on the tab) that either docks the window over the Game Viewport's node as a tab, or fills the whole editor (hiding the other panels until restored). Today docking over the viewport doesn't work because the Game Viewport's dock node hides its tab bar, so nothing can be tabbed into it: show the Game Viewport tab (or allow docking into its node) without breaking its toolbar layout. Restore returns the previous layout exactly. Generalize to every window using the standard header if it costs nothing extra. Short design note first (layout save/restore, interaction with play mode and the viewport's input focus from EDT-73).
+  - Done when: Each of the three windows can be maximized and restored, both over the viewport and full editor; the layout is restored exactly; tests for the layout save/restore.
+  - Deps: EDT-67
 - [ ] **EDT-82** `P2` Editor-wide "unsaved assets" prompt on close
   - Do: (ANI-21 design answer, 2026-11-10): one prompt when the project or editor closes, listing the unsaved scene, animation clips and animator controllers, with Save all / Discard / Cancel.
   - Done when: Closing with unsaved assets asks first; tests for the dirty-document registry.
