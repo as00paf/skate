@@ -41,6 +41,9 @@ abstract class AssetBrowserTab(
         }
     }
 
+    /** Set by the window: creates a project shader from the template (EDT-80); null hides New Shader. */
+    var onNewShader: (() -> Unit)? = null
+
     /** Folder listed by this tab, or null when it is not a folder on disk (the prefab catalog). */
     protected open val folder: File? get() = AssetDiscovery.root(assetsManager.paths.projectRoot)
 
@@ -52,8 +55,9 @@ abstract class AssetBrowserTab(
         if (ImGui.beginChild("##${label}_content", 0f, 0f)) {
             body()
             val dir = folder
-            EmptySpaceMenu.render(stringManager, "##${label}_empty_space", EmptySpaceItem.assetTab(dir != null)) { item ->
+            EmptySpaceMenu.render(stringManager, "##${label}_empty_space", EmptySpaceItem.assetTab(dir != null, hasProject = onNewShader != null && assetsManager.paths.projectRoot != null)) { item ->
                 when (item) {
+                    EmptySpaceItem.NEW_SHADER -> onNewShader?.invoke()
                     EmptySpaceItem.REFRESH -> refreshAssets()
                     EmptySpaceItem.SHOW_FOLDER -> dir?.let(::openFolder)
                     EmptySpaceItem.COPY_FOLDER_PATH -> dir?.let { ImGui.setClipboardText(it.absolutePath) }

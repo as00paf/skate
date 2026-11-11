@@ -48,6 +48,16 @@ class ProjectActionHandlerFileOpsTest {
     }
 
     @Test
+    fun `create file writes the requested content (EDT-80 New Shader)`() {
+        setup()
+        val file = File(tempDir, "Assets/Shaders/NewShader.glsl")
+        eventSystem.publish(CreateFileRequested(file.absolutePath, false, "#type vertex"))
+
+        assertEquals(1, changed)
+        assertEquals("#type vertex", file.readText())
+    }
+
+    @Test
     fun `create file publishes operation failed event when target exists`() {
         setup()
         val existing = File(tempDir, "existing.txt").apply { writeText("content") }
