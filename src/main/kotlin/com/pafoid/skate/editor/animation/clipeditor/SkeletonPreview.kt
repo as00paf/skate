@@ -52,9 +52,13 @@ class SkeletonPreview {
         ).mul(distance).add(target)
     }
 
-    fun viewProjection(width: Float, height: Float): Matrix4f =
+    fun viewProjection(width: Float, height: Float): Matrix4f = projection(width, height).mul(view())
+
+    /** The orbit camera's view matrix (the skinned preview renders with it, REN-33). */
+    fun view(): Matrix4f = Matrix4f().lookAt(eye(), target, Vector3f(0f, 1f, 0f))
+
+    fun projection(width: Float, height: Float): Matrix4f =
         Matrix4f().perspective(Math.toRadians(FOV_DEG).toFloat(), width / height.coerceAtLeast(1f), 0.01f, 1000f)
-            .lookAt(eye(), target, Vector3f(0f, 1f, 0f))
 
     /** Screen positions (pixels from the area's top-left) of [points]; null for points behind the camera. */
     fun project(points: Array<Vector3f>, width: Float, height: Float): Array<FloatArray?> {

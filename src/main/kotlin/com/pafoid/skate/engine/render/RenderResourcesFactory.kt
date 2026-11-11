@@ -2,6 +2,7 @@ package com.pafoid.skate.engine.render
 
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.EngineDefaults
+import com.pafoid.skate.engine.render.preview.SkinnedPreviewViewport
 import com.pafoid.skate.engine.assets.AssetsManager
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.core.LoggerService
@@ -132,7 +133,12 @@ class RenderResourcesFactory(
             shadow = shadowRenderer,
             splash = splashRenderer,
             debug = debugRenderer,
-            thumbnail = thumbnailRenderer
+            thumbnail = thumbnailRenderer,
+            // Its own variant of the mesh shader, so the preview's camera and studio light never reach the scene's program
+            skinnedPreview = SkinnedPreviewViewport(
+                shader = { assetsManager.getShaderVariant(EngineDefaults.Shaders.DEFAULT_3D, setOf(ShaderFeature.SKINNED)) },
+                modelRenderer = modelRenderer,
+            ),
         )
     }
 
