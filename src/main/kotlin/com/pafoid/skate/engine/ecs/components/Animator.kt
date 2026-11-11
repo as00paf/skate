@@ -19,6 +19,7 @@ import com.pafoid.skate.engine.assets.data.models.animations.Skeleton
 import com.pafoid.skate.engine.core.LoggerService
 import com.pafoid.skate.engine.core.LoggerService.LogLevel
 import com.pafoid.skate.engine.getComponent
+import com.pafoid.skate.engine.utils.SkeletonMath
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import com.pafoid.skate.engine.assets.EngineDefaultResolver
@@ -69,6 +70,39 @@ data class Animator(
         } else {
             for (bone in skeleton.getAllBones()) if (bone.index < out.boneCount) out.setBone(bone.index, bone.bindLocalTransform)
         }
+    }
+
+    /**
+     * Inspector Play while the game is not running (ANI-24): the AnimationSystem animates this Animator in the scene
+     * view (its controller, else the selected clip). Not saved.
+     */
+    @Transient
+    var editPreview: Boolean = false
+
+    /** Inspector Pause while the game runs (ANI-24): the controller holds its pose. Not saved. */
+    @Transient
+    var controllerPaused: Boolean = false
+
+    /**
+     * Writes the current pose into [skeleton] and rebuilds its skin matrices, so the view updates at once (scrub,
+     * reset, ANI-24): the controller's pose, else the selected clip at [currentTime], else the bind pose.
+     */
+    fun applyPose(skeleton: SkeletonComponent) {
+        val pose = skeleton.pose
+        val machine = stateMachine
+        if (machine != null) {
+            for (i in 0 until minOf(machine.pose.boneCount, pose.localTransforms.size)) machine.pose.toMatrix(i, pose.localTransforms[i])
+        } else {
+            val clip = currentAnimation
+            clip?.update(currentTime, pose.skeleton)
+            for (bone in pose.skeleton.getAllBones()) {
+                if (bone.index in pose.localTransforms.indices) {
+                    pose.localTransforms[bone.index].set(if (clip != null) bone.localTransform else bone.bindLocalTransform)
+                }
+            }
+        }
+        SkeletonMath.buildSkinMatrices(pose, skeleton.matrixPalette)
+        skeleton.markPaletteDirty()
     }
 
     /** Parameters of the active state machine (gameplay writes floats/bools/triggers here), or null without a controller. */

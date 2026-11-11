@@ -48,7 +48,10 @@ class AnimationSystem(
     }
 
     override fun update(dt: Float) {
-        if (!scene.isRunning) return
+        if (!scene.isRunning) {
+            previewInEditMode(dt)
+            return
+        }
         visibility?.beginFrame()
 
         var updated = 0
@@ -74,6 +77,16 @@ class AnimationSystem(
         }
         EngineStats.animationsUpdated.set(updated)
         EngineStats.animationsSkipped.set(skipped)
+    }
+
+    /** Edit mode: only Animators whose inspector Play is on move (ANI-24); no events reach gameplay. */
+    private fun previewInEditMode(dt: Float) {
+        animated.forEach { go ->
+            val animator = go.getComponent<Animator>() ?: return@forEach
+            if (!animator.editPreview) return@forEach
+            val skeleton = go.getComponent<SkeletonComponent>() ?: return@forEach
+            updateAnimation(AnimatedGameObject(animator, skeleton), dt, editMode = true)
+        }
     }
 
     private fun isVisible(skeleton: SkeletonComponent): Boolean {
@@ -120,15 +133,16 @@ class AnimationSystem(
         return base.second
     }
 
-    private fun updateAnimation(ago: AnimatedGameObject, dt: Float) {
+    private fun updateAnimation(ago: AnimatedGameObject, dt: Float, editMode: Boolean = false) {
         val animator = ago.animator
         val pose = ago.skeleton.pose
         val skeleton = pose.skeleton
 
         val machine = animator.stateMachine
         if (machine != null) {
-            machine.update(dt)
-            publishEvents(ago, machine)
+            // Paused from the inspector while playing (ANI-24): the controller holds its pose.
+            if (editMode || !animator.controllerPaused) machine.update(dt)
+            if (!editMode) publishEvents(ago, machine)
             val result = masked(ago, machine.pose, dt)
             for (i in 0 until minOf(result.boneCount, pose.localTransforms.size)) {
                 result.toMatrix(i, pose.localTransforms[i])
@@ -141,7 +155,7 @@ class AnimationSystem(
 
         var sourceFresh = false
 
-        if (animator.isPlaying) {
+        if (animator.isPlaying || editMode) {
             val animation = animator.currentAnimation
             if (animation != null) {
                 animator.currentTime += dt
