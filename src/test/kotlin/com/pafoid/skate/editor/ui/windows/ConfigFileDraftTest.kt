@@ -36,7 +36,7 @@ class ConfigFileDraftTest {
         assertEquals(listOf("startMounted", "push.acceleration", "push.maxSpeed", "mount.targetName"), draft.fields.map { it.path })
         assertEquals(ConfigField.Kind.BOOL, byPath.getValue("startMounted").kind)
         assertEquals(ConfigField.Kind.NUMBER, byPath.getValue("push.acceleration").kind)
-        assertEquals(ConfigField.Kind.INT, byPath.getValue("push.maxSpeed").kind)
+        assertEquals(ConfigField.Kind.NUMBER, byPath.getValue("push.maxSpeed").kind, "a float written as 8 is not integer-only")
         assertEquals(ConfigField.Kind.TEXT, byPath.getValue("mount.targetName").kind)
         assertEquals("push", byPath.getValue("push.acceleration").section)
         assertEquals("acceleration", byPath.getValue("push.acceleration").label)
@@ -89,5 +89,17 @@ class ConfigFileDraftTest {
         assertNotNull(draft.error)
         assertEquals(emptyList<ConfigField>(), draft.fields)
         assertNull(draft.value)
+    }
+
+    @Test
+    fun aWholeNumberCanBecomeAFractionAndStaysAnIntegerLiteralWhenWhole() {
+        val draft = ConfigFileDraft().apply { show(character, characterText) }
+
+        draft.set("push.maxSpeed", ConfigField.number(8.5))
+        assertEquals("8.5", draft.fields.single { it.path == "push.maxSpeed" }.value.content)
+
+        draft.set("push.maxSpeed", ConfigField.number(9.0))
+        assertEquals("9", draft.fields.single { it.path == "push.maxSpeed" }.value.content)
+        assertEquals(JsonPrimitive(-3), ConfigField.number(-3.0))
     }
 }

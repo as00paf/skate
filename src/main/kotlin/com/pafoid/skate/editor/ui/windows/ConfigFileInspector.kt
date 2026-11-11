@@ -1,5 +1,7 @@
 package com.pafoid.skate.editor.ui.windows
 
+import com.pafoid.skate.editor.commands.Command
+import com.pafoid.skate.editor.commands.project.SaveConfigFileCommand
 import com.pafoid.skate.editor.imgui.MImGui
 import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.editor.imgui.label
@@ -9,7 +11,6 @@ import com.pafoid.skate.engine.gameplay.ConfigProperties
 import imgui.ImGui
 import imgui.type.ImBoolean
 import imgui.type.ImDouble
-import imgui.type.ImInt
 import imgui.type.ImString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
@@ -22,15 +23,24 @@ import java.io.File
 
 /** One editable value of a config file: its dotted [path], a readable [label] and the [section] it is grouped under. */
 data class ConfigField(val path: String, val section: String, val label: String, val value: JsonPrimitive) {
-    enum class Kind { BOOL, INT, NUMBER, TEXT }
+    /** Every number is a [NUMBER]: a file cannot tell an integer setting from a float written as `5`. */
+    enum class Kind { BOOL, NUMBER, TEXT }
 
     val kind: Kind
         get() = when {
             value.isString -> Kind.TEXT
             value.booleanOrNull != null -> Kind.BOOL
-            value.content.all { it.isDigit() || it == '-' } -> Kind.INT
             else -> Kind.NUMBER
         }
+
+    companion object {
+        /**
+         * [value] as JSON: a whole number is written without a fraction (`5`), so it still loads into an integer
+         * setting, and any other value keeps its fraction (`2.5`), so a float written as `5` can become `2.5`.
+         */
+        fun number(value: Double): JsonPrimitive =
+            if (value % 1.0 == 0.0 && kotlin.math.abs(value) < 1e15) JsonPrimitive(value.toLong()) else JsonPrimitive(value)
+    }
 }
 
 /**
@@ -115,11 +125,13 @@ class ConfigFileDraft {
  * The Properties window section for a selected character config or animator controller (GPL-26): every value of
  * the file as a field, grouped by top-level section, with Revert and Apply (Apply saves the file). Users edit the
  * project's copy (`Assets/Data/skater.character.json`, `Assets/Animations/skater.controller.json`), which overrides
- * the engine default. The Animator window (ANI-21) will add graph editing for controllers.
+ * the engine default. Apply is a [SaveConfigFileCommand]: undoable, and a failed write shows an error, while the
+ * edits stay in the draft. The Animator window (ANI-21) will add graph editing for controllers.
  */
 class ConfigFileInspector(
     private val strings: StringManager,
-    private val write: (File, String) -> Boolean = { file, text -> runCatching { file.writeText(text) }.isSuccess },
+    /** Runs the save as an undoable command; the editor's undo manager reports a failure in the error dialog. */
+    private val execute: (Command) -> Unit = { it.execute() },
 ) : FileInspector {
     private val draft = ConfigFileDraft()
     private var loadedFor: Pair<File, Long>? = null
@@ -157,7 +169,9 @@ class ConfigFileInspector(
     }
 
     private fun apply(file: File) {
-        if (write(file, draft.text())) {
+        val command = SaveConfigFileCommand(file, draft.text())
+        execute(command)
+        if (command.wasSuccessful()) {
             draft.applied()
             loadedFor = file to file.lastModified()
         }
@@ -171,13 +185,9 @@ class ConfigFileInspector(
                     val flag = ImBoolean(field.value.content.toBoolean())
                     if (ImGui.checkbox(id, flag)) draft.set(field.path, JsonPrimitive(flag.get()))
                 }
-                ConfigField.Kind.INT -> {
-                    val number = ImInt(field.value.content.toIntOrNull() ?: 0)
-                    if (ImGui.inputInt(id, number)) draft.set(field.path, JsonPrimitive(number.get()))
-                }
                 ConfigField.Kind.NUMBER -> {
                     val number = ImDouble(field.value.content.toDoubleOrNull() ?: 0.0)
-                    if (ImGui.inputDouble(id, number, 0.0, 0.0, "%.4g")) draft.set(field.path, JsonPrimitive(number.get()))
+                    if (ImGui.inputDouble(id, number, 0.0, 0.0, "%.4g")) draft.set(field.path, ConfigField.number(number.get()))
                 }
                 ConfigField.Kind.TEXT -> {
                     val text = ImString(field.value.content, 256)
