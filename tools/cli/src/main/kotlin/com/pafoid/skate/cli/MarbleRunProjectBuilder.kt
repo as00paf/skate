@@ -1,5 +1,6 @@
 package com.pafoid.skate.cli
 
+import com.pafoid.skate.engine.assets.EngineDefaults
 import com.pafoid.skate.engine.ecs.SceneSun
 import com.pafoid.skate.engine.ecs.components.EnvironmentComponent
 import com.pafoid.skate.editor.project.Project
@@ -31,14 +32,12 @@ class MarbleRunProjectBuilder(private val serializer: Serializer = Serializer())
         private const val RAMP_TILT = 10f
     }
 
-    private lateinit var assetsPrefix: String
 
     fun build(parent: File): File {
         val projectDir = File(parent, PROJECT_NAME).absoluteFile.also { it.mkdirs() }
         val assetsDir = ProjectLayout.create(projectDir)
         val scenesDir = ProjectLayout.scenesDir(projectDir)
-        copyEngineAssets(projectDir)
-        assetsPrefix = assetsDir.absolutePath + File.separator
+        copyEngineAssets(projectDir, copyAll = false) // samples use reference mode (AST-26 §7)
         val files = ProjectFiles(serializer, projectDir)
 
         val scenePath = files.writeScene(scenesDir, SCENE_NAME, run()).path
@@ -57,11 +56,11 @@ class MarbleRunProjectBuilder(private val serializer: Serializer = Serializer())
     private fun mesh(name: String, model: String, pos: Vector3f, scale: Vector3f, color: Vector4f, rotZ: Float = 0f) =
         GameObject(name)
             .addComponent(Transform(pos, scale, Vector3f(0f, 0f, rotZ)))
-            .addComponent(RenderComponent(`3dModel`(assetsPrefix + model), Material(baseColor = color)))
+            .addComponent(RenderComponent(`3dModel`(model), Material(baseColor = color)))
 
     // The cube model spans -1..1, scaled by the half extents; Bullet scales the unit box collider with the transform.
     private fun staticBox(name: String, pos: Vector3f, half: Vector3f, color: Vector4f, rotZ: Float = 0f) =
-        mesh(name, Assets.Bundled.CUBE, pos, half, color, rotZ)
+        mesh(name, EngineDefaults.Models.CUBE, pos, half, color, rotZ)
             .addComponent(RigidBody3D(0f, BodyType.Static))
             .addComponent(BoxCollider3D(Vector3f(1f)))
 
@@ -89,7 +88,7 @@ class MarbleRunProjectBuilder(private val serializer: Serializer = Serializer())
 
         // Hinge joint anchored to the world: a pendulum bumper over the second ramp
         scene.children.add(
-            mesh("Pendulum", Assets.Bundled.CUBE, Vector3f(0f, 10.2f, 0f), Vector3f(0.2f, 1.2f, 0.8f), Vector4f(0.9f, 0.3f, 0.2f, 1f))
+            mesh("Pendulum", EngineDefaults.Models.CUBE, Vector3f(0f, 10.2f, 0f), Vector3f(0.2f, 1.2f, 0.8f), Vector4f(0.9f, 0.3f, 0.2f, 1f))
                 .addComponent(RigidBody3D(2f)).addComponent(BoxCollider3D(Vector3f(1f)))
                 .addComponent(JointComponent(
                     jointType = JointType.HINGE, anchor = Vector3f(0f, 1.2f, 0f),
@@ -101,7 +100,7 @@ class MarbleRunProjectBuilder(private val serializer: Serializer = Serializer())
 
         // Slider joint anchored to the world: a pusher block the marbles shove along the lowest ramp
         scene.children.add(
-            mesh("Pusher", Assets.Bundled.CUBE, Vector3f(-4f, 1.2f, 0f), Vector3f(0.4f, 0.4f, 1.8f), Vector4f(0.2f, 0.5f, 0.9f, 1f))
+            mesh("Pusher", EngineDefaults.Models.CUBE, Vector3f(-4f, 1.2f, 0f), Vector3f(0.4f, 0.4f, 1.8f), Vector4f(0.2f, 0.5f, 0.9f, 1f))
                 .addComponent(RigidBody3D(3f)).addComponent(BoxCollider3D(Vector3f(1f)))
                 .addComponent(JointComponent(
                     jointType = JointType.SLIDER, anchor = Vector3f(), connectedAnchor = Vector3f(-4f, 1.2f, 0f),
@@ -118,7 +117,7 @@ class MarbleRunProjectBuilder(private val serializer: Serializer = Serializer())
         repeat(MARBLE_COUNT) { i ->
             val hue = i / MARBLE_COUNT.toFloat()
             scene.children.add(
-                mesh("Marble_$i", Assets.Bundled.SPHERE, Vector3f(-5f + (i % 2) * 0.3f, 14f + i * 1.2f, (i % 3 - 1) * 0.6f),
+                mesh("Marble_$i", EngineDefaults.Models.SPHERE, Vector3f(-5f + (i % 2) * 0.3f, 14f + i * 1.2f, (i % 3 - 1) * 0.6f),
                     Vector3f(0.5f), Vector4f(1f - hue, hue, 0.5f, 1f))
                     .addComponent(RigidBody3D(1f, useCCD = true).also { it.friction = 0.3f; it.angularDamping = 0.05f })
                     // Capsules take the uniform transform scale: sphere.obj has radius 0.7.

@@ -112,7 +112,7 @@ class GraphicsBackendSettingTest {
     fun Strings_ExistInBothLanguages_AndSayTheEditorStaysOnOpenGl() {
         val keys = listOf(GraphicsBackendField.LABEL_KEY, GraphicsBackendField.TOOLTIP_KEY, GraphicsBackendField.WARNING_KEY,
             "settings.project.graphics", "settings.project.graphics.description") + GraphicsBackend.entries.map { it.labelKey }
-        val files = File("assets/strings/editor").listFiles { f -> f.extension == "properties" }!!.toList()
+        val files = File("src/main/resources/editor/strings").listFiles { f -> f.extension == "properties" }!!.toList()
         files.partition { it.name.endsWith("_fr.properties") }.toList().forEach { group ->
             val props = Properties().apply { group.forEach { f -> f.reader(Charsets.UTF_8).use { load(it) } } }
             assertEquals(emptyList<String>(), keys.filter { props.getProperty(it).isNullOrBlank() }, group.first().name)

@@ -1,9 +1,8 @@
 # AST-17: City generation from OpenStreetMap (design note)
 
-Status: **revision 3, awaiting the human's approval.** Revision 2's open questions were answered on 2026-11-10 (§0.1);
-this revision designs those answers: an embedded map (§3.1), JTS for geometry (§4.3), `meshRef` colliders and a box
-fallback for the Simple backend (§4.6). Revision 1 was rejected as not grounded in this codebase. No code has been
-written.
+Status: **revision 3, approved by the human (2026-11-10)**; the §10 answers are in §0.2. Implemented by **AST-34**
+(skate-assets), **EDT-71** (skate-editor: map widget, dialog) and **PHY-24/25** (skate-physics: `meshRef`, Simple
+backend boxes). Revision 2's answers are in §0.1; revision 1 was rejected as not grounded in this codebase.
 
 ## 0. Human decisions (recorded 2026-11-07, kept)
 
@@ -28,6 +27,15 @@ written.
 5. No tag-to-material mapping file in v1; the generated .skmat files are the styling surface.
 6. ODbL: agreed: Produced Work, attribution in ledger and credits, no raw snapshot packed; legal check before a
    commercial release.
+
+### 0.2 Answers to the revision 3 open questions (2026-11-10, verbatim; note approved)
+
+- Q-N1 the Simple path waits for PHY-25 (box task); the dialog warns collisions are approximate until then;
+- Q-N2 OpenFreeMap vector tiles by default plus an optional user raster URL with mandatory attribution;
+- Q-N3 User-Agent SkateEngine/<version> (+https://github.com/as00paf/skate);
+- Q-N4 regenerate from the snapshot after a backend change.
+
+Implementation: AST-34 (you), EDT-71 (editor), PHY-24/25 (physics).
 
 ## 1. Tool choice (decision 1)
 
@@ -85,7 +93,8 @@ City from OpenStreetMap
   Simplify (decision 3):  ( ) None  (o) Medium  ( ) Strong     → triangle and object counts
   Colliders: [x] Buildings  [x] Ground & roads
      ⓘ This project uses the Simple physics backend: colliders are boxes (one per building,
-       flat boxes for roads and areas), not exact meshes.        (only with Simple; answer 4)
+       flat boxes for roads and areas), not exact meshes. Collisions are approximate
+       until PHY-25 lands.                                         (only with Simple; answer 4, Q-N1)
   Attribution: "© OpenStreetMap contributors, ODbL 1.0" (always added; §7)
                                                   [Cancel] [Generate]
 ```
@@ -289,7 +298,8 @@ through `MeshCollider3D` (static only, exact, supported by both backends).
 - **Gap found in the code:** `SimplePhysics3D` approximates **every** body by a bounding sphere, so these boxes
   would collide as spheres (a 40 m road box becomes a 20 m sphere). The fallback is only correct once Simple gets
   static oriented boxes (sphere-vs-OBB contacts and rays) and a broad phase (it tests all pairs, and a city adds
-  thousands of static bodies): `NEEDS PHY` (Q-N1).
+  thousands of static bodies): PHY-25. The Simple path waits for PHY-25, and until it lands the dialog's Simple
+  note also says collisions are approximate (Q-N1).
 - The dialog shows the note from §3 when the project uses Simple, and the generated prefab is tagged with the backend
   it was built for. Switching backend later means re-generating from the snapshot (offline, §3.1).
 
@@ -353,11 +363,11 @@ The terrain collider is then PHY-15's `ColliderShape.Heightfield`, and the city 
 
 | Slice | Owner | Contents |
 |---|---|---|
-| AST-17a | skate-assets | Overpass client on the `OsmHttp` seam, snapshot, parser, projection, link parser, JTS dependency (editor-only, excluded from `gameLibsJar`, guard test, `verify-game-jar.sh` check), geometry (repair, triangulation, extrusion, road buffers, clipping), simplify, chunking, `GlbWriter`, collision GLB, box fallback, `.skmat`/prefab output, ledger entry, `*.osm.json` pack exclusion. Pure functions + fixtures. |
-| AST-17c | skate-assets | Map data side (§3.1): OpenFreeMap TileJSON + tile client, disk/memory cache with HTTP caching rules, MVT decoder, Java2D rasteriser, raster template source, offline handling, Editor Settings entries (tile source, URL template + attribution, clear cache). |
-| AST-17b | skate-editor | Generic map widget (`editor/imgui/map/`: `MapView`, `WebMercator`, `AreaSelection`, drawing and input), the dialog, the overlay of fetched data, progress/cancel, the Simple-backend note, the undoable import command. **EDT review of the widget** (answer 1). |
-| PHY-a | skate-physics | `MeshCollider3D.meshRef` (answer 2). |
-| PHY-b | skate-physics | `SimplePhysics3D`: static oriented boxes (contacts and rays) and a broad phase, so the box fallback behaves as boxes (answer 4, §4.6). |
+| AST-34 (was AST-17a) | skate-assets | Overpass client on the `OsmHttp` seam, snapshot, parser, projection, link parser, JTS dependency (editor-only, excluded from `gameLibsJar`, guard test, `verify-game-jar.sh` check), geometry (repair, triangulation, extrusion, road buffers, clipping), simplify, chunking, `GlbWriter`, collision GLB, box fallback, `.skmat`/prefab output, ledger entry, `*.osm.json` pack exclusion. Pure functions + fixtures. |
+| AST-34 (was AST-17c) | skate-assets | Map data side (§3.1): OpenFreeMap TileJSON + tile client, disk/memory cache with HTTP caching rules, MVT decoder, Java2D rasteriser, raster template source, offline handling, Editor Settings entries (tile source, URL template + attribution, clear cache). |
+| EDT-71 (was AST-17b) | skate-editor | Generic map widget (`editor/imgui/map/`: `MapView`, `WebMercator`, `AreaSelection`, drawing and input), the dialog, the overlay of fetched data, progress/cancel, the Simple-backend note, the undoable import command. **EDT review of the widget** (answer 1). |
+| PHY-24 (was PHY-a) | skate-physics | `MeshCollider3D.meshRef` (answer 2). |
+| PHY-25 (was PHY-b) | skate-physics | `SimplePhysics3D`: static oriented boxes (contacts and rays) and a broad phase, so the box fallback behaves as boxes (answer 4, §4.6). |
 | Later | REN + AST | Elevation (§6), trees through REN-29 scatter. |
 
 ## 9. Tests (unit, fixtures, no sockets)
@@ -378,7 +388,7 @@ The terrain collider is then PHY-15's `ColliderShape.Heightfield`, and the city 
 - Ledger entry written with the right license and asset IDs; credits include it.
 - The HTTP fake for fetch, cancel and HTTP errors (`StoreHttpException`).
 
-## 10. Open questions (revision 3, with recommended answers)
+## 10. Open questions of revision 3 (all answered in §0.2)
 
 Revision 2's questions are answered in §0.1.
 

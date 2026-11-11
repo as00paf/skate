@@ -69,7 +69,7 @@ class UndoCoverageCommandsTest {
     fun ApplyTexture_UndoPutsThePreviousRenderComponentBack() {
         val target = GameObject("Box").also { it.addComponent(RenderComponent()) }
         val before = target.getComponent<RenderComponent>()
-        val command = ApplyTextureCommand(target, "assets/textures/test.png", mockk<AssetsManager>(relaxed = true), mockk(relaxed = true))
+        val command = ApplyTextureCommand(target, "assets/Textures/test.png", mockk<AssetsManager>(relaxed = true), mockk(relaxed = true))
 
         undo.executeCommand(command)
         val applied = target.getComponent<RenderComponent>()

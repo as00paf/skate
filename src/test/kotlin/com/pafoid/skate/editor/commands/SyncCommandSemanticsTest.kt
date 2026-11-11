@@ -61,7 +61,7 @@ class SyncCommandSemanticsTest {
     fun `apply texture command is undoable (EDT-10)`() {
         val command = ApplyTextureCommand(
             GameObject("Target"),
-            "assets/textures/test.png",
+            "assets/Textures/test.png",
             mockk<AssetsManager>(relaxed = true),
             mockk<EventSystem>(relaxed = true)
         )

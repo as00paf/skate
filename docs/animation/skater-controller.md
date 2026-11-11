@@ -49,7 +49,7 @@ The `poses` entries are keyed `HumanoidPoseDef` lists baked on the character's o
 
 **A clip on the Animator whose name equals a slot name replaces that slot.** A clip's name is its file name without the extension. To use a real push:
 
-1. Save the clip as `push.fbx` (any Mixamo-rigged FBX) under `assets/characters/animations/` and add it to `Assets.Animations`/`Assets.Bundled` and `Skater.DEFAULT_ANIMATIONS`.
+1. Save the clip as `push.fbx` (any Mixamo-rigged FBX) under `assets/Animations/` and add it to `Assets.Animations`/`Assets.Bundled` and `Skater.DEFAULT_ANIMATIONS`.
 2. Nothing else to change. The procedural `push` is no longer built. You can delete its `poses` entry.
 
 Alternatively, keep the file name and point the state's `motion` at it. That's what ANI-10 does for `skate riding.fbx`: `ride` and `ride_idle` use it, and their procedural poses are gone.

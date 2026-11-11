@@ -1,5 +1,6 @@
 package com.pafoid.skate.game.prefabs
 
+import com.pafoid.skate.engine.assets.EngineDefaults
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.PrefabsGenerator
 import com.pafoid.skate.engine.core.Engine
@@ -21,7 +22,8 @@ class SkateparkLayoutTest {
 
     private val engine = mockk<Engine>(relaxed = true).also { every { it.logger } returns LoggerService() }
     private val park = PrefabsGenerator(engine, loadAssets = false).spawnSkatepark()
-    private val engineModel = Assets.Bundled.bundledAssets.toMap()
+    /** The repo file of an `engine:` model reference. */
+    private fun engineFile(reference: String) = File("assets/" + EngineDefaults.logicalPath(reference)!!)
 
     /** World XZ footprint and top height of an obstacle, from its committed model and its transform (yaw 0 or 180). */
     private data class Footprint(val minX: Float, val maxX: Float, val minZ: Float, val maxZ: Float, val top: Float) {
@@ -30,8 +32,7 @@ class SkateparkLayoutTest {
     }
 
     private fun footprint(go: GameObject): Footprint {
-        val bundled = go.getComponent<RenderComponent>()!!.model!!.path.substringAfter("EngineDefaults").let { "EngineDefaults$it" }
-        val obj = File(engineModel.getValue(bundled))
+        val obj = engineFile(go.getComponent<RenderComponent>()!!.model!!.path)
         val vs = obj.readLines().filter { it.startsWith("v ") }.map { l -> l.trim().split(Regex("\\s+")).let { Vector3f(it[1].toFloat(), it[2].toFloat(), it[3].toFloat()) } }
         val t = go.getComponent<Transform>()!!
         val turned = t.rotation.y == 180f
@@ -84,8 +85,7 @@ class SkateparkLayoutTest {
         // Ridden going north (+Z): the deck and the turned bank rise toward +Z, the turned kicker launches north.
         fun highEndIsNorth(name: String): Boolean {
             val go = park.single { it.name == name }
-            val bundled = go.getComponent<RenderComponent>()!!.model!!.path.substringAfter("EngineDefaults").let { "EngineDefaults$it" }
-            val vs = File(engineModel.getValue(bundled)).readLines().filter { it.startsWith("v ") }
+            val vs = engineFile(go.getComponent<RenderComponent>()!!.model!!.path).readLines().filter { it.startsWith("v ") }
                 .map { l -> l.trim().split(Regex("\\s+")).let { Vector3f(it[1].toFloat(), it[2].toFloat(), it[3].toFloat()) } }
             val sign = if (go.getComponent<Transform>()!!.rotation.y == 180f) -1f else 1f
             val top = vs.maxOf { it.y }
