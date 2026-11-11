@@ -171,7 +171,7 @@ because the serializer already has `ignoreUnknownKeys = true` and every new fiel
 ### 4.2 Graph layout
 
 ```json
-"layout": { "idle": [0, 0], "walking": [220, 0], "@any": [-220, -120] }
+"layout": { "idle": { "x": 0, "y": 0 }, "walking": { "x": 220, "y": 0 }, "@any": { "x": -220, "y": -120 } }
 ```
 
 - Box positions in canvas units, keyed by state name (`@any` is the Any State box). The runtime ignores the field.
@@ -183,7 +183,7 @@ because the serializer already has `ignoreUnknownKeys = true` and every new fiel
 ### 4.3 Clip sources
 
 ```json
-"clips": { "kickflip": "Animations/kickflip.skanim" }
+"clips": [ "Animations/kickflip.skanim" ]
 ```
 
 - Today a state's clip name must already be on the character's Animator (`animations`), so "assign a clip" from the
