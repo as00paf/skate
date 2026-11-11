@@ -2,6 +2,7 @@ package com.pafoid.skate.editor.gizmos
 
 import com.pafoid.skate.editor.commands.objects.UiRectCommand
 import com.pafoid.skate.editor.events.ViewportAction
+import com.pafoid.skate.editor.systems.SelectionLogic
 import com.pafoid.skate.editor.systems.UndoRedoManager
 import com.pafoid.skate.editor.ui.windows.viewport.ViewportRenderer
 import com.pafoid.skate.engine.core.Engine
@@ -17,8 +18,8 @@ import imgui.ImGui
 
 /**
  * Viewport editing of the selected UI element (EDT-75): outline with resize handles, a pivot marker and anchor
- * markers, drag to move/resize/re-pivot/re-anchor with snapping (one undo step per drag), and click-to-select among
- * UI elements. Active only while a UI object is selected and the scene is not running. [claimsMouse] tells the 3D
+ * markers, drag to move/resize/re-pivot/re-anchor with snapping (one undo step per drag), and click-to-select of UI
+ * elements over the 3D scene ([UiViewportPick], EDT-81). Inactive while the scene is running. [claimsMouse] tells the 3D
  * gizmos to leave the mouse alone. All maths lives in [UiEditing].
  */
 class UiRectGizmo(
@@ -27,6 +28,8 @@ class UiRectGizmo(
     private val viewport: ViewportRenderer,
     /** Rect snap step in canvas units; 0 while the toolbar's Snap is off. */
     private val snap: () -> Float = { 0f },
+    /** Whether the Select tool is active: then a click on any UI element selects it (EDT-81). */
+    private val selectTool: () -> Boolean = { true },
 ) {
     var claimsMouse = false
         private set
@@ -38,60 +41,83 @@ class UiRectGizmo(
     /** Call inside the viewport window after the viewport image is drawn. */
     fun render(scene: Scene?) {
         claimsMouse = false
-        val selected = scene?.selectedGameObject
-        val element = selected?.getComponent<UIElementComponent>()
-        val canvasGo = selected?.let { UiEditing.canvasOf(it) }
-        val canvas = canvasGo?.getComponent<UICanvasComponent>()
-        if (scene == null || scene.isRunning || selected == null || canvas == null || canvas.scale <= 0f) {
+        if (scene == null || scene.isRunning) {
             dragHandle = null
             return
         }
+        val selected = scene.selectedGameObject
+        val element = selected?.getComponent<UIElementComponent>()
+        val canvasGo = selected?.let { UiEditing.canvasOf(it) }
+        val canvas = canvasGo?.getComponent<UICanvasComponent>()
+        // The selected UI object, when its canvas is laid out: only then are there handles to draw and drag.
+        val editing = selected != null && canvas != null && canvas.scale > 0f
 
         val dpi = viewport.dpiScale
-        val k = canvas.scale / dpi
         val overImage = ImGui.isWindowHovered() && !ImGui.isPopupOpen("", imgui.flag.ImGuiPopupFlags.AnyPopupId) &&
             ImGui.getMousePosX() in viewport.imageScreenPosX..(viewport.imageScreenPosX + viewport.imageSizeX) &&
             ImGui.getMousePosY() in viewport.imageScreenPosY..(viewport.imageScreenPosY + viewport.imageSizeY)
-        val mx = (ImGui.getMousePosX() - viewport.imageScreenPosX) / k
-        val my = (ImGui.getMousePosY() - viewport.imageScreenPosY) / k
-        val tolerance = HANDLE_PX / k
-        val editAnchors = !UiEditing.isLayoutManaged(selected)
-        val parent = UiEditing.parentRect(selected)
+        // Pointer in logical pixels from the image's top-left corner.
+        val imageX = ImGui.getMousePosX() - viewport.imageScreenPosX
+        val imageY = ImGui.getMousePosY() - viewport.imageScreenPosY
 
-        if (element != null) draw(element, if (editAnchors) parent else null, k)
+        var handle: UiHandle? = null
+        var mx = 0f
+        var my = 0f
+        if (editing) {
+            val k = canvas!!.scale / dpi
+            mx = imageX / k
+            my = imageY / k
+            val editAnchors = !UiEditing.isLayoutManaged(selected!!)
+            val parent = UiEditing.parentRect(selected)
 
-        val drag = dragHandle
-        val start = dragStart
-        if (drag != null && start != null && element != null) {
-            claimsMouse = true
-            if (ImGui.isMouseDown(0)) {
-                UiEditing.drag(element, start, drag, mx, my, snap())
-            } else {
-                val before = dragBefore
-                val after = UiRectCommand.Rect.of(element)
-                if (before != null && before != after) {
-                    undoRedoManager.pushCommand(UiRectCommand(selected, element, before, after))
-                    scene.isDirty = true
+            if (element != null) draw(element, if (editAnchors) parent else null, k)
+
+            val drag = dragHandle
+            val start = dragStart
+            if (drag != null && start != null && element != null) {
+                claimsMouse = true
+                if (ImGui.isMouseDown(0)) {
+                    UiEditing.drag(element, start, drag, mx, my, snap())
+                } else {
+                    val before = dragBefore
+                    val after = UiRectCommand.Rect.of(element)
+                    if (before != null && before != after) {
+                        undoRedoManager.pushCommand(UiRectCommand(selected, element, before, after))
+                        scene.isDirty = true
+                    }
+                    dragHandle = null
+                    dragStart = null
+                    dragBefore = null
                 }
-                dragHandle = null
-                dragStart = null
-                dragBefore = null
+                return
             }
-            return
+            if (overImage) handle = element?.let { UiEditing.hitGizmo(it, parent, mx, my, HANDLE_PX / k, editAnchors) }
+        } else {
+            dragHandle = null
         }
 
         if (!overImage) return
-        val handle = element?.let { UiEditing.hitGizmo(it, parent, mx, my, tolerance, editAnchors) }
-        val pickedElsewhere = if (handle == null) UiEditing.pick(canvasGo, mx, my) else null
-        claimsMouse = handle != null || pickedElsewhere != null
+        // EDT-81: UI is drawn over the 3D scene, so it is hit-tested first, whatever is selected.
+        val picked = if (handle == null && UiViewportPick.picksOnClick(selectTool(), editing)) {
+            UiViewportPick.pick(UiViewportPick.canvases(scene), imageX, imageY, dpi)
+        } else null
+        claimsMouse = handle != null || picked != null
+        if (picked != null) scene.hoveredGameObject = picked
 
         if (ImGui.isMouseClicked(0)) {
             if (handle != null) {
-                dragStart = UiEditing.beginDrag(selected, element, mx, my)
+                dragStart = UiEditing.beginDrag(selected!!, element!!, mx, my)
                 dragHandle = handle.takeIf { dragStart != null }
                 dragBefore = UiRectCommand.Rect.of(element)
-            } else if (pickedElsewhere != null) {
-                engine.eventSystem.publish(ViewportAction.GameObjectSelected(pickedElsewhere))
+            } else if (picked != null) {
+                val io = ImGui.getIO()
+                engine.eventSystem.publish(
+                    if (io.keyCtrl || io.keyShift) {
+                        ViewportAction.MultiSelectionChanged(SelectionLogic.viewportClick(scene.selectedGameObjects, picked, io.keyCtrl, io.keyShift))
+                    } else {
+                        ViewportAction.GameObjectSelected(picked)
+                    },
+                )
             }
         }
     }
