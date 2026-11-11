@@ -10,7 +10,7 @@ class AssimpModelInspectionTest {
     @Test
     fun `inspect james animations`() {
         val loader = AssimpLoader(mockk(), mockk())
-        val filePath = "assets/characters/james.dae"
+        val filePath = "assets/Models/james.dae"
         val file = File(filePath)
         if (!file.exists()) {
             println("File not found: ${file.absolutePath}")

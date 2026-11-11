@@ -1,5 +1,10 @@
 package com.pafoid.skate.editor.systems
 
+import com.pafoid.skate.engine.assets.pack.PackedGuids
+import com.pafoid.skate.engine.physics3d.ModelCollisionMeshSource
+import com.pafoid.skate.engine.physics3d.CollisionMeshSource
+import com.pafoid.skate.engine.physics3d.CollisionMeshes
+import com.pafoid.skate.engine.assets.EngineDefaults
 import com.pafoid.skate.engine.ecs.random.RandomService
 import com.pafoid.skate.engine.render.rhi.GraphicsBackend
 import com.pafoid.skate.engine.assets.serialization.FileKind
@@ -68,9 +73,11 @@ class ProjectManager(
         folder: File,
         graphicsBackend: GraphicsBackend = GraphicsBackend.DEFAULT,
         preparedDir: File? = null,
+        /** Copy the engine defaults into the project (AST-26 §4.3); false references them (basic shaders still copied). */
+        copyDefaults: Boolean = true,
     ): Result<Project> {
         return try {
-            val projectDir = preparedDir ?: prepareProjectFolder(name, folder).getOrElse { return Result.failure(it) }
+            val projectDir = preparedDir ?: prepareProjectFolder(name, folder, copyDefaults).getOrElse { return Result.failure(it) }
             val projectFile = File(projectDir, "$name.skateproject")
 
             if (hasProject()) closeProject()
@@ -85,7 +92,8 @@ class ProjectManager(
             val project = Project(
                 name = name,
                 projectPath = projectFile.absolutePath,
-                iconPath = File(assetsDir, Assets.Bundled.PROJECT_APP_ICON).absolutePath,
+                // Saved as `engine:Textures/app_icon.png` (AST-26): the project's copy when it has one, else the engine's.
+                iconPath = assetPaths.absolute(EngineDefaults.Textures.APP_ICON),
                 defaultScene = scenesDir.path + "\\MainScene.scene",
                 scenesPath = scenes.map { "${scenesDir.path}\\${it.name}.scene" },
                 resolution = Vector2i(1920, 1080),
@@ -110,10 +118,11 @@ class ProjectManager(
     }
 
     /**
-     * The file part of [createProject], safe on a background thread (EDT-56): the project folder and its
-     * sub-folders, the strings file, and a copy of the engine's bundled assets. Fails when the project exists.
+     * The file part of [createProject], safe on a background thread (EDT-56): the project folder and its typed
+     * sub-folders, the strings file, and the engine defaults: all of them when [copyDefaults] (the default, AST-26
+     * §4.3), else only the basic shaders. Fails when the project exists.
      */
-    fun prepareProjectFolder(name: String, folder: File): Result<File> {
+    fun prepareProjectFolder(name: String, folder: File, copyDefaults: Boolean = true): Result<File> {
         logger.logEditor("Creating project: $name in ${folder.absolutePath}")
         return try {
             val projectDir = File(folder, name)
@@ -124,9 +133,9 @@ class ProjectManager(
             val assetsDir = ProjectLayout.create(projectDir)
             File(assetsDir, ProjectLayout.STRINGS_FILE).writeText("project.name=$name")
 
-            val copyResult = engineAssetCopier.copyBundledAssets(projectDir)
+            val copyResult = engineAssetCopier.copyEngineDefaults(projectDir, copyAll = copyDefaults)
             if (copyResult.isSuccess) {
-                logger.logEditor("Copied ${copyResult.getOrNull() ?: 0} engine-bundled assets to project")
+                logger.logEditor("Copied ${copyResult.getOrNull()?.copied?.size ?: 0} engine default assets to the project")
             } else {
                 logger.logEditor("Failed to copy engine assets: ${copyResult.exceptionOrNull()?.message}", LogLevel.ERROR)
             }
@@ -164,6 +173,10 @@ class ProjectManager(
         if (hasProject()) closeProject()
         // References in the project file and its scenes are relative to the folder the project is in now (AST-09).
         assetPaths.projectRoot = projectFile.absoluteFile.parentFile
+        // Unchanged copies of the basic shaders follow the engine (AST-26 §5.2): refresh them silently.
+        runCatching { engineAssetCopier.refreshUnchangedShaders(projectFile.absoluteFile.parentFile) }
+            .onSuccess { if (it.isNotEmpty()) logger.logEditor("Updated ${it.size} unchanged engine shader copies") }
+        assetPaths.engineDefaults.invalidate()
         return try {
             openProject(ready.project, scenes = ready.scenes)
         } catch (e: Exception) {
@@ -201,9 +214,13 @@ class ProjectManager(
         engine.systemManager.getSystem<InputSystem>()?.mappings = project.gameplaySettings.inputMappings
 
         if (binData == null || assetAtlas == null || headerSize <= 0) {
+            // PHY-24 / AST-35: meshRef GUIDs resolve through the project's registry (scanned once on the first miss).
+            CollisionMeshes.source = assetRegistry()?.let { editorCollisionMeshSource(it, assetPaths) } ?: CollisionMeshSource.NONE
             loadDefaultScenes(project, scenes)
         } else {
             engine.assetsManager.initAssetsResolver(assetAtlas, binData, headerSize)
+            // AST-35: an exported game resolves meshRef GUIDs through the pack's GUID table.
+            CollisionMeshes.source = PackedGuids.collisionMeshSource(assetPaths)
 
             engine.assetsManager.resolve<Scene>(project.defaultScene)?.let { scene ->
                 scene.getComponent<EnvironmentComponent>()?.skyTexture?.filePath?.let { path ->
@@ -264,6 +281,7 @@ class ProjectManager(
 
         currentProject = null
         assetPaths.projectRoot = null
+        CollisionMeshes.source = CollisionMeshSource.NONE
 
         eventSystem.publish(ProjectEvent.Closed(project))
     }
@@ -328,3 +346,12 @@ class ProjectManager(
 
     fun hasProject(): Boolean = currentProject != null
 }
+
+/**
+ * Collision models in the editor (PHY-24, AST-35): GUIDs (and project paths, `engine:` references) through [registry],
+ * scanned once on the first miss because the editor does not scan it on open; files through [paths].
+ */
+internal fun editorCollisionMeshSource(registry: AssetRegistry, paths: AssetPaths) = ModelCollisionMeshSource(
+    resolve = { ref -> registry.resolve(ref) ?: run { registry.scan(); registry.resolve(ref) } },
+    localPath = paths::localPath,
+)

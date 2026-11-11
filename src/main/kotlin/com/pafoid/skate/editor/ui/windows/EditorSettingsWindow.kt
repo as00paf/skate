@@ -257,7 +257,7 @@ class EditorSettingsWindow(
     }
 
     private fun renderInterface() {
-        // EDT-07: the themes shipped in assets/themes; picking one previews it live until OK/Apply or Cancel.
+        // EDT-07: the themes shipped in src/main/resources/editor/themes; picking one previews it live until OK/Apply or Cancel.
         val themes = ImGuiStyleManager.library.themes
         val themeOptions = themes.map { stringManager.getString(it.nameKey) }.toTypedArray()
         val themeValues = themes.map { it.id }.toTypedArray()

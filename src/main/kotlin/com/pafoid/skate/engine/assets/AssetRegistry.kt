@@ -6,6 +6,7 @@ import java.util.concurrent.ConcurrentHashMap
 /**
  * Maps [AssetId]s to the current project-relative path of their source file (always `/`-separated).
  * The `.meta` sidecar is the source of truth: moving or renaming a file together with its sidecar keeps the GUID.
+ * Engine defaults (`engine:` references, AST-26 §4.2) have a GUID derived from the reference, copied or not.
  */
 class AssetRegistry(val root: File) {
     private val pathById = ConcurrentHashMap<AssetId, String>()
@@ -13,15 +14,18 @@ class AssetRegistry(val root: File) {
 
     val size: Int get() = pathById.size
 
-    fun idOf(path: String): AssetId? = idByPath[normalize(path)]
+    fun idOf(path: String): AssetId? =
+        if (EngineDefaults.isReference(path)) EngineDefaults.idOf(path) else idByPath[normalize(path)]
 
-    fun pathOf(id: AssetId): String? = pathById[id]
+    /** The project-relative path of [id], or the `engine:` reference for an engine default's derived GUID. */
+    fun pathOf(id: AssetId): String? = pathById[id] ?: EngineDefaults.referenceOf(id)
 
-    fun fileOf(id: AssetId): File? = pathOf(id)?.let { File(root, it) }
+    fun fileOf(id: AssetId): File? = pathById[id]?.let { File(root, it) }
 
     /** Accepts either a GUID string or a (possibly stale) path and returns the current path. */
     fun resolve(reference: String): String? {
         AssetId.parseOrNull(reference)?.let { return pathOf(it) }
+        if (EngineDefaults.isReference(reference)) return EngineDefaults.logicalPath(reference)?.let { reference }
         val normalized = normalize(reference)
         return normalized.takeIf { idByPath.containsKey(it) }
     }

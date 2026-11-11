@@ -10,7 +10,7 @@ data class EditorSettings(
     var autoSaveEnabled: Boolean = true,
     var autorSaveIntervalMinutes: Int = 5,
     var language: String = "en",
-    /** Id of the editor theme (`assets/themes/<id>.theme.json`, EDT-07). */
+    /** Id of the editor theme (`src/main/resources/editor/themes/<id>.theme.json`, EDT-07). */
     var theme: String = EditorTheme.DEFAULT_ID,
     /** UI scale (EDT-57), multiplied with the theme's own font scale; 1 = 100 %. */
     var fontSize: Float = 1.0f,

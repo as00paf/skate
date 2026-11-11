@@ -52,7 +52,7 @@ class CommandNamesTest {
             .map { "command.$it" }
             .filter { it !in editorKeys }
             .toList()
-        assertTrue(missing.isEmpty(), "Add these keys to assets/strings/editor/core.properties (+ _fr): $missing")
+        assertTrue(missing.isEmpty(), "Add these keys to src/main/resources/editor/strings/core.properties (+ _fr): $missing")
     }
 
     @Test

@@ -20,6 +20,11 @@ data class MaterialAsset(
     val doubleSided: Boolean = false,
     val alphaMode: AlphaMode = AlphaMode.OPAQUE,
     val alphaCutoff: Float = 0.5f,
+    /**
+     * Custom colour-pass shader (AST-26 §5.6): a project shader path or `engine:Shaders/...`; null uses the schema's
+     * shader. Shadows and picking keep the engine shaders (v1). Added in version 2; older files read as null.
+     */
+    val shader: String? = null,
     val version: Int = CURRENT_VERSION,
 ) {
     /** Builds a runtime material; unknown/invalid params are rejected, missing ones use defaults. */
@@ -47,6 +52,7 @@ data class MaterialAsset(
             doubleSided = doubleSided,
             alphaMode = alphaMode,
             alphaCutoff = alphaCutoff,
+            shader = shader,
         )
     }
 
@@ -55,7 +61,7 @@ data class MaterialAsset(
     fun save(file: File) = file.writeText(toJson())
 
     companion object {
-        const val CURRENT_VERSION = 1
+        const val CURRENT_VERSION = 2
         const val EXTENSION = "skmat"
 
         private val json = Json { prettyPrint = true; encodeDefaults = true; ignoreUnknownKeys = true }
@@ -83,7 +89,7 @@ data class MaterialAsset(
             }
             val tex = HashMap<String, String>()
             for (t in s.textures) material.textureFor(t.name)?.filePath?.let { tex[t.name] = AssetPaths.relativize(it, projectRoot) }
-            return MaterialAsset(name, s.id, out, tex, material.doubleSided, material.alphaMode, material.alphaCutoff)
+            return MaterialAsset(name, s.id, out, tex, material.doubleSided, material.alphaMode, material.alphaCutoff, material.shader)
         }
     }
 }

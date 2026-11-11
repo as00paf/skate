@@ -1,5 +1,6 @@
 package com.pafoid.skate.game.prefabs
 
+import com.pafoid.skate.engine.assets.EngineDefaults
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.procedural.MeshBuilder
 import com.pafoid.skate.engine.assets.procedural.PropShapes
@@ -43,34 +44,34 @@ object PrefabCatalog {
     private val metal = listOf(MaterialType.METAL)
 
     val entries: List<PrefabEntry> = listOf(
-        PrefabEntry(PrefabType.SKATEBOARD, PrefabCategory.PLAYER, Assets.Models.SKATEBOARD, Assets.Bundled.SKATEBOARD, emptyList(), SkateboardShape::mesh),
-        PrefabEntry(PrefabType.SKATER, PrefabCategory.PLAYER, Assets.Models.JAMES, Assets.Bundled.JAMES, emptyList()),
+        PrefabEntry(PrefabType.SKATEBOARD, PrefabCategory.PLAYER, Assets.Models.SKATEBOARD, EngineDefaults.Models.SKATEBOARD, emptyList(), SkateboardShape::mesh),
+        PrefabEntry(PrefabType.SKATER, PrefabCategory.PLAYER, Assets.Models.JAMES, EngineDefaults.Models.JAMES, emptyList()),
 
-        PrefabEntry(PrefabType.LEDGE, PrefabCategory.STREET, Assets.Models.LEDGE, Assets.Bundled.LEDGE, parkSurfaces),
-        park(PrefabType.HUBBA, PrefabCategory.STREET, Assets.Models.HUBBA, Assets.Bundled.HUBBA, parkSurfaces),
-        PrefabEntry(PrefabType.MANUAL_PAD, PrefabCategory.STREET, Assets.Models.MANUAL_PAD, Assets.Bundled.MANUAL_PAD, parkSurfaces),
-        park(PrefabType.GRIND_BOX, PrefabCategory.STREET, Assets.Models.GRIND_BOX, Assets.Bundled.GRIND_BOX, parkSurfaces),
-        park(PrefabType.FUNBOX, PrefabCategory.STREET, Assets.Models.FUNBOX, Assets.Bundled.FUNBOX, parkSurfaces),
-        PrefabEntry(PrefabType.RAIL, PrefabCategory.STREET, Assets.Models.RAIL, Assets.Bundled.RAIL, metal),
-        park(PrefabType.HANDRAIL, PrefabCategory.STREET, Assets.Models.HANDRAIL, Assets.Bundled.HANDRAIL, metal),
-        park(PrefabType.KINKED_RAIL, PrefabCategory.STREET, Assets.Models.KINKED_RAIL, Assets.Bundled.KINKED_RAIL, metal),
-        park(PrefabType.STAIRS_3, PrefabCategory.STREET, Assets.Models.STAIRS_3, Assets.Bundled.STAIRS_3, parkSurfaces),
-        park(PrefabType.STAIRS_5, PrefabCategory.STREET, Assets.Models.STAIRS_5, Assets.Bundled.STAIRS_5, parkSurfaces),
-        park(PrefabType.EURO_GAP, PrefabCategory.STREET, Assets.Models.EURO_GAP, Assets.Bundled.EURO_GAP, parkSurfaces),
+        PrefabEntry(PrefabType.LEDGE, PrefabCategory.STREET, Assets.Models.LEDGE, EngineDefaults.Models.LEDGE, parkSurfaces),
+        park(PrefabType.HUBBA, PrefabCategory.STREET, Assets.Models.HUBBA, EngineDefaults.Models.HUBBA, parkSurfaces),
+        PrefabEntry(PrefabType.MANUAL_PAD, PrefabCategory.STREET, Assets.Models.MANUAL_PAD, EngineDefaults.Models.MANUAL_PAD, parkSurfaces),
+        park(PrefabType.GRIND_BOX, PrefabCategory.STREET, Assets.Models.GRIND_BOX, EngineDefaults.Models.GRIND_BOX, parkSurfaces),
+        park(PrefabType.FUNBOX, PrefabCategory.STREET, Assets.Models.FUNBOX, EngineDefaults.Models.FUNBOX, parkSurfaces),
+        PrefabEntry(PrefabType.RAIL, PrefabCategory.STREET, Assets.Models.RAIL, EngineDefaults.Models.RAIL, metal),
+        park(PrefabType.HANDRAIL, PrefabCategory.STREET, Assets.Models.HANDRAIL, EngineDefaults.Models.HANDRAIL, metal),
+        park(PrefabType.KINKED_RAIL, PrefabCategory.STREET, Assets.Models.KINKED_RAIL, EngineDefaults.Models.KINKED_RAIL, metal),
+        park(PrefabType.STAIRS_3, PrefabCategory.STREET, Assets.Models.STAIRS_3, EngineDefaults.Models.STAIRS_3, parkSurfaces),
+        park(PrefabType.STAIRS_5, PrefabCategory.STREET, Assets.Models.STAIRS_5, EngineDefaults.Models.STAIRS_5, parkSurfaces),
+        park(PrefabType.EURO_GAP, PrefabCategory.STREET, Assets.Models.EURO_GAP, EngineDefaults.Models.EURO_GAP, parkSurfaces),
 
-        park(PrefabType.KICKER, PrefabCategory.TRANSITION, Assets.Models.KICKER, Assets.Bundled.KICKER, parkSurfaces),
-        park(PrefabType.BANK, PrefabCategory.TRANSITION, Assets.Models.BANK, Assets.Bundled.BANK, parkSurfaces),
-        park(PrefabType.QUARTER_PIPE, PrefabCategory.TRANSITION, Assets.Models.QUARTER_PIPE, Assets.Bundled.QUARTER_PIPE, parkSurfaces),
-        park(PrefabType.HALF_PIPE, PrefabCategory.TRANSITION, Assets.Models.HALF_PIPE, Assets.Bundled.HALF_PIPE, parkSurfaces),
-        park(PrefabType.BOWL, PrefabCategory.TRANSITION, Assets.Models.BOWL, Assets.Bundled.BOWL, parkSurfaces),
+        park(PrefabType.KICKER, PrefabCategory.TRANSITION, Assets.Models.KICKER, EngineDefaults.Models.KICKER, parkSurfaces),
+        park(PrefabType.BANK, PrefabCategory.TRANSITION, Assets.Models.BANK, EngineDefaults.Models.BANK, parkSurfaces),
+        park(PrefabType.QUARTER_PIPE, PrefabCategory.TRANSITION, Assets.Models.QUARTER_PIPE, EngineDefaults.Models.QUARTER_PIPE, parkSurfaces),
+        park(PrefabType.HALF_PIPE, PrefabCategory.TRANSITION, Assets.Models.HALF_PIPE, EngineDefaults.Models.HALF_PIPE, parkSurfaces),
+        park(PrefabType.BOWL, PrefabCategory.TRANSITION, Assets.Models.BOWL, EngineDefaults.Models.BOWL, parkSurfaces),
 
-        PrefabEntry(PrefabType.POINT_LIGHT, PrefabCategory.GENERIC, Assets.Models.SPHERE, Assets.Bundled.SPHERE, emptyList()),
-        PrefabEntry(PrefabType.SPOT_LIGHT, PrefabCategory.GENERIC, Assets.Models.SPHERE, Assets.Bundled.SPHERE, emptyList()),
-        PrefabEntry(PrefabType.CRATE, PrefabCategory.GENERIC, Assets.Models.CUBE, Assets.Bundled.CUBE, listOf(MaterialType.WOOD_BROWN)),
-        PrefabEntry(PrefabType.BARREL, PrefabCategory.GENERIC, Assets.Models.CYLINDER, Assets.Bundled.CYLINDER, metal),
-        PrefabEntry(PrefabType.BENCH, PrefabCategory.GENERIC, Assets.Models.BENCH, Assets.Bundled.BENCH, listOf(MaterialType.WOOD_DARK), PropShapes::bench),
-        PrefabEntry(PrefabType.TRIGGER_VOLUME, PrefabCategory.GENERIC, Assets.Models.CUBE, Assets.Bundled.CUBE, emptyList()),
-        PrefabEntry(PrefabType.SPAWN_POINT, PrefabCategory.GENERIC, Assets.Models.SPAWN_MARKER, Assets.Bundled.SPAWN_MARKER, emptyList(), PropShapes::spawnMarker),
+        PrefabEntry(PrefabType.POINT_LIGHT, PrefabCategory.GENERIC, Assets.Models.SPHERE, EngineDefaults.Models.SPHERE, emptyList()),
+        PrefabEntry(PrefabType.SPOT_LIGHT, PrefabCategory.GENERIC, Assets.Models.SPHERE, EngineDefaults.Models.SPHERE, emptyList()),
+        PrefabEntry(PrefabType.CRATE, PrefabCategory.GENERIC, Assets.Models.CUBE, EngineDefaults.Models.CUBE, listOf(MaterialType.WOOD_BROWN)),
+        PrefabEntry(PrefabType.BARREL, PrefabCategory.GENERIC, Assets.Models.CYLINDER, EngineDefaults.Models.CYLINDER, metal),
+        PrefabEntry(PrefabType.BENCH, PrefabCategory.GENERIC, Assets.Models.BENCH, EngineDefaults.Models.BENCH, listOf(MaterialType.WOOD_DARK), PropShapes::bench),
+        PrefabEntry(PrefabType.TRIGGER_VOLUME, PrefabCategory.GENERIC, Assets.Models.CUBE, EngineDefaults.Models.CUBE, emptyList()),
+        PrefabEntry(PrefabType.SPAWN_POINT, PrefabCategory.GENERIC, Assets.Models.SPAWN_MARKER, EngineDefaults.Models.SPAWN_MARKER, emptyList(), PropShapes::spawnMarker),
     )
 
     private val byType = entries.associateBy { it.type }

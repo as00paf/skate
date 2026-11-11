@@ -21,7 +21,7 @@ class EditorMenuBarLifecycleTest {
     @Test
     fun `appIconLifecycle_ProjectClosed_ReloadsBundledTextureId`() {
         val assetsManager = mockk<AssetsManager>(relaxed = true)
-        every { assetsManager.getBundledTexture(Assets.Bundled.APP_ICON) } returnsMany listOf(texture(101), texture(202))
+        every { assetsManager.getBundledTexture(Assets.Classpath.APP_ICON) } returnsMany listOf(texture(101), texture(202))
 
         val eventSystem = EventSystem()
         val engine = mockk<Engine>(relaxed = true)
@@ -41,7 +41,7 @@ class EditorMenuBarLifecycleTest {
 
         eventSystem.publish(ProjectEvent.Closed(Project(name = "AnyProject", projectPath = "AnyProject/AnyProject.skateproj", defaultScene = "Main.scene", scenesPath = emptyList())))
         assertEquals(202, readAppIconTexId(menuBar))
-        verify(exactly = 2) { assetsManager.getBundledTexture(Assets.Bundled.APP_ICON) }
+        verify(exactly = 2) { assetsManager.getBundledTexture(Assets.Classpath.APP_ICON) }
     }
 
     private fun texture(id: Int): Texture = Texture().also { it.texId = id }

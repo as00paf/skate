@@ -81,7 +81,7 @@ class SkateRidingClipTest {
     }
 
     private companion object {
-        const val JAMES = "assets/characters/james.glb"
-        const val RIDING = "assets/characters/animations/skate riding.fbx"
+        const val JAMES = "assets/Models/james.glb"
+        const val RIDING = "assets/Animations/skate riding.fbx"
     }
 }

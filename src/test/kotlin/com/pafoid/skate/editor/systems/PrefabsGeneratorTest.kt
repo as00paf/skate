@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.systems
 
+import com.pafoid.skate.engine.assets.EngineDefaults
 import com.pafoid.skate.engine.ecs.components.DayNightCycleComponent
 import com.pafoid.skate.engine.ecs.SceneSun
 import com.pafoid.skate.engine.assets.Assets
@@ -194,7 +195,7 @@ class PrefabsGeneratorTest {
 
         generator.spawnLedge(material = MaterialType.CONCRETE)
 
-        verify { assetsManager.getTexture("C:\\proj\\Assets\\" + Assets.Bundled.CONCRETE_SIMPLE) }
+        verify { assetsManager.getTexture(EngineDefaults.Textures.CONCRETE_SIMPLE) }
     }
 
     @Test
@@ -246,10 +247,10 @@ class PrefabsGeneratorTest {
         generator.spawn(PrefabType.HALF_PIPE, material = MaterialType.WOOD_DARK)
         generator.spawn(PrefabType.KINKED_RAIL, material = MaterialType.WOOD_DARK)
 
-        verify { assetsManager.loadModel("C:\\proj\\Assets\\" + Assets.Bundled.HALF_PIPE) }
-        verify { assetsManager.getTexture("C:\\proj\\Assets\\" + Assets.Bundled.WOOD_DARK) }
+        verify { assetsManager.loadModel(EngineDefaults.Models.HALF_PIPE) }
+        verify { assetsManager.getTexture(EngineDefaults.Textures.WOOD_DARK) }
         // Rails only come in metal.
-        verify { assetsManager.getTexture("C:\\proj\\Assets\\" + Assets.Bundled.METAL) }
+        verify { assetsManager.getTexture(EngineDefaults.Textures.METAL) }
     }
 
     @Test
@@ -325,15 +326,15 @@ class PrefabsGeneratorTest {
         val generator = PrefabsGenerator(engine, loadAssets = false).apply { projectAssetsDir = "P\\" }
 
         val bank = generator.spawn(PrefabType.BANK, material = MaterialType.CONCRETE)
-        val character = generator.spawnAnimatedCharacter("Walker", Vector3f(), Assets.Bundled.WALKING)
+        val character = generator.spawnAnimatedCharacter("Walker", Vector3f(), EngineDefaults.Animations.WALKING)
 
         verify(exactly = 0) { assetsManager.loadModel(any()) }
         verify(exactly = 0) { assetsManager.getTexture(any()) }
         verify(exactly = 0) { assetsManager.loadAnimationSync(any()) }
         val render = bank.getComponent<com.pafoid.skate.engine.ecs.components.RenderComponent>()!!
-        assertEquals("P\\" + PrefabCatalog.entry(PrefabType.BANK).bundledModelPath, render.model!!.path)
-        assertEquals("P\\" + MaterialType.CONCRETE.texturePath, render.material!!.baseColorTexture!!.filePath)
+        assertEquals(PrefabCatalog.entry(PrefabType.BANK).bundledModelPath, render.model!!.path)
+        assertEquals(MaterialType.CONCRETE.texturePath, render.material!!.baseColorTexture!!.filePath)
         val animator = character.getComponent<com.pafoid.skate.engine.ecs.components.Animator>()!!
-        assertEquals(listOf("P\\" + Assets.Bundled.WALKING), animator.animations.map { it.path })
+        assertEquals(listOf(EngineDefaults.Animations.WALKING), animator.animations.map { it.path })
     }
 }
