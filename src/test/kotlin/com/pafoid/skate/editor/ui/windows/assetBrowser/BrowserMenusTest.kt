@@ -33,6 +33,8 @@ class BrowserMenusTest {
     fun AssetTabMenu_HasFolderActionsOnlyForFolders() {
         assertEquals(listOf(EmptySpaceItem.REFRESH, EmptySpaceItem.SHOW_FOLDER, EmptySpaceItem.COPY_FOLDER_PATH), EmptySpaceItem.assetTab(true))
         assertEquals(emptyList<EmptySpaceItem>(), EmptySpaceItem.assetTab(false), "the prefab catalog has nothing to act on")
+        assertEquals(EmptySpaceItem.NEW_SHADER, EmptySpaceItem.assetTab(true, hasProject = true).first(), "EDT-80: New Shader with a project")
+        assertEquals(emptyList<EmptySpaceItem>(), EmptySpaceItem.assetTab(false, hasProject = true))
     }
 
     @Test

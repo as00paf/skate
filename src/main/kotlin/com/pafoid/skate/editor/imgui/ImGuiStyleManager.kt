@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.imgui
 
+import com.pafoid.skate.editor.settings.AppearanceSettings
 import com.pafoid.skate.editor.imgui.data.Style
 import com.pafoid.skate.editor.imgui.theme.EditorTheme
 import com.pafoid.skate.editor.imgui.theme.ThemeLibrary
@@ -83,10 +84,27 @@ object ImGuiStyleManager {
     var uiScale: () -> Float = { 1f }
     private var appliedScale = 1f
 
-    /** Applies [effective] (and the UI scale) when it differs from what is showing. Call between frames (before `newFrame`). */
+    /** The saved spacing and rounding over the theme (EDT-76); the theme's own values unless the editor wires it. */
+    var appearance: () -> AppearanceSettings = { AppearanceSettings.THEME_ONLY }
+
+    /** Appearance the settings window is previewing; null when none (the saved one applies). */
+    var previewAppearance: AppearanceSettings? = null
+
+    /** UI scale the settings window is previewing; null when none. */
+    var previewUiScale: Float? = null
+
+    private var appliedAppearance: AppearanceSettings? = null
+
+    private fun effectiveAppearance() = previewAppearance ?: appearance()
+    private fun effectiveScale() = previewUiScale ?: uiScale()
+
+    /**
+     * Applies [effective] (with the appearance and the UI scale) when any of them differs from what is showing.
+     * Call between frames (before `newFrame`).
+     */
     fun sync(savedId: String) {
         val theme = effective(savedId)
-        if (theme.id == appliedId && uiScale() == appliedScale) return
+        if (theme.id == appliedId && effectiveScale() == appliedScale && effectiveAppearance() == appliedAppearance) return
         apply(theme)
     }
 
@@ -96,11 +114,14 @@ object ImGuiStyleManager {
     /** Forgets what is applied (a new ImGui context starts with ImGui's default style), so [sync] reapplies. */
     fun invalidate() {
         appliedId = null
+        appliedAppearance = null
     }
 
     fun apply(theme: EditorTheme) {
-        setupStyle(theme.style)
-        appliedScale = uiScale()
+        val appearance = effectiveAppearance()
+        setupStyle(AppearanceSettings.apply(theme.style, appearance))
+        appliedAppearance = appearance
+        appliedScale = effectiveScale()
         ImGui.getIO().fontGlobalScale = fontScale(theme.fontScale, appliedScale)
         appliedId = theme.id
     }

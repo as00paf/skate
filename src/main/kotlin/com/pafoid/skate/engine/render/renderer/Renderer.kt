@@ -78,6 +78,7 @@ class Renderer(
         renderResources.renderers.skyDome.destroy()
         renderResources.renderers.shadow.destroy()
         renderResources.renderers.debug.destroy()
+        renderResources.renderers.skinnedPreview.destroy()
         renderResources.renderPasses.picking.destroy()
         renderResources.renderPasses.geometry.destroy()
         renderResources.renderPasses.particles.destroy()

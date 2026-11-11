@@ -11,6 +11,7 @@ import com.pafoid.skate.engine.animation.graph.ClipMotion
 import com.pafoid.skate.engine.animation.graph.Pose
 import com.pafoid.skate.engine.animation.graph.FittedMotion
 import com.pafoid.skate.engine.animation.graph.Motion
+import com.pafoid.skate.engine.animation.graph.RestMotion
 import com.pafoid.skate.engine.assets.AssetsManager
 import com.pafoid.skate.engine.assets.BoneNameMapper
 import com.pafoid.skate.engine.assets.data.models.animations.Animation
@@ -78,6 +79,18 @@ data class Animator(
     @Transient
     val ik: IkRig = IkRig()
 
+    /**
+     * Clips loaded from the controller's own `clips` list (ANI-21 §4.3). Not saved with the scene: the controller
+     * file lists them and [resolveController] reloads them.
+     */
+    @Transient
+    var controllerClips: List<Animation> = emptyList()
+        private set
+
+    /** Loads a clip by asset path; remembered by [resolveAnimationsFromPaths] for the controller's own clips. */
+    @Transient
+    private var clipLoader: ((String) -> Animation?)? = null
+
     /** The bool parameter set by the last [play] while a controller is active. */
     @Transient
     var requestedState: String? = null
@@ -92,7 +105,8 @@ data class Animator(
         skeleton: Skeleton,
         extraMotions: Map<String, Motion> = emptyMap(),
     ): AnimationStateMachine {
-        val clips = animations.associate { clip ->
+        // Clips the controller brings (ANI-21 §4.3) come first so a clip of the same name on the Animator wins.
+        val clips = (controllerClips + animations).associate { clip ->
             val motion: Motion = ClipMotion.of(clip, skeleton)
             clip.name to (asset.clipFits[clip.name]?.let { FittedMotion.of(motion, it, skeleton) } ?: motion)
         } + extraMotions
@@ -102,7 +116,7 @@ data class Animator(
         }
         val sources = clips + poses
         val trees = asset.motions.mapValues { (_, def) -> def.build { sources[it] } }
-        val motions = sources + trees
+        val motions = sources + trees + ("" to RestMotion.of(skeleton))
         requestedState = null
         return AnimationStateMachine(asset, motions, skeleton.boneCount).also { stateMachine = it }
     }
@@ -111,12 +125,14 @@ data class Animator(
      * Loads [controllerPath] and builds the state machine from the clips in [animations]. Problems are logged and
      * leave no state machine (so the legacy single-clip playback still works). Returns true when a controller is active.
      * [read] loads project-relative or packed controllers (`AssetsManager.readText`, AST-09); the file system and
-     * bundled resources are tried after it.
+     * bundled resources are tried after it. [loadClip] loads the clip files the controller lists (ANI-21 §4.3); by
+     * default the loader of the last [resolveAnimationsFromPaths].
      */
     fun resolveController(
         logger: LoggerService,
         skeleton: Skeleton? = gameObject?.getComponent<SkeletonComponent>()?.pose?.skeleton,
         read: (String) -> String? = { null },
+        loadClip: ((String) -> Animation?)? = clipLoader,
     ): Boolean {
         val path = controllerPath ?: return false
         stateMachine = null
@@ -128,7 +144,8 @@ data class Animator(
         }
         return try {
             val asset = AnimationControllerAsset.fromJson(text)
-            val problems = asset.issues(animations.map { it.name }.toSet())
+            controllerClips = loadControllerClips(asset, path, logger, loadClip)
+            val problems = asset.issues((animations + controllerClips).map { it.name }.toSet())
             if (problems.isNotEmpty()) {
                 problems.forEach { logger.log("Controller '$path': $it", LogLevel.ERROR) }
                 false
@@ -139,6 +156,20 @@ data class Animator(
         } catch (e: Exception) {
             logger.log("Failed to load controller '$path': ${e.message}", LogLevel.ERROR)
             false
+        }
+    }
+
+    private fun loadControllerClips(asset: AnimationControllerAsset, path: String, logger: LoggerService, loadClip: ((String) -> Animation?)?): List<Animation> {
+        if (asset.clips.isEmpty()) return emptyList()
+        if (loadClip == null) {
+            logger.log("Controller '$path' lists clips but no clip loader is available", LogLevel.WARN)
+            return emptyList()
+        }
+        val have = animations.map { it.name }.toSet()
+        return asset.clips.mapNotNull { clipPath ->
+            val clip = try { loadClip(clipPath) } catch (e: Exception) { null }
+            if (clip == null) logger.log("Controller '$path': clip not found: $clipPath", LogLevel.ERROR)
+            clip?.takeIf { it.name !in have }
         }
     }
 
@@ -165,6 +196,7 @@ data class Animator(
     fun clearController() {
         controllerPath = null
         stateMachine = null
+        controllerClips = emptyList()
     }
 
     val normalizedTime: Float
@@ -188,6 +220,7 @@ data class Animator(
      * Called by SceneSerializer after scene deserialization.
      */
     fun resolveAnimationsFromPaths(assetsManager: AssetsManager, logger: LoggerService) {
+        clipLoader = { assetsManager.loadAnimationSync(it) }
         val animationPaths = animations.map { it.path }
         animations.clear()
         currentAnimation = null

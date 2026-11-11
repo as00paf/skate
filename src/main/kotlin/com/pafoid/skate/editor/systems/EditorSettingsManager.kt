@@ -131,6 +131,7 @@ class EditorSettingsManager(
             fontSize = next.fontSize.coerceIn(EditorSettings.MIN_UI_SCALE, EditorSettings.MAX_UI_SCALE),
             gizmoSnap = next.gizmoSnap.sanitized(),
             camera = next.camera.sanitized(),
+            appearance = next.appearance.sanitized(),
             blenderTimeoutSeconds = next.blenderTimeoutSeconds.coerceIn(EditorSettings.MIN_BLENDER_TIMEOUT, EditorSettings.MAX_BLENDER_TIMEOUT),
             blenderPath = next.blenderPath?.trim()?.ifBlank { null },
         )

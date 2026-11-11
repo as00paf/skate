@@ -186,6 +186,8 @@ class ProjectWindow(
             EmptySpaceItem.REFRESH -> needsRefresh = true
             EmptySpaceItem.SHOW_FOLDER -> openInExplorer(root)
             EmptySpaceItem.COPY_FOLDER_PATH -> copyPathToClipboard(root.absolutePath)
+            // Offered by the Asset Browser only (EDT-80); not in this window's menu
+            EmptySpaceItem.NEW_SHADER -> Unit
         }
     }
 

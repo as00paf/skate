@@ -11,6 +11,7 @@ import com.pafoid.skate.engine.render.renderer.SplashRenderer
 import com.pafoid.skate.engine.render.renderer.ThumbnailRenderer
 import com.pafoid.skate.engine.render.renderer.passes.DebugPass
 import com.pafoid.skate.engine.render.renderer.passes.GeometryPass
+import com.pafoid.skate.engine.render.preview.SkinnedPreviewViewport
 import com.pafoid.skate.engine.render.renderer.passes.ParticlePass
 import com.pafoid.skate.engine.render.renderer.passes.PickingPass
 import com.pafoid.skate.engine.render.renderer.passes.PostProcessPass
@@ -61,6 +62,8 @@ data class Renderers(
     val splash: SplashRenderer,
     val debug: DebugRenderer,
     val thumbnail: ThumbnailRenderer,
+    /** Offscreen skinned-model preview for the Animation Editor (REN-33); allocates its target on first use. */
+    val skinnedPreview: SkinnedPreviewViewport,
 )
 
 /**
