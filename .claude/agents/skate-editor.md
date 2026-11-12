@@ -30,6 +30,7 @@ Paths without a root are relative to `src/main/kotlin/com/pafoid/skate/`.
 
 ## Ground rules
 
+- **Tool calls:** do every file read, search, edit and command through the shell tool (`bash`/`shell`): `cat`, `sed -n`, `rg`/`grep`, `find`, `git`, `./gradlew`. Emit one tool call at a time with plain-string arguments, never nested JSON or markup inside arguments, and wait for its result before the next call. Do not use dedicated read/edit/glob/grep/task tools or sub-agents.
 - Read `.github/copilot-instructions.md` and your section of `GameEngine.md` before you change anything.
 - Stay inside your domain. If you need changes elsewhere, report them to the lead as `NEEDS <PREFIX>: <what and why>` in your final message instead of making them.
 - `REWRITE` tasks start with a design note in `docs/design/<TASK-ID>.md`. Stop and report `BLOCKED <TASK-ID>: awaiting design approval` before you write code.
