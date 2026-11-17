@@ -58,7 +58,10 @@ data class TerrainRecipe(val steps: List<TerrainStep> = TerrainPreset.ISLAND.rec
 
 /** Recipe presets (REN-28 §5.3). */
 enum class TerrainPreset {
-    FLAT, ROLLING_HILLS, ISLAND, MOUNTAINS, SKATEPARK_BOWL;
+    FLAT, ROLLING_HILLS, ISLAND, MOUNTAINS, SKATEPARK_BOWL,
+
+    /** The Feature Showcase's small island (REN-28 §11): 96 m, a beach ring, grassy slopes and one rocky peak. */
+    SHOWCASE_ISLAND;
 
     fun recipe(): TerrainRecipe = TerrainRecipe(
         when (this) {
@@ -79,6 +82,13 @@ enum class TerrainPreset {
                 TerrainStep.Noise("ridges", NoiseSettings(fractal = FractalKind.RIDGED, frequency = 0.004f, octaves = 5), amplitude = 0.6f, offset = 0.3f),
                 TerrainStep.Curve(listOf(CurvePoint(0f, 0f), CurvePoint(0.4f, 0.2f), CurvePoint(1f, 1f))),
                 TerrainStep.Clamp(0f, 1f),
+            )
+            SHOWCASE_ISLAND -> listOf(
+                TerrainStep.DomainWarp(strength = 6f, settings = NoiseSettings(frequency = 0.02f)),
+                TerrainStep.Noise("hills", NoiseSettings(frequency = 0.03f, octaves = 3), amplitude = 0.15f, offset = 0.3f),
+                TerrainStep.Noise("peak", NoiseSettings(fractal = FractalKind.RIDGED, frequency = 0.025f, octaves = 2), amplitude = 0.25f, offset = 0.1f),
+                TerrainStep.Falloff(FalloffShape.ISLAND, inner = 0.35f, outer = 0.95f, floor = -0.08f),
+                TerrainStep.Clamp(-0.08f, 1f),
             )
             SKATEPARK_BOWL -> listOf(
                 TerrainStep.Noise("hills", NoiseSettings(frequency = 0.01f, octaves = 2), amplitude = 0.05f, offset = 0.05f),

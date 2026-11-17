@@ -53,6 +53,11 @@ class PureLogicIsolationGuardTest {
             "engine/terrain/TerrainChunkBuilder.kt",
             "engine/terrain/HeightField.kt",
             "engine/terrain/TerrainRuntime.kt",
+            "engine/terrain/Biome.kt",
+            "engine/terrain/BiomeMap.kt",
+            "engine/terrain/ScatterRule.kt",
+            "engine/terrain/ScatterPlacer.kt",
+            "engine/terrain/TerrainMacro.kt",
         )
         val forbidden = listOf("import org.lwjgl.", "import com.pafoid.skate.editor.", "import imgui.")
         val violations = pureFiles.flatMap { f ->

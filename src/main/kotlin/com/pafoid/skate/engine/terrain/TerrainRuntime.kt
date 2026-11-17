@@ -14,6 +14,9 @@ class TerrainRuntime {
         private set
     private var grid: Array<TerrainChunkData?> = emptyArray()
 
+    /** Far-field colour (REN-28 §6), baked by the renderer from the splat weights and layer colours; null before. */
+    var macro: TerrainMacro? = null
+
     /** Bumped on every rebuild and on [markEdited]. */
     var version = 0L
         private set
@@ -38,7 +41,10 @@ class TerrainRuntime {
     fun ensureBuilt(key: TerrainKey, parallel: Boolean = true): Boolean {
         if (key == this.key) return false
         val l = TerrainLayout(key.size, key.spacing, key.chunkQuads)
-        val g = TerrainGenerator(key.recipe, key.stamps, l, key.heightScale, key.projectSeed, key.seedName, key.seedOffset)
+        val g = TerrainGenerator(
+            key.recipe, key.stamps, l, key.heightScale, key.projectSeed, key.seedName, key.seedOffset,
+            key.biomes, key.climate, key.biomeSource,
+        )
         val built = TerrainChunkBuilder.buildAll(g, parallel)
         grid = arrayOfNulls(l.chunkCount)
         for (c in built) grid[c.cz * l.chunksPerSide + c.cx] = c
@@ -49,8 +55,15 @@ class TerrainRuntime {
         return true
     }
 
-    /** Sculpting or loaded data changed chunk heights in place: bump [version] (chunks carry their own dirty flag). */
-    fun markEdited() { version++ }
+    /**
+     * Sculpting or loaded data changed chunk heights in place: recomputes the edited chunks' splat, biomes and scatter
+     * and bumps [version] (chunks carry their own dirty flag for the GPU).
+     */
+    fun markEdited() {
+        val g = generator
+        if (g != null) for (c in chunks) if (c.dirty) TerrainChunkBuilder.refreshDerived(g, c)
+        version++
+    }
 
     fun clear() {
         key = null; generator = null; layout = null; grid = emptyArray(); version++
@@ -68,4 +81,7 @@ data class TerrainKey(
     val projectSeed: Long,
     val seedName: String,
     val seedOffset: Int,
+    val biomes: List<Biome> = emptyList(),
+    val climate: BiomeClimate = BiomeClimate(),
+    val biomeSource: BiomeSource = BiomeSource.PROCEDURAL,
 )
