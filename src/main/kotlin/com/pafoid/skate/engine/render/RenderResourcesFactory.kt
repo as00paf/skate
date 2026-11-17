@@ -28,7 +28,11 @@ import com.pafoid.skate.engine.render.renderer.passes.PickingPass
 import com.pafoid.skate.engine.render.renderer.passes.PostProcessPass
 import com.pafoid.skate.engine.render.renderer.passes.PresentedViewport
 import com.pafoid.skate.engine.render.renderer.passes.ShadowPass
+import com.pafoid.skate.engine.render.renderer.passes.SceneFrame
+import com.pafoid.skate.engine.render.renderer.passes.TransparentPass
 import com.pafoid.skate.engine.render.renderer.passes.UiPass
+import com.pafoid.skate.engine.render.renderer.passes.WaterPass
+import com.pafoid.skate.engine.render.water.WaterRenderer
 import com.pafoid.skate.engine.render.shader.ShaderFeature
 import com.pafoid.skate.engine.render.shadow.ShadowFrame
 import com.pafoid.skate.engine.render.shadow.ShadowSettings
@@ -156,6 +160,28 @@ class RenderResourcesFactory(
 
         renderer2D.bindShader(shaders.batch)
 
+        val shadowFrame = ShadowFrame()
+        val sceneFrame = SceneFrame(
+            lightingUniformsLoader = lightingUniformsLoader,
+            shadowFrame = shadowFrame,
+            environmentProbe = EnvironmentProbe(assetsManager.getShader(EngineDefaults.Shaders.IBL_CAPTURE)),
+        )
+        // Water (REN-29 §6): shaders resolved on use, so project overrides and hot reloads apply
+        lateinit var postProcessSettings: () -> com.pafoid.skate.engine.render.renderer.passes.PostProcessSettings
+        val waterPass = WaterPass(
+            shader = { assetsManager.getShader(EngineDefaults.Shaders.WATER) },
+            pickingShader = { assetsManager.getShaderVariant(EngineDefaults.Shaders.WATER, setOf(ShaderFeature.PICKING)) },
+            renderer = WaterRenderer(
+                readText = { path -> assetsManager.readText(path)?.ifEmpty { null } },
+                resolveTexture = assetsManager::getTexture,
+            ),
+            frameBuffer = frameBuffer,
+            sceneFrame = sceneFrame,
+            cameraManager = cameraManager,
+            ssrSteps = { postProcessSettings().ssrSteps },
+            debugRenderer = renderers.debug,
+        )
+
         val pickingPass = PickingPass(
             pickingTexture = pickingTexture,
             pickingShader3D = shaders.picking3D,
@@ -163,10 +189,10 @@ class RenderResourcesFactory(
             renderer2D = renderer2D,
             pickingShader = shaders.picking,
             modelRenderer = renderers.model,
-            cameraManager = cameraManager
+            cameraManager = cameraManager,
+            extraPicking = waterPass::drawPicking,
         )
 
-        val shadowFrame = ShadowFrame()
         val geometryPass = GeometryPass(
             defaultShader = shaders.default,
             batchShader = shaders.batch,
@@ -174,11 +200,9 @@ class RenderResourcesFactory(
             renderer2D = renderer2D,
             skyDomeRenderer = renderers.skyDome,
             frameBuffer = frameBuffer,
-            lightingUniformsLoader = lightingUniformsLoader,
+            sceneFrame = sceneFrame,
             useFbo = useFbo,
             cameraManager = cameraManager,
-            shadowFrame = shadowFrame,
-            environmentProbe = EnvironmentProbe(assetsManager.getShader(EngineDefaults.Shaders.IBL_CAPTURE)),
             // Custom material shaders (AST-26 §5.6): colour pass only; null falls back to the schema shader
             materialShader = { reference -> assetsManager.materialShader(reference) },
         )
@@ -219,6 +243,7 @@ class RenderResourcesFactory(
             ssaoShader = assetsManager.getShader(EngineDefaults.Shaders.POST_SSAO),
             vaoLoader = assetsManager.vaoLoader
         )
+        postProcessSettings = postProcessPass::getSettings
 
         val shadowPass = if (shadowMap != null && localShadowMap != null) {
             ShadowPass(
@@ -235,6 +260,9 @@ class RenderResourcesFactory(
         return RenderPasses(
             picking = pickingPass,
             geometry = geometryPass,
+            water = waterPass,
+            transparent = TransparentPass(renderers.model, frameBuffer, sceneFrame, useFbo),
+            sceneFrame = sceneFrame,
             debug = debugPass,
             shadow = shadowPass,
             postProcess = postProcessPass,

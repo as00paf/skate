@@ -5,6 +5,7 @@ import com.pafoid.skate.engine.ecs.components.Animator
 import com.pafoid.skate.engine.ecs.components.AudioComponent
 import com.pafoid.skate.engine.ecs.components.AudioListener
 import com.pafoid.skate.engine.ecs.components.ParticleEmitter
+import com.pafoid.skate.engine.ecs.components.WaterComponent
 import com.pafoid.skate.engine.ecs.components.ReverbZone
 import com.pafoid.skate.engine.net.LoopbackPredictionComponent
 import com.pafoid.skate.engine.net.NetState
@@ -106,6 +107,7 @@ class Serializer(val assetPaths: AssetPaths = AssetPaths()) {
             subclass(SpriteRenderer::class)
             subclass(RagdollComponent::class)
             subclass(ParticleEmitter::class)
+            subclass(WaterComponent::class)
             subclass(VehicleComponent::class)
             subclass(LoopbackPredictionComponent::class)
 
