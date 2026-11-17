@@ -14,6 +14,8 @@ L'éditeur est fait de fenêtres que l'on peut ancrer. La disposition par défau
 
 Chaque fenêtre a un onglet. Faites glisser un onglet pour déplacer une fenêtre, fermez-la avec le X et rouvrez-la depuis **Vue > Fenêtres**. Le bouton **?** dans l'en-tête d'une fenêtre ouvre l'article d'aide de cette fenêtre.
 
+Pour donner plus de place à une fenêtre d'outil, cliquez sur le bouton **Agrandir** à côté de son **?**, double-cliquez sur son onglet ou appuyez sur **Maj+Espace**. Par défaut, la fenêtre remplit tout l'éditeur ; vous pouvez plutôt l'ancrer par-dessus la vue du jeu dans **Paramètres de l'éditeur > Interface**, et le menu du clic droit sur l'onglet propose les deux. Cliquez sur **Restaurer** (dans l'en-tête de la fenêtre ou dans la barre d'état), ou appuyez de nouveau sur **Maj+Espace**, pour remettre chaque fenêtre à sa place.
+
 ## Les mots que vous verrez
 
 - **Projet** : le dossier qui contient votre jeu, ses scènes, ses scripts et ses ressources.

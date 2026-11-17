@@ -1,5 +1,7 @@
 package com.pafoid.skate.editor.imgui
 
+import com.pafoid.skate.editor.data.EditorShortcuts
+import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.editor.imgui.data.UiConstants.STATUS_BAR_HEIGHT
 import com.pafoid.skate.editor.ui.windows.vcs.BranchStatusButton
 import com.pafoid.skate.editor.ui.windows.vcs.VcsModals
@@ -56,6 +58,8 @@ class EditorStatusBar(
             val totalMB = rt.totalMemory() / (1024 * 1024)
             ImGui.text(stringManager.getString("lbl.status_bar.memory").format(usedMB, totalMB))
 
+            maximizedStatus()
+
             // Latest notice, e.g. where a screenshot was saved (EDT-42).
             EditorToast.current()?.let { notice ->
                 ImGui.sameLine()
@@ -82,5 +86,22 @@ class EditorStatusBar(
 
         ImGui.popStyleVar(3)
         vcsModals?.render()
+    }
+
+    /**
+     * EDT-88: "<window> maximized" and a Restore button, always reachable even when the window's own header has
+     * scrolled away.
+     */
+    private fun maximizedStatus() {
+        val window = MaximizeSession.model?.window ?: return
+        ImGui.sameLine()
+        ImGui.textDisabled(" | ")
+        ImGui.sameLine()
+        ImGui.text("${Icons.WINDOW_MAXIMIZE} " + stringManager.getString("lbl.status_bar.maximized", stringManager.getString(window)))
+        ImGui.sameLine()
+        val label = "${Icons.WINDOW_RESTORE} ${stringManager.getString("btn.status_bar.restore")}##status_restore"
+        if (stringManager.tipped(ImGui.smallButton(label), "btn.status_bar.restore", EditorShortcuts.MAXIMIZE_WINDOW)) {
+            MaximizeSession.requestRestore()
+        }
     }
 }

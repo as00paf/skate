@@ -14,6 +14,8 @@ The editor is made of dockable windows. The default layout shows:
 
 Every window has a tab. Drag a tab to move a window, close it with the X, and reopen it from **View > Windows**. The **?** button in a window header opens the help article for that window.
 
+To give a tool window more room, click the **Maximize** button next to its **?**, double-click its tab or press **Shift+Space**. By default the window fills the whole editor; you can choose to dock it over the Game Viewport instead in **Editor Settings > Interface**, and the tab's right-click menu offers both. Click **Restore** (in the window header or in the status bar), or press **Shift+Space** again, to put every window back where it was.
+
 ## Words you will see
 
 - **Project**: the folder that holds your game, its scenes, scripts and assets.

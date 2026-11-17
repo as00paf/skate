@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.imgui
 
+import com.pafoid.skate.editor.data.EditorShortcuts
 import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.engine.core.StringManager
 import imgui.ImGui
@@ -9,14 +10,32 @@ import imgui.flag.ImGuiTableFlags
 
 /** An item of a window's tab / title-bar right-click menu (EDT-51 §2.3). */
 enum class TabMenuItem(val labelKey: String, val icon: String) {
+    /** EDT-88: maximize in the default mode (Editor Settings › Interface). */
+    MAXIMIZE("context.window.maximize", Icons.WINDOW_MAXIMIZE),
+    MAXIMIZE_OVER_VIEWPORT("context.window.maximize_over_viewport", Icons.WINDOW_MAXIMIZE),
+    RESTORE("context.window.restore", Icons.WINDOW_RESTORE),
     HELP("window.menu.help", Icons.QUESTION_CIRCLE),
     RESET_POSITION("window.menu.reset_position", Icons.ARROW_ROTATE),
     CLOSE("window.menu.close", Icons.WINDOW_CLOSE);
 
     companion object {
-        /** Help first, Close last; Reset position only for windows that dock. */
-        fun forWindow(isDialog: Boolean): List<TabMenuItem> =
-            if (isDialog) listOf(HELP, CLOSE) else listOf(HELP, RESET_POSITION, CLOSE)
+        /**
+         * Maximize items first (EDT-88: Maximize and Maximize over Game Viewport, or Restore while maximized), then
+         * Help, then Close last; Reset position only for windows that dock and are not maximized.
+         */
+        fun forWindow(isDialog: Boolean, canMaximize: Boolean = false, maximized: Boolean = false): List<TabMenuItem> {
+            val maximize = when {
+                isDialog || !canMaximize -> emptyList()
+                maximized -> listOf(RESTORE)
+                else -> listOf(MAXIMIZE, MAXIMIZE_OVER_VIEWPORT)
+            }
+            val rest = when {
+                isDialog -> listOf(HELP, CLOSE)
+                maximized -> listOf(HELP, CLOSE)
+                else -> listOf(HELP, RESET_POSITION, CLOSE)
+            }
+            return maximize + rest
+        }
     }
 }
 
@@ -71,6 +90,10 @@ object HelpButtonLayout {
         return Row(top, buttonX, (buttonX - itemSpacingX - startX).coerceAtLeast(0f))
     }
 
+    /** Width of [count] header buttons of [buttonWidth] side by side, [itemSpacingX] apart (EDT-88: Maximize and `?`). */
+    fun groupWidth(buttonWidth: Float, count: Int, itemSpacingX: Float): Float =
+        buttonWidth * count + itemSpacingX * (count - 1).coerceAtLeast(0)
+
     /** Where the line after the header row starts: below the taller of the tools and the `?`. */
     fun nextLineY(rowTop: Float, buttonHeight: Float, toolsNextLineY: Float, itemSpacingY: Float): Float =
         maxOf(toolsNextLineY, rowTop + buttonHeight + itemSpacingY)
@@ -89,6 +112,7 @@ object WindowHeader {
     private const val TAB_MENU_ID = "##window_tab_menu"
     private const val TABLE_ID = "##window_header"
     private const val BUTTON_ID = "##window_help"
+    private const val MAXIMIZE_BUTTON_ID = "##window_maximize"
 
     /**
      * The window's [tools] on the left, then the `?` button at the right end of the same line, then a separator
@@ -100,9 +124,12 @@ object WindowHeader {
         val style = ImGui.getStyle()
         val size = buttonSize()
         val startX = ImGui.getCursorScreenPosX()
+        // EDT-88: the Maximize button sits left of the `?`; the row reserves both.
+        val buttons = if (window.canMaximize) 2 else 1
         val row = HelpButtonLayout.row(
             startX, ImGui.getCursorScreenPosY(), ImGui.getWindowPosX() + ImGui.getWindowContentRegionMaxX(),
-            ImGui.getWindowDrawList().clipRectMinY, size.width, style.itemSpacingX, ImGui.getScrollY(),
+            ImGui.getWindowDrawList().clipRectMinY, HelpButtonLayout.groupWidth(size.width, buttons, style.itemSpacingX),
+            style.itemSpacingX, ImGui.getScrollY(),
         )
         val clearance = HelpButtonLayout.MIN_CLIP_CLEARANCE
         // The table starts `clearance` above the row with as much cell padding, so the tools have the same margin
@@ -125,7 +152,13 @@ object WindowHeader {
             tools()
         }
         val toolsNextLine = ImGui.getCursorScreenPosY()
-        ImGui.setCursorScreenPos(row.buttonX, row.top)
+        var buttonX = row.buttonX
+        if (window.canMaximize) {
+            ImGui.setCursorScreenPos(buttonX, row.top)
+            maximizeButton(strings, window, size.width, size.height)
+            buttonX += size.width + style.itemSpacingX
+        }
+        ImGui.setCursorScreenPos(buttonX, row.top)
         button(strings, window, size.width, size.height)
         ImGui.setCursorScreenPos(startX, HelpButtonLayout.nextLineY(row.top, size.height, toolsNextLine, style.itemSpacingY))
         ImGui.separator()
@@ -171,6 +204,23 @@ object WindowHeader {
         return HelpButtonLayout.trailingWidth(labels.map { ImGui.calcTextSize(it).x }, style.framePaddingX, style.itemSpacingX)
     }
 
+    /** Maximize (or Restore while maximized) in the default mode (EDT-88). */
+    private fun maximizeButton(strings: StringManager, window: EditorWindow, width: Float, height: Float) {
+        val maximized = MaximizeSession.isMaximized(window.name)
+        val (icon, key) = if (maximized) Icons.WINDOW_RESTORE to "btn.window.restore" else Icons.WINDOW_MAXIMIZE to "btn.window.maximize"
+        val pressed = strings.tipped(ImGui.button("$icon$MAXIMIZE_BUTTON_ID", width, height), key, EditorShortcuts.MAXIMIZE_WINDOW)
+        lastDrawnMaximize = drawnRect()
+        if (pressed) MaximizeSession.request(window.name)
+    }
+
+    private fun drawnRect(): DrawnButton {
+        val list = ImGui.getWindowDrawList()
+        return DrawnButton(
+            Rect(ImGui.getItemRectMinX(), ImGui.getItemRectMinY(), ImGui.getItemRectMaxX(), ImGui.getItemRectMaxY()),
+            Rect(list.clipRectMinX, list.clipRectMinY, list.clipRectMaxX, list.clipRectMaxY),
+        )
+    }
+
     private fun button(strings: StringManager, window: EditorWindow, width: Float, height: Float) {
         if (clicked(strings, width, height)) window.openHelp()
     }
@@ -178,11 +228,7 @@ object WindowHeader {
     private fun clicked(strings: StringManager, width: Float, height: Float): Boolean {
         val pressed = strings.tippedWith(ImGui.button("${Icons.QUESTION_CIRCLE}$BUTTON_ID", width, height), "window.header.help.tooltip")
         // The tooltip adds no item to this window: the last item is still the button.
-        val list = ImGui.getWindowDrawList()
-        lastDrawn = DrawnButton(
-            Rect(ImGui.getItemRectMinX(), ImGui.getItemRectMinY(), ImGui.getItemRectMaxX(), ImGui.getItemRectMaxY()),
-            Rect(list.clipRectMinX, list.clipRectMinY, list.clipRectMaxX, list.clipRectMaxY),
-        )
+        lastDrawn = drawnRect()
         return pressed
     }
 
@@ -197,11 +243,17 @@ object WindowHeader {
     var lastDrawn: DrawnButton? = null
         private set
 
+    /** The last Maximize button drawn this frame (EDT-88); read by tests. */
+    @Volatile
+    var lastDrawnMaximize: DrawnButton? = null
+        private set
+
     /** Right-click on the tab or title bar; call right after `begin`. */
     fun tabMenu(strings: StringManager, window: EditorWindow) {
         if (!ImGui.beginPopupContextItem(TAB_MENU_ID)) return
-        TabMenuItem.forWindow(window.isDialog).forEach { item ->
-            if (item == TabMenuItem.CLOSE) ImGui.separator()
+        val items = TabMenuItem.forWindow(window.isDialog, window.canMaximize, MaximizeSession.isMaximized(window.name))
+        items.forEach { item ->
+            if (item == TabMenuItem.CLOSE || (item == TabMenuItem.HELP && items.first() != TabMenuItem.HELP)) ImGui.separator()
             if (strings.tipped(ImGui.menuItem("${item.icon} ${strings.getString(item.labelKey)}"), item.labelKey)) {
                 run(item, window)
             }
@@ -210,6 +262,9 @@ object WindowHeader {
     }
 
     internal fun run(item: TabMenuItem, window: EditorWindow) = when (item) {
+        TabMenuItem.MAXIMIZE -> MaximizeSession.request(window.name)
+        TabMenuItem.MAXIMIZE_OVER_VIEWPORT -> MaximizeSession.request(window.name, MaximizeMode.OVER_VIEWPORT)
+        TabMenuItem.RESTORE -> MaximizeSession.requestRestore()
         TabMenuItem.HELP -> window.openHelp()
         TabMenuItem.RESET_POSITION -> window.resetPositionRequested = true
         TabMenuItem.CLOSE -> window.isOpen.set(false)

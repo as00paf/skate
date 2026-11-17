@@ -42,6 +42,8 @@ data class EditorInputMappings(
     // Editor shortcuts
     var openSearchWindow: InputBinding = InputBinding(keyboardKey = GLFW.GLFW_KEY_P),
     var toggleFullScreen: InputBinding = InputBinding(keyboardKey = GLFW.GLFW_KEY_F12),
+    /** With Shift (EDT-88). */
+    var maximizeWindow: InputBinding = InputBinding(keyboardKey = GLFW.GLFW_KEY_SPACE),
 ) {
 
     /** Every binding back to its default (all of them, from the constructor defaults). */

@@ -7,7 +7,7 @@ Editor Settings holds your personal preferences: how the editor looks and behave
 The window has a list of categories on the left and their settings on the right:
 
 - **General**: the editor language, and whether the last project opens on startup.
-- **Interface**: theme (dark, light or high contrast), UI scale, tooltips, unit system (metric or imperial) and the gamepad overlay.
+- **Interface**: theme (dark, light or high contrast), UI scale, tooltips, unit system (metric or imperial), the gamepad overlay, and where **Maximize** puts a tool window (the full editor or over the Game Viewport).
 - **Display**: V-Sync, fullscreen and anti-aliasing (MSAA) for the editor window. Some of these need a restart.
 - **Graphics**: overall quality, shadows, textures and MSAA of the editor's 3D view.
 - **Scene view**: gizmo snapping steps, editor camera speed and mouse sensitivity.

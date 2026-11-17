@@ -14,6 +14,7 @@ Les raccourcis font gagner du temps, mais vous n'êtes jamais obligé de les uti
 - **Ctrl+P** : ouvrir la [Recherche globale](search.md).
 - **F5** : lancer ou arrêter le mode Jeu.
 - **F12** : passer l'éditeur en plein écran et revenir.
+- **Maj+Espace** : agrandir la fenêtre d'outil active, ou restaurer la disposition. Sans effet pendant la saisie ou quand la vue du jeu a le focus.
 - **Échap** : désélectionner l'objet courant.
 
 ## Se déplacer dans la Vue du jeu

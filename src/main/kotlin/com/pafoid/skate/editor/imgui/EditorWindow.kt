@@ -3,6 +3,10 @@ package com.pafoid.skate.editor.imgui
 import com.pafoid.skate.editor.help.HelpRouter
 import com.pafoid.skate.engine.core.StringManager
 import imgui.ImGui
+import imgui.flag.ImGuiCond
+import imgui.flag.ImGuiFocusedFlags
+import imgui.flag.ImGuiMouseButton
+import imgui.flag.ImGuiWindowFlags
 import imgui.type.ImBoolean
 
 abstract class EditorWindow(
@@ -36,13 +40,16 @@ abstract class EditorWindow(
     /** Dialogs float: no dock to reset to. */
     open val isDialog: Boolean get() = false
 
+    /** Every docked standard window can be maximized, except the Game Viewport (EDT-88 Q7). */
+    open val canMaximize: Boolean get() = MaximizeSession.canMaximize(this)
+
     /**
      * Window title: the [icon], then translated text (of [textKey], [name] by default) with [name] as its stable
      * ImGui ID, so docking, imgui.ini and the open state survive a language change. Every `begin` of this window must
      * use it.
      */
-    fun title(strings: StringManager, prefix: String = "", textKey: String = name): String =
-        ImGuiIds.stable(prefix + (icon?.let { "$it " } ?: "") + strings.getString(textKey), name)
+    fun title(strings: StringManager, prefix: String = "", textKey: String = name, id: String = name): String =
+        ImGuiIds.stable(prefix + (icon?.let { "$it " } ?: "") + strings.getString(textKey), id)
 
     /**
      * The standard `begin` (EDT-51): the title with its icon and the tab / title-bar right-click menu (Help, Close,
@@ -50,12 +57,33 @@ abstract class EditorWindow(
      * Draw [header] first in the content.
      */
     protected fun beginWindow(strings: StringManager, flags: Int = 0, closable: Boolean = true): Boolean {
-        if (resetPositionRequested) {
-            resetPositionRequested = false
-            DefaultDockLayout.docks.resetTarget(name)?.let { ImGui.setNextWindowDockID(it) }
+        // EDT-88: maximized over the whole editor, the window is drawn in a host over the dock space under its own
+        // ID, so its dock slot and the saved layout are not touched.
+        val host = MaximizeSession.fullEditorArea(name)
+        var windowFlags = flags
+        val title = if (host != null) {
+            ImGui.setNextWindowPos(host.x, host.y, ImGuiCond.Always)
+            ImGui.setNextWindowSize(host.width, host.height, ImGuiCond.Always)
+            windowFlags = windowFlags or HOST_FLAGS
+            title(strings, id = name + MaximizeSession.HOST_ID_SUFFIX)
+        } else {
+            if (resetPositionRequested) {
+                resetPositionRequested = false
+                DefaultDockLayout.docks.resetTarget(name)?.let { ImGui.setNextWindowDockID(it) }
+            }
+            title(strings)
         }
-        val visible = if (closable) ImGui.begin(title(strings), isOpen, flags) else ImGui.begin(title(strings), flags)
-        if (!isDialog) DefaultDockLayout.docks.record(name, ImGui.getWindowDockID())
+        val visible = if (closable) ImGui.begin(title, isOpen, windowFlags) else ImGui.begin(title, windowFlags)
+        if (!isDialog && host == null) DefaultDockLayout.docks.record(name, ImGui.getWindowDockID())
+        if (canMaximize) {
+            if (ImGui.isWindowFocused(ImGuiFocusedFlags.RootAndChildWindows)) MaximizeSession.focused = name
+            // Right after `begin` the last item is the tab (docked) or the title bar (the host): double-click toggles.
+            // A floating window's title bar keeps ImGui's own double-click (collapse).
+            val onTab = host != null || ImGui.isWindowDocked()
+            if (onTab && ImGui.isItemHovered() && ImGui.isMouseDoubleClicked(ImGuiMouseButton.Left)) {
+                MaximizeSession.request(name)
+            }
+        }
         WindowHeader.tabMenu(strings, this)
         return visible
     }
@@ -66,5 +94,9 @@ abstract class EditorWindow(
     companion object {
         /** `window.console` -> `console`. */
         fun helpIdOf(windowName: String): String = windowName.removePrefix("window.")
+
+        /** The full-editor host: fixed over the dock space, not docked, not saved (docs/design/EDT-88.md §3). */
+        const val HOST_FLAGS = ImGuiWindowFlags.NoDocking or ImGuiWindowFlags.NoMove or ImGuiWindowFlags.NoResize or
+            ImGuiWindowFlags.NoCollapse or ImGuiWindowFlags.NoSavedSettings
     }
 }
