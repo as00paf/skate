@@ -31,6 +31,8 @@ enum class BrowserEmptyState {
 enum class EmptySpaceItem(val labelKey: String, val icon: String, val group: Group) {
     NEW_FOLDER("context.project.new_folder", Icons.FOLDER, Group.CREATE),
     NEW_FILE("context.project.new_file", Icons.PLUS, Group.CREATE),
+    /** A `.glsl` from [com.pafoid.skate.engine.render.shader.ShaderTemplates.PBR_MATERIAL] in `Assets/Shaders/` (EDT-80). */
+    NEW_SHADER("context.browser.new_shader", Icons.PLUS, Group.CREATE),
     REFRESH("context.browser.refresh", Icons.ARROW_ROTATE, Group.MAIN),
     SHOW_FOLDER("context.browser.show_folder", Icons.EXTERNAL_LINK, Group.MAIN),
     COPY_FOLDER_PATH("context.browser.copy_folder_path", Icons.COPY, Group.COPY);
@@ -43,10 +45,14 @@ enum class EmptySpaceItem(val labelKey: String, val icon: String, val group: Gro
 
         /**
          * An Asset Browser tab. [hasFolder] is false for the prefab catalog: a fixed list, not a folder on disk, so it
-         * has nothing to act on and gets no menu (EDT-51 §2.3).
+         * has nothing to act on and gets no menu (EDT-51 §2.3). [hasProject] adds New Shader, which writes into the
+         * project (never into the engine's assets).
          */
-        fun assetTab(hasFolder: Boolean): List<EmptySpaceItem> =
-            if (hasFolder) listOf(REFRESH, SHOW_FOLDER, COPY_FOLDER_PATH) else emptyList()
+        fun assetTab(hasFolder: Boolean, hasProject: Boolean = false): List<EmptySpaceItem> = when {
+            !hasFolder -> emptyList()
+            hasProject -> listOf(NEW_SHADER, REFRESH, SHOW_FOLDER, COPY_FOLDER_PATH)
+            else -> listOf(REFRESH, SHOW_FOLDER, COPY_FOLDER_PATH)
+        }
 
         /** A separator goes between two groups. */
         fun separatorBefore(items: List<EmptySpaceItem>, index: Int): Boolean =

@@ -25,5 +25,11 @@ data class Theme(
     val navHighlight: Vector4f = Color.ISLAND_ACCENT_BLUE,
     val navWindowingHighlight: Vector4f = Color.ISLAND_NAV_WINDOWING_HIGHLIGHT,
     val navWindowingDimBg: Vector4f = Color.ISLAND_NAV_WINDOWING_DIM_BG,
-    val modalDimBg: Vector4f = Color.ISLAND_MODAL_DIM_BG
+    val modalDimBg: Vector4f = Color.ISLAND_MODAL_DIM_BG,
+    /** Status colours (EDT-79): added lines, things that worked. */
+    val success: Vector4f = Color.ISLAND_SUCCESS,
+    /** Status colours: attention needed (unsaved scenes, the current branch tag). */
+    val warning: Vector4f = Color.ISLAND_WARNING,
+    /** Status colours: errors, conflicts, removed lines. */
+    val danger: Vector4f = Color.ISLAND_DANGER,
 )

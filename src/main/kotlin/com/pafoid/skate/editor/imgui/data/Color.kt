@@ -43,4 +43,7 @@ object Color {
     val ISLAND_NAV_WINDOWING_HIGHLIGHT = Vector4f(1.00f, 1.00f, 1.00f, 0.70f)
     val ISLAND_NAV_WINDOWING_DIM_BG = Vector4f(0.80f, 0.80f, 0.80f, 0.20f)
     val ISLAND_MODAL_DIM_BG = Vector4f(0.00f, 0.00f, 0.00f, 0.60f)
+    val ISLAND_SUCCESS = Vector4f(0.45f, 0.85f, 0.45f, 1f)
+    val ISLAND_WARNING = Vector4f(1.00f, 0.75f, 0.30f, 1f)
+    val ISLAND_DANGER = Vector4f(1.00f, 0.42f, 0.38f, 1f)
 }

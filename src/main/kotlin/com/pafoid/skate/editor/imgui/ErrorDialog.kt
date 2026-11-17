@@ -42,7 +42,7 @@ class ErrorDialog(eventSystem: EventSystem, strings: StringManager) : EditorModa
     override fun content() {
         val error = queue.current ?: return
         ImGui.pushTextWrapPos(ImGui.getFontSize() * 40f)
-        ImGui.textWrapped(strings.getString(error.messageKey))
+        ImGui.textWrapped(if (error.messageArgs.isEmpty()) strings.getString(error.messageKey) else strings.getString(error.messageKey, *error.messageArgs.toTypedArray()))
         error.detail?.takeIf { it.isNotBlank() }?.let { detail ->
             ImGui.spacing()
             ImGui.textDisabled(detail)
@@ -57,7 +57,7 @@ class ErrorDialog(eventSystem: EventSystem, strings: StringManager) : EditorModa
     override fun buttons(): List<FooterButton> {
         val error = queue.current ?: return emptyList()
         val copy = FooterButton("error.dialog.copy", FooterButton.Role.SECONDARY, closes = false) {
-            ImGui.setClipboardText("${strings.getString(error.titleKey)}\n${strings.getString(error.messageKey)}\n${error.detail}")
+            ImGui.setClipboardText("${strings.getString(error.titleKey)}\n${strings.getString(error.messageKey, *error.messageArgs.toTypedArray())}\n${error.detail}")
         }
         val ok = FooterButton("error.dialog.ok", FooterButton.Role.PRIMARY) { queue.dismiss() }
         return if (error.detail.isNullOrBlank()) listOf(ok) else listOf(copy, ok)

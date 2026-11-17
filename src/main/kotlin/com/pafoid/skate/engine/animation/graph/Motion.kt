@@ -113,3 +113,28 @@ class BlendTree2D(
         }
     }
 }
+
+/**
+ * What a state without a clip plays (ANI-21 §4.4): the [rest] pose (the skeleton's bind pose), or the identity pose
+ * without one, for [DURATION] seconds. A new state therefore runs before it has a clip.
+ */
+class RestMotion(private val rest: Pose? = null) : Motion {
+    override fun duration(params: AnimParameters) = DURATION
+    override fun evaluate(params: AnimParameters, normalizedTime: Float, out: Pose) {
+        val r = rest
+        if (r != null && r.boneCount == out.boneCount) { out.set(r); return }
+        out.translations.fill(0f); out.scales.fill(1f)
+        out.rotations.fill(0f); for (i in 0 until out.boneCount) out.rotations[i * 4 + 3] = 1f
+    }
+
+    companion object {
+        const val DURATION = 1f
+
+        /** The bind pose of [skeleton]. */
+        fun of(skeleton: Skeleton): RestMotion {
+            val pose = Pose(skeleton.boneCount)
+            for (bone in skeleton.getAllBones()) if (bone.index < pose.boneCount) pose.setBone(bone.index, bone.bindLocalTransform)
+            return RestMotion(pose)
+        }
+    }
+}

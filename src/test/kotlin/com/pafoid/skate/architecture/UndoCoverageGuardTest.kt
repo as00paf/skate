@@ -26,6 +26,8 @@ class UndoCoverageGuardTest {
     private val executeOnlyAllowed = mapOf(
         "animation/CreateAnimationClipCommand.kt" to "writes a new .skanim clip file (ANI-17); undo never deletes files",
         "animation/SaveAnimationClipCommand.kt" to "writes the edited .skanim file (ANI-14); undo never rewrites files, the edits stay undoable",
+        "animation/CreateControllerCommand.kt" to "writes a new .controller.json (ANI-21); undo never deletes files",
+        "animation/SaveControllerCommand.kt" to "writes the edited .controller.json (ANI-21); undo never rewrites files, the edits stay undoable",
         "editor/ClearLogsCommand.kt" to "editor-only state (console)",
         "editor/CopyToClipboardCommand.kt" to "editor-only state (clipboard)",
         "editor/TogglePhysicsDebugCommand.kt" to "editor-only view toggle",

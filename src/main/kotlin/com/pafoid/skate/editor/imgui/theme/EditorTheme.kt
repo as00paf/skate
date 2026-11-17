@@ -125,7 +125,7 @@ object ThemeParser {
         "tabInactive" to t.tabInactive, "scrollbarGrab" to t.scrollbarGrab, "scrollbarGrabHover" to t.scrollbarGrabHover,
         "scrollbarGrabActive" to t.scrollbarGrabActive, "selection" to t.selection, "navHighlight" to t.navHighlight,
         "navWindowingHighlight" to t.navWindowingHighlight, "navWindowingDimBg" to t.navWindowingDimBg,
-        "modalDimBg" to t.modalDimBg,
+        "modalDimBg" to t.modalDimBg, "success" to t.success, "warning" to t.warning, "danger" to t.danger,
     )
 
     private fun themeOf(c: Map<String, Vector4f>) = Theme(
@@ -138,6 +138,7 @@ object ThemeParser {
         scrollbarGrabActive = c.getValue("scrollbarGrabActive"), selection = c.getValue("selection"),
         navHighlight = c.getValue("navHighlight"), navWindowingHighlight = c.getValue("navWindowingHighlight"),
         navWindowingDimBg = c.getValue("navWindowingDimBg"), modalDimBg = c.getValue("modalDimBg"),
+        success = c.getValue("success"), warning = c.getValue("warning"), danger = c.getValue("danger"),
     )
 }
 

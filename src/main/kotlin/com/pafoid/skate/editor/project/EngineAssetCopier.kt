@@ -9,8 +9,9 @@ import java.io.File
 
 /**
  * Copies engine defaults into a new project (AST-26 §4.3, §5.2). Copy mode copies the whole [EngineDefaults.CATALOG];
- * reference mode only the basic shaders, which every project gets. A copy lands at `Assets/<logical path>` with
- * `engine.source` / `engine.sha256` in its `.meta`, which makes it the override of its `engine:` reference.
+ * reference mode only [EngineDefaults.ALWAYS_COPIED] (the basic shaders and the skater configs, GPL-26), which every
+ * project gets. A copy lands at `Assets/<logical path>` with `engine.source` / `engine.sha256` in its `.meta`, which
+ * makes it the override of its `engine:` reference.
  *
  * A file already at the target that is not the override of that reference keeps its name; the copy becomes
  * `<name> (engine).<ext>` (decision 9). A source missing from the engine makes the result a failure listing it (the
@@ -30,7 +31,7 @@ class EngineAssetCopier(
 
     /** Copies the catalog ([copyAll]) or only the basic shaders into [projectDir]; failure when sources are missing. */
     fun copyEngineDefaults(projectDir: File, copyAll: Boolean = true): Result<Report> = runCatching {
-        val entries = if (copyAll) EngineDefaults.CATALOG else EngineDefaults.Shaders.BASIC
+        val entries = if (copyAll) EngineDefaults.CATALOG else EngineDefaults.ALWAYS_COPIED
         val projectResolver = EngineDefaultResolver(engineRoot) { projectDir }
         val copied = entries.mapNotNull { ref -> copy(projectDir, ref, projectResolver) }
         val missing = missingSources(entries)

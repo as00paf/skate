@@ -85,6 +85,8 @@ class Engine {
     /** Game-defined pause menu options (GPL-21); hosts install the game's at startup. */
     val gameOptions = GameOptions()
     init { assetsManager.attachAsyncLoading(jobSystem, eventSystem) }
+    // GPL-26: character configs (`engine:Data/...` and project overrides, packed in exports) read through the assets.
+    init { com.pafoid.skate.engine.gameplay.CharacterConfigs.reader = { assetsManager.readText(it) } }
     val audioEngine = AudioEngine(logger)
     val inputProvider = InputProvider(logger)
     val cameraManager = CameraManager(eventSystem)
