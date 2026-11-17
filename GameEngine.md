@@ -116,9 +116,10 @@ Round 27+ goals (human, 2026-11-06): post-processing quality, render-graph clari
   - Do: REN-28 tasks 1–2: extract `lighting.glsl` (GL/VK pixel parity), `engine/procedural` (FastNoiseLite, ECS-14 seeding). The lead dispatches the note's tasks one at a time, in the order of the tables.
   - Done when: Both tasks done with their tests; rendering unchanged.
   - Deps: REN-28, REN-29
-- [ ] **REN-35** `P2` World phase B: wind and water (`docs/design/REN-28.md` §12, `docs/design/REN-29.md` §12)
+- [x] **REN-35** `P2` World phase B: wind and water (`docs/design/REN-28.md` §12, `docs/design/REN-29.md` §12)
   - Do: REN-29 tasks 1, 3, 7, 8, 9 (PHY-16), 10a (EDT), 13a (TLG), 14a (VK), 15 (GPL: bail + respawn), 16 (AUD, optional), with the owners in the table.
   - Done when: The Showcase Nature area part 1 (pool, floating props, wind) works on GL and VK; tests per task.
+  - Result (2026-11-17): REN-29 tasks 1, 3, 7, 8 done (TransparentPass, wind, WaterPass, SSR). The other owners' tasks continue as PHY-16 (task 9), EDT-90 (10a), TLG-17 (13a), VK-08 (14a), GPL-32 (15), AUD-01 (16); TLG-17 carries the Showcase acceptance.
   - Deps: REN-34
 - [ ] **REN-36** `P2` World phase C: instancing and terrain (`docs/design/REN-28.md` §12, `docs/design/REN-29.md` §12)
   - Do: REN-29 task 2 (instancing core) first, then REN-28 tasks 3–13 (terrain data, chunk meshes, splat, biomes, scatter, `.skterrain` (AST), heightfield collider (PHY-15), stamps, editor tools (EDT), showcase Terrain area (TLG)).
@@ -175,6 +176,10 @@ Goal (human, after REN-13): full Vulkan support for **exported games**, chosen p
   - Do: With the SDK's Khronos validation layer enabled, run every Vulkan GpuTest (VK-01..06 harnesses, QA-16 parity suite, exported Vulkan game) and fix every validation message; then close VK-01..06.
   - Done when: All Vulkan GpuTests pass with validation on and zero messages; VK-01..06 marked done.
   - Deps: QA-16
+- [ ] **VK-08** `P2` Vulkan parity for world phase B (REN-29 task 14a)
+  - Do: (NEEDS from REN-35): depth copy in `VkCommands.blit` (`BlitMask.DEPTH`, colour only today), WaterPass (`water.glsl` with `uWaveA0..3`/`uWaveB0..3` vec4 uniforms, texture units 10–14), SSR, WIND shader variants and the new TransparentPass on Vulkan.
+  - Done when: Water, wind and transparent meshes render on Vulkan at parity with GL; GPU parity tests.
+  - Deps: REN-35
 
 ### Asset management — `AST` (`skate-assets`)
 
@@ -247,9 +252,10 @@ Round 27+ goals: the Asset Browser shows every asset type, one assets folder, ex
   - Do: From AST-26 NQ2 (human, 2026-11-10: follow-up): `skater.character.json` and `skater.controller.json` become `engine:Data/skater.character.json` and `engine:Animations/skater.controller.json`, overridable per project like other engine defaults (with skate-animation). Human (Discord 2026-11-10): they live in the project's assets and are editable by users in the editor (panels, not hand-edited JSON).
   - Done when: A project override changes the skater; without one the engine config is used; tests.
   - Deps: AST-27
-- [ ] **AST-29** `P2` Export settings and export dialog (AST-15)
+- [x] **AST-29** `P2` Export settings and export dialog (AST-15)
   - Do: Implement `docs/design/AST-15.md` rev 2: per-project export settings, the export dialog, icon mandatory with engine default, engine splash 2 s by default (or None/custom), gzip on/off, target FPS, debug/release; Windows only; `run-game.bat` stays.
   - Done when: Each setting persists and changes the exported game; warnings for missing icon/splash; tests.
+  - Result (2026-11-17): export side done (settings, icon/splash fallback with warnings, Release/Debug launcher, frame cap, remembered options); the dialog UI continues as EDT-91.
   - Deps: AST-15, AST-27
 - [ ] **AST-30** `P3` Linux and macOS exports: per-platform natives
   - Do: From AST-15 Q1 (human, 2026-11-10): add per-platform native classifiers (LWJGL, Bullet, Jolt) to `gameJar` and a platform choice in the export dialog (one export per platform).
@@ -292,7 +298,7 @@ Round 27+ goals: deterministic seeds for games and procedural generation.
 
 Round 27+ goals: a Jolt backend selectable per project, a terrain heightfield collider, and water.
 
-- [ ] **PHY-15** `P2` Heightfield terrain collider
+- [x] **PHY-15** `P2` Heightfield terrain collider
   - Do: Heightfield collider shape across backends, following the approved REN-28 terrain design.
   - Done when: Bodies and the character collide correctly with terrain; tests.
   - Deps: REN-28
@@ -349,7 +355,7 @@ Round 27+ goals: an animation authoring tool and animation from video.
   - Do: ANI-12 §2.1. Written by skate-animation, reviewed by skate-editor (lead decision); edits go through `Command`s; offscreen preview with REN help.
   - Done when: A clip can be scrubbed, keyed, retimed and saved, with undo; window logic tested.
   - Deps: ANI-13, EDT-52
-- [ ] **ANI-15** `P2` Curve editor and cleanup tools
+- [x] **ANI-15** `P2` Curve editor and cleanup tools
   - Do: ANI-12 §2.1: curve editor (tangent modes) and cleanup tools (resample, reduction, smoothing, foot-lock, mirror, trim, loop seam).
   - Done when: The tools work on a mocap clip in the editor; core logic tested.
   - Deps: ANI-14
@@ -381,6 +387,10 @@ Round 27+ goals: an animation authoring tool and animation from video.
 
 Audio needs a more complete implementation.
 
+- [ ] **AUD-01** `P3` Splash and water-ambience sounds (REN-29 task 16, optional)
+  - Do: (NEEDS from REN-35): play a splash on PHY-16's `WaterEntered` and a looping water ambience near water volumes.
+  - Done when: Entering the showcase pool splashes and the pool has ambience; tests.
+  - Deps: PHY-16
 
 ### Input — `INP` (`skate-input`)
 
@@ -402,6 +412,10 @@ Round 27+ goals: input is too tightly coupled with skateboarding; it needs a gam
   - Do: (ANI-21 design answer, 2026-11-10): edit 1D/2D blend trees of a state in the Animator window's state inspector, with live preview.
   - Done when: A blend tree can be created and edited from the window and saved in the controller file; tests.
   - Deps: ANI-21
+- [ ] **ANI-26** `P2` Animator window lists the parameters the character writes (GPL-31)
+  - Do: (NEEDS from GPL-31): in `AnimatorWindow.parametersPanel()`, call `CharacterAnimationDriver.writtenParameters(controller.preview)` and list the ones not declared yet under a "Written by the character" heading, with a one-click declare. New `lbl.animator_window.*` keys (EN, FR).
+  - Done when: The Animator window lists the character's parameters and can declare them; tests.
+  - Deps: GPL-31
 - [x] **INP-10** `P1` REWRITE Decouple input from skateboarding
   - Do: Design note `docs/design/INP-10.md` first. Generic action maps and input contexts (gameplay/UI/vehicle/...) with push/pop priority in the engine; skate-specific actions, bindings and gesture/flick logic move to the game layer (`game/**`, owned by gameplay). Scripts and in-game UI use the generic API.
   - Done when: The design is approved and implemented, `engine/input/**` has no skateboarding concepts (architecture-guard test), and the skate game plays as before.
@@ -447,10 +461,15 @@ Round 27+ goals: a fuller skate demo with camera modes and standard control sche
 
 Round 27+ goals: menu parity between the editor and the game, and a map view.
 
-- [ ] **GPL-31** `P2` Publish the animator parameter names the character writes
+- [x] **GPL-31** `P2` Publish the animator parameter names the character writes
   - Do: (ANI-21 design answer, 2026-11-10): `CharacterBehavior` exposes the names of the animator parameters it writes (speed, airTime, …) so the Animator window's Parameters panel can suggest them under "Written by the character".
   - Done when: The Animator window lists the character's parameters; tests.
+  - Result (2026-11-17): engine side done (`CharacterBehavior.animationParameters`, `CharacterAnimationDriver.writtenParameters`); the window display continues as ANI-26.
   - Deps: ANI-21
+- [ ] **GPL-32** `P2` Bail and respawn on entering water (REN-29 task 15)
+  - Do: (NEEDS from REN-35): a `PlayerController` policy `waterResponse = BAIL` that bails and respawns the player on PHY-16's `WaterEntered`.
+  - Done when: Riding into the showcase pool bails and respawns the player; tests.
+  - Deps: PHY-16
 - [x] **GUI-12** `P0` Esc in the exported game shows the same menu as editor Play
   - Do: Reproduce on master first. Find the remaining differences between the exported game's Esc menu and the editor Play pause menu (GUI-09) and make them identical (items, layout, behaviour).
   - Done when: Both show the same menu; a test compares the menu definitions used in both paths.
@@ -641,10 +660,23 @@ Round 27+ goals (human, 2026-11-06): fix editor bugs, make every window, dialog 
   - Do: (human, round 33 testing): expanding Input State in the Properties window crashes the editor. Fix it, and add a guard test that draws every registered component inspector expanded (default and populated data) with no ImGui stack imbalance or exception.
   - Done when: Input State expands without crashing; the all-inspectors guard passes.
   - Deps: EDT-86
-- [~] @skate-editor **EDT-88** `P1` Maximize editor tool windows over the Game Viewport, or full screen
+- [x] **EDT-88** `P1` Maximize editor tool windows over the Game Viewport, or full screen
   - Do: (human, 2026-11-11): the Script Editor, Animation Editor and Video to Animation windows can be maximized: a "Maximize" button in the standard window header (and a shortcut, e.g. Shift+Space, plus double-click on the tab) that either docks the window over the Game Viewport's node as a tab, or fills the whole editor (hiding the other panels until restored). Today docking over the viewport doesn't work because the Game Viewport's dock node hides its tab bar, so nothing can be tabbed into it: show the Game Viewport tab (or allow docking into its node) without breaking its toolbar layout. Restore returns the previous layout exactly. Generalize to every window using the standard header if it costs nothing extra. Short design note first (layout save/restore, interaction with play mode and the viewport's input focus from EDT-73).
+  - Design (`docs/design/EDT-88.md`, approved 2026-11-17, all recommendations accepted): default mode Full editor (plus an Editor Settings › Interface choice), "Over Game Viewport" in the tab menu; shortcut Shift+Space (rebindable; ignored while typing or with the viewport focused); always start restored; Stop doesn't re-maximize; Restore over the viewport discards other docking changes; full-editor mode keeps separate ImGui scroll/tree state; every docked standard window except the Game Viewport; F12 undo fix split out to EDT-89.
   - Done when: Each of the three windows can be maximized and restored, both over the viewport and full editor; the layout is restored exactly; tests for the layout save/restore.
   - Deps: EDT-67
+- [ ] **EDT-89** `P3` F12 viewport full screen becomes view state, not an undoable Command
+  - Do: (EDT-88 design answer, 2026-11-17): `ToggleFullScreenCommand` changes no project data but adds Undo entries. Make viewport full screen plain view state (like EDT-88's maximize) and remove it from the undo stack.
+  - Done when: F12 toggles full screen without adding Undo entries; tests.
+  - Deps: EDT-88
+- [ ] **EDT-90** `P2` Water inspector and Environment wind section (REN-29 task 10a)
+  - Do: (NEEDS from REN-35): water inspector (presets `WaterPreset`, per-wave editor, material picker, volume gizmo, Freeze time via `EnvironmentComponent.animateInEditor`) and an Environment wind section with presets (`WindField.CALM/BREEZE/STRONG/STORM`). Wind strings already exist in `components.properties`; the selected-water volume box already draws through the debug renderer.
+  - Done when: Water and wind can be tuned from the inspector with undo; tests.
+  - Deps: REN-35
+- [ ] **EDT-91** `P2` Export dialog UI for the AST-29 settings
+  - Do: (NEEDS from AST-29): in `ExportWizardWindow`, build the wizard with `ExportWizard(ExportMemory.inSettings({ settingsManager.editorSettings }, settingsManager::update))`; add the Game/Build/Summary sections from AST-29 §3 using `ProjectExporter.art()`/`estimate()`, show `ExportResult.warnings` (keys `lbl.export.warning.*`), and pass art to `canStart`/`issues`.
+  - Done when: Each export setting is editable in the dialog and persists; missing icon/splash warnings show; tests.
+  - Deps: AST-29
 - [ ] **EDT-82** `P2` Editor-wide "unsaved assets" prompt on close
   - Do: (ANI-21 design answer, 2026-11-10): one prompt when the project or editor closes, listing the unsaved scene, animation clips and animator controllers, with Save all / Discard / Cancel.
   - Done when: Closing with unsaved assets asks first; tests for the dirty-document registry.
@@ -683,6 +715,10 @@ Round 27+ goals: tooling fixes, an Android feasibility study and new demo projec
 - [x] **TLG-16** `P2` Logical UI hierarchies in the sample projects
   - Do: (human, Discord 2026-11-10): in the Feature Showcase, the legend panel's items become children of the legend panel object and the other UI items are regrouped logically (HUD, menus, panels); same for every sample (Tetris, Marble Run, MainScene).
   - Done when: Each sample's Hierarchy shows grouped UI; samples still play; sample tests updated.
+- [ ] **TLG-17** `P2` Showcase Nature area part 1 (REN-29 task 13a)
+  - Do: (NEEDS from REN-35): a 10 × 6 × 1.5 m pool with `WaterComponent(material = WaterMaterials.POOL)` and steps, floating crates of three densities, a ball and a log, a UI button named in `EnvironmentComponent.windCycleButton`, and `docs/samples.md`.
+  - Done when: The Showcase Nature area part 1 (pool, floating props, wind) works on GL and VK; tests.
+  - Deps: REN-35, PHY-16, VK-08
 
 ### Quality — `QA` (`skate-qa`)
 
