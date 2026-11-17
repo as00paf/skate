@@ -1,5 +1,7 @@
 package com.pafoid.skate.engine.render.rhi.vulkan
 
+import com.pafoid.skate.engine.render.rhi.IntRect
+
 /**
  * Texture orientation convention of the Vulkan backend (VK-05, docs/design/VK-05.md).
  *
@@ -42,6 +44,27 @@ internal object VkOrientation {
         val dstTop = if (dstTopFirst) dstHeight - (dy + dh) else dy + dh
         val dstBottom = if (dstTopFirst) dstHeight - dy else dy
         return intArrayOf(sx, srcTop, sx + sw, srcBottom, dx, dstTop, dx + dw, dstBottom)
+    }
+
+    /**
+     * vkCmdCopyImage region (srcX, srcY, dstX, dstY, width, height) into [out] for a target-to-target depth blit of the
+     * bottom-left GL rects (null: the whole target). Both targets are stored in GL row order, so rows copy as they
+     * are. Depth is never scaled (GL's depth blit only allows NEAREST, and the RHI asks for equal sizes).
+     */
+    fun depthCopyRegion(
+        srcRect: IntRect?, srcWidth: Int, srcHeight: Int,
+        dstRect: IntRect?, dstWidth: Int, dstHeight: Int,
+        out: IntArray = IntArray(6),
+    ): IntArray {
+        val sx = srcRect?.x ?: 0; val sy = srcRect?.y ?: 0
+        val sw = srcRect?.width ?: srcWidth; val sh = srcRect?.height ?: srcHeight
+        val dx = dstRect?.x ?: 0; val dy = dstRect?.y ?: 0
+        val dw = dstRect?.width ?: dstWidth; val dh = dstRect?.height ?: dstHeight
+        require(sw == dw && sh == dh) { "Depth blits need equal sizes: ${sw}x$sh -> ${dw}x$dh" }
+        require(sx >= 0 && sy >= 0 && sx + sw <= srcWidth && sy + sh <= srcHeight) { "Depth blit source rect out of bounds" }
+        require(dx >= 0 && dy >= 0 && dx + dw <= dstWidth && dy + dh <= dstHeight) { "Depth blit destination rect out of bounds" }
+        out[0] = sx; out[1] = sy; out[2] = dx; out[3] = dy; out[4] = sw; out[5] = sh
+        return out
     }
 
     /**

@@ -72,6 +72,58 @@ class GlslToVulkanTest {
     }
 
     @Test
+    fun FragmentOutputs_InExclusiveBranches_EachStartAtLocationZero() {
+        // water.glsl (VK-08): the PICKING variant's output must not push the colour output to location 1
+        val frag = """
+            #version 330 core
+            in vec2 fUv;
+            #ifdef PICKING
+            out vec3 color;
+            void main() { color = vec3(1.0); }
+            #else
+            out vec4 color;
+            void main() { color = vec4(fUv, 0.0, 1.0); }
+            #endif
+        """.trimIndent()
+        val vert = """
+            #version 330 core
+            layout (location=0) in vec3 aPos;
+            #ifdef WIND
+            out vec2 fUv;
+            #else
+            out vec2 fUv;
+            #endif
+            out float fDepth;
+            void main() { fUv = aPos.xy; fDepth = 0.0; gl_Position = vec4(aPos, 1.0); }
+        """.trimIndent()
+        val r = GlslToVulkan.convert(vert, frag)
+        assertTrue("layout(location = 0) out vec3 color;" in r.fragment, r.fragment)
+        assertTrue("layout(location = 0) out vec4 color;" in r.fragment, r.fragment)
+        // A varying declared in both branches keeps one location; the next one follows it
+        assertEquals(2, Regex("""layout\(location = 0\) out vec2 fUv;""").findAll(r.vertex).count(), r.vertex)
+        assertTrue("layout(location = 1) out float fDepth;" in r.vertex, r.vertex)
+        assertTrue("layout(location = 0) in vec2 fUv;" in r.fragment, r.fragment)
+    }
+
+    @Test
+    fun FragmentOutputs_AfterAConditional_FollowTheWidestBranch() {
+        val frag = """
+            #version 330 core
+            #ifdef EXTRA
+            out vec4 a;
+            out vec4 b;
+            #else
+            out vec4 a;
+            #endif
+            out vec4 c;
+            void main() { c = vec4(1.0); }
+        """.trimIndent()
+        val r = GlslToVulkan.convert("#version 330 core\nvoid main() { gl_Position = vec4(0.0); }", frag)
+        assertTrue("layout(location = 1) out vec4 b;" in r.fragment, r.fragment)
+        assertTrue("layout(location = 2) out vec4 c;" in r.fragment, r.fragment)
+    }
+
+    @Test
     fun VertexStage_EndsWithTheDepthRangeFixUp() {
         assertTrue(result.vertex.contains("void skate_main() {"))
         assertTrue(result.vertex.contains("gl_Position.z = (gl_Position.z + gl_Position.w) * 0.5;"))

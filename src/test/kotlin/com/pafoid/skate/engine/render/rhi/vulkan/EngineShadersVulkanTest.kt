@@ -26,10 +26,22 @@ class EngineShadersVulkanTest {
         assertTrue(files.size >= 15, "found ${files.size} shaders")
         for (f in files.sortedBy { it.name }) loader.loadShader("/shaders/${f.name}")
         loader.loadShader("/shaders/shadow.glsl", setOf(ShaderFeature.ALPHA_TEST.name))
+        // World phase B (VK-08): wind variants of the mesh, shadow and picking shaders; the water picking variant
+        val wind = setOf(ShaderFeature.WIND.name)
+        loader.loadShader("/shaders/shader_3d_default.glsl", wind)
+        loader.loadShader("/shaders/shader_3d_default.glsl", wind + ShaderFeature.SKINNED.name)
+        loader.loadShader("/shaders/shadow.glsl", wind)
+        loader.loadShader("/shaders/shadow.glsl", wind + ShaderFeature.ALPHA_TEST.name)
+        loader.loadShader("/shaders/shader_3d_picking.glsl", wind)
+        loader.loadShader("/shaders/water.glsl", setOf(ShaderFeature.PICKING.name))
 
         for (shader in device.shaders) {
             val name = shader.desc.name
             val converted = GlslToVulkan.convert(shader.desc.vertexSource, shader.desc.fragmentSource)
+            // The colour output sits on attachment 0 (VK-08: a PICKING branch's output once pushed it to location 1);
+            // depth-only programs (shadow) have none
+            val outputs = Regex("""layout\(location = (\d+)\) out """).findAll(converted.fragment).map { it.groupValues[1].toInt() }.toList()
+            assertTrue(outputs.isEmpty() || 0 in outputs, "$name: fragment outputs at $outputs, none at location 0")
             val vertex = SpirvReflection.of(ShadercCompiler.compile(converted.vertex, vertex = true, name))
             val fragment = SpirvReflection.of(ShadercCompiler.compile(converted.fragment, vertex = false, name))
             val params = (vertex.descriptors + fragment.descriptors).firstOrNull { it.binding == GlslToVulkan.PARAMS_BINDING }
@@ -37,6 +49,10 @@ class EngineShadersVulkanTest {
             // A Params member is kept by glslang when a stage uses it; both stages together use every one
             val reflected = params?.members?.map { it.name }?.toSet().orEmpty()
             assertEquals(declared, declared intersect reflected, "$name: Params members missing from the reflection")
+            // The program's Params layout (what ParamsBlock writes into) holds every member either stage uses
+            val merged = DescriptorLayouts.merge(vertex.descriptors, fragment.descriptors)
+                .firstOrNull { it.binding == GlslToVulkan.PARAMS_BINDING }?.descriptor?.members?.map { it.name }?.toSet().orEmpty()
+            assertEquals(reflected, reflected intersect merged, "$name: Params members lost when merging the stages")
             for ((sampler, binding) in converted.samplers) {
                 val d = (vertex.descriptors + fragment.descriptors).firstOrNull { it.binding == binding }
                 assertTrue(d == null || d.name == sampler, "$name: binding $binding is ${d?.name}, expected $sampler")
