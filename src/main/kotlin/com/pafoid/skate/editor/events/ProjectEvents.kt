@@ -25,6 +25,11 @@ sealed class ProjectEvent(eventName: String) : Event(eventName) {
         val name: String,
         val folderPath: String,
         val graphicsBackend: GraphicsBackend = GraphicsBackend.DEFAULT,
+        /**
+         * EDT-70: copy the engine defaults into the project's type folders (true), or reference them (false; only the
+         * basic shaders and skater configs are copied). AST-26 §4.3. A creation-time action: never stored.
+         */
+        val copyEngineDefaults: Boolean = true,
     ) : ProjectEvent("project.action.create_project_requested")
 
     /** Change the open project's graphics backend (EDT-43), as an undoable command. */

@@ -18,6 +18,12 @@ class ProjectWizard {
     /** Backend of the new project's exported games (EDT-43); the editor always uses OpenGL. */
     var graphicsBackend: GraphicsBackend = GraphicsBackend.DEFAULT
 
+    /**
+     * EDT-70: copy the engine default assets into the new project (on by default, AST-26 decision 4), or reference
+     * them. Applied once when the project is created; the project does not store it (EDT-59 Q2).
+     */
+    var copyEngineDefaults: Boolean = true
+
 
     fun setProjectName(name: String) {
         projectName = name.trim()

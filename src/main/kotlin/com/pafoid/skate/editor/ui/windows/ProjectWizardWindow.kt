@@ -1,5 +1,8 @@
 package com.pafoid.skate.editor.ui.windows
 
+import com.pafoid.skate.editor.imgui.Tooltips
+import com.pafoid.skate.editor.imgui.label
+import imgui.type.ImBoolean
 import com.pafoid.skate.editor.imgui.GraphicsBackendField
 import com.pafoid.skate.editor.imgui.tipped
 import com.pafoid.skate.editor.systems.EditorPaths
@@ -140,6 +143,11 @@ class ProjectWizardWindow(
         // Graphics backend of exported games (EDT-43); the editor itself stays on OpenGL.
         GraphicsBackendField.render(stringManager, wizard.graphicsBackend)?.let { wizard.graphicsBackend = it }
 
+        // EDT-70: copy the engine defaults or reference them (AST-26 §4.3); applied once, not stored.
+        val copy = ImBoolean(wizard.copyEngineDefaults)
+        if (ImGui.checkbox(stringManager.label("wizard.project.copy_engine_defaults"), copy)) wizard.copyEngineDefaults = copy.get()
+        Tooltips.text(stringManager.getString("wizard.project.copy_engine_defaults.tooltip"))
+
         ImGui.spacing()
         ImGui.spacing()
 
@@ -250,6 +258,6 @@ class ProjectWizardWindow(
         val path = File(wizard.projectPath)
 
         logger.logEditor("Creating project: $name at ${path.absolutePath}")
-        eventSystem.publish(CreateProjectRequested(name, path.absolutePath, wizard.graphicsBackend))
+        eventSystem.publish(CreateProjectRequested(name, path.absolutePath, wizard.graphicsBackend, wizard.copyEngineDefaults))
     }
 }

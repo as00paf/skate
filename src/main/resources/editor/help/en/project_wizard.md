@@ -9,6 +9,8 @@ A **project** is a normal folder on your computer. The wizard asks for two thing
 - **Project Name**: the name of your game. Some characters are not allowed in folder names: `< > : / \ | ? *`.
 - **Location**: the folder in which the project folder is created.
 
+It also has **Copy engine default assets**, on by default. On, the engine's models, animations, textures and sounds are copied into the project's `Assets` folders, where you can edit them. Off, the project uses the engine's own files and stays small; only the basic shaders and the skater settings are copied. Both kinds of project play and export the same way. The choice applies only when the project is created and is not saved with it.
+
 Below the fields, the wizard tells you whether the name and location are valid, and shows the folders it will create.
 
 ## How to use it
