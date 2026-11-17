@@ -37,6 +37,7 @@ enum class ComponentType {
     SKELETON,
     SPOT_LIGHT,
     SPRITE_RENDERER,
+    TERRAIN,
     TRANSFORM,
     UI_BUTTON,
     UI_CANVAS,
@@ -87,6 +88,7 @@ enum class ComponentType {
             SKELETON -> null
             SPOT_LIGHT -> SpotLightComponent()
             SPRITE_RENDERER -> SpriteRenderer()
+            TERRAIN -> TerrainComponent()
             TRANSFORM -> Transform()
             UI_BUTTON -> UIButtonComponent()
             UI_CANVAS -> UICanvasComponent()

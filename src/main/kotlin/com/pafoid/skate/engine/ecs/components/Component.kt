@@ -106,6 +106,7 @@ abstract class Component {
                 is RagdollComponent -> RAGDOLL
                 is VehicleComponent -> ComponentType.VEHICLE
                 is WaterComponent -> ComponentType.WATER
+                is TerrainComponent -> ComponentType.TERRAIN
                 is ScenePhysicsComponent -> SCENE_PHYSICS
                 is ScriptComponent -> ComponentType.SCRIPT
                 is SkeletonComponent -> SKELETON
