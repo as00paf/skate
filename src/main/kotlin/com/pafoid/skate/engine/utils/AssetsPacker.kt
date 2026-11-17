@@ -18,6 +18,10 @@ import com.pafoid.skate.engine.assets.pack.ReferenceCollector
 import com.pafoid.skate.engine.assets.serialization.Serializer
 import com.pafoid.skate.engine.core.LoggerService
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.jsonObject
 import java.io.File
 import java.nio.ByteBuffer
 
@@ -35,6 +39,16 @@ data class AssetInfo(
     val sha256: String = "",
 )
 private val serializer: Serializer = Serializer()
+
+/**
+ * The icon and splash an export ships (AST-29, `docs/design/AST-15.md` §4.1), as pack paths: an `engine:` reference or
+ * a project-relative path. [iconPath] is blank only when even the engine icon cannot be read (a broken install);
+ * [splashPath] is blank when the game shows no splash. [notices] say which fallbacks were used.
+ */
+data class ExportArt(val iconPath: String, val splashPath: String, val splashSeconds: Float, val notices: List<ExportNotice>)
+
+/** How many files an export would pack and their size on disk, before compression (AST-29 summary). */
+data class PackEstimate(val assetCount: Int, val bytes: Long)
 
 /**
  * Packs a project into `builds/game.bin` + `manifest.json`. Besides the project's files, the engine's game string
@@ -89,19 +103,16 @@ class AssetsPacker(
         val all = projectFiles(project, outputDir).filter { it.canonicalFile !in excluded }
 
         val roots = (if (onlyReferenced) all.filter { FileTypeResolver.resolve(it) in alwaysPacked } else all).toMutableList()
-        if (project.iconPath.isNotBlank() && !EngineDefaults.isReference(project.iconPath)) {
-            roots += File(project.iconPath).takeIf { it.isFile }?.let { listOf(it) }.orEmpty()
-        }
+        // The icon and splash ship even with "only referenced" (AST-29); engine ones are packed under their reference.
+        val art = art(project)
+        val artPaths = listOf(art.iconPath, art.splashPath).filter { it.isNotBlank() }
+        artPaths.filterNot(EngineDefaults::isReference).forEach { roots += File(projectDir, it) }
         val registry = AssetRegistry(projectDir).also { it.scan() }
         val resolver = EngineDefaultResolver(engineRoot) { projectDir }
         val collector = ReferenceCollector(projectDir, registry, engineDefaults = resolver)
         val referenced = collector.collect(roots)
         val engineRefs = LinkedHashSet(collector.engineReferences)
-        // The icon in memory may be the resolved engine file or the project's override of it.
-        project.iconPath.takeIf { it.isNotBlank() }?.let { icon ->
-            if (EngineDefaults.isReference(icon)) engineRefs += icon
-            else resolver.referenceFor(File(icon))?.let { engineRefs += it }
-        }
+        engineRefs += artPaths.filter(EngineDefaults::isReference)
         val files = if (onlyReferenced) {
             val allowed = all.map { it.canonicalFile }.toSet()
             (referenced + roots.map { it.canonicalFile }).filter { it in allowed }.distinct().sortedBy { it.path }
@@ -109,6 +120,63 @@ class AssetsPacker(
             all.sortedBy { it.path }
         }
         return Selection(files, engineRefs.filter { resolver.resolve(it) != null }.sorted())
+    }
+
+    /**
+     * Resolves [Project.iconPath] and [Project.splashPath] for an export (AST-29). The icon is mandatory: a blank or
+     * unreadable one falls back to [EngineDefaults.Textures.APP_ICON]. A blank splash is the engine's
+     * [EngineDefaults.Textures.SPLASH_SCREEN]; an unreadable one falls back to it too; [Project.splashSeconds] 0 means
+     * none.
+     */
+    fun art(project: Project): ExportArt {
+        val projectDir = File(project.projectPath).parentFile.canonicalFile
+        val resolver = EngineDefaultResolver(engineRoot) { projectDir }
+        val notices = mutableListOf<ExportNotice>()
+        fun default(reference: String, unavailable: ExportWarning): String =
+            if (resolver.resolve(reference) != null) reference else "".also { notices += ExportNotice(unavailable) }
+
+        val icon = when {
+            project.iconPath.isBlank() -> { notices += ExportNotice(ExportWarning.ICON_NOT_SET); null }
+            else -> packPath(project.iconPath, projectDir, resolver)
+                ?: null.also { notices += ExportNotice(ExportWarning.ICON_NOT_FOUND, listOf(project.iconPath)) }
+        } ?: default(EngineDefaults.Textures.APP_ICON, ExportWarning.ICON_DEFAULT_MISSING)
+
+        val seconds = Project.normalizedSplashSeconds(project.splashSeconds)
+        val splash = when {
+            seconds <= 0f -> ""
+            project.splashPath.isBlank() -> default(EngineDefaults.Textures.SPLASH_SCREEN, ExportWarning.SPLASH_DEFAULT_MISSING)
+            else -> packPath(project.splashPath, projectDir, resolver) ?: run {
+                notices += ExportNotice(ExportWarning.SPLASH_NOT_FOUND, listOf(project.splashPath))
+                default(EngineDefaults.Textures.SPLASH_SCREEN, ExportWarning.SPLASH_DEFAULT_MISSING)
+            }
+        }
+        return ExportArt(icon, splash, if (splash.isBlank()) 0f else seconds, notices)
+    }
+
+    /**
+     * The pack path of [path] (absolute, project-relative or `engine:`), or null when it is not a readable file the
+     * pack can hold. A project copy of an engine default keeps its `engine:` reference, as saved projects do.
+     */
+    private fun packPath(path: String, projectDir: File, resolver: EngineDefaultResolver): String? {
+        if (EngineDefaults.isReference(path)) return path.takeIf { resolver.resolve(it) != null }
+        val file = File(path).let { if (it.isAbsolute) it else File(projectDir, path) }.canonicalFile
+        if (!file.isFile) return null
+        resolver.referenceFor(file)?.let { return it }
+        return file.takeIf { it.startsWith(projectDir) }?.relativeTo(projectDir)?.invariantSeparatorsPath
+    }
+
+    /** The files [pack] would hold and their size on disk, for the export summary; reads no file contents. */
+    fun estimate(
+        project: Project,
+        onlyReferenced: Boolean = true,
+        outputDir: File = defaultOutputDir(project),
+        excludedScenes: Set<String> = emptySet(),
+    ): PackEstimate {
+        val selection = select(project, onlyReferenced, outputDir, excludedScenes)
+        val resolver = EngineDefaultResolver(engineRoot) { File(project.projectPath).parentFile.canonicalFile }
+        val engineFiles = selection.engineReferences.mapNotNull(resolver::resolve)
+        val files = selection.files + engineFiles
+        return PackEstimate(files.size, files.sumOf { it.length() })
     }
 
     private fun projectFiles(project: Project, outputDir: File): List<File> {
@@ -127,8 +195,10 @@ class AssetsPacker(
         file.extension.lowercase() in MODEL_COMPANIONS && file.name != BIN_FILE
 
     /**
-     * Writes [BIN_FILE], [MANIFEST_FILE] and `atlas_report.txt` to [outputDir]. [onProgress] gets the current step,
-     * its completed fraction (0..1) and the file being read, if any.
+     * Writes [BIN_FILE], [MANIFEST_FILE] and, when [writeReport] (debug builds, AST-29), [REPORT_FILE] to [outputDir];
+     * the report always goes to the log. [onProgress] gets the current step, its completed fraction (0..1) and the
+     * file being read, if any. The packed project file carries the export's resolved icon, splash and frame cap
+     * ([art], [packedProject]), so the game needs no fallback logic of its own.
      */
     fun pack(
         project: Project,
@@ -136,6 +206,7 @@ class AssetsPacker(
         onlyReferenced: Boolean = true,
         outputDir: File = defaultOutputDir(project),
         excludedScenes: Set<String> = emptySet(),
+        writeReport: Boolean = true,
         onProgress: (ExportStep, Float, String) -> Unit = { _, _, _ -> },
     ): Boolean {
         atlas = Atlas()
@@ -145,11 +216,14 @@ class AssetsPacker(
         onProgress(ExportStep.COLLECTING, 0f, "")
         val selection = select(project, onlyReferenced, outputDir, excludedScenes)
         val files = selection.files.sortedBy { FileTypeResolver.resolve(it) }
+        val art = art(project)
+        val projectFile = File(project.projectPath).canonicalFile
         val total = (files.size + selection.engineReferences.size).coerceAtLeast(1)
         val projectInputs = files.mapIndexed { index, file ->
             val relative = file.canonicalFile.relativeTo(projectDir).invariantSeparatorsPath
             onProgress(ExportStep.PACKING, index.toFloat() / total, relative)
-            PackInput(file.absolutePath, relative, FileTypeResolver.resolve(file).name, file.readBytes())
+            val bytes = file.readBytes().let { if (file.canonicalFile == projectFile) packedProject(it, project, art) else it }
+            PackInput(file.absolutePath, relative, FileTypeResolver.resolve(file).name, bytes)
         }
         val resolver = EngineDefaultResolver(engineRoot) { projectDir }
         val engineInputs = selection.engineReferences.mapIndexedNotNull { index, reference ->
@@ -189,7 +263,8 @@ class AssetsPacker(
                 val shared = firstAt.putIfAbsent(e.position, e.path)?.let { " (shared with $it)" }.orEmpty()
                 "  ${e.path} ${e.rawSize}->${e.storedSize} ${e.sha256.take(12)}$shared"
             }
-        File(outputDir, "atlas_report.txt").writeText(report)
+        val reportFile = File(outputDir, REPORT_FILE)
+        if (writeReport) reportFile.writeText(report) else reportFile.delete() // a release build lists no packed paths
         logger.logEngine(report, LoggerService.LogLevel.INFO)
         return true
     }
@@ -206,9 +281,27 @@ class AssetsPacker(
 
     companion object {
         const val BIN_FILE = "game.bin"
+        const val REPORT_FILE = "atlas_report.txt"
         const val MANIFEST_FILE = "manifest.json"
         const val BUILDS_DIR = ProjectLayout.BUILDS_DIR
         private val MODEL_COMPANIONS = setOf("mtl", "bin")
+
+        private val projectJson = Json { prettyPrint = true }
+
+        /**
+         * The saved project file [bytes] with the export's resolved [art] and normalized frame cap (AST-29). A file
+         * that is not a JSON object is packed unchanged.
+         */
+        fun packedProject(bytes: ByteArray, project: Project, art: ExportArt): ByteArray {
+            val root = runCatching { Json.parseToJsonElement(bytes.toString(Charsets.UTF_8)).jsonObject }.getOrNull() ?: return bytes
+            val patched = JsonObject(root + mapOf(
+                "iconPath" to JsonPrimitive(art.iconPath),
+                "splashPath" to JsonPrimitive(art.splashPath),
+                "splashSeconds" to JsonPrimitive(art.splashSeconds),
+                "targetFps" to JsonPrimitive(Project.normalizedTargetFps(project.targetFps)),
+            ))
+            return projectJson.encodeToString(JsonObject.serializer(), patched).toByteArray(Charsets.UTF_8)
+        }
 
         /** `<project folder>/builds`. */
         fun defaultOutputDir(project: Project): File = File(File(project.projectPath).parentFile, BUILDS_DIR)

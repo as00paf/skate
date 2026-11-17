@@ -7,6 +7,7 @@ import com.pafoid.skate.engine.core.LoggerService
 import com.pafoid.skate.engine.ui.GameSettings
 import com.pafoid.skate.engine.ui.GameSettingsStore
 import com.pafoid.skate.engine.core.LoggerService.LogLevel
+import com.pafoid.skate.engine.physics3d.PhysicsBackend
 import java.io.File
 
 /** What an export produces. */
@@ -19,6 +20,12 @@ enum class ExportTarget {
 }
 
 /**
+ * How the exported game starts (AST-29). Same jar for both: [DEBUG] only changes `run-game.bat` (`-Dskate.debug=true`,
+ * console kept open on a crash) and keeps `atlas_report.txt` in the build.
+ */
+enum class BuildMode { RELEASE, DEBUG }
+
+/**
  * Export settings. [excludedScenes] are absolute scene paths left out of the pack (the default scene is always
  * included). [outputDir] defaults to `<project>/builds`.
  */
@@ -28,6 +35,7 @@ data class ExportOptions(
     val compress: Boolean = true,
     val onlyReferenced: Boolean = true,
     val outputDir: String? = null,
+    val mode: BuildMode = BuildMode.RELEASE,
 )
 
 /** Export steps in order; [DONE] is reported once everything succeeded. */
@@ -82,6 +90,35 @@ enum class ExportDetail(val key: String) {
     NO_PROJECT("lbl.export.no_project"),
 }
 
+/**
+ * Something a successful export did not do as asked (AST-29), as a string key of the editor's `assets` area. None of
+ * them stops the export; [ExportNotice.args] fill the key's `%s` placeholders.
+ */
+enum class ExportWarning(val key: String) {
+    /** No args: the project has no icon, the engine icon is used. */
+    ICON_NOT_SET("lbl.export.warning.icon_not_set"),
+
+    /** Args: the icon path. */
+    ICON_NOT_FOUND("lbl.export.warning.icon_not_found"),
+
+    /** No args: the engine icon itself is missing (broken install); the game has no window icon. */
+    ICON_DEFAULT_MISSING("lbl.export.warning.icon_default_missing"),
+
+    /** Args: the splash path. The engine splash is used. */
+    SPLASH_NOT_FOUND("lbl.export.warning.splash_not_found"),
+
+    /** No args: the engine splash is missing; the game starts without one. */
+    SPLASH_DEFAULT_MISSING("lbl.export.warning.splash_default_missing"),
+
+    /** No args: Jolt is chosen; the game falls back to Bullet if its native library fails to load. */
+    PHYSICS_JOLT_FALLBACK("lbl.export.warning.physics_jolt_fallback"),
+
+    /** Args: the game jar. It is older than the editor build. */
+    GAME_JAR_STALE("lbl.export.warning.game_jar_stale"),
+}
+
+data class ExportNotice(val warning: ExportWarning, val args: List<String> = emptyList())
+
 /** [detail] and [detailArgs] explain a [failure] (see [ExportDetail]); args are raw paths or system messages. */
 data class ExportResult(
     val outputDir: File,
@@ -90,6 +127,7 @@ data class ExportResult(
     val detailArgs: List<String> = emptyList(),
     val assetCount: Int = 0,
     val packedBytes: Long = 0,
+    val warnings: List<ExportNotice> = emptyList(),
 ) {
     val success: Boolean get() = failure == null
 }
@@ -115,15 +153,23 @@ class ProjectExporter(
             ExportResult(outputDir, failure, detail, args)
         }
         validateOutput(project, outputDir)?.let { return fail(ExportFailure.INVALID_OUTPUT, it, listOf(outputDir.path)) }
+        val notices = mutableListOf<ExportNotice>()
         val jar = if (options.target == ExportTarget.WINDOWS) {
             val search = gameJarSearch()
-            if (search.stale) logger.logEngine("Game jar ${search.jar} is older than the editor build; run `gradlew gameJar`", LogLevel.WARN)
+            if (search.stale) {
+                logger.logEngine("Game jar ${search.jar} is older than the editor build; run `gradlew gameJar`", LogLevel.WARN)
+                notices += ExportNotice(ExportWarning.GAME_JAR_STALE, listOf(search.jar?.path.orEmpty()))
+            }
             search.jar?.takeIf { it.isFile }
                 ?: return fail(ExportFailure.GAME_JAR_MISSING, ExportDetail.GAME_JAR_NOT_BUILT, listOf(searchedList(search)))
         } else null
 
         return try {
-            assetsPacker.pack(project, options.compress, options.onlyReferenced, outputDir, options.excludedScenes) { step, f, detail ->
+            notices.addAll(0, assetsPacker.art(project).notices)
+            if (project.physicsBackend == PhysicsBackend.JOLT) notices += ExportNotice(ExportWarning.PHYSICS_JOLT_FALLBACK)
+            notices.forEach { logger.logEngine("Export warning ${it.warning}: ${it.args.joinToString()}", LogLevel.WARN) }
+            val debug = options.mode == BuildMode.DEBUG
+            assetsPacker.pack(project, options.compress, options.onlyReferenced, outputDir, options.excludedScenes, writeReport = debug) { step, f, detail ->
                 onProgress(ExportProgress(step, f, detail))
             }
             onProgress(ExportProgress(ExportStep.VERIFYING))
@@ -135,15 +181,22 @@ class ProjectExporter(
                 onProgress(ExportProgress(ExportStep.COPYING_JAR))
                 jar.copyTo(File(outputDir, GAME_JAR), overwrite = true)
                 onProgress(ExportProgress(ExportStep.WRITING_LAUNCHER))
-                generateBatchFile(outputDir)
+                File(outputDir, LAUNCHER).writeText(launcher(options.mode))
             }
             val manifest = assetsPacker.lastManifest
             onProgress(ExportProgress(ExportStep.DONE, 1f))
-            ExportResult(outputDir, assetCount = manifest?.entries?.size ?: 0, packedBytes = manifest?.binSize?.toLong() ?: 0)
+            ExportResult(outputDir, assetCount = manifest?.entries?.size ?: 0, packedBytes = manifest?.binSize?.toLong() ?: 0, warnings = notices)
         } catch (e: Exception) {
             fail(ExportFailure.IO_ERROR, ExportDetail.IO_FAILURE, listOf(e.message ?: e.javaClass.simpleName))
         }
     }
+
+    /** Files and on-disk size the export of [options] would pack, for the wizard's summary (run it off the main thread). */
+    fun estimate(project: Project, options: ExportOptions = ExportOptions()): PackEstimate =
+        assetsPacker.estimate(project, options.onlyReferenced, outputDir(project, options), options.excludedScenes)
+
+    /** The icon and splash the export would ship, with their fallback warnings (AST-29). */
+    fun art(project: Project): ExportArt = assetsPacker.art(project)
 
     /** Scenes an export can include or leave out. */
     fun sceneFiles(project: Project, options: ExportOptions = ExportOptions()): List<File> =
@@ -173,13 +226,19 @@ class ProjectExporter(
         return PackBuilder.verify(bin.copyOfRange(headerSize, bin.size), manifest)
     }
 
-    private fun generateBatchFile(outputDir: File) {
-        File(outputDir, LAUNCHER).writeText("@ECHO OFF\r\ncd /d \"%~dp0\"\r\njava -jar $GAME_JAR\r\n")
-    }
-
     companion object {
         const val GAME_JAR = "skate-game.jar"
         const val LAUNCHER = "run-game.bat"
+        const val DEBUG_PROPERTY = "skate.debug"
+
+        /**
+         * `run-game.bat` for [mode] (AST-29). Debug starts the same jar with `-Dskate.debug=true` and pauses on a
+         * non-zero exit so the console stays readable.
+         */
+        fun launcher(mode: BuildMode): String = when (mode) {
+            BuildMode.RELEASE -> "@ECHO OFF\r\ncd /d \"%~dp0\"\r\njava -jar $GAME_JAR\r\n"
+            BuildMode.DEBUG -> "@ECHO OFF\r\ncd /d \"%~dp0\"\r\njava -D$DEBUG_PROPERTY=true -jar $GAME_JAR\r\nif errorlevel 1 pause\r\n"
+        }
 
         fun outputDir(project: Project, options: ExportOptions): File =
             options.outputDir?.takeIf { it.isNotBlank() }?.let(::File) ?: AssetsPacker.defaultOutputDir(project)
