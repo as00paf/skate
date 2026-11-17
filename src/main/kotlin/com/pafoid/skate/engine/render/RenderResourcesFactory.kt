@@ -124,7 +124,7 @@ class RenderResourcesFactory(
             assetsManager.getShaderVariant(Assets.Shaders.SHADOW, setOf(ShaderFeature.ALPHA_TEST)),
         )
         val debugRenderer = DebugRenderer(shaders.debug, cameraManager)
-        val modelRenderer = ModelRenderer(debugRenderer)
+        val modelRenderer = ModelRenderer(debugRenderer, vaoLoader = vaoLoader)
         val splashRenderer = SplashRenderer(vaoLoader)
         splashRenderer.initialize()
 

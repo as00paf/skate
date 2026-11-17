@@ -58,6 +58,20 @@ object VertexLayouts {
         VertexBinding(3 * Float.SIZE_BYTES, listOf(VertexAttribute(0, AttributeType.VEC3, 0))),
     ))
 
+    /**
+     * Per-instance record of instanced meshes (REN-29 §4.1): a 3×4 world matrix as three `vec4` rows, then a params
+     * `vec4` (tint, random, wind phase, LOD fade). Locations 10–13, after the mesh attributes 0–7, the batch-picking id
+     * at 9 (`shader_3d_picking`) and one spare (8); REN-29 §4.1 said 8–11, which collides with that id.
+     */
+    const val INSTANCE_FLOATS = 16
+    const val INSTANCE_FIRST_LOCATION = 10
+    val INSTANCE_TRANSFORM = VertexBinding(INSTANCE_FLOATS * Float.SIZE_BYTES, List(4) { row ->
+        VertexAttribute(INSTANCE_FIRST_LOCATION + row, AttributeType.VEC4, row * 4 * Float.SIZE_BYTES)
+    }, perInstance = true)
+
+    /** A mesh layout plus the per-instance binding as the last binding. */
+    fun instanced(mesh: VertexLayoutDesc) = VertexLayoutDesc(mesh.bindings + INSTANCE_TRANSFORM)
+
     /** Floats per particle instance: position+size, colour, uv rect. */
     const val PARTICLE_FLOATS_PER_INSTANCE = 12
 

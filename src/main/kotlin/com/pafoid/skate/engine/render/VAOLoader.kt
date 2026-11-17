@@ -40,11 +40,38 @@ import org.joml.Matrix4f
  */
 class VAOLoader(private val device: () -> RhiDevice = RhiContext::require) {
 
-    private class GpuMeshBuffers(val input: RhiVertexInput, val buffers: List<RhiBuffer>)
+    private class GpuMeshBuffers(
+        val input: RhiVertexInput,
+        val attributes: List<Pair<Int, AttributeType>>,
+        val vertexBuffers: List<RhiBuffer>,
+        val indices: RhiBuffer?,
+    ) {
+        /** Instanced inputs over these buffers plus an instance buffer (REN-29 §4.1), by instance buffer. */
+        val instanced = java.util.IdentityHashMap<RhiBuffer, RhiVertexInput>()
+    }
 
     private val meshes = LinkedHashMap<Int, GpuMeshBuffers>()
     private var nextId = 1
     private val layouts = HashMap<List<Pair<Int, AttributeType>>, RhiVertexLayout>()
+    private val instancedLayouts = HashMap<List<Pair<Int, AttributeType>>, RhiVertexLayout>()
+
+    /**
+     * A vertex input drawing [part]'s buffers with [instanceBuffer] as the per-instance stream
+     * ([VertexLayouts.INSTANCE_TRANSFORM]). Cached per (part, buffer); released with the mesh or by
+     * [releaseInstanced]. Null when [part] was not uploaded by this loader.
+     */
+    fun instancedInput(part: MeshPart, instanceBuffer: RhiBuffer): RhiVertexInput? {
+        val mesh = meshes[part.vaoId] ?: return null
+        mesh.instanced[instanceBuffer]?.let { return it }
+        val d = device()
+        val layout = instancedLayouts.getOrPut(mesh.attributes) { d.createVertexLayout(VertexLayouts.instanced(VertexLayouts.mesh(mesh.attributes))) }
+        return d.createVertexInput(layout, mesh.vertexBuffers + instanceBuffer, mesh.indices).also { mesh.instanced[instanceBuffer] = it }
+    }
+
+    /** Closes every instanced input built over [instanceBuffer] (the batch owning it is going away). */
+    fun releaseInstanced(instanceBuffer: RhiBuffer) {
+        for (mesh in meshes.values) mesh.instanced.remove(instanceBuffer)?.close()
+    }
 
     /**
      * Uploads a mesh: one buffer per non-empty attribute plus the index buffer.
@@ -143,7 +170,7 @@ class VAOLoader(private val device: () -> RhiDevice = RhiContext::require) {
         val layout = layouts.getOrPut(attributes) { d.createVertexLayout(VertexLayouts.mesh(attributes)) }
         val input = d.createVertexInput(layout, buffers, indices)
         val id = nextId++
-        meshes[id] = GpuMeshBuffers(input, listOfNotNull(indices) + buffers)
+        meshes[id] = GpuMeshBuffers(input, attributes, buffers, indices)
         return id to input
     }
 
@@ -163,7 +190,10 @@ class VAOLoader(private val device: () -> RhiDevice = RhiContext::require) {
     }
 
     private fun release(mesh: GpuMeshBuffers) {
+        mesh.instanced.values.forEach { it.close() }
+        mesh.instanced.clear()
         mesh.input.close()
-        mesh.buffers.forEach { it.close() }
+        mesh.indices?.close()
+        mesh.vertexBuffers.forEach { it.close() }
     }
 }

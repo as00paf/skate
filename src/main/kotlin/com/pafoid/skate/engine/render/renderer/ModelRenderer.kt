@@ -9,7 +9,10 @@ import com.pafoid.skate.engine.assets.data.models.animations.Skeleton
 import com.pafoid.skate.engine.ecs.components.RenderComponent
 import com.pafoid.skate.engine.ecs.components.SkeletonComponent
 import com.pafoid.skate.engine.ecs.components.Transform
+import com.pafoid.skate.engine.render.EngineStats
+import com.pafoid.skate.engine.render.VAOLoader
 import com.pafoid.skate.engine.render.data.RenderMode
+import com.pafoid.skate.engine.render.instancing.InstanceBatch
 import com.pafoid.skate.engine.render.material.MaterialBinder
 import com.pafoid.skate.engine.render.material.ShaderUniformSink
 import com.pafoid.skate.engine.render.rhi.RhiContext
@@ -26,6 +29,8 @@ import org.joml.Vector3f
 class ModelRenderer(
     private val debugRenderer: DebugRenderer,
     private val device: () -> RhiDevice = RhiContext::require,
+    /** Builds instanced vertex inputs over uploaded meshes ([VAOLoader.instancedInput]); null disables instancing. */
+    private val vaoLoader: VAOLoader? = null,
 ) {
 
     private val materialBinder = MaterialBinder { slot, texture -> device().commandList().setTexture(slot, texture.rhi) }
@@ -138,6 +143,32 @@ class ModelRenderer(
         cmd.setPipeline(pipeline)
         cmd.setVertexInput(input)
         cmd.drawIndexed(part.vertexCount)
+    }
+
+    /**
+     * Draws every instance of [batch] with one instanced call (REN-29 §4.1): [shader] is an `INSTANCED` variant that
+     * reads the world matrix from the instance stream; the material binds as for a single mesh, with the same four
+     * pipelines. [simple] is the picking path (no PBR). Returns false when nothing could be drawn.
+     */
+    fun drawInstanced(batch: InstanceBatch, shader: Shader, simple: Boolean = false): Boolean {
+        if (batch.count == 0) return false
+        val loader = vaoLoader ?: return false
+        val instances = batch.upload() ?: return false
+        if (batch.onRelease == null) batch.onRelease = loader::releaseInstanced
+        val input = loader.instancedInput(batch.part, instances) ?: return false
+        val material = batch.material
+        shader.uploadBoolean(Uniforms.HAS_SKIN, false)
+        if (!simple) materialBinder.bind(material, sinkFor(shader))
+        val blended = !simple && material.alphaMode == AlphaMode.BLEND
+        val index = (if (blended) 2 else 0) + (if (material.doubleSided) 1 else 0)
+        val pipeline = pipelines[index].get(shader, input.layout) ?: return false
+        val cmd = device().commandList()
+        cmd.setPipeline(pipeline)
+        cmd.setVertexInput(input)
+        cmd.drawIndexed(batch.part.vertexCount, instances = batch.count)
+        EngineStats.instancedDraws.incrementAndGet()
+        EngineStats.instances.addAndGet(batch.count)
+        return true
     }
 
     fun destroy() = pipelines.forEach { it.close() }

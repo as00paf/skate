@@ -2,9 +2,10 @@ package com.pafoid.skate.engine.render.shader
 
 /**
  * Optional shader permutations; each maps to a `#define` of the same name. WIND: `wind.glsl` vertex displacement
- * (REN-29 §5.2); PICKING: a colour shader that writes entity ids instead (water, REN-29 §6.6).
+ * (REN-29 §5.2); PICKING: a colour shader that writes entity ids instead (water, REN-29 §6.6); INSTANCED: the model
+ * matrix comes from the per-instance stream (`VertexLayouts.INSTANCE_TRANSFORM`, REN-29 §4.1).
  */
-enum class ShaderFeature { SKINNED, SHADOWED, FOG, ALPHA_TEST, SDF, WIND, PICKING }
+enum class ShaderFeature { SKINNED, SHADOWED, FOG, ALPHA_TEST, SDF, WIND, PICKING, INSTANCED }
 
 class ShaderPreprocessException(message: String) : RuntimeException(message)
 

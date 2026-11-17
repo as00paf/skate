@@ -31,6 +31,16 @@ out mat3 fTBN;         // Tangent-Bitangent-Normal matrix for Normal Mapping
 out float fViewDepth;  // Distance along the camera's forward axis, used to pick the shadow cascade
 
 uniform mat4 transformationMatrix; // Model-to-World Matrix
+#ifdef INSTANCED
+// REN-29 §4.1: world matrix rows from the instance stream (VertexLayouts.INSTANCE_TRANSFORM), plus params
+layout (location=10) in vec4 aInstanceRow0;
+layout (location=11) in vec4 aInstanceRow1;
+layout (location=12) in vec4 aInstanceRow2;
+layout (location=13) in vec4 aInstanceParams; // tint, random, wind phase, LOD fade
+#define MODEL_MATRIX transpose(mat4(aInstanceRow0, aInstanceRow1, aInstanceRow2, vec4(0.0, 0.0, 0.0, 1.0)))
+#else
+#define MODEL_MATRIX transformationMatrix
+#endif
 uniform mat4 projectionMatrix;     // View-to-Clip Matrix
 uniform mat4 viewMatrix;           // World-to-View (Camera) Matrix
 
@@ -61,9 +71,9 @@ void main()
 
     // --- Coordinate Transformations ---
     // 1. World Space: Apply skinning then model-to-world transformation
-    vec4 worldPos = transformationMatrix * skinMatrix * vec4(aPos, 1.0);
+    vec4 worldPos = MODEL_MATRIX * skinMatrix * vec4(aPos, 1.0);
 #ifdef WIND
-    worldPos.xyz += windDisplacement(worldPos.xyz, transformationMatrix[3].xyz, aPos.y, aColor);
+    worldPos.xyz += windDisplacement(worldPos.xyz, MODEL_MATRIX[3].xyz, aPos.y, aColor);
 #endif
     fWorldPos = worldPos.xyz;
 
@@ -81,8 +91,8 @@ void main()
     // --- Normal Mapping (TBN Matrix) ---
     // Transform tangent and normal into world space to create the TBN basis.
     // This allows us to perform lighting in world space using normal map details.
-    vec3 T = normalize(vec3(transformationMatrix * skinMatrix * vec4(aTangent, 0.0)));
-    vec3 N = normalize(vec3(transformationMatrix * skinMatrix * vec4(aNormal, 0.0)));
+    vec3 T = normalize(vec3(MODEL_MATRIX * skinMatrix * vec4(aTangent, 0.0)));
+    vec3 N = normalize(vec3(MODEL_MATRIX * skinMatrix * vec4(aNormal, 0.0)));
     T = normalize(T - dot(T, N) * N); // Re-orthogonalize T with respect to N
     vec3 B = cross(N, T);
     fTBN = mat3(T, B, N);
