@@ -4,6 +4,7 @@ import com.pafoid.skate.app.Editor
 import com.pafoid.skate.editor.animation.clipeditor.AnimationEditorController
 import com.pafoid.skate.editor.animation.clipeditor.AnimationEditorWiring
 import com.pafoid.skate.editor.animation.clipeditor.SkeletonPreview
+import com.pafoid.skate.editor.animation.clipeditor.SkinnedPosePreview
 import com.pafoid.skate.editor.animation.clipeditor.TimelineView
 import com.pafoid.skate.editor.animation.mocap.TargetRig
 import com.pafoid.skate.editor.imgui.EditorWindow
@@ -18,7 +19,11 @@ import com.pafoid.skate.engine.animation.edit.EulerCurves
 import com.pafoid.skate.engine.animation.edit.KeyRef
 import com.pafoid.skate.engine.animation.edit.SkClip
 import com.pafoid.skate.engine.assets.data.models.animations.AnimationPath
+import com.pafoid.skate.engine.assets.Assets
+import com.pafoid.skate.engine.assets.data.models.`3dModel`
 import com.pafoid.skate.engine.core.Engine
+import com.pafoid.skate.engine.ecs.components.RenderComponent
+import com.pafoid.skate.engine.getComponent
 import imgui.ImGui
 import imgui.flag.ImGuiKey
 import imgui.flag.ImGuiMouseButton
@@ -51,6 +56,11 @@ class AnimationEditorWindow(
     private val strings = engine.stringManager
     private val timeline = TimelineView()
     private val preview = SkeletonPreview()
+    /** The pose on the character's skinned mesh, rendered offscreen under the bone overlay (REN-33). */
+    private val skinned = SkinnedPosePreview(
+        renderer = { runCatching { engine.renderer.renderResources.renderers.skinnedPreview }.getOrNull() },
+        modelFor = ::previewModel,
+    )
     private var framedFor: Any? = null
     private var fitFor: Any? = null
     private val filter = ImString(128)
@@ -444,6 +454,9 @@ class AnimationEditorWindow(
 
         val draw = ImGui.getWindowDrawList()
         draw.addRectFilled(ox, oy, ox + w, oy + h, ImGui.getColorU32(0.1f, 0.1f, 0.12f, 1f))
+        // The character in the pose (REN-33); the grid and joints are drawn on top of it
+        val character = skinned.draw(rig, locals, preview, w.toInt(), h.toInt())
+        if (character != 0) draw.addImage(character.toLong(), ox, oy, ox + w, oy + h, 0f, 1f, 1f, 0f)
         // Ground grid (1 m cells around the origin).
         val gridColor = ImGui.getColorU32(0.3f, 0.3f, 0.35f, 1f)
         val lines = (-5..5).flatMap { i -> listOf(Vector3f(i.toFloat(), 0f, -5f) to Vector3f(i.toFloat(), 0f, 5f), Vector3f(-5f, 0f, i.toFloat()) to Vector3f(5f, 0f, i.toFloat())) }
@@ -483,6 +496,12 @@ class AnimationEditorWindow(
         }
         ImGui.setCursorScreenPos(ox + 6f, oy + 6f)
         if (strings.tippedWith(ImGui.button(Icons.EXPAND), "btn.animation_editor.frame_view")) framedFor = null
+    }
+
+    /** The skinned mesh of the preview rig: the skater's model, or the selected object's (REN-33). */
+    private fun previewModel(): `3dModel`? = when (controller.rig) {
+        TargetRig.SKATER -> engine.assetsManager.getModel(Assets.Models.JAMES)
+        TargetRig.SELECTED -> engine.sceneManager.currentScene?.selectedGameObject?.getComponent<RenderComponent>()?.model
     }
 
     // ---- files -----------------------------------------------------------------------------------------------

@@ -155,7 +155,7 @@ class ProjectActionHandler(
             project.vsync = event.enabled
         }
         eventSystem.subscribe<CreateFileRequested> { event ->
-            val command = CreateFileCommand(event.path, event.isDirectory, logger)
+            val command = CreateFileCommand(event.path, event.isDirectory, logger, event.content)
             executeAndPublishOnSuccess(command, event.path, "create")
         }
         eventSystem.subscribe<RenameFileRequested> { event ->

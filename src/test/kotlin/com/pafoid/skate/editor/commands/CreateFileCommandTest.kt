@@ -13,6 +13,19 @@ import java.nio.file.Files
 class CreateFileCommandTest {
 
     @Test
+    fun `a failed content write removes the empty file and reports the failure`() {
+        val logger = mockk<LoggerService>(relaxed = true)
+        val file = Files.createTempDirectory("create-file-command").toFile().resolve("NewShader.glsl")
+        val command = CreateFileCommand(file.absolutePath, false, logger, "#type vertex") { _, _ -> throw java.io.IOException("disk full") }
+
+        command.execute()
+
+        assertFalse(file.exists(), "EDT-80: no empty file left behind")
+        assertFalse(command.wasSuccessful())
+        assertNotNull(command.getFailureReason())
+    }
+
+    @Test
     fun `execute and undo create file successfully`() {
         val logger = mockk<LoggerService>(relaxed = true)
         val tempDir = Files.createTempDirectory("create-file-command").toFile()

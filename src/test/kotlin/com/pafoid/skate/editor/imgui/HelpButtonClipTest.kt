@@ -2,6 +2,8 @@ package com.pafoid.skate.editor.imgui
 
 import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.editor.imgui.theme.ThemeLibrary
+import com.pafoid.skate.editor.settings.AppearanceSettings
+import com.pafoid.skate.editor.settings.Density
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.core.StringManager
 import imgui.ImGui
@@ -53,6 +55,7 @@ class HelpButtonClipTest {
     @AfterEach
     fun teardown() {
         ImGuiStyleManager.uiScale = { 1f }
+        ImGuiStyleManager.appearance = { AppearanceSettings.THEME_ONLY }
         ImGuiStyleManager.library = ThemeLibrary(emptyList())
         ImGui.destroyContext()
     }
@@ -65,8 +68,16 @@ class HelpButtonClipTest {
         "small button" to { ImGui.smallButton("x##probe") },
     )
 
-    private fun drawn(theme: String, scale: Float, windowPaddingY: Float?, tools: () -> Unit, modalRow: Boolean = false): WindowHeader.DrawnButton {
+    private fun drawn(
+        theme: String,
+        scale: Float,
+        windowPaddingY: Float?,
+        tools: () -> Unit,
+        modalRow: Boolean = false,
+        density: Density = Density.THEME,
+    ): WindowHeader.DrawnButton {
         ImGuiStyleManager.uiScale = { scale }
+        ImGuiStyleManager.appearance = { AppearanceSettings(density = density) }
         ImGuiStyleManager.invalidate()
         ImGuiStyleManager.sync(theme)
         windowPaddingY?.let { ImGui.getStyle().setWindowPadding(ImGui.getStyle().windowPaddingX, it) }
@@ -93,6 +104,20 @@ class HelpButtonClipTest {
                 if (button.minX < clip.minX || button.maxX > clip.maxX) failures += "side clipped: $case"
                 if (button.minY != kotlin.math.floor(button.minY)) failures += "not on a whole pixel: $case"
             }
+        }
+        assertTrue(failures.isEmpty(), failures.joinToString("\n"))
+    }
+
+    @Test
+    fun HelpButton_IsNeverClipped_WithEveryDensity() {
+        // EDT-76's spacing presets (and Custom with no window padding) at both scales.
+        val failures = mutableListOf<String>()
+        for (density in Density.entries) for (scale in listOf(1f, 1.5f)) for ((toolsName, tools) in toolSets) {
+            val padY = if (density == Density.CUSTOM) 0f else null
+            val (button, clip) = drawn("dark", scale, padY, tools, density = density)
+            val case = "$density @${(scale * 100).toInt()}% tools=$toolsName: button=$button clip=$clip"
+            if (button.minY < clip.minY + HelpButtonLayout.MIN_CLIP_CLEARANCE) failures += "top clipped: $case"
+            if (button.maxY > clip.maxY || button.minX < clip.minX || button.maxX > clip.maxX) failures += "clipped: $case"
         }
         assertTrue(failures.isEmpty(), failures.joinToString("\n"))
     }

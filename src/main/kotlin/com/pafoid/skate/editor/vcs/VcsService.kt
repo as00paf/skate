@@ -14,11 +14,24 @@ data class VcsCommit(
     val author: String,
     val timeMs: Long,
     val files: List<String>,
+    /** Parent commit ids, first parent first (EDT-79: the Git log graph). */
+    val parents: List<String> = emptyList(),
 ) {
     val shortId: String get() = id.take(7)
 }
 
-data class VcsBranches(val current: String?, val local: List<String>)
+/**
+ * The local branches. [current] is null when HEAD is detached; [head] is then the checked-out commit id. [tips] maps
+ * each branch to the commit it points at (EDT-79: Git log labels and branch filter).
+ */
+data class VcsBranches(
+    val current: String?,
+    val local: List<String>,
+    val tips: Map<String, String> = emptyMap(),
+    val head: String? = null,
+) {
+    val detached: Boolean get() = current == null && head != null
+}
 
 data class DiffLine(val kind: Kind, val text: String) {
     enum class Kind { HUNK, CONTEXT, ADDED, REMOVED }
@@ -64,13 +77,13 @@ interface VcsService {
     /** Commits exactly [paths] (additions, edits and deletions) and returns the commit id. */
     fun commit(message: String, paths: List<String>, author: VcsAuthor): String
 
-    /** The current branch's history, newest first. */
-    fun log(limit: Int): List<VcsCommit>
+    /** The current branch's history, newest first; with [allBranches], the history of every local branch. */
+    fun log(limit: Int, allBranches: Boolean = false): List<VcsCommit>
 
     fun branches(): VcsBranches
 
-    /** Creates [name] from the current commit and switches to it. */
-    fun createBranch(name: String)
+    /** Creates [name] from [from], a branch or commit id (null: the current commit); with [checkout], switches to it. */
+    fun createBranch(name: String, from: String? = null, checkout: Boolean = true)
 
     /** Switches to [name]; refused while tracked files have uncommitted changes. */
     fun checkout(name: String)
@@ -83,6 +96,9 @@ interface VcsService {
 
     /** Resolves a conflicted file as a whole: keep our version or take theirs, then mark it resolved. */
     fun resolve(path: String, resolution: Resolution)
+
+    /** A conflicted file: our version (index stage 2) against theirs (stage 3), for a preview before resolving. */
+    fun conflictDiff(path: String): FileDiff
 
     /** The author from Git's own configuration, when it has one. */
     fun configuredAuthor(): VcsAuthor?

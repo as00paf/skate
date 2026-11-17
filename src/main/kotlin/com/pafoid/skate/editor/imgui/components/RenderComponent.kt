@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.imgui.components
 
+import com.pafoid.skate.editor.assets.ProjectShaders
 import com.pafoid.skate.editor.imgui.Tooltips
 import com.pafoid.skate.editor.imgui.EnumLabels
 import com.pafoid.skate.editor.commands.objects.MaterialState
@@ -40,6 +41,9 @@ fun RenderComponent.imgui(engine: Engine) {
 
     materialInspector(engine)
 }
+
+/** The Shader combo's choices, scanned once per opening (EDT-80). */
+private val shaderOptions = ProjectShaders.OptionsCache()
 
 /** Shared by every material inspector so a gesture survives redraws; see [MaterialEditSession]. */
 private val materialSession = MaterialEditSession()
@@ -151,6 +155,24 @@ private fun materialFields(mat: Material, engine: Engine, target: String?, s: (S
     }
     row("doubleSided", s("doubleSided"), "material.doubleSided.tooltip") {
         if (ImGui.checkbox("##value", d.doubleSided)) preview(d.copy(doubleSided = !d.doubleSided))
+    }
+    row("shader", s("shader"), "material.shader.tooltip") {
+        // EDT-80: null is the schema's shader
+        val engineTag = s("shader.engine")
+        val none = s("shader.none")
+        val current = d.shader
+        val open = ImGui.beginCombo("##value", current?.let { ProjectShaders.label(it, engineTag) } ?: none)
+        val options = shaderOptions.frame(mat, open, engine.assetsManager.paths.projectRoot, current)
+        if (open) {
+            if (ImGui.selectable(none, current == null) && current != null) preview(d.copy(shader = null))
+            for (ref in options) {
+                if (ImGui.selectable("${ProjectShaders.label(ref, engineTag)}##$ref", ref == current) && ref != current) {
+                    preview(d.copy(shader = ref))
+                }
+                if (ImGui.isItemHovered()) Tooltips.text(ref)
+            }
+            ImGui.endCombo()
+        }
     }
 
     val none = s("texture.select")

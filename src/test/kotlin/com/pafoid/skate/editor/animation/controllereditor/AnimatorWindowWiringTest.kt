@@ -44,6 +44,19 @@ class AnimatorWindowWiringTest {
     }
 
     @Test
+    fun Resolve_EngineDefault_OpensTheProjectOverrideEditable_ElseTheEngineFileReadOnly() {
+        val ref = Assets.Configs.SKATER_CONTROLLER // engine:Animations/skater.controller.json (GPL-26)
+        val engine = AnimatorWindowWiring.resolve(ref, project)!!
+        assertNull(engine.file, "no project copy: the engine's file is read-only")
+        assertTrue(engine.text.contains("\"skater\""))
+
+        com.pafoid.skate.editor.project.EngineAssetCopier().copyEngineDefaults(project, copyAll = false).getOrThrow()
+        val copy = File(project, "Assets/Animations/skater.controller.json")
+        assertEquals(copy.absoluteFile, AnimatorWindowWiring.resolve(ref, project)!!.file?.absoluteFile, "the project copy is edited")
+        assertEquals(copy.absoluteFile, AnimatorWindowWiring.fileFor(ref, project)?.absoluteFile, "saving it reloads skaters using the reference")
+    }
+
+    @Test
     fun ClipScanner_UsesTheNameInsideEachFile_AndProjectRelativePaths() {
         val f = File(project, "Assets/Animations/run_v2.skanim").apply { parentFile.mkdirs() }
         f.writeText(SkAnimFormat.encode(SkClip(name = "run", duration = 1f, tracks = emptyList())))

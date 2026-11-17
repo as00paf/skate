@@ -116,6 +116,9 @@ dependencies {
 // the jar under /shaders/, so the editor, the tests and the exported game keep a classpath copy.
 tasks.processResources {
     from("assets/Shaders") { into("shaders") }
+    // GPL-26: the skater configs are engine:Data/... and engine:Animations/... defaults with a jar copy under /configs/.
+    from("assets/Data") { include("*.character.json"); into("configs") }
+    from("assets/Animations") { include("*.controller.json"); into("configs") }
 }
 
 tasks.test {

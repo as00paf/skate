@@ -2,6 +2,7 @@ package com.pafoid.skate.editor.imgui.components
 
 import com.pafoid.skate.editor.events.ViewportAction
 import com.pafoid.skate.editor.imgui.Tooltips
+import com.pafoid.skate.editor.imgui.TrailingButtons
 import com.pafoid.skate.editor.imgui.tippedWith
 import com.pafoid.skate.editor.imgui.tipped
 import com.pafoid.skate.editor.animation.AnimatorControllerCatalog
@@ -37,21 +38,20 @@ fun Animator.imgui(engine: Engine) {
     ImGui.separator()
 
     ImGui.beginGroup()
-    if (ImGui.beginCombo(
-            engine.stringManager.label("lbl.animator.animations"),
-            currentAnimation?.name
-                ?: if (animations.isEmpty()) engine.stringManager.getString("lbl.animator.drop_animations") else engine.stringManager.getString(
-                    "lbl.animator.select"
-                )
-        )
-    ) {
+    val running = engine.sceneManager.currentScene?.isRunning == true
+    val shown = inspectorClip ?: currentAnimation.takeIf { stateMachine == null }
+    val comboPreview = shown?.name
+        ?: if (animations.isEmpty()) engine.stringManager.getString("lbl.animator.drop_animations") else engine.stringManager.getString("lbl.animator.select")
+    if (ImGui.beginCombo(engine.stringManager.label("lbl.animator.animations"), comboPreview)) {
         for (anim in animations) {
-            if (ImGui.selectable("${anim.name} (${String.format("%.2f", anim.duration)}s)", currentAnimation == anim)) {
-                play(anim)
+            // ANI-25: on a character with a controller the clip plays over it (and over gameplay) until Stop/Reset.
+            if (ImGui.selectable("${anim.name} (${String.format("%.2f", anim.duration)}s)###clip:${anim.name}", shown == anim)) {
+                AnimatorControls.selectClip(this, anim, skeletonComponent, running)
             }
         }
         ImGui.endCombo()
     }
+    Tooltips.showIfPresent(engine.stringManager, "lbl.animator.animations.tooltip")
     ImGui.endGroup()
 
     if (ImGui.beginDragDropTarget()) {
@@ -72,14 +72,12 @@ fun Animator.imgui(engine: Engine) {
 private fun Animator.playbackSection(engine: Engine, skeletonComponent: SkeletonComponent?) {
     val strings = engine.stringManager
     val running = engine.sceneManager.currentScene?.isRunning == true
-    val anim = currentAnimation
-    val timeline = AnimatorControls.showsClipTimeline(this)
-    if (!timeline && stateMachine == null) return
-    if (timeline) {
-        anim ?: return
-        ImGui.text(strings.getString("lbl.animator.duration", anim.duration))
-        val timeArr = floatArrayOf(currentTime.coerceIn(0f, anim.duration))
-        if (ImGui.sliderFloat(strings.label("lbl.animator.timeline"), timeArr, 0f, anim.duration)) {
+    val timelineClip = AnimatorControls.timelineClip(this)
+    if (timelineClip == null && stateMachine == null) return
+    if (timelineClip != null) {
+        ImGui.text(strings.getString("lbl.animator.duration", timelineClip.duration))
+        val timeArr = floatArrayOf(AnimatorControls.timelineTime(this).coerceIn(0f, timelineClip.duration))
+        if (ImGui.sliderFloat(strings.label("lbl.animator.timeline"), timeArr, 0f, timelineClip.duration)) {
             AnimatorControls.scrub(this, skeletonComponent, timeArr[0], running)
         }
         Tooltips.showIfPresent(strings, "lbl.animator.timeline.tooltip")
@@ -93,6 +91,13 @@ private fun Animator.playbackSection(engine: Engine, skeletonComponent: Skeleton
     if (strings.tippedWith(ImGui.button("${strings.getString("btn.reset")}##animator_reset"), "lbl.animator.reset.tooltip")) {
         AnimatorControls.reset(this, skeletonComponent)
     }
+    if (AnimatorControls.overridesController(this)) {
+        ImGui.sameLine()
+        if (strings.tipped(ImGui.button("${strings.getString("btn.animator.stop_clip")}##animator_stop"), "btn.animator.stop_clip")) {
+            AnimatorControls.stop(this, skeletonComponent)
+        }
+        MImGui.warningText(strings.getString("lbl.animator.clip_over_controller", inspectorClip?.name ?: ""))
+    }
     if (!running) {
         ImGui.sameLine()
         MImGui.textDisabled(strings.getString("lbl.animator.preview_hint"))
@@ -105,7 +110,12 @@ private fun Animator.controllerSection(engine: Engine) {
     val catalog = AnimatorControllerCatalog.shared
     val none = strings.getString("lbl.animator.controller_none")
     val preview = controllerPath?.let { AnimatorControllerCatalog.displayName(it) } ?: none
-    if (ImGui.beginCombo(strings.label("lbl.animator.controller"), preview)) {
+    val comboLabel = strings.label("lbl.animator.controller")
+    val refreshLabel = "${strings.getString("lbl.animator.controller_refresh")}##controller_refresh"
+    // EDT-86: the combo shrinks (or the buttons wrap) so the buttons after it always show.
+    val editLabel = "${strings.getString("btn.animator.edit_controller")}##controller_edit"
+    val row = TrailingButtons.begin(editLabel, refreshLabel, fieldLabel = comboLabel)
+    if (ImGui.beginCombo(comboLabel, preview)) {
         if (ImGui.selectable("$none###controller_none", controllerPath == null)) {
             engine.eventSystem.publish(AnimatorAction.SetController(this, null))
         }
@@ -124,13 +134,13 @@ private fun Animator.controllerSection(engine: Engine) {
         }
         ImGui.endDragDropTarget()
     }
-    ImGui.sameLine()
-    if (strings.tipped(ImGui.button("${strings.getString("btn.animator.edit_controller")}##controller_edit"), "btn.animator.edit_controller")) {
+    row.next()
+    if (strings.tipped(ImGui.button(editLabel), "btn.animator.edit_controller")) {
         // Opens the Animator window (ANI-21) on this controller, previewing this object.
         engine.eventSystem.publish(OpenAnimatorController(controllerPath, this))
     }
-    ImGui.sameLine()
-    if (ImGui.button("${strings.getString("lbl.animator.controller_refresh")}##controller_refresh")) catalog.refresh()
+    row.next()
+    if (ImGui.button(refreshLabel)) catalog.refresh()
     Tooltips.text(strings.getString("lbl.animator.controller_drop_hint"))
 
     val machine = stateMachine

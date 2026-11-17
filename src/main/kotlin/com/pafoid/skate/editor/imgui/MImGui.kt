@@ -9,6 +9,7 @@ import imgui.flag.ImGuiCol
 import imgui.flag.ImGuiCond
 import imgui.flag.ImGuiKey
 import imgui.flag.ImGuiStyleVar
+import imgui.flag.ImGuiTableColumnFlags
 import imgui.flag.ImGuiWindowFlags
 import imgui.type.ImInt
 import org.joml.Vector2f
@@ -36,7 +37,8 @@ object MImGui {
         ImGui.pushID(label)
 
         if (ImGui.beginTable("##${label}_table", 2, 0, 2f)) {
-            ImGui.tableSetupColumn("##Label", 0, columnWidth)
+            // EDT-87: a width needs an explicit sizing policy; without one ImGui asserts and the editor aborts.
+            ImGui.tableSetupColumn("##Label", ImGuiTableColumnFlags.WidthFixed, columnWidth)
             ImGui.tableSetupColumn("##Control")
             ImGui.tableNextRow()
             ImGui.tableSetColumnIndex(0)
@@ -422,9 +424,12 @@ object MImGui {
             ImGui.text(label)
             ImGui.tableSetColumnIndex(1)
 
+            // EDT-86: the combo leaves room for Delete at the current style (it was cut off at the right end).
+            val remove = "${Icons.TRASH}##remove"
+            val row = TrailingButtons.begin(remove)
             val result = ImGui.combo("##$label", index, labels.toTypedArray(), labels.size)
-            ImGui.sameLine()
-            removed = ImGui.button(Icons.TRASH, 15f, 15f)
+            row.next()
+            removed = ImGui.button(remove)
             strings?.let { Tooltips.show(it, "lbl.texture.remove.tooltip") }
 
             ImGui.endTable()
@@ -466,7 +471,7 @@ object MImGui {
         ImGui.pushID(label)
 
         if (ImGui.beginTable("##${label}_table", 2, 0, 2f)) {
-            ImGui.tableSetupColumn("##Label", 0, DEFAULT_COLUMN_WIDTH)
+            ImGui.tableSetupColumn("##Label", ImGuiTableColumnFlags.WidthFixed, DEFAULT_COLUMN_WIDTH)
             ImGui.tableSetupColumn("##Control")
             ImGui.tableNextRow()
             ImGui.tableSetColumnIndex(0)
@@ -777,12 +782,15 @@ object MImGui {
             // A settings field explanation: shown even with tooltips off (EDT-57).
             if (helpTooltip != null) Tooltips.always(helpTooltip)
             ImGui.tableSetColumnIndex(1)
-            ImGui.pushItemWidth(-1f)
+            val resetLabel = "↺##reset_$label"
+            // EDT-86: a reset button gets its room first; the widget takes the rest instead of pushing it out.
+            val row = onReset?.let { TrailingButtons.begin(resetLabel) }
+            ImGui.pushItemWidth(row?.layout?.fieldWidth ?: -1f)
             widget()
             ImGui.popItemWidth()
             if (onReset != null) {
-                ImGui.sameLine()
-                if (ImGui.button("↺##reset_$label")) {
+                row?.next()
+                if (ImGui.button(resetLabel)) {
                     onReset()
                 }
             }

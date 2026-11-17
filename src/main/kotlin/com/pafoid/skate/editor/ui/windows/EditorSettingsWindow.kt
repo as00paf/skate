@@ -9,6 +9,9 @@ import com.pafoid.skate.editor.imgui.FooterButton
 import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.editor.imgui.ImGuiStyleManager
 import com.pafoid.skate.editor.imgui.theme.EditorTheme
+import com.pafoid.skate.editor.settings.AppearanceSettings
+import com.pafoid.skate.editor.settings.Density
+import com.pafoid.skate.editor.settings.Spacing
 import com.pafoid.skate.editor.imgui.MImGui
 import com.pafoid.skate.editor.settings.EditorCameraSettings
 import com.pafoid.skate.editor.settings.EditorSettings
@@ -73,6 +76,7 @@ class EditorSettingsWindow(
     private var tempCompletionDelay = 200
     private var tempShowTooltips = true
     private var tempUiScale = 1f
+    private var tempAppearance = AppearanceSettings()
     private var tempLoadLastProject = true
     private var tempSnap = GizmoSnapSettings()
     private var tempCamera = EditorCameraSettings()
@@ -89,7 +93,7 @@ class EditorSettingsWindow(
             Category("general", "settings.editor.general", arrayOf("general", "language", "unit", "metric", "imperial", "startup", "project", "last")) { renderGeneral() },
             Category("keybindings", "settings.editor.keybindings", arrayOf("key", "binding", "gizmo", "translate", "rotate", "scale", "select", "measure", "deselect", "camera", "reset")) { renderKeyBindings() },
             Category("gamepad_overlay", "settings.editor.gamepad_overlay", arrayOf("gamepad", "overlay", "show", "size", "scale")) { renderGamepadOverlay() },
-            Category("interface", "settings.editor.interface", arrayOf("interface", "theme", "tooltip", "scale", "font", "size")) { renderInterface() },
+            Category("interface", "settings.editor.interface", arrayOf("interface", "theme", "tooltip", "scale", "font", "size", "text", "appearance", "density", "padding", "spacing", "rounding", "compact", "spacious", "menu")) { renderInterface() },
             Category("scene_view", "settings.editor.scene_view", arrayOf("scene", "view", "snap", "gizmo", "grid", "camera", "speed", "sensitivity", "mouse")) { renderSceneView() },
             Category("autosave", "settings.editor.autosave", arrayOf("auto", "save", "autosave", "interval")) { renderAutoSave() },
             Category("script_editor", "settings.editor.script_editor", arrayOf("script", "completion", "popup", "delay", "autocomplete")) { renderScriptEditor() },
@@ -100,7 +104,7 @@ class EditorSettingsWindow(
     /** Standard footer (EDT-51 §2.6): [Cancel] [Apply] [OK]; Apply only while there are unsaved edits. */
     override fun footerButtons(): List<FooterButton> = listOf(
         FooterButton("btn.cancel", FooterButton.Role.CANCEL) {
-            ImGuiStyleManager.preview = null
+            clearPreviews()
             hasPendingChanges = false
             syncTempSettings()
         },
@@ -155,8 +159,15 @@ class EditorSettingsWindow(
 
     /** Closed without OK/Apply, by any path: drop the theme preview and unsaved edits (EDT-40). */
     override fun onClosed() {
-        ImGuiStyleManager.preview = null
+        clearPreviews()
         hasPendingChanges = false
+    }
+
+    /** Theme, appearance and font size show live while edited (EDT-07, EDT-76); this goes back to the saved ones. */
+    private fun clearPreviews() {
+        ImGuiStyleManager.preview = null
+        ImGuiStyleManager.previewAppearance = null
+        ImGuiStyleManager.previewUiScale = null
     }
 
     private fun syncTempSettings() {
@@ -174,6 +185,7 @@ class EditorSettingsWindow(
             tempCompletionDelay = editor.completionDelayMs
             tempShowTooltips = editor.showTooltips
             tempUiScale = editor.fontSize
+            tempAppearance = editor.appearance
             tempLoadLastProject = editor.loadLastProjectOnStartup
             tempSnap = editor.gizmoSnap
             tempCamera = editor.camera
@@ -266,7 +278,72 @@ class EditorSettingsWindow(
         floatRow(
             "settings.editor.interface.ui_scale", tempUiScale, 1f,
             EditorSettings.MIN_UI_SCALE, EditorSettings.MAX_UI_SCALE, "%.2fx",
-        ) { tempUiScale = it }
+        ) { tempUiScale = it; ImGuiStyleManager.previewUiScale = it }
+
+        renderAppearance()
+    }
+
+    /** Spacing presets, the spacing values and corner rounding over the theme (EDT-76); previewed live. */
+    private fun renderAppearance() {
+        ImGui.spacing()
+        ImGui.separator()
+        ImGui.text(stringManager.getString("settings.editor.interface.appearance"))
+
+        val densities = Density.entries
+        val labels = densities.map { stringManager.getString(it.labelKey) }.toTypedArray()
+        val sel = ImInt(densities.indexOf(tempAppearance.density))
+        MImGui.propertyRow(
+            label = stringManager.getString("settings.editor.interface.density"),
+            helpTooltip = stringManager.getString("settings.editor.interface.density.desc"),
+            onReset = { setAppearance(tempAppearance.withDensity(Density.COMFORTABLE)) },
+        ) {
+            if (combo("##density", sel, labels, labels.size)) setAppearance(tempAppearance.withDensity(densities[sel.get()]))
+        }
+
+        val themeStyle = ImGuiStyleManager.library.resolve(tempTheme).style
+        val shown = tempAppearance.spacing ?: AppearanceSettings.spacingOf(themeStyle)
+        val defaults = Density.COMFORTABLE.spacing!!
+        pairRow("settings.editor.interface.window_padding", shown.windowPaddingX, shown.windowPaddingY, defaults.windowPaddingX, defaults.windowPaddingY) { s, x, y ->
+            s.copy(windowPaddingX = x, windowPaddingY = y)
+        }
+        pairRow("settings.editor.interface.frame_padding", shown.framePaddingX, shown.framePaddingY, defaults.framePaddingX, defaults.framePaddingY) { s, x, y ->
+            s.copy(framePaddingX = x, framePaddingY = y)
+        }
+        pairRow("settings.editor.interface.item_spacing", shown.itemSpacingX, shown.itemSpacingY, defaults.itemSpacingX, defaults.itemSpacingY) { s, x, y ->
+            s.copy(itemSpacingX = x, itemSpacingY = y)
+        }
+
+        val rounding = floatArrayOf(tempAppearance.rounding ?: themeStyle.rounding)
+        MImGui.propertyRow(
+            label = stringManager.getString("settings.editor.interface.rounding"),
+            helpTooltip = stringManager.getString("settings.editor.interface.rounding.desc"),
+            onReset = { setAppearance(tempAppearance.copy(rounding = null)) },
+        ) {
+            if (sliderFloat("##rounding", rounding, AppearanceSettings.MIN_ROUNDING, AppearanceSettings.MAX_ROUNDING, "%.0f px")) {
+                setAppearance(tempAppearance.copy(rounding = rounding[0]))
+            }
+        }
+    }
+
+    /** An X/Y spacing row; editing it switches the density to Custom. The reset restores the default preset's values. */
+    private fun pairRow(key: String, x: Float, y: Float, defaultX: Float, defaultY: Float, set: (Spacing, Float, Float) -> Spacing) {
+        val themeSpacing = AppearanceSettings.spacingOf(ImGuiStyleManager.library.resolve(tempTheme).style)
+        MImGui.propertyRow(
+            label = stringManager.getString(key),
+            helpTooltip = stringManager.getString("$key.desc"),
+            onReset = { setAppearance(tempAppearance.withCustom(themeSpacing) { set(it, defaultX, defaultY) }) },
+        ) {
+            val v = floatArrayOf(x, y)
+            if (ImGui.sliderFloat2("##$key", v, Spacing.MIN, Spacing.MAX, "%.0f px")) {
+                setAppearance(tempAppearance.withCustom(themeSpacing) { set(it, v[0], v[1]) })
+            }
+        }
+    }
+
+    private fun setAppearance(next: AppearanceSettings) {
+        tempAppearance = next.sanitized()
+        ImGuiStyleManager.previewAppearance = tempAppearance
+        hasPendingChanges = true
     }
 
     /** Gizmo snap steps and the editor camera (EDT-57). */
@@ -460,6 +537,7 @@ class EditorSettingsWindow(
             it.copy(
                 showTooltips = tempShowTooltips,
                 fontSize = tempUiScale,
+                appearance = tempAppearance,
                 loadLastProjectOnStartup = tempLoadLastProject,
                 gizmoSnap = tempSnap,
                 camera = tempCamera,
@@ -468,7 +546,7 @@ class EditorSettingsWindow(
                 blenderImportOnOpen = tempBlenderImportOnOpen,
             )
         }
-        ImGuiStyleManager.preview = null
+        clearPreviews()
         hasPendingChanges = false
     }
 

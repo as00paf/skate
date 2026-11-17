@@ -3,6 +3,7 @@ package com.pafoid.skate.app
 import com.pafoid.skate.editor.data.EditorShortcuts
 import com.pafoid.skate.editor.data.EditorInputState
 import com.pafoid.skate.editor.gizmos.EditorCamera
+import com.pafoid.skate.editor.imgui.EditorToast
 import com.pafoid.skate.editor.imgui.ImGuiLayer
 import com.pafoid.skate.editor.systems.ClipboardService
 import com.pafoid.skate.editor.systems.EditorPauseActions
@@ -41,6 +42,7 @@ class Editor(
         // EDT-57: Show tooltips and UI scale come from the editor settings, read live.
         com.pafoid.skate.editor.imgui.Tooltips.enabled = { settingsManager.editorSettings.showTooltips }
         com.pafoid.skate.editor.imgui.ImGuiStyleManager.uiScale = { settingsManager.editorSettings.fontSize }
+        com.pafoid.skate.editor.imgui.ImGuiStyleManager.appearance = { settingsManager.editorSettings.appearance }
         EditorPauseActions.install(engine.pauseActions, engine.eventSystem)
         // The game's language lives in the project's game settings, never in the editor's (GUI-10, EDT-39).
         GameSettingsBinding.install(engine.eventSystem, engine.gameLocale, engine.logger)
@@ -74,7 +76,7 @@ class Editor(
             editorCamera
         )
 
-    /** The project's local Git repository (EDT-60), shared by the Version Control window and its handler. */
+    /** The project's local Git repository (EDT-60), shared by the branch button, the VCS dialogs and the Git log (EDT-79). */
     val vcsSession = VcsSession(
         projectRoot = { projectManager.currentProject?.getProjectFile()?.absoluteFile?.parentFile },
         runner = VcsRunner.Jobs(engine.jobSystem),
@@ -84,6 +86,7 @@ class Editor(
         playing = { engine.runtimePlaying },
         unsavedScenes = { engine.sceneManager.openScenes.any { it.isDirty } },
         projectPath = { projectManager.currentProject?.projectPath },
+        notify = { key, args -> EditorToast.show(engine.stringManager.getString(key, *args.toTypedArray())) },
     )
 
     val gizmoSystem = GizmoSystem(engine, settingsManager, undoRedoManager, editorCamera)

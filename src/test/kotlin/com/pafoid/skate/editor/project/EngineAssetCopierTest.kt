@@ -55,11 +55,15 @@ class EngineAssetCopierTest {
     }
 
     @Test
-    fun ReferenceMode_CopiesOnlyTheBasicShaders() {
+    fun ReferenceMode_CopiesOnlyTheBasicShadersAndTheSkaterConfigs() {
         val report = EngineAssetCopier().copyEngineDefaults(project, copyAll = false).getOrThrow()
 
-        assertEquals(EngineDefaults.Shaders.BASIC.size, report.copied.size)
-        assertTrue(report.copied.all { it.parentFile.name == "Shaders" })
+        assertEquals(EngineDefaults.ALWAYS_COPIED.size, report.copied.size)
+        assertEquals(EngineDefaults.Shaders.BASIC.size, report.copied.count { it.parentFile.name == "Shaders" })
+        // GPL-26: users edit the skater configs in the editor, so every project has them.
+        assertTrue(File(assets, "Data/skater.character.json").isFile)
+        assertTrue(File(assets, "Animations/skater.controller.json").isFile)
+        assertFalse(File(assets, "Animations/idle_0.fbx").exists())
         assertFalse(File(assets, "Models/cube.obj").exists())
     }
 

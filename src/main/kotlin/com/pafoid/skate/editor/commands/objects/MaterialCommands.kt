@@ -30,6 +30,8 @@ data class MaterialState(
     val metallicRoughnessTexture: Texture? = null,
     val aoTexture: Texture? = null,
     val emissiveTexture: Texture? = null,
+    /** Custom colour-pass shader reference (REN-31, EDT-80); null uses the schema's shader. */
+    val shader: String? = null,
 ) {
     /** Clamps to the ranges the PBR shader expects. */
     fun validated() = copy(
@@ -58,6 +60,7 @@ data class MaterialState(
         m.metallicRoughnessTexture = metallicRoughnessTexture
         m.aoTexture = aoTexture
         m.emissiveTexture = emissiveTexture
+        m.shader = shader
     }
 
     /** A new, independent material with these values. */
@@ -68,6 +71,7 @@ data class MaterialState(
             Vector4f(m.baseColor), m.baseColorFactor, m.metallicFactor, m.roughnessFactor, Vector3f(m.emissiveFactor),
             m.doubleSided, m.alphaMode, m.alphaCutoff,
             m.baseColorTexture, m.normalMap, m.metallicRoughnessTexture, m.aoTexture, m.emissiveTexture,
+            m.shader,
         )
     }
 }

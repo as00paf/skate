@@ -1,6 +1,8 @@
 package com.pafoid.skate.editor.imgui.theme
 
 import com.pafoid.skate.editor.imgui.ImGuiStyleManager
+import com.pafoid.skate.editor.settings.AppearanceSettings
+import com.pafoid.skate.editor.settings.Density
 import com.pafoid.skate.engine.assets.Assets
 import imgui.ImGui
 import imgui.ImVec4
@@ -24,6 +26,10 @@ class ThemeApplyTest {
     @AfterEach
     fun teardown() {
         ImGuiStyleManager.preview = null
+        ImGuiStyleManager.previewAppearance = null
+        ImGuiStyleManager.previewUiScale = null
+        ImGuiStyleManager.appearance = { AppearanceSettings.THEME_ONLY }
+        ImGuiStyleManager.uiScale = { 1f }
         ImGuiStyleManager.library = ThemeLibrary(emptyList())
         ImGui.destroyContext()
     }
@@ -63,6 +69,48 @@ class ThemeApplyTest {
         ImGuiStyleManager.sync("dark")
         assertBackground("dark")
         assertEquals(1f, ImGui.getIO().fontGlobalScale)
+    }
+
+    @Test
+    fun Appearance_AppliesLiveOverTheTheme() {
+        // EDT-76: each option changes the live style on the next sync, with the theme unchanged.
+        var saved = AppearanceSettings()
+        ImGuiStyleManager.appearance = { saved }
+        ImGuiStyleManager.sync("dark")
+        val comfortable = Density.COMFORTABLE.spacing!!
+        assertEquals(comfortable.framePaddingX, ImGui.getStyle().framePaddingX)
+        assertEquals(comfortable.itemSpacingY, ImGui.getStyle().itemSpacingY)
+        assertEquals(comfortable.windowPaddingX, ImGui.getStyle().windowPaddingX)
+
+        saved = saved.withDensity(Density.SPACIOUS)
+        ImGuiStyleManager.sync("dark")
+        assertEquals(Density.SPACIOUS.spacing!!.framePaddingY, ImGui.getStyle().framePaddingY)
+
+        saved = saved.copy(rounding = 1f)
+        ImGuiStyleManager.sync("dark")
+        assertEquals(1f, ImGui.getStyle().frameRounding)
+        assertEquals(1f, ImGui.getStyle().windowRounding)
+
+        saved = saved.withCustom(Density.SPACIOUS.spacing!!) { it.copy(itemSpacingX = 17f) }
+        ImGuiStyleManager.sync("dark")
+        assertEquals(17f, ImGui.getStyle().itemSpacingX)
+    }
+
+    @Test
+    fun AppearanceAndFontSizePreview_ApplyThenRevert() {
+        ImGuiStyleManager.appearance = { AppearanceSettings() }
+        ImGuiStyleManager.sync("dark")
+        ImGuiStyleManager.previewAppearance = AppearanceSettings().withDensity(Density.COMPACT)
+        ImGuiStyleManager.previewUiScale = 1.5f
+        ImGuiStyleManager.sync("dark")
+        assertEquals(Density.COMPACT.spacing!!.framePaddingX, ImGui.getStyle().framePaddingX)
+        assertEquals(1.5f, ImGui.getIO().fontGlobalScale, 1e-4f)
+
+        ImGuiStyleManager.previewAppearance = null // Cancel
+        ImGuiStyleManager.previewUiScale = null
+        ImGuiStyleManager.sync("dark")
+        assertEquals(Density.COMFORTABLE.spacing!!.framePaddingX, ImGui.getStyle().framePaddingX)
+        assertEquals(1f, ImGui.getIO().fontGlobalScale, 1e-4f)
     }
 
     @Test

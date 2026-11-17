@@ -22,6 +22,8 @@ import com.pafoid.skate.engine.getComponent
 import com.pafoid.skate.engine.utils.SkeletonMath
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
+import com.pafoid.skate.engine.assets.EngineDefaultResolver
+import com.pafoid.skate.engine.assets.EngineDefaults
 import java.io.File
 
 @Serializable
@@ -77,18 +79,36 @@ data class Animator(
     @Transient
     var editPreview: Boolean = false
 
+    /**
+     * A clip the inspector plays in place of the controller (ANI-25). While set it drives the pose; the controller
+     * is not advanced, so what gameplay writes meanwhile (parameters, `play(state)` requests) only waits in it, and
+     * it takes over again when this is cleared (inspector Stop or Reset). Not saved.
+     */
+    @Transient
+    var inspectorClip: Animation? = null
+
+    /** Playback time of [inspectorClip], in seconds. */
+    @Transient
+    var inspectorTime: Float = 0f
+
     /** Inspector Pause while the game runs (ANI-24): the controller holds its pose. Not saved. */
     @Transient
     var controllerPaused: Boolean = false
 
     /**
      * Writes the current pose into [skeleton] and rebuilds its skin matrices, so the view updates at once (scrub,
-     * reset, ANI-24): the controller's pose, else the selected clip at [currentTime], else the bind pose.
+     * reset, ANI-24): the inspector's clip ([inspectorClip]), else the controller's pose, else the selected clip at [currentTime], else the bind pose.
      */
     fun applyPose(skeleton: SkeletonComponent) {
         val pose = skeleton.pose
         val machine = stateMachine
-        if (machine != null) {
+        val override = inspectorClip
+        if (override != null) {
+            override.update(inspectorTime, pose.skeleton)
+            for (bone in pose.skeleton.getAllBones()) {
+                if (bone.index in pose.localTransforms.indices) pose.localTransforms[bone.index].set(bone.localTransform)
+            }
+        } else if (machine != null) {
             for (i in 0 until minOf(machine.pose.boneCount, pose.localTransforms.size)) machine.pose.toMatrix(i, pose.localTransforms[i])
         } else {
             val clip = currentAnimation
@@ -205,8 +225,13 @@ data class Animator(
         }
     }
 
-    /** A project file at [path], else a bundled classpath resource (e.g. `configs/skater.controller.json`). */
+    /**
+     * A project file at [path], else a bundled classpath resource. An `engine:` reference (GPL-26,
+     * `engine:Animations/skater.controller.json`) reads the engine's own file; its project override is read through
+     * the `read` of [resolveController] (the scene's asset paths).
+     */
     private fun readController(path: String): String? {
+        if (EngineDefaults.isReference(path)) return engineDefaults.resolve(path)?.takeIf { it.isFile }?.readText()
         val file = File(path)
         if (file.isFile) return file.readText()
         return Animator::class.java.classLoader.getResourceAsStream(path.replace('\\', '/').trimStart('/'))
@@ -357,3 +382,6 @@ data class Animator(
         return criticalBonePatterns.any { lowerName.contains(it) }
     }
 }
+
+/** Resolves `engine:` controller references outside a project (GPL-26). */
+private val engineDefaults by lazy { EngineDefaultResolver() }

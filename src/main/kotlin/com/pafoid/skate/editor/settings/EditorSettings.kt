@@ -41,6 +41,8 @@ data class EditorSettings(
     var showTooltips: Boolean = true,
     var gizmoSnap: GizmoSnapSettings = GizmoSnapSettings(),
     var camera: EditorCameraSettings = EditorCameraSettings(),
+    /** Spacing presets and overrides over the theme (EDT-76). */
+    var appearance: AppearanceSettings = AppearanceSettings(),
 ) {
 
     companion object {

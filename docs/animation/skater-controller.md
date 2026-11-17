@@ -1,10 +1,10 @@
 # Skater animation controller (ANI-09)
 
-`src/main/resources/configs/skater.controller.json` is the skater's ANI-02 state machine. `Skater` sets it as `Animator.controllerPath`. When the path is not a project file, it is loaded from the classpath.
+`engine:Animations/skater.controller.json` (repo file `assets/Animations/skater.controller.json`) is the skater's ANI-02 state machine. `Skater` sets it as `Animator.controllerPath`. Every new project gets a copy in `Assets/Animations/`, which overrides the engine file and is edited in the Properties window (select it in the Project window). Without a copy the engine file is used (GPL-26).
 
 ## How gameplay drives it
 
-`SkateBehavior` reports a state per frame, and `configs/skater.character.json` (`animations` and `onFoot.animations`) maps each state to a name. `PlayerMotionSystem` passes that name to `Animator.play(name)`. While a controller is active, `play` doesn't play a clip: it sets the bool parameter `name` to true and the previous one to false. Each state has an any-state transition that fires when its bool is true. Gameplay decides *which* state, and the controller decides *how* to blend to it.
+`SkateBehavior` reports a state per frame, and `engine:Data/skater.character.json` (`animations` and `onFoot.animations`) maps each state to a name. `PlayerMotionSystem` passes that name to `Animator.play(name)`. While a controller is active, `play` doesn't play a clip: it sets the bool parameter `name` to true and the previous one to false. Each state has an any-state transition that fires when its bool is true. Gameplay decides *which* state, and the controller decides *how* to blend to it.
 
 | Gameplay state | Request / controller state | Motion |
 |---|---|---|
