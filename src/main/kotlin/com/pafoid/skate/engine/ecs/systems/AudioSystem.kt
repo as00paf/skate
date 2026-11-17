@@ -2,6 +2,7 @@ package com.pafoid.skate.engine.ecs.systems
 
 import com.pafoid.skate.engine.assets.AssetsManager
 import com.pafoid.skate.engine.assets.data.SoundSource
+import com.pafoid.skate.engine.audio.AttenuationModel
 import com.pafoid.skate.engine.audio.AudioEngine
 import com.pafoid.skate.engine.audio.BusId
 import com.pafoid.skate.engine.audio.ClipPicker
@@ -12,6 +13,10 @@ import com.pafoid.skate.engine.audio.StreamPolicy
 import com.pafoid.skate.engine.audio.StreamingPlayer
 import com.pafoid.skate.engine.audio.VoiceManager
 import com.pafoid.skate.engine.audio.SpatialAudio
+import com.pafoid.skate.engine.audio.SplashCooldown
+import com.pafoid.skate.engine.audio.WaterAudio
+import com.pafoid.skate.engine.audio.WaterAudioConfig
+import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.core.LoggerService
 import com.pafoid.skate.engine.core.LoggerService.LogLevel
 import com.pafoid.skate.engine.ecs.components.AudioComponent
@@ -19,6 +24,8 @@ import com.pafoid.skate.engine.ecs.components.AudioListener
 import com.pafoid.skate.engine.ecs.components.ReverbZone
 import com.pafoid.skate.engine.ecs.components.RigidBody3D
 import com.pafoid.skate.engine.ecs.components.Transform
+import com.pafoid.skate.engine.ecs.components.WaterComponent
+import com.pafoid.skate.engine.events.WaterEntered
 import com.pafoid.skate.engine.ecs.systems.SystemManager.ExecutionPriority
 import com.pafoid.skate.engine.getComponent
 import com.pafoid.skate.engine.ecs.GameObject
@@ -26,11 +33,16 @@ import com.pafoid.skate.engine.ecs.Scene
 import org.joml.Matrix4f
 import org.joml.Vector3f
 import java.io.File
+import java.util.concurrent.ConcurrentLinkedQueue
+import kotlin.math.atan2
 
 /**
  * Plays [AudioComponent]s. Sources with `playOnAwake` start when the scene starts running (Play) and every voice is
  * released when it stops, which also re-arms `playOnAwake` for the next Play. Explicit `play()` works in both modes
  * (the inspector previews sounds while editing). All OpenAL access goes through [audioEngine]'s backend.
+ *
+ * In Play it also plays the water sounds (AUD-01, [waterAudio]): a splash on every [WaterEntered] from [eventSystem]
+ * and a looping ambience from the nearest edge of each `WaterComponent` within reach of the listener.
  */
 class AudioSystem(
     val audioEngine: AudioEngine,
@@ -39,6 +51,8 @@ class AudioSystem(
     private val cameraManager: CameraManager,
     /** Maps a saved sound reference to a file to play: project-relative or packed sounds (AST-09). */
     private val localPath: (String) -> String = { it },
+    /** Source of PHY-16's [WaterEntered] for splashes; null leaves splashes off (ambience still plays). */
+    eventSystem: EventSystem? = null,
 ) : System(priority = ExecutionPriority.LATE) {
     override val runsAfter = listOf(CameraManager::class)
 
@@ -70,6 +84,23 @@ class AudioSystem(
     private var wasPaused = false
     private val heldByPause = mutableSetOf<Int>()
 
+    /** Water splash and ambience settings (AUD-01); applied from the next frame. */
+    var waterAudio = WaterAudioConfig()
+
+    /** Engine-owned water voices by voice key (never an entity id: see [ambienceKey], [nextSplashKey]). */
+    private val waterSounds = mutableMapOf<Int, WaterSound>()
+    private val pendingSplashes = ConcurrentLinkedQueue<WaterEntered>()
+    private val splashCooldown = SplashCooldown()
+    private val splashPicker = ClipPicker()
+    private var nextSplashKey = -1
+    private var clock = 0f
+    private val heldWater = mutableSetOf<Int>()
+
+    init {
+        // Never unsubscribed: EventSystem.unsubscribe drops every listener of the type, gameplay's included.
+        eventSystem?.subscribe<WaterEntered> { pendingSplashes.add(it) }
+    }
+
     /** Runs while paused to hold and later continue the playing voices. */
     override val runsWhilePaused get() = true
 
@@ -83,6 +114,7 @@ class AudioSystem(
             wasPaused = false
             wasRunning = false
             playbacks.keys.toList().forEach { releasePlayback(it) }
+            releaseWater()
         }
         super.init(scene)
     }
@@ -115,6 +147,8 @@ class AudioSystem(
         updateListener()
         updateReverbZone()
         updateAudioSources(running)
+        clock += dt
+        updateWater(running)
     }
 
     /** Pause menu opened: holds every playing voice where it is (not released, so Resume continues it). */
@@ -128,6 +162,12 @@ class AudioSystem(
             pb.stream?.paused = true
             heldByPause.add(go.uId)
         }
+        heldWater.clear()
+        waterSounds.forEach { (key, ws) ->
+            if (!ws.playback.source.isPlaying()) return@forEach
+            ws.playback.source.pause()
+            heldWater.add(key)
+        }
     }
 
     /** Resume: continues only the voices [pauseAll] held; sounds paused by gameplay stay paused. */
@@ -139,6 +179,8 @@ class AudioSystem(
             }
         }
         heldByPause.clear()
+        heldWater.forEach { waterSounds[it]?.playback?.source?.play() }
+        heldWater.clear()
     }
 
     /** End of Play: silence every source and re-arm playOnAwake. */
@@ -146,6 +188,7 @@ class AudioSystem(
         heldByPause.clear()
         wasPaused = false
         playbacks.keys.toList().forEach { releasePlayback(it) }
+        releaseWater()
         scene.children.forEach { go ->
             go.getComponent<AudioComponent>()?.apply {
                 awoken = false
@@ -343,7 +386,7 @@ class AudioSystem(
         releasePlayback(id)
         val result = audioEngine.voices.request(id, ac.priority, spatial.gain)
         if (result is VoiceManager.Result.Denied) return
-        (result as VoiceManager.Result.Granted<*>).stolen?.let { releasePlayback(it as Int) }
+        (result as VoiceManager.Result.Granted<*>).stolen?.let { releaseVoice(it as Int) }
 
         try {
             val playback = createPlayback(clip, ac)
@@ -389,11 +432,165 @@ class AudioSystem(
         }
     }
 
+    /** A stolen voice: an entity's ([AudioComponent]) or an engine water sound's (negative key). */
+    private fun releaseVoice(key: Int) = if (key >= 0) releasePlayback(key) else releaseWaterSound(key)
+
+    // --- Water sounds (AUD-01) ---
+
+    /** An engine-owned water voice: a splash at a fixed point, or an ambience that follows the nearest edge. */
+    private class WaterSound(val playback: Playback, val position: Vector3f, val volume: Float, val ambience: Boolean)
+
+    private val waterCenter = Vector3f()
+
+    private fun updateWater(running: Boolean) {
+        val config = waterAudio
+        if (!running || !config.enabled) {
+            pendingSplashes.clear()
+            if (waterSounds.isNotEmpty()) releaseWater()
+            return
+        }
+        startSplashes(config)
+        updateAmbience(config)
+        // Splashes stay where they started; the listener moves, so their gain is refreshed every frame.
+        waterSounds.entries.filter { !it.value.ambience }.forEach { (key, ws) ->
+            if (!ws.playback.source.isPlaying()) {
+                releaseWaterSound(key)
+                return@forEach
+            }
+            applyWater(key, ws, splashGain(config, ws.position, ws.volume))
+        }
+    }
+
+    private fun splashGain(config: WaterAudioConfig, position: Vector3f, volume: Float): Float =
+        audioEngine.mixer.sourceGain(BusId.SFX, volume) * SpatialAudio.attenuation(
+            AttenuationModel.INVERSE_CLAMPED, position.distance(listenerPos),
+            config.splashMinDistance, config.splashMaxDistance, 1f,
+        )
+
+    private fun startSplashes(config: WaterAudioConfig) {
+        var started = 0
+        while (true) {
+            val event = pendingSplashes.poll() ?: break
+            // The rest of a burst is dropped, not delayed: a late splash sounds wrong.
+            if (started >= config.maxSplashesPerFrame) continue
+            if (!splashCooldown.tryStart(event.body.uId, clock, config.splashCooldown)) continue
+            val position = event.body.getComponent<Transform>()?.worldMatrix?.getTranslation(Vector3f()) ?: continue
+            val body = event.body.getComponent<RigidBody3D>()?.takeIf { it.rawBody != null }
+            val volume = config.splashVolume * WaterAudio.splashGain(body?.linearVelocity ?: Vector3f())
+            val clip = splashPicker.pick(SPLASH_PICKER_OWNER, "", config.splashClips)
+            val key = nextSplashKey
+            nextSplashKey = if (nextSplashKey <= Int.MIN_VALUE + 2) -1 else nextSplashKey - 2
+            val gain = splashGain(config, position, volume)
+            val sound = startWaterSound(key, clip, looping = false, config.splashPriority, gain) ?: continue
+            WaterSound(sound, position, volume, ambience = false).also {
+                waterSounds[key] = it
+                applyWater(key, it, gain)
+            }
+            sound.source.play()
+            started++
+        }
+    }
+
+    private fun updateAmbience(config: WaterAudioConfig) {
+        val seen = mutableSetOf<Int>()
+        if (config.ambienceClip.isNotBlank()) scene.children.forEach { go ->
+            val water = go.getComponent<WaterComponent>()?.takeIf { it.enabled } ?: return@forEach
+            // A water with its own AudioComponent has chosen its sound.
+            if (go.getComponent<AudioComponent>() != null) return@forEach
+            val m = go.getComponent<Transform>()?.takeIf { it.enabled }?.worldMatrix ?: return@forEach
+            waterCenter.set(m.m30(), m.m31(), m.m32())
+            val key = ambienceKey(go.uId)
+            val existing = waterSounds[key]
+            val point = WaterAudio.nearestSurfacePoint(
+                waterCenter, atan2(m.m20(), m.m22()), water.sizeX, water.sizeZ, listenerPos, existing?.position ?: Vector3f()
+            )
+            val distance = point.distance(listenerPos)
+            // A little hysteresis so walking along the limit does not restart the loop every frame.
+            val reach = if (existing == null) config.ambienceMaxDistance else config.ambienceMaxDistance * 1.1f
+            if (distance > reach) return@forEach
+            val gain = audioEngine.mixer.sourceGain(BusId.SFX, config.ambienceVolume) * SpatialAudio.attenuation(
+                AttenuationModel.LINEAR_CLAMPED, distance, config.ambienceMinDistance, config.ambienceMaxDistance, 1f,
+            )
+            val ws = existing ?: run {
+                val sound = startWaterSound(key, config.ambienceClip, looping = true, config.ambiencePriority, gain)
+                    ?: return@forEach
+                WaterSound(sound, point, config.ambienceVolume, ambience = true).also {
+                    waterSounds[key] = it
+                    applyWater(key, it, gain)
+                    sound.source.play()
+                }
+            }
+            seen += key
+            applyWater(key, ws, gain)
+        }
+        waterSounds.filter { it.value.ambience && it.key !in seen }.keys.forEach { releaseWaterSound(it) }
+    }
+
+    private fun applyWater(key: Int, ws: WaterSound, gain: Float) {
+        val source = ws.playback.source
+        source.setPosition(ws.position.x, ws.position.y, ws.position.z)
+        source.setVolume(gain)
+        val bus = audioEngine.mixer.bus(BusId.SFX)
+        audioEngine.effects.applySource(source.sourceId, bus.effectiveLowPassGainHF * zoneLowPass, bus.reverbSend * zoneSend)
+        audioEngine.voices.updateAudibility(key, gain)
+    }
+
+    /** A loaded, positioned (not yet playing) source for an engine water clip, or null (missing, failed, no voice). */
+    private fun startWaterSound(key: Int, reference: String, looping: Boolean, priority: Int, gain: Float): Playback? {
+        val clip = localPath(reference)
+        if (clip.isBlank() || clip in failedClips) return null
+        if (!File(clip).isFile) {
+            if (missingClips.add(clip)) logger.log("AudioSystem: Sound file not found '$clip' - not played", LogLevel.WARN)
+            return null
+        }
+        val result = audioEngine.voices.request(key, priority, gain)
+        if (result is VoiceManager.Result.Denied) return null
+        (result as VoiceManager.Result.Granted<*>).stolen?.let { releaseVoice(it as Int) }
+        val source = audioEngine.createSource(looping, false)
+        return try {
+            val buffer = assetsManager.getSound(clip)
+            if (buffer.bufferId == -1) throw IllegalStateException("sound buffer not loaded")
+            source.setBuffer(buffer.bufferId)
+            source.setLooping(looping)
+            source.setRelative(false)
+            Playback(clip, source, null)
+        } catch (e: Exception) {
+            source.close()
+            audioEngine.voices.release(key)
+            failedClips.add(clip)
+            logger.log("AudioSystem: Cannot play '$clip' - ${e.message}", LogLevel.ERROR)
+            null
+        }
+    }
+
+    private fun releaseWaterSound(key: Int) {
+        waterSounds.remove(key)?.let {
+            audioEngine.effects.release(it.playback.source.sourceId)
+            it.playback.close()
+        }
+        heldWater.remove(key)
+        audioEngine.voices.release(key)
+    }
+
+    private fun releaseWater() {
+        waterSounds.keys.toList().forEach { releaseWaterSound(it) }
+        heldWater.clear()
+        pendingSplashes.clear()
+        splashCooldown.clear()
+    }
+
     override fun destroy() {
         isInitialized = false
+        releaseWater()
         playbacks.values.forEach { it.close() }
         playbacks.clear()
         audioEngine.voices.clear()
     }
 
+    private companion object {
+        const val SPLASH_PICKER_OWNER = -1
+
+        /** Even negative voice keys for ambiences; splashes use odd negative ones, entities their (positive) ids. */
+        fun ambienceKey(waterId: Int) = -2 * (waterId + 1)
+    }
 }
