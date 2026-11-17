@@ -30,3 +30,12 @@ data class PhysicsBackendFellBack(
     val used: PhysicsBackend,
     val reason: String,
 ) : PhysicsEvent("physics.backend_fallback")
+
+/**
+ * [body] started touching the water held by [water] (a `WaterComponent` entity), PHY-16. Published once per body and
+ * water, for bodies whose `RigidBody3D.buoyancy` is not `OFF`; for splash audio (AUD) and gameplay (GPL).
+ */
+data class WaterEntered(val water: GameObject, val body: GameObject) : PhysicsEvent("physics.water_entered")
+
+/** [body] left the water held by [water], or the water or body went away while touching (PHY-16). */
+data class WaterExited(val water: GameObject, val body: GameObject) : PhysicsEvent("physics.water_exited")

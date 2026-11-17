@@ -6,6 +6,7 @@ import com.pafoid.skate.engine.physics3d.ALL_LAYERS
 import com.pafoid.skate.engine.physics3d.BodyType
 import com.pafoid.skate.engine.physics3d.IPhysicsBody3D
 import com.pafoid.skate.engine.physics3d.IRigidBodyHandle
+import com.pafoid.skate.engine.physics3d.water.BuoyancyMode
 import com.pafoid.skate.engine.utils.JomlVector3f
 import com.pafoid.skate.engine.utils.toRadiansF
 import kotlinx.serialization.Serializable
@@ -65,6 +66,9 @@ open class RigidBody3D(
             field = value
             rawBody?.setDamping(linearDamping, value)
         }
+
+    /** How water treats this body (PHY-16): buoyancy and drag, events only, or nothing. */
+    var buoyancy: BuoyancyMode = BuoyancyMode.AUTO
 
     @Transient
     var rawBody: IRigidBodyHandle? = null
