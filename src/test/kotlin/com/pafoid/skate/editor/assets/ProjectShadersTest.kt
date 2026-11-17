@@ -29,7 +29,7 @@ class ProjectShadersTest {
 
     @Test
     fun options_ListEngineMaterialShadersThenProjectShadersWithoutBasicCopies() {
-        glsl("Assets/Shaders/water.glsl")
+        glsl("Assets/Shaders/lava.glsl")
         glsl("Assets/Shaders/shader_3d_default.glsl") // basic copy: already the engine entry
         glsl("Assets/Shaders/fog.glsl") // basic include copy
         glsl("Assets/Effects/glow.GLSL")
@@ -39,7 +39,7 @@ class ProjectShadersTest {
         assertEquals(
             listOf(
                 EngineDefaults.Shaders.DEFAULT_3D, EngineDefaults.Shaders.TEXTURE_3D,
-                "Assets/Effects/glow.GLSL", "Assets/Shaders/water.glsl",
+                "Assets/Effects/glow.GLSL", "Assets/Shaders/lava.glsl", // not water.glsl: an engine basic since REN-35
             ),
             ProjectShaders.options(project, current = null),
         )
