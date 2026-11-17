@@ -2,7 +2,10 @@ package com.pafoid.skate.engine.ecs.systems
 
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
+import com.pafoid.skate.engine.ecs.components.EnvironmentComponent
 import com.pafoid.skate.engine.ecs.components.JointComponent
+import com.pafoid.skate.engine.ecs.components.WaterComponent
+import com.pafoid.skate.engine.environment.WaterQueries
 import com.pafoid.skate.engine.ecs.components.PlayerController
 import com.pafoid.skate.engine.ecs.components.RagdollComponent
 import com.pafoid.skate.engine.ecs.components.RagdollState
@@ -57,6 +60,14 @@ class PhysicsSystem(
     private val vehicles = query(VehicleComponent::class, RigidBody3D::class, topLevelOnly = true)
     private val vehicleSolver = RaycastVehicleSolver(physics3d)
     private val activeRagdolls: MutableSet<RagdollComponent> = Collections.newSetFromMap(IdentityHashMap())
+    private val waters = query(WaterComponent::class, Transform::class)
+    private val buoyancy = BuoyancySystem(eventSystem)
+
+    /**
+     * Water lookups (surface, flow, depth, capsule submersion) for gameplay and audio, refreshed every fixed step
+     * while running (PHY-16).
+     */
+    val waterQueries = WaterQueries()
 
     init {
         physics3d.contactListener = object : PhysicsContactListener {
@@ -78,6 +89,7 @@ class PhysicsSystem(
     override fun init(scene: Scene) {
         super.init(scene)
         releaseObjectsOutsideScene()
+        buoyancy.reset()
         // Adds new bodies; bodies kept from a previous load restart from the loaded pose
         bodies.forEach { teleport(it) }
         simulating = false
@@ -243,6 +255,7 @@ class PhysicsSystem(
             val body = go.getComponent<RigidBody3D>() ?: return@forEach
             vehicleSolver.step(vehicle, body, fixedDt)
         }
+        stepWater(fixedDt)
         physics3d.step(fixedDt)
 
         scene.getComponent<ScenePhysicsComponent>()?.let { component ->
@@ -273,6 +286,16 @@ class PhysicsSystem(
         syncJoints()
         syncRagdolls()
         publishCollisionMeshFailures()
+    }
+
+    /** Buoyancy and drag for bodies in water, on the same clock as the rendered waves (REN-29 §5.3). */
+    private fun stepWater(fixedDt: Float) {
+        val environment = scene.getComponent<EnvironmentComponent>()
+        val waterEntities = waters.entities
+        waterQueries.refresh(waterEntities, environment)
+        // Dry scenes skip the body walk; a body still marked wet gets its WaterExited first
+        if (waterEntities.isEmpty() && buoyancy.bodiesInWater == 0) return
+        buoyancy.step(bodies.entities, waterQueries, environment?.runtime?.animationTime ?: 0f, fixedDt, appliedGravity)
     }
 
     /**
