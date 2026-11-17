@@ -14,6 +14,7 @@ Shortcuts save time, but you never have to use them: every action is also availa
 - **Ctrl+P**: open [Search Everywhere](search.md).
 - **F5**: start or stop Play mode.
 - **F12**: switch the editor to fullscreen and back.
+- **Shift+Space**: maximize the focused tool window, or restore the layout. It does nothing while you type or while the Game Viewport is focused.
 - **Esc**: deselect the current object.
 
 ## Moving in the Game Viewport

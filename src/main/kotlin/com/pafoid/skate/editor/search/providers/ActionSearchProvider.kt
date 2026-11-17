@@ -183,6 +183,23 @@ class ActionSearchProvider(
             descriptionKey = "search.action.vcs_history.desc",
             icon = Icons.HISTORY,
             execute = { eventSystem.publish(WindowAction.Show(VcsWindows.LOG)) }
+        ),
+        // EDT-88: the last focused tool window, in the mode set in Editor Settings > Interface.
+        EditorAction(
+            actionId = "maximize_window",
+            displayNameKey = "search.action.maximize_window",
+            keywords = listOf("maximize", "maximise", "full", "screen", "window", "panel", "zoom", "focus"),
+            descriptionKey = "search.action.maximize_window.desc",
+            icon = Icons.WINDOW_MAXIMIZE,
+            execute = { eventSystem.publish(WindowAction.ToggleMaximizeFocused) }
+        ),
+        EditorAction(
+            actionId = "restore_layout",
+            displayNameKey = "search.action.restore_layout",
+            keywords = listOf("restore", "layout", "window", "unmaximize", "panels"),
+            descriptionKey = "search.action.restore_layout.desc",
+            icon = Icons.WINDOW_RESTORE,
+            execute = { eventSystem.publish(WindowAction.RestoreMaximized) }
         )
     )
 

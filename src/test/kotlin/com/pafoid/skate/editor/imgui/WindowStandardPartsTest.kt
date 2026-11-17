@@ -21,6 +21,41 @@ class WindowStandardPartsTest {
     }
 
     @Test
+    fun TabMenu_MaximizeItemsComeFirst_RestoreWhileMaximized() {
+        // EDT-88: Maximize and Maximize over Game Viewport, or Restore; Reset position is pointless while maximized.
+        assertEquals(
+            listOf(TabMenuItem.MAXIMIZE, TabMenuItem.MAXIMIZE_OVER_VIEWPORT, TabMenuItem.HELP, TabMenuItem.RESET_POSITION, TabMenuItem.CLOSE),
+            TabMenuItem.forWindow(isDialog = false, canMaximize = true),
+        )
+        assertEquals(
+            listOf(TabMenuItem.RESTORE, TabMenuItem.HELP, TabMenuItem.CLOSE),
+            TabMenuItem.forWindow(isDialog = false, canMaximize = true, maximized = true),
+        )
+        assertEquals(listOf(TabMenuItem.HELP, TabMenuItem.CLOSE), TabMenuItem.forWindow(isDialog = true, canMaximize = true))
+    }
+
+    @Test
+    fun TabMenu_MaximizeItemsQueueRequests() {
+        try {
+            MaximizeSession.defaultMode = { MaximizeMode.FULL_EDITOR }
+            val window = TestWindow("window.script_editor")
+            WindowHeader.run(TabMenuItem.MAXIMIZE, window)
+            WindowHeader.run(TabMenuItem.MAXIMIZE_OVER_VIEWPORT, window)
+            WindowHeader.run(TabMenuItem.RESTORE, window)
+            assertEquals(
+                listOf(
+                    MaximizeSession.Request("window.script_editor", MaximizeMode.FULL_EDITOR),
+                    MaximizeSession.Request("window.script_editor", MaximizeMode.OVER_VIEWPORT),
+                    MaximizeSession.Request(null, null),
+                ),
+                MaximizeSession.drain(),
+            )
+        } finally {
+            MaximizeSession.reset()
+        }
+    }
+
+    @Test
     fun TabMenu_ItemsActOnTheWindow() {
         val window = TestWindow("window.console").also { it.isOpen.set(true) }
         WindowHeader.run(TabMenuItem.RESET_POSITION, window)

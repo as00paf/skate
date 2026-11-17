@@ -8,4 +8,10 @@ sealed class WindowAction(eventName: String) : Event(eventName) {
     object ShowDefault : WindowAction("window.showDefault")
     object ResetLayout : WindowAction("window.resetLayout")
     object HideAll : WindowAction("window.hideAll")
+
+    /** EDT-88: the maximize shortcut; maximizes or restores the focused tool window. */
+    object ToggleMaximizeFocused : WindowAction("window.toggleMaximizeFocused")
+
+    /** EDT-88: puts the layout back as it was before maximizing (Search Everywhere). */
+    object RestoreMaximized : WindowAction("window.restoreMaximized")
 }

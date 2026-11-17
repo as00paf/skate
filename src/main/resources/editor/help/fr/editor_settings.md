@@ -7,7 +7,7 @@ Les Paramètres de l'éditeur contiennent vos préférences personnelles : l'app
 La fenêtre a une liste de catégories à gauche et leurs réglages à droite :
 
 - **Général** : la langue de l'éditeur, et l'ouverture du dernier projet au démarrage.
-- **Interface** : thème (sombre, clair ou contraste élevé), échelle de l'interface, infobulles, système d'unités (métrique ou impérial) et superposition de la manette.
+- **Interface** : thème (sombre, clair ou contraste élevé), échelle de l'interface, infobulles, système d'unités (métrique ou impérial), superposition de la manette, et où **Agrandir** place une fenêtre d'outil (tout l'éditeur ou par-dessus la vue du jeu).
 - **Affichage** : synchro verticale, plein écran et anticrénelage (MSAA) de la fenêtre de l'éditeur. Certains demandent un redémarrage.
 - **Graphismes** : qualité globale, ombres, textures et MSAA de la vue 3D de l'éditeur.
 - **Vue de scène** : pas d'aimantation des gizmos, vitesse de la caméra de l'éditeur et sensibilité de la souris.

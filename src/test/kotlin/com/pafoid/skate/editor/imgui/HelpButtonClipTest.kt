@@ -29,7 +29,7 @@ class HelpButtonClipTest {
         private val strings: StringManager,
         private val modalRow: Boolean,
         private val tools: () -> Unit,
-    ) : EditorWindow("window.probe") {
+    ) : EditorWindow("window.console") {
         override val icon: String = Icons.LIST
         override fun imgui() {
             if (beginWindow(strings)) {
@@ -120,6 +120,31 @@ class HelpButtonClipTest {
             if (button.maxY > clip.maxY || button.minX < clip.minX || button.maxX > clip.maxX) failures += "clipped: $case"
         }
         assertTrue(failures.isEmpty(), failures.joinToString("\n"))
+    }
+
+    @Test
+    fun MaximizeButton_IsNeverClipped_AndSitsLeftOfHelp() {
+        // EDT-88: the header reserves both buttons at every density, scale and theme.
+        val failures = mutableListOf<String>()
+        for (theme in listOf("dark", "light", "high_contrast")) for (density in Density.entries) for (scale in listOf(1f, 1.5f)) {
+            for ((toolsName, tools) in toolSets) {
+                val padY = if (density == Density.CUSTOM) 0f else null
+                val (help, _) = drawn(theme, scale, padY, tools, density = density)
+                val (button, clip) = WindowHeader.lastDrawnMaximize!!
+                val case = "$theme $density @${(scale * 100).toInt()}% tools=$toolsName: button=$button help=$help clip=$clip"
+                if (button.minY < clip.minY + HelpButtonLayout.MIN_CLIP_CLEARANCE) failures += "top clipped: $case"
+                if (button.maxY > clip.maxY || button.minX < clip.minX || button.maxX > clip.maxX) failures += "clipped: $case"
+                if (button.maxX > help.minX) failures += "overlaps the ?: $case"
+                if (button.minY != help.minY) failures += "not on the ?'s row: $case"
+            }
+        }
+        assertTrue(failures.isEmpty(), failures.joinToString("\n"))
+    }
+
+    @Test
+    fun GroupWidth_IsButtonsPlusSpacing() {
+        assertEquals(20f, HelpButtonLayout.groupWidth(20f, 1, 4f))
+        assertEquals(44f, HelpButtonLayout.groupWidth(20f, 2, 4f))
     }
 
     @Test
