@@ -112,4 +112,22 @@ class ClipEditingTest {
         assertArrayEquals(floatArrayOf(0f, 0f, 0f, 1f), set.track("Hips", ROTATION)!!.keys[0].value.toFloatArray())
         assertEquals(0.3f, ClipEditing.snap(0.27f, 10f), 1e-6f)
     }
+
+    @Test
+    fun Trim_KeepsTheRangeAndMovesItToZero() {
+        val trimmed = ClipEditing.trim(clip, 0.25f, 1.25f)
+        assertEquals(1f, trimmed.duration, 1e-6f)
+        val hips = trimmed.track("Hips", TRANSLATION)!!
+        assertEquals(listOf(0f, 0.25f, 0.75f, 1f), hips.keys.map { it.time }.map { Math.round(it * 1000) / 1000f })
+        // The kept motion is unchanged: the clip at t plays what the original played at t + 0.25.
+        for (t in listOf(0f, 0.4f, 0.75f, 1f)) {
+            for (bone in listOf("Hips", "Spine")) assertEquals(
+                KeyEditing.sample(clip.track(bone, TRANSLATION)!!, t + 0.25f)[0],
+                KeyEditing.sample(trimmed.track(bone, TRANSLATION)!!, t)[0], 1e-5f, "$bone at $t",
+            )
+        }
+        assertEquals(listOf(SkEvent(0.75f, "step")), trimmed.events)
+        SkAnimFormat.validate(trimmed)
+        assertEquals(trimmed, ClipEditing.trim(clip, 1.25f, 0.25f), "either order")
+    }
 }

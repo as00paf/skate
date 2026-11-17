@@ -22,8 +22,10 @@ La fenêtre montre un aperçu du clip sur un personnage, la liste des os, la lig
 5. Avec des clés sélectionnées, utilisez **Échelle** avec un **Facteur**, **Copier** (**Ctrl+C**), **Coller** (**Ctrl+V**) et **Supprimer les clés** (**Suppr**).
 6. Pour changer une pose, sélectionnez un os dans la liste (tapez dans **Filtrer les os** pour le trouver) ou cliquez dessus dans l'aperçu, puis cliquez sur **Clés sur os** (**K**) pour enregistrer sa pose à la tête de lecture.
 7. Tapez un **Nom de l'événement** et cliquez sur **Ajouter un événement** pour placer un événement à la tête de lecture. **Renommer** et **Supprimer l'événement** le modifient.
-8. Réglez la **Durée (s)**, puis **Réajuster** pour étirer tout le clip à cette durée, ou **Couper** pour le raccourcir. Changez la **Cadence** si besoin.
-9. Chaque changement s'annule avec **Ctrl+Z**. Cliquez sur **Enregistrer** pour écrire le fichier.
+8. Ouvrez l'onglet **Courbes** pour façonner le mouvement entre les clés. Choisissez la piste dans la liste (les rotations sont en degrés) et les courbes **X**, **Y** et **Z** à afficher. Faites glisser une clé pour changer sa valeur et son temps ; maintenez **Maj** pour rester dans une seule direction. Donnez une tangente aux clés sélectionnées : **Auto**, **Linéaire**, **Plate**, **Libre**, **Cassée** ou **Palier**. Sur les courbes de position et d'échelle, faites glisser les poignées rondes pour régler la pente. La molette zoome les valeurs, **Ctrl**+molette zoome le temps.
+9. Utilisez **Nettoyage** pour corriger un clip de mocap ou de vidéo. **Rééchantillonner** met une clé à chaque image, **Réduire les clés** supprime les clés inutiles à la courbe, et **Lisser** retire le tremblement. Réglez une **Plage** sur la règle (**Début à la tête de lecture**, **Fin à la tête de lecture**) pour choisir les images de **Lisser**, **Bloquer le pied gauche** ou **Bloquer le pied droit** (empêche les pieds de glisser), et **Couper à la plage**. **Miroir** échange gauche et droite, et **Corriger la boucle** évite qu'une boucle saute à la fin. Sélectionnez d'abord des os pour limiter Réduire et Lisser à ces os.
+10. Réglez la **Durée (s)**, puis **Réajuster** pour étirer tout le clip à cette durée, ou **Couper** pour le raccourcir. Changez la **Cadence** si besoin.
+11. Chaque changement s'annule avec **Ctrl+Z**. Cliquez sur **Enregistrer** pour écrire le fichier.
 
 Pour jouer le clip dans le jeu, faites-le glisser sur un objet qui a un **Animator**.
 

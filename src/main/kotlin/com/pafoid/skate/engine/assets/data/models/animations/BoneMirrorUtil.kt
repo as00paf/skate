@@ -1,25 +1,29 @@
 package com.pafoid.skate.engine.assets.data.models.animations
 
+/**
+ * Left/right bone name swapping for mirroring clips (ANI-15). Recognises the side as a word (`LeftUpLeg`,
+ * `mixamorig:RightHand`, `upperarm_left`), a one-letter prefix (`L_Foot`, `r.hand`) or a one-letter suffix
+ * (`Thigh_L`, `hand.r`). Letters inside words are left alone (`Small_Toe`, `Upper_Arm`). A name without a side
+ * comes back unchanged.
+ */
 object BoneMirrorUtil {
-
-    private val LEFT_PREFIXES = listOf("Left", "L_")
-    private val RIGHT_PREFIXES = listOf("Right", "R_")
+    private val word = Regex("Left|Right|LEFT|RIGHT|left|right")
+    private val letterPrefix = Regex("(^|[:|])([LlRr])(?=[_.\\- ])")
+    private val letterSuffix = Regex("(?<=[_.\\- ])([LlRr])$")
 
     fun getMirroredBoneName(boneName: String): String {
-        // Check for common 'Left' prefixes
-        for (prefix in LEFT_PREFIXES) {
-            if (boneName.contains(prefix, ignoreCase = true)) {
-                return boneName.replace(prefix, RIGHT_PREFIXES[LEFT_PREFIXES.indexOf(prefix)], ignoreCase = true)
-            }
-        }
+        if (word.containsMatchIn(boneName)) return word.replace(boneName) { swapWord(it.value) }
+        val prefixed = letterPrefix.replace(boneName) { it.groupValues[1] + swapLetter(it.groupValues[2]) }
+        return letterSuffix.replace(prefixed) { swapLetter(it.value) }
+    }
 
-        // Check for common 'Right' prefixes
-        for (prefix in RIGHT_PREFIXES) {
-            if (boneName.contains(prefix, ignoreCase = true)) {
-                return boneName.replace(prefix, LEFT_PREFIXES[RIGHT_PREFIXES.indexOf(prefix)], ignoreCase = true)
-            }
-        }
+    private fun swapWord(w: String) = when (w) {
+        "Left" -> "Right"; "Right" -> "Left"
+        "LEFT" -> "RIGHT"; "RIGHT" -> "LEFT"
+        "left" -> "right"; else -> "left"
+    }
 
-        return boneName
+    private fun swapLetter(l: String) = when (l) {
+        "L" -> "R"; "R" -> "L"; "l" -> "r"; else -> "l"
     }
 }

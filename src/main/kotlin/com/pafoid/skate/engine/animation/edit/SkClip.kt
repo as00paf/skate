@@ -70,6 +70,11 @@ enum class TangentMode {
     LINEAR,
     /** Uses the stored [SkKey.inTangent] / [SkKey.outTangent] (imported curves, hand-edited handles). */
     FREE,
+    /** Like [FREE], but the in and out handles are edited independently (a corner in the curve). */
+    BROKEN;
+
+    /** The key keeps its own stored tangents ([FREE] or [BROKEN]). */
+    val stored: Boolean get() = this == FREE || this == BROKEN
 }
 
 @Serializable

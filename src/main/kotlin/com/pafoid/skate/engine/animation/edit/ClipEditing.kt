@@ -84,6 +84,29 @@ object ClipEditing {
         )
     }
 
+    /**
+     * Keeps only [start, end] of the clip and moves it to time 0 (mocap cleanup: cut the lead-in and tail). Each track
+     * gets keys at both cut points with the value it plays there, so linear and stepped motion does not change (mocap
+     * is linear). On cubic tracks the AUTO keys next to a cut lose a neighbour, so the curve can bend slightly there.
+     */
+    fun trim(clip: SkClip, start: Float, end: Float): SkClip {
+        val a = minOf(start, end).coerceIn(0f, clip.duration)
+        val b = maxOf(start, end).coerceIn(0f, clip.duration)
+        require(b - a > EPS) { "Trim range is empty" }
+        return clip.copy(
+            duration = b - a,
+            tracks = clip.tracks.map { t ->
+                if (t.keys.isEmpty()) return@map t
+                var cut = t
+                for (edge in listOf(a, b)) if (cut.keys.none { abs(it.time - edge) <= EPS }) {
+                    cut = KeyEditing.insertKey(cut, edge, KeyEditing.sample(t, edge))
+                }
+                cut.copy(keys = cut.keys.filter { it.time >= a - EPS && it.time <= b + EPS }.map { it.copy(time = (it.time - a).coerceIn(0f, b - a)) })
+            },
+            events = clip.events.filter { it.time >= a - EPS && it.time <= b + EPS }.map { it.copy(time = (it.time - a).coerceIn(0f, b - a)) },
+        )
+    }
+
     fun deleteKeys(clip: SkClip, selection: Set<KeyRef>): SkClip {
         val hit = resolve(clip, selection)
         return clip.copy(tracks = clip.tracks.mapIndexed { i, t -> hit[i]?.let { KeyEditing.removeKeys(t, it) } ?: t })

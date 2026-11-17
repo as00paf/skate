@@ -72,14 +72,14 @@ class EulerCurves(val times: FloatArray, val x: FloatArray, val y: FloatArray, v
 
     /**
      * Writes the curves back into [track] as quaternion keys (hemisphere-continuous). Key tangent modes are kept;
-     * stored FREE tangents are dropped to AUTO because quaternion tangents cannot be derived from Euler handles.
+     * stored (FREE, BROKEN) tangents are dropped to AUTO because quaternion tangents cannot be derived from Euler handles.
      */
     fun toTrack(track: SkTrack): SkTrack {
         require(track.path == AnimationPath.ROTATION) { "Euler curves need a rotation track" }
         val rows = Array(size) { QuatMath.toRow(toQuat(at(it))) }
         QuatMath.makeContinuous(rows)
         val keys = List(size) { i ->
-            val mode = track.keys.getOrNull(i)?.tangentMode?.takeIf { it != TangentMode.FREE } ?: TangentMode.AUTO
+            val mode = track.keys.getOrNull(i)?.tangentMode?.takeIf { !it.stored } ?: TangentMode.AUTO
             SkKey(times[i], rows[i].toList(), mode)
         }
         return track.copy(keys = keys)

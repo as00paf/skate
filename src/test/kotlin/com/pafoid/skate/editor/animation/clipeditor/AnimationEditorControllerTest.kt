@@ -256,7 +256,9 @@ class AnimationEditorControllerTest {
         val strings = StringManager(mockk(relaxed = true), "en").apply { loadStrings(com.pafoid.skate.engine.assets.Assets.Strings.EDITOR_STRINGS) }
         val doc = ClipDocument(File(dir, "x.skanim"), walk)
         listOf("key_bones", "delete_keys", "set_key", "move_keys", "scale_keys", "paste_keys", "move_event", "add_event",
-            "rename_event", "delete_event", "set_loop", "set_fps", "retime_clip", "set_duration").forEach { action ->
+            "rename_event", "delete_event", "set_loop", "set_fps", "retime_clip", "set_duration",
+            // ANI-15
+            "set_tangent", "curve_keys", "resample", "reduce_keys", "smooth", "foot_lock", "mirror", "trim_range", "loop_seam").forEach { action ->
             val command = ClipEditCommand(doc, walk, walk, action)
             assertTrue(strings.hasString(command.displayNameKey), command.displayNameKey)
             assertEquals(strings.getString(command.displayNameKey), CommandNames.displayName(command, strings))
