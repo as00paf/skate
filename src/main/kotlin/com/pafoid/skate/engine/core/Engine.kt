@@ -13,6 +13,7 @@ import com.pafoid.skate.engine.ecs.systems.CameraManager
 import com.pafoid.skate.engine.ecs.systems.DayNightCycleSystem
 import com.pafoid.skate.engine.ecs.systems.ParticleSystem
 import com.pafoid.skate.engine.ecs.systems.DirectionalLightSystem
+import com.pafoid.skate.engine.ecs.systems.EnvironmentClockSystem
 import com.pafoid.skate.engine.ecs.systems.EnvironmentSystem
 import com.pafoid.skate.engine.ecs.systems.CameraControlSystem
 import com.pafoid.skate.engine.ecs.systems.CameraCycleSystem
@@ -174,6 +175,7 @@ class Engine {
             inputSystem,
             AudioSystem(audioEngine, logger, assetsManager, cameraManager, assetsManager.paths::localPath),
             EnvironmentSystem(),
+            EnvironmentClockSystem(), // wind/water clock, before physics (REN-29 §5.3)
             physicsSystem,
             PhysicsFrameSystem(physicsSystem),
             DayNightCycleSystem(),

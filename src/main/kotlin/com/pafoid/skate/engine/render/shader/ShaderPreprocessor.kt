@@ -1,7 +1,7 @@
 package com.pafoid.skate.engine.render.shader
 
-/** Optional shader permutations; each maps to a `#define` of the same name. */
-enum class ShaderFeature { SKINNED, SHADOWED, FOG, ALPHA_TEST, SDF }
+/** Optional shader permutations; each maps to a `#define` of the same name. WIND: `wind.glsl` vertex displacement (REN-29 §5.2). */
+enum class ShaderFeature { SKINNED, SHADOWED, FOG, ALPHA_TEST, SDF, WIND }
 
 class ShaderPreprocessException(message: String) : RuntimeException(message)
 

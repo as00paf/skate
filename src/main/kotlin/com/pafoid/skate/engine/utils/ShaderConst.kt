@@ -166,5 +166,43 @@ object ShaderConst {
         const val ENV_PREFILTERED_UNIT = 7
         const val ENV_SKY_UNIT = 8
         const val ENV_BRDF_LUT_UNIT = 9
+
+        /** Wind (REN-29 §5.2, `wind.glsl`): direction (unit XZ), speed, gust (strength, scale), turbulence, clock. */
+        const val WIND_DIR = "uWindDir"
+        const val WIND_SPEED = "uWindSpeed"
+        const val WIND_GUST = "uWindGust"
+        const val WIND_TURBULENCE = "uWindTurbulence"
+        const val WIND_TIME = "uWindTime"
+
+        /** Per-draw wind response: profile (0 none, 1 grass, 2 tree), (stiffness, flutter), model height range. */
+        const val WIND_PROFILE = "uWindProfile"
+        const val WIND_BEND = "uWindBend"
+        const val WIND_HEIGHT = "uWindHeight"
+
+        /**
+         * Water (REN-29 §6, `water.glsl`/`water_waves.glsl`): up to 4 Gerstner waves as separate uniforms (no arrays,
+         * so every backend maps them the same): `uWaveA<i>` = (dirX, dirZ, k, amplitude), `uWaveB<i>` = (Q, ω, 0, 0).
+         */
+        const val WAVE_COUNT = "uWaveCount"
+        val WAVE_A = Array(4) { "uWaveA$it" }
+        val WAVE_B = Array(4) { "uWaveB$it" }
+        const val WATER_MODEL = "uWaterModel"
+        const val WATER_FLOW = "uWaterFlow"
+        const val WATER_DEPTH = "uWaterDepth"
+        const val WATER_SCREEN = "uScreenSize"
+        const val WATER_NEAR_FAR = "uNearFar"
+        const val WATER_SSR_STEPS = "uSsrSteps"
+        const val WATER_SCENE_COLOR = "uSceneColor"
+        const val WATER_SCENE_DEPTH = "uSceneDepth"
+        const val WATER_NORMAL_A = "normalA"
+        const val WATER_NORMAL_B = "normalB"
+        const val WATER_FOAM = "foam"
+
+        /** Texture units of the water pass (after the IBL units). */
+        const val WATER_SCENE_COLOR_UNIT = 10
+        const val WATER_SCENE_DEPTH_UNIT = 11
+        const val WATER_NORMAL_A_UNIT = 12
+        const val WATER_NORMAL_B_UNIT = 13
+        const val WATER_FOAM_UNIT = 14
     }
 }

@@ -5,6 +5,10 @@ layout (location=1) in vec2 aTexCoords;
 layout (location=6) in ivec4 aJoints;
 layout (location=7) in vec4 aWeights;
 layout (location = 9) in float aEntityId;
+#ifdef WIND
+layout (location=4) in vec4 aColor;
+#include "wind.glsl"
+#endif
 
 uniform mat4 transformationMatrix;
 uniform mat4 projectionMatrix;
@@ -41,6 +45,9 @@ void main()
 
     // Apply skinning then model-to-world transformation
     vec4 worldPos = transformationMatrix * skinMatrix * vec4(aPos, 1.0);
+#ifdef WIND
+    worldPos.xyz += windDisplacement(worldPos.xyz, transformationMatrix[3].xyz, aPos.y, aColor);
+#endif
 
     // Transform to clip space
     gl_Position = projectionMatrix * viewMatrix * worldPos;
