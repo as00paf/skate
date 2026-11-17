@@ -19,10 +19,11 @@ Calling `play("jump")` from gameplay or a script turns on the Bool parameter `ju
 2. Built-in controllers, such as the skater's, are read-only: click **Make a project copy to edit**, then **Use on …** to give the copy to the character.
 3. Right-click the graph > **Add state**, or drag an animation from the Project window onto the graph. Drag boxes to move them; drag on empty space to select several. Double-click a state to rename it.
 4. Select a state to choose its **Clip**, **Speed**, **Loop** and **Events** on the right. A state without a clip holds the rest pose.
-5. Right-click a state > **Make transition**, then click the state to go to. Select the arrow to add **Conditions** ("speed is greater than 2", "jump is set"), the blend time and the wait for the end of the clip. Use the arrows next to a state's transitions to set which one is checked first.
-6. Add parameters with **+ Float**, **+ Bool** and **+ Trigger**. Renaming a parameter updates every condition.
-7. **Ctrl+D** duplicates, **Ctrl+C** / **Ctrl+V** copy and paste states, **Delete** deletes, **F** frames the whole graph. Every change can be undone with **Ctrl+Z**.
-8. Click **Save**: the characters that use the controller are updated, even while the game is playing.
+5. To mix clips by a parameter (walk to run by speed, strafes by two directions), select a state and click **Make 1D blend tree** or **Make 2D blend tree**. Pick the **Parameter**, add clips with **+ Motion**, and set where each one plays alone. Drag the marker in the preview to see each clip's share; while playing, it moves the character's parameters. **Back to one clip** undoes it.
+6. Right-click a state > **Make transition**, then click the state to go to. Select the arrow to add **Conditions** ("speed is greater than 2", "jump is set"), the blend time and the wait for the end of the clip. Use the arrows next to a state's transitions to set which one is checked first.
+7. Add parameters with **+ Float**, **+ Bool** and **+ Trigger**. Renaming a parameter updates every condition.
+8. **Ctrl+D** duplicates, **Ctrl+C** / **Ctrl+V** copy and paste states, **Delete** deletes, **F** frames the whole graph. Every change can be undone with **Ctrl+Z**.
+9. Click **Save**: the characters that use the controller are updated, even while the game is playing.
 
 While the game is playing, the graph follows the **Preview on** object: the active state is green, a running blend shows on its arrow, events flash, and you can change parameter values to try transitions. Those live values are not saved.
 

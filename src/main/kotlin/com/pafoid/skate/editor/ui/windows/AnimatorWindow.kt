@@ -6,6 +6,8 @@ import com.pafoid.skate.editor.animation.clipeditor.OpenAnimationClip
 import com.pafoid.skate.editor.animation.controllereditor.AnimatorWindowController
 import com.pafoid.skate.editor.animation.controllereditor.AnimatorLayout
 import com.pafoid.skate.editor.animation.controllereditor.AnimatorWindowWiring
+import com.pafoid.skate.editor.animation.controllereditor.BlendKind
+import com.pafoid.skate.editor.animation.controllereditor.BlendPlot
 import com.pafoid.skate.editor.animation.controllereditor.ClipOption
 import com.pafoid.skate.editor.animation.controllereditor.ClipSource
 import com.pafoid.skate.editor.animation.controllereditor.ControllerGraphView
@@ -23,7 +25,11 @@ import com.pafoid.skate.editor.imgui.tippedWith
 import com.pafoid.skate.editor.systems.ProjectManager
 import com.pafoid.skate.engine.animation.edit.SkAnimFormat
 import com.pafoid.skate.engine.animation.graph.AnimationControllerAsset.Companion.ANY_STATE_NODE
+import com.pafoid.skate.engine.animation.graph.Blend1DDef
+import com.pafoid.skate.engine.animation.graph.Blend2DDef
+import com.pafoid.skate.engine.animation.graph.ClipRef
 import com.pafoid.skate.engine.animation.graph.ConditionOp
+import com.pafoid.skate.engine.animation.graph.MotionDef
 import com.pafoid.skate.engine.animation.graph.NodePos
 import com.pafoid.skate.engine.animation.graph.ParameterDef
 import com.pafoid.skate.engine.animation.graph.ParameterType
@@ -620,10 +626,10 @@ class AnimatorWindow(
             section(strings.getString("lbl.animator_window.clip_files"))
             for (c in asset.clips) textWrapped(c)
         }
-        if (asset.poses.isNotEmpty() || asset.clipFits.isNotEmpty() || asset.motions.isNotEmpty()) {
+        // Blend trees are edited in the state inspector (ANI-23); poses and clip fits stay read-only.
+        if (asset.poses.isNotEmpty() || asset.clipFits.isNotEmpty()) {
             section(strings.getString("lbl.animator_window.read_only_parts"))
             if (asset.poses.isNotEmpty()) textWrapped(strings.getString("lbl.animator_window.poses", asset.poses.keys.joinToString()))
-            if (asset.motions.isNotEmpty()) textWrapped(strings.getString("lbl.animator_window.blend_trees", asset.motions.keys.joinToString()))
             if (asset.clipFits.isNotEmpty()) textWrapped(strings.getString("lbl.animator_window.clip_fits", asset.clipFits.keys.joinToString()))
         }
         ImGui.spacing()
@@ -683,11 +689,20 @@ class AnimatorWindow(
             }
         }
         if (state.motion.isEmpty()) wrapped { MImGui.warningText(strings.getString("lbl.animator_window.no_clip_warning")) }
+        val tree = controller.blendTreeOf(state)
+        if (tree == null) {
+            buttonRow(
+                "btn.animator_window.make_blend_1d" to { controller.createBlendTree(state.name, BlendKind.ONE_D) },
+                "btn.animator_window.make_blend_2d" to { controller.createBlendTree(state.name, BlendKind.TWO_D) },
+            )
+        }
 
         floatCommit("state_speed:${state.name}", labeled("lbl.animator_window.speed"), state.speed, 0.01f, -10f, 10f, "%.2f")
             ?.let { v -> controller.updateState(state.name) { it.copy(speed = v) } }
         Tooltips.always(strings.getString("lbl.animator_window.speed.tooltip"))
         if (labeledCheckbox("lbl.animator_window.loop", state.loop)) controller.updateState(state.name) { it.copy(loop = !it.loop) }
+
+        if (tree != null) blendTreeInspector(state, state.motion, tree)
 
         section(strings.getString("lbl.animator_window.events"))
         state.events.forEachIndexed { i, e ->
@@ -717,6 +732,151 @@ class AnimatorWindow(
             "btn.animator_window.delete" to { controller.deleteSelection() },
         )
         ImGui.popID()
+    }
+
+    // ---- blend trees (ANI-23) --------------------------------------------------------------------------------
+
+    private fun blendTreeInspector(state: StateDef, key: String, def: MotionDef) {
+        ImGui.pushID("blend:$key")
+        section(strings.getString(if (def is Blend2DDef) "lbl.animator_window.blend_2d" else "lbl.animator_window.blend_1d"))
+        textCommit("blend_name:$key", labeled("lbl.animator_window.blend_name"), key)?.let { controller.renameBlendTree(key, it) }
+        Tooltips.always(strings.getString("lbl.animator_window.blend_name.tooltip"))
+        when (def) {
+            is Blend1DDef -> parameterCombo("lbl.animator_window.blend_parameter", def.parameter) { controller.setBlendParameter(key, 0, it) }
+            is Blend2DDef -> {
+                parameterCombo("lbl.animator_window.blend_parameter_x", def.parameterX) { controller.setBlendParameter(key, 0, it) }
+                parameterCombo("lbl.animator_window.blend_parameter_y", def.parameterY) { controller.setBlendParameter(key, 1, it) }
+            }
+            is ClipRef -> Unit
+        }
+        blendPreview(key, def)
+
+        section(strings.getString("lbl.animator_window.blend_motions"))
+        val weights = controller.blendPreviewWeights(key)
+        val options = controller.clipOptions()
+        val children: List<MotionDef> = when (def) {
+            is Blend1DDef -> def.children.map { it.motion }
+            is Blend2DDef -> def.children.map { it.motion }
+            is ClipRef -> emptyList()
+        }
+        children.forEachIndexed { i, motion ->
+            ImGui.pushID(i)
+            ImGui.textUnformatted("${i + 1}.")
+            ImGui.sameLine()
+            val row = trailing(listOf(iconButtonWidth()))
+            val current = (motion as? ClipRef)?.clip ?: strings.getString("lbl.animator_window.blend_nested")
+            if (ImGui.beginCombo("##blend_clip", current)) {
+                for (o in options) if (ImGui.selectable("${o.name}###blend_clip:${o.source}:${o.name}", o.name == current)) controller.setBlendChildClip(key, i, o)
+                ImGui.endCombo()
+            }
+            Tooltips.always(strings.getString("lbl.animator_window.blend_clip.tooltip"))
+            row.next()
+            ImGui.beginDisabled(children.size <= 1)
+            if (strings.tippedWith(iconButton(Icons.TRASH), "btn.animator_window.remove_blend_motion.tooltip")) controller.removeBlendChild(key, i)
+            ImGui.endDisabled()
+            val share = AnimatorLayout.share(ImGui.getContentRegionAvailX(), em(AnimatorLayout.MIN_VALUE_EMS))
+            when (def) {
+                is Blend1DDef -> {
+                    ImGui.setNextItemWidth(share)
+                    floatCommit("blend_t:$key:$i", "##threshold", def.children[i].threshold, 0.01f, -1000f, 1000f, "%.2f")
+                        ?.let { controller.setBlendThreshold(key, i, it) }
+                    Tooltips.always(strings.getString("lbl.animator_window.blend_threshold.tooltip", def.parameter))
+                }
+                is Blend2DDef -> {
+                    val c = def.children[i]
+                    ImGui.setNextItemWidth(share)
+                    floatCommit("blend_x:$key:$i", "##x", c.x, 0.01f, -1000f, 1000f, "%.2f")?.let { controller.setBlendPosition(key, i, it, c.y) }
+                    Tooltips.always(strings.getString("lbl.animator_window.blend_position.tooltip", def.parameterX))
+                    flow(share)
+                    ImGui.setNextItemWidth(share)
+                    floatCommit("blend_y:$key:$i", "##y", c.y, 0.01f, -1000f, 1000f, "%.2f")?.let { controller.setBlendPosition(key, i, c.x, it) }
+                    Tooltips.always(strings.getString("lbl.animator_window.blend_position.tooltip", def.parameterY))
+                }
+                is ClipRef -> Unit
+            }
+            weights?.getOrNull(i)?.let { w ->
+                val text = strings.getString("lbl.animator_window.blend_weight", Math.round(w * 100f))
+                flow(ImGui.calcTextSize(text).x)
+                if (w > 0f) MImGui.successText(text) else MImGui.textDisabled(text)
+                Tooltips.always(strings.getString("lbl.animator_window.blend_weight.tooltip"))
+            }
+            ImGui.popID()
+        }
+        if (strings.tipped(iconLabelButton("${Icons.PLUS} ${strings.getString("btn.animator_window.add_blend_motion")}"), "btn.animator_window.add_blend_motion")) {
+            ImGui.openPopup("##add_blend_motion")
+        }
+        if (ImGui.beginPopup("##add_blend_motion")) {
+            if (options.isEmpty()) MImGui.textDisabled(strings.getString("lbl.animator_window.blend_no_clips"))
+            for (o in options) if (ImGui.selectable("${o.name}###add_blend:${o.source}:${o.name}")) controller.addBlendChild(key, o)
+            ImGui.endPopup()
+        }
+        ImGui.spacing()
+        buttonRow("btn.animator_window.blend_to_clip" to { controller.removeBlendTree(state.name) })
+        ImGui.popID()
+    }
+
+    /** A combo of the float parameters (the blend tree follows one per axis). */
+    private fun parameterCombo(key: String, current: String, pick: (String) -> Unit) {
+        if (ImGui.beginCombo(labeled(key), current)) {
+            val floats = controller.floatParameters()
+            if (floats.isEmpty()) MImGui.textDisabled(strings.getString("lbl.animator_window.blend_no_floats"))
+            for (p in floats) if (ImGui.selectable("$p###blend_param:$p", p == current)) pick(p)
+            ImGui.endCombo()
+        }
+        Tooltips.always(strings.getString("$key.tooltip"))
+    }
+
+    /**
+     * The tree's parameter space: a line of thresholds (1D) or a plane of positions (2D), the motions numbered as in
+     * the list and sized by their weight, and the preview marker. Dragging the marker previews the mix; in play mode
+     * it moves the character's parameters (live, not saved).
+     */
+    private fun blendPreview(key: String, def: MotionDef) {
+        val (px, py) = controller.blendPreviewPoint(key)
+        val weights = controller.blendPreviewWeights(key) ?: return
+        val twoD = def is Blend2DDef
+        val xs: FloatArray
+        val ys: FloatArray
+        when (def) {
+            is Blend1DDef -> { xs = FloatArray(def.children.size) { def.children[it].threshold }; ys = FloatArray(xs.size) }
+            is Blend2DDef -> { xs = FloatArray(def.children.size) { def.children[it].x }; ys = FloatArray(xs.size) { def.children[it].y } }
+            is ClipRef -> return
+        }
+        val w = ImGui.getContentRegionAvailX().coerceAtLeast(1f)
+        val h = if (twoD) minOf(w, em(14f)) else em(2.5f)
+        val ox = ImGui.getCursorScreenPosX()
+        val oy = ImGui.getCursorScreenPosY()
+        ImGui.invisibleButton("##blend_preview", w, h)
+        Tooltips.always(strings.getString("lbl.animator_window.blend_preview.tooltip"))
+        val bx = BlendPlot.bounds(xs + px)
+        val by = if (twoD) BlendPlot.bounds(ys + py) else -1f to 1f
+        val pad = em(0.8f)
+        fun sx(v: Float) = ox + pad + (v - bx.first) / (bx.second - bx.first) * (w - 2f * pad)
+        fun sy(v: Float) = if (twoD) oy + h - pad - (v - by.first) / (by.second - by.first) * (h - 2f * pad) else oy + h * 0.5f
+        if (ImGui.isItemActive()) {
+            val vx = bx.first + (ImGui.getMousePosX() - ox - pad) / (w - 2f * pad) * (bx.second - bx.first)
+            val vy = if (twoD) by.first + (oy + h - pad - ImGui.getMousePosY()) / (h - 2f * pad) * (by.second - by.first) else 0f
+            controller.setBlendPreviewPoint(key, vx, vy)
+        }
+        val draw = ImGui.getWindowDrawList()
+        draw.addRectFilled(ox, oy, ox + w, oy + h, ImGui.getColorU32(imgui.flag.ImGuiCol.FrameBg))
+        val axis = ImGui.getColorU32(imgui.flag.ImGuiCol.Border)
+        if (twoD) {
+            if (0f in bx.first..bx.second) draw.addLine(sx(0f), oy, sx(0f), oy + h, axis)
+            if (0f in by.first..by.second) draw.addLine(ox, sy(0f), ox + w, sy(0f), axis)
+        } else draw.addLine(ox + pad, sy(0f), ox + w - pad, sy(0f), axis)
+        val text = ImGui.getColorU32(imgui.flag.ImGuiCol.Text)
+        val accent = ImGui.getColorU32(imgui.flag.ImGuiCol.CheckMark)
+        for (i in xs.indices) {
+            val r = em(0.25f) + em(0.35f) * weights[i]
+            draw.addCircleFilled(sx(xs[i]), sy(ys[i]), r, if (weights[i] > 0f) accent else axis)
+            draw.addText(sx(xs[i]) + r + 2f, sy(ys[i]) - em(1f), text, "${i + 1}")
+        }
+        val mx = sx(px); val my = sy(py)
+        draw.addCircle(mx, my, em(0.45f), ImGui.getColorU32(imgui.flag.ImGuiCol.PlotHistogram), 12, 2f)
+        val value = if (def is Blend2DDef) strings.getString("lbl.animator_window.blend_value_2d", def.parameterX, px, def.parameterY, py)
+        else strings.getString("lbl.animator_window.blend_value", (def as Blend1DDef).parameter, px)
+        textWrapped(value)
     }
 
     private fun anyStateInspector() {

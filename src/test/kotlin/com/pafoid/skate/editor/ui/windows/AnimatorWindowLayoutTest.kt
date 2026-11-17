@@ -17,6 +17,11 @@ import com.pafoid.skate.engine.animation.graph.AnimationControllerAsset.Companio
 import com.pafoid.skate.engine.animation.graph.ConditionOp
 import com.pafoid.skate.engine.animation.graph.ParameterDef
 import com.pafoid.skate.engine.animation.graph.ParameterType
+import com.pafoid.skate.engine.animation.graph.Blend1DChild
+import com.pafoid.skate.engine.animation.graph.Blend1DDef
+import com.pafoid.skate.engine.animation.graph.Blend2DChild
+import com.pafoid.skate.engine.animation.graph.Blend2DDef
+import com.pafoid.skate.engine.animation.graph.ClipRef
 import com.pafoid.skate.engine.animation.graph.StateDef
 import com.pafoid.skate.engine.animation.graph.TransitionCondition
 import com.pafoid.skate.engine.animation.graph.TransitionDef
@@ -75,6 +80,8 @@ class AnimatorWindowLayoutTest {
         listOf(
             StateDef("standing idle", "idle", events = listOf(AnimEventDef(0.25f, "left foot down"), AnimEventDef(0.75f, "right foot down"))),
             StateDef("running fast", ""), StateDef("jump", "idle"),
+            // ANI-23: blend tree inspectors.
+            StateDef("walking blend", "locomotion blend tree"), StateDef("strafing blend", "strafe plane"),
         ),
         listOf(
             TransitionDef("standing idle", "running fast", listOf(
@@ -90,6 +97,14 @@ class AnimatorWindowLayoutTest {
             ParameterDef("horizontalSpeed", ParameterType.FLOAT, 1f), ParameterDef("grounded", ParameterType.BOOL),
             ParameterDef("jumpRequested", ParameterType.TRIGGER),
         ),
+        motions = mapOf(
+            "locomotion blend tree" to Blend1DDef("horizontalSpeed", listOf(
+                Blend1DChild(0f, ClipRef("idle")), Blend1DChild(1.5f, ClipRef("a walking clip with a long name")), Blend1DChild(4f, ClipRef("idle")),
+            )),
+            "strafe plane" to Blend2DDef("horizontalSpeed", "horizontalSpeed", listOf(
+                Blend2DChild(0f, 0f, ClipRef("idle")), Blend2DChild(-1f, 0f, ClipRef("left strafe walking")), Blend2DChild(1f, 1f, ClipRef("idle")),
+            )),
+        ),
     )
 
     private class Case(val name: String, val prepare: (AnimatorWindowController) -> Unit)
@@ -98,6 +113,8 @@ class AnimatorWindowLayoutTest {
         Case("controller settings") { it.clearSelection() },
         Case("state") { it.select("standing idle") },
         Case("state without clip") { it.select("running fast") },
+        Case("1D blend tree") { it.select("walking blend") },
+        Case("2D blend tree") { it.select("strafing blend") },
         Case("any state") { it.select(ANY_STATE_NODE) },
         Case("multi select") { it.selectNodes(setOf("standing idle", "jump")) },
         Case("transition with conditions") { it.selectTransition(0) },

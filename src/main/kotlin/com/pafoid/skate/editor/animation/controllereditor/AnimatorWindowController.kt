@@ -9,9 +9,16 @@ import com.pafoid.skate.engine.animation.graph.AnimEventDef
 import com.pafoid.skate.engine.animation.graph.AnimationControllerAsset
 import com.pafoid.skate.engine.animation.graph.AnimationControllerAsset.Companion.ANY_STATE_NODE
 import com.pafoid.skate.engine.animation.graph.AnimationStateMachine
+import com.pafoid.skate.engine.animation.graph.Blend1DChild
+import com.pafoid.skate.engine.animation.graph.Blend1DDef
+import com.pafoid.skate.engine.animation.graph.Blend2DChild
+import com.pafoid.skate.engine.animation.graph.Blend2DDef
+import com.pafoid.skate.engine.animation.graph.BlendWeights
+import com.pafoid.skate.engine.animation.graph.ClipRef
 import com.pafoid.skate.engine.animation.graph.ConditionOp
 import com.pafoid.skate.engine.animation.graph.ControllerEditor
 import com.pafoid.skate.engine.animation.graph.ControllerParameters
+import com.pafoid.skate.engine.animation.graph.MotionDef
 import com.pafoid.skate.engine.animation.graph.NodePos
 import com.pafoid.skate.engine.animation.graph.ParameterDef
 import com.pafoid.skate.engine.animation.graph.ParameterType
@@ -33,6 +40,9 @@ enum class ClipSource { CHARACTER, CONTROLLER, PROJECT, POSE }
 data class ClipOption(val name: String, val source: ClipSource, val path: String? = null)
 
 /** States copied with Ctrl+C (ANI-21 Q8): pasted into this or another controller open in the window. */
+/** Kinds of blend tree the state inspector creates (ANI-23). */
+enum class BlendKind { ONE_D, TWO_D }
+
 data class CopiedStates(val states: List<StateDef>, val transitions: List<TransitionDef>, val positions: Map<String, NodePos>)
 
 /**
@@ -502,6 +512,166 @@ class AnimatorWindowController(
         return ok
     }
 
+    // ---- blend trees (ANI-23) ---------------------------------------------------------------------------------
+
+    /** The blend tree [state] plays (a named 1D or 2D motion), or null for a clip or the rest pose. */
+    fun blendTreeOf(state: StateDef): MotionDef? = asset?.motions?.get(state.motion)?.takeIf { it !is ClipRef }
+
+    /** Float parameters a blend tree can follow, declared first. */
+    fun floatParameters(): List<String> = parameters().filter { it.type == ParameterType.FLOAT }.map { it.name }
+
+    /**
+     * Turns [state] into a blend tree of [kind] named "<state> Blend" whose first motion is the state's clip (else the
+     * first clip on offer). It follows the first float parameters, declaring `speed` (1D) or `moveX`/`moveY` (2D)
+     * when there are not enough. Returns the tree's name.
+     */
+    fun createBlendTree(state: String, kind: BlendKind): String? {
+        val a = asset ?: return null
+        val s = a.states.firstOrNull { it.name == state } ?: return null
+        val current = a.motions[s.motion]
+        val clip = (current as? ClipRef)?.clip
+            ?: s.motion.takeIf { it.isNotEmpty() && current == null }
+            ?: clipOptions().firstOrNull()?.name
+            ?: run { message = NO_CLIP; return null }
+        val option = clipOptions().firstOrNull { it.name == clip }
+        val key = freeName("$state Blend", a.motions.keys + a.states.map { it.name })
+        val floats = floatParameters()
+        val taken = parameters().map { it.name }.toMutableSet()
+        val ok = edit(ControllerAction.CREATE_BLEND_TREE) { e ->
+            fun floatParam(index: Int, base: String): String = floats.getOrNull(index)
+                ?: freeName(base, taken).also { taken += it; e.addParameter(ParameterDef(it, ParameterType.FLOAT)) }
+            val def = when (kind) {
+                BlendKind.ONE_D -> Blend1DDef(floatParam(0, "speed"), listOf(Blend1DChild(0f, ClipRef(clip))))
+                BlendKind.TWO_D -> Blend2DDef(floatParam(0, "moveX"), floatParam(1, "moveY"), listOf(Blend2DChild(0f, 0f, ClipRef(clip))))
+            }
+            e.setMotion(key, def)
+            e.updateState(state) { it.copy(motion = key) }
+            addFile(e, option)
+        }
+        return if (ok) key else null
+    }
+
+    /** Sets the parameter of a 1D tree ([axis] 0) or the X (0) / Y (1) parameter of a 2D tree. */
+    fun setBlendParameter(key: String, axis: Int, parameter: String) = editTree(key) { def ->
+        when (def) {
+            is Blend1DDef -> def.copy(parameter = parameter)
+            is Blend2DDef -> if (axis == 0) def.copy(parameterX = parameter) else def.copy(parameterY = parameter)
+            else -> def
+        }
+    }
+
+    /** Adds [option] as a new motion of the tree: after the last threshold (1D) or on a free spot around the origin (2D). */
+    fun addBlendChild(key: String, option: ClipOption): Boolean {
+        val def = asset?.motions?.get(key) ?: return false
+        val motion = ClipRef(option.name)
+        return editTree(key, option) {
+            when (def) {
+                is Blend1DDef -> def.withChild((def.children.maxOfOrNull { it.threshold } ?: -1f) + 1f, motion)
+                is Blend2DDef -> {
+                    val spot = SPOTS.firstOrNull { (x, y) -> def.children.none { it.x == x && it.y == y } } ?: (def.children.size.toFloat() to 0f)
+                    def.withChild(spot.first, spot.second, motion)
+                }
+                else -> def
+            }
+        }
+    }
+
+    /** Removes motion [index]; refused for the last one (a tree needs a motion). */
+    fun removeBlendChild(key: String, index: Int) = editTree(key) { def ->
+        when (def) {
+            is Blend1DDef -> def.withoutChild(index)
+            is Blend2DDef -> def.withoutChild(index)
+            else -> def
+        }
+    }
+
+    fun setBlendThreshold(key: String, index: Int, threshold: Float) = editTree(key) { (it as? Blend1DDef)?.withThreshold(index, threshold) ?: it }
+
+    fun setBlendPosition(key: String, index: Int, x: Float, y: Float) = editTree(key) { (it as? Blend2DDef)?.withPosition(index, x, y) ?: it }
+
+    /** Plays [option] as motion [index] of the tree. */
+    fun setBlendChildClip(key: String, index: Int, option: ClipOption) = editTree(key, option) { def ->
+        when (def) {
+            is Blend1DDef -> def.withChildMotion(index, ClipRef(option.name))
+            is Blend2DDef -> def.withChildMotion(index, ClipRef(option.name))
+            else -> def
+        }
+    }
+
+    fun renameBlendTree(old: String, new: String): Boolean {
+        val trimmed = new.trim()
+        if (trimmed == old) return false
+        val ok = edit(ControllerAction.RENAME_BLEND_TREE) { it.renameMotion(old, trimmed) }
+        if (ok) blendPreview.remove(old)?.let { blendPreview[trimmed] = it }
+        return ok
+    }
+
+    /**
+     * Back to a single clip: [state] plays the tree's first clip. The tree is deleted when no other state uses it.
+     */
+    fun removeBlendTree(state: String) = edit(ControllerAction.REMOVE_BLEND_TREE) { e ->
+        val s = e.asset.states.firstOrNull { it.name == state } ?: return@edit
+        val def = e.asset.motions[s.motion] ?: return@edit
+        e.updateState(state) { it.copy(motion = def.clipNames().firstOrNull() ?: "") }
+        if (e.asset.states.none { it.motion == s.motion }) e.removeMotion(s.motion)
+    }
+
+    private fun editTree(key: String, option: ClipOption? = null, change: (MotionDef) -> MotionDef) =
+        edit(ControllerAction.SET_BLEND_TREE) { e ->
+            e.updateMotion(key, MotionDef::class.java, change)
+            addFile(e, option)
+        }
+
+    private fun addFile(e: ControllerEditor, option: ClipOption?) {
+        if (option?.source == ClipSource.PROJECT) option.path?.let(e::addClipFile)
+    }
+
+    /** Where the preview marker of each tree is when not playing (editor only, not saved). */
+    private val blendPreview = HashMap<String, FloatArray>()
+
+    /**
+     * The parameter values the preview of tree [key] shows: the preview character's live values in play mode,
+     * else the marker the user placed (the parameters' defaults at first).
+     */
+    fun blendPreviewPoint(key: String): Pair<Float, Float> {
+        val def = asset?.motions?.get(key) ?: return 0f to 0f
+        val (px, py) = blendAxes(def)
+        val live = liveMachine?.parameters
+        if (live != null) return live.getFloat(px) to (py?.let(live::getFloat) ?: 0f)
+        blendPreview[key]?.let { return it[0] to it[1] }
+        fun default(name: String?) = parameters().firstOrNull { it.name == name }?.default ?: 0f
+        return default(px) to default(py)
+    }
+
+    /** Moves the preview marker; in play mode it writes the live parameters (not undoable, not saved). */
+    fun setBlendPreviewPoint(key: String, x: Float, y: Float = 0f) {
+        val def = asset?.motions?.get(key) ?: return
+        val (px, py) = blendAxes(def)
+        val live = liveMachine?.parameters
+        if (live != null) { live.setFloat(px, x); py?.let { live.setFloat(it, y) }; return }
+        blendPreview[key] = floatArrayOf(x, y)
+    }
+
+    /** Each motion's share of the mix at the preview point (same weights as the runtime, [BlendWeights]). */
+    fun blendPreviewWeights(key: String): FloatArray? {
+        val def = asset?.motions?.get(key) ?: return null
+        val (x, y) = blendPreviewPoint(key)
+        return BlendWeights.of(def, x, y)
+    }
+
+    private fun blendAxes(def: MotionDef): Pair<String, String?> = when (def) {
+        is Blend1DDef -> def.parameter to null
+        is Blend2DDef -> def.parameterX to def.parameterY
+        is ClipRef -> "" to null
+    }
+
+    private fun freeName(base: String, taken: Collection<String>): String {
+        var name = base
+        var n = 2
+        while (name in taken) name = "$base ${n++}"
+        return name
+    }
+
     // ---- play mode (§6) ---------------------------------------------------------------------------------------
 
     /** Writes a live parameter value on the preview's running state machine: not undoable, not saved. */
@@ -526,6 +696,10 @@ class AnimatorWindowController(
 
     companion object {
         const val READ_ONLY = "This controller is an engine default: make a project copy to edit it"
+        const val NO_CLIP = "A blend tree needs a clip: add clips to the character or the project first"
+
+        /** Free spots for new 2D motions: the four directions, then the diagonals (unit parameter space). */
+        private val SPOTS = listOf(0f to 0f, 0f to 1f, 1f to 0f, 0f to -1f, -1f to 0f, 1f to 1f, -1f to 1f, 1f to -1f, -1f to -1f)
 
         /** Operators offered for a condition on a parameter of [type] (ANI-21 §3.3). */
         fun operatorsFor(type: ParameterType?): List<ConditionOp> =

@@ -44,14 +44,9 @@ class BlendTree1D(
     init { require(children.isNotEmpty()) { "BlendTree1D needs at least one child" } }
 
     /** Returns (lowerIndex, upperIndex, weightOfUpper). */
-    internal fun select(value: Float): Triple<Int, Int, Float> {
-        if (children.size == 1 || value <= children.first().first) return Triple(0, 0, 0f)
-        if (value >= children.last().first) return Triple(children.size - 1, children.size - 1, 0f)
-        val hi = children.indexOfFirst { it.first >= value }
-        val lo = hi - 1
-        val span = children[hi].first - children[lo].first
-        return Triple(lo, hi, if (span <= 0f) 0f else (value - children[lo].first) / span)
-    }
+    internal fun select(value: Float): Triple<Int, Int, Float> = BlendWeights.select1D(thresholds, value)
+
+    private val thresholds = this.children.map { it.first }
 
     override fun duration(params: AnimParameters): Float {
         val (lo, hi, w) = select(params.getFloat(parameter))
@@ -77,17 +72,10 @@ class BlendTree2D(
 ) : Motion {
     init { require(children.isNotEmpty()) { "BlendTree2D needs at least one child" } }
 
-    internal fun weights(x: Float, y: Float): FloatArray {
-        val w = FloatArray(children.size)
-        for ((i, c) in children.withIndex()) {
-            val d = (c.first - x) * (c.first - x) + (c.second - y) * (c.second - y)
-            if (d < 1e-8f) { w.fill(0f); w[i] = 1f; return w }
-            w[i] = 1f / d
-        }
-        val sum = w.sum()
-        for (i in w.indices) w[i] /= sum
-        return w
-    }
+    private val xs = FloatArray(children.size) { children[it].first }
+    private val ys = FloatArray(children.size) { children[it].second }
+
+    internal fun weights(x: Float, y: Float): FloatArray = BlendWeights.blend2D(xs, ys, x, y)
 
     override fun duration(params: AnimParameters): Float {
         val w = weights(params.getFloat(parameterX), params.getFloat(parameterY))

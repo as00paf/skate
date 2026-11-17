@@ -19,10 +19,11 @@ Appeler `play("jump")` depuis le gameplay ou un script active le paramètre bool
 2. Les contrôleurs intégrés, comme celui du skateur, sont en lecture seule : cliquez sur **Faire une copie dans le projet**, puis sur **Utiliser sur …** pour donner la copie au personnage.
 3. Clic droit sur le graphe > **Ajouter un état**, ou glissez une animation depuis la fenêtre Projet sur le graphe. Glissez les boîtes pour les déplacer ; glissez dans le vide pour en sélectionner plusieurs. Double-cliquez sur un état pour le renommer.
 4. Sélectionnez un état pour choisir son **Clip**, sa **Vitesse**, sa **Boucle** et ses **Événements** à droite. Un état sans clip garde la pose de repos.
-5. Clic droit sur un état > **Créer une transition**, puis cliquez sur l'état d'arrivée. Sélectionnez la flèche pour ajouter des **Conditions** (« speed est supérieur à 2 », « jump est déclenché »), la durée du fondu et l'attente de la fin du clip. Les flèches à côté des transitions d'un état règlent laquelle est testée en premier.
-6. Ajoutez des paramètres avec **+ Nombre**, **+ Booléen** et **+ Déclencheur**. Renommer un paramètre met à jour chaque condition.
-7. **Ctrl+D** duplique, **Ctrl+C** / **Ctrl+V** copient et collent des états, **Suppr** supprime, **F** affiche tout le graphe. Tout peut être annulé avec **Ctrl+Z**.
-8. Cliquez sur **Enregistrer** : les personnages qui utilisent le contrôleur sont mis à jour, même pendant le jeu.
+5. Pour mélanger des clips selon un paramètre (marche vers course selon la vitesse, pas de côté selon deux directions), sélectionnez un état et cliquez sur **Créer un arbre 1D** ou **Créer un arbre 2D**. Choisissez le **Paramètre**, ajoutez des clips avec **+ Mouvement**, et réglez où chacun joue seul. Glissez le repère de l'aperçu pour voir la part de chaque clip ; pendant le jeu, il change les paramètres du personnage. **Revenir à un clip** l'annule.
+6. Clic droit sur un état > **Créer une transition**, puis cliquez sur l'état d'arrivée. Sélectionnez la flèche pour ajouter des **Conditions** (« speed est supérieur à 2 », « jump est déclenché »), la durée du fondu et l'attente de la fin du clip. Les flèches à côté des transitions d'un état règlent laquelle est testée en premier.
+7. Ajoutez des paramètres avec **+ Nombre**, **+ Booléen** et **+ Déclencheur**. Renommer un paramètre met à jour chaque condition.
+8. **Ctrl+D** duplique, **Ctrl+C** / **Ctrl+V** copient et collent des états, **Suppr** supprime, **F** affiche tout le graphe. Tout peut être annulé avec **Ctrl+Z**.
+9. Cliquez sur **Enregistrer** : les personnages qui utilisent le contrôleur sont mis à jour, même pendant le jeu.
 
 Pendant le jeu, le graphe suit l'objet **Aperçu sur** : l'état actif est vert, un fondu en cours s'affiche sur sa flèche, les événements clignotent, et vous pouvez changer les valeurs des paramètres pour essayer les transitions. Ces valeurs en direct ne sont pas enregistrées.
 
