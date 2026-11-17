@@ -43,6 +43,8 @@ data class EditorSettings(
     var camera: EditorCameraSettings = EditorCameraSettings(),
     /** Spacing presets and overrides over the theme (EDT-76). */
     var appearance: AppearanceSettings = AppearanceSettings(),
+    /** Export wizard choices per project path (AST-29); build choices, kept out of the `.skateproject`. */
+    var exportPreferences: Map<String, com.pafoid.skate.editor.project.ExportPreferences> = emptyMap(),
 ) {
 
     companion object {

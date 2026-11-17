@@ -1,25 +1,70 @@
 package com.pafoid.skate.editor.project
 
 import com.pafoid.skate.editor.settings.EditorSettings
+import com.pafoid.skate.engine.utils.BuildMode
+import com.pafoid.skate.engine.utils.ExportArt
 import com.pafoid.skate.engine.utils.ExportOptions
 import com.pafoid.skate.engine.utils.ExportProgress
 import com.pafoid.skate.engine.utils.ExportResult
 import com.pafoid.skate.engine.utils.ExportTarget
 import com.pafoid.skate.engine.utils.GameJarLocator
 import com.pafoid.skate.engine.utils.ProjectExporter
+import kotlinx.serialization.Serializable
 import java.io.File
+
+/**
+ * The export choices remembered for one project (AST-29, `docs/design/AST-15.md` §2): build choices, so they live in
+ * the editor's settings keyed by project path, not in the `.skateproject`. [excludedScenes] are absolute paths.
+ */
+@Serializable
+data class ExportPreferences(
+    val target: ExportTarget = ExportTarget.WINDOWS,
+    val mode: BuildMode = BuildMode.RELEASE,
+    val compress: Boolean = true,
+    val onlyReferenced: Boolean = true,
+    val outputDir: String = "",
+    val excludedScenes: Set<String> = emptySet(),
+)
+
+/** Where [ExportWizard] keeps [ExportPreferences] between sessions. */
+interface ExportMemory {
+    fun recall(projectPath: String): ExportPreferences?
+    fun remember(projectPath: String, preferences: ExportPreferences)
+
+    /** Remembers nothing (tests, or no settings). */
+    object None : ExportMemory {
+        override fun recall(projectPath: String): ExportPreferences? = null
+        override fun remember(projectPath: String, preferences: ExportPreferences) = Unit
+    }
+
+    companion object {
+        /** Keeps the preferences in [EditorSettings.exportPreferences]; [update] must save the settings. */
+        fun inSettings(settings: () -> EditorSettings, update: ((EditorSettings) -> EditorSettings) -> Unit): ExportMemory =
+            object : ExportMemory {
+                override fun recall(projectPath: String) = settings().exportPreferences[projectPath]
+                override fun remember(projectPath: String, preferences: ExportPreferences) {
+                    if (settings().exportPreferences[projectPath] == preferences) return
+                    update { it.copy(exportPreferences = it.exportPreferences + (projectPath to preferences)) }
+                }
+            }
+    }
+}
 
 /**
  * State of the export wizard (EDT-09): the options the user picks and the progress of the running export. It holds
  * no ImGui code so it can be unit tested; [com.pafoid.skate.editor.ui.windows.ExportWizardWindow] renders it.
  */
-class ExportWizard {
+class ExportWizard(private val memory: ExportMemory = ExportMemory.None) {
     enum class Phase { EDITING, SAVING, RUNNING, SUCCEEDED, FAILED }
 
-    /** Why the current options cannot be exported. */
-    enum class Issue { INVALID_OUTPUT, GAME_JAR_MISSING }
+    /**
+     * Why the current options cannot be exported. [ICON_UNREADABLE]: not even the engine icon can be read (a broken
+     * install); a missing project icon is only a warning ([ExportArt.notices]).
+     */
+    enum class Issue { INVALID_OUTPUT, GAME_JAR_MISSING, ICON_UNREADABLE }
 
     var target: ExportTarget = ExportTarget.WINDOWS
+    var mode: BuildMode = BuildMode.RELEASE
     var compress: Boolean = true
     var onlyReferenced: Boolean = true
 
@@ -45,13 +90,12 @@ class ExportWizard {
 
     /**
      * Refreshes the scene list when the wizard opens. Choices are kept for the same project (scenes that no longer
-     * exist are dropped) and reset when another project is opened.
+     * exist are dropped); another project gets its remembered choices ([ExportMemory]), else the defaults.
      */
     fun load(project: Project, sceneFiles: List<File>) {
         if (project.projectPath != projectPath) {
             projectPath = project.projectPath
-            excluded.clear()
-            outputDir = ""
+            applyPreferences(memory.recall(project.projectPath) ?: ExportPreferences())
             if (!isBusy) reset()
         }
         defaultScene = File(project.defaultScene).absolutePath
@@ -76,7 +120,20 @@ class ExportWizard {
      * (not the editor's working directory, EDT-40).
      */
     fun options(project: Project? = null): ExportOptions =
-        ExportOptions(target, excluded.toSet(), compress, onlyReferenced, resolvedOutput(project))
+        ExportOptions(target, excluded.toSet(), compress, onlyReferenced, resolvedOutput(project), mode)
+
+    /** The current choices as remembered per project. */
+    fun preferences(): ExportPreferences = ExportPreferences(target, mode, compress, onlyReferenced, outputDir.trim(), excluded.toSet())
+
+    private fun applyPreferences(preferences: ExportPreferences) {
+        target = preferences.target
+        mode = preferences.mode
+        compress = preferences.compress
+        onlyReferenced = preferences.onlyReferenced
+        outputDir = preferences.outputDir
+        excluded.clear()
+        excluded += preferences.excludedScenes
+    }
 
     private fun resolvedOutput(project: Project?): String? {
         val text = outputDir.trim().ifBlank { return null }
@@ -85,19 +142,24 @@ class ExportWizard {
         return File(project.getProjectDirectory(), text).path
     }
 
-    /** Every reason the export cannot start, empty when it can. [gameJar] is the jar `gradlew gameJar` built, if any. */
-    fun issues(project: Project, gameJar: File?): List<Issue> = buildList {
+    /**
+     * Every reason the export cannot start, empty when it can. [gameJar] is the jar `gradlew gameJar` built, if any;
+     * [art] the icon and splash the export would ship (`ProjectExporter.art`, resolved when the wizard opens).
+     */
+    fun issues(project: Project, gameJar: File?, art: ExportArt? = null): List<Issue> = buildList {
         // Runs every frame on whatever the user typed: a path the OS rejects (quotes, '<', '|') must not throw.
         val invalid = runCatching { ProjectExporter.validateOutput(project, ProjectExporter.outputDir(project, options(project))) != null }
             .getOrDefault(true)
         if (invalid) add(Issue.INVALID_OUTPUT)
         if (target == ExportTarget.WINDOWS && gameJar?.isFile != true) add(Issue.GAME_JAR_MISSING)
+        if (art != null && art.iconPath.isBlank()) add(Issue.ICON_UNREADABLE)
     }
 
-    fun canStart(project: Project, gameJar: File?): Boolean = !isBusy && issues(project, gameJar).isEmpty()
+    fun canStart(project: Project, gameJar: File?, art: ExportArt? = null): Boolean = !isBusy && issues(project, gameJar, art).isEmpty()
 
-    /** Called when the export request is sent: the editor saves the project first. */
+    /** Called when the export request is sent: the editor saves the project first; the choices are remembered. */
     fun start() {
+        projectPath?.let { memory.remember(it, preferences()) }
         phase = Phase.SAVING
         progress = null
         result = null

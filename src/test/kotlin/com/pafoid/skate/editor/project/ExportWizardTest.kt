@@ -1,5 +1,8 @@
 package com.pafoid.skate.editor.project
 
+import com.pafoid.skate.editor.settings.EditorSettings
+import com.pafoid.skate.engine.utils.BuildMode
+import com.pafoid.skate.engine.utils.ExportArt
 import com.pafoid.skate.engine.utils.ExportFailure
 import com.pafoid.skate.engine.utils.ExportProgress
 import com.pafoid.skate.engine.utils.ExportResult
@@ -103,5 +106,66 @@ class ExportWizardTest {
         w.load(other, scenes(other))
         assertTrue(w.scenes.all(w::isIncluded))
         assertEquals("", w.outputDir)
+    }
+
+    /** [EditorSettings] kept in memory, as `EditorSettingsManager.update` keeps (and saves) them. */
+    private class FakeSettings {
+        var settings = EditorSettings()
+        var saves = 0
+        val memory = ExportMemory.inSettings({ settings }) { change -> settings = change(settings); saves++ }
+    }
+
+    @Test
+    fun ExportWizard_RemembersChoicesPerProjectAcrossSessions() {
+        val p = project()
+        val other = project("Other")
+        val store = FakeSettings()
+        val first = ExportWizard(store.memory).also { it.load(p, scenes(p)) }
+        val extra = first.scenes.first { it.endsWith("Extra.scene") }
+        first.target = ExportTarget.PACK_ONLY
+        first.mode = BuildMode.DEBUG
+        first.compress = false
+        first.onlyReferenced = false
+        first.outputDir = "C:/out"
+        first.setIncluded(extra, false)
+        first.start()
+        assertEquals(1, store.saves)
+
+        // A new editor session (new wizard) on the same settings.
+        val next = ExportWizard(store.memory).also { it.load(p, scenes(p)) }
+        assertEquals(ExportTarget.PACK_ONLY, next.target)
+        assertEquals(BuildMode.DEBUG, next.options().mode)
+        assertFalse(next.compress)
+        assertFalse(next.onlyReferenced)
+        assertEquals("C:/out", next.outputDir)
+        assertFalse(next.isIncluded(extra))
+
+        next.load(other, scenes(other))
+        assertEquals(ExportTarget.WINDOWS, next.target, "another project starts from the defaults")
+        assertEquals(BuildMode.RELEASE, next.mode)
+        next.load(p, scenes(p))
+        assertEquals(BuildMode.DEBUG, next.mode, "back to the first project: its choices again")
+
+        next.reset(); next.start()
+        assertEquals(1, store.saves, "unchanged choices are not saved again")
+    }
+
+    @Test
+    fun ExportPreferences_SurviveTheEditorSettingsFile() {
+        val prefs = ExportPreferences(ExportTarget.PACK_ONLY, BuildMode.DEBUG, false, false, "out", setOf("C:/a.scene"))
+        val json = kotlinx.serialization.json.Json { ignoreUnknownKeys = true }
+        val text = json.encodeToString(EditorSettings.serializer(), EditorSettings(exportPreferences = mapOf("C:/p/Game.skateproject" to prefs)))
+        assertEquals(prefs, json.decodeFromString(EditorSettings.serializer(), text).exportPreferences["C:/p/Game.skateproject"])
+        assertTrue(json.decodeFromString(EditorSettings.serializer(), "{}").exportPreferences.isEmpty())
+    }
+
+    @Test
+    fun ExportWizard_BlocksOnlyWhenNoIconAtAllCanBeShipped() {
+        val p = project()
+        val w = ExportWizard().also { it.load(p, scenes(p)) }
+        val fallback = ExportArt("engine:Textures/app_icon.png", "", 0f, emptyList())
+        assertTrue(w.issues(p, jar(), fallback).isEmpty(), "a missing project icon is only a warning")
+        assertEquals(listOf(ExportWizard.Issue.ICON_UNREADABLE), w.issues(p, jar(), fallback.copy(iconPath = "")))
+        assertFalse(w.canStart(p, jar(), fallback.copy(iconPath = "")))
     }
 }
