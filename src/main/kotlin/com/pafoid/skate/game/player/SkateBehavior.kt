@@ -4,6 +4,8 @@ import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.net.PredictionModels
 import com.pafoid.skate.game.net.SkaterPredictionModel
 import com.pafoid.skate.engine.animation.graph.AnimParameters
+import com.pafoid.skate.engine.animation.graph.ParameterDef
+import com.pafoid.skate.engine.animation.graph.ParameterType
 import com.pafoid.skate.engine.assets.PrefabsGenerator
 import com.pafoid.skate.engine.gameplay.ActionPresets
 import com.pafoid.skate.engine.gameplay.CameraPreset
@@ -118,13 +120,15 @@ class SkateBehavior(
      * `airTime` (s), `landImpact` (fall speed of the last landing, m/s), `manualBalance` (-1..1 toward a bail) and
      * `turn` (steering stick, -1..1).
      */
+    override val animationParameters: List<ParameterDef> get() = ANIMATION_PARAMETERS
+
     override fun writeAnimationParameters(parameters: AnimParameters) = with(context) {
-        parameters.setFloat("speed", speed)
-        parameters.setFloat("verticalSpeed", verticalSpeed)
-        parameters.setFloat("airTime", airborneTime)
-        parameters.setFloat("landImpact", landingImpact)
-        parameters.setFloat("manualBalance", (manualAngle / config.manual.bailAngleDeg).coerceIn(-1f, 1f))
-        parameters.setFloat("turn", move.x.takeIf { it.isFinite() } ?: 0f)
+        parameters.setFloat(P_SPEED, speed)
+        parameters.setFloat(P_VERTICAL_SPEED, verticalSpeed)
+        parameters.setFloat(P_AIR_TIME, airborneTime)
+        parameters.setFloat(P_LAND_IMPACT, landingImpact)
+        parameters.setFloat(P_MANUAL_BALANCE, (manualAngle / config.manual.bailAngleDeg).coerceIn(-1f, 1f))
+        parameters.setFloat(P_TURN, move.x.takeIf { it.isFinite() } ?: 0f)
     }
 
     override fun update(input: CharacterInput, dt: Float): CharacterMotion {
@@ -302,6 +306,18 @@ class SkateBehavior(
 
     companion object {
         const val ID = "skate"
+
+        const val P_SPEED = "speed"
+        const val P_VERTICAL_SPEED = "verticalSpeed"
+        const val P_AIR_TIME = "airTime"
+        const val P_LAND_IMPACT = "landImpact"
+        const val P_MANUAL_BALANCE = "manualBalance"
+        const val P_TURN = "turn"
+
+        /** Every parameter [writeAnimationParameters] writes, all floats (GPL-31). */
+        val ANIMATION_PARAMETERS: List<ParameterDef> =
+            listOf(P_SPEED, P_VERTICAL_SPEED, P_AIR_TIME, P_LAND_IMPACT, P_MANUAL_BALANCE, P_TURN)
+                .map { ParameterDef(it, ParameterType.FLOAT) }
     }
 }
 
