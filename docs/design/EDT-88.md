@@ -226,3 +226,19 @@ Every recommendation above is accepted:
 6. Accepted: the full-editor host keeps its own ImGui scroll and tree state.
 7. Every docked standard window except the Game Viewport can be maximized.
 8. Making F12 plain view state (not an undoable Command) is split out to **EDT-89**, not part of EDT-88.
+
+## Implementation notes
+
+- Step 1 spike passed: `LayoutSnapshotReloadSpikeTest` reloads a docking layout from memory between frames and gets
+  `saveIniSettingsToMemory()` back byte for byte, including a split that docking had removed.
+- Restore over the viewport does not focus the window: a focused docked window becomes its node's front tab, which
+  would change the restored layout. Focus is cleared after the reload, so the snapshot's front tabs stay. Restore
+  from the full editor still focuses the window (its dock layout never changed).
+- Exit while maximized over the viewport writes the snapshot text to `imgui.ini` and leaves autosave off, so ImGui's
+  own save at shutdown cannot overwrite it.
+- "Every docked standard window" means every window with a default dock zone (`DefaultDockLayout`), except the Game
+  Viewport. Dialogs and floating helpers (Search Everywhere) have no Maximize button.
+- The shortcut runs in edit mode only (the editor's shortcut handler does not run during Play, where the game owns
+  Space). The header button, tab menu and status bar work in Play too.
+- A window closed while maximized over the viewport is restored to its own node; like any closed and reopened tab,
+  ImGui puts it last in that node's tab order.
