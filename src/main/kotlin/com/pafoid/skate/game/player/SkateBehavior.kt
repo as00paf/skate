@@ -12,7 +12,6 @@ import com.pafoid.skate.engine.gameplay.CameraPreset
 import com.pafoid.skate.game.input.SkateActions
 import com.pafoid.skate.game.input.SkateInputContext
 import com.pafoid.skate.engine.core.Engine
-import com.pafoid.skate.engine.ecs.systems.PlayerMotionSystem
 import com.pafoid.skate.game.input.SkateControls
 import com.pafoid.skate.game.ui.SkateHudSystem
 import com.pafoid.skate.game.input.SkateIntent
@@ -347,7 +346,7 @@ class SkateBehavior(
 object SkateGameplay {
     /**
      * Per-engine setup, called by each host (editor and exported game) once the engine has started: the control
-     * scheme option in the pause menu and the trick HUD (GPL-21) and the water bail (GPL-32). Call [register] first. Safe to call again.
+     * scheme option in the pause menu and the trick HUD (GPL-21); the water bail (GPL-32) is engine wiring (ECS-18). Call [register] first. Safe to call again.
      */
     fun install(engine: Engine) {
         engine.gameOptions.register(SkateControls.option())
@@ -355,8 +354,6 @@ object SkateGameplay {
         if (engine.systemManager.getSystem<SkateHudSystem>() == null) {
             engine.systemManager.addSystem(SkateHudSystem(engine.eventSystem))
         }
-        // Water bails (GPL-32); idempotent. To move into Engine wiring so every game gets it.
-        engine.systemManager.getSystem<PlayerMotionSystem>()?.listenTo(engine.eventSystem)
     }
 
     fun register() {
