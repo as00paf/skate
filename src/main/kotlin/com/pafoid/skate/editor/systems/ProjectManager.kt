@@ -1,5 +1,7 @@
 package com.pafoid.skate.editor.systems
 
+import com.pafoid.skate.engine.assets.terrain.TerrainAssetSource
+import com.pafoid.skate.engine.assets.terrain.TerrainAssets
 import com.pafoid.skate.engine.assets.pack.PackedGuids
 import com.pafoid.skate.engine.physics3d.ModelCollisionMeshSource
 import com.pafoid.skate.engine.physics3d.CollisionMeshSource
@@ -216,11 +218,14 @@ class ProjectManager(
         if (binData == null || assetAtlas == null || headerSize <= 0) {
             // PHY-24 / AST-35: meshRef GUIDs resolve through the project's registry (scanned once on the first miss).
             CollisionMeshes.source = assetRegistry()?.let { editorCollisionMeshSource(it, assetPaths) } ?: CollisionMeshSource.NONE
+            // AST-36: `.skterrain` GUIDs resolve to folders in the project (hot reloaded).
+            TerrainAssets.source = assetRegistry()?.let { TerrainAssetSource.forRegistry(it) } ?: TerrainAssetSource.NONE
             loadDefaultScenes(project, scenes)
         } else {
             engine.assetsManager.initAssetsResolver(assetAtlas, binData, headerSize)
             // AST-35: an exported game resolves meshRef GUIDs through the pack's GUID table.
             CollisionMeshes.source = PackedGuids.collisionMeshSource(assetPaths)
+            TerrainAssets.source = TerrainAssetSource.forPack(assetPaths)
 
             engine.assetsManager.resolve<Scene>(project.defaultScene)?.let { scene ->
                 scene.getComponent<EnvironmentComponent>()?.skyTexture?.filePath?.let { path ->
@@ -282,6 +287,7 @@ class ProjectManager(
         currentProject = null
         assetPaths.projectRoot = null
         CollisionMeshes.source = CollisionMeshSource.NONE
+        TerrainAssets.source = TerrainAssetSource.NONE
 
         eventSystem.publish(ProjectEvent.Closed(project))
     }

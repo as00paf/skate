@@ -37,9 +37,13 @@ class AssetRegistry(val root: File) {
     fun scan() {
         pathById.clear()
         idByPath.clear()
-        root.walkTopDown()
-            .onEnter { !it.name.startsWith(".") && it.name != "builds" && it.name != "Builds" }
-            .filter { it.isFile && !AssetMeta.isSidecar(it) && !it.name.startsWith(".") && it.name != "builds" && it.name != "Builds" && !isToolSideFile(it) }
+        val walk = root.walkTopDown()
+            // A `.skterrain` folder is one asset (AST-36): registered itself, its inner files are not.
+            .onEnter { (it == root || !isFolderAsset(it)) && !it.name.startsWith(".") && it.name != "builds" && it.name != "Builds" }
+        val folders = root.walkTopDown().onEnter { !it.name.startsWith(".") && it.name != "builds" && it.name != "Builds" }
+            .filter { it != root && isFolderAsset(it) }
+        (walk.filter { it.isFile && !AssetMeta.isSidecar(it) && !it.name.startsWith(".") && it.name != "builds" && it.name != "Builds" && !isToolSideFile(it) } + folders)
+            .distinct()
             .sortedBy { relativePath(it) }
             .forEach { register(it) }
     }
@@ -109,6 +113,11 @@ class AssetRegistry(val root: File) {
 
         /** Blender backups (`x.blend1`), its in-progress save (`x.blend@`) and our `.part` temp files: never assets. */
         fun isToolSideFile(file: File): Boolean = TOOL_SIDE_FILE.containsMatchIn(file.name)
+
+        /** Folders that are a single asset with one GUID (`.skterrain`, AST-36). */
+        val FOLDER_ASSET_EXTENSIONS = setOf("skterrain")
+
+        fun isFolderAsset(file: File): Boolean = file.isDirectory && file.extension.lowercase() in FOLDER_ASSET_EXTENSIONS
     }
 
     private fun normalize(path: String): String = path.replace('\\', '/').removePrefix("./").trimStart('/')

@@ -37,6 +37,11 @@ data class TerrainComponent(
     var seedOffset: Int = 0,
     var castShadows: Boolean = true,
     var collider: Boolean = true,
+    /**
+     * GUID of the `.skterrain` asset holding this terrain's document and chunk data (AST-36); empty keeps everything
+     * in the scene (procedural only, edits are not saved). See `TerrainAssets`.
+     */
+    var asset: String = "",
 ) : Component() {
 
     @Transient
@@ -74,6 +79,7 @@ data class TerrainComponent(
         streaming = TerrainStreaming.AUTO
         seedOffset = 0
         castShadows = true; collider = true
+        asset = ""
         runtime.clear()
     }
 

@@ -239,7 +239,7 @@ class AssetsPacker(
         // AST-35: GUIDs saved in scenes (MeshCollider3D.meshRef) resolve in the game through this table.
         val guids = files.mapNotNull { file ->
             AssetMeta.read(file)?.guid?.let { it.value to file.canonicalFile.relativeTo(projectDir).invariantSeparatorsPath }
-        }.toMap()
+        }.toMap() + folderAssetGuids(files, projectDir)
         lastPackedIds = guids.keys
         val inputs = projectInputs + engineInputs + gameStringInputs(projectInputs) + PackedGuids.input(guids)
         val result = PackBuilder.build(project.name, inputs, compress, project.graphicsBackend)
@@ -273,6 +273,13 @@ class AssetsPacker(
         logger.logEngine(report, LoggerService.LogLevel.INFO)
         return true
     }
+
+    /** GUIDs of folder assets (`.skterrain`, AST-36) whose files are packed: GUID → the folder's pack path. */
+    private fun folderAssetGuids(files: List<File>, projectDir: File): Map<String, String> =
+        files.mapNotNull { f -> generateSequence(f.canonicalFile.parentFile) { it.parentFile }.takeWhile { it != projectDir }.firstOrNull(AssetRegistry::isFolderAsset) }
+            .distinct()
+            .mapNotNull { dir -> AssetMeta.read(dir)?.guid?.let { it.value to dir.canonicalFile.relativeTo(projectDir).invariantSeparatorsPath } }
+            .toMap()
 
     /** The engine's game string tables; a project file at the same pack path wins. */
     private fun gameStringInputs(projectInputs: List<PackInput>): List<PackInput> {
