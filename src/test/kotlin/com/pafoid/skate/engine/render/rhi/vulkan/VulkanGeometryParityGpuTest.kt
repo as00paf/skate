@@ -30,7 +30,8 @@ import java.io.File
  */
 @GpuTest
 class VulkanGeometryParityGpuTest {
-    private val geometryOnly = { pass: String -> pass == "GeometryPass" }
+    // Opaque + blended meshes: the geometry pass split its blended draws into TransparentPass (REN-29 task 1)
+    private val geometryOnly = { pass: String -> pass == "GeometryPass" || pass == "TransparentPass" }
 
     private fun View(name: String, scene: String, setup: (Engine) -> Unit) = ParityView(name, scene, geometryOnly, setup)
 

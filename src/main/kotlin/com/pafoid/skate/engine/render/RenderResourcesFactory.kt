@@ -28,6 +28,8 @@ import com.pafoid.skate.engine.render.renderer.passes.PickingPass
 import com.pafoid.skate.engine.render.renderer.passes.PostProcessPass
 import com.pafoid.skate.engine.render.renderer.passes.PresentedViewport
 import com.pafoid.skate.engine.render.renderer.passes.ShadowPass
+import com.pafoid.skate.engine.render.renderer.passes.SceneFrame
+import com.pafoid.skate.engine.render.renderer.passes.TransparentPass
 import com.pafoid.skate.engine.render.renderer.passes.UiPass
 import com.pafoid.skate.engine.render.shader.ShaderFeature
 import com.pafoid.skate.engine.render.shadow.ShadowFrame
@@ -167,6 +169,11 @@ class RenderResourcesFactory(
         )
 
         val shadowFrame = ShadowFrame()
+        val sceneFrame = SceneFrame(
+            lightingUniformsLoader = lightingUniformsLoader,
+            shadowFrame = shadowFrame,
+            environmentProbe = EnvironmentProbe(assetsManager.getShader(EngineDefaults.Shaders.IBL_CAPTURE)),
+        )
         val geometryPass = GeometryPass(
             defaultShader = shaders.default,
             batchShader = shaders.batch,
@@ -174,11 +181,9 @@ class RenderResourcesFactory(
             renderer2D = renderer2D,
             skyDomeRenderer = renderers.skyDome,
             frameBuffer = frameBuffer,
-            lightingUniformsLoader = lightingUniformsLoader,
+            sceneFrame = sceneFrame,
             useFbo = useFbo,
             cameraManager = cameraManager,
-            shadowFrame = shadowFrame,
-            environmentProbe = EnvironmentProbe(assetsManager.getShader(EngineDefaults.Shaders.IBL_CAPTURE)),
             // Custom material shaders (AST-26 §5.6): colour pass only; null falls back to the schema shader
             materialShader = { reference -> assetsManager.materialShader(reference) },
         )
@@ -235,6 +240,8 @@ class RenderResourcesFactory(
         return RenderPasses(
             picking = pickingPass,
             geometry = geometryPass,
+            transparent = TransparentPass(renderers.model, frameBuffer, sceneFrame, useFbo),
+            sceneFrame = sceneFrame,
             debug = debugPass,
             shadow = shadowPass,
             postProcess = postProcessPass,

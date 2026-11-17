@@ -15,6 +15,8 @@ import com.pafoid.skate.engine.render.preview.SkinnedPreviewViewport
 import com.pafoid.skate.engine.render.renderer.passes.ParticlePass
 import com.pafoid.skate.engine.render.renderer.passes.PickingPass
 import com.pafoid.skate.engine.render.renderer.passes.PostProcessPass
+import com.pafoid.skate.engine.render.renderer.passes.SceneFrame
+import com.pafoid.skate.engine.render.renderer.passes.TransparentPass
 import com.pafoid.skate.engine.render.renderer.passes.UiPass
 import com.pafoid.skate.engine.render.renderer.passes.RenderPass
 
@@ -70,7 +72,9 @@ data class Renderers(
  * Container for all render passes in the pipeline.
  *
  * @param picking Renders object IDs for mouse selection
- * @param geometry Renders the full scene with PBR shading
+ * @param geometry Renders opaque meshes, sprites and the sky with PBR shading
+ * @param transparent Draws the blended meshes after opaque geometry (REN-29 task 1)
+ * @param sceneFrame Lights, shadows and IBL of the frame, shared by the lit colour passes (REN-29 task 1)
  * @param debug Renders debug visualization on top
  * @param shadow Renders depth-only shadow map pass
  * @param particles Draws particle emitters into the scene colour after geometry, before post-processing
@@ -80,6 +84,8 @@ data class Renderers(
 data class RenderPasses(
     val picking: PickingPass,
     val geometry: GeometryPass,
+    val transparent: TransparentPass,
+    val sceneFrame: SceneFrame,
     val debug: DebugPass,
     val shadow: RenderPass,
     val postProcess: PostProcessPass,
@@ -87,10 +93,12 @@ data class RenderPasses(
     val particles: ParticlePass,
 ) {
     /**
-     * Execution order of the frame. Particles go before post-processing so they get bloom/tonemapping; the runtime
-     * UI is last so post effects and debug lines never touch it.
+     * Execution order of the frame. Transparent meshes go after opaque geometry (and later water), particles before
+     * post-processing so they get bloom/tonemapping; the runtime UI is last so post effects and debug lines never
+     * touch it.
      */
-    fun inExecutionOrder(): List<RenderPass> = listOf(shadow, picking, geometry, particles, postProcess, debug, ui)
+    fun inExecutionOrder(): List<RenderPass> =
+        listOf(shadow, picking, geometry, transparent, particles, postProcess, debug, ui)
 }
 
 /**
