@@ -56,6 +56,7 @@ class UiPassTest {
         val passes = RenderPasses(
             picking = mockk(relaxed = true),
             geometry = mockk(relaxed = true),
+            water = mockk(relaxed = true),
             transparent = mockk(relaxed = true),
             sceneFrame = mockk(relaxed = true),
             debug = mockk(relaxed = true),
@@ -68,7 +69,7 @@ class UiPassTest {
         val order = passes.inExecutionOrder()
 
         assertEquals(
-            listOf(passes.shadow, passes.picking, passes.geometry, passes.transparent, passes.particles, passes.postProcess, passes.debug, passes.ui),
+            listOf(passes.shadow, passes.picking, passes.geometry, passes.water, passes.transparent, passes.particles, passes.postProcess, passes.debug, passes.ui),
             order,
         )
     }

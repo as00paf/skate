@@ -1,6 +1,7 @@
 package com.pafoid.skate.engine.render.rhi.opengl
 
 import com.pafoid.skate.engine.render.rhi.ClearValues
+import com.pafoid.skate.engine.render.rhi.BlitMask
 import com.pafoid.skate.engine.render.rhi.Filter
 import com.pafoid.skate.engine.render.rhi.IntRect
 import com.pafoid.skate.engine.render.rhi.RhiBuffer
@@ -141,10 +142,11 @@ internal object GlCommandList : RhiCommandList {
         glBindFramebuffer(GL_FRAMEBUFFER, 0)
     }
 
-    override fun blit(src: RhiRenderTarget, dst: RhiRenderTarget?, srcRect: IntRect?, dstRect: IntRect?, filter: Filter) {
+    override fun blit(src: RhiRenderTarget, dst: RhiRenderTarget?, srcRect: IntRect?, dstRect: IntRect?, filter: Filter, mask: BlitMask) {
         val from = src as GlRenderTarget
         val to = dst as GlRenderTarget?
         require(dstRect != null || to != null) { "A blit to the back buffer needs a destination rect" }
+        require(!mask.depth || (to != null && filter == Filter.NEAREST)) { "Depth blits go target to target with NEAREST" }
         val glFilter = when (filter) {
             Filter.NEAREST -> GL_NEAREST
             Filter.LINEAR -> GL_LINEAR
@@ -157,8 +159,12 @@ internal object GlCommandList : RhiCommandList {
             srcRect?.let { it.x + it.width } ?: from.width, srcRect?.let { it.y + it.height } ?: from.height,
             dstRect?.x ?: 0, dstRect?.y ?: 0,
             dstRect?.let { it.x + it.width } ?: to!!.width, dstRect?.let { it.y + it.height } ?: to!!.height,
-            GL_COLOR_BUFFER_BIT, glFilter,
+            blitBits(mask), glFilter,
         )
         glBindFramebuffer(GL_FRAMEBUFFER, 0)
     }
+
+    /** GL buffer bits of a [BlitMask]. */
+    fun blitBits(mask: BlitMask): Int =
+        (if (mask.color) GL_COLOR_BUFFER_BIT else 0) or (if (mask.depth) GL_DEPTH_BUFFER_BIT else 0)
 }

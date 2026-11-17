@@ -105,7 +105,11 @@ object RenderResourceIds {
     const val SCENE_COLOR = "SceneColor"
     const val SCENE_DEPTH = "SceneDepth"
 
-    val ALL = listOf(SHADOW_MAP, LOCAL_SHADOW_MAP, PICKING_IDS, SCENE_COLOR, SCENE_DEPTH)
+    /** The water pass's copy of the scene colour and depth, sampled for refraction and reflections (REN-29 §6.2). */
+    const val SCENE_COLOR_COPY = "SceneColorCopy"
+    const val SCENE_DEPTH_COPY = "SceneDepthCopy"
+
+    val ALL = listOf(SHADOW_MAP, LOCAL_SHADOW_MAP, PICKING_IDS, SCENE_COLOR, SCENE_DEPTH, SCENE_COLOR_COPY, SCENE_DEPTH_COPY)
 
     fun labelKey(id: String): String = "lbl.render_resource.${RenderLabelKeys.snake(id)}"
 }

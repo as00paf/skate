@@ -19,6 +19,7 @@ import com.pafoid.skate.engine.render.renderer.passes.RenderPass
 import com.pafoid.skate.engine.render.renderer.passes.ShadowPass
 import com.pafoid.skate.engine.render.renderer.passes.StagedRenderPass
 import com.pafoid.skate.engine.render.renderer.passes.TransparentPass
+import com.pafoid.skate.engine.render.renderer.passes.WaterPass
 import com.pafoid.skate.engine.render.renderer.passes.UiPass
 import com.pafoid.skate.engine.render.rhi.FakeRhiDevice
 import com.pafoid.skate.engine.render.shadow.ShadowFrame
@@ -43,6 +44,7 @@ class RenderGraphInfoTest {
         shadow,
         PickingPass(mockk(relaxed = true), mockk(relaxed = true), mockk(relaxed = true), mockk(relaxed = true), mockk(relaxed = true), mockk(relaxed = true), mockk(relaxed = true)),
         GeometryPass(mockk(relaxed = true), mockk(relaxed = true), mockk(relaxed = true), mockk(relaxed = true), mockk(relaxed = true), mockk(relaxed = true), mockk(relaxed = true), true, mockk(relaxed = true)),
+        WaterPass({ null }, { null }, mockk(relaxed = true), mockk(relaxed = true), mockk(relaxed = true), mockk(relaxed = true)),
         TransparentPass(mockk(relaxed = true), mockk(relaxed = true), mockk(relaxed = true), true),
         ParticlePass(mockk(relaxed = true), mockk(relaxed = true), true, mockk(relaxed = true)) { null },
         postProcess(),
@@ -62,13 +64,17 @@ class RenderGraphInfoTest {
         val info = graphOf(realPasses()).info()
 
         assertEquals(
-            listOf("ShadowPass", "PickingPass", "GeometryPass", "TransparentPass", "ParticlePass", "PostProcessPass", "DebugPass", "UiPass"),
+            listOf("ShadowPass", "PickingPass", "GeometryPass", "WaterPass", "TransparentPass", "ParticlePass", "PostProcessPass", "DebugPass", "UiPass"),
             info.passes.map { it.id },
         )
         val io = info.passes.associate { it.id to (it.reads to it.writes) }
         assertEquals(emptyList<String>() to listOf(SHADOW_MAP, LOCAL_SHADOW_MAP), io["ShadowPass"])
         assertEquals(emptyList<String>() to listOf(PICKING_IDS), io["PickingPass"])
         assertEquals(listOf(SHADOW_MAP, LOCAL_SHADOW_MAP) to listOf(SCENE_COLOR, SCENE_DEPTH), io["GeometryPass"])
+        assertEquals(
+            listOf(SCENE_COLOR, SCENE_DEPTH) to listOf(RenderResourceIds.SCENE_COLOR_COPY, RenderResourceIds.SCENE_DEPTH_COPY, SCENE_COLOR, SCENE_DEPTH),
+            io["WaterPass"],
+        )
         assertEquals(listOf(SCENE_COLOR, SCENE_DEPTH) to listOf(SCENE_COLOR), io["TransparentPass"])
         assertEquals(listOf(SCENE_COLOR, SCENE_DEPTH) to listOf(SCENE_COLOR), io["ParticlePass"])
         assertEquals(listOf(SCENE_COLOR, SCENE_DEPTH) to listOf(SCENE_COLOR), io["PostProcessPass"])
@@ -160,7 +166,7 @@ class RenderGraphInfoTest {
 
         graph.addPass(Pass("Extra"))
         assertNewVersion("pass added")
-        assertEquals(9, last.passes.size)
+        assertEquals(10, last.passes.size)
 
         // Setting a flag to its current value changes nothing.
         passes.first { it.name == "ShadowPass" }.isEnabled = true

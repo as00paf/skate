@@ -42,6 +42,12 @@ class PostProcessSettings {
     var ssaoRadius: Float = 1.5f
     var ssaoIntensity: Float = 0.8f
 
+    /**
+     * Screen-space reflection steps for water (REN-29 §6.3, task 8): 0 = IBL reflections only (Low), 16 (Medium),
+     * 32 (High and Ultra). Not a post effect: the water pass reads it.
+     */
+    var ssrSteps: Int = SSR_STEPS_MEDIUM
+
     /** The canonical post-processing pipeline order. */
     val pipelineOrder: List<PostEffect>
         get() = PostEffect.DEFAULT_PIPELINE
@@ -109,6 +115,7 @@ class PostProcessSettings {
         ssaoEnabled = false
         ssaoRadius = 1.5f
         ssaoIntensity = 0.8f
+        ssrSteps = SSR_STEPS_MEDIUM
     }
 
     /** Returns a copy so callers cannot mutate shared state unintentionally. */
@@ -126,12 +133,16 @@ class PostProcessSettings {
         copy.ssaoEnabled = ssaoEnabled
         copy.ssaoRadius = ssaoRadius
         copy.ssaoIntensity = ssaoIntensity
+        copy.ssrSteps = ssrSteps
         return copy
     }
 
     companion object {
         /** Default post-processing state used when none is configured. */
         val DEFAULT: PostProcessSettings = PostProcessSettings()
+
+        const val SSR_STEPS_MEDIUM = 16
+        const val SSR_STEPS_HIGH = 32
     }
 }
 
@@ -150,17 +161,20 @@ object PostProcessQualityPreset {
     fun apply(quality: PostProcessQuality, settings: PostProcessSettings) {
         when (quality) {
             PostProcessQuality.LOW -> {
+                settings.ssrSteps = 0
                 settings.bloomEnabled = false
                 settings.ssaoEnabled = false
                 settings.fxaaEnabled = false
             }
             PostProcessQuality.MEDIUM -> {
+                settings.ssrSteps = PostProcessSettings.SSR_STEPS_MEDIUM
                 settings.bloomEnabled = true
                 settings.bloomIntensity = 0.05f
                 settings.ssaoEnabled = false
                 settings.fxaaEnabled = true
             }
             PostProcessQuality.HIGH -> {
+                settings.ssrSteps = PostProcessSettings.SSR_STEPS_HIGH
                 settings.bloomEnabled = true
                 settings.bloomIntensity = 0.05f
                 settings.ssaoEnabled = true
@@ -169,6 +183,7 @@ object PostProcessQualityPreset {
                 settings.fxaaEnabled = true
             }
             PostProcessQuality.ULTRA -> {
+                settings.ssrSteps = PostProcessSettings.SSR_STEPS_HIGH
                 settings.bloomEnabled = true
                 settings.bloomIntensity = 0.1f
                 settings.ssaoEnabled = true

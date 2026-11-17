@@ -187,6 +187,9 @@ object ShaderConst {
         val WAVE_A = Array(4) { "uWaveA$it" }
         val WAVE_B = Array(4) { "uWaveB$it" }
         const val WATER_MODEL = "uWaterModel"
+        const val WATER_TIME = "uWaveTime"
+        const val WATER_SKIRT_DEPTH = "uSkirtDepth"
+        const val WATER_RECEIVE_SHADOWS = "uReceiveShadows"
         const val WATER_FLOW = "uWaterFlow"
         const val WATER_DEPTH = "uWaterDepth"
         const val WATER_SCREEN = "uScreenSize"

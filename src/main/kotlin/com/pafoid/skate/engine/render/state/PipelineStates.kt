@@ -31,6 +31,12 @@ object PipelineStates {
     )
     val MESH_BLENDED_DOUBLE_SIDED = MESH_BLENDED.copy(cull = CullMode.NONE)
 
+    /**
+     * Water surfaces (REN-29 §6.2): depth read and write, so transparent meshes and particles test against the surface;
+     * both faces, so skirts and the surface from below never vanish; opaque output (the shader blends the scene copy).
+     */
+    val WATER = PipelineState(cull = CullMode.NONE)
+
     /** World sprites (2D batches): depth read/write, no blending, both faces. */
     val SPRITES = PipelineState(cull = CullMode.NONE)
 

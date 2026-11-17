@@ -242,9 +242,13 @@ interface RhiCommandList {
 
     /**
      * Copies color attachment 0 of [src] into [dst] (null: the back buffer, which needs [dstRect]), outside a pass.
-     * Null rects are the whole target; [filter] (NEAREST or LINEAR) applies when the sizes differ.
+     * Null rects are the whole target; [filter] (NEAREST or LINEAR) applies when the sizes differ. [mask] adds the
+     * depth attachment (target to target, NEAREST only), e.g. the water pass's scene copy (REN-29 §6.2).
      */
-    fun blit(src: RhiRenderTarget, dst: RhiRenderTarget?, srcRect: IntRect? = null, dstRect: IntRect? = null, filter: Filter = Filter.NEAREST)
+    fun blit(
+        src: RhiRenderTarget, dst: RhiRenderTarget?, srcRect: IntRect? = null, dstRect: IntRect? = null,
+        filter: Filter = Filter.NEAREST, mask: BlitMask = BlitMask.COLOR,
+    )
 
     /** Binds [buffer] (whole buffer when [size] is -1) to uniform block binding [binding]. */
     fun setUniformBuffer(binding: Int, buffer: RhiBuffer, offset: Long = 0, size: Long = -1)
