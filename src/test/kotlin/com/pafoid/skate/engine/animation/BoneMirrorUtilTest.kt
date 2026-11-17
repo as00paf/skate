@@ -20,4 +20,15 @@ class BoneMirrorUtilTest {
         assertEquals("mixamorig9_Head", BoneMirrorUtil.getMirroredBoneName("mixamorig9_Head"))
         assertEquals("unrelatedBone", BoneMirrorUtil.getMirroredBoneName("unrelatedBone"))
     }
+
+    @Test
+    fun `getMirroredBoneName handles letter prefixes and suffixes but not letters inside words`() {
+        assertEquals("R_Foot", BoneMirrorUtil.getMirroredBoneName("L_Foot"))
+        assertEquals("rig:l.hand", BoneMirrorUtil.getMirroredBoneName("rig:r.hand"))
+        assertEquals("Thigh_R", BoneMirrorUtil.getMirroredBoneName("Thigh_L"))
+        assertEquals("upperarm_right", BoneMirrorUtil.getMirroredBoneName("upperarm_left"))
+        assertEquals("Small_Toe", BoneMirrorUtil.getMirroredBoneName("Small_Toe"))
+        assertEquals("Upper_Arm", BoneMirrorUtil.getMirroredBoneName("Upper_Arm"))
+        assertEquals("Root", BoneMirrorUtil.getMirroredBoneName("Root"))
+    }
 }

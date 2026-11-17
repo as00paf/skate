@@ -3,6 +3,8 @@ package com.pafoid.skate.editor.ui.windows
 import com.pafoid.skate.app.Editor
 import com.pafoid.skate.editor.animation.clipeditor.AnimationEditorController
 import com.pafoid.skate.editor.animation.clipeditor.AnimationEditorWiring
+import com.pafoid.skate.editor.animation.clipeditor.CurveViewport
+import com.pafoid.skate.editor.animation.clipeditor.SmoothFilter
 import com.pafoid.skate.editor.animation.clipeditor.SkeletonPreview
 import com.pafoid.skate.editor.animation.clipeditor.SkinnedPosePreview
 import com.pafoid.skate.editor.animation.clipeditor.TimelineView
@@ -15,9 +17,15 @@ import com.pafoid.skate.editor.imgui.label
 import com.pafoid.skate.editor.imgui.tipped
 import com.pafoid.skate.editor.imgui.tippedWith
 import com.pafoid.skate.editor.systems.ProjectManager
+import com.pafoid.skate.engine.animation.edit.CurveEditing
+import com.pafoid.skate.engine.animation.edit.CurveTangent
 import com.pafoid.skate.engine.animation.edit.EulerCurves
+import com.pafoid.skate.engine.animation.edit.HandleSide
 import com.pafoid.skate.engine.animation.edit.KeyRef
+import com.pafoid.skate.engine.animation.edit.ReductionTolerance
 import com.pafoid.skate.engine.animation.edit.SkClip
+import com.pafoid.skate.engine.animation.edit.SkTrack
+import com.pafoid.skate.engine.animation.edit.TrackCurveView
 import com.pafoid.skate.engine.assets.data.models.animations.AnimationPath
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.data.models.`3dModel`
@@ -25,8 +33,11 @@ import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.ecs.components.RenderComponent
 import com.pafoid.skate.engine.getComponent
 import imgui.ImGui
+import imgui.flag.ImGuiButtonFlags
 import imgui.flag.ImGuiKey
 import imgui.flag.ImGuiMouseButton
+import imgui.flag.ImGuiTabItemFlags
+import imgui.flag.ImGuiTreeNodeFlags
 import imgui.flag.ImGuiWindowFlags
 import imgui.type.ImFloat
 import imgui.type.ImInt
@@ -39,8 +50,10 @@ import kotlin.math.abs
 
 /**
  * Animation editor (ANI-14, ANI-12 §2.1): opens a `.skanim` clip; timeline with scrubbing and playback, dope sheet
- * (select, box-select, drag, copy/paste, delete, key selected bones), events track, key and clip inspector (value,
- * time, retime, trim, fps, loop) and a skeleton preview on the skater or the selected rig. Every edit is undoable.
+ * (select, box-select, drag, copy/paste, delete, key selected bones), curve editor with tangent modes (ANI-15), events
+ * track, key and clip inspector (value, time, retime, trim, fps, loop), cleanup tools for mocap (resample, reduce,
+ * smooth, foot lock, mirror, trim to range, loop seam; ANI-15) and a skeleton preview on the skater or the selected
+ * rig. Every edit is undoable.
  * All state and actions live in [AnimationEditorController].
  */
 class AnimationEditorWindow(
@@ -77,6 +90,30 @@ class AnimationEditorWindow(
     private var scrubbing = false
     private var pressAt: FloatArray? = null
 
+    // Curve editor (ANI-15).
+    /** Tab to bring to front on the next frame: true for Curves, false for the dope sheet. */
+    private var requestedTab: Boolean? = null
+    private val curveView = CurveViewport()
+    private var curveFitFor: Any? = null
+    private val showComponent = booleanArrayOf(true, true, true)
+    private var curveCache: Pair<List<Any>, TrackCurveView>? = null
+    private var curveDragStart: FloatArray? = null
+    /** Key time and shown value of the key whose handle is dragged. */
+    private var handleAnchor: FloatArray? = null
+    private var curveBox: FloatArray? = null
+
+    // Cleanup tools (ANI-15).
+    private val resampleFps = ImFloat(30f)
+    private val reduceDeg = ImFloat(0.25f)
+    private val reduceMm = ImFloat(1f)
+    private var smoothFilter = SmoothFilter.GAUSSIAN
+    private val smoothStrength = ImFloat(2f)
+    private val footBlend = ImFloat(3f)
+    private val seamFrames = ImFloat(5f)
+
+    /** Brings the Curves tab (or the dope sheet) to front. */
+    fun showCurves(curves: Boolean = true) { requestedTab = curves }
+
     override fun imgui() {
         if (beginWindow(strings, ImGuiWindowFlags.NoScrollbar)) {
             header(strings)
@@ -93,7 +130,15 @@ class AnimationEditorWindow(
                 val previewH = (avail * 0.4f).coerceIn(140f, 360f)
                 val inspectorW = 260f
                 if (ImGui.beginChild("##anim_sheet", ImGui.getContentRegionAvailX() - inspectorW - 8f, avail - previewH - 8f, false, ImGuiWindowFlags.NoScrollbar)) {
-                    dopeSheet(clip)
+                    if (ImGui.beginTabBar("##anim_sheet_tabs")) {
+                        val pick = requestedTab
+                        requestedTab = null
+                        val dopeFlags = if (pick == false) ImGuiTabItemFlags.SetSelected else 0
+                        val curveFlags = if (pick == true) ImGuiTabItemFlags.SetSelected else 0
+                        if (ImGui.beginTabItem(strings.label("lbl.animation_editor.tab_dope"), dopeFlags)) { dopeSheet(clip); ImGui.endTabItem() }
+                        if (ImGui.beginTabItem(strings.label("lbl.animation_editor.tab_curves"), curveFlags)) { curveEditor(clip); ImGui.endTabItem() }
+                        ImGui.endTabBar()
+                    }
                 }
                 ImGui.endChild()
                 ImGui.sameLine()
@@ -194,18 +239,8 @@ class AnimationEditorWindow(
         val ctrl = ImGui.getIO().keyCtrl
         val shift = ImGui.getIO().keyShift
 
-        // Ruler: click or drag to scrub.
-        draw.addRectFilled(keysX, y0, keysX + keysW, y0 + RULER_H, ImGui.getColorU32(0.16f, 0.16f, 0.18f, 1f))
-        for (frame in timeline.rulerFrames(clip.fps, keysW)) {
-            val x = timeline.timeToX(frame / clip.fps, keysX)
-            draw.addLine(x, y0 + RULER_H - 6f, x, y0 + RULER_H, ImGui.getColorU32(0.6f, 0.6f, 0.6f, 1f))
-            draw.addText(x + 2f, y0 + 1f, ImGui.getColorU32(0.75f, 0.75f, 0.75f, 1f), frame.toString())
-        }
+        ruler(clip, keysX, y0, keysW)
         val endX = timeline.timeToX(clip.duration, keysX)
-        ImGui.setCursorScreenPos(keysX, y0)
-        ImGui.invisibleButton("##anim_ruler", keysW, RULER_H)
-        if (ImGui.isItemActivated()) scrubbing = true
-        if (scrubbing && ImGui.isMouseDown(ImGuiMouseButton.Left)) controller.seek(timeline.xToTime(mouseX, keysX)) else scrubbing = false
 
         // Events row.
         val evY = y0 + RULER_H
@@ -284,6 +319,26 @@ class AnimationEditorWindow(
         if (px >= keysX && px <= keysX + keysW) {
             draw.addLine(px, y0, px, y0 + ImGui.getWindowHeight(), ImGui.getColorU32(1f, 0.3f, 0.3f, 1f), 1.5f)
         }
+    }
+
+    /** Frame ruler with the cleanup tools' range; click or drag to scrub. */
+    private fun ruler(clip: SkClip, keysX: Float, y0: Float, keysW: Float) {
+        val draw = ImGui.getWindowDrawList()
+        draw.addRectFilled(keysX, y0, keysX + keysW, y0 + RULER_H, ImGui.getColorU32(0.16f, 0.16f, 0.18f, 1f))
+        controller.range?.let { r ->
+            val a = timeline.timeToX(r.start, keysX).coerceIn(keysX, keysX + keysW)
+            val b = timeline.timeToX(r.endInclusive, keysX).coerceIn(keysX, keysX + keysW)
+            draw.addRectFilled(a, y0, b, y0 + RULER_H, ImGui.getColorU32(0.3f, 0.55f, 0.9f, 0.35f))
+        }
+        for (frame in timeline.rulerFrames(clip.fps, keysW)) {
+            val x = timeline.timeToX(frame / clip.fps, keysX)
+            draw.addLine(x, y0 + RULER_H - 6f, x, y0 + RULER_H, ImGui.getColorU32(0.6f, 0.6f, 0.6f, 1f))
+            draw.addText(x + 2f, y0 + 1f, ImGui.getColorU32(0.75f, 0.75f, 0.75f, 1f), frame.toString())
+        }
+        ImGui.setCursorScreenPos(keysX, y0)
+        ImGui.invisibleButton("##anim_ruler", keysW, RULER_H)
+        if (ImGui.isItemActivated()) scrubbing = true
+        if (scrubbing && ImGui.isMouseDown(ImGuiMouseButton.Left)) controller.seek(timeline.xToTime(ImGui.getMousePosX(), keysX)) else scrubbing = false
     }
 
     private fun interactRows(
@@ -368,6 +423,7 @@ class AnimationEditorWindow(
         eventInspector(clip)
         ImGui.separator()
         clipInspector(clip)
+        cleanupTools(clip)
     }
 
     private fun keyInspector(clip: SkClip, ref: KeyRef) {
@@ -428,6 +484,306 @@ class AnimationEditorWindow(
         ImGui.inputFloat(strings.label("lbl.animation_editor.fps"), fpsField, 1f, 10f, "%.0f")
         Tooltips.always(strings.getString("lbl.animation_editor.fps.tooltip"))
         if (ImGui.isItemDeactivatedAfterEdit()) controller.setFps(fpsField.get())
+    }
+
+    // ---- curve editor (ANI-15) -------------------------------------------------------------------------------
+
+    private fun curveEditor(clip: SkClip) {
+        val track = controller.shownCurveTrack()
+        curveToolbar(track)
+        val draw = ImGui.getWindowDrawList()
+        val x0 = ImGui.getCursorScreenPosX()
+        val y0 = ImGui.getCursorScreenPosY()
+        val width = ImGui.getContentRegionAvailX()
+        val height = ImGui.getContentRegionAvailY()
+        val keysX = x0 + AXIS_W
+        val keysW = (width - AXIS_W).coerceAtLeast(50f)
+        if (fitFor !== controller.document) { timeline.fit(clip.duration, keysW); fitFor = controller.document }
+        ruler(clip, keysX, y0, keysW)
+
+        val top = y0 + RULER_H
+        val plotH = (height - RULER_H).coerceAtLeast(40f)
+        ImGui.setCursorScreenPos(x0, top)
+        ImGui.invisibleButton("##anim_curves", width.coerceAtLeast(1f), plotH, ImGuiButtonFlags.MouseButtonLeft or ImGuiButtonFlags.MouseButtonMiddle)
+        val hovered = ImGui.isItemHovered()
+        draw.pushClipRect(x0, top, x0 + width, top + plotH, true)
+        draw.addRectFilled(x0, top, x0 + width, top + plotH, ImGui.getColorU32(0.11f, 0.11f, 0.13f, 1f))
+        if (track == null) {
+            draw.addText(keysX + 8f, top + 8f, ImGui.getColorU32(0.6f, 0.6f, 0.6f, 1f), strings.getString("lbl.animation_editor.no_curve_track"))
+            draw.popClipRect()
+            return
+        }
+        val visible = (0 until CurveEditing.COMPONENTS).filter { showComponent[it] }.toSet()
+        val view = curveData(track, timeline.xToTime(keysX, keysX), timeline.xToTime(keysX + keysW, keysX), (keysW / 3f).toInt())
+        val trackId = Triple(controller.document, track.bone, track.path)
+        if (curveFitFor != trackId) { frameCurves(view, visible, plotH); curveFitFor = trackId }
+
+        // Value grid, labelled in the left gutter.
+        for (v in curveView.gridValues(plotH)) {
+            val y = curveView.valueToY(v, top, plotH)
+            draw.addLine(keysX, y, x0 + width, y, ImGui.getColorU32(1f, 1f, 1f, if (v == 0f) 0.18f else 0.06f))
+            draw.addText(x0 + 2f, y - 7f, ImGui.getColorU32(0.6f, 0.6f, 0.6f, 1f), "%.${decimals(v)}f".format(v))
+        }
+        val endX = timeline.timeToX(clip.duration, keysX)
+        draw.addLine(endX, top, endX, top + plotH, ImGui.getColorU32(0.5f, 0.5f, 0.5f, 1f))
+        controller.range?.let { r ->
+            draw.addRectFilled(timeline.timeToX(r.start, keysX), top, timeline.timeToX(r.endInclusive, keysX), top + plotH, ImGui.getColorU32(0.3f, 0.55f, 0.9f, 0.08f))
+        }
+
+        // Curves, keys and (cubic translation/scale tracks) the handles of the selected keys.
+        for (c in visible) {
+            val color = AXIS_COLORS[c]
+            val xs = view.sampleTimes; val ys = view.sampleValues[c]
+            for (j in 1 until xs.size) {
+                draw.addLine(timeline.timeToX(xs[j - 1], keysX), curveView.valueToY(ys[j - 1], top, plotH),
+                    timeline.timeToX(xs[j], keysX), curveView.valueToY(ys[j], top, plotH), ImGui.getColorU32(color[0], color[1], color[2], 0.9f), 1.5f)
+            }
+        }
+        val mouseX = ImGui.getMousePosX()
+        val mouseY = ImGui.getMousePosY()
+        val selected = controller.selectedIndices(track)
+        var hitKey = -1
+        var hitComponent = -1
+        var hitHandle: Triple<Int, Int, HandleSide>? = null
+        val handleTime = HANDLE_PX / timeline.pxPerSecond
+        val showHandles = track.path != AnimationPath.ROTATION && selected.size <= MAX_HANDLES
+        for (i in track.keys.indices) {
+            val x = timeline.timeToX(view.keyTimes[i], keysX)
+            if (x < keysX - 6f || x > keysX + keysW + 6f) continue
+            val handles = if (showHandles && i in selected) CurveEditing.handles(track, i) else null
+            for (c in visible) {
+                val y = curveView.valueToY(view.keyValues[c][i], top, plotH)
+                if (handles != null) for (side in HandleSide.entries) {
+                    val slope = if (side == HandleSide.IN) handles.inTangent[c] else handles.outTangent[c]
+                    val sign = if (side == HandleSide.IN) -1f else 1f
+                    val hx = timeline.timeToX(view.keyTimes[i] + sign * handleTime, keysX)
+                    val hy = curveView.valueToY(view.keyValues[c][i] + sign * handleTime * slope, top, plotH)
+                    draw.addLine(x, y, hx, hy, ImGui.getColorU32(0.8f, 0.8f, 0.8f, 0.7f))
+                    draw.addCircleFilled(hx, hy, 3.5f, ImGui.getColorU32(0.9f, 0.9f, 0.9f, 1f))
+                    if (hovered && hitHandle == null && abs(mouseX - hx) <= 5f && abs(mouseY - hy) <= 5f) hitHandle = Triple(i, c, side)
+                }
+                val color = if (i in selected) ImGui.getColorU32(1f, 0.85f, 0.25f, 1f) else ImGui.getColorU32(AXIS_COLORS[c][0], AXIS_COLORS[c][1], AXIS_COLORS[c][2], 1f)
+                draw.addQuadFilled(x, y - 4f, x + 4f, y, x, y + 4f, x - 4f, y, color)
+                if (hovered && hitKey < 0 && abs(mouseX - x) <= 6f && abs(mouseY - y) <= 6f) { hitKey = i; hitComponent = c }
+            }
+        }
+        interactCurves(clip, track, view, visible, hitKey, hitComponent, hitHandle, hovered, keysX, keysW, top, plotH)
+        curveBox?.let { b -> draw.addRect(b[0], b[1], mouseX, mouseY, ImGui.getColorU32(0.4f, 0.7f, 1f, 1f)) }
+        val px = timeline.timeToX(controller.time, keysX)
+        if (px >= keysX && px <= keysX + keysW) draw.addLine(px, y0, px, top + plotH, ImGui.getColorU32(1f, 0.3f, 0.3f, 1f), 1.5f)
+        draw.popClipRect()
+
+        if (hitKey >= 0 && curveDragStart == null) {
+            Tooltips.always(strings.getString("lbl.animation_editor.curve_key_tooltip", track.bone, PATH_LETTER.getValue(track.path),
+                AXIS_NAMES[hitComponent], view.keyValues[hitComponent][hitKey], Math.round(view.keyTimes[hitKey] * clip.fps)))
+        }
+    }
+
+    private fun curveToolbar(track: SkTrack?) {
+        val offered = controller.curveTracks()
+        val shown = track?.let { it.bone to it.path }
+        ImGui.setNextItemWidth(NAME_W)
+        if (ImGui.beginCombo("##anim_curve_track", shown?.let { "${it.first} ${PATH_LETTER.getValue(it.second)}" } ?: "")) {
+            for (t in offered) if (ImGui.selectable("${t.first} ${PATH_LETTER.getValue(t.second)}", t == shown)) controller.curveTrack = t
+            ImGui.endCombo()
+        }
+        Tooltips.always(strings.getString("lbl.animation_editor.curve_track.tooltip"))
+        for (c in 0 until CurveEditing.COMPONENTS) {
+            ImGui.sameLine()
+            ImGui.pushStyleColor(imgui.flag.ImGuiCol.Text, AXIS_COLORS[c][0], AXIS_COLORS[c][1], AXIS_COLORS[c][2], 1f)
+            if (ImGui.checkbox(strings.label(AXIS_KEYS[c]), showComponent[c])) showComponent[c] = !showComponent[c]
+            ImGui.popStyleColor()
+            Tooltips.always(strings.getString("${AXIS_KEYS[c]}.tooltip"))
+        }
+        ImGui.sameLine()
+        if (strings.tippedWith(ImGui.button("${Icons.EXPAND}##fit_curves"), "btn.animation_editor.fit_curves")) curveFitFor = null
+        // Tangent modes of the selected keys; the current one is highlighted.
+        val current = track?.let { t -> controller.selectedIndices(t).takeIf { it.isNotEmpty() }?.let { CurveEditing.currentTangent(t, it) } }
+        ImGui.beginDisabled(controller.selection.isEmpty())
+        for ((tangent, key) in TANGENT_KEYS) {
+            ImGui.sameLine()
+            val active = tangent == current
+            if (active) ImGui.pushStyleColor(imgui.flag.ImGuiCol.Button, ImGui.getStyle().getColor(imgui.flag.ImGuiCol.ButtonActive))
+            if (strings.tipped(ImGui.button(strings.label(key)), key)) controller.setTangent(tangent)
+            if (active) ImGui.popStyleColor()
+        }
+        ImGui.endDisabled()
+    }
+
+    private fun interactCurves(
+        clip: SkClip, track: SkTrack, view: TrackCurveView, visible: Set<Int>, hitKey: Int, hitComponent: Int,
+        hitHandle: Triple<Int, Int, HandleSide>?, hovered: Boolean, keysX: Float, keysW: Float, top: Float, plotH: Float,
+    ) {
+        val io = ImGui.getIO()
+        val mouseX = ImGui.getMousePosX()
+        val mouseY = ImGui.getMousePosY()
+        if (ImGui.isItemActivated() && ImGui.isMouseClicked(ImGuiMouseButton.Left)) {
+            curveDragStart = floatArrayOf(mouseX, mouseY)
+            when {
+                hitHandle != null -> {
+                    val (i, c, side) = hitHandle
+                    handleAnchor = floatArrayOf(view.keyTimes[i], view.keyValues[c][i])
+                    controller.beginHandleDrag(i, c, side)
+                }
+                hitKey >= 0 -> {
+                    val ref = KeyRef(track.bone, track.path, track.keys[hitKey].time)
+                    if (io.keyCtrl) controller.selectKey(ref, additive = true)
+                    else if (ref !in controller.selection) controller.selectKey(ref)
+                    controller.beginCurveDrag(hitComponent)
+                }
+                else -> { curveBox = floatArrayOf(mouseX, mouseY); curveDragStart = null }
+            }
+        }
+        val start = curveDragStart
+        if (start != null) {
+            if (ImGui.isMouseDown(ImGuiMouseButton.Left)) {
+                val anchor = handleAnchor
+                if (anchor != null) {
+                    val dt = timeline.xToTime(mouseX, keysX) - anchor[0]
+                    if (abs(dt) > 1e-4f) controller.dragHandle((curveView.yToValue(mouseY, top, plotH) - anchor[1]) / dt)
+                } else {
+                    var dx = mouseX - start[0]
+                    var dy = start[1] - mouseY
+                    // Shift keeps the move on one axis: time or value.
+                    if (io.keyShift) { if (abs(dx) >= abs(dy)) dy = 0f else dx = 0f }
+                    controller.dragCurveKeys(dx / timeline.pxPerSecond, dy / curveView.pxPerUnit)
+                }
+            } else {
+                controller.endDrag()
+                curveDragStart = null
+                handleAnchor = null
+            }
+        }
+        val box = curveBox
+        if (box != null && !ImGui.isMouseDown(ImGuiMouseButton.Left)) {
+            curveBox = null
+            if (abs(mouseX - box[0]) < 3f && abs(mouseY - box[1]) < 3f) {
+                if (!io.keyCtrl) controller.clearSelection()
+                controller.seek(timeline.xToTime(mouseX, keysX))
+            } else {
+                val t0 = timeline.xToTime(minOf(box[0], mouseX), keysX); val t1 = timeline.xToTime(maxOf(box[0], mouseX), keysX)
+                val v0 = curveView.yToValue(maxOf(box[1], mouseY), top, plotH); val v1 = curveView.yToValue(minOf(box[1], mouseY), top, plotH)
+                val refs = track.keys.indices.filter { i ->
+                    view.keyTimes[i] in t0..t1 && visible.any { c -> view.keyValues[c][i] in v0..v1 }
+                }.map { KeyRef(track.bone, track.path, track.keys[it].time) }.toSet()
+                controller.selectKeys(refs, additive = io.keyCtrl)
+            }
+        }
+        if (ImGui.isItemActive() && ImGui.isMouseDragging(ImGuiMouseButton.Middle, 1f)) {
+            curveView.pan(io.mouseDeltaY)
+            timeline.scroll -= io.mouseDeltaX / timeline.pxPerSecond
+        }
+        if (hovered && io.mouseWheel != 0f) {
+            val factor = if (io.mouseWheel > 0f) 1.2f else 1f / 1.2f
+            when {
+                io.keyCtrl -> timeline.zoom(factor, mouseX, keysX)
+                io.keyShift -> timeline.scroll -= io.mouseWheel * 40f / timeline.pxPerSecond
+                else -> curveView.zoom(factor, mouseY, top, plotH)
+            }
+        }
+        timeline.clampScroll(clip.duration, keysW)
+    }
+
+    /** Curves of [track] over the visible time, recomputed only when the clip, track or view changes. */
+    private fun curveData(track: SkTrack, t0: Float, t1: Float, samples: Int): TrackCurveView {
+        val key = listOf(controller.document?.revision ?: -1L, track.bone, track.path, t0, t1, samples)
+        curveCache?.let { (k, v) -> if (k == key) return v }
+        return CurveEditing.view(track, t0, t1, samples).also { curveCache = key to it }
+    }
+
+    private fun frameCurves(view: TrackCurveView, visible: Set<Int>, plotH: Float) {
+        val (lo, hi) = view.range(visible) ?: return
+        curveView.fit(lo, hi, plotH)
+    }
+
+    private fun decimals(step: Float): Int = when {
+        step == 0f || abs(step) >= 10f -> 0
+        abs(step) >= 1f -> 1
+        abs(step) >= 0.1f -> 2
+        else -> 3
+    }
+
+    // ---- cleanup tools (ANI-15) ------------------------------------------------------------------------------
+
+    private fun cleanupTools(clip: SkClip) {
+        if (!ImGui.collapsingHeader(strings.label("lbl.animation_editor.cleanup"), ImGuiTreeNodeFlags.DefaultOpen)) return
+        val fps = clip.fps
+        val r = controller.toolRange()
+        ImGui.text(strings.getString("lbl.animation_editor.range", Math.round(r.start * fps), Math.round(r.endInclusive * fps)))
+        Tooltips.always(strings.getString("lbl.animation_editor.range.tooltip"))
+        if (strings.tipped(ImGui.button(strings.label("btn.animation_editor.range_in")), "btn.animation_editor.range_in")) controller.setRangeStartAtPlayhead()
+        ImGui.sameLine()
+        if (strings.tipped(ImGui.button(strings.label("btn.animation_editor.range_out")), "btn.animation_editor.range_out")) controller.setRangeEndAtPlayhead()
+        ImGui.beginDisabled(controller.selection.isEmpty())
+        if (strings.tipped(ImGui.button(strings.label("btn.animation_editor.range_selection")), "btn.animation_editor.range_selection")) controller.setRangeFromSelection()
+        ImGui.endDisabled()
+        ImGui.sameLine()
+        ImGui.beginDisabled(controller.range == null)
+        if (strings.tipped(ImGui.button(strings.label("btn.animation_editor.range_clear")), "btn.animation_editor.range_clear")) controller.clearRange()
+        ImGui.endDisabled()
+        val bones = controller.selectedBones.size
+        MImGui.textDisabled(if (bones > 0) strings.getString("lbl.animation_editor.cleanup_scope_bones", bones) else strings.getString("lbl.animation_editor.cleanup_scope_all"))
+        ImGui.separator()
+
+        ImGui.setNextItemWidth(70f)
+        ImGui.inputFloat(strings.label("lbl.animation_editor.resample_fps"), resampleFps, 0f, 0f, "%.0f")
+        Tooltips.always(strings.getString("lbl.animation_editor.resample_fps.tooltip"))
+        ImGui.sameLine()
+        if (strings.tipped(ImGui.button(strings.label("btn.animation_editor.resample")), "btn.animation_editor.resample")) controller.resample(resampleFps.get())
+
+        ImGui.setNextItemWidth(70f)
+        ImGui.inputFloat(strings.label("lbl.animation_editor.reduce_deg"), reduceDeg, 0f, 0f, "%.2f")
+        Tooltips.always(strings.getString("lbl.animation_editor.reduce_deg.tooltip"))
+        ImGui.setNextItemWidth(70f)
+        ImGui.inputFloat(strings.label("lbl.animation_editor.reduce_mm"), reduceMm, 0f, 0f, "%.1f")
+        Tooltips.always(strings.getString("lbl.animation_editor.reduce_mm.tooltip"))
+        if (strings.tipped(ImGui.button(strings.label("btn.animation_editor.reduce")), "btn.animation_editor.reduce")) {
+            val mm = reduceMm.get().coerceAtLeast(0f) / 1000f
+            controller.reduceKeys(ReductionTolerance(translationMetres = mm, rotationDeg = reduceDeg.get().coerceAtLeast(0f), scale = mm))
+        }
+        ImGui.separator()
+
+        ImGui.setNextItemWidth(110f)
+        val filterKeys = mapOf(SmoothFilter.GAUSSIAN to "lbl.animation_editor.smooth_gaussian", SmoothFilter.ONE_EURO to "lbl.animation_editor.smooth_one_euro")
+        if (ImGui.beginCombo(strings.label("lbl.animation_editor.smooth_filter"), strings.getString(filterKeys.getValue(smoothFilter)))) {
+            for ((f, k) in filterKeys) if (ImGui.selectable(strings.getString(k), f == smoothFilter)) smoothFilter = f
+            ImGui.endCombo()
+        }
+        Tooltips.always(strings.getString("lbl.animation_editor.smooth_filter.tooltip"))
+        ImGui.setNextItemWidth(70f)
+        ImGui.inputFloat(strings.label("lbl.animation_editor.smooth_strength"), smoothStrength, 0f, 0f, "%.1f")
+        Tooltips.always(strings.getString("lbl.animation_editor.smooth_strength.tooltip"))
+        ImGui.sameLine()
+        if (strings.tipped(ImGui.button(strings.label("btn.animation_editor.smooth")), "btn.animation_editor.smooth")) controller.smooth(smoothFilter, smoothStrength.get())
+        ImGui.separator()
+
+        ImGui.setNextItemWidth(70f)
+        ImGui.inputFloat(strings.label("lbl.animation_editor.foot_blend"), footBlend, 0f, 0f, "%.0f")
+        Tooltips.always(strings.getString("lbl.animation_editor.foot_blend.tooltip"))
+        val left = controller.legChain(left = true)
+        val right = controller.legChain(left = false)
+        ImGui.beginDisabled(left == null)
+        if (strings.tipped(ImGui.button(strings.label("btn.animation_editor.foot_lock_left")), "btn.animation_editor.foot_lock_left")) controller.footLock(true, footBlend.get())
+        ImGui.endDisabled()
+        ImGui.sameLine()
+        ImGui.beginDisabled(right == null)
+        if (strings.tipped(ImGui.button(strings.label("btn.animation_editor.foot_lock_right")), "btn.animation_editor.foot_lock_right")) controller.footLock(false, footBlend.get())
+        ImGui.endDisabled()
+        if (left == null || right == null) MImGui.textDisabled(strings.getString("lbl.animation_editor.no_legs"))
+        ImGui.separator()
+
+        ImGui.beginDisabled(controller.previewRig() == null)
+        if (strings.tipped(ImGui.button(strings.label("btn.animation_editor.mirror")), "btn.animation_editor.mirror")) controller.mirror()
+        ImGui.endDisabled()
+        ImGui.sameLine()
+        ImGui.beginDisabled(controller.range == null)
+        if (strings.tipped(ImGui.button(strings.label("btn.animation_editor.trim_range")), "btn.animation_editor.trim_range")) controller.trimToRange()
+        ImGui.endDisabled()
+        ImGui.setNextItemWidth(70f)
+        ImGui.inputFloat(strings.label("lbl.animation_editor.seam_frames"), seamFrames, 0f, 0f, "%.0f")
+        Tooltips.always(strings.getString("lbl.animation_editor.seam_frames.tooltip"))
+        ImGui.sameLine()
+        if (strings.tipped(ImGui.button(strings.label("btn.animation_editor.loop_seam")), "btn.animation_editor.loop_seam")) controller.loopSeam(seamFrames.get())
     }
 
     // ---- preview ---------------------------------------------------------------------------------------------
@@ -531,5 +887,22 @@ class AnimationEditorWindow(
         private const val RULER_H = 20f
         private const val ROW_H = 20f
         private val PATH_LETTER = mapOf(AnimationPath.TRANSLATION to "T", AnimationPath.ROTATION to "R", AnimationPath.SCALE to "S")
+        /** Width of the curve editor's value labels. */
+        private const val AXIS_W = 48f
+        /** Shown length of a tangent handle, in pixels along time. */
+        private const val HANDLE_PX = 40f
+        /** Handles are drawn for at most this many selected keys (a whole mocap track selected would be noise). */
+        private const val MAX_HANDLES = 32
+        private val AXIS_COLORS = arrayOf(floatArrayOf(0.95f, 0.4f, 0.4f), floatArrayOf(0.45f, 0.9f, 0.45f), floatArrayOf(0.45f, 0.6f, 1f))
+        private val AXIS_NAMES = arrayOf("X", "Y", "Z")
+        private val AXIS_KEYS = arrayOf("lbl.animation_editor.curve_x", "lbl.animation_editor.curve_y", "lbl.animation_editor.curve_z")
+        private val TANGENT_KEYS = linkedMapOf(
+            CurveTangent.AUTO to "btn.animation_editor.tangent_auto",
+            CurveTangent.LINEAR to "btn.animation_editor.tangent_linear",
+            CurveTangent.FLAT to "btn.animation_editor.tangent_flat",
+            CurveTangent.FREE to "btn.animation_editor.tangent_free",
+            CurveTangent.BROKEN to "btn.animation_editor.tangent_broken",
+            CurveTangent.STEP to "btn.animation_editor.tangent_step",
+        )
     }
 }

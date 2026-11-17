@@ -1,6 +1,7 @@
 package com.pafoid.skate.engine.animation.edit
 
 import com.pafoid.skate.engine.animation.ik.IkSolvers
+import com.pafoid.skate.engine.animation.retarget.HumanoidBone
 import com.pafoid.skate.engine.assets.data.models.animations.AnimationPath
 import com.pafoid.skate.engine.assets.data.models.animations.InterpolationType
 import com.pafoid.skate.engine.assets.data.models.animations.Skeleton
@@ -14,6 +15,14 @@ data class LegChain(val upperLeg: String, val lowerLeg: String, val foot: String
     companion object {
         val LEFT = LegChain("LeftUpLeg", "LeftLeg", "LeftFoot")
         val RIGHT = LegChain("RightUpLeg", "RightLeg", "RightFoot")
+
+        /** The left or right leg of a rig with any common humanoid naming ([HumanoidBone]), or null if incomplete. */
+        fun detect(boneNames: Collection<String>, left: Boolean): LegChain? {
+            val slots = if (left) listOf(HumanoidBone.LEFT_UPPER_LEG, HumanoidBone.LEFT_LOWER_LEG, HumanoidBone.LEFT_FOOT)
+            else listOf(HumanoidBone.RIGHT_UPPER_LEG, HumanoidBone.RIGHT_LOWER_LEG, HumanoidBone.RIGHT_FOOT)
+            val found = slots.map { slot -> boneNames.firstOrNull { HumanoidBone.fromName(it) == slot } ?: return null }
+            return LegChain(found[0], found[1], found[2])
+        }
     }
 }
 

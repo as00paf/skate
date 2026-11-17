@@ -8,6 +8,8 @@ import com.pafoid.skate.engine.animation.procedural.TestHumanoid
 import com.pafoid.skate.engine.assets.data.models.animations.AnimationPath
 import com.pafoid.skate.engine.assets.data.models.animations.InterpolationType
 import org.joml.Vector3f
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
@@ -52,5 +54,13 @@ class FootLockTest {
         val eased = FootLock.apply(clip, skeleton, leg, 0.4f, 0.6f, blendSeconds = 0.2f)
         assertTrue(worstStep(eased) < worstStep(hard) * 0.6f, "eased ${worstStep(eased)} vs hard ${worstStep(hard)}")
         assertTrue(footAt(eased, 0.5f).distance(footAt(eased, 0.4f)) < 0.002f, "still planted inside the range")
+    }
+
+    @Test
+    fun `LegChain_DetectsTheLegsOfACommonHumanoidRig`() {
+        assertEquals(leg, LegChain.detect(rig.names.asList(), left = true))
+        assertEquals(LegChain("mixamorig:RightUpLeg", "mixamorig:RightLeg", "mixamorig:RightFoot"), LegChain.detect(rig.names.asList(), left = false))
+        assertEquals(LegChain("thigh_l", "calf_l", "foot_l"), LegChain.detect(listOf("pelvis", "thigh_l", "calf_l", "foot_l"), left = true))
+        assertNull(LegChain.detect(listOf("Hips", "LeftUpLeg"), left = true), "incomplete leg")
     }
 }
