@@ -74,6 +74,9 @@ class VertexLayoutShaderTest {
         assertTrue(layout.bindings.all { b -> b.attributes.single().offset == 0 && !b.perInstance })
     }
 
+    @TestFactory
+    fun terrain_FeedsTheTerrainShader() = exact(VertexLayouts.TERRAIN, "terrain.glsl")
+
     @Test
     fun particleInstanceRecord_MatchesTheFloatsPerInstance() {
         val instance = VertexLayouts.PARTICLES.bindings[1]

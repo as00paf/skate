@@ -82,6 +82,7 @@ class Renderer(
         renderResources.renderPasses.picking.destroy()
         renderResources.renderPasses.geometry.destroy()
         renderResources.renderPasses.water.destroy()
+        renderResources.renderPasses.terrain.destroy()
         renderResources.renderPasses.particles.destroy()
         renderResources.renderPasses.debug.destroy()
 

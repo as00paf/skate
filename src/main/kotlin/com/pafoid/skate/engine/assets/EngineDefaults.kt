@@ -141,6 +141,8 @@ object EngineDefaults {
         const val WATER_WAVES = "engine:Shaders/water_waves.glsl"
         /** Water surface (REN-29 §6.3): refraction, absorption, IBL + SSR reflections, foam; PICKING variant for ids. */
         const val WATER = "engine:Shaders/water.glsl"
+        /** Terrain chunks (REN-28 §4.2); PICKING and DEPTH_ONLY variants for picking and shadows. */
+        const val TERRAIN = "engine:Shaders/terrain.glsl"
         const val POST_BLOOM = "engine:Shaders/post_bloom.glsl"
         const val POST_TONEMAP = "engine:Shaders/post_tonemap.glsl"
         const val POST_GAMMA = "engine:Shaders/post_gamma.glsl"
@@ -156,7 +158,7 @@ object EngineDefaults {
         const val IBL_CAPTURE = "engine:Shaders/ibl_capture.glsl"
 
         val BASIC = listOf(
-            DEFAULT_3D, TEXTURE_3D, BATCH_2D, SHADOW, SKYBOX, SKY_DOME, PARTICLES, FOG, LIGHTING, WIND, WATER_WAVES, WATER,
+            DEFAULT_3D, TEXTURE_3D, BATCH_2D, SHADOW, SKYBOX, SKY_DOME, PARTICLES, FOG, LIGHTING, WIND, WATER_WAVES, WATER, TERRAIN,
             POST_BLOOM, POST_TONEMAP, POST_GAMMA, POST_FXAA, POST_SSAO,
         )
 

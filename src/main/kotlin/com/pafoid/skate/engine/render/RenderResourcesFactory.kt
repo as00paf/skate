@@ -32,6 +32,8 @@ import com.pafoid.skate.engine.render.renderer.passes.SceneFrame
 import com.pafoid.skate.engine.render.renderer.passes.TransparentPass
 import com.pafoid.skate.engine.render.renderer.passes.UiPass
 import com.pafoid.skate.engine.render.renderer.passes.WaterPass
+import com.pafoid.skate.engine.render.renderer.passes.TerrainPass
+import com.pafoid.skate.engine.render.terrain.TerrainRenderer
 import com.pafoid.skate.engine.render.water.WaterRenderer
 import com.pafoid.skate.engine.render.shader.ShaderFeature
 import com.pafoid.skate.engine.render.shadow.ShadowFrame
@@ -182,6 +184,19 @@ class RenderResourcesFactory(
             debugRenderer = renderers.debug,
         )
 
+        // Terrain (REN-28 §4): colour after geometry, ids in the picking pass, a caster in the shadow pass
+        val terrainPass = TerrainPass(
+            shader = { assetsManager.getShader(EngineDefaults.Shaders.TERRAIN) },
+            pickingShader = { assetsManager.getShaderVariant(EngineDefaults.Shaders.TERRAIN, setOf(ShaderFeature.PICKING)) },
+            depthShader = { assetsManager.getShaderVariant(EngineDefaults.Shaders.TERRAIN, setOf(ShaderFeature.DEPTH_ONLY)) },
+            renderer = TerrainRenderer(),
+            frameBuffer = frameBuffer,
+            sceneFrame = sceneFrame,
+            cameraManager = cameraManager,
+            useFbo = useFbo,
+        )
+        renderers.shadow.sources += terrainPass.shadowCaster
+
         val pickingPass = PickingPass(
             pickingTexture = pickingTexture,
             pickingShader3D = shaders.picking3D,
@@ -190,7 +205,7 @@ class RenderResourcesFactory(
             pickingShader = shaders.picking,
             modelRenderer = renderers.model,
             cameraManager = cameraManager,
-            extraPicking = waterPass::drawPicking,
+            extraPicking = { scene -> terrainPass.drawPicking(scene); waterPass.drawPicking(scene) },
         )
 
         val geometryPass = GeometryPass(
@@ -260,6 +275,7 @@ class RenderResourcesFactory(
         return RenderPasses(
             picking = pickingPass,
             geometry = geometryPass,
+            terrain = terrainPass,
             water = waterPass,
             transparent = TransparentPass(renderers.model, frameBuffer, sceneFrame, useFbo),
             sceneFrame = sceneFrame,

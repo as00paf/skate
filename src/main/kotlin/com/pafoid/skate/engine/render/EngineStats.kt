@@ -22,10 +22,14 @@ object EngineStats {
     val instancedDraws = AtomicInteger(0)
     val instances = AtomicInteger(0)
 
+    /** Terrain triangles drawn this frame, all passes (REN-28 §4.1). */
+    val terrainTriangles = AtomicInteger(0)
+
     fun resetDrawCalls() {
         drawCalls.set(0)
         instancedDraws.set(0)
         instances.set(0)
+        terrainTriangles.set(0)
     }
 
     fun resetStateChanges() {

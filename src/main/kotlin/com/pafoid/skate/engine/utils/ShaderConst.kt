@@ -201,6 +201,12 @@ object ShaderConst {
         const val WATER_NORMAL_B = "normalB"
         const val WATER_FOAM = "foam"
 
+        /** Terrain chunks (REN-28 §4, `terrain.glsl`): chunk corner (world), sample spacing, skirt drop, base height. */
+        const val TERRAIN_CORNER = "uTerrainCorner"
+        const val TERRAIN_SPACING = "uTerrainSpacing"
+        const val TERRAIN_SKIRT_DROP = "uSkirtDrop"
+        const val TERRAIN_BASE = "uTerrainBase"
+
         /** Texture units of the water pass (after the IBL units). */
         const val WATER_SCENE_COLOR_UNIT = 10
         const val WATER_SCENE_DEPTH_UNIT = 11

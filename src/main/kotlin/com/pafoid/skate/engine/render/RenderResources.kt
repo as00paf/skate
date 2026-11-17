@@ -18,6 +18,7 @@ import com.pafoid.skate.engine.render.renderer.passes.PostProcessPass
 import com.pafoid.skate.engine.render.renderer.passes.SceneFrame
 import com.pafoid.skate.engine.render.renderer.passes.TransparentPass
 import com.pafoid.skate.engine.render.renderer.passes.WaterPass
+import com.pafoid.skate.engine.render.renderer.passes.TerrainPass
 import com.pafoid.skate.engine.render.renderer.passes.UiPass
 import com.pafoid.skate.engine.render.renderer.passes.RenderPass
 
@@ -74,6 +75,7 @@ data class Renderers(
  *
  * @param picking Renders object IDs for mouse selection
  * @param geometry Renders opaque meshes, sprites and the sky with PBR shading
+ * @param terrain Draws terrain chunks after opaque geometry (REN-28 §4)
  * @param water Draws water surfaces after opaque geometry, before transparent meshes (REN-29 §6.2)
  * @param transparent Draws the blended meshes after opaque geometry and water (REN-29 task 1)
  * @param sceneFrame Lights, shadows and IBL of the frame, shared by the lit colour passes (REN-29 task 1)
@@ -86,6 +88,7 @@ data class Renderers(
 data class RenderPasses(
     val picking: PickingPass,
     val geometry: GeometryPass,
+    val terrain: TerrainPass,
     val water: WaterPass,
     val transparent: TransparentPass,
     val sceneFrame: SceneFrame,
@@ -96,12 +99,12 @@ data class RenderPasses(
     val particles: ParticlePass,
 ) {
     /**
-     * Execution order of the frame. Water and then transparent meshes go after opaque geometry, particles before
+     * Execution order of the frame. Terrain, water and then transparent meshes go after opaque geometry, particles before
      * post-processing so they get bloom/tonemapping; the runtime UI is last so post effects and debug lines never
      * touch it.
      */
     fun inExecutionOrder(): List<RenderPass> =
-        listOf(shadow, picking, geometry, water, transparent, particles, postProcess, debug, ui)
+        listOf(shadow, picking, geometry, terrain, water, transparent, particles, postProcess, debug, ui)
 }
 
 /**

@@ -53,6 +53,12 @@ object VertexLayouts {
         VertexBinding(2 * Float.SIZE_BYTES, listOf(VertexAttribute(0, AttributeType.VEC2, 0))),
     ))
 
+    /** Terrain chunks (REN-28 §4.1): the shared grid (i, j, skirt) at 0 and the chunk's stream (height, nx, nz) at 1. */
+    val TERRAIN = VertexLayoutDesc(listOf(
+        VertexBinding(3 * Float.SIZE_BYTES, listOf(VertexAttribute(0, AttributeType.VEC3, 0))),
+        VertexBinding(3 * Float.SIZE_BYTES, listOf(VertexAttribute(1, AttributeType.VEC3, 0))),
+    ))
+
     /** Water surface grids: water-local position, y = 0 on the surface and -1 on skirts (`water`, REN-29 §6.1). */
     val WATER = VertexLayoutDesc(listOf(
         VertexBinding(3 * Float.SIZE_BYTES, listOf(VertexAttribute(0, AttributeType.VEC3, 0))),
