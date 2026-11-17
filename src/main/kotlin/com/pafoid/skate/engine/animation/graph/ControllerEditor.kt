@@ -224,6 +224,17 @@ class ControllerEditor(asset: AnimationControllerAsset) {
         copy(motions = motions - key)
     }
 
+    /** Renames a named motion; the states that play it follow. */
+    fun renameMotion(old: String, new: String) = edit {
+        require(old in motions) { "Unknown motion '$old'" }
+        require(new.isNotBlank()) { "A blend tree needs a name" }
+        require(new == old || new !in motions) { "Motion '$new' already exists" }
+        copy(
+            motions = motions.entries.associate { (k, v) -> (if (k == old) new else k) to v },
+            states = states.map { if (it.motion == old) it.copy(motion = new) else it },
+        )
+    }
+
     fun <T : MotionDef> updateMotion(key: String, type: Class<T>, change: (T) -> MotionDef) = edit {
         val current = motions[key] ?: throw IllegalArgumentException("Unknown motion '$key'")
         require(type.isInstance(current)) { "Motion '$key' is a ${current::class.simpleName}" }

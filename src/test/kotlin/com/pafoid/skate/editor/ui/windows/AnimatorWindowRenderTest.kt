@@ -136,6 +136,77 @@ class AnimatorWindowRenderTest {
     }
 }
 
+/** ANI-23: the blend tree inspector (1D and 2D, editing and play mode) renders with balanced ImGui scopes. */
+class AnimatorWindowBlendTreeRenderTest {
+    @TempDir
+    lateinit var dir: File
+
+    @BeforeEach
+    fun setup() {
+        ImGui.createContext()
+        val io = ImGui.getIO()
+        io.iniFilename = null
+        io.loadFonts(javaClass.getResourceAsStream(Assets.Fonts.FONTS_FILE)!!.readAllBytes())
+        io.setDisplaySize(1600f, 1000f)
+        io.deltaTime = 1f / 60f
+        ImGuiStyleManager.invalidate()
+        ImGuiStyleManager.library = ThemeLibrary.load(File(Assets.Themes.DIR))
+        ImGuiStyleManager.sync("dark")
+    }
+
+    @AfterEach
+    fun teardown() {
+        ImGuiStyleManager.library = ThemeLibrary(emptyList())
+        ImGui.destroyContext()
+    }
+
+    private fun frames(window: AnimatorWindow, n: Int = 2) = repeat(n) {
+        ImGui.newFrame()
+        ImGui.setNextWindowPos(20f, 20f)
+        ImGui.setNextWindowSize(1400f, 700f)
+        window.imgui()
+        ImGui.render()
+    }
+
+    @Test
+    fun BlendTrees_Render() {
+        val strings = mockk<StringManager>(relaxed = true)
+        every { strings.getString(any()) } answers { firstArg() }
+        every { strings.getString(any(), *anyVararg()) } answers { firstArg() }
+        val engine = mockk<Engine>(relaxed = true) { every { stringManager } returns strings }
+        val projects = mockk<ProjectManager>(relaxed = true) { every { getProjectDirectory() } returns dir }
+        val asset = AnimationControllerAsset("c", "walk", listOf(StateDef("walk", "walk"), StateDef("strafe", "walk")))
+        val file = File(dir, "c.controller.json").apply { writeText(asset.toJson()) }
+        val undo = UndoRedoManager(mockk(relaxed = true), mockk(relaxed = true))
+        val controller = AnimatorWindowController(
+            execute = { undo.executeCommand(it) },
+            resolve = { p -> File(p).takeIf { it.isFile }?.let { ResolvedController(p, it, it.readText()) } },
+        )
+        controller.preview = Animator(animations = mutableListOf(Animation("walk", emptyList(), 1f, "walk.glb"), Animation("run", emptyList(), 1f, "run.glb")))
+        val window = AnimatorWindow(engine, mockk<Editor>(relaxed = true), projects, controller).also { it.isOpen.set(true) }
+        assertTrue(controller.open(file.absolutePath))
+
+        controller.select("walk"); frames(window) // a clip: the Make blend tree buttons
+        val oneD = controller.createBlendTree("walk", com.pafoid.skate.editor.animation.controllereditor.BlendKind.ONE_D)!!
+        controller.addBlendChild(oneD, controller.clipOptions().first { it.name == "run" })
+        frames(window)
+        val twoD = controller.createBlendTree("strafe", com.pafoid.skate.editor.animation.controllereditor.BlendKind.TWO_D)!!
+        controller.addBlendChild(twoD, controller.clipOptions().first { it.name == "run" })
+        controller.select("strafe"); frames(window)
+        val before = undo.getUndoCount()
+
+        // Play mode: the marker shows the character's live values.
+        assertTrue(controller.save())
+        val character = controller.preview!!
+        character.controllerPath = file.absolutePath
+        assertTrue(character.resolveController(LoggerService(), Skeleton(Bone(0, "root", Matrix4f()), 1)))
+        character.stateMachine!!.parameters.setFloat("moveX", 0.5f)
+        frames(window)
+        controller.select("walk"); frames(window)
+        assertEquals(before, undo.getUndoCount(), "drawing alone never edits")
+    }
+}
+
 /** ANI-24: icon buttons in the Animator window use the header button size, never the clipped `smallButton`. */
 class AnimatorWindowIconButtonsTest {
     @Test
