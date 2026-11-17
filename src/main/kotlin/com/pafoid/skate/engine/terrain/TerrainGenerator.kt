@@ -17,10 +17,20 @@ class TerrainGenerator(
     val stamps: List<TerrainStamp>,
     val layout: TerrainLayout,
     val heightScale: Float,
-    projectSeed: Long,
-    seedName: String,
-    seedOffset: Int = 0,
+    val projectSeed: Long,
+    val seedName: String,
+    val seedOffset: Int = 0,
+    /** Biomes (REN-28 §6); empty: no splat weights or scatter. */
+    val biomes: List<Biome> = emptyList(),
+    climate: BiomeClimate = BiomeClimate(),
+    val biomeSource: BiomeSource = BiomeSource.PROCEDURAL,
 ) {
+    /** Procedural biome weights; null without biomes. */
+    val biomeMap: BiomeMap? = if (biomes.isEmpty()) null else BiomeMap(biomes, climate, projectSeed, seedName, seedOffset)
+
+    /** Every biome's scatter rules, flattened (rule index = position here). */
+    val scatterEntries: List<ScatterPlacer.Entry> = ScatterPlacer.entries(biomes)
+
     private sealed class Compiled {
         class Noise(val field: NoiseField, val amplitude: Float, val offset: Float) : Compiled()
         class Warp(val fx: NoiseField, val fz: NoiseField, val strength: Float) : Compiled()

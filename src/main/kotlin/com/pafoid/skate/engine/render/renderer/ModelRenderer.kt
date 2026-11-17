@@ -150,28 +150,35 @@ class ModelRenderer(
      * reads the world matrix from the instance stream; the material binds as for a single mesh, with the same four
      * pipelines. [simple] is the picking path (no PBR). Returns false when nothing could be drawn.
      */
-    fun drawInstanced(batch: InstanceBatch, shader: Shader, simple: Boolean = false): Boolean {
-        if (batch.count == 0) return false
+    fun drawInstanced(batch: InstanceBatch, shader: Shader, simple: Boolean = false, count: Int = batch.count, shadow: Boolean = false): Boolean {
+        val instancesToDraw = count.coerceIn(0, batch.count)
+        if (instancesToDraw == 0) return false
         val loader = vaoLoader ?: return false
         val instances = batch.upload() ?: return false
         if (batch.onRelease == null) batch.onRelease = loader::releaseInstanced
         val input = loader.instancedInput(batch.part, instances) ?: return false
         val material = batch.material
         shader.uploadBoolean(Uniforms.HAS_SKIN, false)
-        if (!simple) materialBinder.bind(material, sinkFor(shader))
+        if (!simple && !shadow) materialBinder.bind(material, sinkFor(shader))
         val blended = !simple && material.alphaMode == AlphaMode.BLEND
         val index = (if (blended) 2 else 0) + (if (material.doubleSided) 1 else 0)
-        val pipeline = pipelines[index].get(shader, input.layout) ?: return false
+        // Shadow casters use the shadow state (slope offset, depth clamp, both faces), like ShadowRenderer
+        val pipeline = (if (shadow) shadowPipelines else pipelines[index]).get(shader, input.layout) ?: return false
         val cmd = device().commandList()
         cmd.setPipeline(pipeline)
         cmd.setVertexInput(input)
-        cmd.drawIndexed(batch.part.vertexCount, instances = batch.count)
+        cmd.drawIndexed(batch.part.vertexCount, instances = instancesToDraw)
         EngineStats.instancedDraws.incrementAndGet()
-        EngineStats.instances.addAndGet(batch.count)
+        EngineStats.instances.addAndGet(instancesToDraw)
         return true
     }
 
-    fun destroy() = pipelines.forEach { it.close() }
+    private val shadowPipelines = PipelineCache(PipelineStates.SHADOW, device)
+
+    fun destroy() {
+        pipelines.forEach { it.close() }
+        shadowPipelines.close()
+    }
 
     private fun visualizeBoneRecursive(bone: Bone, skeleton: Skeleton, modelMatrix: Matrix4f) {
         // Get the bone's world position from the skeleton's world transforms

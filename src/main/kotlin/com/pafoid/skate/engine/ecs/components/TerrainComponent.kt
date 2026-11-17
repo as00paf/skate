@@ -1,5 +1,9 @@
 package com.pafoid.skate.engine.ecs.components
 
+import com.pafoid.skate.engine.terrain.Biome
+import com.pafoid.skate.engine.terrain.BiomeClimate
+import com.pafoid.skate.engine.terrain.BiomePresets
+import com.pafoid.skate.engine.terrain.BiomeSource
 import com.pafoid.skate.engine.terrain.TerrainKey
 import com.pafoid.skate.engine.terrain.TerrainPreset
 import com.pafoid.skate.engine.terrain.TerrainRecipe
@@ -30,6 +34,10 @@ data class TerrainComponent(
     val stamps: MutableList<TerrainStamp> = mutableListOf(),
     /** Up to [MAX_LAYERS] material layers (REN-28 §4.2, task 5). */
     val layers: MutableList<TerrainLayer> = TerrainLayer.defaults(),
+    /** Biomes (REN-28 §6): material layer rules and scatter rules; empty shades by height and slope only. */
+    val biomes: MutableList<Biome> = BiomePresets.defaults(),
+    var biomeSource: BiomeSource = BiomeSource.PROCEDURAL,
+    var climate: BiomeClimate = BiomeClimate(),
     var streaming: TerrainStreaming = TerrainStreaming.AUTO,
     /** ECS-14 stream name; empty means `"terrain/<entity name>"` at first use. Kept on rename so the world stays. */
     var seedName: String = "",
@@ -64,11 +72,17 @@ data class TerrainComponent(
         projectSeed = projectSeed,
         seedName = resolvedSeedName(),
         seedOffset = seedOffset,
+        biomes = biomes.toList(),
+        climate = climate,
+        biomeSource = biomeSource,
     )
 
     fun applyPreset(preset: TerrainPreset) {
         recipe = preset.recipe()
     }
+
+    /** Rerolls this terrain alone (same project seed, new offset): the showcase "Reroll seed" button (REN-28 §11). */
+    fun reroll() { seedOffset++ }
 
     override fun reset() {
         sizeMetres = 256f; sampleSpacing = 1f; heightScaleMetres = 64f; chunkQuads = 64
@@ -76,6 +90,9 @@ data class TerrainComponent(
         recipe = TerrainPreset.ISLAND.recipe()
         stamps.clear()
         layers.clear(); layers.addAll(TerrainLayer.defaults())
+        biomes.clear(); biomes.addAll(BiomePresets.defaults())
+        biomeSource = BiomeSource.PROCEDURAL
+        climate = BiomeClimate()
         streaming = TerrainStreaming.AUTO
         seedOffset = 0
         castShadows = true; collider = true
@@ -90,6 +107,22 @@ data class TerrainComponent(
         const val MIN_CHUNK_QUADS = 8
         const val MAX_CHUNK_QUADS = 256
         val SPACINGS = listOf(0.5f, 1f, 2f, 4f)
+
+        /**
+         * The Feature Showcase terrain (REN-28 §11): a 96 m procedural island with the 3 default biomes (beach,
+         * grass with rocks, rocky peak) and one flattened pad at local ([padX], [padZ]) for a ramp. TLG places it and
+         * wires a "Reroll seed" button to [reroll].
+         */
+        fun showcaseIsland(padX: Float = -18f, padZ: Float = 10f, padHeight: Float = 3f): TerrainComponent = TerrainComponent(
+            sizeMetres = 96f,
+            sampleSpacing = 0.5f,
+            heightScaleMetres = 20f,
+            chunkQuads = 64,
+            recipe = TerrainPreset.SHOWCASE_ISLAND.recipe(),
+            stamps = mutableListOf(TerrainStamp(x = padX, y = padHeight, z = padZ, width = 8f, depth = 12f, falloff = 4f)),
+            streaming = TerrainStreaming.OFF,
+            seedName = "terrain/showcase-island",
+        )
     }
 }
 

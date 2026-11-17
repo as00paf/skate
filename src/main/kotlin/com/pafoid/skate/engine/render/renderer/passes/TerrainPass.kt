@@ -13,6 +13,7 @@ import com.pafoid.skate.engine.render.rhi.RhiContext
 import com.pafoid.skate.engine.render.rhi.RhiDevice
 import com.pafoid.skate.engine.render.shadow.ShadowSignature
 import com.pafoid.skate.engine.render.terrain.TerrainRenderer
+import com.pafoid.skate.engine.render.terrain.TerrainScatterRenderer
 import com.pafoid.skate.engine.utils.EntityIdEncoder
 import com.pafoid.skate.engine.utils.ShaderConst.Uniforms
 import org.joml.Matrix4f
@@ -33,6 +34,12 @@ class TerrainPass(
     private val cameraManager: CameraManager,
     private val useFbo: Boolean = true,
     private val device: () -> RhiDevice = RhiContext::require,
+    /** Instanced scatter (REN-28 §7); null draws no scatter. */
+    private val scatter: TerrainScatterRenderer? = null,
+    /** INSTANCED variants of the mesh, picking and shadow shaders for scatter items. */
+    private val scatterShader: () -> Shader? = { null },
+    private val scatterPickingShader: () -> Shader? = { null },
+    private val scatterShadowShader: () -> Shader? = { null },
 ) : BaseRenderPass() {
 
     override val name: String = "TerrainPass"
@@ -61,6 +68,7 @@ class TerrainPass(
         val scale = renderer.projectionScale(camera.viewportHeight, camera.fov)
         for (draw in draws) {
             val chunks = renderer.sync(draw)
+            renderer.bindMaterials(program, draw)
             program.uploadFloat(Uniforms.SELECTED, SelectionHighlight.stateOf(draw.go, scene))
             program.uploadFloat(Uniforms.TERRAIN_BASE, draw.position.y)
             val half = (draw.terrain.runtime.layout?.half ?: 0f)
@@ -68,7 +76,32 @@ class TerrainPass(
             renderer.drawChunks(program, draw, chunks, cameraPosition, scale)
         }
         program.stop()
+        drawScatter(scene)
         cmd.endPass()
+    }
+
+    private val resident = ArrayList<com.pafoid.skate.engine.terrain.TerrainChunkData>()
+
+    /** Scatter items of every terrain, lit like meshes (INSTANCED mesh shader). */
+    private fun drawScatter(scene: Scene) {
+        val s = scatter ?: return
+        resident.clear()
+        for (d in draws) resident += d.terrain.runtime.chunks
+        s.retain(resident)
+        val program = scatterShader() ?: return
+        val camera = cameraManager.camera
+        program.start()
+        sceneFrame.prepare(program)
+        program.uploadFloat(Uniforms.SELECTED, 0f)
+        s.setFrustum(camera.projection, camera.view)
+        s.resetCounters()
+        for (draw in draws) {
+            val rules = draw.terrain.runtime.generator?.scatterEntries ?: continue
+            if (rules.isEmpty()) continue
+            sceneFrame.selectObjectLights(program, center.set(draw.position), (draw.terrain.runtime.layout?.half ?: 0f) * 1.42f)
+            for (c in renderer.sync(draw)) s.draw(program, c.data, rules, draw.position, c.min, c.max, cameraPosition)
+        }
+        program.stop()
     }
 
     /** Terrain ids into the bound picking target, at LOD 2. */
@@ -92,6 +125,22 @@ class TerrainPass(
             renderer.drawChunks(program, draw, renderer.sync(draw), cameraPosition, 1f, fixedLod = PICKING_LOD)
         }
         program.stop()
+        // Clicking a scatter item selects its terrain
+        val s = scatter
+        val itemProgram = scatterPickingShader()
+        if (s != null && itemProgram != null) {
+            itemProgram.start()
+            itemProgram.uploadMat4f(Uniforms.PROJECTION_MATRIX, camera.projection)
+            itemProgram.uploadMat4f(Uniforms.VIEW_MATRIX, camera.view)
+            itemProgram.uploadBoolean(Uniforms.USE_BATCH, false)
+            s.setFrustum(camera.projection, camera.view)
+            for (draw in draws) {
+                val rules = draw.terrain.runtime.generator?.scatterEntries ?: continue
+                itemProgram.uploadFloat(Uniforms.ENTITY_ID, EntityIdEncoder.encode(draw.go.uId))
+                for (c in renderer.sync(draw)) s.draw(itemProgram, c.data, rules, draw.position, c.min, c.max, cameraPosition, simple = true)
+            }
+            itemProgram.stop()
+        }
         draws.clear()
     }
 
@@ -127,10 +176,22 @@ class TerrainPass(
             program.uploadMat4f(Uniforms.LIGHT_SPACE_MATRIX, lightMatrix)
             renderer.setFrustum(lightMatrix)
             for (d in casters) renderer.drawChunks(program, d, renderer.sync(d), camera, scale, lodBias = 1, shadow = true)
+            val s = scatter ?: return
+            val itemProgram = scatterShadowShader() ?: return
+            itemProgram.start()
+            itemProgram.uploadMat4f(Uniforms.LIGHT_SPACE_MATRIX, lightMatrix)
+            s.setFrustum(lightMatrix)
+            for (d in casters) {
+                val rules = d.terrain.runtime.generator?.scatterEntries ?: continue
+                for (c in renderer.sync(d)) s.drawShadow(itemProgram, c.data, rules, d.position, c.min, c.max, camera)
+            }
         }
     }
 
-    fun destroy() = renderer.destroy()
+    fun destroy() {
+        renderer.destroy()
+        scatter?.destroy()
+    }
 
     companion object {
         const val PICKING_LOD = 2
