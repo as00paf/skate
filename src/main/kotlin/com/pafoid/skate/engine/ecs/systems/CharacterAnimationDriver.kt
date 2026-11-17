@@ -1,9 +1,12 @@
 package com.pafoid.skate.engine.ecs.systems
 
+import com.pafoid.skate.engine.animation.graph.ParameterDef
 import com.pafoid.skate.engine.ecs.components.Animator
+import com.pafoid.skate.engine.ecs.components.PlayerController
 import com.pafoid.skate.engine.gameplay.CharacterBehavior
 import com.pafoid.skate.engine.gameplay.CharacterMotion
 import com.pafoid.skate.engine.gameplay.MountRequest
+import com.pafoid.skate.engine.getComponent
 
 /**
  * How a [CharacterBehavior]'s motion reaches the [Animator] each frame (GPL-06). With a controller, a request (bool
@@ -16,6 +19,13 @@ object CharacterAnimationDriver {
 
     /** Crossfade used when a behavior names no blend time for a clip (single-clip playback only). */
     const val DEFAULT_BLEND = 0.2f
+
+    /**
+     * The parameters the character owning [animator] writes every frame (GPL-31), for the Animator window's
+     * "Written by the character" suggestions. Empty without a [PlayerController] on the same object.
+     */
+    fun writtenParameters(animator: Animator?): List<ParameterDef> =
+        animator?.gameObject?.getComponent<PlayerController>()?.behavior?.animationParameters ?: emptyList()
 
     /**
      * Applies [motion] from [behavior] to [animator] given the [previousState] the animator was last driven with,

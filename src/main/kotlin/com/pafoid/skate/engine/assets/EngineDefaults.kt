@@ -105,8 +105,10 @@ object EngineDefaults {
         const val SKY_HDRI = "engine:Textures/sky_hdri.png"
         /** The default project and window icon; also on the classpath (`/app_icon.png`). */
         const val APP_ICON = "engine:Textures/app_icon.png"
+        /** The default splash an exported game shows at start (AST-29); a project's `splashPath` replaces it. */
+        const val SPLASH_SCREEN = "engine:Textures/splash_screen.png"
 
-        val ALL = listOf(ASPHALT, CONCRETE_SIMPLE, METAL, WOOD_BROWN, WOOD_LIGHT, WOOD_TAN, WOOD_DARK, SKY_HDRI, APP_ICON)
+        val ALL = listOf(ASPHALT, CONCRETE_SIMPLE, METAL, WOOD_BROWN, WOOD_LIGHT, WOOD_TAN, WOOD_DARK, SKY_HDRI, APP_ICON, SPLASH_SCREEN)
     }
 
     object Sounds {

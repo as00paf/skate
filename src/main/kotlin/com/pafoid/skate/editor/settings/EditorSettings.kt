@@ -46,6 +46,8 @@ data class EditorSettings(
     var appearance: AppearanceSettings = AppearanceSettings(),
     /** Where Maximize, a tab double-click and the shortcut put a tool window (EDT-88). */
     var maximizeMode: MaximizeMode = MaximizeMode.FULL_EDITOR,
+    /** Export wizard choices per project path (AST-29); build choices, kept out of the `.skateproject`. */
+    var exportPreferences: Map<String, com.pafoid.skate.editor.project.ExportPreferences> = emptyMap(),
 ) {
 
     companion object {
