@@ -112,9 +112,13 @@ class NoiseFieldTest {
         var sink = 0f
         repeat(20) { f.fill(out, 0f, 0f, 1f, 65, 65); sink += f.sample(it.toFloat(), 0f, 1f) } // warm up (JIT, thread-local scratch)
         val id = Thread.currentThread().id
-        val before = bean.getThreadAllocatedBytes(id)
-        repeat(50) { f.fill(out, it * 64f, 0f, 1f, 65, 65); sink += f.sample(it.toFloat(), 2f, 3f) }
-        val allocated = bean.getThreadAllocatedBytes(id) - before
+        // QA-18: best of 3 windows. In a full suite run (shared JVM, JaCoCo agent, deopts) a single window can pick up a
+        // one-off stray allocation; a real per-sample allocation would cost megabytes in every window.
+        val allocated = (0 until 3).minOf { window ->
+            val before = bean.getThreadAllocatedBytes(id)
+            repeat(50) { f.fill(out, (window * 50 + it) * 64f, 0f, 1f, 65, 65); sink += f.sample(it.toFloat(), 2f, 3f) }
+            bean.getThreadAllocatedBytes(id) - before
+        }
         assertTrue(allocated < 4_096, "allocated $allocated bytes for ~211k samples ($sink)")
     }
 
