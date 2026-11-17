@@ -65,6 +65,9 @@ dependencies {
 
     implementation(libs.joml)
     implementation(libs.joml.primitives)
+    // AST-34 (docs/design/AST-17.md §4.3): polygon repair, triangulation, buffers and clipping for the OSM city
+    // generator. Editor-only: excluded from the game jar (isEditorOnlyLib), guarded by OsmEditorOnlyGuardTest.
+    implementation("org.locationtech.jts:jts-core:1.20.0")
 
     // IM GUI
     implementation(libs.imgui.binding)
@@ -166,8 +169,8 @@ tasks.withType<Test> {
 // game code (TLG-10). Two steps keep it cheap: the dependencies are packed once into gameLibsJar (redone only when
 // the runtime classpath changes), then gameJar compresses just the engine/game classes and copies the dependency
 // entries raw. Same single fat jar as before, with the main classes first (they win over duplicate dependency entries).
-/** Editor-only libraries the exported game never needs (EDT-60: JGit). */
-fun isEditorOnlyLib(jarName: String): Boolean = jarName.startsWith("org.eclipse.jgit")
+/** Editor-only libraries the exported game never needs (EDT-60: JGit; AST-34: JTS for the OSM city generator). */
+fun isEditorOnlyLib(jarName: String): Boolean = jarName.startsWith("org.eclipse.jgit") || jarName.startsWith("jts-core")
 
 val gameLibsJar = tasks.register<Jar>("gameLibsJar") {
     description = "Runtime dependencies of the standalone game, merged once (input of gameJar)."

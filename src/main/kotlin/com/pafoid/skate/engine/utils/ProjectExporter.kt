@@ -1,5 +1,7 @@
 package com.pafoid.skate.engine.utils
 
+import com.pafoid.skate.editor.assetstore.AttributionLedger
+import com.pafoid.skate.editor.assetstore.LedgerEntry
 import com.pafoid.skate.editor.project.Project
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.pack.PackBuilder
@@ -176,6 +178,7 @@ class ProjectExporter(
             val problems = verifyPack(outputDir)
             if (problems.isNotEmpty()) return fail(ExportFailure.VERIFY_FAILED, ExportDetail.PACK_MISMATCH, listOf(problems.joinToString("; ")))
             writeGameSettings(project, outputDir)
+            writeCredits(project, outputDir)
 
             if (jar != null) {
                 onProgress(ExportProgress(ExportStep.COPYING_JAR))
@@ -219,6 +222,24 @@ class ProjectExporter(
         }
     }
 
+    /**
+     * `CREDITS.txt` next to the game (AST-16 §6.2, AST-17 §7): one block per attribution ledger entry with a packed
+     * file, e.g. "© OpenStreetMap contributors, ODbL 1.0" for a generated city. Not written (and an old one removed)
+     * when nothing packed needs credit.
+     */
+    private fun writeCredits(project: Project, outputDir: File) {
+        val file = File(outputDir, CREDITS_FILE)
+        val projectDir = File(project.projectPath).parentFile
+        val entries = runCatching { AttributionLedger.load(projectDir).entriesFor(assetsPacker.lastPackedIds) }
+            .onFailure { logger.logEngine("Could not read the attribution ledger: ${it.message}", LogLevel.WARN) }
+            .getOrDefault(emptyList())
+        if (entries.isEmpty()) {
+            file.delete()
+            return
+        }
+        file.writeText(credits(project.name, entries))
+    }
+
     private fun verifyPack(outputDir: File): List<String> {
         val manifest = assetsPacker.lastManifest ?: return listOf("no manifest")
         val bin = File(outputDir, AssetsPacker.BIN_FILE).readBytes()
@@ -230,6 +251,22 @@ class ProjectExporter(
         const val GAME_JAR = "skate-game.jar"
         const val LAUNCHER = "run-game.bat"
         const val DEBUG_PROPERTY = "skate.debug"
+        const val CREDITS_FILE = "CREDITS.txt"
+
+        /** The credits text for [entries] (sorted by title, one block each; OSM data gets its ODbL line). */
+        fun credits(gameName: String, entries: List<LedgerEntry>): String = buildString {
+            append("$gameName uses the following third-party content.\r\n\r\n")
+            entries.sortedBy { it.title.lowercase() }.forEach { e ->
+                append(e.title).append("\r\n")
+                if (e.license.spdx == "ODbL-1.0") append("  Map data © OpenStreetMap contributors, ODbL 1.0\r\n")
+                if (e.authors.isNotEmpty()) append("  By: ").append(e.authors.joinToString { a -> a.url?.let { "${a.name} ($it)" } ?: a.name }).append("\r\n")
+                append("  License: ").append(e.license.spdx)
+                if (e.license.url.isNotBlank()) append(" (").append(e.license.url).append(")")
+                append("\r\n")
+                if (e.sourceUrl.isNotBlank()) append("  Source: ").append(e.sourceUrl).append("\r\n")
+                append("\r\n")
+            }
+        }
 
         /**
          * `run-game.bat` for [mode] (AST-29). Debug starts the same jar with `-Dskate.debug=true` and pauses on a
