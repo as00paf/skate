@@ -34,6 +34,14 @@ class EngineShadersVulkanTest {
         loader.loadShader("/shaders/shadow.glsl", wind + ShaderFeature.ALPHA_TEST.name)
         loader.loadShader("/shaders/shader_3d_picking.glsl", wind)
         loader.loadShader("/shaders/water.glsl", setOf(ShaderFeature.PICKING.name))
+        // Instancing and terrain (VK-09): the INSTANCED mesh variants, terrain's PICKING and DEPTH_ONLY variants
+        val instanced = setOf(ShaderFeature.INSTANCED.name)
+        loader.loadShader("/shaders/shader_3d_default.glsl", instanced)
+        loader.loadShader("/shaders/shader_3d_default.glsl", instanced + ShaderFeature.WIND.name)
+        loader.loadShader("/shaders/shadow.glsl", instanced)
+        loader.loadShader("/shaders/shader_3d_picking.glsl", instanced)
+        loader.loadShader("/shaders/terrain.glsl", setOf(ShaderFeature.PICKING.name))
+        loader.loadShader("/shaders/terrain.glsl", setOf(ShaderFeature.DEPTH_ONLY.name))
 
         for (shader in device.shaders) {
             val name = shader.desc.name
