@@ -39,13 +39,16 @@ object KeyEditing {
         return track.copy(keys = track.keys.toMutableList().also { it[index] = it[index].copy(value = value.toList()) })
     }
 
-    /** Sets the tangent mode; for [TangentMode.FREE] the given tangents are stored (defaults to the current ones). */
+    /**
+     * Sets the tangent mode; for [TangentMode.FREE] and [TangentMode.BROKEN] the given tangents are stored (defaults
+     * to the current ones).
+     */
     fun setTangents(track: SkTrack, index: Int, mode: TangentMode, inTangent: FloatArray? = null, outTangent: FloatArray? = null): SkTrack {
-        val current = if (mode == TangentMode.FREE) Tangents.resolve(track)[index] else null
+        val current = if (mode.stored) Tangents.resolve(track)[index] else null
         val key = track.keys[index].copy(
             tangentMode = mode,
-            inTangent = if (mode == TangentMode.FREE) (inTangent ?: current!!.inTangent).toList() else null,
-            outTangent = if (mode == TangentMode.FREE) (outTangent ?: current!!.outTangent).toList() else null,
+            inTangent = if (mode.stored) (inTangent ?: current!!.inTangent).toList() else null,
+            outTangent = if (mode.stored) (outTangent ?: current!!.outTangent).toList() else null,
         )
         return track.copy(keys = track.keys.toMutableList().also { it[index] = key })
     }

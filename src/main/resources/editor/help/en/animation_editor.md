@@ -22,8 +22,10 @@ The window shows a preview of the clip on a character, the bone list, the timeli
 5. With keys selected, use **Scale** with a **Factor**, **Copy** (**Ctrl+C**), **Paste** (**Ctrl+V**) and **Delete keys** (**Delete**).
 6. To change a pose, select a bone in the list (type in **Filter bones** to find it) or click it in the preview, then click **Key bones** (**K**) to key its pose at the playhead.
 7. Type an **Event name** and click **Add event** to put an event at the playhead. **Rename** and **Delete event** change it.
-8. Set **Length (s)**, then **Retime** to stretch the whole clip to it or **Trim** to cut it. Change the **Frame rate** if needed.
-9. Every change can be undone with **Ctrl+Z**. Click **Save** to write the file.
+8. Open the **Curves** tab to shape the motion between keys. Pick the track in the list (rotations show as degrees) and the **X**, **Y** and **Z** curves to show. Drag a key to change its value and time; hold **Shift** to keep to one direction. Give the selected keys a tangent: **Auto**, **Linear**, **Flat**, **Free**, **Broken** or **Step**. On position and scale curves, drag the round handles to set the slope. The mouse wheel zooms the values, **Ctrl**+wheel zooms the time.
+9. Use **Cleanup** to fix a mocap or video clip. **Resample** puts a key on every frame, **Reduce keys** removes keys the curve does not need, and **Smooth** removes jitter. Set a **Range** on the ruler (**Start at playhead**, **End at playhead**) to choose the frames for **Smooth**, **Lock left foot** or **Lock right foot** (stops feet sliding), and **Trim to range**. **Mirror** swaps left and right, and **Fix loop seam** stops a loop from jumping at its end. Select bones first to limit Reduce and Smooth to them.
+10. Set **Length (s)**, then **Retime** to stretch the whole clip to it or **Trim** to cut it. Change the **Frame rate** if needed.
+11. Every change can be undone with **Ctrl+Z**. Click **Save** to write the file.
 
 To play the clip in the game, drag it onto an object with an **Animator**.
 

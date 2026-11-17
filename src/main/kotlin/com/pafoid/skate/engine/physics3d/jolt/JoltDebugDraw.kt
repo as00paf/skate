@@ -67,6 +67,7 @@ internal object JoltDebugDraw {
             is ColliderShape.ConvexHull -> hullEdges(shape.points)
             is ColliderShape.CompoundHull -> shape.hulls.map { hullEdges(it) }.fold(FloatArray(0)) { acc, e -> acc + e }
             is ColliderShape.TriangleMesh -> ShapeWireframe.featureEdges(meshTriangles(shape))
+            is ColliderShape.Heightfield -> ShapeWireframe.heightfieldEdges(shape)
             else -> FloatArray(0)
         }
         for (i in edges.indices) {

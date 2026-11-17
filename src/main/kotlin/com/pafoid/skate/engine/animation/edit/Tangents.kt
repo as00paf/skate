@@ -23,7 +23,7 @@ object Tangents {
                     val outgoing = if (i < n - 1) slope(values, times, i, i + 1, c) else null
                     KeyTangents(incoming ?: outgoing ?: FloatArray(c), outgoing ?: incoming ?: FloatArray(c))
                 }
-                TangentMode.FREE -> {
+                TangentMode.FREE, TangentMode.BROKEN -> {
                     val fallback by lazy { auto(values, times, i, c) }
                     KeyTangents(
                         key.inTangent?.takeIf { it.size == c }?.toFloatArray() ?: fallback,
