@@ -1,6 +1,7 @@
 package com.pafoid.skate.engine.gameplay
 
 import com.pafoid.skate.engine.animation.graph.AnimParameters
+import com.pafoid.skate.engine.animation.graph.ParameterDef
 import com.pafoid.skate.engine.gameplay.ground.GroundConfig
 import org.joml.Vector2f
 import org.joml.Vector3f
@@ -70,6 +71,12 @@ interface CharacterBehavior {
 
     /** Writes per-frame values (speed, air time...) to the animation controller's parameters, after [update]. */
     fun writeAnimationParameters(parameters: AnimParameters) {}
+
+    /**
+     * The parameters [writeAnimationParameters] writes (GPL-31), so the Animator window can offer them under
+     * "Written by the character". Request bools named after states (`Animator.play`) are not listed.
+     */
+    val animationParameters: List<ParameterDef> get() = emptyList()
 }
 
 /** Registry of behaviors by id so engine components can reference game-specific logic by name. */
