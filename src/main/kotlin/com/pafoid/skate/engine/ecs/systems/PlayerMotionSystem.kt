@@ -1,6 +1,11 @@
 package com.pafoid.skate.engine.ecs.systems
 
+import com.pafoid.skate.engine.assets.PrefabsGenerator
+import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.ecs.components.Animator
+import com.pafoid.skate.engine.ecs.components.Transform
+import com.pafoid.skate.engine.events.WaterEntered
+import com.pafoid.skate.engine.gameplay.WaterRespawns
 import com.pafoid.skate.engine.ecs.components.InputStateComponent
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.components.PlayerController
@@ -43,8 +48,33 @@ class PlayerMotionSystem(
     private val actionViews = java.util.WeakHashMap<PlayerController, ActionQuery>()
     private val seen = HashSet<Any>()
 
+    /** Pending water bails (GPL-32) and where each player was when Play started, the fallback respawn point. */
+    private val waterRespawns = WaterRespawns()
+    private val startPoses = java.util.WeakHashMap<PlayerController, Pose>()
+    private var events: EventSystem? = null
+
+    private class Pose(val position: Vector3f, val rotation: Quaternionf)
+
+    /**
+     * Reacts to PHY-16's [WaterEntered] with each player's [PlayerController.waterResponse]. Call once per engine;
+     * calling again with the same [eventSystem] does nothing (it has no per-listener unsubscribe).
+     */
+    fun listenTo(eventSystem: EventSystem) {
+        if (events === eventSystem) return
+        events = eventSystem
+        eventSystem.subscribe<WaterEntered> { onWaterEntered(it) }
+    }
+
+    /** Starts [event]'s player's bail when its policy asks for one; the respawn happens in [update]. */
+    fun onWaterEntered(event: WaterEntered) {
+        if (!scene.isRunning) return
+        event.body.getComponent<PlayerController>()?.let(waterRespawns::enter)
+    }
+
     override fun init(scene: Scene) {
         super.init(scene)
+        waterRespawns.clear()
+        startPoses.clear()
         // A new scene (Play snapshot, restart, scene switch): game presets' actions, and no context left held.
         inputSampler?.applyPresets()
         inputSampler?.leases?.releaseAll()
@@ -70,6 +100,8 @@ class PlayerMotionSystem(
             val body = go.getComponent<RigidBody3D>() ?: return@forEach
             val inputState = go.getComponent<InputStateComponent>() ?: return@forEach
             seen += controller
+            if (body.rawBody != null) startPoses.getOrPut(controller) { Pose(body.getWorldPosition(), body.getRotation()) }
+            if (waterRespawns.tick(controller, dt)) respawn(controller, body)
 
             val mount = (controller.behavior as? Mountable)?.let { findMount(it.mountTargetName, go) }
             val motion = controller.behavior.update(buildInput(controller, inputState, body, mount, body.getWorldPosition()), dt)
@@ -90,6 +122,23 @@ class PlayerMotionSystem(
         }
         // Characters that left the scene give their input contexts back.
         inputSampler?.leases?.retainOnly(seen)
+    }
+
+    /**
+     * Moves [body] to the first object tagged [PrefabsGenerator.SPAWN_POINT_TAG] (its position and heading), or to
+     * where the player was when Play started, stops it and resets the behavior. A ridden mount follows on [syncMount].
+     */
+    private fun respawn(controller: PlayerController, body: RigidBody3D) {
+        val spawn = scene.findFirstByTag(PrefabsGenerator.SPAWN_POINT_TAG)?.getComponent<Transform>()
+        val start = startPoses[controller]
+        val position = spawn?.worldMatrix?.getTranslation(Vector3f()) ?: start?.position ?: return
+        val rotation = spawn?.let { Quaternionf().rotateY(MotionMath.yawOfRotation(it.worldMatrix.getNormalizedRotation(Quaternionf()))) }
+            ?: start?.rotation ?: Quaternionf()
+        body.rawBody?.setLocation(position)
+        body.setRotation(rotation)
+        body.linearVelocity = Vector3f()
+        body.angularVelocity = Vector3f()
+        controller.behavior.respawn()
     }
 
     private fun buildInput(

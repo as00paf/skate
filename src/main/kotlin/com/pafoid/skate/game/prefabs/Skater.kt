@@ -1,5 +1,6 @@
 package com.pafoid.skate.game.prefabs
 
+import com.pafoid.skate.engine.gameplay.WaterResponse
 import com.pafoid.skate.engine.assets.EngineDefaults
 import com.pafoid.skate.engine.addComponent
 import com.pafoid.skate.engine.assets.Assets
@@ -38,7 +39,7 @@ class Skater(
     val renderComponent = RenderComponent(model)
     val animator = Animator()
     val skeletonComponent = SkeletonComponent(SkeletonPose(model.skeleton!!))
-    val playerController = PlayerController(SkateBehavior.ID, CONFIG_PATH)
+    val playerController = PlayerController(SkateBehavior.ID, CONFIG_PATH, waterResponse = WaterResponse.BAIL)
 
     init {
         SkateGameplay.register()
