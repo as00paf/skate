@@ -1,6 +1,7 @@
 package com.pafoid.skate.editor.settings
 
 import com.pafoid.skate.editor.data.EditorInputMappings
+import com.pafoid.skate.editor.imgui.MaximizeMode
 import com.pafoid.skate.editor.imgui.theme.EditorTheme
 import com.pafoid.skate.engine.utils.UnitSystem
 import kotlinx.serialization.Serializable
@@ -43,6 +44,8 @@ data class EditorSettings(
     var camera: EditorCameraSettings = EditorCameraSettings(),
     /** Spacing presets and overrides over the theme (EDT-76). */
     var appearance: AppearanceSettings = AppearanceSettings(),
+    /** Where Maximize, a tab double-click and the shortcut put a tool window (EDT-88). */
+    var maximizeMode: MaximizeMode = MaximizeMode.FULL_EDITOR,
 ) {
 
     companion object {

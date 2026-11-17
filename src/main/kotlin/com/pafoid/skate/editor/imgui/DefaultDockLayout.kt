@@ -19,8 +19,8 @@ object DefaultDockLayout {
         "window.video_to_animation" to Zone.BOTTOM,
         "window.animation_editor" to Zone.BOTTOM,
         "window.animator" to Zone.BOTTOM,
-        // EDT-55: open by default as a bottom tab; the centre node has no tab bar, so a window docked there hides
-        // behind the viewport.
+        // EDT-55: open by default as a bottom tab, so the viewport stays in front; Maximize can dock it over the
+        // viewport when needed (EDT-88).
         "window.script_editor" to Zone.BOTTOM,
         "window.console" to Zone.BOTTOM,
         "window.profiler" to Zone.BOTTOM,

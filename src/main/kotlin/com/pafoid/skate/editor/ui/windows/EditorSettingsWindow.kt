@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.ui.windows
 
+import com.pafoid.skate.editor.imgui.MaximizeMode
 import com.pafoid.skate.editor.imgui.tipped
 import com.pafoid.skate.editor.imgui.label
 import com.pafoid.skate.editor.data.EditorInputMappings
@@ -75,6 +76,7 @@ class EditorSettingsWindow(
     private var tempCompletionAuto = true
     private var tempCompletionDelay = 200
     private var tempShowTooltips = true
+    private var tempMaximizeMode = MaximizeMode.FULL_EDITOR
     private var tempUiScale = 1f
     private var tempAppearance = AppearanceSettings()
     private var tempLoadLastProject = true
@@ -93,7 +95,7 @@ class EditorSettingsWindow(
             Category("general", "settings.editor.general", arrayOf("general", "language", "unit", "metric", "imperial", "startup", "project", "last")) { renderGeneral() },
             Category("keybindings", "settings.editor.keybindings", arrayOf("key", "binding", "gizmo", "translate", "rotate", "scale", "select", "measure", "deselect", "camera", "reset")) { renderKeyBindings() },
             Category("gamepad_overlay", "settings.editor.gamepad_overlay", arrayOf("gamepad", "overlay", "show", "size", "scale")) { renderGamepadOverlay() },
-            Category("interface", "settings.editor.interface", arrayOf("interface", "theme", "tooltip", "scale", "font", "size", "text", "appearance", "density", "padding", "spacing", "rounding", "compact", "spacious", "menu")) { renderInterface() },
+            Category("interface", "settings.editor.interface", arrayOf("interface", "theme", "tooltip", "scale", "font", "size", "text", "appearance", "density", "padding", "spacing", "rounding", "compact", "spacious", "menu", "maximize")) { renderInterface() },
             Category("scene_view", "settings.editor.scene_view", arrayOf("scene", "view", "snap", "gizmo", "grid", "camera", "speed", "sensitivity", "mouse")) { renderSceneView() },
             Category("autosave", "settings.editor.autosave", arrayOf("auto", "save", "autosave", "interval")) { renderAutoSave() },
             Category("script_editor", "settings.editor.script_editor", arrayOf("script", "completion", "popup", "delay", "autocomplete")) { renderScriptEditor() },
@@ -184,6 +186,7 @@ class EditorSettingsWindow(
             tempCompletionAuto = editor.completionAutoPopup
             tempCompletionDelay = editor.completionDelayMs
             tempShowTooltips = editor.showTooltips
+            tempMaximizeMode = editor.maximizeMode
             tempUiScale = editor.fontSize
             tempAppearance = editor.appearance
             tempLoadLastProject = editor.loadLastProjectOnStartup
@@ -279,6 +282,20 @@ class EditorSettingsWindow(
             "settings.editor.interface.ui_scale", tempUiScale, 1f,
             EditorSettings.MIN_UI_SCALE, EditorSettings.MAX_UI_SCALE, "%.2fx",
         ) { tempUiScale = it; ImGuiStyleManager.previewUiScale = it }
+
+        // EDT-88: where Maximize puts a tool window.
+        val modes = MaximizeMode.entries
+        val modeSel = ImInt(modes.indexOf(tempMaximizeMode))
+        val modeLabels = modes.map { stringManager.getString(it.labelKey) }.toTypedArray()
+        MImGui.propertyRow(
+            label = stringManager.getString("settings.editor.interface.maximize_mode"),
+            helpTooltip = stringManager.getString("settings.editor.interface.maximize_mode.desc"),
+        ) {
+            if (combo("##maximize_mode", modeSel, modeLabels, modeLabels.size)) {
+                tempMaximizeMode = modes[modeSel.get()]
+                hasPendingChanges = true
+            }
+        }
 
         renderAppearance()
     }
@@ -536,6 +553,7 @@ class EditorSettingsWindow(
         settingsManager.update {
             it.copy(
                 showTooltips = tempShowTooltips,
+                maximizeMode = tempMaximizeMode,
                 fontSize = tempUiScale,
                 appearance = tempAppearance,
                 loadLastProjectOnStartup = tempLoadLastProject,

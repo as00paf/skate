@@ -4,6 +4,7 @@ import com.pafoid.skate.editor.systems.EditorResources
 import com.pafoid.skate.editor.systems.EditorPaths
 import com.pafoid.skate.app.Editor
 import com.pafoid.skate.editor.events.EditorEvent
+import com.pafoid.skate.editor.events.ViewportAction
 import com.pafoid.skate.editor.events.WindowAction
 import com.pafoid.skate.editor.imgui.data.UiConstants
 import com.pafoid.skate.editor.imgui.theme.ThemeLibrary
@@ -53,7 +54,7 @@ import imgui.type.ImInt
 import org.lwjgl.glfw.GLFW
 
 class ImGuiLayer(
-    engine: Engine,
+    private val engine: Engine,
     editor: Editor,
     projectManager: ProjectManager,
 ) {
@@ -82,6 +83,14 @@ class ImGuiLayer(
     private val windowRegistry = WindowRegistry(engine, editor, projectManager)
     private val windowManager = WindowManager(stringManager, windowRegistry, engine.eventSystem)
 
+    // EDT-88: maximize; its layout changes run at safe points of the frame.
+    private val maximize = MaximizeDriver(
+        windowOf = { windowRegistry.getWindow(it) },
+        titleOf = { window, id -> window.title(stringManager, id = id) },
+        saveLayout = { saveLayout() },
+        setAutosave = { on -> getIO().iniFilename = if (on) layoutStore.iniFile.path else null },
+    )
+
     fun init(windowController: WindowController) {
         createContext()
         // Only the editor has an ImGui context; engine input asks through these hooks (GUI-14).
@@ -105,6 +114,13 @@ class ImGuiLayer(
         layoutStore.removeDockIds(windowRegistry.windows.filterIsInstance<EditorDialog>().map { it.name })
         windowManager.init()
         eventSystem.subscribe<WindowAction.ResetLayout> { resetLayout() }
+        MaximizeSession.model = maximize.model
+        MaximizeSession.defaultMode = { settingsManager.editorSettings.maximizeMode }
+        eventSystem.subscribe<WindowAction.ToggleMaximizeFocused> { toggleMaximizeFocused() }
+        eventSystem.subscribe<WindowAction.RestoreMaximized> { MaximizeSession.requestRestore() }
+        eventSystem.subscribe<WindowAction.Show> { event ->
+            if (windowRegistry.getWindow(event.name)?.isDialog == false) maximize.model.onWindowShown(event.name)
+        }
         windowController.onToggleMaximize = { maximized -> windowRegistry.menuBar.setMaximized(maximized) }
         eventSystem.subscribe<EditorEvent.Exit> { windowController.close() }
         eventSystem.subscribe<EditorEvent.Minimize> { windowController.minimize() }
@@ -118,12 +134,15 @@ class ImGuiLayer(
         return true
     }
 
-    private fun saveLayout() {
-        ImGui.saveIniSettingsToDisk(layoutStore.iniFile.path)
+    /** Writes the layout on screen, or [ini] (EDT-88: the layout from before maximizing), and the open windows. */
+    private fun saveLayout(ini: String? = null) {
+        if (ini == null) ImGui.saveIniSettingsToDisk(layoutStore.iniFile.path) else layoutStore.iniFile.writeText(ini)
         layoutStore.saveOpenWindows(windowRegistry.dockableWindows.filter { it.isOpen.get() }.map { it.name })
     }
 
     private fun resetLayout() {
+        // EDT-88 §8: the maximize state is dropped, not restored: the layout is replaced anyway.
+        maximize.onResetLayout()
         layoutStore.clear()
         windowRegistry.showDefaultWindows()
         forceLayoutRebuild = true
@@ -146,12 +165,8 @@ class ImGuiLayer(
         val rightId = dockBuilderSplitNode(mainBodyId.get(), ImGuiDir.Right, DefaultDockLayout.RIGHT_RATIO, null, mainBodyId)
         val bottomId = dockBuilderSplitNode(mainBodyId.get(), ImGuiDir.Down, DefaultDockLayout.BOTTOM_RATIO, null, mainBodyId)
 
-        val centralNode = ImGui.dockBuilderGetNode(mainBodyId.get())
-        val noTabBar = imgui.internal.flag.ImGuiDockNodeFlags.NoTabBar
-        val noWindowMenuButton = 1 shl 12
-        val noCloseButton = 1 shl 13
-
-        centralNode.setLocalFlags(noTabBar or noWindowMenuButton or noCloseButton)
+        // EDT-88: the viewport's node shows a tab bar only when another window is docked over it.
+        DockLayoutFlags.applyCentral(ImGui.dockBuilderGetNode(mainBodyId.get()))
 
         windowManager.dockWindows(mainBodyId, leftId, rightId, bottomId)
 
@@ -159,6 +174,7 @@ class ImGuiLayer(
     }
 
     fun update(dt: Float) {
+        maximize.beforeFrame()
 
         startFrame()
 
@@ -238,16 +254,36 @@ class ImGuiLayer(
 
         popStyleVar(4)
 
-        setupLayout(getID("DockSpace"))
-        dockSpace(getID("DockSpace"))
+        // EDT-88 §3: the full-editor host covers the dock space's area, between the menu bar and the status bar.
+        MaximizeSession.hostArea = MaximizeSession.Area(
+            ImGui.getCursorScreenPosX(), ImGui.getCursorScreenPosY(),
+            ImGui.getContentRegionAvailX(), ImGui.getContentRegionAvailY(),
+        )
+        val dockspaceId = getID("DockSpace")
+        setupLayout(dockspaceId)
+        // While a window fills the editor the dock nodes stay alive but are not drawn, and their windows are skipped.
+        dockSpace(dockspaceId, 0f, 0f, maximize.dockSpaceFlags())
+        maximize.afterDockSpace(ImGui.dockBuilderGetCentralNode(dockspaceId))
 
         windowManager.update()
+
+        maximize.afterWindows(engine.runtimePlaying)
 
         end()
     }
 
+    /** EDT-88: the maximize shortcut acts on the last focused tool window; it turns F12 full screen off first. */
+    private fun toggleMaximizeFocused() {
+        val target = maximize.model.window ?: MaximizeSession.focused ?: return
+        if (isViewportMaximized) eventSystem.publish(ViewportAction.ToggleFullScreen)
+        MaximizeSession.request(target)
+    }
+
     fun destroy() {
-        saveLayout()
+        // EDT-88: save the layout from before maximizing, never the temporary one.
+        val held = maximize.onExit()
+        if (held == null) saveLayout() else saveLayout(held)
+        MaximizeSession.reset()
         imGuiGl3.shutdown()
         imGuiGlfw.shutdown()
         // Input read after this point must not touch the destroyed context (GUI-16).

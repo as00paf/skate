@@ -77,8 +77,12 @@ class EditorInputHandler(
         handleClipboardAndUndo(scene)
     }
 
+    /** The Game Viewport's focus this frame, read once by [pollEditorInput]. */
+    private var viewportFocused = false
+
     private fun pollEditorInput() {
         val (viewportFocused, viewportHovered) = viewportFocus.consume()
+        this.viewportFocused = viewportFocused
         val inside = inputProvider.isInsideViewport()
         editorInputState.isInsideViewport = inside
 
@@ -120,6 +124,9 @@ class EditorInputHandler(
         if (pressed(EditorShortcuts.OPEN_PROJECT)) eventSystem.publish(ProjectEvent.OpenProjectFileRequested)
         if (pressed(EditorShortcuts.VCS_COMMIT)) eventSystem.publish(WindowAction.Show(VcsWindows.COMMIT))
         if (pressed(EditorShortcuts.FULLSCREEN)) eventSystem.publish(ViewportAction.ToggleFullScreen)
+        if (ViewportCameraGate.maximizeShortcutAllowed(viewportFocused, textInputActive()) &&
+            pressed(EditorShortcuts.MAXIMIZE_WINDOW)
+        ) eventSystem.publish(WindowAction.ToggleMaximizeFocused)
     }
 
     private fun handleSceneShortcuts(scene: Scene) {

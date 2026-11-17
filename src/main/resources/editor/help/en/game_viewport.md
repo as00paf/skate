@@ -10,6 +10,8 @@ The bar also has Play controls. **Play** starts the scene, **Pause** freezes it 
 
 The tabs above the 3D view are the open scenes. Each scene remembers the editor camera position and mode, so switching back to a scene puts you where you left it.
 
+Other windows can be docked over the viewport as tabs: drag a window's tab onto it, or use **Maximize over Game Viewport** in a tool window's tab menu. The viewport then shows a tab bar; click the **Game Viewport** tab to bring it back to the front. Pressing **Play** always brings it to the front.
+
 ## How to use it
 
 1. Click an object to select it. The same object is selected in the [Scene Hierarchy](hierarchy.md).

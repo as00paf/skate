@@ -6,6 +6,7 @@ import imgui.flag.ImGuiDir
 import imgui.flag.ImGuiDockNodeFlags
 import imgui.flag.ImGuiWindowFlags
 import imgui.internal.ImGui as Internal
+import imgui.internal.ImGuiDockNode
 import imgui.type.ImInt
 
 /**
@@ -16,7 +17,7 @@ class HeadlessDock(
     /** Window name (ImGui ID string) -> zone. */
     private val zones: Map<String, DefaultDockLayout.Zone>,
     /** Flags the layout gives the central node when it is built. */
-    private val centralFlags: (imgui.internal.ImGuiDockNode) -> Unit = {},
+    private val centralFlags: (ImGuiDockNode) -> Unit = {},
 ) {
     var dockspaceId = 0
         private set
@@ -47,7 +48,17 @@ class HeadlessDock(
 
     fun destroy() = ImGui.destroyContext()
 
-    fun frame(dockSpaceFlags: Int = 0, windows: () -> Unit = { drawWindows() }) {
+    /**
+     * One frame, in `ImGuiLayer`'s order: the host, [beforeDockSpace] (cursor at the dock space's corner), the dock
+     * space with [dockSpaceFlags], [afterDockSpace] with the central node, the [windows], then [afterWindows].
+     */
+    fun frame(
+        dockSpaceFlags: Int = 0,
+        beforeDockSpace: () -> Unit = {},
+        afterDockSpace: (ImGuiDockNode) -> Unit = {},
+        windows: () -> Unit = { drawWindows() },
+        afterWindows: () -> Unit = {},
+    ) {
         ImGui.newFrame()
         ImGui.setNextWindowPos(0f, 0f)
         ImGui.setNextWindowSize(1600f, 1000f)
@@ -56,14 +67,21 @@ class HeadlessDock(
                 ImGuiWindowFlags.NoMove or ImGuiWindowFlags.NoBringToFrontOnFocus or ImGuiWindowFlags.NoSavedSettings,
         )
         dockspaceId = ImGui.getID("DockSpace")
+        beforeDockSpace()
         if (!built) build()
         ImGui.dockSpace(dockspaceId, 0f, 0f, dockSpaceFlags)
-        centralId = Internal.dockBuilderGetCentralNode(dockspaceId).id
+        val central = Internal.dockBuilderGetCentralNode(dockspaceId)
+        centralId = central.id
+        afterDockSpace(central)
         extra()
-        ImGui.end()
         windows()
+        afterWindows()
+        ImGui.end()
         ImGui.render()
     }
+
+    /** The central (Game Viewport) node now. */
+    fun central(): ImGuiDockNode = Internal.dockBuilderGetCentralNode(dockspaceId)
 
     fun drawWindows() {
         for (name in zones.keys) {

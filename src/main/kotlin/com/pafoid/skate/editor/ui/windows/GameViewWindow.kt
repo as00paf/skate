@@ -79,9 +79,15 @@ class GameViewWindow(
     }
 
     override fun imgui() {
-        val noTabItem = 1 shl 23
-        // No title bar or tab: the `?` is the toolbar's last button (EDT-51 §2.2).
-        beginWindow(stringManager, ImGuiWindowFlags.NoScrollbar or ImGuiWindowFlags.NoScrollWithMouse or ImGuiWindowFlags.NoTitleBar or noTabItem, closable = false)
+        // No title bar: the `?` is the toolbar's last button (EDT-51 §2.2). Docked, its node shows the tab only when
+        // another window is tabbed over it (EDT-88).
+        val visible = beginWindow(stringManager, ImGuiWindowFlags.NoScrollbar or ImGuiWindowFlags.NoScrollWithMouse or ImGuiWindowFlags.NoTitleBar, closable = false)
+        if (!visible) {
+            // Hidden behind another tab (EDT-88 §1, §7): no focus report (the camera stops), no pointer view rect
+            // from a hidden image, and no framebuffer resize to a hidden size.
+            ImGui.end()
+            return
+        }
 
         scenesTabBar.render(sceneManager)
 

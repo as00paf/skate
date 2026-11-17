@@ -58,8 +58,10 @@ class WindowManager(
     private val deleteDialog = DeleteObjectsDialog(eventSystem, stringManager)
 
     fun update() {
+        val full = MaximizeSession.model?.fullEditorWindow
         windowRegistry.windows.forEach { window ->
             if (!window.isOpen.get()) return@forEach
+            if (!MaximizeSession.drawsWhileMaximized(window, full)) return@forEach
             window.imgui()
         }
         if (activateDefaultTabs) {

@@ -10,6 +10,8 @@ La barre contient aussi les commandes de jeu. **Jouer** lance la scène, **Pause
 
 Les onglets au-dessus de la vue 3D sont les scènes ouvertes. Chaque scène retient la position et le mode de la caméra de l'éditeur : en revenant à une scène, vous la retrouvez là où vous l'aviez laissée.
 
+D'autres fenêtres peuvent être ancrées par-dessus la vue comme onglets : faites glisser l'onglet d'une fenêtre dessus, ou utilisez **Agrandir par-dessus la vue du jeu** dans le menu de l'onglet d'une fenêtre d'outil. La vue affiche alors une barre d'onglets ; cliquez sur l'onglet **Vue du jeu** pour la remettre devant. **Jouer** la remet toujours devant.
+
 ## Comment l'utiliser
 
 1. Cliquez sur un objet pour le sélectionner. Le même objet est sélectionné dans la [Hiérarchie de la scène](hierarchy.md).

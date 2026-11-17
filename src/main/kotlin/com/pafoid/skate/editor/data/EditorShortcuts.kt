@@ -57,8 +57,8 @@ object EditorShortcuts {
     @Volatile
     var mappings: () -> EditorInputMappings = { EditorInputMappings() }
 
-    private fun key(id: String, label: String, group: ShortcutGroup, binding: KMutableProperty1<EditorInputMappings, InputBinding>, ctrl: Boolean = false, scope: ShortcutScope = ShortcutScope.GLOBAL) =
-        EditorShortcut(id, label, group, scope, binding, ctrl = ctrl)
+    private fun key(id: String, label: String, group: ShortcutGroup, binding: KMutableProperty1<EditorInputMappings, InputBinding>, ctrl: Boolean = false, scope: ShortcutScope = ShortcutScope.GLOBAL, shift: Boolean = false) =
+        EditorShortcut(id, label, group, scope, binding, ctrl = ctrl, shift = shift)
 
     private fun fixed(id: String, label: String, key: Int, ctrl: Boolean = true, shift: Boolean = false) =
         EditorShortcut(id, label, ShortcutGroup.EDITOR, fixedKey = key, ctrl = ctrl, shift = shift)
@@ -90,6 +90,11 @@ object EditorShortcuts {
     val MEASURE = key("measure", "lbl.keybindings.measure", ShortcutGroup.EDITOR, EditorInputMappings::measureTool)
     val DESELECT = key("deselect", "lbl.keybindings.deselect", ShortcutGroup.EDITOR, EditorInputMappings::deselectAll)
     val FOCUS = key("focus", "lbl.keybindings.focus", ShortcutGroup.EDITOR, EditorInputMappings::focusSelected)
+    /**
+     * EDT-88: maximizes or restores the focused tool window. Shift+Space; ignored while typing and while the Game
+     * Viewport is focused, where Shift and Space move the camera.
+     */
+    val MAXIMIZE_WINDOW = key("maximize_window", "lbl.keybindings.maximize_window", ShortcutGroup.EDITOR, EditorInputMappings::maximizeWindow, shift = true)
 
     val CAMERA_FORWARD = key("camera_forward", "lbl.keybindings.move_forward", ShortcutGroup.CAMERA, EditorInputMappings::moveForward, scope = ShortcutScope.CAMERA)
     val CAMERA_BACKWARD = key("camera_backward", "lbl.keybindings.move_backward", ShortcutGroup.CAMERA, EditorInputMappings::moveBackward, scope = ShortcutScope.CAMERA)
@@ -112,7 +117,7 @@ object EditorShortcuts {
     val fixedShortcuts: List<EditorShortcut> = listOf(UNDO, REDO, REDO_ALT, CUT, COPY, PASTE, NEW_SCENE, SAVE_SCENE, SAVE_SCENE_AS, OPEN_PROJECT, INPUT_TESTING, VCS_COMMIT)
 
     val rebindable: List<EditorShortcut> = listOf(
-        SEARCH, PLAY_TOGGLE, FULLSCREEN, GIZMO_SELECT, GIZMO_TRANSLATE, GIZMO_ROTATE, GIZMO_SCALE, MEASURE, DESELECT, FOCUS,
+        SEARCH, PLAY_TOGGLE, FULLSCREEN, MAXIMIZE_WINDOW, GIZMO_SELECT, GIZMO_TRANSLATE, GIZMO_ROTATE, GIZMO_SCALE, MEASURE, DESELECT, FOCUS,
         CAMERA_FORWARD, CAMERA_BACKWARD, CAMERA_LEFT, CAMERA_RIGHT, CAMERA_UP, CAMERA_DOWN, CAMERA_RESET,
         CREATE_EMPTY, DELETE, DUPLICATE, RENAME, TOGGLE_VISIBILITY, TOGGLE_LOCK, NAVIGATE_UP, NAVIGATE_DOWN, SELECT_FIRST, SELECT_LAST,
     )

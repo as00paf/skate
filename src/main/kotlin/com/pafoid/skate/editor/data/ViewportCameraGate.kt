@@ -17,6 +17,13 @@ object ViewportCameraGate {
     /** Wheel zoom: the pointer is over the viewport image and the viewport window is the hovered one. */
     fun zoomAllowed(viewportHovered: Boolean, pointerInsideImage: Boolean): Boolean =
         viewportHovered && pointerInsideImage
+
+    /**
+     * The maximize shortcut (EDT-88, Shift+Space by default): not while a text field takes keys (the Script Editor
+     * types a space) and not while the viewport is focused (Shift and Space fly the camera).
+     */
+    fun maximizeShortcutAllowed(viewportFocused: Boolean, textInputActive: Boolean): Boolean =
+        !viewportFocused && !textInputActive
 }
 
 /**
