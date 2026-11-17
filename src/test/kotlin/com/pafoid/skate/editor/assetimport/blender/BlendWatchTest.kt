@@ -1,6 +1,7 @@
 package com.pafoid.skate.editor.assetimport.blender
 
-import com.pafoid.skate.editor.ui.windows.assetBrowser.BrowserAssetType
+import com.pafoid.skate.editor.ui.windows.assetBrowser.AssetDiscovery
+import com.pafoid.skate.engine.assets.AssetFolder
 import com.pafoid.skate.engine.assets.AssetMeta
 import com.pafoid.skate.engine.assets.loaders.AnimationLoader
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -67,8 +68,8 @@ class BlendWatchTest {
     fun ActionClips_AreAnimationsNamedAfterTheAction() {
         assertEquals("Ollie", AnimationLoader.clipName("C:\\p\\Assets\\cap.blend.import\\board@Ollie.glb"))
         assertEquals("walking", AnimationLoader.clipName("assets/walking.fbx"))
-        assertTrue(BrowserAssetType.ANIMATION.matches(File("board@Ollie.glb")))
-        assertFalse(BrowserAssetType.ANIMATION.matches(File("board.glb")))
+        assertEquals(AssetFolder.ANIMATIONS, AssetDiscovery.folderOf(File("board@Ollie.glb")))
+        assertEquals(AssetFolder.MODELS, AssetDiscovery.folderOf(File("board.glb")))
         assertEquals("blender", AssetMeta.importerFor(File("cap.blend")))
         assertTrue(BlenderOutputs.isBlenderSideFile(File("cap.blend1")))
         assertFalse(BlenderOutputs.isBlenderSideFile(File("cap.blend")))
