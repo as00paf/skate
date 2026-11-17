@@ -77,6 +77,15 @@ interface CharacterBehavior {
      * "Written by the character". Request bools named after states (`Animator.play`) are not listed.
      */
     val animationParameters: List<ParameterDef> get() = emptyList()
+
+    /**
+     * Starts a bail (water with [WaterResponse.BAIL], hazards) and returns the seconds before the character may be
+     * respawned. Behaviors without a bail return 0: they respawn at once.
+     */
+    fun bail(): Float = 0f
+
+    /** Called after the character's body was moved to a respawn point: clears speed and state (GPL-32). */
+    fun respawn() {}
 }
 
 /** Registry of behaviors by id so engine components can reference game-specific logic by name. */

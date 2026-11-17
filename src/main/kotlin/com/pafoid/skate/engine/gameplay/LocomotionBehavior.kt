@@ -62,6 +62,14 @@ open class LocomotionBehavior(private val config: LocomotionConfig) : CharacterB
 
     override val state: String get() = machine.current.name
 
+    /** Standing still in IDLE at the respawn point (GPL-32). */
+    override fun respawn() {
+        speed = 0f
+        context.moveMagnitude = 0f
+        context.airborneTime = 0f
+        machine.force(LocomotionState.IDLE, context)
+    }
+
     override fun update(input: CharacterInput, dt: Float): CharacterMotion {
         context.input = input
         context.moveMagnitude = input.move.length().let { if (it.isNaN()) 0f else it }

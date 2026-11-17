@@ -3,6 +3,7 @@ package com.pafoid.skate.engine.ecs.components
 import com.pafoid.skate.engine.gameplay.CharacterBehavior
 import com.pafoid.skate.engine.gameplay.CharacterBehaviors
 import com.pafoid.skate.engine.gameplay.LocomotionBehavior
+import com.pafoid.skate.engine.gameplay.WaterResponse
 import com.pafoid.skate.engine.gameplay.ground.GroundInfo
 import com.pafoid.skate.engine.gameplay.ik.FootIkConfig
 import com.pafoid.skate.engine.gameplay.ik.FootTarget
@@ -17,6 +18,8 @@ import kotlinx.serialization.Transient
 class PlayerController(
     var behaviorId: String = LocomotionBehavior.ID,
     var configPath: String = "",
+    /** What entering water does to this player (GPL-32): nothing, or bail then respawn. */
+    var waterResponse: WaterResponse = WaterResponse.NONE,
 ) : Component() {
 
     /** Latest ground probe, written by the physics system each fixed step. */
