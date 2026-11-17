@@ -47,6 +47,7 @@ class PrefabsTab(
     override val folder: File? get() = null
 
     override fun imgui(label: String, searchText: ImString) {
+        refreshOnProjectChange()
         thumbnails.beginFrame()
         content(label) { renderCatalog(searchText) }
     }
@@ -56,8 +57,11 @@ class PrefabsTab(
         ImGui.setNextItemWidth(180f)
         ImGui.combo(stringManager.label("lbl.material"), surfaceIndex, names, names.size)
 
+        // EDT-69: the `.prefab` files of the project's Prefabs type are listed after the built-in catalog.
+        val files = this.entries.filter { it.name.contains(searchText.get(), ignoreCase = true) }
         val matching = PrefabCategory.entries.sumOf { c -> PrefabCatalog.inCategory(c).count { displayName(it).contains(searchText.get(), ignoreCase = true) } }
-        if (renderEmptyState(PrefabCategory.entries.sumOf { PrefabCatalog.inCategory(it).size }, matching, searchText)) return
+        val total = PrefabCategory.entries.sumOf { PrefabCatalog.inCategory(it).size } + this.entries.size
+        if (renderEmptyState(total, matching + files.size, searchText)) return
 
         PrefabCategory.entries.forEach { category ->
             val entries = PrefabCatalog.inCategory(category).filter {
@@ -68,6 +72,23 @@ class PrefabsTab(
             if (ImGui.collapsingHeader("$header###prefabs_${category.name}", ImGuiTreeNodeFlags.DefaultOpen)) {
                 renderGrid(category, entries)
             }
+        }
+        renderProjectPrefabs(files)
+    }
+
+    /** The project's own prefab files (Assets/Prefabs or anywhere else under Assets/). */
+    private fun renderProjectPrefabs(files: List<BrowserEntry>) {
+        if (files.isEmpty()) return
+        val header = "${Icons.FOLDER} ${stringManager.getString("lbl.asset_browser.project_prefabs")}"
+        if (!ImGui.collapsingHeader("$header###prefabs_project_files", ImGuiTreeNodeFlags.DefaultOpen)) return
+        val numColumns = 1.coerceAtLeast((ImGui.getContentRegionAvailX() / ASSET_BROWSER_ITEM_WIDTH).toInt())
+        if (ImGui.beginTable("##prefab_files", numColumns, ImGuiTableFlags.SizingFixedFit)) {
+            files.forEach { entry ->
+                ImGui.tableNextColumn()
+                fileTiles.renderFileItem(entry)
+                EngineBadges.render(stringManager, entry)
+            }
+            ImGui.endTable()
         }
     }
 
@@ -165,6 +186,6 @@ class PrefabsTab(
         engine.eventSystem.publish(ViewportAction.SpawnPrefab(data.type, material = data.material))
     }
 
-    override fun refreshAssets() {
-    }
+    /** Tiles of the project's prefab files: the same as every other file tab. */
+    private val fileTiles = FileListTab(com.pafoid.skate.engine.assets.AssetFolder.PREFABS, engine.assetsManager, stringManager)
 }

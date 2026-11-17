@@ -15,7 +15,8 @@ class AnimationsTab(
     stringManager: StringManager,
 ) : AssetBrowserTab(engine.assetsManager, stringManager) {
 
-    override fun renderFileItem(file: File) {
+    override fun renderFileItem(entry: BrowserEntry) {
+        val file = entry.file
         val size = 80f
         val padding = 5f
 
@@ -34,7 +35,7 @@ class AnimationsTab(
             }
             ImGui.separator()
             if (stringManager.tipped(ImGui.menuItem("${Icons.CHECK} ${stringManager.getString("context.asset_browser.apply_to_selected")}"), "context.asset_browser.apply_to_selected")) {
-                applyAnimationToSelected(file.path)
+                applyAnimationToSelected(entry.path)
             }
             ImGui.separator()
             if (stringManager.tipped(ImGui.menuItem("${Icons.FOLDER} ${stringManager.getString("context.asset_browser.show_in_folder")}"), "context.asset_browser.show_in_folder")) {
@@ -50,7 +51,7 @@ class AnimationsTab(
         ImGui.popID()
 
         if (ImGui.beginDragDropSource()) {
-            ImGui.setDragDropPayload("ANIMATION", animationOf(file))
+            ImGui.setDragDropPayload("ANIMATION", animationOf(entry.path))
             ImGui.text("${Icons.FILM} ${file.name}")
             ImGui.textColored(0.5f, 0.5f, 0.5f, 1f, stringManager.getString("lbl.asset_browser.drop_animation_hint"))
             ImGui.endDragDropSource()
@@ -62,8 +63,8 @@ class AnimationsTab(
     }
     
     /** The clip in [file], loaded on first use (the browser lists files that are not loaded yet). */
-    private fun animationOf(file: File) = assetsManager.getAnimation(file.path)
-        ?: runCatching { assetsManager.loadAnimationSync(file.path) }.getOrNull()
+    private fun animationOf(path: String) = assetsManager.getAnimation(path)
+        ?: runCatching { assetsManager.loadAnimationSync(path) }.getOrNull()
 
     private fun previewAnimation(file: File) {
         engine.logger.logEditor("Preview animation: ${file.name} (not yet implemented)")
@@ -73,6 +74,4 @@ class AnimationsTab(
         // Future enhancement: Apply animation to selected GameObject's Animator component
         engine.logger.logEditor("Apply animation to selected not yet implemented: $animationPath")
     }
-
-    override fun refreshAssets() = scan(BrowserAssetType.ANIMATION) { job -> engine.jobSystem.runIO { job() } }
 }

@@ -6,6 +6,13 @@ Le Navigateur de ressources est l'étagère des choses que vous pouvez mettre da
 
 Une **ressource** est un fichier utilisé par votre jeu. Le Navigateur de ressources liste les ressources du projet ouvert dans des onglets par type, avec un champ de recherche en haut. Contrairement à la fenêtre [Projet](project.md), il cache les fichiers qui ne sont pas des ressources, comme les fichiers de réglages.
 
+Il y a un onglet par type : **Modèles**, **Animations**, **Textures**, **Matériaux**, **Sons**, **Scripts**, **Shaders**, **Polices**, **Données**, **Prefabs** et **Objets**. Un onglet liste chaque fichier de son type où qu'il soit dans le dossier `Assets` du projet : un fichier déplacé apparaît toujours. Les images du propre dossier d'un modèle sont cachées de **Textures**, sauf si vous cochez **Afficher les textures des modèles**.
+
+Les ressources par défaut du moteur sont listées aussi, avec un badge :
+
+- **Moteur** : pas copiée dans le projet ; le jeu utilise le fichier du moteur.
+- **Copie du moteur** : une copie dans votre projet ; le jeu utilise votre copie. **Modifiée** veut dire que vous l'avez changée, **Mise à jour disponible** que le fichier du moteur a changé depuis la copie.
+
 Un **préfab** est un objet enregistré avec tous ses composants, que vous pouvez placer encore et encore.
 
 ## Comment l'utiliser
