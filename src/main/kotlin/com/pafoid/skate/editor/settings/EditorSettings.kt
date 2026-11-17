@@ -48,6 +48,14 @@ data class EditorSettings(
     var maximizeMode: MaximizeMode = MaximizeMode.FULL_EDITOR,
     /** Export wizard choices per project path (AST-29); build choices, kept out of the `.skateproject`. */
     var exportPreferences: Map<String, com.pafoid.skate.editor.project.ExportPreferences> = emptyMap(),
+    /**
+     * City from OpenStreetMap (AST-34, docs/design/AST-17.md §3.1): an optional raster tile template
+     * (`https://…/{z}/{x}/{y}.png`) replacing the OpenFreeMap vector map, with its mandatory attribution, and the
+     * Overpass endpoint. See `MapSettings.validate`.
+     */
+    var osmTileUrl: String? = null,
+    var osmTileAttribution: String? = null,
+    var overpassUrl: String = com.pafoid.skate.editor.assetimport.osm.OverpassClient.DEFAULT_ENDPOINT,
 ) {
 
     companion object {

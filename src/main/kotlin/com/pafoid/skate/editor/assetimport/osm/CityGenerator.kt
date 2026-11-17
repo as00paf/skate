@@ -93,13 +93,28 @@ class CityGenerator(
      * Rebuilds a city from its saved snapshot, offline (§3.1; Q-N4: after a physics backend change, or with other
      * options). Files that are no longer produced (e.g. collision models after a switch to Simple) are deleted.
      */
-    fun regenerate(snapshotFile: File, options: CityOptions, backend: PhysicsBackend): CityResult {
+    fun regenerate(snapshotFile: File, options: CityOptions? = null, backend: PhysicsBackend): CityResult {
         val meta = AssetMeta.read(snapshotFile) ?: error("${snapshotFile.name} has no .meta with the city area")
         val box = parseBox(meta.settings[META_BOX]) ?: error("${snapshotFile.name}: no area in its .meta")
         val name = meta.settings[META_NAME]?.ifBlank { null }
         val slug = snapshotFile.name.removeSuffix(SNAPSHOT_SUFFIX)
-        return build(slug, CityRequest(box, name, options), OsmParser.parse(snapshotFile.readText()), snapshotFile, backend)
+        val chosen = options ?: lastOptions(snapshotFile) ?: CityOptions()
+        return build(slug, CityRequest(box, name, chosen), OsmParser.parse(snapshotFile.readText()), snapshotFile, backend)
     }
+
+    /**
+     * Snapshots whose city was generated for another kind of collider than [backend] needs (boxes on Simple, mesh
+     * colliders on Bullet/Jolt): after a physics backend change the dialog offers to [regenerate] them (Q-N4).
+     */
+    fun outdatedCities(backend: PhysicsBackend): List<File> =
+        dataDir.listFiles().orEmpty().filter { it.isFile && it.name.endsWith(SNAPSHOT_SUFFIX) }.filter { snapshot ->
+            val built = AssetMeta.read(snapshot)?.settings?.get(META_BACKEND)?.let { runCatching { PhysicsBackend.valueOf(it) }.getOrNull() }
+            built != null && (built == PhysicsBackend.SIMPLE) != (backend == PhysicsBackend.SIMPLE)
+        }.sortedBy { it.name }
+
+    /** The options [snapshotFile]'s city was last generated with, or null. */
+    fun lastOptions(snapshotFile: File): CityOptions? =
+        AssetMeta.read(snapshotFile)?.settings?.get(META_OPTIONS)?.let { runCatching { optionsJson.decodeFromString(CityOptions.serializer(), it) }.getOrNull() }
 
     fun snapshotFile(slug: String): File = File(dataDir, slug + SNAPSHOT_SUFFIX)
 
@@ -154,6 +169,13 @@ class CityGenerator(
         val prefab = PrefabService(serializer).createAsset("$PREFAB_ID_PREFIX$slug", root)
         PrefabStore(serializer).save(prefab, prefabFile)
         ensureMeta(prefabFile)
+
+        AssetMeta.read(snapshotFile)?.let { meta ->
+            writeMeta(snapshotFile, meta.settings + mapOf(
+                META_BACKEND to backend.name,
+                META_OPTIONS to optionsJson.encodeToString(CityOptions.serializer(), request.options),
+            ))
+        }
 
         val files = listOf(prefabFile, snapshotFile) + written + materials.values
         val entry = ledgerEntry(slug, request, data, snapshotFile, files)
@@ -219,6 +241,9 @@ class CityGenerator(
         const val META_BOX = "osm.box"
         const val META_NAME = "osm.name"
         const val META_RETRIEVED = "osm.retrievedAt"
+        const val META_BACKEND = "osm.backend"
+        const val META_OPTIONS = "osm.options"
+        private val optionsJson = kotlinx.serialization.json.Json { ignoreUnknownKeys = true; encodeDefaults = true }
         const val ODBL_SPDX = "ODbL-1.0"
         const val ODBL_URL = "https://opendatacommons.org/licenses/odbl/1-0/"
         const val OSM_AUTHOR = "OpenStreetMap contributors"

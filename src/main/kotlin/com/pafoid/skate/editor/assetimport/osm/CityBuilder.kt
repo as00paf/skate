@@ -10,6 +10,7 @@ import kotlin.math.floor
 import kotlin.math.sqrt
 
 /** What to generate (the dialog's Include, Simplify and Colliders choices, AST-17 §3). */
+@kotlinx.serialization.Serializable
 data class CityOptions(
     val buildings: Boolean = true,
     val roads: Boolean = true,

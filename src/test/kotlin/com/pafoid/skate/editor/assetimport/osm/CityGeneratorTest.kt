@@ -132,7 +132,11 @@ class CityGeneratorTest {
         val wall = File(projectDir, "Assets/Materials/${first.slug}_wall.skmat")
         wall.writeText(wall.readText().replace("concrete_simple", "metal")) // a user's restyle
 
-        val second = generator().regenerate(first.snapshotFile, CityOptions(), PhysicsBackend.SIMPLE)
+        assertEquals(emptyList<File>(), generator().outdatedCities(PhysicsBackend.JOLT), "Jolt uses mesh colliders too")
+        assertEquals(listOf(first.snapshotFile), generator().outdatedCities(PhysicsBackend.SIMPLE))
+        val second = generator().regenerate(first.snapshotFile, backend = PhysicsBackend.SIMPLE)
+        assertEquals(emptyList<File>(), generator().outdatedCities(PhysicsBackend.SIMPLE))
+        assertEquals(CityOptions(), generator().lastOptions(first.snapshotFile), "previous options reused")
         assertEquals(first.slug, second.slug)
         assertEquals(roofGuid, AssetMeta.read(roof)!!.guid, "render models keep their GUIDs")
         assertTrue(File(projectDir, "Assets/Models/${first.slug}").listFiles()!!.none { it.name.contains(".collision.glb") },
