@@ -24,6 +24,7 @@ import org.lwjgl.vulkan.VkClearValue
 import org.lwjgl.vulkan.VkCommandBuffer
 import org.lwjgl.vulkan.VkGraphicsPipelineCreateInfo
 import org.lwjgl.vulkan.VkImageBlit
+import org.lwjgl.vulkan.VkImageCopy
 import org.lwjgl.vulkan.VkPipelineColorBlendAttachmentState
 import org.lwjgl.vulkan.VkPipelineColorBlendStateCreateInfo
 import org.lwjgl.vulkan.VkPipelineDepthStencilStateCreateInfo
@@ -101,6 +102,8 @@ internal class VkCommandList(
     private val uniformBuffers = arrayOfNulls<VkRhiBuffer>(16)
     private val uniformOffsets = LongArray(16)
     private var scissor: IntRect? = null
+    /** Scratch region of [copyDepth] (no allocation per frame). */
+    private val depthRegion = IntArray(6)
 
     override fun beginPass(target: RhiRenderTarget?, layer: Int, clear: ClearValues?, viewport: IntRect?) {
         check(!inPass) { "beginPass inside a pass" }
@@ -235,13 +238,17 @@ internal class VkCommandList(
     }
 
     /**
-     * Copies colour attachment 0 of [src] into [dst] or the back buffer with vkCmdBlitImage, outside a pass. Rects
-     * are bottom-left based (GL). Targets are stored in GL row order and the back buffer top row first
-     * ([VkOrientation]), so a blit to the back buffer mirrors rows and a target-to-target blit copies them as they are.
+     * Copies colour attachment 0 of [src] into [dst] or the back buffer with vkCmdBlitImage, and the depth attachment
+     * with [copyDepth] when [mask] asks for it, outside a pass. Rects are bottom-left based (GL). Targets are stored in
+     * GL row order and the back buffer top row first ([VkOrientation]), so a blit to the back buffer mirrors rows and a
+     * target-to-target blit copies them as they are.
      */
     override fun blit(src: RhiRenderTarget, dst: RhiRenderTarget?, srcRect: IntRect?, dstRect: IntRect?, filter: Filter, mask: BlitMask) {
         check(!inPass) { "blit inside a pass" }
-        // Colour only for now; the depth copy for the water pass is VK-14a (REN-29 task 14a)
+        if (mask.depth) {
+            require(dst != null && filter == Filter.NEAREST) { "Depth blits go target to target with NEAREST" }
+            copyDepth(src as VkRhiRenderTarget, dst as VkRhiRenderTarget, srcRect, dstRect)
+        }
         if (!mask.color) return
         val cmd = frames.commandBuffer()
         this.cmd = cmd
@@ -288,6 +295,32 @@ internal class VkCommandList(
             frames.swapchain!!.transition(cmd, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VkSwapchain.PRESENT_LAYOUT)
             frames.backbufferLayout = VkSwapchain.PRESENT_LAYOUT
         }
+    }
+
+    /**
+     * Depth half of [blit] (VK-08, the water pass's scene copy): vkCmdCopyImage, which needs only transfer support of
+     * the depth format (blitting depth is optional in Vulkan). Equal formats and sizes; rows copy as stored.
+     */
+    private fun copyDepth(src: VkRhiRenderTarget, dst: VkRhiRenderTarget, srcRect: IntRect?, dstRect: IntRect?) {
+        val from = checkNotNull(src.depth) { "Depth blit: the source target has no depth" }
+        val to = checkNotNull(dst.depth) { "Depth blit: the destination target has no depth" }
+        require(from.format == to.format) { "Depth blit needs equal depth formats" }
+        val r = VkOrientation.depthCopyRegion(srcRect, src.width, src.height, dstRect, dst.width, dst.height, depthRegion)
+        val cmd = frames.commandBuffer()
+        this.cmd = cmd
+        from.transition(cmd, from.sampledLayout, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, 0, 1)
+        to.transition(cmd, to.sampledLayout, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 0, 1)
+        stackPush().use { s ->
+            val region = VkImageCopy.calloc(1, s)
+            region[0].srcSubresource { it.aspectMask(VK_IMAGE_ASPECT_DEPTH_BIT).mipLevel(0).baseArrayLayer(0).layerCount(1) }
+            region[0].srcOffset().set(r[0], r[1], 0)
+            region[0].dstSubresource { it.aspectMask(VK_IMAGE_ASPECT_DEPTH_BIT).mipLevel(0).baseArrayLayer(0).layerCount(1) }
+            region[0].dstOffset().set(r[2], r[3], 0)
+            region[0].extent().set(r[4], r[5], 1)
+            vkCmdCopyImage(cmd, from.image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, to.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, region)
+        }
+        from.transition(cmd, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, from.sampledLayout, 0, 1)
+        to.transition(cmd, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, to.sampledLayout, 0, 1)
     }
 
     override fun beginTimer(timer: RhiTimer) {}

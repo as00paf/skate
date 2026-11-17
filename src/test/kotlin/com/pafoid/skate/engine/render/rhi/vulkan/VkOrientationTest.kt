@@ -1,10 +1,13 @@
 package com.pafoid.skate.engine.render.rhi.vulkan
 
+import com.pafoid.skate.engine.render.rhi.IntRect
+
 import org.junit.jupiter.api.Assertions.assertArrayEquals
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 
 /** VK-05 texture-orientation convention: GL-ordered targets, top-first back buffer. */
 class VkOrientationTest {
@@ -59,5 +62,23 @@ class VkOrientationTest {
         assertEquals(0, VkOrientation.readRow(0, 10, topFirst = false))
         assertEquals(9, VkOrientation.readRow(0, 10, topFirst = true))
         assertEquals(0, VkOrientation.readRow(9, 10, topFirst = true))
+    }
+
+    @Test
+    fun DepthCopyRegion_WholeTargetsCopyAsStored() {
+        val r = VkOrientation.depthCopyRegion(null, 640, 360, null, 640, 360)
+        assertArrayEquals(intArrayOf(0, 0, 0, 0, 640, 360), r)
+    }
+
+    @Test
+    fun DepthCopyRegion_SubRectsKeepGlRows() {
+        val r = VkOrientation.depthCopyRegion(IntRect(10, 20, 100, 50), 200, 100, IntRect(30, 40, 100, 50), 300, 300)
+        assertArrayEquals(intArrayOf(10, 20, 30, 40, 100, 50), r)
+    }
+
+    @Test
+    fun DepthCopyRegion_RejectsScalingAndOutOfBounds() {
+        assertThrows<IllegalArgumentException> { VkOrientation.depthCopyRegion(null, 640, 360, null, 320, 180) }
+        assertThrows<IllegalArgumentException> { VkOrientation.depthCopyRegion(IntRect(600, 0, 100, 10), 640, 360, null, 100, 10) }
     }
 }
