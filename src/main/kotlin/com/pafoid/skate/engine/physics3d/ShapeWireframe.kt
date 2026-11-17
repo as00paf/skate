@@ -18,6 +18,19 @@ internal object ShapeWireframe {
      * Returns the feature edges of [triangles] (9 floats per triangle) as 6 floats per segment: boundary edges and
      * creases between non-coplanar faces. Diagonals splitting flat faces and duplicate edges are left out.
      */
+    /** The grid lines of a heightfield (rows along X, then columns along Z), without the quad diagonals. */
+    fun heightfieldEdges(field: ColliderShape.Heightfield): FloatArray {
+        val n = field.samplesPerSide
+        val out = FloatArray(2 * n * (n - 1) * 6)
+        var k = 0
+        fun put(x: Int, z: Int) {
+            out[k++] = x * field.spacing; out[k++] = field.height(x, z); out[k++] = z * field.spacing
+        }
+        for (z in 0 until n) for (x in 0 until n - 1) { put(x, z); put(x + 1, z) }
+        for (x in 0 until n) for (z in 0 until n - 1) { put(x, z); put(x, z + 1) }
+        return out
+    }
+
     fun featureEdges(triangles: FloatArray): FloatArray {
         val edges = LinkedHashMap<Pair<Long, Long>, Edge>()
         for (t in 0 until triangles.size / 9) {

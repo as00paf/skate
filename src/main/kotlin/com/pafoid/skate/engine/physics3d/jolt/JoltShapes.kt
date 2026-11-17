@@ -5,6 +5,7 @@ import com.github.stephengold.joltjni.CapsuleShapeSettings
 import com.github.stephengold.joltjni.ConvexHullShapeSettings
 import com.github.stephengold.joltjni.CylinderShapeSettings
 import com.github.stephengold.joltjni.Float3
+import com.github.stephengold.joltjni.HeightFieldShapeSettings
 import com.github.stephengold.joltjni.IndexedTriangle
 import com.github.stephengold.joltjni.MeshShapeSettings
 import com.github.stephengold.joltjni.Quat
@@ -52,7 +53,19 @@ internal object JoltShapes {
         is ColliderShape.ConvexHull -> hull(shape.points)
         is ColliderShape.CompoundHull -> compound(shape.hulls.map { hull(it) to Vector3f() })
         is ColliderShape.TriangleMesh -> mesh(shape)
+        is ColliderShape.Heightfield -> heightfield(shape)
     }
+
+    /**
+     * Jolt's height field already has its origin at the corner sample and splits quads along the (x, z)–(x+1, z+1)
+     * diagonal. A sample count that is not a multiple of the block size (65 per terrain chunk) is padded by Jolt with
+     * no-collision samples; heights are quantized per block (a few mm at terrain ranges).
+     */
+    private fun heightfield(shape: ColliderShape.Heightfield): ShapeRefC = build(
+        HeightFieldShapeSettings(
+            shape.heights, Vec3(0f, 0f, 0f), Vec3(shape.spacing, 1f, shape.spacing), shape.samplesPerSide,
+        )
+    )
 
     private fun hull(points: List<Vector3f>): ShapeRefC =
         build(ConvexHullShapeSettings(*points.map { vec(it) }.toTypedArray()))

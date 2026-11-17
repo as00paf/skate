@@ -73,7 +73,7 @@ class SimplePhysics3D : IPhysics3D {
         val body = SimpleBody(
             mass = if (isStatic) 0f else rb.mass,
             radius = radius * max(scale.x, max(scale.y, scale.z)),
-            box = box,
+            surface = box,
         )
         body.isKinematic = rb.bodyType == BodyType.Kinematic && colliders.none { it.staticOnly }
         body.restitution = rb.restitution
@@ -130,6 +130,7 @@ class SimplePhysics3D : IPhysics3D {
         SimpleBody(0f, 0.01f).also { it.setLocation(location); register(it) }
 
     override fun createRigidBody(shape: ColliderShape, mass: Float): IRigidBodyHandle {
+        if (shape is ColliderShape.Heightfield) return SimpleBody(0f, boundingRadius(shape), HeightGrid(shape)).also { register(it) }
         val box = (shape as? ColliderShape.Box)?.takeIf { mass <= 0f }?.let { OrientedBox(it.halfExtents) }
         return SimpleBody(max(mass, 0f), boundingRadius(shape), box).also { register(it) }
     }
@@ -202,8 +203,8 @@ class SimplePhysics3D : IPhysics3D {
 
     /** Contact between [a] and [b] with the normal pointing from a to b, or null when they do not touch. */
     private fun contact(a: SimpleBody, b: SimpleBody): BoxContact? {
-        a.staticBox?.let { box -> return box.sphereContact(b.position, b.radius) }
-        b.staticBox?.let { box ->
+        a.staticSurface?.let { surface -> return surface.sphereContact(b.position, b.radius) }
+        b.staticSurface?.let { box ->
             val c = box.sphereContact(a.position, a.radius) ?: return null
             return BoxContact(c.normal.negate(), c.depth, c.point)
         }
@@ -269,7 +270,7 @@ class SimplePhysics3D : IPhysics3D {
     }
 
     private fun sweepBody(b: SimpleBody, radius: Float, from: Vector3f, dir: Vector3f, length: Float): PhysicsHit? {
-        b.staticBox?.let { box ->
+        b.staticSurface?.let { box ->
             val hit = box.raycast(from, dir, length, radius) ?: return null
             return PhysicsHit(b.owner, Vector3f(from).fma(hit.distance, dir), hit.normal, hit.distance / length)
         }
@@ -300,14 +301,16 @@ class SimplePhysics3D : IPhysics3D {
         is ColliderShape.ConvexHull -> shape.points.maxOfOrNull { it.length() } ?: 0.5f
         is ColliderShape.CompoundHull -> shape.hulls.flatten().maxOfOrNull { it.length() } ?: 0.5f
         is ColliderShape.TriangleMesh -> shape.vertices.maxOfOrNull { it.length() } ?: 0.5f
+        is ColliderShape.Heightfield -> Vector3f(shape.size, maxOf(-shape.minY, shape.maxY), shape.size).length()
     }
 }
 
 /**
- * A SimplePhysics3D body: a sphere of [radius], or, when static with a [box], that oriented box (PHY-25).
+ * A SimplePhysics3D body: a sphere of [radius], or, when static with a [surface], that oriented box (PHY-25) or
+ * heightfield (PHY-15).
  * [onLayoutChange] tells the world that the static broad phase must be rebuilt.
  */
-internal class SimpleBody(override val mass: Float, val radius: Float, private val box: OrientedBox? = null) : IRigidBodyHandle {
+internal class SimpleBody(override val mass: Float, val radius: Float, private val surface: StaticSurface? = null) : IRigidBodyHandle {
     var owner: GameObject? = null
     var id = 0
     var queryStamp = 0
@@ -337,12 +340,12 @@ internal class SimpleBody(override val mass: Float, val radius: Float, private v
     val isStatic get() = mass == 0f && !isKinematic
     val inverseMass get() = if (mass == 0f || isKinematic) 0f else 1f / mass
 
-    /** The oriented box used for contacts and queries; only while the body is static. */
-    val staticBox: OrientedBox? get() = box?.takeIf { isStatic }
+    /** The real geometry used for contacts and queries; only while the body is static. */
+    val staticSurface: StaticSurface? get() = surface?.takeIf { isStatic }
 
     /** World-space bounds for the broad phase. */
     fun bounds(min: Vector3f, max: Vector3f) {
-        staticBox?.let { return it.bounds(min, max) }
+        staticSurface?.let { return it.bounds(min, max) }
         min.set(position).sub(radius, radius, radius)
         max.set(position).add(radius, radius, radius)
     }
@@ -396,7 +399,7 @@ internal class SimpleBody(override val mass: Float, val radius: Float, private v
 
     /** Static bodies moved by hand (editor, teleport) must be re-filed in the broad phase. */
     private fun placed() {
-        box?.place(position, rotation)
+        surface?.place(position, rotation)
         if (isStatic) onLayoutChange?.invoke()
     }
 
