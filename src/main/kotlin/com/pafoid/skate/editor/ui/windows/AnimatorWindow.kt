@@ -255,6 +255,34 @@ class AnimatorWindow(
             }
             ImGui.popID()
         }
+        writtenByCharacter(doc.readOnly)
+    }
+
+    /**
+     * ANI-26: the parameters the preview character writes every frame (GPL-31,
+     * `CharacterAnimationDriver.writtenParameters`) that the controller does not declare yet, each with a one-click
+     * declare.
+     */
+    private fun writtenByCharacter(readOnly: Boolean) {
+        val written = controller.characterParameters()
+        if (written.isEmpty()) return
+        section(strings.getString("lbl.animator_window.written_by_character"))
+        wrapped { MImGui.textDisabled(strings.getString("lbl.animator_window.written_by_character_help")) }
+        ImGui.beginDisabled(readOnly)
+        for (p in written) {
+            ImGui.pushID("written:${p.name}")
+            val label = fit(strings.getString("btn.animator_window.declare"))
+            ImGui.alignTextToFramePadding()
+            textWrapped("${p.name} (${typeName(p.type)})")
+            Tooltips.always(strings.getString("lbl.animator_window.written_parameter.tooltip", p.name))
+            flow(buttonWidth(label))
+            if (strings.tipped(ImGui.button(label), "btn.animator_window.declare")) controller.declareCharacterParameter(p.name)
+            ImGui.popID()
+        }
+        if (written.size > 1) {
+            buttonRow("btn.animator_window.declare_all" to { controller.declareAllCharacterParameters() })
+        }
+        ImGui.endDisabled()
     }
 
     private fun defaultValue(p: ParameterDef, readOnly: Boolean) {
