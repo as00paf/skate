@@ -462,7 +462,8 @@ class ProjectLifecycleEndToEndTest {
         val sceneRefs = packed.scenesPath.flatMap { path -> Regex("\"(engine:[^\"]+)\"").findAll(packedText(path)).map { it.groupValues[1] }.toList() }.toSet()
         val packedPaths = entries.keys
         assertTrue(EngineDefaults.Models.JAMES in sceneRefs, "scenes reference engine defaults: $sceneRefs")
-        assertEquals(emptyList<String>(), (sceneRefs - packedPaths).sorted(), "engine defaults missing from the reference-mode pack")
+        // Built-in references (water material presets, AST-37) have no file: the game resolves them in code.
+        assertEquals(emptyList<String>(), (sceneRefs - packedPaths).filterNot(EngineDefaults::isBuiltIn).sorted(), "engine defaults missing from the reference-mode pack")
         val store = GameSettingsStore(GameSettings.fileIn(vkExportDir), logger)
         assertEquals(GraphicsBackend.VULKAN, store.settings.graphicsBackend, "game.settings.json")
         // GameMain's choice: no -D override, the player's settings file, then the packed project.
