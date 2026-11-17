@@ -2,6 +2,7 @@ package com.pafoid.skate.editor.ui.windows.assetBrowser
 
 import com.pafoid.skate.editor.imgui.Tooltips
 import com.pafoid.skate.editor.imgui.tipped
+import com.pafoid.skate.editor.imgui.label
 import com.pafoid.skate.editor.imgui.contextPopupId
 import com.pafoid.skate.editor.events.ViewportAction
 import com.pafoid.skate.editor.imgui.data.Icons
@@ -20,7 +21,20 @@ class TexturesTab(
     private val undoRedoManager: UndoRedoManager,
 ) : AssetBrowserTab(engine.assetsManager, stringManager) {
 
-    override fun renderFileItem(file: File) {
+    /** Images inside multi-file model folders show only on demand (AST-26 decision 8). */
+    private val showModelTextures = imgui.type.ImBoolean(false)
+
+    override fun visible(entries: List<BrowserEntry>): List<BrowserEntry> =
+        if (showModelTextures.get()) entries else entries.filterNot { it.modelTexture }
+
+    override fun renderToolbar() {
+        if (entries.none { it.modelTexture }) return
+        ImGui.checkbox(stringManager.label("lbl.asset_browser.show_model_textures"), showModelTextures)
+        Tooltips.text(stringManager.getString("lbl.asset_browser.show_model_textures.tooltip"))
+    }
+
+    override fun renderFileItem(entry: BrowserEntry) {
+        val file = entry.file
         val size = 80f
         val padding = 5f
 
@@ -38,7 +52,7 @@ class TexturesTab(
         // Context menu on right-click
         if (ImGui.beginPopupContextItem(contextPopupId("texture"))) {
             if (stringManager.tipped(ImGui.menuItem("${Icons.CHECK} ${stringManager.getString("context.asset_browser.apply_to_selected")}"), "context.asset_browser.apply_to_selected")) {
-                applyTextureToSelected(file.path)
+                applyTextureToSelected(entry.path)
             }
             ImGui.separator()
             if (stringManager.tipped(ImGui.menuItem("${Icons.EXTERNAL_LINK} ${stringManager.getString("context.asset_browser.open_external")}"), "context.asset_browser.open_external")) {
@@ -62,7 +76,7 @@ class TexturesTab(
         ImGui.popID()
 
         if (ImGui.beginDragDropSource()) {
-            ImGui.setDragDropPayload("TEXTURE", file.path)
+            ImGui.setDragDropPayload("TEXTURE", entry.path)
             thumb?.let { ImGui.image(it.texId, size * 1.5f, size * 1.5f, 0f, 0f, 1f, 1f) }
             ImGui.text(file.name)
             thumb?.let { ImGui.textColored(0.7f, 0.7f, 0.7f, 1f, "${it.sourceWidth}x${it.sourceHeight}") }
@@ -104,8 +118,6 @@ class TexturesTab(
     }
 
     override fun onProjectChanged() = thumbnails.clear()
-
-    override fun refreshAssets() = scan(BrowserAssetType.TEXTURE) { job -> engine.jobSystem.runIO { job() } }
 
     private companion object {
         /** Small (≤128 px, no mips) uploads: a handful per frame keeps the frame time flat. */

@@ -16,6 +16,7 @@ import com.pafoid.skate.engine.animation.graph.ParameterType
 import com.pafoid.skate.engine.animation.graph.StateDef
 import com.pafoid.skate.engine.animation.graph.TransitionCondition
 import com.pafoid.skate.engine.animation.graph.TransitionDef
+import com.pafoid.skate.engine.addComponent
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.data.models.animations.Animation
 import com.pafoid.skate.engine.assets.data.models.animations.Bone
@@ -204,6 +205,69 @@ class AnimatorWindowBlendTreeRenderTest {
         frames(window)
         controller.select("walk"); frames(window)
         assertEquals(before, undo.getUndoCount(), "drawing alone never edits")
+    }
+}
+
+/** ANI-26: the "Written by the character" list renders for a skater preview and empties once declared. */
+class AnimatorWindowWrittenParametersRenderTest {
+    @TempDir
+    lateinit var dir: File
+
+    @BeforeEach
+    fun setup() {
+        ImGui.createContext()
+        val io = ImGui.getIO()
+        io.iniFilename = null
+        io.loadFonts(javaClass.getResourceAsStream(Assets.Fonts.FONTS_FILE)!!.readAllBytes())
+        io.setDisplaySize(1600f, 1000f)
+        io.deltaTime = 1f / 60f
+        ImGuiStyleManager.invalidate()
+        ImGuiStyleManager.library = ThemeLibrary.load(File(Assets.Themes.DIR))
+        ImGuiStyleManager.sync("dark")
+    }
+
+    @AfterEach
+    fun teardown() {
+        ImGuiStyleManager.library = ThemeLibrary(emptyList())
+        ImGui.destroyContext()
+    }
+
+    @Test
+    fun WrittenParameters_Render() {
+        val strings = mockk<StringManager>(relaxed = true)
+        every { strings.getString(any()) } answers { firstArg() }
+        every { strings.getString(any(), *anyVararg()) } answers { firstArg() }
+        val engine = mockk<Engine>(relaxed = true) { every { stringManager } returns strings }
+        val projects = mockk<ProjectManager>(relaxed = true) { every { getProjectDirectory() } returns dir }
+        val file = File(dir, "c.controller.json").apply { writeText(AnimationControllerAsset("c", "idle", listOf(StateDef("idle", ""))).toJson()) }
+        val undo = UndoRedoManager(mockk(relaxed = true), mockk(relaxed = true))
+        val controller = AnimatorWindowController(
+            execute = { undo.executeCommand(it) },
+            resolve = { p -> File(p).takeIf { it.isFile }?.let { ResolvedController(p, it, it.readText()) } },
+        )
+        com.pafoid.skate.game.player.SkateGameplay.register()
+        val skater = Animator()
+        com.pafoid.skate.engine.ecs.GameObject("Skater").also {
+            it.addComponent(skater)
+            it.addComponent(com.pafoid.skate.engine.ecs.components.PlayerController(com.pafoid.skate.game.player.SkateBehavior.ID, ""))
+        }
+        controller.preview = skater
+        val window = AnimatorWindow(engine, mockk<Editor>(relaxed = true), projects, controller).also { it.isOpen.set(true) }
+        assertTrue(controller.open(file.absolutePath))
+        repeat(2) { frame(window) }
+        assertTrue(controller.characterParameters().isNotEmpty())
+        assertTrue(controller.declareAllCharacterParameters())
+        repeat(2) { frame(window) }
+        assertTrue(controller.characterParameters().isEmpty())
+        assertEquals(1, undo.getUndoCount(), "drawing alone never edits")
+    }
+
+    private fun frame(window: AnimatorWindow) {
+        ImGui.newFrame()
+        ImGui.setNextWindowPos(20f, 20f)
+        ImGui.setNextWindowSize(1400f, 700f)
+        window.imgui()
+        ImGui.render()
     }
 }
 

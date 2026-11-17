@@ -2,7 +2,8 @@ package com.pafoid.skate.engine.assets
 
 import com.pafoid.skate.editor.data.FileType
 import com.pafoid.skate.editor.systems.FileTypeResolver
-import com.pafoid.skate.editor.ui.windows.assetBrowser.BrowserAssetType
+import com.pafoid.skate.editor.ui.windows.assetBrowser.AssetDiscovery
+import com.pafoid.skate.engine.assets.AssetFolder
 import com.pafoid.skate.engine.animation.edit.SkAnimFormat
 import com.pafoid.skate.engine.animation.edit.SkClip
 import com.pafoid.skate.engine.animation.edit.SkKey
@@ -35,8 +36,8 @@ class SkAnimAssetTypeTest {
         val clip = file("Assets/anims/wave.skanim", clipText)
         assertTrue("skanim" in FileType.ANIMATION.extensions)
         assertEquals(FileType.ANIMATION, FileTypeResolver.resolve(clip))
-        assertTrue(BrowserAssetType.ANIMATION.matches(clip))
-        assertTrue(BrowserAssetType.ANIMATION.matches(File("Wave.SKANIM")), "extension match is case-insensitive")
+        assertEquals(AssetFolder.ANIMATIONS, AssetDiscovery.folderOf(clip))
+        assertEquals(AssetFolder.ANIMATIONS, AssetDiscovery.folderOf(File("Wave.SKANIM")), "extension match is case-insensitive")
     }
 
     @Test

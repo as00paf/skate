@@ -78,11 +78,14 @@ class TerrainMeshTest {
     fun Stream_CarriesHeightsAndNormals_SkirtsCopyTheirEdge() {
         val c = chunk { i, j -> i.toFloat() + 10f * j }
         val s = mesh.stream(c)
-        assertEquals(c.height(3, 2), s[mesh.gridIndex(3, 2) * 3])
+        val f = TerrainMeshBuilder.STREAM_FLOATS
+        assertEquals(c.height(3, 2), s[mesh.gridIndex(3, 2) * f])
         val bottomSkirt = (q + 1) * (q + 1) + 3
-        assertEquals(c.height(3, 0), s[bottomSkirt * 3])
+        assertEquals(c.height(3, 0), s[bottomSkirt * f])
         val n = c.normal(3, 2, Vector3f())
-        assertEquals(n.x, s[mesh.gridIndex(3, 2) * 3 + 1]); assertEquals(n.z, s[mesh.gridIndex(3, 2) * 3 + 2])
+        assertEquals(n.x, s[mesh.gridIndex(3, 2) * f + 1]); assertEquals(n.z, s[mesh.gridIndex(3, 2) * f + 2])
+        c.biomeIds = ByteArray((q + 1) * (q + 1)) { 2 }
+        assertEquals(2f, mesh.stream(c)[mesh.gridIndex(3, 2) * f + 3])
     }
 
     @Test
@@ -144,7 +147,7 @@ class TerrainMeshTest {
         val (scene, terrain) = sceneWithTerrain()
         val frame = SceneFrame(LightingUniformsLoader())
         val shader = mockk<Shader>(relaxed = true)
-        val renderer = TerrainRenderer { device }
+        val renderer = TerrainRenderer(device = { device })
         val fb = FrameBuffer(640, 360, msaaSamples = 0) { device }.apply { initialize() }
         val pass = TerrainPass({ shader }, { shader }, { shader }, renderer, fb, frame, cameraManager)
         frame.begin(scene, camera, Vector3f(0f, 40f, 90f), null)
@@ -169,7 +172,7 @@ class TerrainMeshTest {
     fun Pass_FeedsPickingAndShadows() {
         val (scene, _) = sceneWithTerrain()
         val shader = mockk<Shader>(relaxed = true)
-        val renderer = TerrainRenderer { device }
+        val renderer = TerrainRenderer(device = { device })
         val pass = TerrainPass({ shader }, { shader }, { shader }, renderer, mockk(relaxed = true), SceneFrame(LightingUniformsLoader()), cameraManager)
         pass.drawPicking(scene)
         verify(exactly = 1) { shader.uploadFloat(Uniforms.ENTITY_ID, any()) }
@@ -185,7 +188,7 @@ class TerrainMeshTest {
 
     @Test
     fun Pass_NoTerrain_DoesNothing() {
-        val renderer = TerrainRenderer { device }
+        val renderer = TerrainRenderer(device = { device })
         val frame = SceneFrame(LightingUniformsLoader())
         frame.begin(Scene(), camera, Vector3f(), null)
         device.events.clear()

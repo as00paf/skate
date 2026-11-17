@@ -45,6 +45,12 @@ object PackBuilder {
     private val alreadyCompressed = setOf("png", "jpg", "jpeg", "gif", "ogg", "mp3", "glb")
 
     /**
+     * `.skterrain` region files (AST-36, REN-28 §15.6) are stored raw: their chunk records are already deflated, and
+     * a raw entry lets a chunk be read at `entry.position + record.offset` once the pack has random access.
+     */
+    fun isTerrainRegion(path: String): Boolean = Regex("""\.skterrain/regions/[^/]+\.bin$""").containsMatchIn(path.replace('\\', '/'))
+
+    /**
      * Lays [inputs] out back to back. Entries are gzipped when that makes them clearly smaller. Identical inputs
      * (same SHA-256) are stored once: later entries reuse the first one's position, size and compression, so readers
      * need no change (AST-26 §4.6).
@@ -60,7 +66,7 @@ object PackBuilder {
         val entries = inputs.map { input ->
             val hash = sha256(input.bytes)
             stored[hash]?.let { first -> return@map first.copy(path = input.relativePath, type = input.type) }
-            val gz = if (compress && input.relativePath.substringAfterLast('.', "").lowercase() !in alreadyCompressed)
+            val gz = if (compress && input.relativePath.substringAfterLast('.', "").lowercase() !in alreadyCompressed && !isTerrainRegion(input.relativePath))
                 gzip(input.bytes).takeIf { it.size < input.bytes.size * 0.9 } else null
             val bytes = gz ?: input.bytes
             val entry = ManifestEntry(input.relativePath, input.type, out.size(), bytes.size, input.bytes.size, gz != null, hash)

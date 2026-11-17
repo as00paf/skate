@@ -6,6 +6,13 @@ The Asset Browser is the shelf of things you can put in your scenes: 3D models, 
 
 An **asset** is a file your game uses. The Asset Browser lists the assets of the open project in tabs by type and has a search box at the top. Unlike the [Project](project.md) window, it hides files that are not assets, such as settings files.
 
+There is one tab per type: **Models**, **Animations**, **Textures**, **Materials**, **Sounds**, **Scripts**, **Shaders**, **Fonts**, **Data**, **Prefabs** and **Items**. A tab lists every file of its type wherever it is in the project's `Assets` folder, so a file you moved still shows. Images inside a model's own folder are hidden from **Textures** unless you tick **Show model textures**.
+
+The engine's default assets are listed too, with a badge:
+
+- **Engine**: not copied into the project; the game uses the engine's file.
+- **Engine copy**: a copy in your project; the game uses your copy. **Modified** means you changed it, **Update available** means the engine's file changed since it was copied.
+
 A **prefab** is a saved object, with all its components, that you can place again and again.
 
 ## How to use it

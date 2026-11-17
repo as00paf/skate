@@ -7,7 +7,7 @@ import kotlin.math.abs
 /**
  * Terrain chunk geometry (REN-28 §4.1), pure. Every chunk of a terrain shares one grid vertex buffer ([gridVertices]:
  * sample column i, row j and a skirt flag) and the LOD index buffers ([lodIndices], vertex step 2^lod, skirts included);
- * a chunk only adds its stream ([stream]: height, normal x, normal z per vertex). Quads split along the
+ * a chunk only adds its stream ([stream]: height, normal x, normal z, dominant biome per vertex). Quads split along the
  * (i, j)–(i+1, j+1) diagonal, as `ColliderShape.Heightfield` does, so LOD 0 is exactly the collided surface.
  */
 class TerrainMeshBuilder(val chunkQuads: Int) {
@@ -75,13 +75,16 @@ class TerrainMeshBuilder(val chunkQuads: Int) {
         out += listOf(a, sa, b, b, sa, sb)
     }
 
-    /** The chunk's per-vertex stream (height, normal x, normal z), skirt copies included; into [out] if it fits. */
+    /** The chunk's per-vertex stream (height, normal x, normal z, biome id), skirt copies included; into [out]. */
     fun stream(chunk: TerrainChunkData, out: FloatArray = FloatArray(vertexCount * STREAM_FLOATS)): FloatArray {
         require(chunk.chunkQuads == chunkQuads)
         val normal = Vector3f()
+        val ids = chunk.biomeIds
         fun write(v: Int, i: Int, j: Int) {
             chunk.normal(i, j, normal)
-            out[v * 3] = chunk.height(i, j); out[v * 3 + 1] = normal.x; out[v * 3 + 2] = normal.z
+            val o = v * STREAM_FLOATS
+            out[o] = chunk.height(i, j); out[o + 1] = normal.x; out[o + 2] = normal.z
+            out[o + 3] = ids?.let { (it[j * n + i].toInt() and 255).toFloat() } ?: 0f
         }
         for (j in 0 until n) for (i in 0 until n) write(gridIndex(i, j), i, j)
         for (k in 0 until n) {
@@ -116,6 +119,6 @@ class TerrainMeshBuilder(val chunkQuads: Int) {
 
     companion object {
         const val MAX_LODS = 4
-        const val STREAM_FLOATS = 3
+        const val STREAM_FLOATS = 4
     }
 }

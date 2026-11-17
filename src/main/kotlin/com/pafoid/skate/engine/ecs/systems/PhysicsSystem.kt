@@ -4,7 +4,9 @@ import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.components.EnvironmentComponent
 import com.pafoid.skate.engine.ecs.components.JointComponent
+import com.pafoid.skate.engine.ecs.components.TerrainComponent
 import com.pafoid.skate.engine.ecs.components.WaterComponent
+import com.pafoid.skate.engine.physics3d.HeightfieldCollider3D
 import com.pafoid.skate.engine.environment.WaterQueries
 import com.pafoid.skate.engine.ecs.components.PlayerController
 import com.pafoid.skate.engine.ecs.components.RagdollComponent
@@ -62,6 +64,10 @@ class PhysicsSystem(
     private val activeRagdolls: MutableSet<RagdollComponent> = Collections.newSetFromMap(IdentityHashMap())
     private val waters = query(WaterComponent::class, Transform::class)
     private val buoyancy = BuoyancySystem(eventSystem)
+    private val terrains = query(TerrainComponent::class, Transform::class)
+    /** One heightfield collider per terrain (PHY-26); identity-keyed like the joints. */
+    private val terrainColliders = IdentityHashMap<TerrainComponent, HeightfieldCollider3D>()
+    private val terrainPosition = Vector3f()
 
     /**
      * Water lookups (surface, flow, depth, capsule submersion) for gameplay and audio, refreshed every fixed step
@@ -90,6 +96,9 @@ class PhysicsSystem(
         super.init(scene)
         releaseObjectsOutsideScene()
         buoyancy.reset()
+        // Rebuilt from the loaded scene's terrains on the next sync
+        terrainColliders.values.forEach { it.clear() }
+        terrainColliders.clear()
         // Adds new bodies; bodies kept from a previous load restart from the loaded pose
         bodies.forEach { teleport(it) }
         simulating = false
@@ -217,8 +226,31 @@ class PhysicsSystem(
             body.rawBody?.let { state.restartAt(it) }
         }
         if (stateList.size != liveCount) removeStaleBodies(stamp)
+        syncTerrainColliders(waitForStableEdits = true)
         publishCollisionMeshFailures()
     }
+
+    /**
+     * Keeps one [HeightfieldCollider3D] per terrain in line with its chunks and position. In edit mode a sculpt
+     * stroke's colliders are rebuilt once the stroke stops changing the terrain.
+     */
+    private fun syncTerrainColliders(waitForStableEdits: Boolean) {
+        var live = 0
+        terrains.forEach { go ->
+            val terrain = go.getComponent<TerrainComponent>() ?: return@forEach
+            val transform = go.getComponent<Transform>() ?: return@forEach
+            live++
+            transform.worldMatrix.getTranslation(terrainPosition)
+            terrainColliders.getOrPut(terrain) { HeightfieldCollider3D(physics3d) }.sync(terrain, terrainPosition, waitForStableEdits)
+        }
+        if (live != terrainColliders.size) {
+            val current = terrains.entities.mapNotNull { it.getComponent<TerrainComponent>() }
+            terrainColliders.keys.filter { t -> current.none { it === t } }.forEach { terrainColliders.remove(it)?.clear() }
+        }
+    }
+
+    /** Heightfield bodies currently in the world for all terrains (tests, stats). */
+    val terrainColliderBodyCount: Int get() = terrainColliders.values.sumOf { it.bodyCount }
 
     /** Reports `meshRef` models that could not be loaded (each once; see [CollisionMeshes]). */
     private fun publishCollisionMeshFailures() {
@@ -255,6 +287,7 @@ class PhysicsSystem(
             val body = go.getComponent<RigidBody3D>() ?: return@forEach
             vehicleSolver.step(vehicle, body, fixedDt)
         }
+        syncTerrainColliders(waitForStableEdits = false)
         stepWater(fixedDt)
         physics3d.step(fixedDt)
 

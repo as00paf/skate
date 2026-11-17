@@ -16,9 +16,18 @@ abstract class AssetBrowserTab(
     protected val assetsManager: AssetsManager,
     protected val stringManager: StringManager
 ) {
-    /** Listed files; replaced whole by [refreshAssets] on an IO worker, so the UI never iterates a list being filled. */
+    /**
+     * Listed entries (EDT-69): set whole by the window after its one scan of the assets on an IO worker
+     * ([AssetBrowserListing]), so the UI never iterates a list being filled.
+     */
     @Volatile
-    protected var items: List<File> = emptyList()
+    var entries: List<BrowserEntry> = emptyList()
+
+    /** Set by the window: asks for one rescan of every tab (several requests in a frame make one scan). */
+    var requestRefresh: () -> Unit = {}
+
+    /** Entries shown before the search: every entry by default; the Textures tab hides model textures. */
+    protected open fun visible(entries: List<BrowserEntry>): List<BrowserEntry> = entries
 
     private var scannedProject: File? = null
     private var scanned = false
@@ -28,13 +37,16 @@ abstract class AssetBrowserTab(
         refreshOnProjectChange()
         pumpPreviews()
         content(label) {
-            val files = items.filter { it.name.contains(searchText.get(), ignoreCase = true) }
-            if (renderEmptyState(items.size, files.size, searchText)) return@content
+            renderToolbar()
+            val listed = visible(entries)
+            val shown = listed.filter { it.name.contains(searchText.get(), ignoreCase = true) }
+            if (renderEmptyState(listed.size, shown.size, searchText)) return@content
             val numColumns = max(1, (ImGui.getContentRegionAvailX() / ASSET_BROWSER_ITEM_WIDTH).toInt())
             if (ImGui.beginTable("##${label}_table", numColumns, ImGuiTableFlags.SizingFixedFit)) {
-                for (file in files) {
+                for (entry in shown) {
                     ImGui.tableNextColumn()
-                    renderFileItem(file)
+                    renderFileItem(entry)
+                    EngineBadges.render(stringManager, entry)
                 }
                 ImGui.endTable()
             }
@@ -88,11 +100,8 @@ abstract class AssetBrowserTab(
     /** Drops cached previews of the previous project. */
     protected open fun onProjectChanged() {}
 
-    /** Lists the [type] files of the open project (or the engine assets) on an IO worker. */
-    protected fun scan(type: BrowserAssetType, runIO: (() -> Unit) -> Unit) {
-        val root = AssetDiscovery.root(assetsManager.paths.projectRoot)
-        runIO { items = AssetDiscovery.discover(root, type) }
-    }
+    /** Filters above the grid (the Textures tab's "Show model textures"). */
+    protected open fun renderToolbar() {}
 
     /**
      * Empty state (EDT-10) when the tab has no assets, or none matching the search; true when it was shown and the
@@ -104,7 +113,9 @@ abstract class AssetBrowserTab(
         BrowserEmptyState.NO_RESULTS -> { EmptyState.noResults(stringManager) { searchText.set("") }; true }
     }
 
-    open fun renderFileItem(file: File) {}
-    open fun refreshAssets() {}
+    open fun renderFileItem(entry: BrowserEntry) {}
+
+    /** Rescans: every tab, once ([requestRefresh]). */
+    open fun refreshAssets() = requestRefresh()
 
 }
