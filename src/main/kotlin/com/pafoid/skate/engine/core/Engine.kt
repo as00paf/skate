@@ -177,7 +177,7 @@ class Engine {
             AudioSystem(audioEngine, logger, assetsManager, cameraManager, assetsManager.paths::localPath),
             EnvironmentSystem(),
             EnvironmentClockSystem(), // wind/water clock, before physics (REN-29 §5.3)
-            TerrainSystem(), // builds terrain chunks before physics and rendering read them (REN-28 task 3)
+            TerrainSystem({ logger.log(it, LoggerService.LogLevel.ERROR) }), // builds terrain chunks before physics and rendering read them (REN-28 task 3)
             physicsSystem,
             PhysicsFrameSystem(physicsSystem),
             DayNightCycleSystem(),
