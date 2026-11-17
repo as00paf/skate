@@ -53,6 +53,11 @@ object VertexLayouts {
         VertexBinding(2 * Float.SIZE_BYTES, listOf(VertexAttribute(0, AttributeType.VEC2, 0))),
     ))
 
+    /** Water surface grids: water-local position, y = 0 on the surface and -1 on skirts (`water`, REN-29 §6.1). */
+    val WATER = VertexLayoutDesc(listOf(
+        VertexBinding(3 * Float.SIZE_BYTES, listOf(VertexAttribute(0, AttributeType.VEC3, 0))),
+    ))
+
     /** Floats per particle instance: position+size, colour, uv rect. */
     const val PARTICLE_FLOATS_PER_INSTANCE = 12
 

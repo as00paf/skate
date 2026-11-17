@@ -39,6 +39,10 @@ class PureLogicIsolationGuardTest {
             "engine/audio/VoiceManager.kt",
             "engine/ecs/ComponentQuery.kt",
             "engine/ecs/systems/SystemOrdering.kt",
+            // REN-29: wind and water math, sampled by gameplay, physics and audio without the renderer
+            "engine/environment/WindField.kt",
+            "engine/environment/EnvironmentClock.kt",
+            "engine/environment/WindCycle.kt",
         )
         val forbidden = listOf("import org.lwjgl.", "import com.pafoid.skate.editor.", "import imgui.")
         val violations = pureFiles.flatMap { f ->

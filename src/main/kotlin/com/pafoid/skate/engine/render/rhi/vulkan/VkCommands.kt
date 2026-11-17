@@ -2,6 +2,7 @@ package com.pafoid.skate.engine.render.rhi.vulkan
 
 import com.pafoid.skate.engine.render.EngineStats
 import com.pafoid.skate.engine.render.rhi.ClearValues
+import com.pafoid.skate.engine.render.rhi.BlitMask
 import com.pafoid.skate.engine.render.rhi.Filter
 import com.pafoid.skate.engine.render.rhi.IntRect
 import com.pafoid.skate.engine.render.rhi.PipelineDesc
@@ -238,8 +239,10 @@ internal class VkCommandList(
      * are bottom-left based (GL). Targets are stored in GL row order and the back buffer top row first
      * ([VkOrientation]), so a blit to the back buffer mirrors rows and a target-to-target blit copies them as they are.
      */
-    override fun blit(src: RhiRenderTarget, dst: RhiRenderTarget?, srcRect: IntRect?, dstRect: IntRect?, filter: Filter) {
+    override fun blit(src: RhiRenderTarget, dst: RhiRenderTarget?, srcRect: IntRect?, dstRect: IntRect?, filter: Filter, mask: BlitMask) {
         check(!inPass) { "blit inside a pass" }
+        // Colour only for now; the depth copy for the water pass is VK-14a (REN-29 task 14a)
+        if (!mask.color) return
         val cmd = frames.commandBuffer()
         this.cmd = cmd
         val from = (src as VkRhiRenderTarget).colors[0]

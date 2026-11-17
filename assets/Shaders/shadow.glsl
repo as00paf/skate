@@ -5,6 +5,10 @@ layout (location=0) in vec3 aPos;
 layout (location=1) in vec2 aTexCoords;
 layout (location=6) in ivec4 aJoints;
 layout (location=7) in vec4 aWeights;
+#ifdef WIND
+layout (location=4) in vec4 aColor;
+#include "wind.glsl"
+#endif
 
 uniform mat4 uModelMatrix;
 uniform mat4 uLightSpaceMatrix;
@@ -29,7 +33,11 @@ void main()
     }
 
     mat4 worldMatrix = uModelMatrix * skinMatrix;
-    gl_Position = uLightSpaceMatrix * worldMatrix * vec4(aPos, 1.0);
+    vec4 worldPos = worldMatrix * vec4(aPos, 1.0);
+#ifdef WIND
+    worldPos.xyz += windDisplacement(worldPos.xyz, uModelMatrix[3].xyz, aPos.y, aColor);
+#endif
+    gl_Position = uLightSpaceMatrix * worldPos;
 
     fTexCoords = aTexCoords;
 }

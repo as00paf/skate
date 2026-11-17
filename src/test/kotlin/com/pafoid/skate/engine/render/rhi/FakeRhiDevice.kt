@@ -161,8 +161,8 @@ class FakeRhiDevice : RhiDevice {
 
         override fun endPass() { events += "end" }
 
-        override fun blit(src: RhiRenderTarget, dst: RhiRenderTarget?, srcRect: IntRect?, dstRect: IntRect?, filter: Filter) {
-            events += "blit ${(src as Target).name} -> ${(dst as Target?)?.name ?: "backbuffer"} $filter"
+        override fun blit(src: RhiRenderTarget, dst: RhiRenderTarget?, srcRect: IntRect?, dstRect: IntRect?, filter: Filter, mask: BlitMask) {
+            events += "blit ${(src as Target).name} -> ${(dst as Target?)?.name ?: "backbuffer"} $filter" + if (mask == BlitMask.COLOR) "" else " $mask"
         }
     }
 }

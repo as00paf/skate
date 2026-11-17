@@ -54,7 +54,9 @@ class PickingPass(
     private val renderer2D: Renderer2D,
     private val pickingShader: Shader,
     private val modelRenderer: ModelRenderer,
-    private val cameraManager: CameraManager
+    private val cameraManager: CameraManager,
+    /** Extra id draws after the meshes, into the bound picking target (water surfaces, REN-29 §6.6). */
+    private val extraPicking: (Scene) -> Unit = {},
 ) : BaseRenderPass() {
 
     override val name: String = "PickingPass"
@@ -102,6 +104,7 @@ class PickingPass(
         renderer2D.bindCamera(cameraManager.camera)
         render2D(scene, pickingShader)
         render3DPicking(scene)
+        extraPicking(scene)
         pickingRenderer.draw()
 
         cmd.endPass()

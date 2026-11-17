@@ -219,3 +219,10 @@ data class PipelineDesc(
     val layout: RhiVertexLayout,
     val state: PipelineState = PipelineState(),
 )
+
+/** Attachments a [RhiCommandList.blit] copies (REN-29 task 7). Depth needs equal sizes and NEAREST filtering. */
+enum class BlitMask(val color: Boolean, val depth: Boolean) {
+    COLOR(true, false),
+    DEPTH(false, true),
+    COLOR_DEPTH(true, true),
+}

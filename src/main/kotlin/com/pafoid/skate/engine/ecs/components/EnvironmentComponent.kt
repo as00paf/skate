@@ -4,6 +4,9 @@ import com.pafoid.skate.engine.assets.data.Texture
 import com.pafoid.skate.engine.ecs.config.EnvironmentPreset
 import com.pafoid.skate.engine.ecs.config.FogCycle
 import com.pafoid.skate.engine.ecs.config.FogMode
+import com.pafoid.skate.engine.environment.EnvironmentClock
+import com.pafoid.skate.engine.environment.WindField
+import kotlinx.serialization.Transient
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
 import org.joml.Vector3f
@@ -46,7 +49,31 @@ data class EnvironmentComponent(
     var skyLightIntensity: Float = DEFAULT_SKY_LIGHT_INTENSITY,
     /** Name of a runtime UI button that cycles the fog demo steps ([FogCycle]) when clicked in Play; empty = none. */
     @GameObjectRef var fogCycleButton: String = "",
+    /** Wind (REN-29 §3.1): yaw in degrees the wind blows towards (0° = +Z, 90° = +X). */
+    var windDirection: Float = DEFAULT_WIND_DIRECTION,
+    /** Wind speed in m/s; 0 disables wind. Presets: calm 0.5, breeze 3, strong 8, storm 16 ([WindField]). */
+    var windSpeed: Float = DEFAULT_WIND_SPEED,
+    /** Gust amplitude relative to [windSpeed]. */
+    var windGustStrength: Float = DEFAULT_WIND_GUST_STRENGTH,
+    /** Gust front wavelength in metres; gusts travel along the wind at [windSpeed]. */
+    var windGustScale: Float = DEFAULT_WIND_GUST_SCALE,
+    /** High-frequency flutter weight (leaves, grass tips). */
+    var windTurbulence: Float = DEFAULT_WIND_TURBULENCE,
+    /** Wind and waves move in edit mode (preview); off freezes them at time 0. */
+    var animateInEditor: Boolean = true,
+    /** Name of a runtime UI button that cycles the wind presets (calm, breeze, storm) when clicked in Play; empty = none. */
+    @GameObjectRef var windCycleButton: String = "",
 ) : SceneComponent() {
+
+    /** Not serialized: the animation clock of wind and water ([EnvironmentClock]), stepped by `EnvironmentClockSystem`. */
+    @Transient
+    val runtime: EnvironmentClock = EnvironmentClock()
+
+    @Transient
+    private val windField = WindField()
+
+    /** This environment's wind as a [WindField] (one instance, refreshed from the fields on each call). */
+    fun wind(): WindField = windField.set(windDirection, windSpeed, windGustStrength, windGustScale, windTurbulence)
 
     override fun reset() {
         skyColor.set(0.6f, 0.7f, 0.9f)
@@ -66,6 +93,13 @@ data class EnvironmentComponent(
         ambientIntensity = DEFAULT_AMBIENT_INTENSITY
         reflectionIntensity = 1f
         skyLightIntensity = DEFAULT_SKY_LIGHT_INTENSITY
+        windDirection = DEFAULT_WIND_DIRECTION
+        windSpeed = DEFAULT_WIND_SPEED
+        windGustStrength = DEFAULT_WIND_GUST_STRENGTH
+        windGustScale = DEFAULT_WIND_GUST_SCALE
+        windTurbulence = DEFAULT_WIND_TURBULENCE
+        animateInEditor = true
+        runtime.reset()
     }
 
     /** Ambient light reaching surfaces: [ambientColor] scaled by [ambientIntensity], written into [out]. */
@@ -74,6 +108,11 @@ data class EnvironmentComponent(
     companion object {
         const val DEFAULT_AMBIENT_INTENSITY = 0.25f
         const val DEFAULT_SKY_LIGHT_INTENSITY = 0.35f
+        const val DEFAULT_WIND_DIRECTION = 45f
+        const val DEFAULT_WIND_SPEED = WindField.BREEZE
+        const val DEFAULT_WIND_GUST_STRENGTH = 0.4f
+        const val DEFAULT_WIND_GUST_SCALE = 20f
+        const val DEFAULT_WIND_TURBULENCE = 0.3f
     }
 
     fun applyPreset(preset: EnvironmentPreset) {

@@ -135,6 +135,12 @@ object EngineDefaults {
         const val FOG = "engine:Shaders/fog.glsl"
         /** Shared scene lighting include (REN-28 task 1). */
         const val LIGHTING = "engine:Shaders/lighting.glsl"
+        /** Shared wind include (REN-29 §5.2): WIND variants of the mesh, shadow and picking shaders, and water. */
+        const val WIND = "engine:Shaders/wind.glsl"
+        /** Gerstner waves include (REN-29 §6.1), mirrored by `WaterWaves`. */
+        const val WATER_WAVES = "engine:Shaders/water_waves.glsl"
+        /** Water surface (REN-29 §6.3): refraction, absorption, IBL + SSR reflections, foam; PICKING variant for ids. */
+        const val WATER = "engine:Shaders/water.glsl"
         const val POST_BLOOM = "engine:Shaders/post_bloom.glsl"
         const val POST_TONEMAP = "engine:Shaders/post_tonemap.glsl"
         const val POST_GAMMA = "engine:Shaders/post_gamma.glsl"
@@ -150,7 +156,7 @@ object EngineDefaults {
         const val IBL_CAPTURE = "engine:Shaders/ibl_capture.glsl"
 
         val BASIC = listOf(
-            DEFAULT_3D, TEXTURE_3D, BATCH_2D, SHADOW, SKYBOX, SKY_DOME, PARTICLES, FOG, LIGHTING,
+            DEFAULT_3D, TEXTURE_3D, BATCH_2D, SHADOW, SKYBOX, SKY_DOME, PARTICLES, FOG, LIGHTING, WIND, WATER_WAVES, WATER,
             POST_BLOOM, POST_TONEMAP, POST_GAMMA, POST_FXAA, POST_SSAO,
         )
 

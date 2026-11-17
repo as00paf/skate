@@ -42,6 +42,10 @@ layout(std140) uniform SkinBlock {
 };
 uniform bool u_HasSkin;
 
+#ifdef WIND
+#include "wind.glsl"
+#endif
+
 void main()
 {
     // --- Skeletal Skinning ---
@@ -58,6 +62,9 @@ void main()
     // --- Coordinate Transformations ---
     // 1. World Space: Apply skinning then model-to-world transformation
     vec4 worldPos = transformationMatrix * skinMatrix * vec4(aPos, 1.0);
+#ifdef WIND
+    worldPos.xyz += windDisplacement(worldPos.xyz, transformationMatrix[3].xyz, aPos.y, aColor);
+#endif
     fWorldPos = worldPos.xyz;
 
     // 2. View Space: Transform world coordinates relative to the camera

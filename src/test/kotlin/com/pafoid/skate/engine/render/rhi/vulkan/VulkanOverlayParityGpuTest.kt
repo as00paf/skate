@@ -172,7 +172,7 @@ class VulkanOverlayParityGpuTest {
             val scene = engine.sceneManager.openScenes.first { it.name == FeatureShowcase.SCENE_NAME }
             if (engine.sceneManager.currentScene !== scene) engine.sceneManager.switchScene(scene)
             for (view in views) {
-                val enabled = view.passes + "GeometryPass"
+                val enabled = view.passes + "GeometryPass" + "TransparentPass"
                 engine.renderer.renderGraph.getAllPasses().forEach { it.isEnabled = it.name in enabled }
                 view.setup(engine)
                 repeat(3) { engine.update(1f / 60f) }
