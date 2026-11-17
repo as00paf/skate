@@ -105,6 +105,7 @@ abstract class Component {
                 is ReverbZone -> ComponentType.REVERB_ZONE
                 is RagdollComponent -> RAGDOLL
                 is VehicleComponent -> ComponentType.VEHICLE
+                is WaterComponent -> ComponentType.WATER
                 is ScenePhysicsComponent -> SCENE_PHYSICS
                 is ScriptComponent -> ComponentType.SCRIPT
                 is SkeletonComponent -> SKELETON
