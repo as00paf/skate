@@ -31,6 +31,9 @@ import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.ecs.components.VehicleComponent
 import com.pafoid.skate.engine.ecs.systems.AnimationSystem
 import com.pafoid.skate.engine.ecs.systems.AudioSystem
+import com.pafoid.skate.engine.ecs.systems.EnvironmentSystem
+import com.pafoid.skate.engine.ecs.components.EnvironmentComponent
+import com.pafoid.skate.engine.environment.WindCycle
 import com.pafoid.skate.engine.ecs.systems.CameraControlSystem
 import com.pafoid.skate.engine.ecs.systems.CameraManager
 import com.pafoid.skate.engine.ecs.systems.FlyInput
@@ -145,7 +148,7 @@ class FeatureShowcaseSmokeTest {
         val physics = PhysicsSystem(debug, events, physics3d = world)
         val cameraManager = CameraManager(events)
         listOf(
-            GameObjectManager(), TransformSystem(), cameraManager,
+            GameObjectManager(), TransformSystem(), cameraManager, EnvironmentSystem(),
             AudioSystem(audioEngine, logger, assets, cameraManager),
             physics, PhysicsFrameSystem(physics),
             AnimationSystem(), ParticleSystem(), LoopbackPredictionSystem(),
@@ -244,6 +247,27 @@ class FeatureShowcaseSmokeTest {
         }
         val ball = obj("[Physics] Ball")
         assertTrue(ball.getComponent<Transform>()!!.pos().y < start.getValue("[Physics] Ball").y - 3f, "ball never fell")
+    }
+
+    /** TLG-17 (PHY-16): the crates, ball and log drop into the pool and float, lighter crates riding higher. */
+    @Test
+    @Order(2)
+    fun Showcase_Nature_PropsFloatInThePoolAtTheirDensity() {
+        val surface = obj(FeatureShowcase.POOL).getComponent<Transform>()!!.pos().y
+        val crates = FeatureShowcase.CRATE_DENSITIES.map { (suffix, _) -> FeatureShowcase.crateName(suffix) }
+        (crates + FeatureShowcase.BALL + FeatureShowcase.LOG).forEach { name ->
+            val ys = heights.getValue(name)
+            assertNotNull(obj(name).getComponent<RigidBody3D>()!!.rawBody, "$name has no physics body")
+            assertTrue(ys.min() < start.getValue(name).y - 0.3f, "$name never dropped into the water: ${ys.min()}")
+            val y = ys.takeLast(60).average().toFloat()
+            assertTrue(y in surface - 0.5f..surface + 0.4f, "$name is not floating at the surface ($surface): y=$y")
+            // Bobbing dies down: the last second swings less than half as much as seconds 1 to 3.
+            val early = ys.subList(60, 180)
+            val late = ys.takeLast(60)
+            assertTrue(late.max() - late.min() < 0.5f * (early.max() - early.min()), "$name is not settling: ${early.min()}..${early.max()} then ${late.min()}..${late.max()}")
+        }
+        val (light, medium, heavy) = crates.map { heights.getValue(it).takeLast(60).average() }
+        assertTrue(light > medium && medium > heavy, "crates should ride higher the lighter they are: $light, $medium, $heavy")
     }
 
     @Test
@@ -410,6 +434,21 @@ class FeatureShowcaseSmokeTest {
         frame(UiInputFrame(cancel = true))
         assertTrue(!mapCanvas.visible, "Esc did not close the full map")
         assertTrue(!pauseMenu.isOpen, "Esc closed the map, it must not also open the pause menu")
+    }
+
+    /** TLG-17: the overlay's Cycle wind button steps the scene wind (calm, breeze, storm). */
+    @Test
+    @Order(11)
+    fun Showcase_Wind_CycleButtonStepsTheSceneWind() {
+        val env = scene.getComponent<EnvironmentComponent>()!!
+        val canvas = overlay()
+        val seen = mutableListOf(WindCycle.stepOf(env))
+        repeat(WindCycle.Step.entries.size) {
+            click(canvas, FeatureShowcase.WIND_TOGGLE_BUTTON)
+            seen += WindCycle.stepOf(env)
+        }
+        assertEquals(WindCycle.Step.entries.toSet(), seen.toSet(), "steps seen: $seen")
+        assertEquals(seen.first(), seen.last(), "a full cycle comes back to the start")
     }
 
     private fun overlay() = scene.children.single {
