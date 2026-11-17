@@ -1,6 +1,6 @@
 # EDT-88 — Maximize tool windows over the Game Viewport, or to the whole editor
 
-Status: **awaiting approval** · Owner: skate-editor · Deps: EDT-67 · Priority: P1
+Status: **approved** (human, 2026-11-17) · Owner: skate-editor · Deps: EDT-67 · Priority: P1
 
 ## Goal
 
@@ -212,3 +212,17 @@ override it to false.
 8. **F12 viewport full screen is an undoable Command** (`ToggleFullScreenCommand`) although it changes no project
    data, so it clutters Undo. Recommend making it plain view state like maximize, in a separate small task, not part
    of EDT-88.
+
+## Decisions (approved 2026-11-17)
+
+Every recommendation above is accepted:
+
+1. Default mode: **Full editor**, with "Maximize over Game Viewport" in the tab menu, plus an Editor Settings ›
+   Interface choice "Maximize: Full editor / Over Game Viewport".
+2. Shortcut: **Shift+Space**, rebindable, ignored while typing and while the Game Viewport is focused.
+3. The maximized state is not remembered: the editor always starts restored.
+4. Stop does not re-maximize a full-editor maximize that Play restored.
+5. Accepted: Restore over the viewport discards other docking changes made while maximized.
+6. Accepted: the full-editor host keeps its own ImGui scroll and tree state.
+7. Every docked standard window except the Game Viewport can be maximized.
+8. Making F12 plain view state (not an undoable Command) is split out to **EDT-89**, not part of EDT-88.
