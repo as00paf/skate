@@ -14,14 +14,14 @@ internal class BoxHit(val distance: Float, val normal: Vector3f)
  * An oriented box in world space (PHY-25): [halfExtents] along the box's own axes, centred at [localCenter] in the owning
  * body's frame. [place] puts it at the body's pose; the queries then work in world space.
  */
-internal class OrientedBox(halfExtents: Vector3f, localCenter: Vector3f = Vector3f()) {
+internal class OrientedBox(halfExtents: Vector3f, localCenter: Vector3f = Vector3f()) : StaticSurface {
     val halfExtents = Vector3f(halfExtents).absolute()
     private val localCenter = Vector3f(localCenter)
     val center = Vector3f()
     private val rotation = Quaternionf()
     private val inverse = Quaternionf()
 
-    fun place(position: Vector3f, rotation: Quaternionf) {
+    override fun place(position: Vector3f, rotation: Quaternionf) {
         this.rotation.set(rotation).normalize()
         inverse.set(this.rotation).conjugate()
         center.set(localCenter).rotate(this.rotation).add(position)
@@ -29,8 +29,7 @@ internal class OrientedBox(halfExtents: Vector3f, localCenter: Vector3f = Vector
 
     private fun toLocal(point: Vector3f, out: Vector3f): Vector3f = out.set(point).sub(center).rotate(inverse)
 
-    /** World-space axis-aligned bounds. */
-    fun bounds(min: Vector3f, max: Vector3f) {
+    override fun bounds(min: Vector3f, max: Vector3f) {
         val extent = Vector3f()
         val axis = Vector3f()
         for (k in 0 until 3) {
@@ -42,7 +41,7 @@ internal class OrientedBox(halfExtents: Vector3f, localCenter: Vector3f = Vector
     }
 
     /** Contact with the sphere at [sphereCenter] of [radius], or null when they do not overlap. */
-    fun sphereContact(sphereCenter: Vector3f, radius: Float): BoxContact? {
+    override fun sphereContact(sphereCenter: Vector3f, radius: Float): BoxContact? {
         val local = toLocal(sphereCenter, Vector3f())
         val clamped = Vector3f(
             local.x.coerceIn(-halfExtents.x, halfExtents.x),
@@ -76,7 +75,7 @@ internal class OrientedBox(halfExtents: Vector3f, localCenter: Vector3f = Vector
      * every side (a swept sphere of that radius, with square corners). Starting inside gives no hit, like the other
      * backends' rays.
      */
-    fun raycast(from: Vector3f, direction: Vector3f, length: Float, inflate: Float = 0f): BoxHit? {
+    override fun raycast(from: Vector3f, direction: Vector3f, length: Float, inflate: Float): BoxHit? {
         val origin = toLocal(from, Vector3f())
         val dir = Vector3f(direction).rotate(inverse)
         var near = Float.NEGATIVE_INFINITY

@@ -224,15 +224,15 @@ class JoltPhysics3D internal constructor(
     /** Standalone bodies use Bullet's defaults for them: layer 1, colliding with layer 1 only. */
     override fun createRigidBody(shape: ColliderShape, mass: Float): IRigidBodyHandle {
         val joltShape = JoltShapes.create(shape)
-        val type = if (mass > 0f) BodyType.Dynamic else BodyType.Static
+        val type = if (mass > 0f && shape !is ColliderShape.Heightfield) BodyType.Dynamic else BodyType.Static
         val settings = BodyCreationSettings(
             joltShape, RVec3(), Quat(0f, 0f, 0f, 1f), motionTypeOf(type),
             layers.objectLayer(STANDALONE_LAYER, STANDALONE_LAYER, type != BodyType.Static),
         )
         if (type != BodyType.Static) dynamicCapable(settings, mass)
         return addBody(
-            settings, joltShape, type, mass, STANDALONE_LAYER, STANDALONE_LAYER, false, 0f, 0f, null,
-            listOf(ShapePart(shape, Vector3f())),
+            settings, joltShape, type, if (type == BodyType.Static) 0f else mass, STANDALONE_LAYER, STANDALONE_LAYER,
+            false, 0f, 0f, null, listOf(ShapePart(shape, Vector3f())),
         )
     }
 
@@ -383,7 +383,7 @@ class JoltPhysics3D internal constructor(
         layerMask: Int,
         excludeBody: IPhysicsBody3D?,
     ): PhysicsHit? {
-        require(shape !is ColliderShape.TriangleMesh && shape !is ColliderShape.CompoundHull) { "Shape casts need a convex shape" }
+        require(shape !is ColliderShape.TriangleMesh && shape !is ColliderShape.CompoundHull && shape !is ColliderShape.Heightfield) { "Shape casts need a convex shape" }
         val castShape = JoltShapes.create(shape)
         val excluded = excludedHandle(excludeBody)
         shapeCollector.reset()

@@ -17,6 +17,7 @@ import com.jme3.bullet.collision.shapes.CapsuleCollisionShape
 import com.jme3.bullet.collision.shapes.CollisionShape
 import com.jme3.bullet.collision.shapes.CompoundCollisionShape
 import com.jme3.bullet.collision.shapes.CylinderCollisionShape
+import com.jme3.bullet.collision.shapes.HeightfieldCollisionShape
 import com.jme3.bullet.collision.shapes.HullCollisionShape
 import com.jme3.bullet.collision.shapes.MeshCollisionShape
 import com.jme3.bullet.collision.shapes.infos.IndexedMesh
@@ -310,7 +311,7 @@ class BulletPhysics3D(
     }
 
     override fun createRigidBody(shape: ColliderShape, mass: Float): IRigidBodyHandle {
-        val body = PhysicsRigidBody(createShape(shape), mass)
+        val body = PhysicsRigidBody(createShape(shape), if (shape is ColliderShape.Heightfield) 0f else mass)
         physicsSpace.add(body)
         return BulletRigidBodyHandle(body)
     }
@@ -340,6 +341,22 @@ class BulletPhysics3D(
         is ColliderShape.TriangleMesh -> MeshCollisionShape(
             true, IndexedMesh(shape.vertices.map { it.toJme() }.toTypedArray(), shape.indices.toIntArray()),
         )
+        is ColliderShape.Heightfield -> heightfieldShape(shape)
+    }
+
+    /**
+     * Libbulletjme centres a heightfield on its middle sample in X/Z and makes its height bounds symmetric around 0, so
+     * raw heights are local Y. The compound child moves it so the corner sample sits at the body origin, as
+     * [ColliderShape.Heightfield] defines. Quad edges are flipped: Bullet's default diagonal is (x+1, z)–(x, z+1), and
+     * flipping gives the (x, z)–(x+1, z+1) split Jolt and SimplePhysics3D use.
+     */
+    private fun heightfieldShape(shape: ColliderShape.Heightfield): CollisionShape {
+        val n = shape.samplesPerSide
+        val field = HeightfieldCollisionShape(
+            n, n, shape.heights, JmeVector3f(shape.spacing, 1f, shape.spacing), 1, true, false, false, false,
+        )
+        val half = shape.size / 2f
+        return CompoundCollisionShape(1).also { it.addChildShape(field, JmeVector3f(half, 0f, half)) }
     }
 
     private fun hullShape(points: List<JomlVector3f>) = HullCollisionShape(*points.map { it.toJme() }.toTypedArray())

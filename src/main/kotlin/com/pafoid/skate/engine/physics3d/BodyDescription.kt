@@ -104,7 +104,8 @@ class BodyDescription(
                         minOf(shape.halfExtents.x * scale.x, shape.halfExtents.y * scale.y, shape.halfExtents.z * scale.z)
                     is ColliderShape.Capsule -> shape.radius * minOf(scale.x, scale.z)
                     is ColliderShape.Cylinder -> minOf(shape.radius * minOf(scale.x, scale.z), shape.height / 2f * scale.y)
-                    is ColliderShape.ConvexHull, is ColliderShape.CompoundHull, is ColliderShape.TriangleMesh -> 0.1f
+                    is ColliderShape.ConvexHull, is ColliderShape.CompoundHull, is ColliderShape.TriangleMesh,
+                    is ColliderShape.Heightfield -> 0.1f
                 }
             } ?: 0.1f
             return (smallest * 0.5f).coerceAtLeast(0.01f)
