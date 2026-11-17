@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.ui.windows
 
+import com.pafoid.skate.editor.imgui.Tooltips
 import com.pafoid.skate.editor.data.EditorShortcuts
 import com.pafoid.skate.editor.data.EditorFocus
 import com.pafoid.skate.editor.imgui.tipped
@@ -260,9 +261,7 @@ class ScriptEditorWindow(
             newName.set("")
         }
         if (!valid) ImGui.endDisabled()
-        if (ImGui.isItemHovered(imgui.flag.ImGuiHoveredFlags.AllowWhenDisabled)) {
-            ImGui.setTooltip(strings.getString("tooltip.script_editor.new"))
-        }
+        Tooltips.text(strings.getString("tooltip.script_editor.new"))
     }
 
     private fun scriptsDirectory(): File? =
@@ -285,7 +284,7 @@ class ScriptEditorWindow(
                     }
                     ImGui.endTabItem()
                 }
-                if (ImGui.isItemHovered()) ImGui.setTooltip(doc.file.path)
+                Tooltips.always(doc.file.path)
                 if (!keepOpen.get() && !tabs.requestClose(doc)) openCloseConfirm = true
             }
             ImGui.endTabBar()
@@ -519,7 +518,7 @@ class ScriptEditorWindow(
                 dl.addRectFilled(origin.x, y, origin.x + gutter + width, y + lineHeight, colors.errorLine)
                 val color = if (marker.source == DiagnosticSource.COMPILE) colors.errorText else colors.runtimeMarker
                 dl.addCircleFilled(origin.x + 6f, y + lineHeight / 2f, lineHeight / 4f, color)
-                if (ImGui.isMouseHoveringRect(origin.x, y, origin.x + gutter, y + lineHeight)) ImGui.setTooltip(marker.tooltip)
+                if (ImGui.isMouseHoveringRect(origin.x, y, origin.x + gutter, y + lineHeight)) Tooltips.set(Tooltips.Kind.ALWAYS, marker.tooltip)
             }
             val number = (i + 1).toString()
             val nx = origin.x + gutter - 8f - ImGui.calcTextSize(number).x

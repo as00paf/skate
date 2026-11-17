@@ -124,9 +124,7 @@ class EditorMenuBar(
         if (ImGui.button(currentProjectName)) {
             eventSystem.publish(WindowAction.Show("window.project_switcher"))
         }
-        if (ImGui.isItemHovered()) {
-            ImGui.setTooltip(stringManager.getString("tooltip.switch_projects"))
-        }
+        Tooltips.text(stringManager.getString("tooltip.switch_projects"))
     }
 
     fun setMaximized(maximized: Boolean) {

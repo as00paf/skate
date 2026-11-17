@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.ui.windows
 
+import com.pafoid.skate.editor.imgui.Tooltips
 import com.pafoid.skate.editor.commands.CommandNames
 import com.pafoid.skate.editor.imgui.EmptyState
 import com.pafoid.skate.editor.imgui.tipped
@@ -65,16 +66,12 @@ class CommandHistoryWindow(
                 undoRedoManager.undo()
                 scrollToBottom = true
             }
-            if (ImGui.isItemHovered()) {
-                ImGui.setTooltip(stringManager.getString("tooltip.command_history.undo"))
-            }
+            Tooltips.text(stringManager.getString("tooltip.command_history.undo"))
         } else {
             ImGui.pushStyleColor(ImGuiCol.Text, 0.5f, 0.5f, 0.5f, 1f)
             ImGui.button("${Icons.UNDO} ${stringManager.getString("btn.undo")}")
             ImGui.popStyleColor()
-            if (ImGui.isItemHovered()) {
-                ImGui.setTooltip(stringManager.getString("tooltip.command_history.undo_empty"))
-            }
+            Tooltips.text(stringManager.getString("tooltip.command_history.undo_empty"))
         }
 
         ImGui.sameLine()
@@ -84,16 +81,12 @@ class CommandHistoryWindow(
                 undoRedoManager.redo()
                 scrollToBottom = true
             }
-            if (ImGui.isItemHovered()) {
-                ImGui.setTooltip(stringManager.getString("tooltip.command_history.redo"))
-            }
+            Tooltips.text(stringManager.getString("tooltip.command_history.redo"))
         } else {
             ImGui.pushStyleColor(ImGuiCol.Text, 0.5f, 0.5f, 0.5f, 1f)
             ImGui.button("${Icons.REDO} ${stringManager.getString("btn.redo")}")
             ImGui.popStyleColor()
-            if (ImGui.isItemHovered()) {
-                ImGui.setTooltip(stringManager.getString("tooltip.command_history.redo_empty"))
-            }
+            Tooltips.text(stringManager.getString("tooltip.command_history.redo_empty"))
         }
 
         ImGui.sameLine()
@@ -102,16 +95,12 @@ class CommandHistoryWindow(
             if (ImGui.button("${Icons.TRASH} ${stringManager.getString("btn.clear_history")}")) {
                 eventSystem.publish(UndoRedoAction.ClearHistory)
             }
-            if (ImGui.isItemHovered()) {
-                ImGui.setTooltip(stringManager.getString("tooltip.command_history.clear"))
-            }
+            Tooltips.text(stringManager.getString("tooltip.command_history.clear"))
         } else {
             ImGui.pushStyleColor(ImGuiCol.Text, 0.5f, 0.5f, 0.5f, 1f)
             ImGui.button("${Icons.TRASH} ${stringManager.getString("btn.clear_history")}")
             ImGui.popStyleColor()
-            if (ImGui.isItemHovered()) {
-                ImGui.setTooltip(stringManager.getString("tooltip.command_history.clear_empty"))
-            }
+            Tooltips.text(stringManager.getString("tooltip.command_history.clear_empty"))
         }
     }
 
@@ -135,9 +124,7 @@ class CommandHistoryWindow(
                 eventSystem.publish(UndoRedoAction.UndoTo(i))
                 scrollToBottom = true
             }
-            if (ImGui.isItemHovered()) {
-                ImGui.setTooltip(stringManager.getString("lbl.command_history.shortcuts"))
-            }
+            Tooltips.text(stringManager.getString("lbl.command_history.shortcuts"))
             stepMenu("##undo_to_$i", "context.command_history.undo_to", Icons.UNDO) {
                 eventSystem.publish(UndoRedoAction.UndoTo(i))
             }

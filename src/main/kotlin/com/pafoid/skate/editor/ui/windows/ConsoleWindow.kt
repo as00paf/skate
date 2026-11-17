@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.ui.windows
 
+import com.pafoid.skate.editor.imgui.Tooltips
 import com.pafoid.skate.editor.data.EditorShortcuts
 import com.pafoid.skate.editor.data.EditorFocus
 import com.pafoid.skate.editor.imgui.tipped
@@ -87,9 +88,7 @@ class ConsoleWindow(engine: Engine) : EditorWindow("window.console", true) {
 
         ImGui.pushItemWidth(searchWidth)
         ImGui.inputTextWithHint("##ConsoleSearch", "${Icons.SEARCH} ${stringManager.getString("lbl.search")}...", searchText)
-        if (ImGui.isItemHovered()) {
-            ImGui.setTooltip(stringManager.getString("tooltip.search_console"))
-        }
+        Tooltips.text(stringManager.getString("tooltip.search_console"))
         ImGui.popItemWidth()
 
         ImGui.sameLine()
@@ -98,18 +97,14 @@ class ConsoleWindow(engine: Engine) : EditorWindow("window.console", true) {
             selectedLogs.clear()
             lastSelectedIndex = -1
         }
-        if (ImGui.isItemHovered()) {
-            ImGui.setTooltip(stringManager.getString("tooltip.clear_console"))
-        }
+        Tooltips.text(stringManager.getString("tooltip.clear_console"))
 
         ImGui.sameLine()
         autoScrollCheckbox.set(autoScroll.enabled)
         if (ImGui.checkbox(autoScrollLabel, autoScrollCheckbox)) {
             autoScroll.setEnabled(autoScrollCheckbox.get())
         }
-        if (ImGui.isItemHovered()) {
-            ImGui.setTooltip(stringManager.getString("tooltip.console.auto_scroll"))
-        }
+        Tooltips.text(stringManager.getString("tooltip.console.auto_scroll"))
     }
 
     /** Log level filter buttons with per-level count badges, under the header. */
@@ -155,9 +150,7 @@ class ConsoleWindow(engine: Engine) : EditorWindow("window.console", true) {
         if (isActive) {
             ImGui.popStyleColor(2)
         }
-        if (ImGui.isItemHovered()) {
-            ImGui.setTooltip(tooltip)
-        }
+        Tooltips.text(tooltip)
     }
 
     private fun renderLogList(logs: List<LogEntry>, label: String) {
