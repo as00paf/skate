@@ -20,6 +20,17 @@ import org.joml.Matrix4f
 import org.joml.Vector3f
 
 /** A shadow-casting object with its world bounding sphere, gathered once per frame. */
+/**
+ * Shadow casters that are not render components (terrain, REN-28 §4.2): collected with the meshes, part of each
+ * layer's content signature, and drawn after the meshes with their own depth-only program.
+ */
+interface ShadowCasterSource {
+    fun collect(root: GameObject)
+    fun signature(seed: Long): Long
+    /** Draws into the bound shadow layer; may switch programs (the renderer restarts its own afterwards). */
+    fun draw(lightMatrix: Matrix4f)
+}
+
 class ShadowCaster {
     lateinit var renderComponent: RenderComponent
     lateinit var transform: Transform
@@ -40,6 +51,9 @@ class ShadowRenderer(
     private val shadowShader: Shader,
     private val alphaTestShader: Shader = shadowShader,
 ) {
+    /** Non-mesh casters (terrain), drawn after the meshes in every layer. */
+    val sources = ArrayList<ShadowCasterSource>()
+
     private val pool = ArrayList<ShadowCaster>()
     private val casters = ArrayList<ShadowCaster>()
     private val pipelines = PipelineCache(PipelineStates.SHADOW)
@@ -51,6 +65,7 @@ class ShadowRenderer(
     fun collect(root: GameObject): List<ShadowCaster> {
         casters.clear()
         RenderTraversal.forEachRendered(root) { go -> collectOne(go) }
+        sources.forEach { it.collect(root) }
         return casters
     }
 
@@ -79,6 +94,7 @@ class ShadowRenderer(
     fun cascadeSignature(fit: CascadeFit): Long {
         var h = ShadowSignature.mix(ShadowSignature.SEED, fit.matrix)
         for (c in casters) if (ShadowCulling.intersectsCascade(fit, c.center, c.radius)) h = casterSignature(h, c)
+        for (source in sources) h = source.signature(h)
         return h
     }
 
@@ -86,6 +102,7 @@ class ShadowRenderer(
     fun localSignature(lightPosition: Vector3f, range: Float, matrix: Matrix4f): Long {
         var h = ShadowSignature.mix(ShadowSignature.SEED, matrix)
         for (c in casters) if (ShadowCulling.intersectsLight(lightPosition, range, c.center, c.radius)) h = casterSignature(h, c)
+        for (source in sources) h = source.signature(h)
         return h
     }
 
@@ -135,10 +152,14 @@ class ShadowRenderer(
         shadowShader.uploadMat4f(Uniforms.LIGHT_SPACE_MATRIX, lightMatrix)
         var anyMasked = false
         for (c in selected) anyMasked = draw(shadowShader, c, masked = false) or anyMasked
-        if (!anyMasked) return
-        alphaTestShader.start()
-        alphaTestShader.uploadMat4f(Uniforms.LIGHT_SPACE_MATRIX, lightMatrix)
-        for (c in selected) draw(alphaTestShader, c, masked = true)
+        if (anyMasked) {
+            alphaTestShader.start()
+            alphaTestShader.uploadMat4f(Uniforms.LIGHT_SPACE_MATRIX, lightMatrix)
+            for (c in selected) draw(alphaTestShader, c, masked = true)
+            shadowShader.start()
+        }
+        if (sources.isEmpty()) return
+        for (source in sources) source.draw(lightMatrix)
         shadowShader.start()
     }
 
