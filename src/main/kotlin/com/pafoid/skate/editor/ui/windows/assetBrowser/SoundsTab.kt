@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.ui.windows.assetBrowser
 
+import com.pafoid.skate.editor.imgui.Tooltips
 import com.pafoid.skate.editor.imgui.tipped
 import com.pafoid.skate.editor.imgui.contextPopupId
 import com.pafoid.skate.editor.imgui.data.Icons
@@ -112,9 +113,7 @@ class SoundsTab(
         if (ImGui.button(buttonIcon, -1f, 0f)) {
             handlePlayback(file)
         }
-        if (ImGui.isItemHovered()) {
-            ImGui.setTooltip(stringManager.getString(tooltipKey))
-        }
+        Tooltips.text(stringManager.getString(tooltipKey))
 
         ImGui.popID()
     }

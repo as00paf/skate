@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.ui.windows.assetBrowser
 
+import com.pafoid.skate.editor.imgui.Tooltips
 import com.pafoid.skate.editor.imgui.tipped
 import com.pafoid.skate.editor.imgui.contextPopupId
 import com.pafoid.skate.editor.events.ViewportAction
@@ -32,9 +33,7 @@ class TexturesTab(
         } else {
             ImGui.button(if (thumbnails.state(file) is AsyncAssetCache.State.Failed) Icons.WINDOW_CLOSE else Icons.FILE_IMAGE, size, size)
         }
-        if (ImGui.isItemHovered()) {
-            ImGui.setTooltip(file.name)
-        }
+        Tooltips.always(file.name)
         
         // Context menu on right-click
         if (ImGui.beginPopupContextItem(contextPopupId("texture"))) {

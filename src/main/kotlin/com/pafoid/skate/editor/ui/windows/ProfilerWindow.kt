@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.ui.windows
 
+import com.pafoid.skate.editor.imgui.Tooltips
 import com.pafoid.skate.editor.imgui.EditorWindow
 import com.pafoid.skate.editor.imgui.EmptyState
 import com.pafoid.skate.editor.imgui.data.Icons
@@ -218,16 +219,12 @@ class ProfilerWindow(private val stringManager: StringManager) : EditorWindow("w
                 isFrozen.set(false)
             }
             ImGui.popStyleColor(2)
-            if (ImGui.isItemHovered()) {
-                ImGui.setTooltip(stringManager.getString("tooltip.profiler.unfreeze"))
-            }
+            Tooltips.text(stringManager.getString("tooltip.profiler.unfreeze"))
         } else {
             if (ImGui.button("${Icons.PAUSE} ${stringManager.getString("btn.profiler.freeze")}")) {
                 isFrozen.set(true)
             }
-            if (ImGui.isItemHovered()) {
-                ImGui.setTooltip(stringManager.getString("tooltip.profiler.freeze"))
-            }
+            Tooltips.text(stringManager.getString("tooltip.profiler.freeze"))
         }
 
         ImGui.sameLine()
@@ -236,9 +233,7 @@ class ProfilerWindow(private val stringManager: StringManager) : EditorWindow("w
         if (ImGui.button("${Icons.ARROW_ROTATE} ${stringManager.getString("btn.profiler.reset_stats")}")) {
             history.reset()
         }
-        if (ImGui.isItemHovered()) {
-            ImGui.setTooltip(stringManager.getString("tooltip.profiler.reset_stats"))
-        }
+        Tooltips.text(stringManager.getString("tooltip.profiler.reset_stats"))
     }
 
     private fun updateStats(currentTime: Long) {

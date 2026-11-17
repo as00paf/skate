@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.ui.windows
 
+import com.pafoid.skate.editor.imgui.Tooltips
 import com.pafoid.skate.editor.imgui.tipped
 import com.pafoid.skate.editor.systems.EditorPaths
 import com.pafoid.skate.editor.imgui.EditorWindow
@@ -79,12 +80,12 @@ class ShellWindow(
 
     private fun toolbar() {
         if (ImGui.button(strings.label("shell.presets"))) ImGui.openPopup("shell_presets_popup")
-        if (ImGui.isItemHovered()) ImGui.setTooltip(strings.getString("shell.tooltip.presets"))
+        Tooltips.text(strings.getString("shell.tooltip.presets"))
         if (ImGui.beginPopup("shell_presets_popup")) {
             val project = projectManager.currentProject?.projectPath
             ShellPresets.all(projectFile = project).forEach { preset ->
                 if (ImGui.menuItem(strings.label(preset.labelKey))) input.set(preset.command)
-                if (ImGui.isItemHovered()) ImGui.setTooltip(preset.command)
+                Tooltips.always(preset.command)
             }
             ImGui.endPopup()
         }
@@ -107,7 +108,7 @@ class ShellWindow(
 
         ImGui.sameLine()
         ImGui.textDisabled(statusText())
-        if (ImGui.isItemHovered()) ImGui.setTooltip(strings.getString("shell.tooltip.working_dir", workingDir.path))
+        Tooltips.always(strings.getString("shell.tooltip.working_dir", workingDir.path))
     }
 
     private fun statusText(): String = when (val s = session.status) {

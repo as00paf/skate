@@ -15,8 +15,8 @@ import kotlin.io.path.readText
  * itself. Help on controls goes through `Tooltips.show` / `tipped` / `Tooltips.text` (hidden when the setting is off);
  * field explanations and data through `Tooltips.showIfPresent` / `Tooltips.always`.
  *
- * [ALLOW_LIST] holds the files still being reworked by other EDT-52 chunks; each chunk converts its files and removes
- * them. Nobody adds any.
+ * [ALLOW_LIST] is empty since EDT-65 and stays empty. Hover checks that are not ImGui items (canvas hit-tests) use
+ * `Tooltips.set` with a kind.
  */
 class TooltipToggleGuardTest {
     private val root: Path = Paths.get(System.getProperty("user.dir")).toAbsolutePath()
@@ -43,10 +43,16 @@ class TooltipToggleGuardTest {
     }
 
     @Test
+    fun AllowList_IsEmpty() {
+        assertTrue(ALLOW_LIST.isEmpty(), "EDT-65: every tooltip honours Show tooltips; do not add files: $ALLOW_LIST")
+    }
+
+    @Test
     fun Guard_CountsDirectCallsOnly() {
         val src = """
             if (ImGui.isItemHovered()) ImGui.setTooltip("a")
             Tooltips.text("b")
+            Tooltips.set(Tooltips.Kind.HELP, "c")
             // ImGui.setTooltip("in a comment")
             setTooltip(x)
         """.trimIndent()
@@ -54,19 +60,8 @@ class TooltipToggleGuardTest {
     }
 
     companion object {
-        /** Files still reworked by other EDT-52 chunks; each removes its own when converted. */
-        val ALLOW_LIST = setOf(
-            // C: project & assets
-            "AnimationsTab.kt", "SoundsTab.kt", "TexturesTab.kt",
-            // D: debug
-            "ConsoleWindow.kt", "ProfilerWindow.kt", "CommandHistoryWindow.kt", "ShellWindow.kt",
-            // G: menus
-            "EditorMenuBar.kt",
-            // H: domain windows
-            "AudioMixerPanel.kt", "ScriptEditorWindow.kt",
-            // EDT-54: Render Graph rewrite
-            "RenderGraphWindow.kt",
-        )
+        /** Files allowed to call `ImGui.setTooltip` directly. EDT-65 converted the last ones; nobody adds any. */
+        val ALLOW_LIST = emptySet<String>()
 
         private val CALL = Regex("""(?<![\w.])(ImGui\.)?setTooltip\s*\(""")
 
