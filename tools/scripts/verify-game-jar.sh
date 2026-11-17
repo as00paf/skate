@@ -37,6 +37,9 @@ if jar_entry "$jar" native/windows/x86_64/bulletjme.dll | grep -a -q 'Debug_'; t
   echo "FAIL: $jar ships the debug Bullet native (use the SpRelease classifier)"; exit 1
 fi
 echo "3/4 game jar ships the Bullet (release) and Jolt physics natives"
+# AST-34: JTS (OSM city generator) is editor-only and must not reach the game jar
+if grep -q '^org/locationtech/jts/' <<<"$entries"; then echo "FAIL: $jar contains org/locationtech/jts/ (editor-only)"; exit 1; fi
+echo "   game jar has no editor-only JTS classes"
 # AST-27: every engine shader in the repo's assets/Shaders (basic and internal) ships in the jar under /shaders/
 for shader in assets/Shaders/*.glsl; do
   grep -qx "shaders/$(basename "$shader")" <<<"$entries" || { echo "FAIL: $jar is missing shaders/$(basename "$shader")"; exit 1; }
