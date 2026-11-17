@@ -125,8 +125,9 @@ class InstancingTest {
             val vertex = File("assets/Shaders/$name").readText().substringAfter("#type vertex").substringBefore("#type fragment")
             val out = ShaderPreprocessor.process(vertex, setOf(ShaderFeature.INSTANCED.name), name) { File("assets/Shaders/$it").readText() }
             assertTrue("#define INSTANCED" in out, name)
-            assertTrue("worldPos = MODEL_MATRIX" in out || "worldMatrix = MODEL_MATRIX" in out, name)
-            assertTrue("#define MODEL_MATRIX transpose(mat4(aInstanceRow0, aInstanceRow1, aInstanceRow2" in out, name)
+            assertTrue("worldPos = modelMatrix()" in out || "worldMatrix = modelMatrix()" in out, name)
+            assertTrue("mat4 modelMatrix() { return transpose(mat4(aInstanceRow0, aInstanceRow1, aInstanceRow2" in out, name)
+            assertTrue("#define MODEL" !in out, "no conditional #define: GlslToVulkan hoists them")
         }
     }
 }

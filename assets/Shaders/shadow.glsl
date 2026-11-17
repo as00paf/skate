@@ -17,9 +17,10 @@ layout (location=10) in vec4 aInstanceRow0;
 layout (location=11) in vec4 aInstanceRow1;
 layout (location=12) in vec4 aInstanceRow2;
 layout (location=13) in vec4 aInstanceParams; // tint, random, wind phase, LOD fade
-#define MODEL_MATRIX transpose(mat4(aInstanceRow0, aInstanceRow1, aInstanceRow2, vec4(0.0, 0.0, 0.0, 1.0)))
+// A function, not a #define: GlslToVulkan hoists every #define above the #ifdefs
+mat4 modelMatrix() { return transpose(mat4(aInstanceRow0, aInstanceRow1, aInstanceRow2, vec4(0.0, 0.0, 0.0, 1.0))); }
 #else
-#define MODEL_MATRIX uModelMatrix
+mat4 modelMatrix() { return uModelMatrix; }
 #endif
 uniform mat4 uLightSpaceMatrix;
 uniform bool u_HasSkin;
@@ -42,10 +43,10 @@ void main()
         aWeights.w * u_JointMatrices[aJoints.w];
     }
 
-    mat4 worldMatrix = MODEL_MATRIX * skinMatrix;
+    mat4 worldMatrix = modelMatrix() * skinMatrix;
     vec4 worldPos = worldMatrix * vec4(aPos, 1.0);
 #ifdef WIND
-    worldPos.xyz += windDisplacement(worldPos.xyz, MODEL_MATRIX[3].xyz, aPos.y, aColor);
+    worldPos.xyz += windDisplacement(worldPos.xyz, modelMatrix()[3].xyz, aPos.y, aColor);
 #endif
     gl_Position = uLightSpaceMatrix * worldPos;
 
