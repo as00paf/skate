@@ -137,7 +137,7 @@ class TerrainDataTest {
 
     @Test
     fun Component_SanitizesItsKey_AndDataSourceIgnoresTheRecipe() {
-        val t = TerrainComponent(sizeMetres = 1e6f, sampleSpacing = 0.9f, chunkQuads = 100, seedName = "terrain/X")
+        val t = TerrainComponent(sizeMetres = 1e6f, sampleSpacing = 0.9f, chunkQuads = 100, seedName = "terrain/X", streaming = com.pafoid.skate.engine.ecs.components.TerrainStreaming.OFF)
         val key = t.key(seed)
         assertEquals(TerrainComponent.MAX_SIZE, key.size)
         assertEquals(4f, key.spacing, "16 km at 1 m exceeds the resident sample cap (REN-42)")
