@@ -11,7 +11,8 @@ import com.pafoid.skate.engine.ecs.components.ReverbZone
 import com.pafoid.skate.engine.net.LoopbackPredictionComponent
 import com.pafoid.skate.engine.net.NetState
 import com.pafoid.skate.engine.net.NetworkIdentity
-import com.pafoid.skate.engine.ecs.components.BoneOverride
+import com.pafoid.skate.engine.ecs.components.IkSetup
+import com.pafoid.skate.engine.ecs.components.IkTarget
 import com.pafoid.skate.engine.ecs.components.BoxCollider3D
 import com.pafoid.skate.engine.ecs.components.CameraComponent
 import com.pafoid.skate.engine.ecs.components.CameraFocusComponent
@@ -102,7 +103,8 @@ class Serializer(val assetPaths: AssetPaths = AssetPaths()) {
             subclass(JointComponent::class)
 
             // Animation components
-            subclass(BoneOverride::class)
+            subclass(IkSetup::class)
+            subclass(IkTarget::class)
             subclass(SkeletonComponent::class)
             subclass(Animator::class)
             subclass(SpriteRenderer::class)

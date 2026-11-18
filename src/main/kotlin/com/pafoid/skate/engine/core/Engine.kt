@@ -8,6 +8,7 @@ import com.pafoid.skate.engine.assets.serialization.Serializer
 import com.pafoid.skate.engine.audio.AudioEngine
 import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.ecs.systems.AnimationSystem
+import com.pafoid.skate.engine.ecs.systems.IkSetupSystem
 import com.pafoid.skate.engine.ecs.systems.AudioSystem
 import com.pafoid.skate.engine.ecs.systems.CameraManager
 import com.pafoid.skate.engine.ecs.systems.DayNightCycleSystem
@@ -203,6 +204,8 @@ class Engine {
                 CameraProbe { from, to, radius, exclude -> physicsSystem.sphereCast(from, to, radius, exclude.getComponent<RigidBody3D>()) },
                 eventSystem,
             ),
+            // ANI-28: characters' IK setups become IK constraints after gameplay sets goals, before animation solves.
+            IkSetupSystem(),
             AnimationSystem(FrustumVisibility { cameraManager.camera.projection to cameraManager.camera.view }).also {
                 it.eventSystem = eventSystem
                 it.ikDebugSink = IkDebugSink { from, to, color -> debugRenderer.addLine3D(from, to, color) }

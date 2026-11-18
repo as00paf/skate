@@ -7,7 +7,8 @@ import com.pafoid.skate.engine.ecs.components.Animator
 import com.pafoid.skate.engine.ecs.components.AudioComponent
 import com.pafoid.skate.engine.ecs.components.AudioListener
 import com.pafoid.skate.engine.ecs.components.ReverbZone
-import com.pafoid.skate.engine.ecs.components.BoneOverride
+import com.pafoid.skate.engine.ecs.components.IkSetup
+import com.pafoid.skate.engine.ecs.components.IkTarget
 import com.pafoid.skate.engine.ecs.components.BoxCollider3D
 import com.pafoid.skate.engine.ecs.components.CameraComponent
 import com.pafoid.skate.engine.ecs.components.CapsuleCollider3D
@@ -50,7 +51,6 @@ fun GameObject.getComponent(type: ComponentType) =
         ComponentType.ANIMATOR -> getComponent<Animator>()
         ComponentType.AUDIO -> getComponent<AudioComponent>()
         ComponentType.AUDIO_LISTENER -> getComponent<AudioListener>()
-        ComponentType.BONE_OVERRIDE -> getComponent<BoneOverride>()
         ComponentType.BOX_COLLIDER_3D -> getComponent<BoxCollider3D>()
         ComponentType.CAMERA -> getComponent<CameraComponent>()
         ComponentType.CAPSULE_COLLIDER -> getComponent<CapsuleCollider3D>()
@@ -64,6 +64,8 @@ fun GameObject.getComponent(type: ComponentType) =
         ComponentType.FIRST_PERSON_CAMERA -> getComponent<com.pafoid.skate.engine.ecs.components.FirstPersonCameraComponent>()
         ComponentType.CAMERA_CYCLE -> getComponent<com.pafoid.skate.engine.ecs.components.CameraCycleComponent>()
         ComponentType.GRID_LINES -> getComponent<GridLines>()
+        ComponentType.IK_SETUP -> getComponent<IkSetup>()
+        ComponentType.IK_TARGET -> getComponent<IkTarget>()
         ComponentType.INPUT_STATE -> getComponent<InputStateComponent>()
         ComponentType.JOINT -> getComponent<JointComponent>()
         ComponentType.MESH_COLLIDER -> getComponent<MeshCollider3D>()
