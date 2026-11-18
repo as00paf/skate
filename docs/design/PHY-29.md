@@ -1,7 +1,13 @@
 # PHY-29 — Destruction system (design note)
 
-Status: **revision 1, awaiting the human's approval.** No implementation code has been written. Open questions are in
-§16; each has a recommended answer.
+Status: **revision 2, awaiting the human's approval of the runtime-fracture additions.** No implementation code has
+been written. The human answered revision 1's questions on 2026-11-18 (§16.1). Runtime fracture is now in scope (§6.4);
+it raises four new questions (§16.2), each with a recommended answer.
+
+History:
+- Revision 1 (2026-11-17): pre-fractured pieces only; eight open questions.
+- Revision 2 (2026-11-18): records the answers; adds runtime fracture (algorithm, cost budget, determinism, slices
+  29l–29o); the editor generator (29h) now reuses the runtime algorithm offline.
 
 Task (GameEngine.md, Physics, human on Discord 2026-11-17): "plan a destruction system (fractured meshes,
 pre-fractured vs runtime, debris pooling and lifetime, damage thresholds, effects and audio hooks, network and
@@ -39,8 +45,7 @@ Goals:
 - Broken props stay broken across chunk streaming and save/load (REN-37), and in multiplayer.
 - Same behaviour on Bullet, Jolt and `SimplePhysics3D`.
 
-Non-goals (now): runtime fracture of arbitrary meshes (§6.4), structural collapse of buildings (§16 Q7), destructible
-terrain, soft bodies.
+Non-goals (now): structural collapse of buildings (later, §16.1 Q7), destructible terrain, soft bodies.
 
 ## 3. Overview
 
@@ -66,7 +71,9 @@ terrain, soft bodies.
 | `integrity` | 100 | Own hit points, used when the object has no `HealthComponent` (§5.3) |
 | `impactThreshold` | 150 N·s | Impacts below this do nothing (a crate dropped from knee height survives) |
 | `impactDamagePerNs` | 0.5 | Damage per N·s above the threshold. A 70 kg skater at 6 m/s (≈ 420 N·s) breaks a default crate; a 20 kg crate thrown at 5 m/s (100 N·s) does not |
+| `fractureSource` | `AUTO` | For `SHATTER`: `PREFRACTURED` (the `fracture` asset), `RUNTIME` (§6.4), or `AUTO` (the asset when set, else runtime) |
 | `fracture` | "" | `.skfracture` asset for `SHATTER` (§6) |
+| `maxRuntimePieces` | 12 | Upper bound on runtime pieces (4–16, §6.4.3) |
 | `brokenPrefab` | "" | Prefab GUID or path for `SWAP` |
 | `breakImpulse` | 2 N·s/kg | Outward push of the pieces from the break point |
 | `surface` | `"wood"` | Key for sounds and dust (§8); free string like GPL-24 damage types |
@@ -140,9 +147,10 @@ Mass per piece is the prop's mass times its volume share. Hulls are precomputed,
 1. **Import pre-fractured models (first):** a model whose mesh parts are the pieces, e.g. exported from Blender's
    Cell Fracture add-on. The editor builds the `.skfracture` from it (hull and volume per part). Needs AST to keep mesh
    part names on import (GPL-24's AST-xx task already asks for it).
-2. **Editor fracture generator (later slice):** Voronoi fracture of a closed model into N pieces (3–32), seeded, with
-   capped cut faces; writes the pieces as a new model file plus its `.skfracture`. Runs offline in the editor, never in
-   the game.
+2. **Editor fracture generator (later slice 29h):** runs the runtime algorithm of §6.4 offline (more pieces, up to
+   32, no time limit) and writes the pieces as a new model file (OBJ, like `assets/procedural/MeshBuilder.toObj`) plus
+   its `.skfracture`. Same code as the game, so what the editor previews is what a runtime break gives for the same
+   seed and impact point.
 
 ### 6.3 Rendering the pieces
 
@@ -151,11 +159,73 @@ per-part visibility (GPL-24); until it lands, the generator and import can write
 (more files, same result). Debris fade-out needs a per-object fade or dissolve, which the renderer doesn't have:
 debris shrinks to zero over 0.4 s before despawning instead (no REN dependency); a dissolve is an optional REN task.
 
-### 6.4 Runtime fracture (not planned)
+### 6.4 Runtime fracture (rev 2, human 2026-11-18: in scope)
 
-Cutting meshes at runtime (Voronoi around the impact point) needs runtime mesh building and upload, hull building on
-a worker, and gives different pieces on every client. Pre-fractured pieces look as good for props, cost nothing at
-break time and are deterministic. §16 Q1 asks to confirm leaving it out.
+A prop with `fractureSource = RUNTIME` (or `AUTO` without a `.skfracture`) is cut into pieces at the moment it breaks,
+around the actual impact point. Pre-fractured pieces stay the first choice for hero props (authored look, remains,
+zero break-time cost); runtime fracture covers everything else without authoring.
+
+#### 6.4.1 Inputs
+
+- **The render mesh on the CPU:** positions, normals, UVs and the material slot of each triangle, welded. Models keep
+  only GPU buffers today, and `CollisionMeshes` reads positions only, so slice 29m (AST) adds `ModelCpuMeshes.get(ref)`
+  (NEW), cached like `CollisionMeshes` (LRU, 16 MB), with a **watertight** flag computed once per model (every edge
+  shared by exactly two triangles).
+- The impact point in the prop's frame (quantized to 1 mm), the piece count, and a seed (§6.4.4).
+- Limits: at most **4096 input triangles**. Bigger or non-watertight meshes don't fracture at runtime (§16.2 Q12).
+
+#### 6.4.2 Algorithm (pure Kotlin, `engine/physics3d/fracture/RuntimeFracture.kt`, NEW)
+
+1. **Sites:** N Voronoi sites in the prop's local bounds. Half are drawn in a sphere around the impact point (radius
+   35 % of the bounds diagonal), half uniformly, so pieces are small near the hit and large far from it. A minimum
+   spacing (15 % of `diagonal / N^(1/3)`) is kept by rejection with a bounded number of tries.
+2. **Cells:** each site's cell is the mesh clipped by the bisecting half-spaces towards every other site
+   (`(x − mᵢⱼ)·(sⱼ − sᵢ) ≤ 0`). Planes are applied nearest first, and a plane farther from the site than the cell's
+   current bounding radius is skipped, so a cell sees about 8–12 planes, not N − 1.
+3. **Clipping a closed mesh by a plane:** per triangle, keep the inside part and split straddling triangles,
+   interpolating normals and UVs. The cut edges are chained into loops; each loop is triangulated on the plane (ear
+   clipping in 2D) to cap the hole. Caps get the prop's `interiorMaterial` slot (or its first material), the plane's
+   normal and planar UVs at 1 UV per metre in the prop's frame.
+4. **Clean-up:** a cell that splits into islands (concave input) becomes one piece per island. Pieces under 0.5 % of
+   the prop's volume are dropped and counted as dust for the effect (§8).
+5. **Per piece:** centroid, volume (signed tetrahedra over the closed surface), mass share, and a **convex hull** of
+   its vertices (quickhull, reduced to ≤ 32 points by farthest-point sampling) for the collider. Concave pieces collide
+   as their hull, which is fine for debris.
+
+#### 6.4.3 Cost budget and pipeline
+
+| Step | Where | Budget |
+|---|---|---|
+| Break decided | main thread, fixed step *k* | as today (§5.4) |
+| Fracture job | `JobSystem` worker, inputs copied (immutable) | ≤ 4 ms for 2k triangles × 12 pieces (benchmark test in 29l); **at most 2 jobs in flight**, later breaks wait in the §5.4 queue |
+| Piece meshes to the GPU | main thread, via the REN API (29n) | ≤ 8192 triangles uploaded per frame (≈ 0.2 ms) |
+| Pieces spawned | main thread, `DebrisSystem` | the §7.1 caps (32 per break, 64 per step), pooled GameObjects and bodies |
+
+- **The original stays visible and solid until its pieces are ready**, normally 1–3 fixed steps (17–50 ms), then
+  swaps in one step (§16.2 Q9). After 6 steps (100 ms) without a result, the break falls back to `REMOVE` with its
+  effects, so a slow machine never shows a prop that refuses to break.
+- **Piece count** grows with the overkill: `N = clamp(4 + 8 × excessDamage / maxIntegrity, 4, maxRuntimePieces)`.
+- **Cache:** results are cached per (model, seed, impact cell of 5 cm) in an LRU of 32 entries, so a row of identical
+  crates broken the same way costs one job.
+- Runtime meshes are released to the REN pool when their piece expires (§7.1); debris is never saved (§9), so
+  in-memory models (empty `path`) are never serialized.
+
+#### 6.4.4 Determinism
+
+- The algorithm is pure Kotlin float math in a fixed order: no parallel reductions, no hash-ordered collections, no
+  platform math beyond `+ − × ÷ sqrt` (IEEE strict on JDK 17). The same input mesh, seed and quantized impact point
+  give **byte-identical** pieces on every machine; a test pins this.
+- **Seed:** the server draws it from the ECS-14 stream `"destruction/<object GUID>/<break index>"`. In multiplayer
+  `FracturedMessage` already carries the seed (§10) plus the quantized impact point, so every client computes the
+  same pieces. Only their flight differs, as decided (§16.1 Q4).
+- Single player uses the same stream, so a replayed save breaks the same way.
+
+#### 6.4.5 What it doesn't do
+
+- Remains: runtime-fractured props leave none (§16.2 Q10); use a pre-fractured asset with `anchored` pieces when a
+  stump must stay.
+- Re-fracture: runtime pieces don't break again (§16.2 Q11).
+- Skinned or animated meshes, and meshes over the limits, fall back as §16.2 Q12 decides.
 
 ## 7. Debris
 
@@ -215,7 +285,8 @@ Users, each in its own domain:
   machines). Clients never break props on their own; a predicted local skater hitting a crate sees it break when the
   server's event arrives (≈ one round trip).
 - **Replicated state:** `DestructibleComponent` implements `NetReplicated` with `integrity` (quantized) and `broken`.
-  Breaks travel as a reliable `FracturedMessage(netId, point, impulse, seed)`.
+  Breaks travel as a reliable `FracturedMessage(netId, point, impulse, seed)`; the point is in the prop's frame,
+  quantized to 1 mm, so runtime fracture gives the same pieces on every client (§6.4.4).
 - **Debris is cosmetic and local:** each client spawns the pieces from the message with the same seed and initial
   velocities, then simulates them itself. Pieces end up in slightly different places per client, which is fine for
   short-lived debris. Persistent pieces (§7.2) are server-spawned networked objects.
@@ -239,6 +310,7 @@ Users, each in its own domain:
 | Active debris (High) | 256, ≈ 0.5–1 ms per step with most frozen (PHY-17 box pile: 1000 bodies ≈ 0.5–0.9 ms mean) |
 | Break cost on the main thread | < 0.3 ms for 32 pooled pieces (no hull building, no allocation once pools are warm) |
 | Memory | a `.skfracture` of 32 pieces ≈ 30 KB; pools grow to the live peak and shrink after 30 s idle |
+| Runtime fracture | ≤ 4 ms per job on a worker, ≤ 2 jobs in flight, ≤ 8192 triangles uploaded per frame, CPU mesh cache 16 MB, result cache 32 entries (§6.4.3) |
 
 ## 13. Tests (no GL)
 
@@ -251,6 +323,12 @@ Users, each in its own domain:
   after warm-up.
 - Save round-trip: broken hand-placed props of each mode reload as their remains; scatter records (with REN-37).
 - Network: a server break reaches a loopback client as `broken` plus one local debris spawn (with NET).
+- `RuntimeFracture` (29l): a cube cut by one plane gives two closed pieces whose volumes add up to the cube; N sites
+  give at most N pieces, all watertight, volumes summing to the input within 0.1 %; caps use the interior slot; a
+  concave L-shape gives separate islands; the same mesh, seed and point give byte-identical output; changing the seed
+  changes it; a non-watertight mesh is rejected; benchmark (2k triangles, 12 pieces) logged against the 4 ms budget.
+- Runtime break path (29o): the original stays until the result arrives; the 100 ms fallback gives `REMOVE`; the
+  cache returns the same pieces for the same key; at most 2 jobs in flight.
 
 ## 14. Slices
 
@@ -263,13 +341,18 @@ Users, each in its own domain:
 | **29e** | AUD, REN | Break and crack sounds per surface (AUD); dust bursts per surface (REN or GPL) | 29a |
 | **29f** | PHY (EDT reviews) | Destructible and `.skfracture` inspectors, "Break now" preview | 29a–29c |
 | **29g** | PHY + GPL | `HealthComponent` bridge (`HitEvent`/`DiedEvent`) | 29a, GPL-24b |
-| **29h** | PHY (EDT reviews) | Editor Voronoi fracture generator | 29b |
+| **29h** | PHY (EDT reviews) | Editor fracture generator: runs `RuntimeFracture` offline, writes OBJ + `.skfracture` | 29b, 29l |
 | **29i** | PHY + REN + AST | Saves: remains on load; scatter `DESTROYED`/`CHANGED` through the `ScatterItem` hook | 29c, REN-37 tasks 24–25 |
 | **29j** | NET + PHY | `NetReplicated` destructible state, `FracturedMessage`, local cosmetic debris | 29c, NET-02 |
-| **29k** | TLG | Feature Showcase "Destruction" corner: crates of three strengths, a glass pane, a fence, an explosive barrel | 29a–29e |
+| **29k** | TLG | Feature Showcase "Destruction" corner: crates of three strengths, a glass pane, a fence, an explosive barrel, and a runtime-fractured statue | 29a–29e, 29o |
+| **29l** | PHY | `RuntimeFracture` (pure): sites, cell clipping with caps, islands, hulls, volumes; determinism and benchmark tests | — |
+| **29m** | AST | `ModelCpuMeshes`: CPU positions, normals, UVs and material slots of a model, cached, with the watertight flag | — |
+| **29n** | REN (+ VK parity) | Upload an in-memory mesh as a `MeshPart` for a `RenderComponent` and release it, pooled buffers, GL and Vulkan | — |
+| **29o** | PHY | Runtime break path in `DestructionSystem`/`DebrisSystem`: `fractureSource`, worker jobs, 100 ms fallback, result cache, seeds from ECS-14; the seed and point in `FracturedMessage` (with 29j) | 29c, 29l, 29m, 29n |
 | (optional) | REN | Per-object dissolve for debris fade-out | 29c |
 
-29a, 29b and 29d can start right after approval; 29a alone already gives breakable crates (`SWAP`/`REMOVE`).
+29a, 29b, 29d, 29l, 29m and 29n can start right after approval, in parallel; 29a alone already gives breakable
+crates (`SWAP`/`REMOVE`).
 
 ## 15. Risks
 
@@ -279,22 +362,37 @@ Users, each in its own domain:
   the break queue bounds the cost per step; a `.skfracture` piece can't itself be destructible.
 - **Jolt keeps islands awake** (PHY-17 benchmark): frozen (kinematic) debris avoids that cost.
 - **Multiplayer:** clients see debris in different places; persistent pieces are the escape hatch for gameplay.
-- **Content:** pre-fractured models need authoring (Blender) until the generator (29h) exists.
+- **Content:** pre-fractured models need authoring (Blender) until the generator (29h) exists; runtime fracture
+  covers unauthored props meanwhile.
+- **Runtime fracture robustness:** plane clipping of real meshes meets degenerate cases (vertices on the plane, sliver
+  triangles, tiny loops). Mitigation: epsilon snapping to the plane, welding before and after, loop validation, and
+  the `REMOVE` fallback when a result fails validation (not watertight, volume off by > 1 %).
+- **Runtime fracture latency** (1–3 steps): fast impacts may show the intact prop for a frame or two after contact;
+  §16.2 Q9 asks whether that is acceptable.
 
-## 16. Open questions for the human
+## 16. Decisions and open questions
 
-1. **Runtime fracture:** leave it out and use pre-fractured pieces only (imported or generated in the editor)?
-   *Recommended:* yes (§6.4).
-2. **Fracture source first:** import pre-fractured models (Blender Cell Fracture) first and the editor generator
-   later? *Recommended:* yes; the generator is slice 29h.
-3. **Debris persistence:** debris is cosmetic, expires and is never saved; after a load only the remains are there.
-   *Recommended:* yes, with `persistent` pieces for the rare gameplay piece.
-4. **Multiplayer debris:** each client simulates its own debris, so pieces differ slightly between players. OK?
-   *Recommended:* yes.
-5. **Budgets:** 256 active pieces on High (96 Low), 10 s lifetime, 4 breaks per step. OK?
-6. **Characters break props:** the skater riding into a crate at speed breaks it (impact damage from any body).
-   *Recommended:* yes, tuned per prop with `impactThreshold`.
-7. **Structural destruction** (walls and buildings breaking piece by piece with support): out of scope for now?
-   *Recommended:* yes, a later design if a game needs it.
-8. **Health:** props with a `HealthComponent` use GPL-24's health and resistances; props without one use their own
-   `integrity`. OK? *Recommended:* yes (§5.3).
+### 16.1 Answers to revision 1 (human, 2026-11-18)
+
+| # | Question | Answer |
+|---|---|---|
+| Q1 | Leave out runtime fracture? | **Changed: runtime fracture is in scope**, alongside pre-fractured pieces (§6.4) |
+| Q2 | Import pre-fractured models first, editor generator later? | Yes |
+| Q3 | Debris cosmetic, expires, never saved? | Yes, with `persistent` pieces for gameplay (§7.2) |
+| Q4 | Each client simulates its own debris? | Yes |
+| Q5 | Budgets: 256 High / 96 Low, 10 s lifetime, 4 breaks per step | Yes, as proposed |
+| Q6 | Any body impact can break a prop? | Yes, tuned with `impactThreshold` |
+| Q7 | Structural destruction | Later |
+| Q8 | `HealthComponent` where present, `integrity` otherwise | Yes |
+
+### 16.2 New questions from runtime fracture (revision 2)
+
+9. **Latency:** a runtime-fractured prop stays intact for 1–3 fixed steps (17–50 ms) while its pieces are computed on
+   a worker, then breaks; after 100 ms it falls back to disappearing with effects. Acceptable? *Recommended:* yes.
+   The alternative, computing on the main thread, costs a 2–4 ms hitch per break.
+10. **Remains:** runtime-fractured props leave no remains (no stump or base stays). *Recommended:* yes; props that need
+    remains use a pre-fractured asset with `anchored` pieces.
+11. **Re-fracture:** runtime pieces never break again. *Recommended:* yes; one level keeps the cost bounded.
+12. **Unsuitable meshes** (not watertight, over 4096 triangles, skinned): with `AUTO`, fall back to `REMOVE` with
+    effects and log once per model. *Recommended:* yes. (Alternative: refuse `RUNTIME` in the inspector and require a
+    pre-fractured asset for such models.)
