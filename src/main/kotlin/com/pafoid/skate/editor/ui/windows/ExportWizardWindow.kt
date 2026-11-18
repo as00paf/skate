@@ -8,9 +8,13 @@ import com.pafoid.skate.editor.imgui.EditorDialog
 import com.pafoid.skate.editor.imgui.EmptyState
 import com.pafoid.skate.editor.imgui.DialogFooter
 import com.pafoid.skate.editor.imgui.FooterButton
+import com.pafoid.skate.editor.imgui.GraphicsBackendField
 import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.editor.imgui.MImGui
 import com.pafoid.skate.editor.imgui.label
+import com.pafoid.skate.editor.commands.project.TargetFpsChoices
+import com.pafoid.skate.editor.project.ExportMemory
+import com.pafoid.skate.editor.project.ExportSummary
 import com.pafoid.skate.editor.project.ExportWizard
 import com.pafoid.skate.editor.project.ExportWizard.Phase
 import com.pafoid.skate.editor.project.Project
@@ -18,12 +22,18 @@ import com.pafoid.skate.editor.systems.EditorSettingsManager
 import com.pafoid.skate.editor.systems.ProjectManager
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.core.LoggerService.LogLevel
+import com.pafoid.skate.engine.assets.EngineDefaults
+import com.pafoid.skate.engine.physics3d.PhysicsBackend
 import com.pafoid.skate.engine.utils.AssetsPacker
+import com.pafoid.skate.engine.utils.BuildMode
+import com.pafoid.skate.engine.utils.ExportNotice
 import com.pafoid.skate.engine.utils.ExportProgress
 import com.pafoid.skate.engine.utils.ExportTarget
 import com.pafoid.skate.engine.utils.GameJarSearch
 import com.pafoid.skate.engine.utils.ProjectExporter
 import imgui.ImGui
+import imgui.type.ImFloat
+import imgui.type.ImInt
 import imgui.type.ImString
 import java.awt.Desktop
 import java.io.File
@@ -31,8 +41,10 @@ import javax.swing.JFileChooser
 import javax.swing.UIManager
 
 /**
- * File > Export Project (EDT-09): picks the target, scenes, compression and output folder, then shows the export's
- * progress. The export itself runs in [com.pafoid.skate.editor.ui.handlers.ProjectActionHandler] on an IO thread;
+ * File > Export Project (EDT-09, EDT-91): Target, Game (icon, splash, graphics and physics backends, frame cap: the
+ * project's own settings, changed through undoable commands), Build (Release/Debug, compression, scenes, output) and a
+ * Summary (asset count, estimated size, warnings such as a missing icon or splash), then the export's progress. Build
+ * choices are remembered per project in the editor settings. The export itself runs in [com.pafoid.skate.editor.ui.handlers.ProjectActionHandler] on an IO thread;
  * progress comes back as [ProjectEvent.ExportProgressed] / [ProjectEvent.ExportFinished].
  */
 class ExportWizardWindow(
@@ -47,7 +59,13 @@ class ExportWizardWindow(
     private val strings = engine.stringManager
     private val eventSystem = engine.eventSystem
     private val logger = engine.logger
-    val wizard = ExportWizard()
+    val wizard = ExportWizard(ExportMemory.inSettings({ settingsManager.editorSettings }, settingsManager::update))
+    internal val summary = ExportSummary(
+        runAsync = { block -> engine.jobSystem.runAsync { block() } },
+        runOnMain = { block -> engine.jobSystem.runOnMain { block() } },
+    )
+    private val splashSeconds = ImFloat()
+    private val customFps = ImInt()
     private val outputInput = ImString(1024)
     private var jarSearch = GameJarSearch(null, emptyList())
     private val gameJar: File? get() = jarSearch.jar
@@ -74,14 +92,14 @@ class ExportWizardWindow(
         val outputDir = wizard.result?.outputDir ?: ProjectExporter.outputDir(project, wizard.options(project))
         return footer(
             state,
-            canStart = wizard.canStart(project, gameJar),
+            canStart = wizard.canStart(project, gameJar, summary.snapshot?.art),
             hasOutputFolder = state == FooterState.FINISHED && outputDir.isDirectory,
             onStart = {
                 wizard.start()
                 eventSystem.publish(ProjectEvent.ExportRequested(wizard.options(project)))
             },
             onOpenFolder = { openFolder(outputDir) },
-            onBack = { wizard.reset() },
+            onBack = { wizard.reset(); summary.clear() },
         )
     }
 
@@ -98,6 +116,7 @@ class ExportWizardWindow(
         lastFrame = frame
 
         if (wizard.phase == Phase.EDITING) options(project) else status()
+        wizard.remember() // saves the build choices only when they changed (EDT-91)
     }
 
     /** The dialog was just opened: rescan scenes and look for the game jar again. */
@@ -118,16 +137,24 @@ class ExportWizardWindow(
             }
         }
         if (wizard.target == ExportTarget.WINDOWS) gameJarSection()
-        backendLine(project)
 
-        MImGui.labeledSeparator(strings.getString("lbl.export.scenes", wizard.includedSceneCount, wizard.scenes.size))
-        sceneList(project)
+        gameSection(project)
 
-        MImGui.labeledSeparator(strings.getString("lbl.export.options"))
+        MImGui.labeledSeparator(strings.getString("lbl.export.section.build"))
+        MImGui.propertyRow(strings.getString("lbl.export.mode"), strings.getString("lbl.export.mode.tooltip")) {
+            BuildMode.entries.forEachIndexed { i, mode ->
+                if (i > 0) ImGui.sameLine()
+                val key = "lbl.export.mode.${mode.name.lowercase()}"
+                if (strings.tipped(ImGui.radioButton(strings.label(key), wizard.mode == mode), key)) wizard.mode = mode
+            }
+        }
         if (ImGui.checkbox(strings.label("lbl.export.compress"), wizard.compress)) wizard.compress = !wizard.compress
         Tooltips.always(strings.getString("tip.export.compress"))
         if (ImGui.checkbox(strings.label("lbl.export.only_referenced"), wizard.onlyReferenced)) wizard.onlyReferenced = !wizard.onlyReferenced
         Tooltips.always(strings.getString("tip.export.only_referenced"))
+
+        MImGui.labeledSeparator(strings.getString("lbl.export.scenes", wizard.includedSceneCount, wizard.scenes.size))
+        sceneList(project)
 
         MImGui.labeledSeparator(strings.getString("lbl.export.output"))
         ImGui.setNextItemWidth(ImGui.getContentRegionAvailX() - 200f)
@@ -140,16 +167,159 @@ class ExportWizardWindow(
             wizard.outputDir = outputInput.get()
         }
 
-        val issues = wizard.issues(project, gameJar)
+        summarySection(project)
+
+        val issues = wizard.issues(project, gameJar, summary.snapshot?.art)
         if (ExportWizard.Issue.INVALID_OUTPUT in issues) MImGui.errorText(strings.getString("lbl.export.failure.invalid_output"))
+        if (ExportWizard.Issue.ICON_UNREADABLE in issues) MImGui.errorText(strings.getString("lbl.export.issue.icon_unreadable"))
     }
 
-    /** The project's graphics backend the exported game starts with (AST-12; chosen in the project settings, EDT-43). */
-    private fun backendLine(project: Project) {
-        val backend = project.graphicsBackend
-        MImGui.textDisabled(strings.getString("lbl.export.backend", strings.getString(backend.labelKey)))
-        Tooltips.always(strings.getString("lbl.export.backend.tooltip"))
-        if (backend.experimental) MImGui.warningText(strings.getString("lbl.export.backend_experimental"))
+    /**
+     * The project settings the exported game uses (EDT-91, AST-15 §3). Each change publishes a request the service
+     * turns into an undoable command; the export saves the project before packing, so the export and the project agree.
+     */
+    private fun gameSection(project: Project) {
+        MImGui.labeledSeparator(strings.getString("lbl.export.section.game"))
+        ImGui.pushTextWrapPos(0f)
+        MImGui.textDisabled(strings.getString("lbl.export.game_note"))
+        ImGui.popTextWrapPos()
+
+        MImGui.propertyRow(strings.getString("lbl.export.icon"), strings.getString("lbl.export.icon.tooltip")) {
+            ImGui.text(displayPath(project, project.iconPath, "lbl.export.icon.engine_default"))
+            ImGui.sameLine()
+            if (strings.tipped(ImGui.button(strings.label("btn.export.icon_change")), "btn.export.icon_change")) {
+                chooseImage(project, "dialog.export.select_icon")?.let { eventSystem.publish(ProjectEvent.SetProjectIconRequested(it)) }
+            }
+            ImGui.sameLine()
+            if (strings.tipped(ImGui.button(strings.label("btn.export.icon_default")), "btn.export.icon_default")) {
+                eventSystem.publish(ProjectEvent.SetProjectIconRequested(EngineDefaults.Textures.APP_ICON))
+            }
+        }
+
+        MImGui.propertyRow(strings.getString("lbl.export.splash"), strings.getString("lbl.export.splash.tooltip")) {
+            val none = project.splashSeconds <= 0f
+            ImGui.text(if (none) strings.getString("lbl.export.splash.none") else displayPath(project, project.splashPath, "lbl.export.splash.engine_default"))
+            ImGui.sameLine()
+            if (strings.tipped(ImGui.button(strings.label("btn.export.splash_change")), "btn.export.splash_change")) {
+                chooseImage(project, "dialog.export.select_splash")?.let { path ->
+                    eventSystem.publish(ProjectEvent.SetProjectSplashRequested(path, project.splashSeconds.takeIf { it > 0f } ?: Project.DEFAULT_SPLASH_SECONDS))
+                }
+            }
+            ImGui.sameLine()
+            if (strings.tipped(ImGui.button(strings.label("btn.export.splash_none")), "btn.export.splash_none")) {
+                eventSystem.publish(ProjectEvent.SetProjectSplashRequested(project.splashPath, 0f))
+            }
+            ImGui.sameLine()
+            if (strings.tipped(ImGui.button(strings.label("btn.export.splash_default")), "btn.export.splash_default")) {
+                eventSystem.publish(ProjectEvent.SetProjectSplashRequested("", Project.DEFAULT_SPLASH_SECONDS))
+            }
+        }
+        if (project.splashSeconds > 0f) {
+            MImGui.propertyRow(strings.getString("lbl.export.splash_seconds"), strings.getString("lbl.export.splash_seconds.tooltip")) {
+                if (!ImGui.isAnyItemActive()) splashSeconds.set(project.splashSeconds)
+                ImGui.setNextItemWidth(120f)
+                ImGui.sliderFloat("##export_splash_seconds", splashSeconds.data, 0.5f, Project.MAX_SPLASH_SECONDS, "%.1f s")
+                Tooltips.show(strings, "lbl.export.splash_seconds.tooltip")
+                if (ImGui.isItemDeactivatedAfterEdit()) {
+                    eventSystem.publish(ProjectEvent.SetProjectSplashRequested(project.splashPath, splashSeconds.get()))
+                }
+            }
+        }
+
+        GraphicsBackendField.render(strings, project.graphicsBackend)?.let { eventSystem.publish(ProjectEvent.SetGraphicsBackendRequested(it)) }
+
+        MImGui.propertyRow(strings.getString("lbl.export.physics_backend"), strings.getString("lbl.export.physics_backend.tooltip")) {
+            ImGui.setNextItemWidth(200f)
+            if (ImGui.beginCombo("##export_physics_backend", strings.getString(physicsKey(project.physicsBackend)))) {
+                PhysicsBackend.entries.forEach { backend ->
+                    if (ImGui.selectable(strings.getString(physicsKey(backend)), backend == project.physicsBackend) && backend != project.physicsBackend) {
+                        eventSystem.publish(ProjectEvent.SetProjectPhysicsBackendRequested(backend))
+                    }
+                    Tooltips.show(strings, "lbl.export.physics_backend.tooltip")
+                }
+                ImGui.endCombo()
+            }
+            Tooltips.show(strings, "lbl.export.physics_backend.tooltip")
+        }
+        if (project.physicsBackend == PhysicsBackend.JOLT) MImGui.warningText(strings.getString("lbl.export.warning.physics_jolt_fallback"))
+
+        MImGui.propertyRow(strings.getString("lbl.export.target_fps"), strings.getString("lbl.export.target_fps.tooltip")) {
+            val custom = !TargetFpsChoices.isPreset(project.targetFps)
+            ImGui.setNextItemWidth(160f)
+            val shown = if (custom) strings.getString("lbl.export.target_fps.custom") else fpsLabel(project.targetFps)
+            if (ImGui.beginCombo("##export_target_fps", shown)) {
+                TargetFpsChoices.PRESETS.forEach { fps ->
+                    if (ImGui.selectable(fpsLabel(fps), !custom && fps == project.targetFps)) eventSystem.publish(ProjectEvent.SetProjectTargetFpsRequested(fps))
+                    Tooltips.show(strings, "lbl.export.target_fps.tooltip")
+                }
+                if (ImGui.selectable(strings.getString("lbl.export.target_fps.custom"), custom) && !custom) {
+                    eventSystem.publish(ProjectEvent.SetProjectTargetFpsRequested(CUSTOM_FPS_START))
+                }
+                Tooltips.show(strings, "lbl.export.target_fps.tooltip")
+                ImGui.endCombo()
+            }
+            Tooltips.show(strings, "lbl.export.target_fps.tooltip")
+            if (custom) {
+                ImGui.sameLine()
+                if (!ImGui.isAnyItemActive()) customFps.set(project.targetFps)
+                ImGui.setNextItemWidth(100f)
+                ImGui.inputInt("##export_custom_fps", customFps)
+                Tooltips.show(strings, "lbl.export.target_fps.tooltip")
+                if (ImGui.isItemDeactivatedAfterEdit()) eventSystem.publish(ProjectEvent.SetProjectTargetFpsRequested(customFps.get()))
+            }
+        }
+    }
+
+    /** Asset count, estimated size and warnings, recomputed on a worker when an input changes (EDT-91). */
+    private fun summarySection(project: Project) {
+        MImGui.labeledSeparator(strings.getString("lbl.export.section.summary"))
+        summary.refresh(project, wizard.options(project), gameJar?.takeIf { jarSearch.stale && wizard.target == ExportTarget.WINDOWS })
+        val snap = summary.snapshot
+        if (snap == null) {
+            MImGui.textDisabled(strings.getString("lbl.export.summary.computing"))
+            return
+        }
+        ImGui.text(strings.getString("lbl.export.summary.assets", snap.estimate.assetCount, formatBytes(snap.estimate.bytes, strings)))
+        if (summary.computing) {
+            ImGui.sameLine()
+            MImGui.textDisabled(strings.getString("lbl.export.summary.updating"))
+        }
+        warningList(snap.warnings, "lbl.export.summary.no_warnings")
+    }
+
+    /** Translated warnings (`lbl.export.warning.*`), one per line, or [emptyKey] when there are none. */
+    private fun warningList(warnings: List<ExportNotice>, emptyKey: String?) {
+        if (warnings.isEmpty()) {
+            emptyKey?.let { MImGui.textDisabled(strings.getString(it)) }
+            return
+        }
+        ImGui.pushTextWrapPos(0f)
+        warnings.forEach { MImGui.warningText(warningText(strings, it)) }
+        ImGui.popTextWrapPos()
+    }
+
+    private fun fpsLabel(fps: Int): String =
+        if (fps <= 0) strings.getString("lbl.export.target_fps.uncapped") else strings.getString("lbl.export.target_fps.value", fps)
+
+    /** [path] for display: project-relative, an `engine:` reference as is, or [defaultKey]'s text when blank. */
+    private fun displayPath(project: Project, path: String, defaultKey: String): String = when {
+        path.isBlank() -> strings.getString(defaultKey)
+        EngineDefaults.isReference(path) -> path
+        else -> File(path).let { f -> if (f.isAbsolute) f.relativeToOrSelf(project.getProjectDirectory()).invariantSeparatorsPath else path }
+    }
+
+    /** A project image picked with the system dialog (absolute path; saved project-relative), or null. */
+    private fun chooseImage(project: Project, titleKey: String): String? = try {
+        UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName())
+        val start = File(project.getProjectDirectory(), "Assets/Textures").takeIf { it.isDirectory } ?: project.getProjectDirectory()
+        val chooser = JFileChooser(start)
+        chooser.fileSelectionMode = JFileChooser.FILES_ONLY
+        chooser.fileFilter = javax.swing.filechooser.FileNameExtensionFilter(strings.getString("dialog.export.images"), "png", "jpg", "jpeg")
+        chooser.dialogTitle = strings.getString(titleKey)
+        if (chooser.showOpenDialog(null) == JFileChooser.APPROVE_OPTION) chooser.selectedFile.absolutePath else null
+    } catch (e: Exception) {
+        logger.logEditor("Error choosing an image: ${e.message}", LogLevel.ERROR)
+        null
     }
 
     /** Where the game jar was found (or every place searched), a stale-jar warning and the optional override (AST-11). */
@@ -225,6 +395,10 @@ class ExportWizardWindow(
                     strings.getString("lbl.export.succeeded", result.assetCount, formatBytes(result.packedBytes, strings), result.outputDir.path)
                 )
                 ImGui.progressBar(1f, -1f, 0f, "100%")
+                if (result.warnings.isNotEmpty()) {
+                    MImGui.labeledSeparator(strings.getString("lbl.export.warnings"))
+                    warningList(result.warnings, null)
+                }
             }
             Phase.FAILED -> {
                 val result = wizard.result ?: return
@@ -269,6 +443,15 @@ class ExportWizardWindow(
 
     companion object {
         const val NAME = "window.export_wizard"
+
+        /** Where "Custom" starts in the frame cap combo. */
+        const val CUSTOM_FPS_START = 90
+
+        fun physicsKey(backend: PhysicsBackend): String = "lbl.export.physics.${backend.name.lowercase()}"
+
+        /** An export warning in the editor language, its args filling the key's placeholders. */
+        fun warningText(strings: StringManager, notice: ExportNotice): String =
+            strings.getString(notice.warning.key, *notice.args.toTypedArray())
 
         /** No project or running: [Close]. Editing: [Cancel] [Export]. Finished: [Open folder] [Back] [Close]. */
         internal fun footer(

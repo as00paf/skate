@@ -2,6 +2,10 @@ package com.pafoid.skate.editor.ui.handlers
 
 import com.pafoid.skate.editor.commands.project.SetGraphicsBackendCommand
 import com.pafoid.skate.editor.commands.project.SetRandomSeedCommand
+import com.pafoid.skate.editor.commands.project.SetProjectIconCommand
+import com.pafoid.skate.editor.commands.project.SetProjectPhysicsBackendCommand
+import com.pafoid.skate.editor.commands.project.SetProjectSplashCommand
+import com.pafoid.skate.editor.commands.project.SetProjectTargetFpsCommand
 import com.pafoid.skate.engine.ecs.random.RandomService
 import com.pafoid.skate.editor.commands.project.SetProjectGraphicsQualityCommand
 import com.pafoid.skate.editor.commands.project.SetProjectMsaaSamplesCommand
@@ -99,6 +103,23 @@ class ProjectActionHandler(
             val project = projectManager.currentProject ?: return@subscribe
             val command = SetGraphicsBackendCommand(project, event.backend)
             if (!command.isNoOp) undoRedoManager.executeCommand(command)
+        }
+        // Export dialog, Game section (EDT-91, AST-29).
+        eventSystem.subscribe<ProjectEvent.SetProjectIconRequested> { event ->
+            val project = projectManager.currentProject ?: return@subscribe
+            SetProjectIconCommand(project, event.iconPath).takeUnless { it.isNoOp }?.let { undoRedoManager.executeCommand(it) }
+        }
+        eventSystem.subscribe<ProjectEvent.SetProjectSplashRequested> { event ->
+            val project = projectManager.currentProject ?: return@subscribe
+            SetProjectSplashCommand(project, event.splashPath, event.seconds).takeUnless { it.isNoOp }?.let { undoRedoManager.executeCommand(it) }
+        }
+        eventSystem.subscribe<ProjectEvent.SetProjectTargetFpsRequested> { event ->
+            val project = projectManager.currentProject ?: return@subscribe
+            SetProjectTargetFpsCommand(project, event.fps).takeUnless { it.isNoOp }?.let { undoRedoManager.executeCommand(it) }
+        }
+        eventSystem.subscribe<ProjectEvent.SetProjectPhysicsBackendRequested> { event ->
+            val project = projectManager.currentProject ?: return@subscribe
+            SetProjectPhysicsBackendCommand(project, event.backend).takeUnless { it.isNoOp }?.let { undoRedoManager.executeCommand(it) }
         }
         eventSystem.subscribe<ProjectEvent.SetRandomSeedRequested> { event ->
             val project = projectManager.currentProject ?: return@subscribe
