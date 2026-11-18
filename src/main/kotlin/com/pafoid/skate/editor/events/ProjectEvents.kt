@@ -55,6 +55,13 @@ sealed class ProjectEvent(eventName: String) : Event(eventName) {
     data class SetFullscreenRequested(val enabled: Boolean) : ProjectEvent("project.action.set_fullscreen")
     /** Change the open project's VSync setting (GUI-15). */
     data class SetVsyncRequested(val enabled: Boolean) : ProjectEvent("project.action.set_vsync")
+
+    /** Export dialog, Game section (EDT-91, AST-29); each becomes an undoable command. */
+    data class SetProjectIconRequested(val iconPath: String) : ProjectEvent("project.action.set_icon")
+    data class SetProjectSplashRequested(val splashPath: String, val seconds: Float) : ProjectEvent("project.action.set_splash")
+    data class SetProjectTargetFpsRequested(val fps: Int) : ProjectEvent("project.action.set_target_fps")
+    data class SetProjectPhysicsBackendRequested(val backend: com.pafoid.skate.engine.physics3d.PhysicsBackend) :
+        ProjectEvent("project.action.set_physics_backend")
     data class CreateProjectSucceeded(val name: String, val folderPath: String) : ProjectEvent("project.action.create_project_succeeded")
     data class CreateProjectFailed(val name: String, val folderPath: String, val reason: String) : ProjectEvent("project.action.create_project_failed")
     /** Create a file or folder at [path]; a new file starts with [content] when given (EDT-80: shader template). */
