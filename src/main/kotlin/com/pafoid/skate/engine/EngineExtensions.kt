@@ -65,6 +65,7 @@ fun GameObject.getComponent(type: ComponentType) =
         ComponentType.CAMERA_CYCLE -> getComponent<com.pafoid.skate.engine.ecs.components.CameraCycleComponent>()
         ComponentType.INVENTORY -> getComponent<com.pafoid.skate.engine.ecs.components.InventoryComponent>()
         ComponentType.EQUIPMENT -> getComponent<com.pafoid.skate.engine.ecs.components.EquipmentComponent>()
+        ComponentType.BONE_ATTACHMENT -> getComponent<com.pafoid.skate.engine.ecs.components.BoneAttachment>()
         ComponentType.GRID_LINES -> getComponent<GridLines>()
         ComponentType.INPUT_STATE -> getComponent<InputStateComponent>()
         ComponentType.JOINT -> getComponent<JointComponent>()

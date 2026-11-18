@@ -12,7 +12,10 @@ import com.pafoid.skate.engine.gameplay.CameraPreset
 import com.pafoid.skate.game.input.SkateActions
 import com.pafoid.skate.game.input.SkateInputContext
 import com.pafoid.skate.engine.core.Engine
+import com.pafoid.skate.engine.ecs.systems.AppearanceSystem
+import com.pafoid.skate.engine.ecs.systems.BoneAttachmentSystem
 import com.pafoid.skate.engine.ecs.systems.InventorySystem
+import com.pafoid.skate.engine.gameplay.appearance.SkeletonConfigs
 import com.pafoid.skate.engine.ecs.systems.PlayerMotionSystem
 import com.pafoid.skate.engine.gameplay.items.ItemDatabase
 import com.pafoid.skate.game.items.SkateItems
@@ -118,6 +121,8 @@ class SkateBehavior(
     override val rideHeight: Float get() = config.mount.rideHeight
 
     override val animationBlendTimes: Map<String, Float> get() = config.blendTimes
+
+    override val skeletonConfig: String get() = config.skeletonConfig
 
     /**
      * Controller parameters (floats) for blend trees and transitions: `speed` (m/s), `verticalSpeed` (m/s, + up),
@@ -358,11 +363,18 @@ object SkateGameplay {
         if (engine.systemManager.getSystem<SkateHudSystem>() == null) {
             engine.systemManager.addSystem(SkateHudSystem(engine.eventSystem))
         }
-        // Items and equipment (GPL-24a); the item set reloads on each Play start.
+        // Items and equipment (GPL-24a, e); the item set reloads on each scene init. One database for both systems.
         if (engine.systemManager.getSystem<InventorySystem>() == null) {
+            val items = ItemDatabase()
             engine.systemManager.addSystem(
-                InventorySystem(engine.eventSystem, ItemDatabase(), reload = { SkateItems.load(it, engine.assetsManager.paths.projectRoot) }),
+                InventorySystem(
+                    engine.eventSystem, items,
+                    slotsOf = SkeletonConfigs::slotsOf,
+                    reload = { SkateItems.load(it, engine.assetsManager.paths.projectRoot) },
+                ),
             )
+            engine.systemManager.addSystem(AppearanceSystem(engine.eventSystem, items) { engine.assetsManager.loadModel(it) })
+            engine.systemManager.addSystem(BoneAttachmentSystem())
         }
         // Water bails (GPL-32); idempotent. To move into Engine wiring so every game gets it.
         engine.systemManager.getSystem<PlayerMotionSystem>()?.listenTo(engine.eventSystem)

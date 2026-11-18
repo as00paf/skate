@@ -6,6 +6,7 @@ enum class ComponentType {
     ANIMATOR,
     AUDIO,
     AUDIO_LISTENER,
+    BONE_ATTACHMENT,
     BONE_OVERRIDE,
     BOX_COLLIDER_3D,
     CAMERA,
@@ -62,6 +63,7 @@ enum class ComponentType {
             CAMERA -> CameraComponent()
             CAMERA_CYCLE -> CameraCycleComponent()
             INVENTORY -> InventoryComponent()
+            BONE_ATTACHMENT -> BoneAttachment()
             EQUIPMENT -> EquipmentComponent()
             CAPSULE_COLLIDER -> CapsuleCollider3D()
             COMPOUND_HULL_COLLIDER -> CompoundHullCollider3D()

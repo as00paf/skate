@@ -94,6 +94,7 @@ abstract class Component {
                 is CameraCycleComponent -> ComponentType.CAMERA_CYCLE
                 is InventoryComponent -> ComponentType.INVENTORY
                 is EquipmentComponent -> ComponentType.EQUIPMENT
+                is BoneAttachment -> ComponentType.BONE_ATTACHMENT
                 is GridLines -> ComponentType.GRID_LINES
                 is InputStateComponent -> INPUT_STATE
                 is JointComponent -> JOINT

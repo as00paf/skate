@@ -1,6 +1,7 @@
 package com.pafoid.skate.game.items
 
 import com.pafoid.skate.engine.assets.AssetFolder
+import com.pafoid.skate.engine.assets.PrefabsGenerator
 import com.pafoid.skate.engine.assets.ProjectLayout
 import com.pafoid.skate.engine.gameplay.items.ItemDatabase
 import java.io.File
@@ -10,8 +11,11 @@ import java.io.File
  * folder, whose files override bundled ones with the same id.
  */
 object SkateItems {
-    /** Bundled item files (classpath resources). */
-    val BUNDLED: List<String> = emptyList()
+    const val HAT = "skate.hat"
+    const val GLASSES = "skate.glasses"
+
+    /** Bundled item files (classpath resources): a hat and glasses on placeholder meshes (GPL-24e). */
+    val BUNDLED: List<String> = listOf(PrefabsGenerator.SKATER_HAT_ITEM, PrefabsGenerator.SKATER_GLASSES_ITEM)
 
     fun load(db: ItemDatabase, projectRoot: File?) {
         db.loadAll(BUNDLED)
