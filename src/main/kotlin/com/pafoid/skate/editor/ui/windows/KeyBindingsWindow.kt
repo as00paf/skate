@@ -45,7 +45,7 @@ class KeyBindingsWindow(
     override val icon: String = Icons.KEYBOARD
     override val relatedWindows = listOf("window.editor_settings", "window.project_settings")
 
-    private var keyBindingTab = TAB_ACTIONS  // 0=Game actions, 1=Editor, 2=Camera, 3=Hierarchy, 4=Fixed, 5=Gamepad, 6=Test
+    private var keyBindingTab = TAB_ACTIONS  // 0=Game actions, 1=Editor, 2=Camera, 3=Hierarchy, 4=Tool windows, 5=Fixed, 6=Gamepad, 7=Test
 
     /** Esc pressed this frame to cancel a key capture: it must not also close the dialog through the footer. */
     private var escapeUsedByCapture = false
@@ -104,6 +104,7 @@ class KeyBindingsWindow(
             stringManager.getString(ShortcutGroup.EDITOR.labelKey),
             stringManager.getString(ShortcutGroup.CAMERA.labelKey),
             stringManager.getString(ShortcutGroup.HIERARCHY.labelKey),
+            stringManager.getString(ShortcutGroup.TOOL_WINDOWS.labelKey),
             stringManager.getString("tab.keybindings.fixed"),
             stringManager.getString("tab.keybindings.gamepad"),
             stringManager.getString("tab.keybindings.test"),
@@ -124,6 +125,10 @@ class KeyBindingsWindow(
                 MImGui.textDisabled(stringManager.getString("lbl.keybindings.camera_look_note"))
             }
             TAB_HIERARCHY -> renderGroup(ShortcutGroup.HIERARCHY)
+            TAB_TOOL_WINDOWS -> {
+                MImGui.textDisabled(stringManager.getString("lbl.keybindings.tool_windows_note"))
+                renderGroup(ShortcutGroup.TOOL_WINDOWS)
+            }
             TAB_FIXED -> renderFixed()
             TAB_GAMEPAD -> text(stringManager.getString("lbl.keybindings.gamepad_moved"))
             TAB_TEST -> renderTest()
@@ -206,9 +211,14 @@ class KeyBindingsWindow(
         const val TAB_EDITOR = 1
         const val TAB_CAMERA = 2
         const val TAB_HIERARCHY = 3
-        const val TAB_FIXED = 4
-        const val TAB_GAMEPAD = 5
-        const val TAB_TEST = 6
+        /** EDT-84: one Alt shortcut per tool window. */
+        const val TAB_TOOL_WINDOWS = 4
+        const val TAB_FIXED = 5
+        const val TAB_GAMEPAD = 6
+        const val TAB_TEST = 7
+
+        /** The tabs of rebindable editor shortcuts: they get Reset to defaults. */
+        val REBINDABLE_TABS = TAB_EDITOR..TAB_TOOL_WINDOWS
 
         /**
          * Window target that opens this dialog on its Test tab ([openTestTab]): publish `WindowAction.Show(TEST_TAB)`.
@@ -223,7 +233,7 @@ class KeyBindingsWindow(
             onResetToDefaults: () -> Unit = {},
             onClose: () -> Unit = {},
         ): List<FooterButton> = buildList {
-            if (tab in TAB_EDITOR..TAB_HIERARCHY) {
+            if (tab in REBINDABLE_TABS) {
                 add(FooterButton("btn.reset_to_defaults", FooterButton.Role.SECONDARY, closes = false, onClick = onResetToDefaults))
             }
             add(FooterButton("btn.close", FooterButton.Role.CANCEL, closes = !escapeUsedByCapture, onClick = onClose))

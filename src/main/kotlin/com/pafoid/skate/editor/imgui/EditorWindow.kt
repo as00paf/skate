@@ -37,6 +37,9 @@ abstract class EditorWindow(
     /** Set by the tab menu's Reset position; applied before the next `begin`. */
     internal var resetPositionRequested = false
 
+    /** EDT-84: a dock node to move into before the next `begin` (a side-bar button moved to another side). */
+    internal var dockRequest: Int? = null
+
     /** Dialogs float: no dock to reset to. */
     open val isDialog: Boolean get() = false
 
@@ -71,12 +74,18 @@ abstract class EditorWindow(
                 resetPositionRequested = false
                 DefaultDockLayout.docks.resetTarget(name)?.let { ImGui.setNextWindowDockID(it) }
             }
+            dockRequest?.let {
+                dockRequest = null
+                ImGui.setNextWindowDockID(it)
+            }
             title(strings)
         }
         val visible = if (closable) ImGui.begin(title, isOpen, windowFlags) else ImGui.begin(title, windowFlags)
         if (!isDialog && host == null) DefaultDockLayout.docks.record(name, ImGui.getWindowDockID())
+        val focused = ImGui.isWindowFocused(ImGuiFocusedFlags.RootAndChildWindows)
+        ToolWindowStates.report(name, visible, focused) // EDT-84: the side-bar buttons' look and click
         if (canMaximize) {
-            if (ImGui.isWindowFocused(ImGuiFocusedFlags.RootAndChildWindows)) MaximizeSession.focused = name
+            if (focused) MaximizeSession.focused = name
             // Right after `begin` the last item is the tab (docked) or the title bar (the host): double-click toggles.
             // A floating window's title bar keeps ImGui's own double-click (collapse).
             val onTab = host != null || ImGui.isWindowDocked()

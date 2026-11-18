@@ -4,12 +4,51 @@ import com.pafoid.skate.engine.input.InputBinding
 import org.lwjgl.glfw.GLFW
 import kotlin.reflect.KMutableProperty1
 
-/** A key with its modifiers. Modifiers must match exactly: Ctrl+Shift+S is not Ctrl+S. */
-data class KeyCombo(val key: Int, val ctrl: Boolean = false, val shift: Boolean = false) {
-    fun display(): String = buildString {
+/**
+ * A key with its modifiers. Modifiers must match exactly: Ctrl+Shift+S is not Ctrl+S. A negative [key] is unbound: it
+ * never fires and conflicts with nothing (EDT-84 tool window shortcuts that have no default).
+ */
+data class KeyCombo(val key: Int, val ctrl: Boolean = false, val shift: Boolean = false, val alt: Boolean = false) {
+    val isBound: Boolean get() = key >= 0
+
+    fun display(): String = if (!isBound) UNBOUND else buildString {
         if (ctrl) append("Ctrl+")
         if (shift) append("Shift+")
+        if (alt) append("Alt+")
         append(KeyNames.name(key))
+    }
+
+    companion object {
+        /** Shown for an unbound shortcut (a dash: no language needed). */
+        const val UNBOUND = "—"
+    }
+}
+
+/** Where a rebindable shortcut keeps its key in [EditorInputMappings]. */
+interface ShortcutBinding {
+    /** Stable name: the mappings property, or `toolWindows.<window>`. */
+    val name: String
+    fun get(mappings: EditorInputMappings): InputBinding
+    fun set(mappings: EditorInputMappings, binding: InputBinding)
+}
+
+/** A binding stored in its own [EditorInputMappings] property. */
+class PropertyBinding(private val property: KMutableProperty1<EditorInputMappings, InputBinding>) : ShortcutBinding {
+    override val name: String get() = property.name
+    override fun get(mappings: EditorInputMappings) = property.get(mappings)
+    override fun set(mappings: EditorInputMappings, binding: InputBinding) = property.set(mappings, binding)
+}
+
+/**
+ * EDT-84: a tool window's key, in [EditorInputMappings.toolWindows]. Settings saved before a window existed have no
+ * entry: the window's default ([ToolWindowShortcuts.defaultKey]) applies.
+ */
+class ToolWindowBinding(val window: String) : ShortcutBinding {
+    override val name: String get() = "toolWindows.$window"
+    override fun get(mappings: EditorInputMappings): InputBinding =
+        mappings.toolWindows[window] ?: InputBinding(keyboardKey = ToolWindowShortcuts.defaultKey(window))
+    override fun set(mappings: EditorInputMappings, binding: InputBinding) {
+        mappings.toolWindows = mappings.toolWindows + (window to binding)
     }
 }
 
@@ -21,6 +60,8 @@ enum class ShortcutGroup(val labelKey: String) {
     EDITOR("tab.keybindings.editor"),
     CAMERA("tab.keybindings.camera"),
     HIERARCHY("tab.keybindings.hierarchy"),
+    /** EDT-84: one shortcut per tool window, like a click on its side-bar button. */
+    TOOL_WINDOWS("tab.keybindings.tool_windows"),
 }
 
 /**
@@ -32,15 +73,16 @@ class EditorShortcut internal constructor(
     val labelKey: String,
     val group: ShortcutGroup,
     val scope: ShortcutScope = ShortcutScope.GLOBAL,
-    val binding: KMutableProperty1<EditorInputMappings, InputBinding>? = null,
+    val binding: ShortcutBinding? = null,
     private val fixedKey: Int = GLFW.GLFW_KEY_UNKNOWN,
     val ctrl: Boolean = false,
     val shift: Boolean = false,
+    val alt: Boolean = false,
 ) {
     val rebindable: Boolean get() = binding != null
 
     fun combo(mappings: EditorInputMappings = EditorShortcuts.mappings()): KeyCombo =
-        KeyCombo(binding?.get(mappings)?.keyboardKey ?: fixedKey, ctrl, shift)
+        KeyCombo(binding?.get(mappings)?.keyboardKey ?: fixedKey, ctrl, shift, alt)
 
     /** Text for menus and tooltips, e.g. `Ctrl+D`. */
     fun display(mappings: EditorInputMappings = EditorShortcuts.mappings()): String = combo(mappings).display()
@@ -58,7 +100,7 @@ object EditorShortcuts {
     var mappings: () -> EditorInputMappings = { EditorInputMappings() }
 
     private fun key(id: String, label: String, group: ShortcutGroup, binding: KMutableProperty1<EditorInputMappings, InputBinding>, ctrl: Boolean = false, scope: ShortcutScope = ShortcutScope.GLOBAL, shift: Boolean = false) =
-        EditorShortcut(id, label, group, scope, binding, ctrl = ctrl, shift = shift)
+        EditorShortcut(id, label, group, scope, PropertyBinding(binding), ctrl = ctrl, shift = shift)
 
     private fun fixed(id: String, label: String, key: Int, ctrl: Boolean = true, shift: Boolean = false) =
         EditorShortcut(id, label, ShortcutGroup.EDITOR, fixedKey = key, ctrl = ctrl, shift = shift)
@@ -114,13 +156,24 @@ object EditorShortcuts {
     val SELECT_FIRST = key("select_first", "lbl.hierarchy.select_first", ShortcutGroup.HIERARCHY, EditorInputMappings::hierarchySelectFirst, scope = ShortcutScope.HIERARCHY)
     val SELECT_LAST = key("select_last", "lbl.hierarchy.select_last", ShortcutGroup.HIERARCHY, EditorInputMappings::hierarchySelectLast, scope = ShortcutScope.HIERARCHY)
 
+    /**
+     * EDT-84: one shortcut per tool window (Alt + a key, like IntelliJ's Alt+1…9), labelled with the window's title.
+     * Pressed, it does what a click on the window's side-bar button does.
+     */
+    val TOOL_WINDOWS: List<EditorShortcut> = ToolWindowShortcuts.WINDOWS.map { window ->
+        EditorShortcut("tool_window.${window.removePrefix("window.")}", window, ShortcutGroup.TOOL_WINDOWS, binding = ToolWindowBinding(window), alt = true)
+    }
+
+    /** The tool window shortcut of [window], or null. */
+    fun toolWindow(window: String): EditorShortcut? = TOOL_WINDOWS.firstOrNull { (it.binding as ToolWindowBinding).window == window }
+
     val fixedShortcuts: List<EditorShortcut> = listOf(UNDO, REDO, REDO_ALT, CUT, COPY, PASTE, NEW_SCENE, SAVE_SCENE, SAVE_SCENE_AS, OPEN_PROJECT, INPUT_TESTING, VCS_COMMIT)
 
     val rebindable: List<EditorShortcut> = listOf(
         SEARCH, PLAY_TOGGLE, FULLSCREEN, MAXIMIZE_WINDOW, GIZMO_SELECT, GIZMO_TRANSLATE, GIZMO_ROTATE, GIZMO_SCALE, MEASURE, DESELECT, FOCUS,
         CAMERA_FORWARD, CAMERA_BACKWARD, CAMERA_LEFT, CAMERA_RIGHT, CAMERA_UP, CAMERA_DOWN, CAMERA_RESET,
         CREATE_EMPTY, DELETE, DUPLICATE, RENAME, TOGGLE_VISIBILITY, TOGGLE_LOCK, NAVIGATE_UP, NAVIGATE_DOWN, SELECT_FIRST, SELECT_LAST,
-    )
+    ) + TOOL_WINDOWS
 
     val all: List<EditorShortcut> = fixedShortcuts + rebindable
 
@@ -134,7 +187,8 @@ object EditorShortcuts {
         for (i in all.indices) for (j in i + 1 until all.size) {
             val a = all[i]
             val b = all[j]
-            if (bucket(a) == bucket(b) && a.combo(mappings) == b.combo(mappings)) result += a to b
+            val combo = a.combo(mappings)
+            if (combo.isBound && bucket(a) == bucket(b) && combo == b.combo(mappings)) result += a to b
         }
         return result
     }
