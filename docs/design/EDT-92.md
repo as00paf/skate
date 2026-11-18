@@ -79,3 +79,21 @@ of the inspector sections and the tool panel; string/tooltip guards (EN + FR in 
    EDT-92 is sculpt, paint, stamps, asset creation, `seedName` on create and the note when the sample spacing is
    capped. (Assumption: the "pinned-chunk note" in the approval means the REN-42 `spacingCapped()` note; streaming
    eviction and chunk pinning are not implemented yet.) §1 item 3 therefore keeps only *Stamps* in EDT-92.
+
+## 8. Implementation notes (2026-11-17)
+
+- Code: `editor/terrain/` (pure: `TerrainBrush`, `TerrainStampHandles`, `TerrainToolState`, `TerrainEditing`),
+  `editor/gizmos/TerrainBrushTool` (run by `GizmoSystem` instead of the other gizmos while it claims the selection; a
+  gizmo key gives the viewport back), `editor/commands/terrain/` (`TerrainStrokeCommand`, `SetTerrainStampsCommand`,
+  `ApplyTerrainPresetCommand`, `UsePaintedBiomesCommand`, `CreateTerrainAssetCommand`), `editor/events/TerrainAction`,
+  `editor/ui/handlers/TerrainActionHandler`, `editor/imgui/components/Terrain.kt`.
+- Deviations from §2–§5:
+  - "Flatten terrain under" always adds a RECT stamp from the object's world bounding spheres (1 m margin, lowest
+    point, 4 m falloff). PREFAB footprints that follow a prefab are left for later; nothing fills `prefabGuid` yet.
+  - Stamp handle drags and inspector field edits apply on release (one rebuild per edit), with a preview outline
+    while dragging.
+  - Painting a procedural-biome terrain first runs `UsePaintedBiomesCommand` (its own undo step: every chunk starts
+    from its current dominant biomes) and paints once the terrain has rebuilt with painted biomes.
+  - A stroke that outlives a rebuild of its terrain (settings changed mid-stroke) is dropped, not recorded.
+  - The asset is created through `TerrainAssetStore.create` and registered with the project registry at once
+    (`AssetRegistry.register`), because the registry source only rescans on its first unknown GUID.
