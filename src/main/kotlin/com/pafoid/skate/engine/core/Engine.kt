@@ -16,6 +16,7 @@ import com.pafoid.skate.engine.ecs.systems.DirectionalLightSystem
 import com.pafoid.skate.engine.ecs.systems.EnvironmentClockSystem
 import com.pafoid.skate.engine.ecs.systems.EnvironmentSystem
 import com.pafoid.skate.engine.ecs.systems.TerrainSystem
+import com.pafoid.skate.engine.ecs.systems.TerrainStreamingSystem
 import com.pafoid.skate.engine.ecs.systems.CameraControlSystem
 import com.pafoid.skate.engine.ecs.systems.CameraCycleSystem
 import com.pafoid.skate.engine.events.CameraAction
@@ -179,6 +180,11 @@ class Engine {
             EnvironmentSystem(),
             EnvironmentClockSystem(), // wind/water clock, before physics (REN-29 §5.3)
             TerrainSystem({ logger.log(it, LoggerService.LogLevel.ERROR) }), // builds terrain chunks before physics and rendering read them (REN-28 task 3)
+            TerrainStreamingSystem(
+                cameraPosition = { cameraManager.transform.worldMatrix.getTranslation(org.joml.Vector3f()) },
+                source = TerrainStreamingSystem::storedChunks,
+                report = { logger.log(it, LoggerService.LogLevel.WARN) },
+            ), // streams terrain chunks around the camera and StreamingFocus entities (REN-28 §15)
             physicsSystem,
             PhysicsFrameSystem(physicsSystem),
             DayNightCycleSystem(),
