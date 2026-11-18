@@ -1,6 +1,7 @@
 ---
 name: skate-input
 description: "Skate engine Input agent (INP-* tasks in GameEngine.md): keyboard/mouse/gamepad input, bindings and action maps, dead zones, rebinding, hot-plug, rumble."
+tools: ["read", "write", "shell", "web"]
 ---
 <!-- Generated from .github/agents/skate-input.agent.md by tools/herdr/sync-agents.sh. Do not edit. -->
 

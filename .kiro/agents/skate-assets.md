@@ -1,6 +1,7 @@
 ---
 name: skate-assets
 description: "Skate engine Asset management agent (AST-* tasks in GameEngine.md): asset loading, handles/GUIDs, async loading, serialization and versioning, hot reload, export and asset packing."
+tools: ["read", "write", "shell", "web"]
 ---
 <!-- Generated from .github/agents/skate-assets.agent.md by tools/herdr/sync-agents.sh. Do not edit. -->
 

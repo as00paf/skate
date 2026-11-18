@@ -1,6 +1,7 @@
 ---
 name: skate-gameui
 description: "Skate engine In-game UI agent (GUI-* tasks in GameEngine.md): runtime (non-ImGui) UI: canvas, layout, widgets, focus and gamepad navigation, fonts, localization."
+tools: ["read", "write", "shell", "web"]
 ---
 <!-- Generated from .github/agents/skate-gameui.agent.md by tools/herdr/sync-agents.sh. Do not edit. -->
 

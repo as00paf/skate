@@ -1,6 +1,7 @@
 ---
 name: skate-audio
 description: "Skate engine Audio agent (AUD-* tasks in GameEngine.md): OpenAL audio engine, mixer and buses, 3D spatial audio, streaming, voice management, effects."
+tools: ["read", "write", "shell", "web"]
 ---
 <!-- Generated from .github/agents/skate-audio.agent.md by tools/herdr/sync-agents.sh. Do not edit. -->
 

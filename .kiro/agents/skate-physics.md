@@ -1,6 +1,7 @@
 ---
 name: skate-physics
 description: "Skate engine Physics agent (PHY-* tasks in GameEngine.md): physics abstraction and backends (Bullet via libbulletjme), Physics3DFactory, colliders, rigid bodies, joints and constraints, ragdolls, queries, collision events."
+tools: ["read", "write", "shell", "web"]
 ---
 <!-- Generated from .github/agents/skate-physics.agent.md by tools/herdr/sync-agents.sh. Do not edit. -->
 

@@ -1,6 +1,7 @@
 ---
 name: skate-online
 description: "Skate engine Networking & platform agent (NET-* tasks in GameEngine.md): multiplayer architecture, transport, replication, prediction, Steam integration (steamworks4j) and Steam networking."
+tools: ["read", "write", "shell", "web"]
 ---
 <!-- Generated from .github/agents/skate-online.agent.md by tools/herdr/sync-agents.sh. Do not edit. -->
 

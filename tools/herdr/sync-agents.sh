@@ -41,6 +41,7 @@ for f in "$src"/*.agent.md; do
     echo "---"
     echo "name: $name"
     echo "description: \"${description//\"/\\\"}\""
+    echo 'tools: ["read", "write", "shell", "web"]'
     echo "---"
     echo "$note"
     echo "$body"

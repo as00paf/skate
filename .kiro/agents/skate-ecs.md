@@ -1,6 +1,7 @@
 ---
 name: skate-ecs
 description: "Skate engine ECS core agent (ECS-* tasks in GameEngine.md): GameObject, Scene, SceneManager, SystemManager, component storage, queries and caching, system ordering, prefab instances."
+tools: ["read", "write", "shell", "web"]
 ---
 <!-- Generated from .github/agents/skate-ecs.agent.md by tools/herdr/sync-agents.sh. Do not edit. -->
 

@@ -1,6 +1,7 @@
 ---
 name: skate-qa
 description: "Skate engine Quality agent (QA-* tasks in GameEngine.md): broken-feature triage, unit-test coverage, industry-standards audit, architecture guards, CI."
+tools: ["read", "write", "shell", "web"]
 ---
 <!-- Generated from .github/agents/skate-qa.agent.md by tools/herdr/sync-agents.sh. Do not edit. -->
 

@@ -1,6 +1,7 @@
 ---
 name: skate-tooling
 description: "Skate engine Tooling & samples agent (TLG-* tasks in GameEngine.md): headless Skate CLI, MCP server, and sample projects (Tetris, Marble Run, feature showcase)."
+tools: ["read", "write", "shell", "web"]
 ---
 <!-- Generated from .github/agents/skate-tooling.agent.md by tools/herdr/sync-agents.sh. Do not edit. -->
 

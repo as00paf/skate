@@ -1,6 +1,7 @@
 ---
 name: skate-vulkan
 description: "Skate engine Vulkan agent (VK-* tasks in GameEngine.md): the Vulkan RHI backend for exported games: window surface and swapchain, frames in flight, memory and descriptors, SPIR-V shaders, and porting render passes to Vulkan at parity with OpenGL."
+tools: ["read", "write", "shell", "web"]
 ---
 <!-- Generated from .github/agents/skate-vulkan.agent.md by tools/herdr/sync-agents.sh. Do not edit. -->
 

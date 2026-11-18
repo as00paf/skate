@@ -1,6 +1,7 @@
 ---
 name: skate-scripting
 description: "Skate engine Scripting agent (SCR-* tasks in GameEngine.md): language-agnostic script API, Kotlin Script (.kts) host, script hot reload and errors, later TypeScript and Lua hosts."
+tools: ["read", "write", "shell", "web"]
 ---
 <!-- Generated from .github/agents/skate-scripting.agent.md by tools/herdr/sync-agents.sh. Do not edit. -->
 

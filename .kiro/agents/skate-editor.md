@@ -1,6 +1,7 @@
 ---
 name: skate-editor
 description: "Skate engine Editor agent (EDT-* tasks in GameEngine.md): ImGui layer, docking and layout persistence, viewport, gizmos, camera/light visuals, tooltips, translations, theming, shell panel, export UX."
+tools: ["read", "write", "shell", "web"]
 ---
 <!-- Generated from .github/agents/skate-editor.agent.md by tools/herdr/sync-agents.sh. Do not edit. -->
 

@@ -1,6 +1,7 @@
 ---
 name: skate-animation
 description: "Skate engine Animation agent (ANI-* tasks in GameEngine.md): skeletal animation, Animator, blending, state machines, retargeting, masks, IK, GPU skinning."
+tools: ["read", "write", "shell", "web"]
 ---
 <!-- Generated from .github/agents/skate-animation.agent.md by tools/herdr/sync-agents.sh. Do not edit. -->
 

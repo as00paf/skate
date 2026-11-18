@@ -1,6 +1,7 @@
 ---
 name: skate-gameplay
 description: "Skate engine Gameplay agent (GPL-* tasks in GameEngine.md): player and skateboard controllers, character controller, game camera, skate prefabs and the prefab library."
+tools: ["read", "write", "shell", "web"]
 ---
 <!-- Generated from .github/agents/skate-gameplay.agent.md by tools/herdr/sync-agents.sh. Do not edit. -->
 

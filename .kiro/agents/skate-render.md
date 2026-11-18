@@ -1,6 +1,7 @@
 ---
 name: skate-render
 description: "Skate engine Rendering agent (REN-* tasks in GameEngine.md): renderer, render graph and passes, RHI, materials, shaders, lighting, shadows, post-processing, particles, fog, 2D/3D texture rendering."
+tools: ["read", "write", "shell", "web"]
 ---
 <!-- Generated from .github/agents/skate-render.agent.md by tools/herdr/sync-agents.sh. Do not edit. -->
 
