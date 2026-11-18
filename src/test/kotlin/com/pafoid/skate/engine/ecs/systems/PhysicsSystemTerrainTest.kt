@@ -9,8 +9,13 @@ import com.pafoid.skate.engine.ecs.components.ScenePhysicsComponent
 import com.pafoid.skate.engine.ecs.components.TerrainComponent
 import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.getComponent
+import com.pafoid.skate.engine.physics3d.CollisionMeshSource
+import com.pafoid.skate.engine.physics3d.CollisionMeshes
+import com.pafoid.skate.engine.physics3d.ScatterCollider3DTest
 import com.pafoid.skate.engine.physics3d.native.NativeLibraryLoader
 import com.pafoid.skate.engine.render.renderer.DebugRenderer
+import com.pafoid.skate.engine.terrain.Biome
+import com.pafoid.skate.engine.terrain.ScatterRule
 import com.pafoid.skate.engine.terrain.TerrainPreset
 import io.mockk.mockk
 import org.joml.Vector3f
@@ -63,5 +68,33 @@ class PhysicsSystemTerrainTest {
         terrain.collider = false
         manager.update(1f / 60f)
         assertEquals(0, physics.terrainColliderBodyCount)
+    }
+
+    @Test
+    fun sceneTerrain_GetsScatterColliders_FromTheCollisionMeshSource() {
+        NativeLibraryLoader().loadNativeLibrary()
+        CollisionMeshes.source = CollisionMeshSource { if (it == "rock.glb") ScatterCollider3DTest.ROCK else null }
+        try {
+            val physics = PhysicsSystem(mockk<DebugRenderer>(relaxed = true))
+            val manager = SystemManager().apply { addSystem(physics); start() }
+            val terrain = TerrainComponent(sizeMetres = 32f, sampleSpacing = 1f, chunkQuads = 16).apply {
+                applyPreset(TerrainPreset.FLAT)
+                biomes.clear()
+                biomes += Biome(scatter = listOf(ScatterRule(id = "rocks", model = "rock.glb", collider = true, densityPer100m2 = 4f, minSpacing = 3f)))
+                runtime.ensureBuilt(key(projectSeed = 5L), parallel = false)
+            }
+            val scene = Scene().apply {
+                addComponent(ScenePhysicsComponent())
+                addChild(GameObject("Terrain").apply { addComponent(Transform()); addComponent(terrain) })
+            }
+            manager.loadScene(scene)
+            physics.onFrame(1f / 60f, 0f)
+
+            val items = terrain.runtime.chunks.sumOf { it.scatter.size }
+            assertTrue(items > 0)
+            assertEquals(items, physics.scatterColliderBodyCount)
+        } finally {
+            CollisionMeshes.source = CollisionMeshSource.NONE
+        }
     }
 }
