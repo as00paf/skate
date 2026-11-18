@@ -67,6 +67,10 @@ class AssetsPacker(
     var lastManifest: PackManifest? = null
         private set
 
+    /** GUIDs (from `.meta` sidecars) of the project files in the last pack: what export credits are matched against. */
+    var lastPackedIds: Set<String> = emptySet()
+        private set
+
     /** Types that are always packed; everything else is packed only when referenced from scenes, prefabs or the project. */
     private val alwaysPacked = setOf(FileType.PROJECT_FILE, FileType.SCENE, FileType.SCRIPT_KOTLIN, FileType.SCRIPT_JAVA, FileType.CONFIG, FileType.SHADER)
     private val packable = alwaysPacked + setOf(
@@ -185,7 +189,7 @@ class AssetsPacker(
         // The project folder itself is never hidden, even when its path ends in `..` (QA-15).
         return projectDir.walkTopDown()
             .onEnter { (it == projectDir || !it.name.startsWith(".")) && it.canonicalFile != skipped }
-            .filter { it.isFile && !it.name.startsWith(".") && !AssetMeta.isSidecar(it) }
+            .filter { it.isFile && !it.name.startsWith(".") && !AssetMeta.isSidecar(it) && !isRawOsmSnapshot(it) }
             .filter { FileTypeResolver.resolve(it) in packable || isModelCompanion(it) }
             .toList()
     }
@@ -236,6 +240,7 @@ class AssetsPacker(
         val guids = files.mapNotNull { file ->
             AssetMeta.read(file)?.guid?.let { it.value to file.canonicalFile.relativeTo(projectDir).invariantSeparatorsPath }
         }.toMap()
+        lastPackedIds = guids.keys
         val inputs = projectInputs + engineInputs + gameStringInputs(projectInputs) + PackedGuids.input(guids)
         val result = PackBuilder.build(project.name, inputs, compress, project.graphicsBackend)
         inputs.zip(result.manifest.entries).forEach { (input, entry) ->
@@ -285,6 +290,11 @@ class AssetsPacker(
         const val MANIFEST_FILE = "manifest.json"
         const val BUILDS_DIR = ProjectLayout.BUILDS_DIR
         private val MODEL_COMPANIONS = setOf("mtl", "bin")
+
+        /** Raw OpenStreetMap snapshots stay in the project (ODbL, AST-17 §7): never packed, referenced or not. */
+        const val OSM_SNAPSHOT_SUFFIX = ".osm.json"
+
+        fun isRawOsmSnapshot(file: File): Boolean = file.name.lowercase().endsWith(OSM_SNAPSHOT_SUFFIX)
 
         private val projectJson = Json { prettyPrint = true }
 
