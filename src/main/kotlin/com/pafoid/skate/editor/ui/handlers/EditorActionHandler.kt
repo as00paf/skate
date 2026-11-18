@@ -32,6 +32,7 @@ class EditorActionHandler(
     val componentFieldActionHandler = ComponentFieldActionHandler(engine.eventSystem, undoRedoManager, engine.sceneManager)
     val transformActionHandler = TransformActionHandler(engine.eventSystem, undoRedoManager, engine.sceneManager)
     val audioActionHandler = AudioActionHandler(engine.eventSystem, projectManager, undoRedoManager, engine.audioEngine)
+    val waterActionHandler = WaterActionHandler(engine.eventSystem, undoRedoManager, engine.sceneManager)
     val materialActionHandler = MaterialActionHandler(
         engine.eventSystem, undoRedoManager, engine.logger,
         projectDir = { projectManager.currentProject?.getProjectFile()?.absoluteFile?.parentFile },
