@@ -563,9 +563,23 @@ class AnimationEditorController(
 
     fun save() {
         val doc = document ?: return
+        save(doc)
+    }
+
+    /** Saves [doc] (open or not), e.g. from the editor's close prompt (EDT-82). */
+    fun save(doc: ClipDocument) {
         val command = SaveAnimationClipCommand(doc)
         execute(command)
         error = command.getFailureReason()
+    }
+
+    /** Clips with unsaved changes, open in the window or not (EDT-82). */
+    fun unsavedDocuments(): List<ClipDocument> = documents.values.filter { it.dirty }
+
+    /** Forgets [doc] and its unsaved changes (the file is untouched); reopening reads the file again. */
+    fun discard(doc: ClipDocument) {
+        documents.values.remove(doc)
+        if (document === doc) close()
     }
 
     // ---- preview ---------------------------------------------------------------------------------------------

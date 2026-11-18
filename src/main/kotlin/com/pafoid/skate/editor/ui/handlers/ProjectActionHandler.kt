@@ -1,5 +1,7 @@
 package com.pafoid.skate.editor.ui.handlers
 
+import com.pafoid.skate.editor.systems.CloseGuard
+import com.pafoid.skate.editor.systems.CloseTarget
 import com.pafoid.skate.editor.commands.project.SetGraphicsBackendCommand
 import com.pafoid.skate.editor.commands.project.SetRandomSeedCommand
 import com.pafoid.skate.engine.ecs.random.RandomService
@@ -67,30 +69,41 @@ class ProjectActionHandler(
     private val stringManager: StringManager,
     /** Runs project create / open with the loading screen (EDT-56); shared with the scene handler. */
     private val loading: LoadingRunner = LoadingRunner(engine.eventSystem, StepExecutor.Jobs(engine.jobSystem)),
+    /** Asks before closing (or switching away from) a project with unsaved assets (EDT-82); null closes at once. */
+    private val closeGuard: CloseGuard? = null,
 ) {
     private val jobSystem = engine.jobSystem
     private val eventSystem = engine.eventSystem
     private val random by lazy { engine.random }
     private val logger = engine.logger
 
+    /** Runs [close] now, or once the unsaved-assets prompt allows it (EDT-82). */
+    private fun guarded(close: () -> Unit) {
+        val guard = closeGuard
+        if (guard == null) close() else guard.request(CloseTarget.PROJECT, close)
+    }
+
+    private fun openProject(event: OpenProjectRequested) {
+        val file = File(event.projectPath)
+        openWithLoading(file, { OpenProjectFileCommand(projectManager, file, it) }) { opened ->
+            if (opened) {
+                eventSystem.publish(WindowAction.Hide("project_switcher"))
+                eventSystem.publish(WindowAction.Hide("project_wizard"))
+                eventSystem.publish(WindowAction.ShowDefault)
+                eventSystem.publish(OpenProjectSucceeded(event.projectPath))
+            } else {
+                eventSystem.publish(OpenProjectFailed(event.projectPath, projectManager.lastError ?: "Failed to open project"))
+            }
+        }
+    }
+
     /** True from an export request until its result is published (main thread only). */
     private var exportRunning = false
 
     init {
         eventSystem.subscribe<OpenProjectRequested> { event ->
-            executeOnMainThread {
-                val file = File(event.projectPath)
-                openWithLoading(file, { OpenProjectFileCommand(projectManager, file, it) }) { opened ->
-                    if (opened) {
-                        eventSystem.publish(WindowAction.Hide("project_switcher"))
-                        eventSystem.publish(WindowAction.Hide("project_wizard"))
-                        eventSystem.publish(WindowAction.ShowDefault)
-                        eventSystem.publish(OpenProjectSucceeded(event.projectPath))
-                    } else {
-                        eventSystem.publish(OpenProjectFailed(event.projectPath, projectManager.lastError ?: "Failed to open project"))
-                    }
-                }
-            }
+            // Opening another project closes this one: unsaved assets are asked about first (EDT-82).
+            executeOnMainThread { if (projectManager.hasProject()) guarded { openProject(event) } else openProject(event) }
         }
         eventSystem.subscribe<CreateProjectRequested> { event ->
             executeOnMainThread { createWithLoading(event) }
@@ -173,8 +186,8 @@ class ProjectActionHandler(
         eventSystem.subscribe<CloseProjectRequested> {
             executeOnMainThread {
                 if (projectManager.hasProject()) {
-                    val command = CloseProjectCommand(projectManager)
-                    undoRedoManager.executeCommand(command)
+                    // EDT-82: unsaved scenes, clips and controllers are asked about first.
+                    guarded { if (projectManager.hasProject()) undoRedoManager.executeCommand(CloseProjectCommand(projectManager)) }
                 }
             }
         }
