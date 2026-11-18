@@ -2,6 +2,7 @@ package com.pafoid.skate.engine.ecs.systems
 
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.ecs.GameObject
+import com.pafoid.skate.engine.ecs.components.ComponentSettings
 import com.pafoid.skate.engine.ecs.components.FollowCameraComponent
 import com.pafoid.skate.engine.ecs.components.InputStateComponent
 import com.pafoid.skate.engine.ecs.components.PlayerController
@@ -28,7 +29,10 @@ fun interface CameraProbe {
  * objects each frame, so it also works for scenes loaded from disk. Its pose, speed, look input
  * ([InputStateComponent.cameraLook]) and walking/riding preset ([Mountable.cameraPreset]) feed [FollowCameraRig].
  * Runs after the rider and board have moved and before world matrices are rebuilt, so the view uses this frame's pose.
- * In edit mode the camera stays where it was placed, and the next Play snaps behind the target.
+ * In edit mode the camera stays where it was placed, and the next Play snaps behind the target; in a paused Play it
+ * holds still. In every mode an edit of the camera's settings shows on the next frame (ECS-21): the camera snaps to
+ * the rest pose for the new settings instead of easing toward it (or not moving). The first frame a camera is seen
+ * only records its settings, so loading a scene never moves a placed camera.
  */
 class FollowCameraSystem(
     private val probe: CameraProbe? = null,
@@ -38,6 +42,7 @@ class FollowCameraSystem(
     override val phase = SystemPhase.LATE_UPDATE
     override val runsAfter = listOf(MountFollowSystem::class)
     override val runsBefore = listOf(TransformSystem::class)
+    override val runsWhilePaused: Boolean get() = true
 
     private val cameras = query(FollowCameraComponent::class, Transform::class)
     private val impacts = ArrayList<Collision>()
@@ -47,24 +52,38 @@ class FollowCameraSystem(
     }
 
     override fun update(dt: Float) {
-        if (!scene.isRunning) {
-            impacts.clear()
-            cameras.forEach { it.getComponent<FollowCameraComponent>()?.state?.initialized = false }
-            return
-        }
+        val running = scene.isRunning
+        val paused = running && scene.isPaused
         cameras.forEach { go ->
             val camera = go.getComponent<FollowCameraComponent>() ?: return@forEach
             val transform = go.getComponent<Transform>() ?: return@forEach
+            val settings = ComponentSettings.of(camera, RUNTIME_FIELDS)
+            val edited = camera.state.settings.let { it != null && it != settings }
+            camera.state.settings = settings
+            if (!running) camera.state.initialized = false // the next Play snaps
             if (!camera.enabled) return@forEach
+            if (!running && !edited) return@forEach
+            if (paused && !edited) return@forEach
             val target = scene.findFirstByName(camera.targetName, exclude = go) ?: return@forEach
-            impacts.forEach { if (it.self === target && it.impulse >= camera.impactShakeImpulse) camera.shake(camera.impactShake) }
             val sphere = probe?.let { p -> SphereProbe { from, to, r -> p.cast(from, to, r, target) } }
-            FollowCameraRig.update(camera, followTarget(target), dt, sphere, transform)
+            val pose = followTarget(target)
+            if (running && !paused) {
+                impacts.forEach { if (it.self === target && it.impulse >= camera.impactShakeImpulse) camera.shake(camera.impactShake) }
+            }
+            if (edited) {
+                FollowCameraRig.snap(camera, pose, sphere, transform)
+                if (!running) camera.state.initialized = false
+            } else {
+                FollowCameraRig.update(camera, pose, dt, sphere, transform)
+            }
         }
         impacts.clear()
     }
 
     companion object {
+        /** Runtime state, not settings. */
+        private val RUNTIME_FIELDS = setOf("state")
+
         /** The follow inputs of [target]: top-level position, facing, horizontal speed, look input and preset. */
         fun followTarget(target: GameObject): FollowTarget {
             val transform = target.getComponent<Transform>()

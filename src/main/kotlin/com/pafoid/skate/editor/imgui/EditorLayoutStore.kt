@@ -9,6 +9,8 @@ import java.io.File
 class EditorLayoutStore(
     val iniFile: File,
     private val openWindowsFile: File,
+    /** EDT-84: the tool window bars' placement ([ToolWindowBars.encode]); null keeps none. */
+    private val toolBarsFile: File? = null,
 ) {
     /**
      * True when the ini holds a layout in the current format. Window titles carry stable `###` IDs (EDT-38); an ini
@@ -41,9 +43,17 @@ class EditorLayoutStore(
         if (cleaned != text) runCatching { iniFile.writeText(cleaned) }
     }
 
+    fun saveToolBars(text: String) {
+        toolBarsFile?.let { runCatching { it.writeText(text) } }
+    }
+
+    /** The saved tool window bars, or null when none were saved. */
+    fun loadToolBars(): String? = toolBarsFile?.takeIf { it.isFile }?.let { runCatching { it.readText() }.getOrNull() }
+
     fun clear() {
         iniFile.delete()
         openWindowsFile.delete()
+        toolBarsFile?.delete()
     }
 
     companion object {

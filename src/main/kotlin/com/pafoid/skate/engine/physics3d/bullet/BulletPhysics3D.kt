@@ -13,6 +13,7 @@ import com.jme3.bullet.joints.SixDofJoint
 import com.jme3.bullet.joints.SliderJoint
 import com.jme3.bullet.collision.PhysicsRayTestResult
 import com.jme3.bullet.collision.shapes.BoxCollisionShape
+import com.jme3.bullet.objects.PhysicsGhostObject
 import com.jme3.bullet.collision.shapes.CapsuleCollisionShape
 import com.jme3.bullet.collision.shapes.CollisionShape
 import com.jme3.bullet.collision.shapes.CompoundCollisionShape
@@ -40,6 +41,7 @@ import com.pafoid.skate.engine.physics3d.ColliderShape
 import com.pafoid.skate.engine.physics3d.IPhysics3D
 import com.pafoid.skate.engine.physics3d.IPhysicsBody3D
 import com.pafoid.skate.engine.physics3d.IRigidBodyHandle
+import com.pafoid.skate.engine.physics3d.ScenePhysicsQueries
 import com.pafoid.skate.engine.physics3d.constraints.ConeTwistConstraint3D
 import com.pafoid.skate.engine.physics3d.constraints.FixedConstraint3D
 import com.pafoid.skate.engine.physics3d.constraints.HingeConstraint3D
@@ -168,6 +170,30 @@ class BulletPhysics3D(
             normal = hit.getHitNormalLocal(null).toVector3f(),
             fraction = hit.hitFraction,
         )
+    }
+
+    override fun overlap(
+        shape: ColliderShape,
+        position: JomlVector3f,
+        rotation: Quaternionf,
+        layerMask: Int,
+        excludeBody: IPhysicsBody3D?,
+    ): List<GameObject> {
+        ScenePhysicsQueries.requireQueryShape(shape)
+        val excluded = excludedObject(excludeBody)
+        val ghost = PhysicsGhostObject(createShape(shape))
+        ghost.setPhysicsLocation(position.toJme())
+        ghost.setPhysicsRotation(Quaternion(rotation.x, rotation.y, rotation.z, rotation.w))
+        val found = LinkedHashMap<GameObject, JomlVector3f>()
+        physicsSpace.contactTest(ghost) { event ->
+            // Contacts within the contact threshold but still apart are not an overlap
+            if (event.distance1 > OVERLAP_TOLERANCE) return@contactTest
+            val other = if (event.objectA === ghost) event.objectB else event.objectA
+            if (!isQueryable(other, layerMask, excluded)) return@contactTest
+            val go = other.userObject as? GameObject ?: return@contactTest
+            if (go !in found) found[go] = other.getPhysicsLocation(null).toVector3f()
+        }
+        return ScenePhysicsQueries.nearestFirst(position, found)
     }
 
     private fun translationOnly(location: JomlVector3f) =
@@ -558,6 +584,9 @@ class BulletPhysics3D(
         const val PENDING_COLLISION = 0
         const val PENDING_TRIGGER_ENTER = 1
         const val PENDING_TRIGGER_EXIT = 2
+
+        /** Contact distance (m) still counted as touching in [overlap]; Bullet reports points slightly apart too. */
+        const val OVERLAP_TOLERANCE = 1e-3f
     }
 
     override fun debugDraw(dt: Float) {

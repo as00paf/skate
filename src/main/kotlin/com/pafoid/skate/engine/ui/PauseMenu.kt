@@ -93,6 +93,43 @@ object PauseMenu {
         }
     }
 
+    /**
+     * Everything [menu] draws, one line per object in tree order (GUI-20): its path, canvas, element (anchors,
+     * offsets, size, layout, laid-out rect), image, text, button and slider fields, with each text and label resolved
+     * through [strings] when given. Two hosts show the same menu exactly when their snapshots are equal.
+     */
+    fun snapshot(menu: GameObject, strings: com.pafoid.skate.engine.core.StringManager? = null): List<String> = buildList {
+        fun text(key: String) = if (strings == null || key.isEmpty()) "" else " \"${strings.getString(key)}\""
+        fun walk(go: GameObject, path: String) {
+            val parts = mutableListOf(path)
+            go.getComponent<UICanvasComponent>()?.let {
+                parts += "canvas(sort=${it.sortOrder} ${it.scaleMode} ${it.referenceWidth}x${it.referenceHeight} match=${it.match} visible=${it.visible} modal=${it.modal})"
+            }
+            go.getComponent<UIElementComponent>()?.let {
+                parts += "element(anchors=${it.anchorMinX},${it.anchorMinY},${it.anchorMaxX},${it.anchorMaxY} pivot=${it.pivotX},${it.pivotY} " +
+                    "pos=${it.x},${it.y} size=${it.width}x${it.height} layout=${it.layout} visible=${it.visible} " +
+                    "interactable=${it.interactable} opacity=${it.opacity} z=${it.zOrder} rect=${it.rect.x},${it.rect.y},${it.rect.w},${it.rect.h})"
+            }
+            go.getComponent<UIImageComponent>()?.let {
+                parts += "image(texture=${it.texturePath} tint=${it.tint} slices=${it.sliceLeft},${it.sliceTop},${it.sliceRight},${it.sliceBottom})"
+            }
+            go.getComponent<UITextComponent>()?.let {
+                parts += "text(key=${it.key}${text(it.key)} args=${it.args} color=${it.color} size=${it.fontSize} align=${it.alignX},${it.alignY} quantity=${it.quantity})"
+            }
+            go.getComponent<UIButtonComponent>()?.let {
+                parts += "button(label=${it.labelKey}${text(it.labelKey)} colors=${it.normalColor} ${it.hoverColor} ${it.pressedColor} " +
+                    "${it.disabledColor} ${it.focusColor} ${it.labelColor} size=${it.fontSize} clickable=${it.onClick != null})"
+            }
+            go.getComponent<UISliderComponent>()?.let {
+                parts += "slider(range=${it.min}..${it.max} value=${it.value} step=${it.step} track=${it.trackColor} fill=${it.fillColor} " +
+                    "listens=${it.onValueChanged != null})"
+            }
+            add(parts.joinToString(" "))
+            go.children.forEach { walk(it, "$path/${it.name}") }
+        }
+        walk(menu, menu.name)
+    }
+
     fun find(root: GameObject, name: String): GameObject? {
         for (c in root.children) {
             if (c.name == name) return c

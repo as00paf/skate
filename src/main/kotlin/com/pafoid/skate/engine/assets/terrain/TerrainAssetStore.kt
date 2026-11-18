@@ -36,8 +36,8 @@ class TerrainAssetStore(val folder: File) {
 
     fun saveDocument(document: TerrainDocument) = atomicWrite(documentFile, document.encode().toByteArray(Charsets.UTF_8))
 
-    /** Heights of chunk ([cx], [cz]) from its region record, or null (no region, no record, other grid settings). */
-    fun readChunk(cx: Int, cz: Int, chunkQuads: Int, sampleSpacing: Float): FloatArray? {
+    /** Chunk ([cx], [cz]) from its region record, or null (no region, no record, other grid settings). */
+    fun readChunk(cx: Int, cz: Int, chunkQuads: Int, sampleSpacing: Float): TerrainRegionFile.ChunkRecord? {
         val f = regionFile(TerrainRegionFile.regionOf(cx), TerrainRegionFile.regionOf(cz))
         if (!f.isFile) return null
         return chunkFrom(f.readBytes(), cx, cz, chunkQuads, sampleSpacing)
@@ -45,8 +45,8 @@ class TerrainAssetStore(val folder: File) {
 
     /**
      * Saves [terrain]'s document and chunk data. A `DATA` terrain stores every resident chunk; a procedural one only
-     * chunks whose heights differ from what its recipe and stamps generate (sculpted), and drops records of chunks
-     * that match again. Only regions that change are rewritten; regions left empty are deleted. The terrain's
+     * chunks whose heights differ from what its recipe and stamps generate (sculpted) or that carry painted biome ids
+     * (AST-38), and drops records of chunks that match again. Only regions that change are rewritten; regions left empty are deleted. The terrain's
      * runtime must be built ([TerrainComponent.runtime]).
      */
     fun save(terrain: TerrainComponent): TerrainSaveResult {
@@ -58,7 +58,7 @@ class TerrainAssetStore(val folder: File) {
         val keep = HashMap<Pair<Int, Int>, TerrainChunkData>()
         val drop = HashSet<Pair<Int, Int>>()
         for (chunk in runtime.chunks) {
-            val edited = terrain.source == TerrainSource.DATA || generator == null ||
+            val edited = terrain.source == TerrainSource.DATA || generator == null || chunk.paintedBiomeIds != null ||
                 differs(chunk.heights, TerrainChunkBuilder.build(generator, chunk.cx, chunk.cz).heights)
             if (edited) keep[chunk.cx to chunk.cz] = chunk else drop += chunk.cx to chunk.cz
         }
@@ -79,14 +79,15 @@ class TerrainAssetStore(val folder: File) {
             val before = records.toMap()
             removeByRegion[region].orEmpty().forEach { (cx, cz) -> if (records.remove(TerrainRegionFile.slotOf(cx, cz)) != null) removed++ }
             byRegion[region].orEmpty().forEach { c ->
-                records[TerrainRegionFile.slotOf(c.cx, c.cz)] = TerrainRegionFile.encodeRecord(c.heights)
+                val own = (chunkQuads + 1) * (chunkQuads + 1)
+                records[TerrainRegionFile.slotOf(c.cx, c.cz)] = TerrainRegionFile.record(c.heights, c.paintedBiomeIds?.takeIf { it.size == own })
                 written++
             }
             when {
                 records.isEmpty() -> if (file.delete()) regionsDeleted++
-                existing != null && records.keys == before.keys && records.all { (k, v) -> before[k]?.contentEquals(v) == true } -> Unit
+                existing != null && records == before -> Unit
                 else -> {
-                    atomicWrite(file, TerrainRegionFile.encode(chunkQuads, sampleSpacing, records))
+                    atomicWrite(file, TerrainRegionFile.encodeRecords(chunkQuads, sampleSpacing, records))
                     regionsWritten++
                 }
             }
@@ -119,13 +120,13 @@ class TerrainAssetStore(val folder: File) {
 
         fun isAssetFolder(file: File): Boolean = file.isDirectory && file.name.endsWith(".$EXTENSION")
 
-        /** The chunk's heights in region [bytes], or null when absent or saved with other grid settings. */
-        fun chunkFrom(bytes: ByteArray, cx: Int, cz: Int, chunkQuads: Int, sampleSpacing: Float): FloatArray? {
+        /** The chunk's data in region [bytes], or null when absent or saved with other grid settings. */
+        fun chunkFrom(bytes: ByteArray, cx: Int, cz: Int, chunkQuads: Int, sampleSpacing: Float): TerrainRegionFile.ChunkRecord? {
             val header = TerrainRegionFile.readHeader(bytes)
             if (header.chunkQuads != chunkQuads || header.sampleSpacing != sampleSpacing) return null
-            val raw = TerrainRegionFile.readRecord(bytes, header, TerrainRegionFile.slotOf(cx, cz)) ?: return null
-            val stride = chunkQuads + 3
-            return TerrainRegionFile.decodeRecord(raw, stride * stride)
+            val slot = TerrainRegionFile.slotOf(cx, cz)
+            val raw = TerrainRegionFile.readRecord(bytes, header, slot) ?: return null
+            return TerrainRegionFile.decodeChunk(TerrainRegionFile.Record(raw, header.entries[slot].flags), chunkQuads)
         }
 
         /**

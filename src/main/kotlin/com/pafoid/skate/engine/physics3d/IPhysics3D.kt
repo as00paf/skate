@@ -2,6 +2,7 @@ package com.pafoid.skate.engine.physics3d
 
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.physics3d.constraints.IPhysicsConstraint
+import org.joml.Quaternionf
 import org.joml.Vector3f
 
 interface IPhysics3D {
@@ -37,6 +38,20 @@ interface IPhysics3D {
         layerMask: Int = ALL_LAYERS,
         excludeBody: IPhysicsBody3D? = null,
     ): PhysicsHit?
+
+    /**
+     * Scene objects whose colliders touch or penetrate [shape] placed at [position] with [rotation] (PHY-22), nearest
+     * body origin first, each once. Triggers, bodies off [layerMask], [excludeBody] and bodies that belong to no
+     * GameObject (terrain chunks, joint anchors) are left out. [shape] must not be a triangle mesh or heightfield.
+     */
+    fun overlap(
+        shape: ColliderShape,
+        position: Vector3f,
+        rotation: Quaternionf = Quaternionf(),
+        layerMask: Int = ALL_LAYERS,
+        excludeBody: IPhysicsBody3D? = null,
+    ): List<GameObject>
+
     fun add(go: GameObject)
 
     /**
