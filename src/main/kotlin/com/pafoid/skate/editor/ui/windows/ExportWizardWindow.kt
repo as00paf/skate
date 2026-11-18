@@ -9,6 +9,7 @@ import com.pafoid.skate.editor.imgui.EmptyState
 import com.pafoid.skate.editor.imgui.DialogFooter
 import com.pafoid.skate.editor.imgui.FooterButton
 import com.pafoid.skate.editor.imgui.GraphicsBackendField
+import com.pafoid.skate.editor.imgui.TrailingButtons
 import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.editor.imgui.MImGui
 import com.pafoid.skate.editor.imgui.label
@@ -65,6 +66,7 @@ class ExportWizardWindow(
         runOnMain = { block -> engine.jobSystem.runOnMain { block() } },
     )
     private val splashSeconds = ImFloat()
+    private val pathBuffer = ImString(1024)
     private val customFps = ImInt()
     private val outputInput = ImString(1024)
     private var jarSearch = GameJarSearch(null, emptyList())
@@ -157,12 +159,15 @@ class ExportWizardWindow(
         sceneList(project)
 
         MImGui.labeledSeparator(strings.getString("lbl.export.output"))
-        ImGui.setNextItemWidth(ImGui.getContentRegionAvailX() - 200f)
+        val browse = strings.label("btn.export.browse")
+        val defaultOutput = strings.label("btn.export.default_output")
+        val outputRow = TrailingButtons.begin(browse, defaultOutput)
         if (ImGui.inputText("##export_output", outputInput)) wizard.outputDir = outputInput.get()
-        ImGui.sameLine()
-        if (strings.tipped(ImGui.button(strings.label("btn.export.browse")), "btn.export.browse")) browseForOutput()
-        ImGui.sameLine()
-        if (strings.tipped(ImGui.button(strings.label("btn.export.default_output")), "btn.export.default_output")) {
+        probe("output")
+        outputRow.next()
+        if (strings.tipped(ImGui.button(browse), "btn.export.browse")) browseForOutput()
+        outputRow.next()
+        if (strings.tipped(ImGui.button(defaultOutput), "btn.export.default_output")) {
             outputInput.set(AssetsPacker.defaultOutputDir(project).path)
             wizard.outputDir = outputInput.get()
         }
@@ -185,40 +190,52 @@ class ExportWizardWindow(
         ImGui.popTextWrapPos()
 
         MImGui.propertyRow(strings.getString("lbl.export.icon"), strings.getString("lbl.export.icon.tooltip")) {
-            ImGui.text(displayPath(project, project.iconPath, "lbl.export.icon.engine_default"))
-            ImGui.sameLine()
-            if (strings.tipped(ImGui.button(strings.label("btn.export.icon_change")), "btn.export.icon_change")) {
+            val change = strings.label("btn.export.icon_change")
+            val default = strings.label("btn.export.icon_default")
+            val row = TrailingButtons.begin(change, default)
+            pathField("##export_icon_path", displayPath(project, project.iconPath, "lbl.export.icon.engine_default"), "lbl.export.icon.tooltip")
+            row.next()
+            if (strings.tipped(ImGui.button(change), "btn.export.icon_change")) {
                 chooseImage(project, "dialog.export.select_icon")?.let { eventSystem.publish(ProjectEvent.SetProjectIconRequested(it)) }
             }
-            ImGui.sameLine()
-            if (strings.tipped(ImGui.button(strings.label("btn.export.icon_default")), "btn.export.icon_default")) {
+            row.next()
+            if (strings.tipped(ImGui.button(default), "btn.export.icon_default")) {
                 eventSystem.publish(ProjectEvent.SetProjectIconRequested(EngineDefaults.Textures.APP_ICON))
             }
         }
 
         MImGui.propertyRow(strings.getString("lbl.export.splash"), strings.getString("lbl.export.splash.tooltip")) {
             val none = project.splashSeconds <= 0f
-            ImGui.text(if (none) strings.getString("lbl.export.splash.none") else displayPath(project, project.splashPath, "lbl.export.splash.engine_default"))
-            ImGui.sameLine()
-            if (strings.tipped(ImGui.button(strings.label("btn.export.splash_change")), "btn.export.splash_change")) {
+            val change = strings.label("btn.export.splash_change")
+            val noneLabel = strings.label("btn.export.splash_none")
+            val default = strings.label("btn.export.splash_default")
+            val row = TrailingButtons.begin(change, noneLabel, default)
+            pathField(
+                "##export_splash_path",
+                if (none) strings.getString("lbl.export.splash.none") else displayPath(project, project.splashPath, "lbl.export.splash.engine_default"),
+                "lbl.export.splash.tooltip",
+            )
+            row.next()
+            if (strings.tipped(ImGui.button(change), "btn.export.splash_change")) {
                 chooseImage(project, "dialog.export.select_splash")?.let { path ->
                     eventSystem.publish(ProjectEvent.SetProjectSplashRequested(path, project.splashSeconds.takeIf { it > 0f } ?: Project.DEFAULT_SPLASH_SECONDS))
                 }
             }
-            ImGui.sameLine()
-            if (strings.tipped(ImGui.button(strings.label("btn.export.splash_none")), "btn.export.splash_none")) {
+            row.next()
+            if (strings.tipped(ImGui.button(noneLabel), "btn.export.splash_none")) {
                 eventSystem.publish(ProjectEvent.SetProjectSplashRequested(project.splashPath, 0f))
             }
-            ImGui.sameLine()
-            if (strings.tipped(ImGui.button(strings.label("btn.export.splash_default")), "btn.export.splash_default")) {
+            row.next()
+            if (strings.tipped(ImGui.button(default), "btn.export.splash_default")) {
                 eventSystem.publish(ProjectEvent.SetProjectSplashRequested("", Project.DEFAULT_SPLASH_SECONDS))
             }
         }
         if (project.splashSeconds > 0f) {
             MImGui.propertyRow(strings.getString("lbl.export.splash_seconds"), strings.getString("lbl.export.splash_seconds.tooltip")) {
                 if (!ImGui.isAnyItemActive()) splashSeconds.set(project.splashSeconds)
-                ImGui.setNextItemWidth(120f)
+                ImGui.setNextItemWidth(fit(ImGui.getFontSize() * SLIDER_EMS))
                 ImGui.sliderFloat("##export_splash_seconds", splashSeconds.data, 0.5f, Project.MAX_SPLASH_SECONDS, "%.1f s")
+                probe("splash_seconds")
                 Tooltips.show(strings, "lbl.export.splash_seconds.tooltip")
                 if (ImGui.isItemDeactivatedAfterEdit()) {
                     eventSystem.publish(ProjectEvent.SetProjectSplashRequested(project.splashPath, splashSeconds.get()))
@@ -229,7 +246,7 @@ class ExportWizardWindow(
         GraphicsBackendField.render(strings, project.graphicsBackend)?.let { eventSystem.publish(ProjectEvent.SetGraphicsBackendRequested(it)) }
 
         MImGui.propertyRow(strings.getString("lbl.export.physics_backend"), strings.getString("lbl.export.physics_backend.tooltip")) {
-            ImGui.setNextItemWidth(200f)
+            ImGui.setNextItemWidth(fit(comboWidth(PhysicsBackend.entries.map { strings.getString(physicsKey(it)) })))
             if (ImGui.beginCombo("##export_physics_backend", strings.getString(physicsKey(project.physicsBackend)))) {
                 PhysicsBackend.entries.forEach { backend ->
                     if (ImGui.selectable(strings.getString(physicsKey(backend)), backend == project.physicsBackend) && backend != project.physicsBackend) {
@@ -239,13 +256,15 @@ class ExportWizardWindow(
                 }
                 ImGui.endCombo()
             }
+            probe("physics_backend")
             Tooltips.show(strings, "lbl.export.physics_backend.tooltip")
         }
         if (project.physicsBackend == PhysicsBackend.JOLT) MImGui.warningText(strings.getString("lbl.export.warning.physics_jolt_fallback"))
 
         MImGui.propertyRow(strings.getString("lbl.export.target_fps"), strings.getString("lbl.export.target_fps.tooltip")) {
             val custom = !TargetFpsChoices.isPreset(project.targetFps)
-            ImGui.setNextItemWidth(160f)
+            val choices = TargetFpsChoices.PRESETS.map(::fpsLabel) + strings.getString("lbl.export.target_fps.custom")
+            ImGui.setNextItemWidth(fit(comboWidth(choices)))
             val shown = if (custom) strings.getString("lbl.export.target_fps.custom") else fpsLabel(project.targetFps)
             if (ImGui.beginCombo("##export_target_fps", shown)) {
                 TargetFpsChoices.PRESETS.forEach { fps ->
@@ -258,12 +277,17 @@ class ExportWizardWindow(
                 Tooltips.show(strings, "lbl.export.target_fps.tooltip")
                 ImGui.endCombo()
             }
+            probe("target_fps")
             Tooltips.show(strings, "lbl.export.target_fps.tooltip")
             if (custom) {
-                ImGui.sameLine()
+                // Next to the combo when it fits, else on the next line (never cut at 150 % or with wide spacing).
+                val width = ImGui.getFontSize() * CUSTOM_FPS_EMS
+                val right = ImGui.getWindowContentRegionMaxX() + ImGui.getWindowPosX()
+                if (TrailingButtons.fitsOnLine(ImGui.getItemRectMaxX(), width, ImGui.getStyle().itemSpacingX, right)) ImGui.sameLine()
                 if (!ImGui.isAnyItemActive()) customFps.set(project.targetFps)
-                ImGui.setNextItemWidth(100f)
+                ImGui.setNextItemWidth(fit(width))
                 ImGui.inputInt("##export_custom_fps", customFps)
+                probe("custom_fps")
                 Tooltips.show(strings, "lbl.export.target_fps.tooltip")
                 if (ImGui.isItemDeactivatedAfterEdit()) eventSystem.publish(ProjectEvent.SetProjectTargetFpsRequested(customFps.get()))
             }
@@ -296,6 +320,26 @@ class ExportWizardWindow(
         ImGui.pushTextWrapPos(0f)
         warnings.forEach { MImGui.warningText(warningText(strings, it)) }
         ImGui.popTextWrapPos()
+    }
+
+    /** A read-only path field (the row's width is set by [TrailingButtons.begin]). */
+    private fun pathField(id: String, text: String, tooltipKey: String) {
+        pathBuffer.set(text)
+        ImGui.inputText(id, pathBuffer, imgui.flag.ImGuiInputTextFlags.ReadOnly)
+        probe(id)
+        Tooltips.show(strings, tooltipKey)
+    }
+
+    /** A combo wide enough for its longest [labels] (text, frame padding and the arrow button), from the font. */
+    private fun comboWidth(labels: List<String>): Float =
+        (labels.maxOfOrNull { ImGui.calcTextSize(it).x } ?: 0f) + ImGui.getStyle().framePaddingX * 2f + ImGui.getFrameHeight()
+
+    /** [width], but never past what is left on the line. */
+    private fun fit(width: Float): Float = width.coerceAtMost(ImGui.getContentRegionAvailX()).coerceAtLeast(1f)
+
+    /** Reports the last item's right edge against the clip rectangle (render tests: nothing is cut). */
+    private fun probe(name: String) {
+        fieldProbe?.invoke(name, ImGui.getItemRectMaxX(), ImGui.getWindowDrawList().clipRectMaxX)
     }
 
     private fun fpsLabel(fps: Int): String =
@@ -332,13 +376,16 @@ class ExportWizardWindow(
             MImGui.errorText(strings.getString("lbl.export.jar_missing", ProjectExporter.searchedList(jarSearch)))
         }
         ImGui.text(strings.getString("lbl.export.jar_override"))
-        ImGui.setNextItemWidth(ImGui.getContentRegionAvailX() - 200f)
+        val jarBrowse = strings.label("btn.export.jar_browse")
+        val jarClear = strings.label("btn.export.jar_clear")
+        val jarRow = TrailingButtons.begin(jarBrowse, jarClear)
         ImGui.inputText("##export_game_jar", jarInput)
+        probe("game_jar")
         if (ImGui.isItemDeactivatedAfterEdit()) setJarOverride(jarInput.get())
-        ImGui.sameLine()
-        if (strings.tipped(ImGui.button(strings.label("btn.export.jar_browse")), "btn.export.jar_browse")) browseForJar()
-        ImGui.sameLine()
-        if (strings.tipped(ImGui.button(strings.label("btn.export.jar_clear")), "btn.export.jar_clear")) setJarOverride("")
+        jarRow.next()
+        if (strings.tipped(ImGui.button(jarBrowse), "btn.export.jar_browse")) browseForJar()
+        jarRow.next()
+        if (strings.tipped(ImGui.button(jarClear), "btn.export.jar_clear")) setJarOverride("")
     }
 
     private fun setJarOverride(path: String) {
@@ -446,6 +493,13 @@ class ExportWizardWindow(
 
         /** Where "Custom" starts in the frame cap combo. */
         const val CUSTOM_FPS_START = 90
+
+        /** Field widths in multiples of the font size (EDT-91 review: no fixed pixels). */
+        const val SLIDER_EMS = 8f
+        const val CUSTOM_FPS_EMS = 6f
+
+        /** Test hook: (field, its right edge, the clip rectangle's right edge) for every new field drawn. */
+        internal var fieldProbe: ((String, Float, Float) -> Unit)? = null
 
         fun physicsKey(backend: PhysicsBackend): String = "lbl.export.physics.${backend.name.lowercase()}"
 

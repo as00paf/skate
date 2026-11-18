@@ -107,11 +107,14 @@ class ProjectActionHandler(
         // Export dialog, Game section (EDT-91, AST-29).
         eventSystem.subscribe<ProjectEvent.SetProjectIconRequested> { event ->
             val project = projectManager.currentProject ?: return@subscribe
-            SetProjectIconCommand(project, event.iconPath).takeUnless { it.isNoOp }?.let { undoRedoManager.executeCommand(it) }
+            // An image picked outside the project is copied into Assets/Textures, so the project stays portable.
+            val icon = com.pafoid.skate.editor.project.ProjectImages.inProject(project.getProjectDirectory(), event.iconPath)
+            SetProjectIconCommand(project, icon).takeUnless { it.isNoOp }?.let { undoRedoManager.executeCommand(it) }
         }
         eventSystem.subscribe<ProjectEvent.SetProjectSplashRequested> { event ->
             val project = projectManager.currentProject ?: return@subscribe
-            SetProjectSplashCommand(project, event.splashPath, event.seconds).takeUnless { it.isNoOp }?.let { undoRedoManager.executeCommand(it) }
+            val splash = com.pafoid.skate.editor.project.ProjectImages.inProject(project.getProjectDirectory(), event.splashPath)
+            SetProjectSplashCommand(project, splash, event.seconds).takeUnless { it.isNoOp }?.let { undoRedoManager.executeCommand(it) }
         }
         eventSystem.subscribe<ProjectEvent.SetProjectTargetFpsRequested> { event ->
             val project = projectManager.currentProject ?: return@subscribe

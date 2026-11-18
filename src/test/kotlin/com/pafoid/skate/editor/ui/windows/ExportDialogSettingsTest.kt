@@ -85,8 +85,15 @@ class ExportDialogSettingsTest {
         val project = projects.currentProject!!
         val icon = File(project.getProjectDirectory(), "Assets/Textures/icon.png").apply { parentFile.mkdirs(); writeText("png") }
 
+        // An image from outside the project is copied in, so the saved path stays project-relative (review).
+        val outside = File(dir, "Downloads/logo.png").apply { parentFile.mkdirs(); writeText("logo") }
+        events.publish(ProjectEvent.SetProjectSplashRequested(outside.absolutePath, 2f))
+        val copied = File(project.getProjectDirectory(), "Assets/Textures/logo.png")
+        assertEquals(copied.absolutePath, project.splashPath)
+        assertEquals("logo", copied.readText())
+
         events.publish(ProjectEvent.SetProjectIconRequested(icon.absolutePath))
-        events.publish(ProjectEvent.SetProjectSplashRequested("", 3.5f))
+        events.publish(ProjectEvent.SetProjectSplashRequested(project.splashPath, 3.5f))
         events.publish(ProjectEvent.SetProjectTargetFpsRequested(1000))
         events.publish(ProjectEvent.SetProjectPhysicsBackendRequested(PhysicsBackend.JOLT))
         assertEquals(icon.absolutePath, project.iconPath)
@@ -106,8 +113,25 @@ class ExportDialogSettingsTest {
         val saved = ProjectFileReader.read(serializer, project.getProjectFile())
         assertEquals("Assets/Textures/icon.png", saved.iconPath.replace('\\', '/').substringAfter("P/"), "saved project-relative")
         assertEquals(3.5f, saved.splashSeconds)
+        val raw = project.getProjectFile().readText()
+        assertTrue("\"splashPath\": \"Assets/Textures/logo.png\"" in raw, "saved project-relative: $raw")
+        assertTrue("Downloads" !in raw, "nothing outside the project is referenced")
         assertEquals(Project.MAX_TARGET_FPS, saved.targetFps)
         assertEquals(PhysicsBackend.JOLT, saved.physicsBackend)
+    }
+
+    @Test
+    fun ProjectImages_KeepsProjectFiles_CopiesOutsideOnes_ReusesIdenticalCopies() {
+        val project = File(dir, "Proj").also { File(it, "Assets/Textures").mkdirs() }
+        val inside = File(project, "Assets/Textures/icon.png").apply { writeText("in") }
+        assertEquals(inside.absolutePath, com.pafoid.skate.editor.project.ProjectImages.inProject(project, inside.absolutePath))
+        assertEquals(EngineDefaults.Textures.APP_ICON, com.pafoid.skate.editor.project.ProjectImages.inProject(project, EngineDefaults.Textures.APP_ICON))
+        assertEquals("", com.pafoid.skate.editor.project.ProjectImages.inProject(project, ""))
+        val a = File(dir, "a/icon.png").apply { parentFile.mkdirs(); writeText("other") }
+        val first = com.pafoid.skate.editor.project.ProjectImages.inProject(project, a.absolutePath)
+        assertEquals(File(project, "Assets/Textures/icon_2.png").absolutePath, first, "a different file with the same name")
+        assertEquals(first, com.pafoid.skate.editor.project.ProjectImages.inProject(project, a.absolutePath), "the same file again reuses its copy")
+        assertEquals("in", inside.readText(), "the project's own file is never overwritten")
     }
 
     // --- Build section: remembered without exporting ----------------------------------------------------------
@@ -228,6 +252,71 @@ class ExportDialogSettingsTest {
         window.wizard.onFinished(ExportResult(File(dir, "out"), com.pafoid.skate.engine.utils.ExportFailure.IO_ERROR))
         frames()
         assertTrue(published.isEmpty(), "rendering alone publishes nothing")
+    }
+
+    @Test
+    fun Dialog_NothingIsCut_At150PercentAndEveryDensity_InEnglishAndFrench() = imgui {
+        val project = project().apply { File(getProjectDirectory(), "Scenes").mkdirs(); targetFps = 75; physicsBackend = PhysicsBackend.JOLT }
+        val jobs = mockk<JobSystem>(relaxed = true)
+        val projects = mockk<ProjectManager>(relaxed = true).also {
+            every { it.currentProject } returns project
+            every { it.hasProject() } returns true
+        }
+        val settingsManager = mockk<EditorSettingsManager>(relaxed = true).also { every { it.editorSettings } returns EditorSettings() }
+        val densest = com.pafoid.skate.editor.settings.AppearanceSettings(
+            com.pafoid.skate.editor.settings.Density.CUSTOM,
+            com.pafoid.skate.editor.settings.Spacing(24f, 24f, 24f, 24f, 24f, 24f),
+        )
+        val appearances = com.pafoid.skate.editor.settings.Density.entries.filter { it != com.pafoid.skate.editor.settings.Density.CUSTOM }
+            .map { com.pafoid.skate.editor.settings.AppearanceSettings(density = it) } + densest
+        val failures = ArrayList<String>()
+        var fields = 0
+        var buttons = 0
+        try {
+            for (locale in listOf("en", "fr")) {
+                val strings = StringManager(logger, "en").apply { loadStrings(Assets.Strings.EDITOR_STRINGS); setLocale(locale) }
+                assertTrue(strings.getString("lbl.export.splash").isNotBlank())
+                val engine = mockk<Engine>(relaxed = true).also { e ->
+                    every { e.stringManager } returns strings
+                    every { e.eventSystem } returns events
+                    every { e.logger } returns logger
+                    every { e.jobSystem } returns jobs
+                }
+                val window = ExportWizardWindow(engine, projects, settingsManager).also { it.open() }
+                for (appearance in appearances) for (scale in listOf(1f, 1.5f, EditorSettings.MAX_UI_SCALE)) for (width in listOf(520f, 900f)) {
+                    ImGuiStyleManager.appearance = { appearance }
+                    ImGuiStyleManager.uiScale = { scale }
+                    ImGuiStyleManager.invalidate()
+                    ImGuiStyleManager.sync("dark")
+                    val case = "$locale ${appearance.density} @${(scale * 100).toInt()}% width=$width"
+                    val seen = HashSet<String>()
+                    ExportWizardWindow.fieldProbe = { name, maxX, clipMaxX ->
+                        seen += name; fields++
+                        if (maxX > clipMaxX + 0.5f) failures += "$case: field $name ends at $maxX past $clipMaxX"
+                    }
+                    com.pafoid.skate.editor.imgui.TrailingButtons.placed = { p ->
+                        buttons++
+                        if (p.minX < p.clipMinX - 0.5f || p.maxX > p.clipMaxX + 0.5f) failures += "$case: button cut off: $p"
+                    }
+                    repeat(2) {
+                        ImGui.newFrame()
+                        ImGui.setNextWindowPos(20f, 20f)
+                        ImGui.setNextWindowSize(width, 950f)
+                        window.imgui()
+                        ImGui.render()
+                    }
+                    val expected = setOf("##export_icon_path", "##export_splash_path", "splash_seconds", "physics_backend", "target_fps", "custom_fps", "output", "game_jar")
+                    if (!seen.containsAll(expected)) failures += "$case: not drawn: ${expected - seen}"
+                }
+            }
+        } finally {
+            ExportWizardWindow.fieldProbe = null
+            com.pafoid.skate.editor.imgui.TrailingButtons.placed = null
+            ImGuiStyleManager.uiScale = { 1f }
+            ImGuiStyleManager.appearance = { com.pafoid.skate.editor.settings.AppearanceSettings.THEME_ONLY }
+        }
+        assertTrue(fields > 0 && buttons > 0)
+        assertTrue(failures.isEmpty(), failures.take(20).joinToString("\n"))
     }
 
     @Test
