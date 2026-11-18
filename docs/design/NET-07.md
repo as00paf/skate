@@ -1,16 +1,28 @@
-# NET-01 — Publish to Steam from the editor
+# NET-07 — Publish to Steam from the editor
 
-Status: **awaiting approval** (human + lead). No code is written until approved. Author: `skate-online`, 2026-11-17.
-Paths are relative to `src/main/kotlin/com/pafoid/skate/`.
+Status: **approved with changes** (human, 2026-11-18; see §0). Author: `skate-online`, 2026-11-17.
+Paths are relative to `src/main/kotlin/com/pafoid/skate/`. First drafted under the reused ID NET-01; renumbered
+NET-07 (Q8). `docs/design/NET-01.md` stays the multiplayer architecture note.
 
-> **File name.** `docs/design/NET-01.md` is the approved *multiplayer architecture* note of the archived NET-01
-> (`docs/backlog-archive.md`), referenced by NET-02…06 and by the agent rules. The task ID was reused, so this note
-> lives in `NET-01-steam-publish.md` (same pattern as `ANI-04-ik-wiring.md`). The lead may prefer to renumber the
-> task instead (see Q8).
+## 0. Decisions (human, 2026-11-18)
+
+| Q | Decision |
+|---|---|
+| Q1 Password | **steamcmd cached session only.** Skate never stores a password (§5 as written). No Credential Manager. |
+| Q2 steamcmd source | **Managed download** from Valve after the user confirms (§4 as written). |
+| Q3 Set live | **CHANGED: never set a branch live automatically.** Upload only. The build script never contains `SetLive`, and the UI has no "set live" option; the user sets builds live in Steamworks. The branch field goes away from the target (kept only as an optional note in the description template). |
+| Q4 Launcher | **CHANGED: wait for AST-31.** The Steam upload (UI entry + CLI command) does not ship until the export produces a native `.exe` with bundled Java. Validation refuses content without that launcher instead of warning. Back-end pieces that do not depend on it may land earlier, hidden. |
+| Q5 Depots | **One Windows depot.** `SteamPublishTarget` holds a single depot ID; the VDF writer still takes a list internally. |
+| Q6 Spike | **Waits.** Everything that does not need the human's Steamworks account goes first; the output parser and real-login flows wait for spike 07a. |
+| Q7 CLI | **Editor + `skate publish steam`** CLI command. |
+| Q8 ID | **Renumbered NET-07**; this file is `docs/design/NET-07.md`. |
+
+Where §1–§12 below disagree with this table (`SetLive`, branch combo, `.bat` warning, several depots), this table
+wins.
 
 Marker: **⚠ UNVERIFIED** = a steamcmd/SteamPipe detail taken from Valve's documentation and memory, not checked against a
 real Steamworks app on 2026-11-17 (the agent machine has no Steamworks partner account). Each one gets a spike in
-step 01a before the code that depends on it.
+step 07a before the code that depends on it.
 
 ## 1. Goals / non-goals
 
@@ -196,20 +208,19 @@ by `skate-editor`):
 Architecture guard: a new test asserts `engine/platform/steampipe/**` imports nothing from `editor.*` and that no
 code in `steampipe` passes a password through a command-line argument (string check on `"+login"` argument count).
 
-## 9. Implementation steps (after approval)
+## 9. Implementation slices (after the 2026-11-18 decisions)
 
-- **01a Spike** (needs the human: a Steamworks app with a test depot, a build account, and 30 minutes): run steamcmd
-  by hand once, capture the full output of first login (password + Guard), cached login, `run_app_build` with
-  `Preview 1` and with `SetLive` on a private branch, an expired/failed login, and a cancel. These captures become
-  the parser's test fixtures and resolve every ⚠ UNVERIFIED marker. Without them the parser is guesswork.
-- **01b** VDF writer, target model and validation, log filter, output parser (from 01a fixtures). Unit tests only.
-- **01c** Locator, installer, interactive process, publisher state machine, all with fakes.
-- **01d** Editor window, sign-in/install modals, menu + export-wizard entry, strings, help article (EDT review).
-- **01e** (optional, TLG) `skate publish steam --project … --branch …` CLI command that reuses `SteamPublisher` and
-  reads the password from stdin for CI.
+| Slice | Content | Needs spike | Needs AST-31 | Owner |
+|---|---|---|---|---|
+| **NET-07a** Spike | Human runs steamcmd once with their Steamworks app (test depot, build account): first login (password + Guard), cached login, `run_app_build` with `Preview 1` and a real upload, a failed or expired login, a cancel. The captures become test fixtures and resolve every ⚠ UNVERIFIED. | **yes** (is the spike) | no | NET + human |
+| **NET-07b** Config | `SteamPublishTarget` (app ID, one depot ID, description template, exclusions) and its validation; project entry `Project.steamPublish`; editor settings `steamCmdPath`, `steamUsername`. | no | no | NET (Project/EditorSettings one-line fields, AST/EDT informed) |
+| **NET-07c** steamcmd manager | `SteamCmdLocator` (setting → managed install → PATH), `SteamCmdInstaller` (confirmed download of Valve's zip, zip-slip-safe unzip, `+quit` self-update), `AppBuildScript` VDF writer (never `SetLive`, Preview flag), `SteamCmdManager` (stages the script, builds `+login <user> +run_app_build <vdf> +quit`, never a password on argv, runs Preview builds), `SteamLogFilter`. All behind fakes. | no | no | NET |
+| **NET-07d** Output parser + publisher | `SteamCmdOutputParser` (events from the 07a fixtures), interactive sign-in over stdin, `SteamPublisher` state machine (export → sign in → upload → BuildID), session-expired handling, sign out. | **yes** | no | NET |
+| **NET-07e** Editor UI | Steam Publish window, sign-in and install modals, File → Publish menu, export-wizard button, `editor/platform` strings (EN/FR), help article. Ships visible only once the export produces the `.exe` launcher; validation refuses content without it. | yes (via 07d) | **yes** | NET, EDT review |
+| **NET-07f** CLI | `skate publish steam --project … [--preview]` in `tools/cli`, reusing `SteamPublisher`; password (first sign-in only) read from stdin. | yes (via 07d) | **yes** | TLG (NET reviews) |
 
-Done when (from the backlog): a build uploads to a Steam branch from the editor. Verified by the human on their app.
-Unit tests cover everything except the real steamcmd.
+Done when (from the backlog): a build uploads to a Steam branch from the editor (uploaded, not set live, per Q3).
+Verified by the human on their app. Unit tests cover everything except the real steamcmd.
 
 ## 10. Cross-domain needs
 
@@ -219,7 +230,7 @@ Unit tests cover everything except the real steamcmd.
 - **EDT**: review the window; add **File → Publish** submenu and a button on the export wizard success page.
 - **AST-31**: needed for a build players can launch from Steam without Java (Q4).
 
-## 11. Questions for the human
+## 11. Questions for the human (answered 2026-11-18, see §0)
 
 1. **Password storage.** OK to rely only on steamcmd's cached session (sign in once with password + Steam Guard, never
    stored by Skate)? Or do you also want "remember password" through Windows Credential Manager?
@@ -231,9 +242,9 @@ Unit tests cover everything except the real steamcmd.
    launcher and a warning? Proposed: ship v1 with the warning; schedule AST-31 before the first public build.
 5. **Depots.** Is one Windows depot enough for v1, or do you need several now (for example a separate DLC or
    soundtrack depot)?
-6. **Spike.** Can you give 30 minutes with your Steamworks app (a test branch and a build account) for step 01a? No
+6. **Spike.** Can you give 30 minutes with your Steamworks app (a test branch and a build account) for step 07a? No
    real upload is needed for most of it (`Preview` mode).
-7. **CLI/CI.** Do you want the `skate publish steam` CLI command (01e) for automated uploads, or editor only?
+7. **CLI/CI.** Do you want the `skate publish steam` CLI command (07e) for automated uploads, or editor only?
 8. **Task ID** (lead): keep this note as `NET-01-steam-publish.md`, or renumber the task (e.g. NET-07) so that
    NET-01 keeps meaning the multiplayer architecture?
 
