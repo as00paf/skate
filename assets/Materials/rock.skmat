@@ -1,0 +1,13 @@
+{
+    "name": "Rock",
+    "schema": "pbr-metallic-roughness",
+    "params": {
+        "baseColor": [0.46, 0.45, 0.43, 1.0],
+        "metallicFactor": [0.0],
+        "roughnessFactor": [0.92]
+    },
+    "textures": {
+        "baseColor": "engine:Textures/concrete_simple.png"
+    },
+    "version": 2
+}
