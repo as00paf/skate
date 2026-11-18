@@ -89,15 +89,18 @@ class EditorScenesTabBar(
 
             closeModal.render()
 
-            val addTabFlags =
-                ImGuiTabItemFlags.Trailing or ImGuiTabItemFlags.NoCloseWithMiddleMouseButton or ImGuiTabItemFlags.NoReorder
-            if (ImGui.beginTabItem(Icons.PLUS, addTabFlags)) {
+            // A tab button, not a tab (EDT-99): a "+" tab stays selected until ImGui catches up with the new scene's tab
+            // a frame later, so beginTabItem reported it twice and one click created two scenes.
+            if (stringManager.tippedWith(ImGui.tabItemButton(Icons.PLUS, NEW_SCENE_BUTTON_FLAGS), "tooltip.scene_tab.new_scene")) {
                 eventSystem.publish(CreateRequested)
-                ImGui.endTabItem()
             }
 
             ImGui.endTabBar()
         }
+    }
+
+    private companion object {
+        const val NEW_SCENE_BUTTON_FLAGS = ImGuiTabItemFlags.Trailing or ImGuiTabItemFlags.NoTooltip
     }
 
     private inner class CloseSceneModal : EditorModal(stringManager, Icons.WINDOW_CLOSE) {
