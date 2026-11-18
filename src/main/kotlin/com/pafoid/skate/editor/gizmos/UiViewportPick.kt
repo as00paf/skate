@@ -20,7 +20,7 @@ object UiViewportPick {
     fun canvases(scene: Scene): List<GameObject> {
         val out = ArrayList<GameObject>()
         fun walk(node: GameObject) {
-            for (child in node.children) {
+            for (child in node.persistentChildren) {
                 if (!child.isEnabled || child.isDead) continue
                 if (child.getComponent<UICanvasComponent>() != null) out.add(child)
                 walk(child)
