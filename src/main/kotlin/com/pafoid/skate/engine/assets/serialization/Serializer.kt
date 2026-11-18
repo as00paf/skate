@@ -10,6 +10,7 @@ import com.pafoid.skate.engine.ecs.components.InventoryComponent
 import com.pafoid.skate.engine.ecs.components.EquipmentComponent
 import com.pafoid.skate.engine.ecs.components.BoneAttachment
 import com.pafoid.skate.engine.ecs.components.TerrainComponent
+import com.pafoid.skate.engine.ecs.components.StreamingFocus
 import com.pafoid.skate.engine.ecs.components.ReverbZone
 import com.pafoid.skate.engine.net.LoopbackPredictionComponent
 import com.pafoid.skate.engine.net.NetState
@@ -116,6 +117,7 @@ class Serializer(val assetPaths: AssetPaths = AssetPaths()) {
             subclass(ParticleEmitter::class)
             subclass(WaterComponent::class)
             subclass(TerrainComponent::class)
+            subclass(StreamingFocus::class)
             subclass(VehicleComponent::class)
             subclass(LoopbackPredictionComponent::class)
 

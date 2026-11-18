@@ -72,7 +72,8 @@ class TerrainAssetTest {
     private fun system(vararg terrains: TerrainComponent): TerrainSystem {
         val scene = Scene("S")
         terrains.forEachIndexed { i, t -> scene.addChild(GameObject("T$i").addComponent(t)) }
-        return TerrainSystem().apply { init(scene) }
+        // No rebuild debounce: these tests step with dt = 0 (REN-42 debounces inspector drags by 0.25 s)
+        return TerrainSystem(debounceSeconds = 0f).apply { init(scene) }
     }
 
     /** Raises chunk ([cx], [cz]) by [dy] m everywhere (apron included), like a sculpt brush would. */
@@ -141,7 +142,7 @@ class TerrainAssetTest {
         assertTrue(region.isFile)
         val header = TerrainRegionFile.readHeader(region.readBytes())
         assertEquals(listOf(TerrainRegionFile.slotOf(1, 2)), header.entries.indices.filter { header.entries[it].present }, "only the sculpted chunk")
-        assertClose(t.runtime.chunk(1, 2)!!.heights, store.readChunk(1, 2, 16, 1f)!!)
+        assertClose(t.runtime.chunk(1, 2)!!.heights, store.readChunk(1, 2, 16, 1f)!!.heights)
         assertFalse(folder.walkTopDown().any { it.name.endsWith(".tmp") }, "atomic writes leave no temp files")
 
         sculpt(t, 1, 2, -4f)

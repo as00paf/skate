@@ -58,6 +58,13 @@ class PureLogicIsolationGuardTest {
             "engine/terrain/ScatterRule.kt",
             "engine/terrain/ScatterPlacer.kt",
             "engine/terrain/TerrainMacro.kt",
+            // REN-28 phase D: streaming is pure so a headless server can stream physics
+            "engine/terrain/TerrainOverview.kt",
+            "engine/terrain/streaming/StreamingRings.kt",
+            "engine/terrain/streaming/ChunkStreamingPlanner.kt",
+            "engine/terrain/streaming/TerrainStreamer.kt",
+            "engine/terrain/streaming/StreamingUploadQueue.kt",
+            "engine/terrain/streaming/FarFieldQuadtree.kt",
         )
         val forbidden = listOf("import org.lwjgl.", "import com.pafoid.skate.editor.", "import imgui.")
         val violations = pureFiles.flatMap { f ->

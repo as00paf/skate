@@ -126,7 +126,8 @@ class TerrainDataTest {
         assertTrue(rt.ensureBuilt(terrain.key(seed), parallel = false))
         val v = rt.version
         assertFalse(rt.ensureBuilt(terrain.key(seed), parallel = false))
-        assertEquals("terrain/Hill", terrain.seedName)
+        assertEquals("terrain/Hill", terrain.resolvedSeedName())
+        assertEquals("", terrain.seedName, "key() never writes the name (REN-42)")
         terrain.stamps += TerrainStamp(x = 0f, z = 0f, y = 3f)
         assertTrue(rt.ensureBuilt(terrain.key(seed), parallel = false))
         assertTrue(rt.version > v)
@@ -136,10 +137,10 @@ class TerrainDataTest {
 
     @Test
     fun Component_SanitizesItsKey_AndDataSourceIgnoresTheRecipe() {
-        val t = TerrainComponent(sizeMetres = 1e6f, sampleSpacing = 0.9f, chunkQuads = 100, seedName = "terrain/X")
+        val t = TerrainComponent(sizeMetres = 1e6f, sampleSpacing = 0.9f, chunkQuads = 100, seedName = "terrain/X", streaming = com.pafoid.skate.engine.ecs.components.TerrainStreaming.OFF)
         val key = t.key(seed)
         assertEquals(TerrainComponent.MAX_SIZE, key.size)
-        assertEquals(1f, key.spacing)
+        assertEquals(4f, key.spacing, "16 km at 1 m exceeds the resident sample cap (REN-42)")
         assertEquals(64, key.chunkQuads)
         t.source = TerrainSource.DATA
         assertEquals(TerrainPreset.FLAT.recipe(), t.key(seed).recipe)
@@ -162,7 +163,7 @@ class TerrainDataTest {
         val terrain = TerrainComponent(sizeMetres = 64f, chunkQuads = 32)
         val scene = Scene("S")
         scene.addChild(GameObject("T").addComponent(terrain))
-        val system = TerrainSystem().apply { init(scene) }
+        val system = TerrainSystem(debounceSeconds = 0f).apply { init(scene) }
         system.update(0f)
         assertEquals(1, system.rebuilt)
         assertEquals(4, terrain.runtime.chunks.size)

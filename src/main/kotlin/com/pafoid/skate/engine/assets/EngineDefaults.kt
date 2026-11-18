@@ -1,5 +1,8 @@
 package com.pafoid.skate.engine.assets
 
+import com.pafoid.skate.engine.audio.WaterAudio
+import com.pafoid.skate.engine.ecs.components.WaterComponent
+import com.pafoid.skate.engine.ecs.components.WaterMaterials
 import java.nio.charset.StandardCharsets
 import java.util.UUID
 
@@ -115,8 +118,28 @@ object EngineDefaults {
         /** Background music for the default MainScene (by the project author). */
         const val MUSIC = "engine:Sounds/Music/aquarela do brasil.mp3"
 
-        val ALL = listOf(MUSIC)
+        /** Water ambience and splashes (AUD-01), played by `AudioSystem` for every `WaterComponent`. */
+        val WATER: List<String> = listOf(WaterAudio.DEFAULT_AMBIENCE) + WaterAudio.DEFAULT_SPLASHES
+
+        val ALL = listOf(MUSIC) + WATER
     }
+
+    /**
+     * `engine:` references that resolve in code and have no file (AST-37): the water material presets
+     * (`WaterMaterials.ALL`, read from `WaterSchema.BUILT_IN`). Nothing is packed for them and the exported game
+     * resolves them the same way.
+     */
+    val BUILT_IN: Set<String> = WaterMaterials.ALL.toSet()
+
+    fun isBuiltIn(reference: String): Boolean = reference in BUILT_IN
+
+    /**
+     * Engine defaults a component uses at run time without naming them in the scene (AST-37), keyed by the
+     * component's serialized type: a packed scene or prefab with that component brings them into the pack.
+     */
+    val IMPLIED_BY_COMPONENT: Map<String, List<String>> = mapOf(
+        WaterComponent::class.qualifiedName!! to Sounds.WATER,
+    )
 
     /**
      * Engine shaders (AST-26 §5.1). The **basic** ones are copied into every project's `Assets/Shaders/` in both copy

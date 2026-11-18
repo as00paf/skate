@@ -16,7 +16,6 @@ import com.pafoid.skate.engine.ecs.systems.AppearanceSystem
 import com.pafoid.skate.engine.ecs.systems.BoneAttachmentSystem
 import com.pafoid.skate.engine.ecs.systems.InventorySystem
 import com.pafoid.skate.engine.gameplay.appearance.SkeletonConfigs
-import com.pafoid.skate.engine.ecs.systems.PlayerMotionSystem
 import com.pafoid.skate.engine.gameplay.items.ItemDatabase
 import com.pafoid.skate.game.items.SkateItems
 import com.pafoid.skate.game.input.SkateControls
@@ -355,7 +354,8 @@ class SkateBehavior(
 object SkateGameplay {
     /**
      * Per-engine setup, called by each host (editor and exported game) once the engine has started: the control
-     * scheme option in the pause menu and the trick HUD (GPL-21) and the water bail (GPL-32). Call [register] first. Safe to call again.
+     * scheme option in the pause menu, the trick HUD (GPL-21) and the item systems (GPL-24a, e); the water bail
+     * (GPL-32) is engine wiring (ECS-18). Call [register] first. Safe to call again.
      */
     fun install(engine: Engine) {
         engine.gameOptions.register(SkateControls.option())
@@ -376,8 +376,6 @@ object SkateGameplay {
             engine.systemManager.addSystem(AppearanceSystem(engine.eventSystem, items) { engine.assetsManager.loadModel(it) })
             engine.systemManager.addSystem(BoneAttachmentSystem())
         }
-        // Water bails (GPL-32); idempotent. To move into Engine wiring so every game gets it.
-        engine.systemManager.getSystem<PlayerMotionSystem>()?.listenTo(engine.eventSystem)
     }
 
     fun register() {

@@ -7,6 +7,8 @@ import com.pafoid.skate.engine.ecs.components.JointComponent
 import com.pafoid.skate.engine.ecs.components.TerrainComponent
 import com.pafoid.skate.engine.ecs.components.WaterComponent
 import com.pafoid.skate.engine.physics3d.HeightfieldCollider3D
+import com.pafoid.skate.engine.physics3d.ScatterCollider3D
+import com.pafoid.skate.engine.physics3d.ScenePhysicsQueries
 import com.pafoid.skate.engine.environment.WaterQueries
 import com.pafoid.skate.engine.ecs.components.PlayerController
 import com.pafoid.skate.engine.ecs.components.RagdollComponent
@@ -65,9 +67,26 @@ class PhysicsSystem(
     private val waters = query(WaterComponent::class, Transform::class)
     private val buoyancy = BuoyancySystem(eventSystem)
     private val terrains = query(TerrainComponent::class, Transform::class)
-    /** One heightfield collider per terrain (PHY-26); identity-keyed like the joints. */
-    private val terrainColliders = IdentityHashMap<TerrainComponent, HeightfieldCollider3D>()
+    /** Ground (PHY-26) and scatter (PHY-27) colliders of one terrain. */
+    private inner class TerrainColliders {
+        val ground = HeightfieldCollider3D(physics3d)
+        val scatter = ScatterCollider3D(physics3d)
+
+        fun clear() {
+            ground.clear()
+            scatter.clear()
+        }
+    }
+
+    /** Colliders per terrain; identity-keyed like the joints. */
+    private val terrainColliders = IdentityHashMap<TerrainComponent, TerrainColliders>()
     private val terrainPosition = Vector3f()
+
+    /**
+     * Rays, shape sweeps and overlaps against this scene's physics world (PHY-22), for gameplay systems such as
+     * `CombatSystem`; they take [ScenePhysicsQueries] so tests can pass a fake.
+     */
+    val queries: ScenePhysicsQueries = ScenePhysicsQueries.of(physics3d)
 
     /**
      * Water lookups (surface, flow, depth, capsule submersion) for gameplay and audio, refreshed every fixed step
@@ -231,8 +250,9 @@ class PhysicsSystem(
     }
 
     /**
-     * Keeps one [HeightfieldCollider3D] per terrain in line with its chunks and position. In edit mode a sculpt
-     * stroke's colliders are rebuilt once the stroke stops changing the terrain.
+     * Keeps each terrain's ground ([HeightfieldCollider3D]) and scatter ([ScatterCollider3D]) colliders in line with its
+     * chunks and position. In edit mode a sculpt stroke's ground colliders are rebuilt once the stroke stops changing
+     * the terrain.
      */
     private fun syncTerrainColliders(waitForStableEdits: Boolean) {
         var live = 0
@@ -241,7 +261,9 @@ class PhysicsSystem(
             val transform = go.getComponent<Transform>() ?: return@forEach
             live++
             transform.worldMatrix.getTranslation(terrainPosition)
-            terrainColliders.getOrPut(terrain) { HeightfieldCollider3D(physics3d) }.sync(terrain, terrainPosition, waitForStableEdits)
+            val colliders = terrainColliders.getOrPut(terrain) { TerrainColliders() }
+            colliders.ground.sync(terrain, terrainPosition, waitForStableEdits)
+            colliders.scatter.sync(terrain, terrainPosition)
         }
         if (live != terrainColliders.size) {
             val current = terrains.entities.mapNotNull { it.getComponent<TerrainComponent>() }
@@ -250,7 +272,10 @@ class PhysicsSystem(
     }
 
     /** Heightfield bodies currently in the world for all terrains (tests, stats). */
-    val terrainColliderBodyCount: Int get() = terrainColliders.values.sumOf { it.bodyCount }
+    val terrainColliderBodyCount: Int get() = terrainColliders.values.sumOf { it.ground.bodyCount }
+
+    /** Scatter item bodies currently in the world for all terrains (tests, stats). */
+    val scatterColliderBodyCount: Int get() = terrainColliders.values.sumOf { it.scatter.bodyCount }
 
     /** Reports `meshRef` models that could not be loaded (each once; see [CollisionMeshes]). */
     private fun publishCollisionMeshFailures() {

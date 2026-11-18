@@ -39,7 +39,11 @@ data class TerrainComponent(
     var biomeSource: BiomeSource = BiomeSource.PROCEDURAL,
     var climate: BiomeClimate = BiomeClimate(),
     var streaming: TerrainStreaming = TerrainStreaming.AUTO,
-    /** ECS-14 stream name; empty means `"terrain/<entity name>"` at first use. Kept on rename so the world stays. */
+    /**
+     * ECS-14 stream name. Empty means `"terrain/<entity name>"`, read live (renaming such a terrain changes its ground);
+     * the editor stores the name when it creates a terrain, so a renamed terrain keeps its world. A duplicate keeps it
+     * too: a copy has the same ground until rerolled ([reroll]) or renamed here (REN-42).
+     */
     var seedName: String = "",
     /** Rerolls this terrain alone (0 keeps the plain seed). */
     var seedOffset: Int = 0,
@@ -55,18 +59,53 @@ data class TerrainComponent(
     @Transient
     val runtime: TerrainRuntime = TerrainRuntime()
 
-    /** The stream name, assigned from the entity name the first time it is needed. */
-    fun resolvedSeedName(): String {
-        if (seedName.isEmpty()) seedName = "terrain/" + (gameObject?.name ?: "Terrain")
-        return seedName
+    /**
+     * The stream name in use: [seedName], or `"terrain/<entity name>"` while it is empty. Pure: it never writes
+     * [seedName], so loading then saving a scene leaves the file unchanged (EDT-60), and a call before the component is
+     * attached does not pin it to "terrain/Terrain" (REN-42).
+     */
+    fun resolvedSeedName(): String = seedName.ifEmpty { "terrain/" + (gameObject?.name ?: "Terrain") }
+
+    /** Size in metres actually built: finite, within [MIN_SIZE]..[MAX_SIZE] (NaN or 0 fall back to the default). */
+    fun effectiveSize(): Float = finite(sizeMetres, DEFAULT_SIZE).coerceIn(MIN_SIZE, MAX_SIZE)
+
+    /**
+     * Sample spacing actually built: the nearest allowed spacing, coarsened until the terrain holds at most
+     * [MAX_RESIDENT_SAMPLES] samples, since every chunk is resident until streaming (REN-28 phase D). 16384 m at
+     * 0.5 m would be about 4.3 GB of heights; it builds at 4 m instead (REN-42).
+     */
+    fun effectiveSpacing(): Float {
+        val requested = SPACINGS.minBy { kotlin.math.abs(it - finite(sampleSpacing, 1f)) }
+        // A streamed terrain only holds its rings: no cap (REN-28 §15)
+        if (streamsAt(requested)) return requested
+        val size = effectiveSize()
+        for (i in SPACINGS.indexOf(requested) until SPACINGS.size) if (samplesFor(size, SPACINGS[i]) <= MAX_RESIDENT_SAMPLES) return SPACINGS[i]
+        return SPACINGS.last()
     }
 
-    /** What the heights depend on, under [projectSeed]. */
+    private fun quads(): Int = Integer.highestOneBit(chunkQuads.coerceIn(MIN_CHUNK_QUADS, MAX_CHUNK_QUADS))
+
+    private fun streamsAt(spacing: Float): Boolean = when (streaming) {
+        TerrainStreaming.OFF -> false
+        TerrainStreaming.ON -> true
+        TerrainStreaming.AUTO -> {
+            val perSide = kotlin.math.ceil(effectiveSize() / (quads() * spacing)).toLong()
+            perSide * perSide > AUTO_STREAMING_CHUNKS
+        }
+    }
+
+    /** True when [effectiveSpacing] is coarser than asked (the inspector can say why). */
+    fun spacingCapped(): Boolean = effectiveSpacing() > SPACINGS.minBy { kotlin.math.abs(it - finite(sampleSpacing, 1f)) }
+
+    /** The layers used: the first [MAX_LAYERS]; extra entries stay in the list (and the file) but are ignored. */
+    fun effectiveLayers(): List<TerrainLayer> = layers.take(MAX_LAYERS)
+
+    /** What the heights depend on, under [projectSeed]; every value sanitized, so building never throws on bad input. */
     fun key(projectSeed: Long): TerrainKey = TerrainKey(
-        size = sizeMetres.coerceIn(MIN_SIZE, MAX_SIZE),
-        spacing = SPACINGS.minBy { kotlin.math.abs(it - sampleSpacing) },
+        size = effectiveSize(),
+        spacing = effectiveSpacing(),
         chunkQuads = Integer.highestOneBit(chunkQuads.coerceIn(MIN_CHUNK_QUADS, MAX_CHUNK_QUADS)),
-        heightScale = heightScaleMetres,
+        heightScale = finite(heightScaleMetres, DEFAULT_HEIGHT_SCALE),
         recipe = if (source == TerrainSource.PROCEDURAL) recipe else TerrainPreset.FLAT.recipe(),
         stamps = stamps.toList(),
         projectSeed = projectSeed,
@@ -75,7 +114,14 @@ data class TerrainComponent(
         biomes = biomes.toList(),
         climate = climate,
         biomeSource = biomeSource,
+        streamed = isStreamed(),
     )
+
+    /**
+     * Whether chunks stream (REN-28 §15.1): ON, or AUTO with more than [AUTO_STREAMING_CHUNKS] chunks (about 1 km at
+     * 1 m spacing). OFF keeps every chunk resident.
+     */
+    fun isStreamed(): Boolean = streamsAt(effectiveSpacing())
 
     fun applyPreset(preset: TerrainPreset) {
         recipe = preset.recipe()
@@ -101,6 +147,20 @@ data class TerrainComponent(
     }
 
     companion object {
+        const val DEFAULT_SIZE = 256f
+        const val AUTO_STREAMING_CHUNKS = 256L
+        const val DEFAULT_HEIGHT_SCALE = 64f
+
+        /** Most samples a non-streamed terrain keeps resident (4097², 64 MB of heights); streamed ones only hold rings. */
+        const val MAX_RESIDENT_SAMPLES = 4097L * 4097L
+
+        fun samplesFor(size: Float, spacing: Float): Long {
+            val perSide = kotlin.math.ceil(size / spacing).toLong() + 1
+            return perSide * perSide
+        }
+
+        private fun finite(v: Float, fallback: Float): Float = if (v.isFinite() && v > 0f) v else fallback
+
         const val MIN_SIZE = 8f
         const val MAX_SIZE = 16384f
         const val MAX_LAYERS = 8

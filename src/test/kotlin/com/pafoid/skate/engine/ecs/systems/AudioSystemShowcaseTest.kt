@@ -19,6 +19,7 @@ import com.pafoid.skate.engine.audio.AudioEngine
 import com.pafoid.skate.engine.audio.BusId
 import com.pafoid.skate.engine.audio.FakeAudioBackend
 import com.pafoid.skate.engine.audio.SpatialAudio
+import com.pafoid.skate.engine.audio.WaterAudioConfig
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.core.LoggerService
 import com.pafoid.skate.engine.core.LoggerService.LogLevel
@@ -96,8 +97,16 @@ class AudioSystemShowcaseTest {
     private fun localPath(engineMissing: Boolean = false): (String) -> String =
         AssetPaths().apply { if (engineMissing) engineDefaults = EngineDefaultResolver(File(dir, "no-engine")) }::localPath
 
+    /** The showcase pool's water ambience (AUD-01, TLG-17) is its own voice; these tests are about the song's. */
+    private companion object {
+        val NO_WATER_AUDIO = WaterAudioConfig(enabled = false)
+    }
+
     private fun system(scene: Scene, engineMissing: Boolean = false) =
-        AudioSystem(AudioEngine(logger, al.backend), logger, assetsManager, cameraManager, localPath(engineMissing)).also { it.init(scene) }
+        AudioSystem(AudioEngine(logger, al.backend), logger, assetsManager, cameraManager, localPath(engineMissing)).also {
+            it.waterAudio = NO_WATER_AUDIO
+            it.init(scene)
+        }
 
     private fun frame(system: AudioSystem, scene: Scene) {
         scene.children.forEach { go -> go.getComponent<Transform>()?.let { transforms.updateTransform(it) } }
@@ -265,7 +274,10 @@ class AudioSystemShowcaseTest {
         val scene = loadShowcaseFromDisk()
         val emitterPos = scene.named("[Audio] Emitter3D").getComponent<Transform>()!!.translation
         val engine = AudioEngine(logger, al.backend)
-        val system = AudioSystem(engine, logger, assetsManager, cameraManager, localPath()).also { it.init(scene) }
+        val system = AudioSystem(engine, logger, assetsManager, cameraManager, localPath()).also {
+            it.waterAudio = NO_WATER_AUDIO
+            it.init(scene)
+        }
         camera.translation.set(emitterPos).add(0f, 0f, 0.5f)
         scene.isRunning = true
         frame(system, scene)

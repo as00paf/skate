@@ -43,7 +43,10 @@ class ReferenceCollector(
                 resolveRelative(file, name)?.takeIf { it.isFile && it.canonicalFile.path.startsWith(root.path) }?.let { add(it.canonicalFile) }
             }
             if (file.extension.lowercase() !in scanExtensions) continue
-            for (token in stringLiteral.findAll(file.readText()).map { unescape(it.groupValues[1]) }) {
+            val text = file.readText()
+            // AST-37: components whose engine defaults are implied (water sounds), not written in the scene.
+            EngineDefaults.IMPLIED_BY_COMPONENT.forEach { (type, refs) -> if ("\"$type\"" in text) refs.forEach(::addEngine) }
+            for (token in stringLiteral.findAll(text).map { unescape(it.groupValues[1]) }) {
                 if (EngineDefaults.isReference(token)) addEngine(token)
                 else resolve(token)?.let { add(it) } ?: resolveFolderAsset(token)?.forEach { add(it) }
             }
@@ -53,6 +56,7 @@ class ReferenceCollector(
 
     /** Records [reference] and the engine files its model names (`.mtl`, maps), when they resolve. */
     private fun addEngine(reference: String) {
+        if (EngineDefaults.isBuiltIn(reference)) return // resolved in code, nothing to pack (AST-37)
         val resolver = engineDefaults ?: return
         val logical = EngineDefaults.logicalPath(reference) ?: return
         if (reference in engineReferences) return
@@ -102,8 +106,9 @@ class ReferenceCollector(
     }
 
     /**
-     * The files of a folder asset (`.skterrain`, AST-36) referenced by GUID or path: `terrain.json` (scanned in turn
-     * for layer materials and stamp prefabs) and its region files.
+     * The files of a folder asset (`.skterrain`, AST-36) referenced by GUID or path: `terrain.json` and its region files.
+     * `terrain.json` is scanned in turn like any JSON asset, so layer materials, stamp prefabs and each biome's scatter
+     * `model`, `material` and `prefab` (GUIDs, paths or `engine:` references) are packed too (AST-38).
      */
     private fun resolveFolderAsset(token: String): List<File>? {
         if (token.isBlank() || token.length > 512 || token.contains("://")) return null

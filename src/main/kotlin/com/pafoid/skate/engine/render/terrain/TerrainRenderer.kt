@@ -51,6 +51,11 @@ class TerrainRenderer(
 
     private class Resident(val pool: ChunkBufferPool, val atlas: SplatAtlas) {
         val chunks = IdentityHashMap<TerrainChunkData, GpuChunk>()
+        /** Uploaded chunks by index `cz * chunksPerSide + cx` (the far field skips them). */
+        val byIndex = HashMap<Int, GpuChunk>()
+        var far: FarFieldRenderer? = null
+        var macroFor: com.pafoid.skate.engine.terrain.TerrainOverview? = null
+        var macroJob: java.util.concurrent.CompletableFuture<*>? = null
         var version = -1L
         var layers: TerrainLayerArrays? = null
         var layersKey: List<TerrainLayer>? = null
@@ -108,26 +113,30 @@ class TerrainRenderer(
             val it = resident.chunks.entries.iterator()
             while (it.hasNext()) {
                 val e = it.next()
-                if (e.key !in keep) { resident.pool.release(e.value.slot); resident.atlas.release(e.value.splatLayer); it.remove() }
+                if (e.key !in keep) {
+                    resident.pool.release(e.value.slot); resident.atlas.release(e.value.splatLayer)
+                    resident.byIndex.remove(e.key.cz * chunkLayout.chunksPerSide + e.key.cx)
+                    it.remove()
+                }
             }
+            uploads.removeIf { item -> item.resident === resident && item.data !in keep }
             for (data in current) {
                 val existing = resident.chunks[data]
                 if (existing != null && !data.dirty) continue
-                val slot = existing?.slot ?: resident.pool.acquire()
-                resident.pool.upload(slot, data)
-                val layer = when {
-                    data.splat == null -> { existing?.let { resident.atlas.release(it.splatLayer) }; -1 }
-                    existing != null && existing.splatLayer >= 0 -> existing.splatLayer
-                    else -> resident.atlas.acquire()
-                }
-                if (layer >= 0) resident.atlas.upload(layer, data)
-                resident.chunks[data] = GpuChunk(data, slot, resident.pool.mesh.lodErrors(data), layer)
-                data.dirty = false
+                // Streamed chunks upload within the frame budget (REN-28 §15.5); the far field covers them meanwhile
+                if (runtime.streamed) {
+                    if (!uploads.contains(Upload(resident, data, chunkLayout.chunksPerSide))) {
+                        uploads.add(Upload(resident, data, chunkLayout.chunksPerSide), uploadBytes(resident))
+                    }
+                } else upload(resident, data, chunkLayout.chunksPerSide)
             }
             resident.version = runtime.version
             refreshLayers(resident, draw.terrain)
-            runtime.macro = TerrainMacro.bake(chunkLayout, current, resident.layers?.averageColors ?: TerrainLayerImages.DEFAULT_COLORS)
+            if (!runtime.streamed) {
+                runtime.macro = TerrainMacro.bake(chunkLayout, current, resident.layers?.averageColors ?: TerrainLayerImages.DEFAULT_COLORS)
+            }
         }
+        if (runtime.streamed) bakeStreamedMacro(resident, draw.terrain)
         refreshLayers(resident, draw.terrain)
         for (c in resident.chunks.values) {
             val size = c.data.chunkQuads * c.data.spacing
@@ -137,9 +146,84 @@ class TerrainRenderer(
         return resident.chunks.values
     }
 
+    /** One pending chunk upload; equal when it is the same chunk object of the same terrain. */
+    private class Upload(val resident: Resident, val data: TerrainChunkData, val chunksPerSide: Int) {
+        override fun equals(other: Any?) = other is Upload && other.resident === resident && other.data === data
+        override fun hashCode() = System.identityHashCode(data)
+    }
+
+    /** Budgeted chunk uploads of streamed terrains, drained once per frame by [drainUploads]. */
+    private val uploads = com.pafoid.skate.engine.terrain.streaming.StreamingUploadQueue<Upload>()
+
+    /** Chunks waiting to upload (stats, tests). */
+    val pendingUploads: Int get() = uploads.size
+
+    /** Sets the per-frame upload budgets (REN-28 §15.5: 1.5 ms, 4 MB). */
+    fun setUploadBudget(timeNs: Long, bytes: Long) { uploads.timeBudgetNs = timeNs; uploads.byteBudget = bytes }
+
+    /** Uploads queued chunks within the frame's time and byte budgets; call once per frame before drawing. */
+    fun drainUploads(): Int {
+        val n = uploads.drain { item ->
+            // Skip chunks that were evicted or replaced since they were queued
+            if (terrains.values.any { it === item.resident }) upload(item.resident, item.data, item.chunksPerSide)
+        }
+        EngineStats.terrainUploadNs.set(uploads.lastDrainNs)
+        EngineStats.terrainGpuBytes.set(terrains.values.sumOf { r -> r.chunks.size.toLong() * uploadBytes(r) })
+        return n
+    }
+
+    private fun uploadBytes(r: Resident): Long =
+        r.pool.mesh.vertexCount.toLong() * TerrainMeshBuilder.STREAM_FLOATS * 4 + 2L * r.atlas.samples * r.atlas.samples * 4
+
+    private fun upload(resident: Resident, data: TerrainChunkData, chunksPerSide: Int) {
+        val existing = resident.chunks[data]
+        val slot = existing?.slot ?: resident.pool.acquire()
+        resident.pool.upload(slot, data)
+        val layer = when {
+            data.splat == null -> { existing?.let { resident.atlas.release(it.splatLayer) }; -1 }
+            existing != null && existing.splatLayer >= 0 -> existing.splatLayer
+            else -> resident.atlas.acquire()
+        }
+        if (layer >= 0) resident.atlas.upload(layer, data)
+        val gpu = GpuChunk(data, slot, resident.pool.mesh.lodErrors(data), layer)
+        resident.chunks[data] = gpu
+        resident.byIndex[data.cz * chunksPerSide + data.cx] = gpu
+        data.dirty = false
+    }
+
+    /** Bakes the far field's macro colours from the overview and biomes on a worker, once per overview. */
+    private fun bakeStreamedMacro(resident: Resident, terrain: TerrainComponent) {
+        val runtime = terrain.runtime
+        val overview = runtime.overview ?: return
+        val generator = runtime.generator ?: return
+        if (resident.macroFor === overview) return
+        resident.macroFor = overview
+        resident.macroJob?.cancel(true)
+        val colours = resident.layers?.averageColors ?: TerrainLayerImages.DEFAULT_COLORS
+        resident.macroJob = java.util.concurrent.CompletableFuture.supplyAsync { TerrainMacro.bakeFromOverview(generator, overview, colours) }
+            .thenAccept { m -> if (runtime.overview === overview) runtime.macro = m }
+    }
+
+    /**
+     * Draws [draw]'s far field (streamed terrains only, once the overview exists) with [shader] (bound): the terrain
+     * colour program ([colour]) or the picking program. Uses the frustum set by [setFrustum].
+     */
+    fun drawFarField(shader: Shader, draw: Draw, camera: Vector3f, farDistance: Float, colour: Boolean) {
+        val runtime = draw.terrain.runtime
+        if (!runtime.streamed) return
+        val overview = runtime.overview ?: return
+        val chunkLayout = runtime.layout ?: return
+        val resident = terrains[draw.terrain] ?: return
+        val vertexLayout = layout ?: return
+        val far = resident.far ?: FarFieldRenderer(device(), vertexLayout).also { resident.far = it }
+        far.draw(shader, chunkLayout, overview, runtime.macro, draw.position, camera, farDistance, frustum,
+            { cx, cz -> resident.byIndex.containsKey(cz * chunkLayout.chunksPerSide + cx) }, colour,
+        ) { colourPipelines.get(shader, vertexLayout) }
+    }
+
     /** Rebuilds the layer texture arrays when the terrain's layers changed. */
     private fun refreshLayers(resident: Resident, terrain: TerrainComponent) {
-        val key = terrain.layers.toList()
+        val key = terrain.effectiveLayers()
         if (resident.layers != null && key == resident.layersKey) return
         resident.layers?.close()
         resident.layers = TerrainLayerArrays(device(), TerrainLayerImages.buildAll(key, layerSize, material, decode), layerSize)
@@ -160,7 +244,7 @@ class TerrainRenderer(
         shader.uploadInt(Uniforms.TERRAIN_ALBEDO, UNIT_ALBEDO); shader.uploadInt(Uniforms.TERRAIN_NORMAL, UNIT_NORMAL)
         shader.uploadInt(Uniforms.TERRAIN_ORM, UNIT_ORM)
         shader.uploadFloat(Uniforms.TERRAIN_CHUNK_QUADS, resident.pool.mesh.chunkQuads.toFloat())
-        val l = draw.terrain.layers
+        val l = draw.terrain.effectiveLayers()
         fun tiling(i: Int) = l.getOrNull(i)?.tilingMetres?.coerceAtLeast(0.01f) ?: 4f
         fun tri(i: Int) = if (l.getOrNull(i)?.triplanar == true) 1f else 0f
         shader.uploadVec4f(Uniforms.TERRAIN_TILING_A, vec4.set(tiling(0), tiling(1), tiling(2), tiling(3)))
@@ -231,7 +315,10 @@ class TerrainRenderer(
     fun projectionScale(viewportHeight: Int, fovDegrees: Float) = ScreenErrorLod.projectionScale(viewportHeight.coerceAtLeast(1), fovDegrees)
 
     private fun release(resident: Resident) {
-        resident.pool.close(); resident.atlas.close(); resident.layers?.close(); resident.chunks.clear()
+        uploads.removeIf { it.resident === resident }
+        resident.macroJob?.cancel(true)
+        resident.far?.close()
+        resident.pool.close(); resident.atlas.close(); resident.layers?.close(); resident.chunks.clear(); resident.byIndex.clear()
     }
 
     fun destroy() {

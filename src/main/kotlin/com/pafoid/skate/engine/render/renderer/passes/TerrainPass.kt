@@ -52,6 +52,14 @@ class TerrainPass(
     private val center = Vector3f()
     private val presentedViewport = PresentedViewport()
 
+    /** Far-field draw distance (REN-28 §15.1: 4 km, capped by the camera's far plane). */
+    var farDistance: Float = 4000f
+
+    override fun prepare() {
+        // Budgeted uploads of streamed chunks, before anything draws this frame (REN-28 §15.5)
+        renderer.drainUploads()
+    }
+
     override fun execute(scene: Scene) {
         renderer.collect(scene, draws)
         renderer.retain(draws)
@@ -74,6 +82,7 @@ class TerrainPass(
             val half = (draw.terrain.runtime.layout?.half ?: 0f)
             sceneFrame.selectObjectLights(program, center.set(draw.position), half * 1.42f)
             renderer.drawChunks(program, draw, chunks, cameraPosition, scale)
+            renderer.drawFarField(program, draw, cameraPosition, minOf(farDistance, camera.farPlane), colour = true)
         }
         program.stop()
         drawScatter(scene)
@@ -123,6 +132,7 @@ class TerrainPass(
         for (draw in draws) {
             program.uploadFloat(Uniforms.ENTITY_ID, EntityIdEncoder.encode(draw.go.uId))
             renderer.drawChunks(program, draw, renderer.sync(draw), cameraPosition, 1f, fixedLod = PICKING_LOD)
+            renderer.drawFarField(program, draw, cameraPosition, minOf(farDistance, camera.farPlane), colour = false)
         }
         program.stop()
         // Clicking a scatter item selects its terrain

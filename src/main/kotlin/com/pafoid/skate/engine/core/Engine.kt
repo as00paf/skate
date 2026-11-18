@@ -16,6 +16,9 @@ import com.pafoid.skate.engine.ecs.systems.DirectionalLightSystem
 import com.pafoid.skate.engine.ecs.systems.EnvironmentClockSystem
 import com.pafoid.skate.engine.ecs.systems.EnvironmentSystem
 import com.pafoid.skate.engine.ecs.systems.TerrainSystem
+import com.pafoid.skate.engine.ecs.systems.TerrainStreamingSystem
+import com.pafoid.skate.engine.ecs.systems.TerrainScatterEntitySystem
+import com.pafoid.skate.engine.ecs.systems.PrefabFileResolver
 import com.pafoid.skate.engine.ecs.systems.CameraControlSystem
 import com.pafoid.skate.engine.ecs.systems.CameraCycleSystem
 import com.pafoid.skate.engine.events.CameraAction
@@ -85,7 +88,7 @@ class Engine {
     val gameLocale = GameLocale(gameStrings)
 
     /** Game-defined pause menu options (GPL-21); hosts install the game's at startup. */
-    val gameOptions = GameOptions()
+    val gameOptions = GameOptions().also(EngineWiring::registerFrameRate)
     init { assetsManager.attachAsyncLoading(jobSystem, eventSystem) }
     // GPL-26: character configs (`engine:Data/...` and project overrides, packed in exports) read through the assets.
     init { com.pafoid.skate.engine.gameplay.CharacterConfigs.reader = { assetsManager.readText(it) } }
@@ -174,17 +177,32 @@ class Engine {
             TransformSystem(),
             cameraManager,
             inputSystem,
-            AudioSystem(audioEngine, logger, assetsManager, cameraManager, assetsManager.paths::localPath),
+            // eventSystem: splashes on PHY-16's WaterEntered (AUD-01).
+            AudioSystem(audioEngine, logger, assetsManager, cameraManager, assetsManager.paths::localPath, eventSystem),
             EnvironmentSystem(),
             EnvironmentClockSystem(), // wind/water clock, before physics (REN-29 §5.3)
-            TerrainSystem(), // builds terrain chunks before physics and rendering read them (REN-28 task 3)
+            TerrainSystem({ logger.log(it, LoggerService.LogLevel.ERROR) }), // builds terrain chunks before physics and rendering read them (REN-28 task 3)
+            TerrainStreamingSystem(
+                cameraPosition = { cameraManager.transform.worldMatrix.getTranslation(org.joml.Vector3f()) },
+                source = TerrainStreamingSystem::storedChunks,
+                report = { logger.log(it, LoggerService.LogLevel.WARN) },
+            ), // streams terrain chunks around the camera and StreamingFocus entities (REN-28 §15)
+            // Prefab scatter items as hidden, unsaved children of their terrain (ECS-19).
+            TerrainScatterEntitySystem(
+                PrefabFileResolver(serializer, assetsManager.paths::localPath) { ref, e ->
+                    logger.logError("Scatter prefab '$ref' could not be loaded", e)
+                },
+            ),
             physicsSystem,
             PhysicsFrameSystem(physicsSystem),
             DayNightCycleSystem(),
             DirectionalLightSystem(cameraManager),
-            PlayerMotionSystem(
-                cameraManager,
-                CharacterInputSampler(inputSystem.reader, contexts = inputSystem.contexts, actionMap = inputSystem.actionMap),
+            EngineWiring.connectWater(
+                PlayerMotionSystem(
+                    cameraManager,
+                    CharacterInputSampler(inputSystem.reader, contexts = inputSystem.contexts, actionMap = inputSystem.actionMap),
+                ),
+                eventSystem,
             ),
             MountFollowSystem(),
             FollowCameraSystem(

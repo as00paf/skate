@@ -85,6 +85,9 @@ uniform vec4 uLayerTilingB;
 uniform vec4 uLayerTriplanarA;
 uniform vec4 uLayerTriplanarB;
 uniform int uBiomeDebug;
+uniform int uFarTile;       // REN-28 §15.4: 1 far-field tile with macro colour, 2 far tile without it yet, 0 detail
+uniform sampler2D uMacro;   // macro colour map of the whole terrain
+uniform vec3 uMacroArea;    // (min x, min z, size) in world metres
 uniform vec3 uBiomeColor0;
 uniform vec3 uBiomeColor1;
 uniform vec3 uBiomeColor2;
@@ -141,7 +144,9 @@ void main()
     float metallic = 0.0;
     float ao = 1.0;
 
-    if (uSplatLayer >= 0) {
+    if (uFarTile == 1) {
+        albedo = texture(uMacro, (fWorldPos.xz - uMacroArea.xy) / uMacroArea.z).rgb;
+    } else if (uSplatLayer >= 0) {
         vec3 suv = vec3((fGrid + 0.5) / (uChunkQuads + 1.0), float(uSplatLayer));
         vec4 wa = texture(uSplat0, suv);
         vec4 wb = texture(uSplat1, suv);
