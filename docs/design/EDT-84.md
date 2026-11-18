@@ -1,6 +1,6 @@
 # EDT-84 — Tool window bars on the left and right (IntelliJ style)
 
-Status: **awaiting approval** · Owner: skate-editor · Deps: none · Priority: P1
+Status: **approved** (human, 2026-11-17) · Owner: skate-editor · Deps: none · Priority: P1
 
 ## Goal
 
@@ -163,3 +163,13 @@ buttons on the left bar and 2 on the right, so this splits them by category (ope
 5. **Can the bars be hidden?** Recommend **yes**: View > Tool Window Bars, on by default, saved in the editor settings.
 6. **Keyboard shortcuts (IntelliJ's Alt+1…9)?** Recommend **later**, as a separate task. They would need a shortcut
    per window in Key Bindings.
+
+## Decisions (approved 2026-11-17)
+
+1. No Game Viewport button.
+2. Bottom-zone windows are split by category: Assets and Scripting on the left bar, Debug, Project and Help on the right.
+3. One-way link: moving a button re-docks its window on that side; dragging a window's tab does not move its button.
+4. Icons with tooltips.
+5. The bars can be hidden from **View > Tool Window Bars** (on by default, saved in the editor settings).
+6. **Changed from the recommendation:** the IntelliJ-style shortcuts are part of EDT-84: one rebindable shortcut per
+   tool window in Key Bindings, ignored while typing. The shortcut works like a click on the window's button (§4).
