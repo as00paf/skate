@@ -43,6 +43,16 @@ class PureLogicIsolationGuardTest {
             "engine/environment/WindField.kt",
             "engine/environment/EnvironmentClock.kt",
             "engine/environment/WindCycle.kt",
+            "engine/environment/WaterWaves.kt",
+            // REN-28 task 3: terrain data is read by physics, gameplay and rendering without GL
+            "engine/terrain/TerrainLayout.kt",
+            "engine/terrain/TerrainRecipe.kt",
+            "engine/terrain/TerrainStamp.kt",
+            "engine/terrain/TerrainGenerator.kt",
+            "engine/terrain/TerrainChunkData.kt",
+            "engine/terrain/TerrainChunkBuilder.kt",
+            "engine/terrain/HeightField.kt",
+            "engine/terrain/TerrainRuntime.kt",
         )
         val forbidden = listOf("import org.lwjgl.", "import com.pafoid.skate.editor.", "import imgui.")
         val violations = pureFiles.flatMap { f ->

@@ -37,6 +37,9 @@ object PipelineStates {
      */
     val WATER = PipelineState(cull = CullMode.NONE)
 
+    /** Terrain chunks (REN-28 §4.1): depth read and write, both faces so skirts show from either side. */
+    val TERRAIN = PipelineState(cull = CullMode.NONE)
+
     /** World sprites (2D batches): depth read/write, no blending, both faces. */
     val SPRITES = PipelineState(cull = CullMode.NONE)
 

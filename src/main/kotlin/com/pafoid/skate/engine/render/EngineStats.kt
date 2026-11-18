@@ -18,8 +18,18 @@ object EngineStats {
     val skinUploadsSkipped = AtomicInteger(0)
     val physicsStepTime = AtomicLong(0) // Nanoseconds
 
+    /** Instanced draw calls and the instances they drew this frame (REN-29 §4.1). */
+    val instancedDraws = AtomicInteger(0)
+    val instances = AtomicInteger(0)
+
+    /** Terrain triangles drawn this frame, all passes (REN-28 §4.1). */
+    val terrainTriangles = AtomicInteger(0)
+
     fun resetDrawCalls() {
         drawCalls.set(0)
+        instancedDraws.set(0)
+        instances.set(0)
+        terrainTriangles.set(0)
     }
 
     fun resetStateChanges() {

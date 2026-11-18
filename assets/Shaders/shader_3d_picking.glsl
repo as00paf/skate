@@ -11,6 +11,17 @@ layout (location=4) in vec4 aColor;
 #endif
 
 uniform mat4 transformationMatrix;
+#ifdef INSTANCED
+// REN-29 §4.1: world matrix rows from the instance stream (VertexLayouts.INSTANCE_TRANSFORM), plus params
+layout (location=10) in vec4 aInstanceRow0;
+layout (location=11) in vec4 aInstanceRow1;
+layout (location=12) in vec4 aInstanceRow2;
+layout (location=13) in vec4 aInstanceParams; // tint, random, wind phase, LOD fade
+// A function, not a #define: GlslToVulkan hoists every #define above the #ifdefs
+mat4 modelMatrix() { return transpose(mat4(aInstanceRow0, aInstanceRow1, aInstanceRow2, vec4(0.0, 0.0, 0.0, 1.0))); }
+#else
+mat4 modelMatrix() { return transformationMatrix; }
+#endif
 uniform mat4 projectionMatrix;
 uniform mat4 viewMatrix;
 uniform float uEntityId;
@@ -44,9 +55,9 @@ void main()
     }
 
     // Apply skinning then model-to-world transformation
-    vec4 worldPos = transformationMatrix * skinMatrix * vec4(aPos, 1.0);
+    vec4 worldPos = modelMatrix() * skinMatrix * vec4(aPos, 1.0);
 #ifdef WIND
-    worldPos.xyz += windDisplacement(worldPos.xyz, transformationMatrix[3].xyz, aPos.y, aColor);
+    worldPos.xyz += windDisplacement(worldPos.xyz, modelMatrix()[3].xyz, aPos.y, aColor);
 #endif
 
     // Transform to clip space

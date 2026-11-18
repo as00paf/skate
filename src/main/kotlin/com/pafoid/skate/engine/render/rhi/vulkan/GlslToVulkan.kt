@@ -9,7 +9,9 @@ package com.pafoid.skate.engine.render.rhi.vulkan
  *   definition wins) so array sizes resolve.
  * - Existing std140 blocks and samplers get explicit bindings, shared by name across the stages.
  * - Vertex outputs get sequential locations and fragment inputs the location of the vertex output of the same name;
- *   the fragment colour output gets location 0.
+ *   the fragment colour output gets location 0. Exclusive `#if`/`#else` branches (a PICKING variant's own output) each
+ *   number their fragment outputs from the same start, and a varying declared again in another branch keeps its
+ *   first location (VK-08: water's `out vec4 color` must not land on location 1).
  * - The vertex stage remaps GL clip depth ([-w, w]) to Vulkan's [0, w] ([ClipSpace.vulkanZ]); the backend flips Y with a
  *   negative viewport height, so projection matrices stay GL-style.
  *
@@ -38,6 +40,9 @@ object GlslToVulkan {
     private val BLOCK = Regex("""^\s*layout\s*\(\s*std140\s*\)\s*uniform\s+(\w+)\s*\{?""")
     private val VARYING = Regex("""^\s*(flat\s+|smooth\s+|noperspective\s+)?(in|out)\s+(\w+)\s+(\w+)\s*(\[\s*(\d+)\s*])?\s*;""")
     private val MAIN = Regex("""\bvoid\s+main\s*\(\s*\)""")
+    private val IF = Regex("""^\s*#\s*if(n?def)?\b""")
+    private val ELSE = Regex("""^\s*#\s*(else|elif)\b""")
+    private val ENDIF = Regex("""^\s*#\s*endif\b""")
 
     fun convert(vertexSource: String, fragmentSource: String): Result {
         val vertex = vertexSource.lines()
@@ -90,9 +95,25 @@ object GlslToVulkan {
         val body = ArrayList<String>()
         var nextLocation = 0
         var fragmentOutputs = 0
+        // Per open conditional: fragment output count at its #if, and the most any branch reached
+        val branches = ArrayList<IntArray>()
         for (raw in lines) {
             val line = stripComment(raw)
             when {
+                IF.containsMatchIn(line) -> {
+                    branches += intArrayOf(fragmentOutputs, fragmentOutputs)
+                    body += raw
+                }
+                ELSE.containsMatchIn(line) && branches.isNotEmpty() -> {
+                    val b = branches.last()
+                    b[1] = maxOf(b[1], fragmentOutputs)
+                    fragmentOutputs = b[0]
+                    body += raw
+                }
+                ENDIF.containsMatchIn(line) && branches.isNotEmpty() -> {
+                    fragmentOutputs = maxOf(branches.removeAt(branches.size - 1)[1], fragmentOutputs)
+                    body += raw
+                }
                 VERSION.matches(line) -> continue
                 DEFINE.matches(line) -> continue
                 BLOCK.containsMatchIn(line) -> {
@@ -114,7 +135,7 @@ object GlslToVulkan {
                     val name = m.groupValues[4]
                     val count = m.groupValues[6].toIntOrNull() ?: 1
                     val location = when {
-                        isVertex && direction == "out" -> nextLocation.also {
+                        isVertex && direction == "out" -> outputs[name] ?: nextLocation.also {
                             outputs[name] = it
                             nextLocation += locationsOf(type) * count
                         }

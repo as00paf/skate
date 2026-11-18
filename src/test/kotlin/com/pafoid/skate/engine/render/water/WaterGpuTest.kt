@@ -46,7 +46,12 @@ class WaterGpuTest {
             EngineDefaults.Shaders.SHADOW to ShaderFeature.WIND,
             EngineDefaults.Shaders.PICKING_3D to ShaderFeature.WIND,
             EngineDefaults.Shaders.WATER to ShaderFeature.PICKING,
+            // REN-29 task 2: the instanced mesh, shadow and picking shaders
+            EngineDefaults.Shaders.DEFAULT_3D to ShaderFeature.INSTANCED,
+            EngineDefaults.Shaders.SHADOW to ShaderFeature.INSTANCED,
+            EngineDefaults.Shaders.PICKING_3D to ShaderFeature.INSTANCED,
         )) assertNotNull(assetsManager.getShaderVariant(path, setOf(feature)).rhi, "$path $feature")
+        assertNotNull(assetsManager.getShaderVariant(EngineDefaults.Shaders.DEFAULT_3D, setOf(ShaderFeature.INSTANCED, ShaderFeature.WIND)).rhi)
         assertNotNull(assetsManager.getShader(EngineDefaults.Shaders.WATER).rhi)
         renderer.renderResources.renderPasses.picking.renderNow(scene) // the water picking draw runs too
     }

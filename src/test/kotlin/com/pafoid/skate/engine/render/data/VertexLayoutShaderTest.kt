@@ -59,7 +59,9 @@ class VertexLayoutShaderTest {
     ).map { file ->
         DynamicTest.dynamicTest(file) {
             val mesh = VertexLayouts.MeshAttribute.entries.associate { it.location to it.type }
-            val inputs = inputsOf(file).filterKeys { !(file == "shader_3d_picking.glsl" && it == PICKING_ENTITY_ID) }
+            val inputs = inputsOf(file)
+                .filterKeys { !(file == "shader_3d_picking.glsl" && it == PICKING_ENTITY_ID) }
+                .filterKeys { it !in instanceLocations } // the INSTANCED stream, checked below
             assertTrue(inputs.isNotEmpty(), "$file has no vertex inputs")
             inputs.forEach { (location, type) -> assertEquals(mesh[location], type, "$file location $location") }
         }
@@ -72,12 +74,31 @@ class VertexLayoutShaderTest {
         assertTrue(layout.bindings.all { b -> b.attributes.single().offset == 0 && !b.perInstance })
     }
 
+    @TestFactory
+    fun terrain_FeedsTheTerrainShader() = exact(VertexLayouts.TERRAIN, "terrain.glsl")
+
     @Test
     fun particleInstanceRecord_MatchesTheFloatsPerInstance() {
         val instance = VertexLayouts.PARTICLES.bindings[1]
         assertTrue(instance.perInstance)
         assertEquals(VertexLayouts.PARTICLE_FLOATS_PER_INSTANCE * Float.SIZE_BYTES, instance.stride)
         assertEquals(VertexLayouts.PARTICLE_FLOATS_PER_INSTANCE, instance.attributes.sumOf { it.type.components })
+    }
+
+    private val instanceLocations = VertexLayouts.INSTANCE_TRANSFORM.attributes.map { it.location }.toSet()
+
+    @TestFactory
+    fun instanceTransform_FeedsTheInstancedMeshShaders() = listOf("shader_3d_default.glsl", "shadow.glsl", "shader_3d_picking.glsl").map { file ->
+        DynamicTest.dynamicTest(file) {
+            val binding = VertexLayouts.INSTANCE_TRANSFORM
+            assertEquals(binding.attributes.associate { it.location to it.type }, inputsOf(file).filterKeys { it in instanceLocations })
+            assertTrue(binding.perInstance)
+            assertEquals(VertexLayouts.INSTANCE_FLOATS * Float.SIZE_BYTES, binding.stride)
+            assertEquals(VertexLayouts.INSTANCE_FLOATS, binding.attributes.sumOf { it.type.components })
+            // Never collides with a mesh attribute or the picking batch id
+            val mesh = VertexLayouts.MeshAttribute.entries.map { it.location }.toSet() + PICKING_ENTITY_ID
+            assertTrue(instanceLocations.none { it in mesh })
+        }
     }
 
     private companion object {
