@@ -4,6 +4,7 @@ import com.pafoid.skate.engine.assets.AssetPaths
 import com.pafoid.skate.engine.assets.AssetRegistry
 import com.pafoid.skate.engine.assets.pack.PackedGuids
 import com.pafoid.skate.engine.ecs.components.TerrainComponent
+import com.pafoid.skate.engine.terrain.TerrainChunkBuilder
 import com.pafoid.skate.engine.terrain.TerrainRuntime
 import java.io.File
 import java.util.WeakHashMap
@@ -94,8 +95,8 @@ object TerrainAssets {
         }.getOrNull()
     }
 
-    /** Chunk ([cx], [cz]) heights from the asset's region files, or null when it has none for that chunk. */
-    fun chunk(reference: String, cx: Int, cz: Int, chunkQuads: Int, sampleSpacing: Float): FloatArray? {
+    /** Chunk ([cx], [cz]) from the asset's region files (heights, painted biomes), or null when it has none. */
+    fun chunk(reference: String, cx: Int, cz: Int, chunkQuads: Int, sampleSpacing: Float): TerrainRegionFile.ChunkRecord? {
         val path = TerrainAssetStore.regionPath(cx, cz)
         val bytes = regions.getOrPut("$reference|$path") { runCatching { source.read(reference, path) } }.getOrNull() ?: return null
         return runCatching { TerrainAssetStore.chunkFrom(bytes, cx, cz, chunkQuads, sampleSpacing) }.getOrNull()
@@ -157,16 +158,26 @@ object TerrainAssets {
         val generator = runtime.generator
         var loaded = 0
         for (chunk in runtime.chunks) {
-            val heights = chunk(ref, chunk.cx, chunk.cz, layout.chunkQuads, layout.spacing)
-            when {
-                heights != null && heights.size == chunk.heights.size -> {
-                    heights.copyInto(chunk.heights); chunk.dirty = true; loaded++
+            val record = chunk(ref, chunk.cx, chunk.cz, layout.chunkQuads, layout.spacing)
+            val changed = when {
+                record != null && record.heights.size == chunk.heights.size -> {
+                    record.heights.copyInto(chunk.heights)
+                    chunk.paintedBiomeIds = record.paintedBiomeIds
+                    loaded++
+                    true
                 }
-                // A record removed since the last load (hot reload): back to the generated heights.
+                // A record removed since the last load (hot reload): back to the generated heights, nothing painted.
                 !rebuilt && last != null && generator != null -> {
-                    com.pafoid.skate.engine.terrain.TerrainChunkBuilder.build(generator, chunk.cx, chunk.cz).heights.copyInto(chunk.heights)
-                    chunk.dirty = true
+                    TerrainChunkBuilder.build(generator, chunk.cx, chunk.cz).heights.copyInto(chunk.heights)
+                    chunk.paintedBiomeIds = null
+                    true
                 }
+                else -> false
+            }
+            if (changed) {
+                // Splat, biome ids and scatter follow the loaded heights and painted biomes (AST-38).
+                generator?.let { TerrainChunkBuilder.refreshDerived(it, chunk) }
+                chunk.dirty = true
             }
         }
         runtime.markEdited()
