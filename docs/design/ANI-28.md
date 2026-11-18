@@ -1,6 +1,7 @@
 # ANI-28 — IK review for skateboarding and parkour (design note)
 
-Status: **draft, awaiting the human's approval.** No code until then (§9 lists the questions).
+Status: **approved by the human (2026-11-18)**, every recommendation accepted (answers in §10). Slice **a** is GPL-38;
+slices b–h follow §6.
 Task: ANI-28 (`P1`), human request (Discord 2026-11-17): a complete review of inverse kinematics for skateboarding
 (feet on the board, hands on the rail or ledge, look-at) and parkour (hand plants, foot placement on ledges and
 stairs): what exists, what is missing (3D markers or targets as components, IK chains, weights, blending with
@@ -181,3 +182,15 @@ Full-body IK solvers, physics-based balance, motion matching, ragdoll blending b
 6. **Bug F1:** fix it right away as slice **a**, before the rest is approved? *Recommendation: yes; it is a bug.*
 7. **`BoneOverride`:** nothing reads it. Remove it, or turn it into the IK inspector's "pose override" (a fixed
    rotation per bone after IK)? *Recommendation: remove it in slice b; the IK setup covers the need.*
+
+## 10. Decisions (human, 2026-11-18)
+
+All recommendations accepted:
+
+1. IK targets are scene objects: `IkTarget` GameObjects.
+2. Chains pick bones by humanoid slot, with a bone-name override.
+3. Per-state IK weights live in the controller asset, edited in the Animator window.
+4. Edit-mode IK preview, behind a toggle.
+5. IK and probes now (slices b–h); parkour movement later, under its own GPL note (slice i).
+6. Bug F1 is fixed now as slice a, by skate-gameplay (task **GPL-38**).
+7. `BoneOverride` is removed in slice b.
