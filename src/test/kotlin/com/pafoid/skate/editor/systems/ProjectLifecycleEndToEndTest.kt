@@ -302,7 +302,10 @@ class ProjectLifecycleEndToEndTest {
 
     @Test
     @Order(5)
-    fun Lifecycle_5_SwitchToTheShowcasePlayThenStop() {
+    fun Lifecycle_5_SwitchToTheShowcasePlayThenStop() = playShowcaseThenStop("Play/Stop")
+
+    /** Switches to the showcase, plays 2 s (physics, animation, audio), stops, and checks the scene came back. */
+    private fun playShowcaseThenStop(step: String) {
         val showcase = scene(FeatureShowcase.SCENE_NAME)
         sceneManager.switchScene(showcase)
         assertEquals(FeatureShowcase.SCENE_NAME, sceneManager.currentScene?.name)
@@ -330,7 +333,7 @@ class ProjectLifecycleEndToEndTest {
         assertEquals(startY, restored.children.single { it.name == "[Physics] Box_4" }.getComponent<Transform>()!!.translation.y, 1e-4f)
         assertTrue(al.playing.isEmpty(), "audio still playing after Stop: ${al.playing.size}")
         sceneManager.switchScene(scene("MainScene"))
-        assertNoErrors("Play/Stop")
+        assertNoErrors(step)
     }
 
     @Test
@@ -436,7 +439,8 @@ class ProjectLifecycleEndToEndTest {
     @Order(9)
     fun Lifecycle_9_VulkanProjectSavesReopensAndExportsWithItsBackend() {
         // New Project wizard with "Graphics backend: Vulkan" (EDT-43), saved, closed and reopened from Recent Projects.
-        // AST-27: this one references the engine defaults instead of copying them (only the basic shaders are copied).
+        // AST-27 / EDT-70: this one references the engine defaults instead of copying them ("Copy engine default
+        // assets" off; only the basic shaders and skater configs are copied). Steps 1-8 cover the copy mode.
         val created = projects.createProject(VK_PROJECT, workspace, GraphicsBackend.VULKAN, copyDefaults = false)
         assertTrue(created.isSuccess, created.exceptionOrNull()?.toString())
         vkProjectFile = File(workspace, "$VK_PROJECT/$VK_PROJECT.skateproject").absoluteFile
@@ -450,6 +454,8 @@ class ProjectLifecycleEndToEndTest {
         assertTrue(projects.openProjectFile(File(recent.projectPath)))
         assertEquals(GraphicsBackend.VULKAN, projects.currentProject!!.graphicsBackend, "backend lost on reopen")
         assertReferencesResolve("open Vulkan project")
+        // EDT-70: a project made without copying the engine defaults plays like a copied one.
+        playShowcaseThenStop("Play/Stop, engine defaults not copied")
 
         vkExportDir = exportWithWizard(File(dir, "ExportVulkan"))
         val bin = File(vkExportDir, "game.bin").readBytes()
@@ -462,7 +468,8 @@ class ProjectLifecycleEndToEndTest {
         val sceneRefs = packed.scenesPath.flatMap { path -> Regex("\"(engine:[^\"]+)\"").findAll(packedText(path)).map { it.groupValues[1] }.toList() }.toSet()
         val packedPaths = entries.keys
         assertTrue(EngineDefaults.Models.JAMES in sceneRefs, "scenes reference engine defaults: $sceneRefs")
-        assertEquals(emptyList<String>(), (sceneRefs - packedPaths).sorted(), "engine defaults missing from the reference-mode pack")
+        // Built-in references (water material presets, AST-37) have no file: the game resolves them in code.
+        assertEquals(emptyList<String>(), (sceneRefs - packedPaths).filterNot(EngineDefaults::isBuiltIn).sorted(), "engine defaults missing from the reference-mode pack")
         val store = GameSettingsStore(GameSettings.fileIn(vkExportDir), logger)
         assertEquals(GraphicsBackend.VULKAN, store.settings.graphicsBackend, "game.settings.json")
         // GameMain's choice: no -D override, the player's settings file, then the packed project.
