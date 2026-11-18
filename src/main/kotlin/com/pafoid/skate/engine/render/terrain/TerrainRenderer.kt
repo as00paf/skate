@@ -139,7 +139,7 @@ class TerrainRenderer(
 
     /** Rebuilds the layer texture arrays when the terrain's layers changed. */
     private fun refreshLayers(resident: Resident, terrain: TerrainComponent) {
-        val key = terrain.layers.toList()
+        val key = terrain.effectiveLayers()
         if (resident.layers != null && key == resident.layersKey) return
         resident.layers?.close()
         resident.layers = TerrainLayerArrays(device(), TerrainLayerImages.buildAll(key, layerSize, material, decode), layerSize)
@@ -160,7 +160,7 @@ class TerrainRenderer(
         shader.uploadInt(Uniforms.TERRAIN_ALBEDO, UNIT_ALBEDO); shader.uploadInt(Uniforms.TERRAIN_NORMAL, UNIT_NORMAL)
         shader.uploadInt(Uniforms.TERRAIN_ORM, UNIT_ORM)
         shader.uploadFloat(Uniforms.TERRAIN_CHUNK_QUADS, resident.pool.mesh.chunkQuads.toFloat())
-        val l = draw.terrain.layers
+        val l = draw.terrain.effectiveLayers()
         fun tiling(i: Int) = l.getOrNull(i)?.tilingMetres?.coerceAtLeast(0.01f) ?: 4f
         fun tri(i: Int) = if (l.getOrNull(i)?.triplanar == true) 1f else 0f
         shader.uploadVec4f(Uniforms.TERRAIN_TILING_A, vec4.set(tiling(0), tiling(1), tiling(2), tiling(3)))
