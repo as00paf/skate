@@ -54,7 +54,7 @@ class FollowCameraSystemTest {
     fun FollowCameraSystem_EditModeLeavesThePlacedCameraAlone() {
         val (_, system, camera) = sceneWithCamera()
 
-        system.update(dt)
+        repeat(2) { system.update(dt) }
 
         assertEquals(Vector3f(0f, 9f, 9f), camera.getComponent<Transform>()!!.translation)
     }
