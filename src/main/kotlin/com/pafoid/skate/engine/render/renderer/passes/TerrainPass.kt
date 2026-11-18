@@ -108,7 +108,7 @@ class TerrainPass(
             val rules = draw.terrain.runtime.generator?.scatterEntries ?: continue
             if (rules.isEmpty()) continue
             sceneFrame.selectObjectLights(program, center.set(draw.position), (draw.terrain.runtime.layout?.half ?: 0f) * 1.42f)
-            for (c in renderer.sync(draw)) s.draw(program, c.data, rules, draw.position, c.min, c.max, cameraPosition)
+            for (c in renderer.sync(draw)) s.draw(program, c.data, rules, draw.position, c.min, c.max, cameraPosition, runtime = draw.terrain.runtime)
         }
         program.stop()
     }
@@ -147,7 +147,7 @@ class TerrainPass(
             for (draw in draws) {
                 val rules = draw.terrain.runtime.generator?.scatterEntries ?: continue
                 itemProgram.uploadFloat(Uniforms.ENTITY_ID, EntityIdEncoder.encode(draw.go.uId))
-                for (c in renderer.sync(draw)) s.draw(itemProgram, c.data, rules, draw.position, c.min, c.max, cameraPosition, simple = true)
+                for (c in renderer.sync(draw)) s.draw(itemProgram, c.data, rules, draw.position, c.min, c.max, cameraPosition, simple = true, runtime = draw.terrain.runtime)
             }
             itemProgram.stop()
         }
@@ -193,7 +193,7 @@ class TerrainPass(
             s.setFrustum(lightMatrix)
             for (d in casters) {
                 val rules = d.terrain.runtime.generator?.scatterEntries ?: continue
-                for (c in renderer.sync(d)) s.drawShadow(itemProgram, c.data, rules, d.position, c.min, c.max, camera)
+                for (c in renderer.sync(d)) s.drawShadow(itemProgram, c.data, rules, d.position, c.min, c.max, camera, runtime = d.terrain.runtime)
             }
         }
     }

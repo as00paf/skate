@@ -51,6 +51,32 @@ class TerrainStreamingSystem(
     /** The streamer of [terrain], if it streams (tests, prefetch callers, debug overlay). */
     fun streamer(terrain: TerrainComponent): TerrainStreamer? = streamers[terrain]
 
+    /**
+     * Loads the rings around world ([worldX], [worldZ]) in every streamed terrain (REN-28 §15.3, task 21): spawns,
+     * respawns, teleports and the loading screen wait on it. [physicsOnly] waits for the physics ring alone. Terrains
+     * that cover nothing there complete at once.
+     */
+    fun prefetch(worldX: Float, worldZ: Float, physicsOnly: Boolean = false): java.util.concurrent.CompletableFuture<Unit> {
+        val futures = ArrayList<java.util.concurrent.CompletableFuture<Unit>>()
+        terrains.forEach { go ->
+            val terrain = go.getComponent<TerrainComponent>()?.takeIf { it.enabled && it.runtime.streamed } ?: return@forEach
+            val layout = terrain.runtime.layout ?: return@forEach
+            val pos = go.getComponent<Transform>()?.worldMatrix?.getTranslation(Vector3f()) ?: Vector3f()
+            val x = worldX - pos.x; val z = worldZ - pos.z
+            if (!layout.contains(x, z)) return@forEach
+            val streamer = streamers.getOrPut(terrain) { TerrainStreamer(terrain.runtime, executor, source(terrain)) }
+            futures += streamer.prefetch(x, z, rings, physicsOnly)
+        }
+        return java.util.concurrent.CompletableFuture.allOf(*futures.toTypedArray()).thenApply { }
+    }
+
+    /** One line per streamed terrain for the streaming overlay (REN-28 §15.5, task 22). */
+    fun statsLines(): List<String> = streamers.map { (terrain, s) ->
+        val name = terrain.gameObject?.name ?: "Terrain"
+        "$name: ${s.residentCount} resident, ${s.queued} queued, ${s.loading} loading, cache ${s.cacheSize}, " +
+            "${s.residentBytes / 1024} KB, state ${terrain.runtime.scatterState.bytes()} B"
+    }
+
     override fun update(dt: Float) {
         gatherWorldFocuses(dt)
         var resident = 0; var queued = 0; var bytes = 0L
@@ -84,6 +110,9 @@ class TerrainStreamingSystem(
         EngineStats.terrainResidentChunks.set(resident)
         EngineStats.terrainQueued.set(queued)
         EngineStats.terrainCpuBytes.set(bytes)
+        var stateBytes = 0L
+        terrains.forEach { go -> go.getComponent<TerrainComponent>()?.let { stateBytes += it.runtime.scatterState.bytes() } }
+        EngineStats.terrainStateBytes.set(stateBytes)
     }
 
     /** The camera (render rings only) and every enabled [StreamingFocus] (with velocity from its last position). */

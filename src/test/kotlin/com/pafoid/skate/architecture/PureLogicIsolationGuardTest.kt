@@ -65,6 +65,11 @@ class PureLogicIsolationGuardTest {
             "engine/terrain/streaming/TerrainStreamer.kt",
             "engine/terrain/streaming/StreamingUploadQueue.kt",
             "engine/terrain/streaming/FarFieldQuadtree.kt",
+            // REN-28 §15.10: remembered scatter state, also on a headless server
+            "engine/terrain/scatter/ScatterState.kt",
+            "engine/terrain/scatter/ScatterStateStore.kt",
+            "engine/terrain/scatter/TerrainStateSnapshot.kt",
+            "engine/terrain/scatter/TerrainScatter.kt",
         )
         val forbidden = listOf("import org.lwjgl.", "import com.pafoid.skate.editor.", "import imgui.")
         val violations = pureFiles.flatMap { f ->

@@ -88,6 +88,8 @@ class TerrainStreamer(
         for (p in prefetches) focusScratch += p.focus
         for (k in pinnedFlags.indices) pinnedFlags[k] = k in runtime.pinned
         plan.plan(focusScratch, focusScratch.size, rings, resident, inFlight, pinnedFlags)
+        // Colliders and scatter entities follow the physics ring (REN-28 §15.1, PHY-28)
+        runtime.physicsRing = plan.physicsWanted
 
         // Cancel loads nobody wants any more
         val it = futures.entries.iterator()

@@ -80,6 +80,16 @@ object BiomePresets {
     /** Placeholder rock model until the bundled CC0 rocks (AST): a squashed engine sphere. */
     const val ROCK_MODEL = "engine:Models/sphere.obj"
 
+    /**
+     * A scatter rule of breakable crates for the stateful props check (REN-28 task 27): a prefab with behaviour,
+     * spawned as entities near the player; broken or taken crates stay that way (§15.10), optionally coming back after
+     * [respawnAfterSeconds].
+     */
+    fun breakableCrates(prefab: String, respawnAfterSeconds: Float = 0f) = ScatterRule(
+        id = "crates", prefab = prefab, densityPer100m2 = 0.3f, minSpacing = 6f, maxSlope = 20f,
+        scaleMin = 1f, scaleMax = 1f, yawJitter = 360f, collider = true, maxEntities = 64, respawnAfterSeconds = respawnAfterSeconds,
+    )
+
     fun defaults(): MutableList<Biome> = mutableListOf(
         Biome(
             name = "Grassland", debugColor = listOf(0.3f, 0.8f, 0.2f),
