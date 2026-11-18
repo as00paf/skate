@@ -26,6 +26,7 @@ import com.pafoid.skate.engine.animation.graph.StateDef
 import com.pafoid.skate.engine.animation.graph.TransitionCondition
 import com.pafoid.skate.engine.animation.graph.TransitionDef
 import com.pafoid.skate.engine.ecs.components.Animator
+import com.pafoid.skate.engine.ecs.systems.CharacterAnimationDriver
 import java.io.File
 
 /** A controller found for a path: its text, and the file to save to (null for a read-only engine default). */
@@ -63,6 +64,8 @@ class AnimatorWindowController(
     private val onSaved: (ControllerDocument) -> Unit = {},
     /** Points an Animator at a controller path (undoable `SetAnimatorControllerCommand`). */
     private val assignController: (Animator, String) -> Unit = { _, _ -> },
+    /** Parameters the character owning an Animator writes every frame (GPL-31). */
+    private val writtenParameters: (Animator?) -> List<ParameterDef> = CharacterAnimationDriver::writtenParameters,
 ) {
     private val documents = HashMap<String, ControllerDocument>()
 
@@ -488,6 +491,31 @@ class AnimatorWindowController(
         edit(ControllerAction.SET_PARAMETER) { it.updateParameter(name) { p -> p.copy(type = type, default = default) } }
 
     fun removeParameter(name: String) = edit(ControllerAction.REMOVE_PARAMETER) { it.removeParameter(name) }
+
+    // ---- parameters the character writes (ANI-26) -------------------------------------------------------------
+
+    /**
+     * Parameters the preview character writes every frame (speed, air time...) that the controller does not declare
+     * yet, with the type and default the character publishes. Empty without a preview or a character behind it.
+     */
+    fun characterParameters(): List<ParameterDef> {
+        val a = asset ?: return emptyList()
+        val declared = a.parameters.map { it.name }.toSet()
+        return writtenParameters(preview).filter { it.name !in declared }.distinctBy { it.name }
+    }
+
+    /** Declares the written parameter [name] as the character publishes it (one undo step). */
+    fun declareCharacterParameter(name: String): Boolean {
+        val p = characterParameters().firstOrNull { it.name == name } ?: return false
+        return edit(ControllerAction.ADD_PARAMETER) { it.addParameter(p) }
+    }
+
+    /** Declares every written parameter not declared yet, in one undo step. */
+    fun declareAllCharacterParameters(): Boolean {
+        val missing = characterParameters()
+        if (missing.isEmpty()) return false
+        return edit(ControllerAction.ADD_PARAMETER) { e -> missing.forEach(e::addParameter) }
+    }
 
     // ---- copy / paste (Q8) ------------------------------------------------------------------------------------
 

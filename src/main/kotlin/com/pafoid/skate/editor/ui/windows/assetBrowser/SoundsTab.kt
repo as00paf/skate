@@ -30,8 +30,8 @@ class SoundsTab(
     }
 
     private fun renderTable(label: String, searchText: ImString) {
-        val files = items.filter { it.name.contains(searchText.get(), ignoreCase = true) }
-        if (renderEmptyState(items.size, files.size, searchText)) return
+        val files = entries.filter { it.name.contains(searchText.get(), ignoreCase = true) }
+        if (renderEmptyState(entries.size, files.size, searchText)) return
 
         val tableFlags = ImGuiTableFlags.RowBg or 
                          ImGuiTableFlags.BordersInnerV or 
@@ -46,15 +46,16 @@ class SoundsTab(
             
             ImGui.tableHeadersRow()
 
-            for (file in files) {
+            for (entry in files) {
                 ImGui.tableNextRow()
-                renderSoundRow(file)
+                renderSoundRow(entry)
             }
             ImGui.endTable()
         }
     }
 
-    private fun renderSoundRow(file: File) {
+    private fun renderSoundRow(entry: BrowserEntry) {
+        val file = entry.file
         ImGui.pushID(file.absolutePath)
 
         // Length comes from a worker; the sound itself loads only when played (AST-23)
@@ -67,6 +68,11 @@ class SoundsTab(
 
         ImGui.tableNextColumn()
         ImGui.selectable(file.name, false)
+        if (entry.badges.isNotEmpty()) {
+            ImGui.sameLine()
+            ImGui.textDisabled(EngineBadges.inline(stringManager, entry))
+            Tooltips.always(entry.badges.joinToString("\n") { stringManager.getString(it.tooltipKey) })
+        }
 
         if (ImGui.beginPopupContextItem(contextPopupId("sound"))) {
             val playStopLabel = if (isPlaying) 
@@ -79,7 +85,7 @@ class SoundsTab(
             }
             ImGui.separator()
             if (stringManager.tipped(ImGui.menuItem("${Icons.PLUS} ${stringManager.getString("context.asset_browser.add_to_gameobject")}"), "context.asset_browser.add_to_gameobject")) {
-                addSoundToSelectedObject(file.path)
+                addSoundToSelectedObject(entry.path)
             }
             ImGui.separator()
             if (stringManager.tipped(ImGui.menuItem("${Icons.EXTERNAL_LINK} ${stringManager.getString("context.asset_browser.open_external")}"), "context.asset_browser.open_external")) {
@@ -96,7 +102,7 @@ class SoundsTab(
         }
         
         if (ImGui.beginDragDropSource()) {
-            ImGui.setDragDropPayload("SOUND", file.path)
+            ImGui.setDragDropPayload("SOUND", entry.path)
             ImGui.text("${Icons.MUSIC} ${file.name}")
             ImGui.textColored(0.7f, 0.7f, 0.7f, 1f, stringManager.getString("lbl.sounds.drag_duration", duration ?: 0f))
             ImGui.textColored(0.5f, 0.5f, 0.5f, 1f, stringManager.getString("lbl.sounds.drop_hint"))
@@ -159,8 +165,6 @@ class SoundsTab(
     )
 
     override fun onProjectChanged() = durations.clear()
-
-    override fun refreshAssets() = scan(BrowserAssetType.SOUND) { job -> engine.jobSystem.runIO { job() } }
 
     fun destroy() {
         playingSource?.close()
