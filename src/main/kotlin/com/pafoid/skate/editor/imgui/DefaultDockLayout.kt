@@ -72,6 +72,9 @@ object DefaultDockLayout {
             return windowsIn(zone).filter { it != window }.firstNotNullOfOrNull { current[it] } ?: home[window]
         }
 
+        /** The dock node of the first of [windows] that is docked now, or null (EDT-84: re-docking next to them). */
+        fun dockOfAny(windows: List<String>): Int? = windows.firstNotNullOfOrNull { current[it] }
+
         fun clear() {
             current.clear()
             home.clear()

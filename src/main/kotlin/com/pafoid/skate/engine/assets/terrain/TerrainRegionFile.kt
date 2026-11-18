@@ -18,9 +18,13 @@ import kotlin.math.roundToInt
  * records                 deflated chunk records, at their offsets
  * ```
  *
- * A chunk record ([FLAG_HEIGHTS]): `base f32 | step f32 | (chunkQuads + 3)² × uint16`, heights = base + q × step, apron
- * included; the per-record base and step keep ≤ step/2 error (1 mm over a 64 m range). Splat, biome and scatter masks
- * (REN tasks 5–7) will append after the heights with their own flags; readers skip what they don't know.
+ * A chunk record is a sequence of sections, named by the index entry's flags, in flag order:
+ * - [FLAG_HEIGHTS]: `base f32 | step f32 | (chunkQuads + 3)² × uint16`, heights = base + q × step, apron included;
+ *   the per-record base and step keep ≤ step/2 error (1 mm over a 64 m range);
+ * - [FLAG_PAINTED_BIOMES] (AST-38): `(chunkQuads + 1)²` bytes, the painted biome index per own sample (row-major by Z).
+ *
+ * [FLAG_SPLAT] and [FLAG_BIOME_IDS] are reserved (both are recomputed from heights and biomes at load today). A reader
+ * reads the sections it knows and ignores the rest.
  */
 object TerrainRegionFile {
     const val MAGIC = 0x52544B53 // "SKTR" little-endian
@@ -28,6 +32,9 @@ object TerrainRegionFile {
     const val REGION_CHUNKS = 16
     const val SLOTS = REGION_CHUNKS * REGION_CHUNKS
     const val FLAG_HEIGHTS = 1
+    const val FLAG_SPLAT = 2
+    const val FLAG_BIOME_IDS = 4
+    const val FLAG_PAINTED_BIOMES = 8
     private const val ENTRY_BYTES = 4 + 4 + 4 + 2 + 4
     const val HEADER_BYTES = 4 + 2 + 2 + 4 + SLOTS * ENTRY_BYTES
 
@@ -37,6 +44,36 @@ object TerrainRegionFile {
     }
 
     class Header(val chunkQuads: Int, val sampleSpacing: Float, val entries: List<Entry>)
+
+    /** A raw (undeflated) record and the flags naming its sections. */
+    class Record(val raw: ByteArray, val flags: Int = FLAG_HEIGHTS) {
+        override fun equals(other: Any?): Boolean = other is Record && flags == other.flags && raw.contentEquals(other.raw)
+        override fun hashCode(): Int = raw.contentHashCode() * 31 + flags
+    }
+
+    /** One chunk's decoded data. [paintedBiomeIds] is null when the record has none. */
+    class ChunkRecord(val heights: FloatArray, val paintedBiomeIds: ByteArray?)
+
+    /** A record for [heights] (apron included) and, when set, the chunk's [paintedBiomeIds] (`(chunkQuads + 1)²`). */
+    fun record(heights: FloatArray, paintedBiomeIds: ByteArray? = null): Record {
+        val h = encodeRecord(heights)
+        return if (paintedBiomeIds == null) Record(h, FLAG_HEIGHTS)
+        else Record(h + paintedBiomeIds, FLAG_HEIGHTS or FLAG_PAINTED_BIOMES)
+    }
+
+    /** Decodes a record of a chunk with [chunkQuads] quads per side. */
+    fun decodeChunk(record: Record, chunkQuads: Int): ChunkRecord {
+        require(record.flags and FLAG_HEIGHTS != 0) { "chunk record without heights" }
+        val stride = chunkQuads + 3
+        val heightBytes = 8 + stride * stride * 2
+        val heights = decodeRecord(record.raw, stride * stride)
+        val own = (chunkQuads + 1) * (chunkQuads + 1)
+        val painted = if (record.flags and FLAG_PAINTED_BIOMES != 0) {
+            require(record.raw.size >= heightBytes + own) { "painted biome section too short" }
+            record.raw.copyOfRange(heightBytes, heightBytes + own)
+        } else null
+        return ChunkRecord(heights, painted)
+    }
 
     fun regionOf(c: Int): Int = Math.floorDiv(c, REGION_CHUNKS)
     fun slotOf(cx: Int, cz: Int): Int = Math.floorMod(cz, REGION_CHUNKS) * REGION_CHUNKS + Math.floorMod(cx, REGION_CHUNKS)
@@ -61,14 +98,19 @@ object TerrainRegionFile {
     }
 
     /** A region file holding [records] (slot → raw record) for chunks of [chunkQuads] quads at [sampleSpacing]. */
-    fun encode(chunkQuads: Int, sampleSpacing: Float, records: Map<Int, ByteArray>): ByteArray {
+    fun encode(chunkQuads: Int, sampleSpacing: Float, records: Map<Int, ByteArray>): ByteArray =
+        encodeRecords(chunkQuads, sampleSpacing, records.mapValues { Record(it.value) })
+
+    /** A region file holding [records] (slot → record with its section flags). */
+    fun encodeRecords(chunkQuads: Int, sampleSpacing: Float, records: Map<Int, Record>): ByteArray {
         val body = ByteArrayOutputStream()
         val entries = arrayOfNulls<Entry>(SLOTS)
-        records.toSortedMap().forEach { (slot, raw) ->
+        records.toSortedMap().forEach { (slot, record) ->
             require(slot in 0 until SLOTS) { "bad slot $slot" }
+            val raw = record.raw
             val stored = deflate(raw)
             val crc = CRC32().apply { update(raw) }.value.toInt()
-            entries[slot] = Entry(HEADER_BYTES + body.size(), stored.size, raw.size, FLAG_HEIGHTS, crc)
+            entries[slot] = Entry(HEADER_BYTES + body.size(), stored.size, raw.size, record.flags, crc)
             body.write(stored)
         }
         val head = ByteBuffer.allocate(HEADER_BYTES).order(ByteOrder.LITTLE_ENDIAN)
@@ -107,10 +149,10 @@ object TerrainRegionFile {
         return raw
     }
 
-    /** Every present record (slot → raw), to merge before rewriting a region. */
-    fun readAll(bytes: ByteArray): Pair<Header, Map<Int, ByteArray>> {
+    /** Every present record (slot → record with its flags), to merge before rewriting a region. */
+    fun readAll(bytes: ByteArray): Pair<Header, Map<Int, Record>> {
         val header = readHeader(bytes)
-        return header to (0 until SLOTS).mapNotNull { s -> readRecord(bytes, header, s)?.let { s to it } }.toMap()
+        return header to (0 until SLOTS).mapNotNull { s -> readRecord(bytes, header, s)?.let { s to Record(it, header.entries[s].flags) } }.toMap()
     }
 
     private fun deflate(raw: ByteArray): ByteArray {

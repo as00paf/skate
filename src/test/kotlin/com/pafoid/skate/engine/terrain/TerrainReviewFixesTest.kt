@@ -7,6 +7,7 @@ import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.components.Component
 import com.pafoid.skate.engine.ecs.components.TerrainComponent
 import com.pafoid.skate.engine.ecs.components.TerrainLayer
+import com.pafoid.skate.engine.ecs.components.TerrainStreaming
 import com.pafoid.skate.engine.ecs.systems.TerrainSystem
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
@@ -21,17 +22,19 @@ class TerrainReviewFixesTest {
     // (1) total samples are capped
     @Test
     fun Samples_AreCappedByCoarseningTheSpacing() {
-        val huge = TerrainComponent(sizeMetres = 16384f, sampleSpacing = 0.5f)
+        val huge = TerrainComponent(sizeMetres = 16384f, sampleSpacing = 0.5f, streaming = TerrainStreaming.OFF)
         assertEquals(4f, huge.effectiveSpacing())
         assertTrue(huge.spacingCapped())
         assertTrue(TerrainComponent.samplesFor(huge.effectiveSize(), huge.effectiveSpacing()) <= TerrainComponent.MAX_RESIDENT_SAMPLES)
-        val big = TerrainComponent(sizeMetres = 4096f, sampleSpacing = 0.5f)
+        // Streamed terrains only hold their rings: they keep the requested spacing (REN-37)
+        assertEquals(0.5f, TerrainComponent(sizeMetres = 16384f, sampleSpacing = 0.5f).effectiveSpacing())
+        val big = TerrainComponent(sizeMetres = 4096f, sampleSpacing = 0.5f, streaming = TerrainStreaming.OFF)
         assertEquals(1f, big.effectiveSpacing(), "4 km fits at 1 m")
         val small = TerrainComponent(sizeMetres = 256f, sampleSpacing = 0.5f)
         assertEquals(0.5f, small.effectiveSpacing())
         assertFalse(small.spacingCapped())
         for (size in listOf(8f, 1000f, 5000f, 9000f, 16384f)) for (spacing in TerrainComponent.SPACINGS) {
-            val t = TerrainComponent(sizeMetres = size, sampleSpacing = spacing)
+            val t = TerrainComponent(sizeMetres = size, sampleSpacing = spacing, streaming = TerrainStreaming.OFF)
             assertTrue(TerrainComponent.samplesFor(t.effectiveSize(), t.effectiveSpacing()) <= TerrainComponent.MAX_RESIDENT_SAMPLES, "$size @ $spacing")
         }
     }
