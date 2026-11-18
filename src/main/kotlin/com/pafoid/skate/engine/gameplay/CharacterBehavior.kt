@@ -61,6 +61,9 @@ interface CharacterBehavior {
     /** Ground probing, slope, step and snapping tuning used by the motion system for this character. */
     val ground: GroundConfig get() = GroundConfig()
 
+    /** `*.skeleton.json` with this character's sockets and equip slots (GPL-24 §6.1); blank = built-in humanoid. */
+    val skeletonConfig: String get() = ""
+
     /** How strongly look input turns this character's camera (see [CharacterInputSampler]). */
     val look: LookTuning get() = LookTuning()
 

@@ -75,11 +75,23 @@ data class TerrainComponent(
      * 0.5 m would be about 4.3 GB of heights; it builds at 4 m instead (REN-42).
      */
     fun effectiveSpacing(): Float {
-        val requested = finite(sampleSpacing, 1f)
+        val requested = SPACINGS.minBy { kotlin.math.abs(it - finite(sampleSpacing, 1f)) }
+        // A streamed terrain only holds its rings: no cap (REN-28 §15)
+        if (streamsAt(requested)) return requested
         val size = effectiveSize()
-        val start = SPACINGS.indexOf(SPACINGS.minBy { kotlin.math.abs(it - requested) })
-        for (i in start until SPACINGS.size) if (samplesFor(size, SPACINGS[i]) <= MAX_RESIDENT_SAMPLES) return SPACINGS[i]
+        for (i in SPACINGS.indexOf(requested) until SPACINGS.size) if (samplesFor(size, SPACINGS[i]) <= MAX_RESIDENT_SAMPLES) return SPACINGS[i]
         return SPACINGS.last()
+    }
+
+    private fun quads(): Int = Integer.highestOneBit(chunkQuads.coerceIn(MIN_CHUNK_QUADS, MAX_CHUNK_QUADS))
+
+    private fun streamsAt(spacing: Float): Boolean = when (streaming) {
+        TerrainStreaming.OFF -> false
+        TerrainStreaming.ON -> true
+        TerrainStreaming.AUTO -> {
+            val perSide = kotlin.math.ceil(effectiveSize() / (quads() * spacing)).toLong()
+            perSide * perSide > AUTO_STREAMING_CHUNKS
+        }
     }
 
     /** True when [effectiveSpacing] is coarser than asked (the inspector can say why). */
@@ -102,7 +114,14 @@ data class TerrainComponent(
         biomes = biomes.toList(),
         climate = climate,
         biomeSource = biomeSource,
+        streamed = isStreamed(),
     )
+
+    /**
+     * Whether chunks stream (REN-28 §15.1): ON, or AUTO with more than [AUTO_STREAMING_CHUNKS] chunks (about 1 km at
+     * 1 m spacing). OFF keeps every chunk resident.
+     */
+    fun isStreamed(): Boolean = streamsAt(effectiveSpacing())
 
     fun applyPreset(preset: TerrainPreset) {
         recipe = preset.recipe()
@@ -129,9 +148,10 @@ data class TerrainComponent(
 
     companion object {
         const val DEFAULT_SIZE = 256f
+        const val AUTO_STREAMING_CHUNKS = 256L
         const val DEFAULT_HEIGHT_SCALE = 64f
 
-        /** Most samples one terrain keeps resident (4097², 64 MB of heights) until streaming (REN-28 phase D). */
+        /** Most samples a non-streamed terrain keeps resident (4097², 64 MB of heights); streamed ones only hold rings. */
         const val MAX_RESIDENT_SAMPLES = 4097L * 4097L
 
         fun samplesFor(size: Float, spacing: Float): Long {
