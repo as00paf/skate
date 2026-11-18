@@ -56,6 +56,10 @@ data class EditorSettings(
     var osmTileUrl: String? = null,
     var osmTileAttribution: String? = null,
     var overpassUrl: String = com.pafoid.skate.editor.assetimport.osm.OverpassClient.DEFAULT_ENDPOINT,
+    /** `steamcmd.exe` or its folder (NET-07); null uses the managed install, then PATH. Per machine. */
+    var steamCmdPath: String? = null,
+    /** Steam build account name (NET-07). The password is never stored; steamcmd keeps its own login session. */
+    var steamUsername: String? = null,
 ) {
 
     companion object {
