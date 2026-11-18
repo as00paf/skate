@@ -9,6 +9,8 @@ Un **projet** est un dossier normal de votre ordinateur. L'assistant demande deu
 - **Nom du projet** : le nom de votre jeu. Certains caractères sont interdits dans les noms de dossiers : `< > : / \ | ? *`.
 - **Emplacement** : le dossier dans lequel le dossier du projet est créé.
 
+Il propose aussi **Copier les assets par défaut du moteur**, activé par défaut. Activé, les modèles, animations, textures et sons du moteur sont copiés dans les dossiers `Assets` du projet, où vous pouvez les modifier. Désactivé, le projet utilise les fichiers du moteur et reste léger ; seuls les shaders de base et les réglages du skateur sont copiés. Les deux sortes de projet se jouent et s'exportent de la même façon. Ce choix ne s'applique qu'à la création du projet et n'est pas enregistré avec lui.
+
 Sous les champs, l'assistant indique si le nom et l'emplacement sont valides et montre les dossiers qu'il va créer.
 
 ## Comment l'utiliser

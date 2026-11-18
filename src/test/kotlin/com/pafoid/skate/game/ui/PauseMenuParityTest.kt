@@ -1,5 +1,6 @@
 package com.pafoid.skate.game.ui
 
+import com.pafoid.skate.engine.ui.FrameRateOption
 import com.pafoid.skate.editor.events.PlayModeAction
 import com.pafoid.skate.editor.systems.EditorPauseActions
 import com.pafoid.skate.engine.core.Engine
@@ -103,6 +104,8 @@ class PauseMenuParityTest {
             PauseMenuEntry(PauseMenu.RESUME, Kind.BUTTON, "pause.resume", 80f),
             PauseMenuEntry(PauseMenu.RESTART, Kind.BUTTON, "pause.restart", 80f),
             PauseMenuEntry(PauseMenu.LANGUAGE, Kind.BUTTON, "pause.language", 80f),
+            // ECS-18: every engine registers the Frame rate row (GUI-17), so editor Play shows it too.
+            PauseMenuEntry(PauseMenu.OPTION_PREFIX + FrameRateOption.OPTION_ID, Kind.BUTTON, FrameRateOption.labelKey(FrameRateOption.PROJECT), 80f),
             PauseMenuEntry(PauseMenu.QUIT, Kind.BUTTON, "pause.quit", 80f),
             PauseMenuEntry("VolumeLabel", Kind.TEXT, "pause.volume", 48f),
             PauseMenuEntry(PauseMenu.VOLUME, Kind.SLIDER, "", 40f),
