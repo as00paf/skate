@@ -6,6 +6,9 @@ import com.pafoid.skate.engine.ecs.components.AudioComponent
 import com.pafoid.skate.engine.ecs.components.AudioListener
 import com.pafoid.skate.engine.ecs.components.ParticleEmitter
 import com.pafoid.skate.engine.ecs.components.WaterComponent
+import com.pafoid.skate.engine.ecs.components.InventoryComponent
+import com.pafoid.skate.engine.ecs.components.EquipmentComponent
+import com.pafoid.skate.engine.ecs.components.BoneAttachment
 import com.pafoid.skate.engine.ecs.components.TerrainComponent
 import com.pafoid.skate.engine.ecs.components.StreamingFocus
 import com.pafoid.skate.engine.ecs.components.ReverbZone
@@ -91,6 +94,9 @@ class Serializer(val assetPaths: AssetPaths = AssetPaths()) {
             subclass(FollowCameraComponent::class)
             subclass(com.pafoid.skate.engine.ecs.components.FirstPersonCameraComponent::class)
             subclass(com.pafoid.skate.engine.ecs.components.CameraCycleComponent::class)
+            subclass(InventoryComponent::class)
+            subclass(EquipmentComponent::class)
+            subclass(BoneAttachment::class)
 
             // Physics components
             subclass(RigidBody3D::class)

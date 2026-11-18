@@ -1,0 +1,10 @@
+{
+  "id": "skate.glasses",
+  "nameKey": "item.skate.glasses",
+  "tags": ["eyewear", "cosmetic"],
+  "equip": {
+    "slot": "EYES",
+    "model": "engine:Models/cube.obj",
+    "scale": { "x": 0.08, "y": 0.018, "z": 0.006 }
+  }
+}
