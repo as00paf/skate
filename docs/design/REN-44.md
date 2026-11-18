@@ -1,6 +1,7 @@
 # REN-44: Terrain surface types (sand, snow and others) — design
 
-Status: **draft rev 1, awaiting the human's approval** (§12). No code before approval.
+Status: **approved, rev 2** (human decisions 2026-11-18, §13). Rev 2 adds the skate-specific surfaces (§3.1) and
+persistent, saved trails (§4.2).
 Request (human, Discord 2026-11-17): plan sand and snow (and other surfaces) as part of `TerrainComponent`, next to
 water: material layers, deformation or footprints/trails, physics response (friction, sinking, skate grip), audio, and
 how biomes assign them.
@@ -27,7 +28,6 @@ Builds on REN-28 (terrain layers, biomes, splat, streaming), REN-29 (water, wind
 
 **Non-goals (now)**
 - Fluid or granular simulation (sand piles, avalanches, snow accumulation physics).
-- Persistent trails across saves and chunk unloads (trails fade; see question Q2).
 - Weather that falls and accumulates in real time (a global snow-cover amount is proposed as an optional slice, Q3).
 - Hardware tessellation (GL 3.3 has none); depth comes from vertex displacement on near chunks plus parallax (§4.3).
 
@@ -70,8 +70,23 @@ surfaces later as `.sksurface` assets (AST, optional slice, Q4).
 | `particles` | `"sand_puff"` / `"snow_spray"` | Particle preset for landings, turns and bails. |
 | `wetness` / `sparkle` | 0 / 0.3 | Shading hints (wet sand darkening near water, snow glints). |
 
-Proposed built-ins: `concrete` (default for the park), `asphalt`, `wood`, `metal`, `grass`, `dirt`, `gravel`, `sand`,
-`snow`, `ice`, `mud`, `rock`, `water`.
+Built-ins (rev 1 list, human Q1: kept): `concrete` (default for meshes), `asphalt`, `wood`, `metal`, `grass`, `dirt`,
+`gravel`, `sand`, `snow`, `ice`, `mud`, `rock`, `water`.
+
+**Skate-specific built-ins (human Q1, rev 2; the human can veto any of them later):**
+
+| id | Use | friction | rolling | skateGrip | pushable | deform | audio set | particles |
+|---|---|---|---|---|---|---|---|---|
+| `park_concrete` | Smooth skatepark concrete (bowls, ledges); the park floor default | 0.65 | 0.010 | 1.0 | yes | NONE | `surface.park_concrete` (smooth roll, crisp pops) | `concrete_dust` (faint) |
+| `coping` | Metal coping on bowl and ramp lips: grinds | 0.25 | 0.015 | 0.8 | yes | NONE | `surface.coping` (grind screech, metallic tap) | `grind_sparks` |
+| `plywood` | Plywood / Skatelite ramps and mini ramps | 0.55 | 0.015 | 0.95 | yes | NONE | `surface.plywood` (hollow roll, wooden thud) | none |
+| `brick` | Brick plazas | 0.7 | 0.06 | 0.9 | yes | NONE | `surface.brick` (rumbly, bumpy roll with clacks per joint) | `brick_dust` (faint) |
+| `tile` | Plaza or indoor tiles | 0.5 | 0.025 | 0.85 | yes | NONE | `surface.tile` (smooth roll, clicks on grout lines) | none |
+| `carpet` | Indoor carpet (shops, home levels) | 0.9 | 0.45 | 0.6 | no (walk) | NONE | `surface.carpet` (muffled roll, soft steps) | none |
+
+Values are first guesses for tuning in the Showcase "Surfaces" area (task 11); rolling resistance is the fraction of
+speed lost per second, so `carpet` stops a board within a few metres and `park_concrete` barely slows it. Grind feel
+on `coping` (balance, speed loss) stays GPL's trick system; the surface only gives its friction, sound and sparks.
 
 ### 3.2 Assignment
 
@@ -114,12 +129,33 @@ one **`DeformationField`** (**new**, `engine/render/terrain/deform/DeformationFi
 - **Recovery:** the field's age channel and the surface's `trailRecovery` fade depth over time (sand fills in; snow
   stays until the field scrolls away or a reset).
 
-### 4.2 Lifetime and streaming
+### 4.2 Persistent, saved trails (human Q2, rev 2)
 
-- Trails exist only within the field (about 50 m around the camera). Leaving and coming back loses them (Q2 asks
-  whether the human wants persistence; it would need per-chunk storage like REN-28 §15.10).
-- The field is per scene and independent of terrain size and streaming. Bounded memory, no CPU cost per chunk.
-- Server profile (REN-28 §15.8): no field (visual only).
+Trails persist across leaving the area, chunk unloads, and save/load, using the REN-28 §15.10 pattern: only the
+difference from the untouched ground is stored, per chunk, never evicted with the chunk, and saved as a section.
+
+- **Source of truth on the CPU:** `TrailStore` (**new**, pure: `engine/terrain/surface/TrailStore.kt`), one per terrain:
+  chunk → sparse **trail tiles** of 4 m × 4 m at 5 cm (80² texels, R8 depth in units of `sinkDepth / 255`, plus the
+  game time of the tile's last stamp). Stamps are applied **on the CPU** (a few hundred small discs per frame, cheap)
+  into tiles that exist only where something touched the ground. A trodden 100 m path is about 25 tiles (160 KB raw,
+  much less deflated).
+- **The GPU field is an upload cache:** the camera-centred `DeformationField` (§4.1) is filled from the store as it
+  scrolls (newly exposed strips upload their tiles) and patched when a tile changes. Nothing is read back from the GPU,
+  so saving never stalls rendering.
+- **Decay option:** each surface's `trailRecovery` (seconds to fade fully; 0 = never). Snow defaults to never, sand to
+  10 minutes of game time, mud to never. A decay pass runs over a few touched tiles per frame (round-robin, game time),
+  re-uploading the ones in the field; tiles that reach zero are deleted. A scene-wide override
+  `EnvironmentComponent.trailDecay` (`SURFACE` default, `NEVER`, `FAST` for arcade) lets a game choose.
+- **Memory cap:** `trailBudgetMB` (default 16 MB, independent of quality like the scatter state). Past the cap, the
+  **least recently stamped** tiles farthest from every focus are dropped first, with one log line; this is the only
+  case where a trail disappears without decaying (trails are cosmetic, unlike scatter state, which never drops).
+- **Saving:** a `SKTR` section per terrain in the save container (AST-41), next to the `SKSD` scatter section:
+  header (magic, version, terrain id, world fingerprint), then per chunk its tiles (deflated R8 + last-stamp time).
+  Restore happens before the spawn prefetch. A world change (reseed, recipe edit) clears the store, as for scatter.
+- **Streaming and server:** the store is per terrain and independent of residency; the server keeps no trails
+  (visual only), so they are not replicated (NET later, if ever wanted).
+- **Snow cover reset:** raising the scene's snow cover (§7, slice 13) can optionally clear snow trails ("fresh
+  snowfall"), a flag on the snow-cover change.
 
 ### 4.3 Rendering the depth
 
@@ -140,13 +176,14 @@ one **`DeformationField`** (**new**, `engine/render/terrain/deform/DeformationFi
      `ContactAddedCallback`, Jolt `ContactListener::OnContactAdded` with `ContactSettings.mCombinedFriction`; Simple:
      per contact). Exact, per-backend work.
   2. **Per-chunk average** friction from the chunk's dominant surfaces. Cheap, wrong at borders.
-  - Recommended: 1 for Bullet and Jolt, a per-contact lookup in `SimplePhysics3D`.
+  - Decided (Q6): option 1 on Bullet and Jolt, a per-contact lookup in `SimplePhysics3D`.
 - **Rolling resistance** for wheeled bodies (vehicles, carts) and the board: applied by `VehicleComponent` /
   board controller as a speed-proportional drag from `surfaceOf(wheel contact).rollingResistance`.
 - **Sinking:** controllers lower the visual root (feet, wheels) by `sinkDepth` × deformation coverage. The collider
   is not changed.
 - **Skater (GPL):**
-  - Board on sand: high rolling resistance, low grip; the skater auto-bails or steps off below a speed (Q7).
+  - Board on sand: high rolling resistance and low grip slow the board hard; below walking speed the skater steps off
+    (no bail, human Q7), so sand is a soft boundary, not a trap.
   - Board on snow and ice: low friction and grip, so carving slides; pushing is disabled where `pushable` is false.
   - Walking: speed and step length scale by surface (deep snow slower).
   - Landing on sand or snow is softer (lower bail threshold for impact), a crater stamp is written.
@@ -181,7 +218,8 @@ one **`DeformationField`** (**new**, `engine/render/terrain/deform/DeformationFi
 
 | Item | Budget |
 |---|---|
-| `DeformationField` | 16 MB GPU (2048² RG16F); < 0.2 ms GPU per frame for stamps and scrolling |
+| `DeformationField` | 16 MB GPU (2048² RG16F); < 0.2 ms GPU per frame for tile uploads and scrolling |
+| `TrailStore` | ≤ `trailBudgetMB` (16 MB) CPU; stamping < 0.1 ms CPU per frame; decay a few tiles per frame |
 | Trail patch mesh (if Q5 yes) | 129² vertices, one draw; < 0.2 ms GPU |
 | `surfaceAt` / `surfaceOf` | < 1 µs, no allocation (splat byte read) |
 | Per-contact friction callbacks | < 0.1 ms per fixed step with 50 contacts |
@@ -191,8 +229,10 @@ one **`DeformationField`** (**new**, `engine/render/terrain/deform/DeformationFi
 
 - **Unit (no GL):** surface registry and defaults; `surfaceAt` picks the dominant layer, water wins, the overview
   fallback works far away; `blendAt` weights sum to 1; border hysteresis; mesh material surface; deformation field
-  toroidal scroll keeps stamps at the right world position and clears exposed strips; recovery fade; stamps ignore
-  non-deformable surfaces.
+  toroidal scroll keeps stamps at the right world position and fills exposed strips from the store; decay by
+  surface and the scene override; stamps ignore non-deformable surfaces; `TrailStore` round-trip of a `SKTR`
+  section byte for byte; trails survive chunk unload and reload; the memory cap drops the least recently stamped,
+  farthest tiles first and logs once; a world change clears the store.
 - **PHY:** a box slides farther on ice than on sand; a ball rolling onto sand stops sooner; contact friction follows
   the splat at a sand/rock border; every backend.
 - **GPL:** board speed decays on sand, carving slides on snow, no push on deep snow.
@@ -207,17 +247,18 @@ one **`DeformationField`** (**new**, `engine/render/terrain/deform/DeformationFi
 | 2 | Per-contact friction and rolling resistance on Bullet, Jolt and Simple; body tests | PHY | 1 |
 | 3 | Skater response: grip, rolling resistance, no-push surfaces, walking speed, soft landings, sinking offset | GPL | 1, 2 |
 | 4 | Surface sound sets: footsteps from ANI events, wheel roll loop with border cross-fade, landing and slide sounds | AUD | 1 |
-| 5 | `DeformationField` (clipmap, toroidal scroll, stamp queue, recovery), terrain shading (normal, parallax, wetness) | REN | 1 |
+| 5 | `TrailStore` (CPU tiles, stamping, decay, memory cap, world-change clear) and `DeformationField` (clipmap, toroidal scroll, tile uploads), terrain shading (normal, parallax, wetness) | REN | 1 |
+| 5b | `SKTR` save section and `TrailStateService` snapshot/restore (REN), stored in the save container | REN + AST (container, AST-41) | 5 |
 | 6 | Stamp writers: wheel contacts, ANI foot plants, bail craters | GPL (+ ANI events) | 5 |
 | 7 | Trail patch mesh for deep surfaces (if Q5) and vertex displacement on LOD 0 | REN | 5 |
 | 8 | Particle presets and triggers (sand puff, snow spray, splash) | REN (presets) + GPL (triggers) | 1 |
 | 9 | Editor: surface pickers, debug view toggle, deformation overlay, clear trails | EDT | 1, 5 |
 | 10 | Vulkan parity: deformation field, stamp pass, trail patch | VK | 5, 7 |
 | 11 | Showcase "Surfaces" area: a sand pit, a snow slope and an ice patch beside concrete, with a board to try them; `docs/samples.md` | TLG | 2–5 |
-| 12 | Optional: `.sksurface` project assets (Q4) | AST | 1 |
-| 13 | Optional: global snow cover (Q3) | REN | 1 |
+| 12 | Later: `.sksurface` project assets (human Q4: after the built-ins) | AST | 1 |
+| 13 | Global snow cover (human Q3: yes): `EnvironmentComponent.snowCover`, shader weight, `surfaceAt`, optional trail reset | REN (+ ECS reviews the field) | 1 |
 
-## 12. Open questions for the human
+## 12. Open questions for the human (rev 1; answered in §13)
 
 1. **Surface list:** are the proposed built-ins right (concrete, asphalt, wood, metal, grass, dirt, gravel, sand,
    snow, ice, mud, rock, water)? Any game-specific ones (e.g. a "skatepark coping" or "carpet")?
@@ -240,3 +281,26 @@ one **`DeformationField`** (**new**, `engine/render/terrain/deform/DeformationFi
 7. **Skating on sand:** should the board stop and the skater step off automatically, bail, or keep skating very
    slowly?
    *Recommended:* slow down hard and step off below walking speed (no bail), so sand is a soft boundary, not a trap.
+
+## 13. Human decisions (2026-11-18, answers to rev 1 §12)
+
+Recorded:
+1. CHANGED: add skate-specific built-in surfaces; propose a short list with grip, sound and particle values (suggested:
+   skatepark concrete, coping, plywood ramp, brick, tile, carpet); the human can veto later.
+2. CHANGED: trails PERSIST and are saved, using the REN-28 §15.10 per-chunk delta mechanism, with a memory cap and a
+   decay option.
+3. Yes: scene-wide snow cover as a small slice.
+4. Built-ins first, `.sksurface` assets later.
+5. Shading-only depth first, the trail mesh next.
+6. Per-contact friction.
+7. Sand slows hard; the skater steps off below walking speed; no bail.
+
+Where each one landed:
+1. §3.1 skate-specific table (`park_concrete`, `coping`, `plywood`, `brick`, `tile`, `carpet`).
+2. §4.2 rewritten (CPU `TrailStore` as the source of truth, decay option, memory cap, `SKTR` section); §9, §10;
+   tasks 5 and 5b.
+3. Task 13.
+4. Task 12 marked later.
+5. Task 5 shading only, task 7 (trail mesh) right after.
+6. §5 option 1; task 2.
+7. §5 skater bullet; task 3.
