@@ -60,3 +60,11 @@ data class DamagedEvent(val target: GameObject, val applied: Float, val remainin
 
 /** [target]'s health reached 0; published once. */
 data class DiedEvent(val target: GameObject, val killer: GameObject?) : GameplayEvent("gameplay.died")
+
+/** [interactor]'s focus moved to [target] (null: nothing in reach); the HUD shows [promptKey] (GPL-24 §5.2). */
+data class InteractionFocusChanged(val interactor: GameObject, val target: GameObject?, val promptKey: String?) :
+    GameplayEvent("interaction.focus")
+
+/** [interactor] used [target]; game code and scripts handle their own [actionId]s. */
+data class InteractEvent(val interactor: GameObject, val target: GameObject, val actionId: String) :
+    GameplayEvent("interaction.interact")

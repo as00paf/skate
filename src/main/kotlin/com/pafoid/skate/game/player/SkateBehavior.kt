@@ -15,6 +15,9 @@ import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.ecs.systems.AppearanceSystem
 import com.pafoid.skate.engine.ecs.systems.BoneAttachmentSystem
 import com.pafoid.skate.engine.ecs.systems.HealthSystem
+import com.pafoid.skate.engine.ecs.systems.InputSystem
+import com.pafoid.skate.engine.ecs.systems.InteractionSystem
+import com.pafoid.skate.engine.gameplay.interaction.Interaction
 import com.pafoid.skate.engine.ecs.systems.InventorySystem
 import com.pafoid.skate.engine.gameplay.appearance.SkeletonConfigs
 import com.pafoid.skate.engine.gameplay.items.ItemDatabase
@@ -364,7 +367,7 @@ object SkateGameplay {
         if (engine.systemManager.getSystem<SkateHudSystem>() == null) {
             engine.systemManager.addSystem(SkateHudSystem(engine.eventSystem))
         }
-        // Items, equipment and health (GPL-24a, b, e); the item set reloads on each scene init. One database for both systems.
+        // Items, equipment, health and interaction (GPL-24a, b, d, e); the item set reloads on each scene init. One database for both systems.
         if (engine.systemManager.getSystem<InventorySystem>() == null) {
             val items = ItemDatabase()
             engine.systemManager.addSystem(
@@ -377,11 +380,14 @@ object SkateGameplay {
             engine.systemManager.addSystem(AppearanceSystem(engine.eventSystem, items) { engine.assetsManager.loadModel(it) })
             engine.systemManager.addSystem(BoneAttachmentSystem())
             engine.systemManager.addSystem(HealthSystem(engine.eventSystem, items))
+            val reader = engine.systemManager.getSystem<InputSystem>()?.reader
+            engine.systemManager.addSystem(InteractionSystem(engine.eventSystem, pressed = { reader?.wasActionPressed(Interaction.ACTION) == true }))
         }
     }
 
     fun register() {
         ActionPresets.register(SkateActions.CATEGORY, SkateActions::register)
+        ActionPresets.register(Interaction.PRESET, Interaction::bindDefaults)
         CharacterBehaviors.register(SkateBehavior.ID) { path ->
             SkateBehavior(CharacterConfigs.load(path) { SkateControllerConfig() })
         }

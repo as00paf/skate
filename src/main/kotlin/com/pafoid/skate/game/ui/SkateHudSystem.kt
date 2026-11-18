@@ -7,6 +7,7 @@ import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.components.PlayerController
 import com.pafoid.skate.engine.ecs.systems.System
 import com.pafoid.skate.engine.ecs.systems.SystemManager.ExecutionPriority
+import com.pafoid.skate.engine.events.InteractionFocusChanged
 import com.pafoid.skate.engine.events.TrickCompleted
 import com.pafoid.skate.engine.getComponent
 import com.pafoid.skate.engine.ui.UITextComponent
@@ -17,8 +18,9 @@ import com.pafoid.skate.game.player.TrickType
 /**
  * Trick feedback in editor Play and the exported game (GPL-21): every HUD text named [TRICK_TEXT] shows the trick
  * in the air, then the one just landed for [showSec]; every [SCORE_TEXT] shows the run's score. Each landed trick
- * adds its points ([com.pafoid.skate.game.player.TrickTuning.points]) and publishes [TrickCompleted]. A new scene
- * (Play, Restart) starts a new run.
+ * adds its points ([com.pafoid.skate.game.player.TrickTuning.points]) and publishes [TrickCompleted]. Every
+ * [PROMPT_TEXT] shows the interaction prompt from [InteractionFocusChanged] (GPL-24d). A new scene (Play, Restart)
+ * starts a new run.
  */
 class SkateHudSystem(
     private val events: EventSystem? = null,
@@ -26,6 +28,10 @@ class SkateHudSystem(
 ) : System(priority = ExecutionPriority.DEFAULT) {
 
     var score = 0
+        private set
+
+    /** String key on the prompt text right now ("" hides it). */
+    var promptKey = ""
         private set
 
     /** String key on the trick text right now ("" hides it). */
@@ -39,11 +45,17 @@ class SkateHudSystem(
     private val riders = query(PlayerController::class)
     private val trickTexts = mutableListOf<UITextComponent>()
     private val scoreTexts = mutableListOf<UITextComponent>()
+    private val promptTexts = mutableListOf<UITextComponent>()
     private var textsVersion = -1L
+
+    init {
+        events?.subscribe<InteractionFocusChanged> { promptKey = it.promptKey.orEmpty() }
+    }
 
     override fun init(scene: Scene) {
         super.init(scene)
         score = 0
+        promptKey = ""
         trickKey = ""
         rider = null
         shownFor = 0f
@@ -52,7 +64,7 @@ class SkateHudSystem(
 
     override fun update(dt: Float) {
         if (!scene.isRunning) return
-        val behavior = findRider() ?: return
+        val behavior = findRider() ?: return writeTexts()
         if (behavior !== rider) {
             rider = behavior
             seenLanded = behavior.landedTricks
@@ -92,9 +104,11 @@ class SkateHudSystem(
             textsVersion = EcsChanges.version
             trickTexts.clear()
             scoreTexts.clear()
+            promptTexts.clear()
             collectTexts(scene)
         }
         trickTexts.forEach { it.key = trickKey }
+        promptTexts.forEach { it.key = promptKey }
         val args = listOf(score.toString())
         scoreTexts.forEach { if (it.args != args) it.args = args }
     }
@@ -105,6 +119,7 @@ class SkateHudSystem(
             when (child.name) {
                 TRICK_TEXT -> child.getComponent<UITextComponent>()?.let(trickTexts::add)
                 SCORE_TEXT -> child.getComponent<UITextComponent>()?.let(scoreTexts::add)
+                PROMPT_TEXT -> child.getComponent<UITextComponent>()?.let(promptTexts::add)
             }
             collectTexts(child)
         }
@@ -113,5 +128,6 @@ class SkateHudSystem(
     companion object {
         const val TRICK_TEXT = GameUi.TRICK_NAME
         const val SCORE_TEXT = GameUi.SCORE_NAME
+        const val PROMPT_TEXT = GameUi.PROMPT_NAME
     }
 }

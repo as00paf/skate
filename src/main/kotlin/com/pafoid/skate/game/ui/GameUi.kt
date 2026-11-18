@@ -22,6 +22,8 @@ object GameUi {
     const val SCORE_NAME = "ScoreText"
     const val TIMER_NAME = "TimerText"
     const val TRICK_NAME = "TrickText"
+    /** Interaction prompt (GPL-24d), e.g. "Pick up", shown while the player faces something usable. */
+    const val PROMPT_NAME = "PromptText"
 
     fun createHud(): GameObject = GameObject(HUD_NAME).apply {
         addComponent(UICanvasComponent(sortOrder = 0))
@@ -29,6 +31,7 @@ object GameUi {
         addChild(text(SCORE_NAME, "hud.score", 48f, 0f).also { it.element().placed(0f, 0f, 40f, 40f, 600f, 64f) })
         addChild(text(TIMER_NAME, "hud.timer", 48f, 1f).also { it.element().placed(1f, 0f, -40f, 40f, 300f, 64f) })
         addChild(text(TRICK_NAME, "", 72f, 0.5f).also { it.element().placed(0.5f, 1f, 0f, -120f, 1000f, 96f) })
+        addChild(text(PROMPT_NAME, "", 40f, 0.5f).also { it.element().placed(0.5f, 1f, 0f, -230f, 800f, 56f) })
     }
 
     private fun GameObject.element(): UIElementComponent = getComponent<UIElementComponent>()!!

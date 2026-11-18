@@ -24,12 +24,14 @@ enum class ComponentType {
     GRID_LINES,
     HEALTH,
     INPUT_STATE,
+    INTERACTABLE,
     INVENTORY,
     JOINT,
     MESH_COLLIDER,
     NATIVE_SCRIPT,
     NON_PICKABLE,
     PARTICLE_EMITTER,
+    PICKUP,
     PLAYER_CONTROLLER,
     POINT_LIGHT,
     RENDER,
@@ -66,6 +68,8 @@ enum class ComponentType {
             INVENTORY -> InventoryComponent()
             BONE_ATTACHMENT -> BoneAttachment()
             HEALTH -> HealthComponent()
+            INTERACTABLE -> InteractableComponent()
+            PICKUP -> PickupComponent()
             EQUIPMENT -> EquipmentComponent()
             CAPSULE_COLLIDER -> CapsuleCollider3D()
             COMPOUND_HULL_COLLIDER -> CompoundHullCollider3D()
