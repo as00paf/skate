@@ -32,6 +32,7 @@ import com.pafoid.skate.engine.ecs.components.RagdollComponent
 import com.pafoid.skate.engine.ecs.components.FollowCameraComponent
 import com.pafoid.skate.engine.ecs.components.ParticleEmitter
 import com.pafoid.skate.engine.ecs.components.VehicleComponent
+import com.pafoid.skate.engine.ecs.components.WaterComponent
 import com.pafoid.skate.engine.ecs.components.RenderComponent
 import com.pafoid.skate.engine.ecs.components.RigidBody3D
 import com.pafoid.skate.engine.ecs.components.SceneComponent
@@ -73,6 +74,7 @@ fun GameObject.getComponent(type: ComponentType) =
         ComponentType.PLAYER_CONTROLLER -> getComponent<PlayerController>()
         ComponentType.RAGDOLL -> getComponent<RagdollComponent>()
         ComponentType.VEHICLE -> getComponent<VehicleComponent>()
+        ComponentType.WATER -> getComponent<WaterComponent>()
         ComponentType.RENDER -> getComponent<RenderComponent>()
         ComponentType.RIGID_BODY_3D -> getComponent<RigidBody3D>()
         ComponentType.REVERB_ZONE -> getComponent<ReverbZone>()

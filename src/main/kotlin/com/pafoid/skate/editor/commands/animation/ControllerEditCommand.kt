@@ -27,6 +27,10 @@ enum class ControllerAction(val key: String) {
     REMOVE_PARAMETER("remove_parameter"),
     SET_CONTROLLER("set_controller"),
     PASTE_STATES("paste_states"),
+    CREATE_BLEND_TREE("create_blend_tree"),
+    SET_BLEND_TREE("set_blend_tree"),
+    RENAME_BLEND_TREE("rename_blend_tree"),
+    REMOVE_BLEND_TREE("remove_blend_tree"),
 }
 
 /**

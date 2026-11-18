@@ -13,7 +13,6 @@ import org.lwjgl.assimp.AINodeAnim
 import org.lwjgl.assimp.AIScene
 import org.lwjgl.assimp.Assimp.aiGetErrorString
 import org.lwjgl.assimp.Assimp.aiImportFile
-import org.lwjgl.assimp.Assimp.aiImportFileFromMemory
 import org.lwjgl.assimp.Assimp.aiProcess_JoinIdenticalVertices
 import org.lwjgl.assimp.Assimp.aiProcess_LimitBoneWeights
 import org.lwjgl.assimp.Assimp.aiProcess_Triangulate
@@ -28,12 +27,9 @@ class AnimationLoader {
             val bytes = ByteArray(data.remaining()).also { data.duplicate().get(it) }
             return listOf(SkAnimFormat.toAnimation(SkAnimFormat.decode(bytes.toString(Charsets.UTF_8)), path))
         }
-        val scene = aiImportFileFromMemory(
-            data,
-            aiProcess_Triangulate or aiProcess_JoinIdenticalVertices or aiProcess_LimitBoneWeights,
-            ""
-        )
-            ?: throw RuntimeException("Error loading animations: " + aiGetErrorString())
+        // AST-39: the path's extension is the format hint (an empty hint fails on files Assimp can't sniff).
+        val scene = AssimpLoader.importFromMemory(data, path, IMPORT_FLAGS)
+            ?: throw RuntimeException("Error loading animations $path: " + aiGetErrorString())
 
         return loadAnimations(scene, path)
     }
@@ -185,6 +181,9 @@ class AnimationLoader {
     }
 
     companion object {
+        /** Assimp flags for animation files (memory and disk). */
+        const val IMPORT_FLAGS = aiProcess_Triangulate or aiProcess_JoinIdenticalVertices or aiProcess_LimitBoneWeights
+
         /**
          * Clip name from a file path: the file name without its extension, with either separator
          * (`...\\animations\\falling idle.fbx` -> `falling idle`). Controllers refer to clips by this name.

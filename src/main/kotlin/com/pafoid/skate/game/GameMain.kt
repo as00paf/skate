@@ -14,6 +14,8 @@ import com.pafoid.skate.engine.input.ViewRect
 import com.pafoid.skate.engine.ui.GameSettings
 import com.pafoid.skate.engine.ecs.random.RandomService
 import com.pafoid.skate.engine.ui.GameSettingsStore
+import com.pafoid.skate.engine.ui.FrameLimiter
+import com.pafoid.skate.engine.ui.FrameRateOption
 import com.pafoid.skate.game.ui.GameHudState
 import com.pafoid.skate.game.ui.GameUiSystem
 import org.lwjgl.glfw.GLFW
@@ -25,6 +27,9 @@ import com.pafoid.skate.engine.render.rhi.IntRect
 import java.nio.ByteBuffer
 
 private val engine = Engine()
+
+/** Paces the game loop to the project's target FPS or the player's pause menu choice (AST-29, GUI-17). */
+private val frameLimiter = FrameLimiter()
 
 fun main(args: Array<String>) {
     SkateGameplay.register()
@@ -66,6 +71,7 @@ fun main(args: Array<String>) {
         engine.systemManager.fixedTimeStep = 1f / project.physicsFPS
     }
     SkateGameplay.install(engine)
+    installFrameRate(project, settings)
 
     if (projectManager.openProject(project, binFile, header, headerSize)) {
         // The project's mixer (bus volumes and mutes set in the editor) applies to the exported game too (EDT-14).
@@ -91,8 +97,20 @@ fun main(args: Array<String>) {
             GameView.resize(w[0] to h[0], fb.width to fb.height)?.let { (fw, fh) -> engine.resizeFrameBuffer(fw, fh) }
             engine.update(dt)
             testDraw(engine.renderer.frameBuffer.width, engine.renderer.frameBuffer.height)
+            frameLimiter.endFrame()
         }
     }
+}
+
+/**
+ * The frame cap: the project's target FPS (AST-29) unless the player picked another rate in the pause menu (GUI-17),
+ * which is saved in game.settings.json.
+ */
+private fun installFrameRate(project: Project, settings: GameSettingsStore) {
+    val projectFps = Project.normalizedTargetFps(project.targetFps)
+    val option = FrameRateOption.option(frameLimiter, projectFps)
+    option.apply(FrameRateOption.saved(settings.settings))
+    engine.gameOptions.register(option)
 }
 
 /**

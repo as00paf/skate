@@ -64,6 +64,17 @@ object Tooltips {
     }
 
     /**
+     * Shows [text] now, for something hovered that is not an ImGui item (canvas hit-tests, the script editor's
+     * gutter): the caller has checked the hover. A [Kind.HELP] tooltip is hidden when tooltips are off (EDT-65).
+     * Returns whether it was shown.
+     */
+    fun set(kind: Kind, text: String): Boolean {
+        if (!shows(kind)) return false
+        ImGui.setTooltip(text)
+        return true
+    }
+
+    /**
      * [text] plus a "Shortcut: Ctrl+D" line. Shortcut text is never written into tooltip strings: it comes from
      * [EditorShortcuts][com.pafoid.skate.editor.data.EditorShortcuts], so it stays right after a rebinding.
      */

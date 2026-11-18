@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.ui.windows.rendergraph
 
+import com.pafoid.skate.editor.imgui.Tooltips
 import com.pafoid.skate.editor.events.ProjectEvent
 import com.pafoid.skate.editor.events.RenderGraphAction
 import com.pafoid.skate.editor.imgui.EditorWindow
@@ -84,14 +85,14 @@ class RenderGraphWindow(
         if (strings.tipped(ImGui.smallButton("${strings.getString("lbl.render_graph.actual_size")}##rg_one"), "lbl.render_graph.actual_size")) view.actualSize()
         ImGui.sameLine()
         ImGui.checkbox("${strings.getString("lbl.render_graph.auto_update")}##rg_auto", autoRefresh)
-        if (ImGui.isItemHovered()) ImGui.setTooltip(strings.getString("tooltip.render_graph.auto_update"))
+        Tooltips.text(strings.getString("tooltip.render_graph.auto_update"))
         ImGui.sameLine()
         ImGui.textDisabled("|")
         ImGui.sameLine()
         ImGui.text(strings.getString("lbl.render_graph.frame_cpu", PassTimingStats.format(stats.frameCpuMs)))
         ImGui.sameLine()
         ImGui.text(strings.getString("lbl.render_graph.frame_gpu", PassTimingStats.format(stats.frameGpuMs)))
-        if (ImGui.isItemHovered()) ImGui.setTooltip(strings.getString("tooltip.render_graph.frame_gpu"))
+        Tooltips.always(strings.getString("tooltip.render_graph.frame_gpu"))
         ImGui.sameLine()
         ImGui.textDisabled("|")
         ImGui.sameLine()
@@ -99,7 +100,7 @@ class RenderGraphWindow(
         if (!timings.gpuTimersAvailable && timings.version >= 0) {
             ImGui.sameLine()
             MImGui.warningText("${Icons.INFO} ${strings.getString("lbl.render_graph.no_timers")}")
-            if (ImGui.isItemHovered()) ImGui.setTooltip(strings.getString("tooltip.render_graph.no_timers"))
+            Tooltips.always(strings.getString("tooltip.render_graph.no_timers"))
         }
     }
 
@@ -197,6 +198,9 @@ class RenderGraphWindow(
     }
 
     private fun hoverTooltip(info: RenderGraphInfo, hit: GraphHit?) {
+        // Toggle and expander say what a click does (help, hidden when tooltips are off); the rest explains the
+        // graph (data, always shown).
+        val kind = if (hit is GraphHit.Toggle || hit is GraphHit.Expander) Tooltips.Kind.HELP else Tooltips.Kind.ALWAYS
         val text = when (hit) {
             is GraphHit.Toggle -> {
                 val pass = info.passes[hit.node]
@@ -222,7 +226,7 @@ class RenderGraphWindow(
             }
             null -> null
         }
-        text?.let { ImGui.setTooltip(it) }
+        text?.let { Tooltips.set(kind, it) }
     }
 
     // ── Drawing ───────────────────────────────────────────────────────────────────────────────────────────────────
@@ -408,7 +412,7 @@ class RenderGraphWindow(
             if (ImGui.selectable("$name##rg_res_$titleKey.$resource", highlighted == resource)) {
                 highlighted = resource.takeIf { it != highlighted }
             }
-            if (ImGui.isItemHovered()) ImGui.setTooltip(strings.getString("tooltip.render_graph.resource", name))
+            Tooltips.always(strings.getString("tooltip.render_graph.resource", name))
         }
     }
 
@@ -420,7 +424,7 @@ class RenderGraphWindow(
         if (ImGui.combo("${strings.getString("lbl.render_graph.shadow_quality")}###rg_shadow_quality", current, labels, labels.size)) {
             engine.eventSystem.publish(ProjectEvent.SetShadowQualityRequested(ShadowQuality.entries[current.get()]))
         }
-        if (ImGui.isItemHovered()) ImGui.setTooltip(strings.getString("tooltip.render_graph.shadow_quality"))
+        Tooltips.text(strings.getString("tooltip.render_graph.shadow_quality"))
     }
 
     private fun statusLine(info: RenderGraphInfo) {

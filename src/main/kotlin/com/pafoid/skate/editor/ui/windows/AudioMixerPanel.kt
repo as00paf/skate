@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.ui.windows
 
+import com.pafoid.skate.editor.imgui.Tooltips
 import com.pafoid.skate.editor.events.AudioAction
 import com.pafoid.skate.editor.imgui.EmptyState
 import com.pafoid.skate.editor.settings.AudioSettings
@@ -34,12 +35,12 @@ class AudioMixerPanel(
             val a = floatArrayOf(value)
             if (ImGui.sliderFloat(label, a, 0f, 1f)) { settings = apply(a[0]); changed = true }
             if (ImGui.isItemDeactivatedAfterEdit()) commit = true
-            if (ImGui.isItemHovered()) ImGui.setTooltip(strings.getString(tooltip))
+            Tooltips.always(strings.getString(tooltip))
         }
 
         fun mute(label: String, value: Boolean, apply: (Boolean) -> AudioSettings) {
             if (ImGui.checkbox(label, value)) { settings = apply(!value); changed = true; commit = true }
-            if (ImGui.isItemHovered()) ImGui.setTooltip(strings.getString("lbl.audio.mute.tooltip"))
+            Tooltips.text(strings.getString("lbl.audio.mute.tooltip"))
         }
 
         fun header(key: String) { ImGui.separator(); ImGui.text(strings.getString(key)) }
