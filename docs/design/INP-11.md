@@ -1,6 +1,12 @@
 # INP-11 — Project input actions
 
-Status: **design, awaiting approval** (skate-input, 2026-11-18). No code yet.
+Status: **approved** (human, 2026-11-18). Design by skate-input.
+
+Answers (human, 2026-11-18):
+- Q1: one file, `Assets/Data/input.actions.json` (option B).
+- Q2: plain names for now; no `nameKey` in INP-11.
+- Q3: "Change id…" stays, with a warning.
+- Q4: "active at start" now; an `InputContext` component later, as a separate task.
 Origin: EDT-106 audit (`docs/design/EDT-106.md`), human decision 2026-11-18: P2, design note first.
 UI rule from EDT-106: the owner (INP) writes the UI, skate-editor reviews it.
 
