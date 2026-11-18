@@ -44,7 +44,8 @@ class ReferenceCollector(
             }
             if (file.extension.lowercase() !in scanExtensions) continue
             for (token in stringLiteral.findAll(file.readText()).map { unescape(it.groupValues[1]) }) {
-                if (EngineDefaults.isReference(token)) addEngine(token) else resolve(token)?.let { add(it) }
+                if (EngineDefaults.isReference(token)) addEngine(token)
+                else resolve(token)?.let { add(it) } ?: resolveFolderAsset(token)?.forEach { add(it) }
             }
         }
         return found
@@ -98,6 +99,18 @@ class ReferenceCollector(
         val direct = File(token)
         val candidates = if (direct.isAbsolute) listOf(direct) else listOf(File(root, token))
         return candidates.firstOrNull { it.isFile && it.canonicalFile.path.startsWith(root.path) }?.canonicalFile
+    }
+
+    /**
+     * The files of a folder asset (`.skterrain`, AST-36) referenced by GUID or path: `terrain.json` (scanned in turn
+     * for layer materials and stamp prefabs) and its region files.
+     */
+    private fun resolveFolderAsset(token: String): List<File>? {
+        if (token.isBlank() || token.length > 512 || token.contains("://")) return null
+        val rel = registry?.resolve(token)?.takeUnless(EngineDefaults::isReference)
+        val dir = (rel?.let { File(root, it) } ?: if (token.indexOf(':') > 1) null else File(token).let { if (it.isAbsolute) it else File(root, token) })
+            ?.takeIf { AssetRegistry.isFolderAsset(it) && it.canonicalFile.path.startsWith(root.path) } ?: return null
+        return dir.walkTopDown().filter { it.isFile && !it.name.endsWith(".tmp") }.map { it.canonicalFile }.toList()
     }
 
     private fun unescape(s: String) = s.replace("\\\\", "\\").replace("\\/", "/")

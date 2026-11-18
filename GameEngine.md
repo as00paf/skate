@@ -121,10 +121,11 @@ Round 27+ goals (human, 2026-11-06): post-processing quality, render-graph clari
   - Done when: The Showcase Nature area part 1 (pool, floating props, wind) works on GL and VK; tests per task.
   - Result (2026-11-17): REN-29 tasks 1, 3, 7, 8 done (TransparentPass, wind, WaterPass, SSR). The other owners' tasks continue as PHY-16 (task 9), EDT-90 (10a), TLG-17 (13a), VK-08 (14a), GPL-32 (15), AUD-01 (16); TLG-17 carries the Showcase acceptance.
   - Deps: REN-34
-- [~] @skate-render **REN-36** `P2` World phase C: instancing and terrain (`docs/design/REN-28.md` §12, `docs/design/REN-29.md` §12)
+- [x] **REN-36** `P2` World phase C: instancing and terrain (`docs/design/REN-28.md` §12, `docs/design/REN-29.md` §12)
   - Do: REN-29 task 2 (instancing core) first, then REN-28 tasks 3–13 (terrain data, chunk meshes, splat, biomes, scatter, `.skterrain` (AST), heightfield collider (PHY-15), stamps, editor tools (EDT), showcase Terrain area (TLG)).
   - Done when: A generated, sculptable terrain with biomes, scatter and stamps plays in the editor and an export; tests per task.
   - Progress (2026-11-17): tasks 2 (instancing), 3 (terrain data), 4 and 13 done. REN tasks 5, 6, 7 and the REN part of 11 remain. Other owners: PHY-26 (task 9), AST-36 (task 8), EDT-92 (task 10), TLG-18 (task 11), ECS-17 (review + registration), VK-09 (Vulkan parity).
+  - Result (2026-11-17): REN tasks 2–7, 13 and the REN part of 11 done. Other owners: PHY-26 (done), AST-36 (done) + AST-38, ECS-17 (done) + ECS-19, PHY-27, EDT-92, TLG-18, VK-09 (done) + VK-10; review fixes REN-42.
   - Deps: REN-34
 - [ ] **REN-40** `P3` REN-29 design note: buoyancy drag formula (PHY-16)
   - Do: (NEEDS from PHY-16): update `docs/design/REN-29.md` §8.2 so drag reads −linearDrag · ρ · V_submerged · (v + ω × r − flow), applied per sample, instead of −linearDrag · m · f · (v − flow) (reasons in the `BuoyancySystem` KDoc).
@@ -134,6 +135,10 @@ Round 27+ goals (human, 2026-11-06): post-processing quality, render-graph clari
   - Do: (NEEDS from VK-08): `WaterPass` always calls `beginPass(frameBuffer.target)`, so with `useFbo = false` the water would draw into a target that is never presented. Latent: nothing passes `useFbo = false` today.
   - Done when: Water draws to the right target in both modes; test.
   - Deps: REN-35
+- [~] @skate-render **REN-42** `P1` TerrainComponent and TerrainSystem review fixes (ECS-17 review)
+  - Do: (REVIEW by skate-ecs, 2026-11-17): (1) cap total samples (16384 m at 0.5 m is about 4.3 GB); (2) debounce the full main-thread rebuild on every inspector drag frame; (3) `key()` writes `seedName`, so load-then-save changes the file (EDT-60), and an unattached call fixes it as "terrain/Terrain"; (4) a NaN or zero size throws in `TerrainLayout` every frame with no catch in `SystemManager`; (5) a duplicate keeps `seedName` (identical ground), `MAX_LAYERS` is not enforced, a disabled terrain keeps its chunks.
+  - Done when: Each finding is fixed or answered with a reason; tests for 1, 3 and 4.
+  - Deps: REN-36
 - [ ] **REN-37** `P2` World phase D: streaming and remembered scatter state (`docs/design/REN-28.md` §12, `docs/design/REN-29.md` §12)
   - Do: REN-28 tasks 14–27: far field, Vulkan parity, streaming core and focus, suspended bodies (PHY), streamed physics and scatter, random-access pack reads (AST), sparse edits, Play/export prefetch (GUI), *Big Island*, component state capture (ECS), scatter state deltas with optional per-rule respawn, save-game container, stateful props check.
   - Done when: *Big Island* streams within the budgets; destroyed or taken props stay that way across unload, save and load; tests per task.
@@ -189,10 +194,14 @@ Goal (human, after REN-13): full Vulkan support for **exported games**, chosen p
   - Do: (NEEDS from REN-35): depth copy in `VkCommands.blit` (`BlitMask.DEPTH`, colour only today), WaterPass (`water.glsl` with `uWaveA0..3`/`uWaveB0..3` vec4 uniforms, texture units 10–14), SSR, WIND shader variants and the new TransparentPass on Vulkan.
   - Done when: Water, wind and transparent meshes render on Vulkan at parity with GL; GPU parity tests.
   - Deps: REN-35
-- [~] @skate-vulkan **VK-09** `P2` Vulkan parity for instancing and terrain (REN-36)
+- [x] **VK-09** `P2` Vulkan parity for instancing and terrain (REN-36)
   - Do: (NEEDS from REN-36): the INSTANCED vertex stream (locations 10–13), TerrainPass and `terrain.glsl` (PICKING and DEPTH_ONLY variants) on Vulkan; they translate already but have never been rendered.
   - Done when: Instanced meshes and terrain render on Vulkan at parity with GL; GPU parity tests.
   - Deps: VK-08 (needs REN-36 tasks 3–4 (checkpoint on agents/render, integrated in round 35))
+- [~] @skate-vulkan **VK-10** `P2` Vulkan parity for terrain splat shading and instanced scatter (REN-36 tasks 5–7)
+  - Do: (NEEDS from REN-36): terrain splat shading on Vulkan (sampler2DArray units 0–4, the stream at location 1 is now vec4, `uBiomeColor0..7` as separate uniforms) and instanced scatter, including the instanced shadow pipeline.
+  - Done when: Splat-shaded terrain and scatter render on Vulkan at parity with GL; GPU parity tests.
+  - Deps: VK-09, REN-36
 
 ### Asset management — `AST` (`skate-assets`)
 
@@ -294,10 +303,18 @@ Round 27+ goals: the Asset Browser shows every asset type, one assets folder, ex
   - Do: (1) From skate-render: add `lighting.glsl` to the AST-26 basic (overridable) shader set next to `fog.glsl`. (2) From skate-physics: a GUID→path table in the pack so exported games resolve `MeshCollider3D.meshRef` (`CollisionMeshes.source = ModelCollisionMeshSource(...)` at game start-up), and set the editor's source from the project's asset registry on project open (with skate-editor). (3) From skate-editor: remove the unused `help.<id>.what/how/related` strings left in the animation, assetstore and render string files.
   - Done when: A referenced mesh collider works in an exported game; `lighting.glsl` is copied and overridable; no unused help strings; tests.
   - Deps: AST-27, REN-34, PHY-24
-- [~] @skate-assets **AST-36** `P2` `.skterrain` asset (REN-28 task 8)
+- [x] **AST-36** `P2` `.skterrain` asset (REN-28 task 8)
   - Do: (NEEDS from REN-36): `terrain.json` with the recipe, stamps and layers; region files for DATA and edited chunks; GUID meta, hot reload, packing. `TerrainSource.DATA` renders flat until chunk data can be loaded.
   - Done when: A sculpted terrain saves, reloads, hot-reloads and exports; tests.
   - Deps: none (needs REN-36 tasks 3–4 (checkpoint on agents/render, integrated in round 35))
+- [~] @skate-assets **AST-37** `P1` Pack built-in water materials and water sounds
+  - Do: (NEEDS from TLG-17 and AUD-01): built-in water materials (`WaterMaterials.ALL`, no file, resolved in `WaterSchema.BUILT_IN`) break the "every engine: ref is packed" check (`ProjectLifecycleEndToEndTest.Lifecycle_9`) now that the showcase uses `WaterMaterials.POOL`: have the packer and the check treat them as built-in (or ship real `water_*.skmat` files with REN). Add the `engine:Sounds/Water/*` clips to `EngineDefaults.Sounds.ALL` so exports pack them.
+  - Done when: TLG-17's showcase passes the lifecycle test; exports contain the water sounds; tests.
+  - Deps: AST-36
+- [ ] **AST-38** `P2` `.skterrain`: layers, biomes, climate and scatter references (REN-36)
+  - Do: (NEEDS from REN-36): store layers, biomes, climate and biome source in `terrain.json`; persist `paintedBiomeIds` per chunk in region files; the pack's `ReferenceCollector` follows layer `.skmat`, scatter models, rule materials and prefabs.
+  - Done when: A biome-painted, scattered terrain saves, reloads and exports with all its references; tests.
+  - Deps: AST-36
 
 ### ECS — `ECS` (`skate-ecs`)
 
@@ -314,14 +331,18 @@ Round 27+ goals: deterministic seeds for games and procedural generation.
   - Do: (from REN-35 test notes): register `WaterComponent` (and any other new REN-35 components) in the component registry and serialization so it can be added from Add Component and saved with the scene.
   - Done when: Water can be added to a GameObject in the editor and survives save/reload; tests.
   - Deps: REN-35
-- [~] @skate-ecs **ECS-17** `P2` Review and register TerrainComponent (REN-36)
+- [x] **ECS-17** `P2` Review and register TerrainComponent (REN-36)
   - Do: (NEEDS from REN-36): review `TerrainComponent` and `TerrainSystem`, and register the component in `ComponentType` and the Add Component menu.
   - Done when: Terrain can be added from Add Component and survives save/reload; tests.
   - Deps: none (needs REN-36 tasks 3–4 (checkpoint on agents/render, integrated in round 35))
-- [ ] **ECS-18** `P3` Frame-rate option in editor Play (GUI-17 parity)
-  - Do: (NEEDS from GUI-17): in `engine/core/Engine.kt`, register `FrameRateOption.option(...)` in `gameOptions` with a limiter that does nothing in the editor, so editor Play shows the same Frame rate row as the exported game (GUI-12 parity). `GameMain` registers it again with the real limiter; register replaces by id.
-  - Done when: The pause menu in editor Play shows the Frame rate row; parity test.
-  - Deps: GUI-17
+- [~] @skate-ecs **ECS-18** `P2` Engine.kt wiring: frame-rate option, water response and water audio (GUI-17, GPL-32, AUD-01)
+  - Do: Engine.kt wiring (no owner, ECS takes it): (a) (NEEDS from GUI-17) register `FrameRateOption.option(...)` in `gameOptions` with a limiter that does nothing in the editor, so editor Play shows the same Frame rate row as the exported game (GUI-12 parity); `GameMain` registers it again with the real limiter, register replaces by id. (b) (NEEDS from GPL-32) call `playerMotionSystem.listenTo(eventSystem)` where `PlayerMotionSystem` is built, then remove the temporary call in `SkateGameplay.install`. (c) (NEEDS from AUD-01) construct `AudioSystem(audioEngine, logger, assetsManager, cameraManager, assetsManager.paths::localPath, eventSystem)` in `initializeSystems()` so splashes hear `WaterEntered`.
+  - Done when: Editor Play shows the Frame rate row; every game reacts to water (bail, splash) without game-specific wiring; tests.
+  - Deps: GUI-17, GPL-32, AUD-01
+- [ ] **ECS-19** `P2` Prefab scatter: hidden child entities under the terrain (REN-28 task 7)
+  - Do: (NEEDS from REN-36): spawn non-serialized, hierarchy-hidden child entities under the terrain for `ScatterRule.prefab`, capped per rule (`maxEntities`), from the placed instances in `TerrainChunkData.scatter`. Overlaps the phase-D ScatterItem task 24.
+  - Done when: Prefab scatter rules spawn capped, unsaved, hidden children that follow chunk changes; tests.
+  - Deps: REN-36
 
 ### Physics — `PHY` (`skate-physics`)
 
@@ -335,10 +356,14 @@ Round 27+ goals: a Jolt backend selectable per project, a terrain heightfield co
   - Do: Buoyancy and drag in water volumes, following the approved REN-29 design.
   - Done when: Showcase objects float and settle realistically; tests.
   - Deps: REN-29
-- [~] @skate-physics **PHY-26** `P2` Terrain heightfield collider component (REN-28 task 9)
+- [x] **PHY-26** `P2` Terrain heightfield collider component (REN-28 task 9)
   - Do: (NEEDS from REN-36): a `HeightfieldCollider3D` reading `TerrainComponent.runtime.chunks`: per chunk `ColliderShape.Heightfield(chunkQuads + 1, spacing, chunk.colliderHeights())`, body at terrain world position + (cornerX, 0, cornerZ), rotation ignored; rebuild when `runtime.version` changes or a chunk is dirty; `TerrainComponent.collider` turns it off.
   - Done when: Bodies and the character collide with a generated terrain on every backend; tests.
   - Deps: PHY-15 (needs REN-36 tasks 3–4 (checkpoint on agents/render, integrated in round 35))
+- [~] @skate-physics **PHY-27** `P2` Static colliders for terrain scatter (REN-28 task 7)
+  - Do: (NEEDS from REN-36): static colliders for scatter items of rules with `collider = true`, from `TerrainChunkData.scatter` (terrain-local position, yaw, scale, normal; world matrix from `TerrainScatterRenderer.matrixOf`). Rebuild when a chunk's `scatter` list changes.
+  - Done when: The character collides with scattered rocks and trees on every backend; tests.
+  - Deps: PHY-26
 - [~] @skate-physics **PHY-17** `P2` REWRITE Jolt physics backend — slices a–e done; slice f (per-project selection) waits for EDT-59
   - Do: Implement the approved slices in order: a) preparation (`BodyDescription`, per-spec native loader, `ShapeWireframe` move, test helper), b) Jolt core (bodies, shapes, layers, queries, factory + fallback), c) contacts and triggers, d) joints/ragdoll/vehicle parity, e) debug draw, stats, leak/determinism tests, benchmark, f) per-project selection plumbing with EDT/AST/TLG. Decisions: physical centre of mass, ship both natives now (AST-15 strips the unused one), Bullet stays the default.
   - Done when: The physics test suite passes on Jolt as well as Bullet; the showcase runs on Jolt.
@@ -420,7 +445,7 @@ Round 27+ goals: an animation authoring tool and animation from video.
 
 Audio needs a more complete implementation.
 
-- [~] @skate-audio **AUD-01** `P3` Splash and water-ambience sounds (REN-29 task 16, optional)
+- [x] **AUD-01** `P3` Splash and water-ambience sounds (REN-29 task 16, optional)
   - Do: (NEEDS from REN-35): play a splash on PHY-16's `WaterEntered` and a looping water ambience near water volumes.
   - Done when: Entering the showcase pool splashes and the pool has ambience; tests.
   - Deps: PHY-16
@@ -445,7 +470,7 @@ Round 27+ goals: input is too tightly coupled with skateboarding; it needs a gam
   - Do: (ANI-21 design answer, 2026-11-10): edit 1D/2D blend trees of a state in the Animator window's state inspector, with live preview.
   - Done when: A blend tree can be created and edited from the window and saved in the controller file; tests.
   - Deps: ANI-21
-- [~] @skate-animation **ANI-26** `P2` Animator window lists the parameters the character writes (GPL-31)
+- [x] **ANI-26** `P2` Animator window lists the parameters the character writes (GPL-31)
   - Do: (NEEDS from GPL-31): in `AnimatorWindow.parametersPanel()`, call `CharacterAnimationDriver.writtenParameters(controller.preview)` and list the ones not declared yet under a "Written by the character" heading, with a one-click declare. New `lbl.animator_window.*` keys (EN, FR).
   - Done when: The Animator window lists the character's parameters and can declare them; tests.
   - Deps: GPL-31
@@ -499,7 +524,7 @@ Round 27+ goals: menu parity between the editor and the game, and a map view.
   - Done when: The Animator window lists the character's parameters; tests.
   - Result (2026-11-17): engine side done (`CharacterBehavior.animationParameters`, `CharacterAnimationDriver.writtenParameters`); the window display continues as ANI-26.
   - Deps: ANI-21
-- [~] @skate-gameplay **GPL-32** `P2` Bail and respawn on entering water (REN-29 task 15)
+- [x] **GPL-32** `P2` Bail and respawn on entering water (REN-29 task 15)
   - Do: (NEEDS from REN-35): a `PlayerController` policy `waterResponse = BAIL` that bails and respawns the player on PHY-16's `WaterEntered`.
   - Done when: Riding into the showcase pool bails and respawns the player; tests.
   - Deps: PHY-16
@@ -635,11 +660,11 @@ Round 27+ goals (human, 2026-11-06): fix editor bugs, make every window, dialog 
   - Do: From the human (2026-11-07): clicking `?` must open a **help window** showing the article for the selected topic — **not** a bigger tooltip/popover. The window is docked like other editor windows, lists the topics (table of contents) and renders the `.md` articles written by EDT-53. Add a **Help** menu item that opens the same window independently of any `?` button. Implement the approved design note.
   - Done when: `?` opens the window on the right topic, the Help menu item opens it with the topic list, articles are `.md` files under `assets/help/**`, and tests cover article discovery/loading, the menu entry and the `?` routing.
   - Deps: EDT-53
-- [~] @skate-editor **EDT-69** `P1` Asset Browser: one tab per asset type
+- [x] **EDT-69** `P1` Asset Browser: one tab per asset type
   - Do: Per AST-26: tabs for Models, Shaders, Sounds, Textures, Materials, Scripts, Animations, Prefabs, Fonts, Data and Items (current tabs: Prefabs, Animations, Textures, Sounds…; keep Prefabs unless AST-26 says otherwise), each with the shared search, empty states and context menu of EDT-52C; engine defaults shown whether copied or not.
   - Done when: Every type folder has a tab listing its files; tests.
   - Deps: AST-27
-- [ ] **EDT-70** `P1` New Project: copy the engine default assets or not
+- [~] @skate-editor **EDT-70** `P1` New Project: copy the engine default assets or not
   - Do: From the human (2026-11-10): a project-creation setting choosing whether `EngineDefaults` is copied into the project's assets folder; the behaviour of each mode comes from AST-26. Fold into the EDT-59 wizard design if it is approved first, otherwise add to the current wizard.
   - Done when: Both choices create a project that opens, plays and exports; the choice is a creation-time action, not stored (EDT-59 Q2, human 2026-11-10); tests.
   - Deps: AST-27
@@ -714,7 +739,12 @@ Round 27+ goals (human, 2026-11-06): fix editor bugs, make every window, dialog 
 - [ ] **EDT-92** `P2` Terrain inspector and tools (REN-28 task 10)
   - Do: (NEEDS from REN-36): terrain inspector (presets via `TerrainComponent.applyPreset`), sculpt and paint brushes writing `TerrainChunkData.setHeight` then `runtime.markEdited()`, a stamp gizmo, "Flatten terrain under", all undoable.
   - Done when: A terrain can be sculpted, painted and stamped from the editor with undo; tests.
-  - Deps: ECS-17 (needs REN-36 tasks 3–4 (checkpoint on agents/render, integrated in round 35))
+  - Also (REN-36 tasks 5–7): inspectors for biomes, layer rules, scatter rules, layers and climate; a toggle for `TerrainDebug.showBiomes`; biome paint writing `paintedBiomeIds` with `biomeSource = PAINTED`, then `runtime.markEdited()` (sculpting calls it too and now recomputes splat and scatter). (AST-36): create a terrain asset from the inspector with `TerrainAssetStore.create(<project>/Assets/Data, name, terrain)` and call `TerrainAssets.save(terrain)` on scene save and after sculpt strokes.
+  - Deps: ECS-17, AST-36
+- [ ] **EDT-93** `P2` Asset Browser: copy or replace engine assets (AST-26 §8)
+  - Do: (NEEDS from EDT-69): "Copy into project" and "Replace with engine version" as undoable Commands (`EngineAssetCopier.copy` exists), plus the "update available" notification.
+  - Done when: An engine asset can be copied into the project or reset to the engine version with undo; tests.
+  - Deps: EDT-69
 - [ ] **EDT-82** `P2` Editor-wide "unsaved assets" prompt on close
   - Do: (ANI-21 design answer, 2026-11-10): one prompt when the project or editor closes, listing the unsaved scene, animation clips and animator controllers, with Save all / Discard / Cancel.
   - Done when: Closing with unsaved assets asks first; tests for the dirty-document registry.
@@ -753,14 +783,16 @@ Round 27+ goals: tooling fixes, an Android feasibility study and new demo projec
 - [x] **TLG-16** `P2` Logical UI hierarchies in the sample projects
   - Do: (human, Discord 2026-11-10): in the Feature Showcase, the legend panel's items become children of the legend panel object and the other UI items are regrouped logically (HUD, menus, panels); same for every sample (Tetris, Marble Run, MainScene).
   - Done when: Each sample's Hierarchy shows grouped UI; samples still play; sample tests updated.
-- [~] @skate-tooling **TLG-17** `P2` Showcase Nature area part 1 (REN-29 task 13a)
+- [!] awaiting AST-37 (built-in water materials break the packing check) **TLG-17** `P2` Showcase Nature area part 1 (REN-29 task 13a)
   - Do: (NEEDS from REN-35): a 10 × 6 × 1.5 m pool with `WaterComponent(material = WaterMaterials.POOL)` and steps, floating crates of three densities, a ball and a log, a UI button named in `EnvironmentComponent.windCycleButton`, and `docs/samples.md`.
   - Done when: The Showcase Nature area part 1 (pool, floating props, wind) works on GL and VK; tests.
+  - Status (2026-11-17): code complete on agents/tooling (bb1e5d26); the full suite fails `ProjectLifecycleEndToEndTest.Lifecycle_9` until AST-37 lands.
   - Deps: REN-35, PHY-16, VK-08
 - [ ] **TLG-18** `P2` Showcase Terrain area (REN-28 task 11)
   - Do: (NEEDS from REN-36): a 96 m procedural island, a stamp under a ramp, a reroll button (`seedOffset`). Best after REN-36 tasks 5–7 (biomes, scatter).
   - Done when: The Showcase Terrain area plays in the editor and an export; tests.
-  - Deps: REN-36, PHY-26, ECS-17
+  - API (REN-36): place `TerrainComponent.showcaseIsland()` with a ramp on its pad (default local (-18, 10), height 3), and a "Reroll seed" button calling `reroll()`.
+  - Deps: REN-36, PHY-26, ECS-17, TLG-17
 
 ### Quality — `QA` (`skate-qa`)
 
@@ -769,6 +801,10 @@ Round 27+ goals: a warning-free build.
 - [x] **QA-17** `P0` Fix build warnings
   - Do: Remove the remaining Kotlin compiler and Gradle warnings (deprecations included) across the codebase, then make new warnings fail the build (`allWarningsAsErrors` or an equivalent CI check) with justified suppressions only.
   - Done when: `gradlew build` prints no warnings and CI fails on a new warning.
+- [~] @skate-qa **QA-18** `P3` Flaky `NoiseFieldTest`
+  - Do: (reported by skate-tooling, 2026-11-17): `NoiseFieldTest` failed once in a full run and passed on rerun. Find the source of non-determinism and fix it, or list it in `docs/bugs.md`.
+  - Done when: 20 consecutive runs pass; or the cause is documented.
+  - Deps: none
 
 ---
 

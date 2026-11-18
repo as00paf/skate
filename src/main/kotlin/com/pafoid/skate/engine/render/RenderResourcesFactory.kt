@@ -34,6 +34,9 @@ import com.pafoid.skate.engine.render.renderer.passes.UiPass
 import com.pafoid.skate.engine.render.renderer.passes.WaterPass
 import com.pafoid.skate.engine.render.renderer.passes.TerrainPass
 import com.pafoid.skate.engine.render.terrain.TerrainRenderer
+import com.pafoid.skate.engine.render.terrain.TerrainScatterRenderer
+import com.pafoid.skate.engine.render.terrain.RgbaImage
+import com.pafoid.skate.engine.render.material.MaterialAsset
 import com.pafoid.skate.engine.render.water.WaterRenderer
 import com.pafoid.skate.engine.render.shader.ShaderFeature
 import com.pafoid.skate.engine.render.shadow.ShadowFrame
@@ -97,6 +100,20 @@ class RenderResourcesFactory(
             localShadowMap = localShadowMap,
         )
     }
+
+    private val imageDecoder = com.pafoid.skate.engine.assets.loaders.TextureLoader()
+
+    /** Decodes a terrain layer texture to RGBA8 on the CPU (null when it can't be read). */
+    private fun terrainImage(path: String): RgbaImage? = runCatching {
+        val data = imageDecoder.decodeFromFile(assetsManager.paths.localPath(path))
+        try {
+            val bytes = ByteArray(data.width * data.height * 4)
+            data.pixels.get(0, bytes)
+            RgbaImage(data.width, data.height, bytes)
+        } finally {
+            imageDecoder.discard(data)
+        }
+    }.getOrNull()
 
     private fun loadShaders(): Shaders {
         return Shaders(
@@ -189,11 +206,24 @@ class RenderResourcesFactory(
             shader = { assetsManager.getShader(EngineDefaults.Shaders.TERRAIN) },
             pickingShader = { assetsManager.getShaderVariant(EngineDefaults.Shaders.TERRAIN, setOf(ShaderFeature.PICKING)) },
             depthShader = { assetsManager.getShaderVariant(EngineDefaults.Shaders.TERRAIN, setOf(ShaderFeature.DEPTH_ONLY)) },
-            renderer = TerrainRenderer(),
+            renderer = TerrainRenderer(
+                material = { path -> runCatching { assetsManager.readText(path)?.takeIf { it.isNotBlank() }?.let(MaterialAsset::fromJson) }.getOrNull() },
+                decode = { path -> terrainImage(path) },
+            ),
             frameBuffer = frameBuffer,
             sceneFrame = sceneFrame,
             cameraManager = cameraManager,
             useFbo = useFbo,
+            scatter = TerrainScatterRenderer(
+                modelRenderer = renderers.model,
+                loadModel = { path -> assetsManager.loadModel(path) },
+                loadMaterial = { path ->
+                    assetsManager.readText(path)?.takeIf { it.isNotBlank() }?.let { MaterialAsset.fromJson(it).toMaterial(assetsManager::getTexture) }
+                },
+            ),
+            scatterShader = { assetsManager.getShaderVariant(EngineDefaults.Shaders.DEFAULT_3D, setOf(ShaderFeature.INSTANCED)) },
+            scatterPickingShader = { assetsManager.getShaderVariant(EngineDefaults.Shaders.PICKING_3D, setOf(ShaderFeature.INSTANCED)) },
+            scatterShadowShader = { assetsManager.getShaderVariant(EngineDefaults.Shaders.SHADOW, setOf(ShaderFeature.INSTANCED)) },
         )
         renderers.shadow.sources += terrainPass.shadowCaster
 

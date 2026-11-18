@@ -207,6 +207,22 @@ object ShaderConst {
         const val TERRAIN_SKIRT_DROP = "uSkirtDrop"
         const val TERRAIN_BASE = "uTerrainBase"
 
+        /** Terrain materials (REN-28 §4.2): splat atlas layer of the chunk, the samplers and per-layer settings. */
+        const val TERRAIN_SPLAT_LAYER = "uSplatLayer"
+        const val TERRAIN_CHUNK_QUADS = "uChunkQuads"
+        const val TERRAIN_SPLAT_0 = "uSplat0"
+        const val TERRAIN_SPLAT_1 = "uSplat1"
+        const val TERRAIN_ALBEDO = "uLayerAlbedo"
+        const val TERRAIN_NORMAL = "uLayerNormal"
+        const val TERRAIN_ORM = "uLayerOrm"
+        const val TERRAIN_TILING_A = "uLayerTilingA"
+        const val TERRAIN_TILING_B = "uLayerTilingB"
+        const val TERRAIN_TRIPLANAR_A = "uLayerTriplanarA"
+        const val TERRAIN_TRIPLANAR_B = "uLayerTriplanarB"
+        const val TERRAIN_BIOME_DEBUG = "uBiomeDebug"
+        /** Separate uniforms, not an array, so every backend maps them the same. */
+        val TERRAIN_BIOME_COLORS = Array(8) { "uBiomeColor$it" }
+
         /** Texture units of the water pass (after the IBL units). */
         const val WATER_SCENE_COLOR_UNIT = 10
         const val WATER_SCENE_DEPTH_UNIT = 11

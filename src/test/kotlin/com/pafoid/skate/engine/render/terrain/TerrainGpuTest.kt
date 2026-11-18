@@ -13,7 +13,6 @@ import com.pafoid.skate.engine.render.rhi.vulkan.FrameDiff
 import com.pafoid.skate.engine.render.rhi.vulkan.ParityView
 import com.pafoid.skate.engine.render.rhi.vulkan.look
 import com.pafoid.skate.engine.render.shader.ShaderFeature
-import com.pafoid.skate.engine.terrain.TerrainPreset
 import com.pafoid.skate.testing.GpuTest
 import org.joml.Vector3f
 import org.junit.jupiter.api.Assertions.assertNotNull
@@ -36,8 +35,9 @@ class TerrainGpuTest {
 
     private fun Engine.addTerrain() {
         val scene = sceneManager.currentScene!!
-        scene.addChild(GameObject("Hills").addComponent(Transform().apply { translation.set(0f, -2f, -70f) })
-            .addComponent(TerrainComponent(sizeMetres = 128f, chunkQuads = 32, heightScaleMetres = 30f, recipe = TerrainPreset.MOUNTAINS.recipe())))
+        // The showcase island (REN-28 §11): beach, grass with rocks, rocky peak, a flattened pad
+        scene.addChild(GameObject("Island").addComponent(Transform().apply { translation.set(0f, -0.5f, -60f) })
+            .addComponent(TerrainComponent.showcaseIsland()))
         for (feature in listOf(ShaderFeature.PICKING, ShaderFeature.DEPTH_ONLY)) {
             assertNotNull(assetsManager.getShaderVariant(EngineDefaults.Shaders.TERRAIN, setOf(feature)).rhi, feature.name)
         }

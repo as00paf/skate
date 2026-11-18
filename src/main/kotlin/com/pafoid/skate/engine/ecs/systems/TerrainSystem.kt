@@ -1,5 +1,6 @@
 package com.pafoid.skate.engine.ecs.systems
 
+import com.pafoid.skate.engine.assets.terrain.TerrainAssets
 import com.pafoid.skate.engine.ecs.components.TerrainComponent
 import com.pafoid.skate.engine.ecs.random.RandomService
 import com.pafoid.skate.engine.ecs.systems.SystemManager.ExecutionPriority
@@ -22,9 +23,14 @@ class TerrainSystem : System(priority = ExecutionPriority.EARLY) {
     override fun update(dt: Float) {
         rebuilt = 0
         val seed = randomService?.seed ?: RandomService.DEFAULT_SEED
+        TerrainAssets.poll() // AST-36: hot reload of `.skterrain` assets (editor; throttled)
         terrains.forEach { go ->
             val terrain = go.getComponent<TerrainComponent>()?.takeIf { it.enabled } ?: return@forEach
-            if (terrain.runtime.ensureBuilt(terrain.key(seed))) rebuilt++
+            // AST-36: the asset's document, then its saved chunks (DATA, or sculpted chunks of a procedural terrain).
+            TerrainAssets.beforeBuild(terrain)
+            val built = terrain.runtime.ensureBuilt(terrain.key(seed))
+            if (built) rebuilt++
+            TerrainAssets.afterBuild(terrain, built)
         }
     }
 }

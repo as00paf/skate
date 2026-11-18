@@ -212,9 +212,15 @@ class MapTilesTest {
         val pool = Executors.newFixedThreadPool(10)
         val tokens = (0 until 10).map { CancelToken() }
         val futures = (0 until 10).map { i -> pool.submit<TileData?> { runCatching { c.fetch(source, TileKey(14, i, 0), tokens[i]) }.getOrNull() } }
-        Thread.sleep(300)
+        val deadline = System.currentTimeMillis() + 5000
+        while (synchronized(http.requests) { http.requests.size } < TileClient.MAX_IN_FLIGHT && System.currentTimeMillis() < deadline) Thread.sleep(10)
+        Thread.sleep(100) // give the other six time to queue behind the limit
         assertEquals(TileClient.MAX_IN_FLIGHT, peak.get())
-        tokens.drop(8).forEach { it.cancel() } // two tiles scroll out of view while waiting
+        // Two tiles that are still waiting scroll out of view.
+        val sent = synchronized(http.requests) { http.requests.map { it.first } }
+        val waiting = (0 until 10).filter { i -> sent.none { url -> url.endsWith("/14/$i/0.pbf") } }
+        assertEquals(10 - TileClient.MAX_IN_FLIGHT, waiting.size)
+        waiting.take(2).forEach { tokens[it].cancel() }
         release.countDown()
         futures.forEach { it.get(5, TimeUnit.SECONDS) }
         pool.shutdown()

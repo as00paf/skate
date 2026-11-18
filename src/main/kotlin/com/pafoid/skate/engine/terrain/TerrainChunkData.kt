@@ -25,6 +25,21 @@ class TerrainChunkData(
     /** Set when the heights changed and derived data (mesh, collider, scatter) must be rebuilt. */
     var dirty = true
 
+    /**
+     * Material layer weights (REN-28 §4.2): [TerrainWeights.LAYERS] bytes per own sample (`(chunkQuads + 1)²`, row-major
+     * by Z), summing to 255; null until computed.
+     */
+    var splat: ByteArray? = null
+
+    /** Dominant biome index per own sample (REN-28 §6); null until computed. */
+    var biomeIds: ByteArray? = null
+
+    /** Painted biome ids per own sample for `BiomeSource.PAINTED` (editor/asset data); null uses the climate map. */
+    var paintedBiomeIds: ByteArray? = null
+
+    /** Scatter items placed on this chunk (REN-28 §7). */
+    var scatter: List<ScatterInstance> = emptyList()
+
     /** Height of sample (i, j), apron included (i, j in -1..chunkQuads + 1). */
     fun height(i: Int, j: Int): Float = heights[(j + 1) * stride + (i + 1)]
 
