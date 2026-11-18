@@ -28,6 +28,9 @@ object StringFields {
 
     private val savedNames = HashMap<Class<*>, Set<String>?>()
 
+    /** Below this width (in font sizes) a GameObject reference's picker goes under its text field (EDT-100). */
+    private const val MIN_SIDE_BY_SIDE_EMS = 16f
+
     /**
      * True when [field] of [type] is a String the scene file saves. `kotlinx.serialization.Transient` runtime state
      * (e.g. `PlayerController.state`) is not JVM-transient, so the serializer's element names are the reference.
@@ -106,8 +109,12 @@ object StringFields {
         val id = "##string.${field.name}"
         val isRef = isGameObjectRef(field)
 
-        ImGui.text(label)
-        if (isRef) ImGui.setNextItemWidth(ImGui.getContentRegionAvailX() * 0.6f)
+        // EDT-100: the label wraps and the field fills the width, so a narrow inspector never clips them.
+        ImGui.pushTextWrapPos(0f)
+        ImGui.textUnformatted(label)
+        ImGui.popTextWrapPos()
+        val pickerBeside = isRef && ImGui.getContentRegionAvailX() >= ImGui.getFontSize() * MIN_SIDE_BY_SIDE_EMS
+        ImGui.setNextItemWidth(if (pickerBeside) ImGui.getContentRegionAvailX() * 0.6f else -1f)
         ImGui.inputText(id, draft, ImGuiInputTextFlags.None)
         if (ImGui.isItemDeactivatedAfterEdit()) {
             d.editing = false
@@ -122,7 +129,7 @@ object StringFields {
         acceptHierarchyDrop(engine, component, field)
         Tooltips.text(strings.getString("inspector.string_field.drop_hint"))
 
-        ImGui.sameLine()
+        if (pickerBeside) ImGui.sameLine()
         ImGui.setNextItemWidth(-1f)
         val scene = engine.sceneManager.currentScene
         val none = strings.getString("inspector.string_field.none")
@@ -134,7 +141,9 @@ object StringFields {
             ImGui.endCombo()
         }
         if (!current.isNullOrEmpty() && scene != null && scene.findFirstByName(current) == null) {
+            ImGui.pushTextWrapPos(0f)
             ImGui.textColored(1f, 0.6f, 0.2f, 1f, strings.getString("inspector.string_field.missing", current))
+            ImGui.popTextWrapPos()
         }
     }
 

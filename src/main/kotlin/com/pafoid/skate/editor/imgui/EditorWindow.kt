@@ -82,6 +82,8 @@ abstract class EditorWindow(
         }
         val visible = if (closable) ImGui.begin(title, isOpen, windowFlags) else ImGui.begin(title, windowFlags)
         if (!isDialog && host == null) DefaultDockLayout.docks.record(name, ImGui.getWindowDockID())
+        // A window with a horizontal scrollbar can reach its overflow: only the others report it.
+        if (windowFlags and ImGuiWindowFlags.HorizontalScrollbar == 0) InspectorLayout.windowProbe?.invoke(name, ImGui.getScrollMaxX())
         val focused = ImGui.isWindowFocused(ImGuiFocusedFlags.RootAndChildWindows)
         ToolWindowStates.report(name, visible, focused) // EDT-84: the side-bar buttons' look and click
         if (canMaximize) {
