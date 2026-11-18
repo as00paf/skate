@@ -27,208 +27,146 @@ object MImGui {
     private fun tr(key: String, fallback: String): String = strings?.getString(key) ?: fallback
 
 
-    const val DEFAULT_COLUMN_WIDTH = 220f
-    private const val SENSIBILITY = 0.01f
+    /** Kept for callers outside the inspectors; rows now size their label column with [InspectorLayout] (EDT-100). */
     const val SENSIBILITY_SCALE = 0.005f
     const val SENSIBILITY_ROTATION = 0.1f
+    private const val SENSIBILITY = 0.01f
 
-    /** Draws a two-column table with label and vector2 editor + reset buttons. */
-    fun drawVec2Control(label: String, values: Vector2f, resetValue: Float = 0f, columnWidth: Float = DEFAULT_COLUMN_WIDTH, sens: Float = SENSIBILITY) {
-        ImGui.pushID(label)
-
-        if (ImGui.beginTable("##${label}_table", 2, 0, 2f)) {
-            // EDT-87: a width needs an explicit sizing policy; without one ImGui asserts and the editor aborts.
-            ImGui.tableSetupColumn("##Label", ImGuiTableColumnFlags.WidthFixed, columnWidth)
-            ImGui.tableSetupColumn("##Control")
-            ImGui.tableNextRow()
-            ImGui.tableSetColumnIndex(0)
-            ImGui.text(label)
-            ImGui.tableSetColumnIndex(1)
-
-            drawVec2Axis(values, resetValue, sens)
-
-            ImGui.endTable()
+    /**
+     * A labelled value row (EDT-100): label and [control] side by side, the label column sized by [InspectorLayout]
+     * from the width the row has, or stacked (label above, [control] full width) when the window is too narrow.
+     * [control] gets the full width of its side (`pushItemWidth(-1)`). A label longer than its column is shortened with
+     * "..." and shows in full as a tooltip. No table: the last item after the row is still [control]'s, so callers can
+     * check `isItemDeactivatedAfterEdit` or attach a tooltip after it. [labelExtra] draws right after the label.
+     */
+    fun row(label: String, id: String = label, labelExtra: () -> Unit = {}, control: () -> Unit) {
+        ImGui.pushID(id)
+        val startX = ImGui.getCursorPosX()
+        val layout = InspectorLayout.row(ImGui.getContentRegionAvailX(), ImGui.getFontSize().toFloat())
+        if (layout.stacked) {
+            ImGui.pushTextWrapPos(0f)
+            ImGui.textUnformatted(label)
+            ImGui.popTextWrapPos()
+            labelExtra()
+        } else {
+            ImGui.alignTextToFramePadding()
+            val shown = InspectorLayout.fit(label, layout.labelWidth - ImGui.getStyle().itemSpacingX) { ImGui.calcTextSize(it).x }
+            ImGui.textUnformatted(shown)
+            if (shown != label) Tooltips.always(label)
+            labelExtra()
+            ImGui.sameLine(startX + layout.labelWidth)
         }
+        ImGui.pushItemWidth(-1f)
+        control()
+        ImGui.popItemWidth()
+        report(id)
         ImGui.popID()
     }
 
     /**
-     * Draws a customized control for editing a [Vector3f].
-     *
-     * @param label The label to display for the control.
-     * @param values The vector to be edited.
-     * @param resetValue The value to set when a component's reset button is clicked.
-     * @param columnWidth The width of the label column.
-     * @param sens The sensitivity of the drag float controls.
+     * `sameLine()` when an item [width] pixels wide still fits on the current line, else nothing (the item goes on the
+     * next line). For rows of buttons in a window that can be narrow (EDT-100).
      */
-    fun drawVec3Control(label: String, values: Vector3f, resetValue: Float = 0f, columnWidth: Float = DEFAULT_COLUMN_WIDTH, sens: Float = SENSIBILITY) {
-        ImGui.pushID(label)
-        ImGui.pushStyleVar(ImGuiStyleVar.ItemSpacing, ImGui.getStyle().itemSpacingX, ImGui.getStyle().itemSpacingY)
-        ImGui.columns(2)
-        ImGui.setColumnWidth(0, columnWidth)
-        ImGui.text(label)
-        ImGui.nextColumn()
-
-        val lineHeight = ImGui.getFontSize() + ImGui.getStyle().framePaddingY * 2f
-        val buttonSizeX = lineHeight + 3
-        val buttonSizeY = lineHeight
-
-        val widthEach = (ImGui.calcItemWidth() - (buttonSizeX * 3f)) / 3f
-
-        // X
-        ImGui.pushItemWidth(widthEach)
-        ImGui.pushStyleColor(ImGuiCol.Button, Color.BLUE.x, Color.BLUE.y, Color.BLUE.z, Color.BLUE.w)
-        ImGui.pushStyleColor(ImGuiCol.ButtonHovered, 0.9f, 0.2f, 0.2f, 1.0f)
-        ImGui.pushStyleColor(ImGuiCol.ButtonActive, 0.8f, 0.1f, 0.15f, 1.0f)
-        if (ImGui.button("X", buttonSizeX, buttonSizeY)) {
-            values.x = resetValue
-        }
-        ImGui.popStyleColor(3)
-
-        ImGui.sameLine()
-        val vecValuesX = floatArrayOf(values.x)
-        ImGui.dragFloat("##x", vecValuesX, sens)
-        values.x = vecValuesX[0]
-        ImGui.popItemWidth()
-        ImGui.sameLine()
-
-        // Y
-        ImGui.pushItemWidth(widthEach)
-        ImGui.pushStyleColor(ImGuiCol.Button, Color.GREEN.x, Color.GREEN.y, Color.GREEN.z, Color.GREEN.w)
-        ImGui.pushStyleColor(ImGuiCol.ButtonHovered, 0.3f, 0.8f, 0.3f, 1.0f)
-        ImGui.pushStyleColor(ImGuiCol.ButtonActive, 0.2f, 0.7f, 0.2f, 1.0f)
-        if (ImGui.button("Y", buttonSizeX, buttonSizeY)) {
-            values.y = resetValue
-        }
-        ImGui.popStyleColor(3)
-
-        ImGui.sameLine()
-        val vecValuesY = floatArrayOf(values.y)
-        ImGui.dragFloat("##y", vecValuesY, sens)
-        values.y = vecValuesY[0]
-        ImGui.popItemWidth()
-        ImGui.sameLine()
-
-        // Z
-        ImGui.pushItemWidth(widthEach)
-        ImGui.pushStyleColor(ImGuiCol.Button, Color.RED.x, Color.RED.y, Color.RED.z, Color.RED.w)
-        ImGui.pushStyleColor(ImGuiCol.ButtonHovered, 0.2f, 0.35f, 0.9f, 1.0f)
-        ImGui.pushStyleColor(ImGuiCol.ButtonActive, 0.1f, 0.25f, 0.8f, 1.0f)
-        if (ImGui.button("Z", buttonSizeX, buttonSizeY)) {
-            values.z = resetValue
-        }
-        ImGui.popStyleColor(3)
-
-        ImGui.sameLine()
-        val vecValuesZ = floatArrayOf(values.z)
-        ImGui.dragFloat("##z", vecValuesZ, sens)
-        values.z = vecValuesZ[0]
-        ImGui.popItemWidth()
-
-        ImGui.nextColumn()
-
-        ImGui.popStyleVar()
-        ImGui.columns(1)
-        ImGui.popID()
+    fun sameLineIfFits(width: Float) {
+        val spacing = ImGui.getStyle().itemSpacingX
+        val right = ImGui.getWindowPosX() + ImGui.getWindowContentRegionMaxX()
+        if (ImGui.getItemRectMaxX() + spacing + width <= right) ImGui.sameLine()
     }
 
     /**
-     * Draws a customized control for editing a [Vector4f].
-     *
-     * @param label The label to display for the control.
-     * @param values The vector to be edited.
-     * @param resetValue The value to set when a component's reset button is clicked.
-     * @param columnWidth The width of the label column.
-     * @param sens The sensitivity of the drag float controls.
+     * A button no wider than the space left on its line (EDT-100): a label too long for a narrow window is cut inside
+     * the button instead of pushing it past the edge. Wrap it in `tipped` as usual so the full text stays readable.
      */
-    fun drawVec4Control(
-        label: String,
-        values: Vector4f,
-        resetValue: Float = 0f,
-        columnWidth: Float = DEFAULT_COLUMN_WIDTH,
-        sens: Float = SENSIBILITY
-    ) {
-        ImGui.pushID(label)
-        ImGui.pushStyleVar(ImGuiStyleVar.ItemSpacing, ImGui.getStyle().itemSpacingX, ImGui.getStyle().itemSpacingY)
-        ImGui.columns(2)
-        ImGui.setColumnWidth(0, columnWidth)
-        ImGui.text(label)
-        ImGui.nextColumn()
+    fun fitButton(label: String): Boolean {
+        val avail = ImGui.getContentRegionAvailX()
+        return if (buttonWidth(label) > avail) ImGui.button(label, avail.coerceAtLeast(ImGui.getFrameHeight()), 0f) else ImGui.button(label)
+    }
 
-        val lineHeight = ImGui.getFontSize() + ImGui.getStyle().framePaddingY * 2f
-        val buttonSizeX = lineHeight + 3
-        val buttonSizeY = lineHeight
+    /**
+     * A framed tree node whose [label] never widens the window (EDT-100): ImGui sizes a tree node by its label, so a
+     * long one made a narrow inspector wider than itself. The node is drawn with a hidden label and the text painted
+     * into its frame, shortened with "..." (full text as a tooltip). Call `treePop()` when it returns true.
+     */
+    fun treeHeader(label: String, id: String, flags: Int = 0): Boolean {
+        val open = ImGui.treeNodeEx("##$id", flags or imgui.flag.ImGuiTreeNodeFlags.Framed)
+        val style = ImGui.getStyle()
+        val textX = ImGui.getItemRectMinX() + ImGui.getFontSize() + style.framePaddingX * 2f
+        val right = ImGui.getItemRectMaxX() - style.framePaddingX
+        val shown = InspectorLayout.fit(label, right - textX) { ImGui.calcTextSize(it).x }
+        ImGui.getWindowDrawList().addText(textX, ImGui.getItemRectMinY() + style.framePaddingY, ImGui.getColorU32(ImGuiCol.Text), shown)
+        if (shown != label) Tooltips.always(label)
+        return open
+    }
 
-        val widthEach = (ImGui.calcItemWidth() - (buttonSizeX * 3f)) / 3f
+    /** The width of a button labelled [label] (its `##id` part hidden). */
+    fun buttonWidth(label: String): Float = ImGui.calcTextSize(label, true).x + ImGui.getStyle().framePaddingX * 2f
 
-        // X
-        ImGui.pushItemWidth(widthEach)
-        ImGui.pushStyleColor(ImGuiCol.Button, Color.BLUE.x, Color.BLUE.y, Color.BLUE.z, Color.BLUE.w)
-        ImGui.pushStyleColor(ImGuiCol.ButtonHovered, 0.9f, 0.2f, 0.2f, 1.0f)
-        ImGui.pushStyleColor(ImGuiCol.ButtonActive, 0.8f, 0.1f, 0.15f, 1.0f)
-        if (ImGui.button("X", buttonSizeX, buttonSizeY)) {
-            values.x = resetValue
+    /** Text that wraps at the window's edge (EDT-100), for hints and read-outs in narrow windows. */
+    fun wrappedText(text: String) {
+        ImGui.pushTextWrapPos(0f)
+        ImGui.textUnformatted(text)
+        ImGui.popTextWrapPos()
+    }
+
+    /** Reports the last item to [InspectorLayout.probe] with the area it had (the guard test's hook). */
+    private fun report(id: String) {
+        val probe = InspectorLayout.probe ?: return
+        val clip = ImGui.getWindowDrawList()
+        probe(InspectorLayout.Field(id, ImGui.getItemRectMinX(), ImGui.getItemRectMaxX(), clip.clipRectMinX,
+            ImGui.getWindowPosX() + ImGui.getWindowContentRegionMaxX()))
+    }
+
+    /**
+     * [count] axis fields (X, Y, Z, W): a coloured reset button and a number field each, on one line when they fit,
+     * else one per line ([InspectorLayout.axes]). [set] gets each changed value; returns true when one changed.
+     */
+    private fun axisFields(count: Int, get: (Int) -> Float, set: (Int, Float) -> Unit, reset: (Int) -> Unit, sens: Float): Boolean {
+        val height = ImGui.getFrameHeight()
+        val button = height + 3f
+        val spacing = ImGui.getStyle().itemInnerSpacingX
+        val layout = InspectorLayout.axes(ImGui.getContentRegionAvailX(), count, button, spacing, ImGui.getFontSize().toFloat())
+        var changed = false
+        for (i in 0 until count) {
+            if (i > 0 && layout.oneLine) ImGui.sameLine(0f, spacing)
+            pushAxisColors(i)
+            if (ImGui.button(AXES[i], button, height)) {
+                reset(i)
+                changed = true
+            }
+            ImGui.popStyleColor(3)
+            ImGui.sameLine(0f, 0f)
+            ImGui.setNextItemWidth(layout.fieldWidth)
+            val v = floatArrayOf(get(i))
+            if (ImGui.dragFloat("##${AXES[i]}", v, sens)) {
+                set(i, v[0])
+                changed = true
+            }
+            report("axis_${AXES[i]}")
         }
-        ImGui.popStyleColor(3)
+        return changed
+    }
 
-        ImGui.sameLine()
-        val vecValuesX = floatArrayOf(values.x)
-        ImGui.dragFloat("##x", vecValuesX, sens)
-        values.x = vecValuesX[0]
-        ImGui.popItemWidth()
-        ImGui.sameLine()
+    private val AXES = arrayOf("X", "Y", "Z", "W")
 
-        // Y
-        ImGui.pushItemWidth(widthEach)
-        ImGui.pushStyleColor(ImGuiCol.Button, Color.GREEN.x, Color.GREEN.y, Color.GREEN.z, Color.GREEN.w)
-        ImGui.pushStyleColor(ImGuiCol.ButtonHovered, 0.3f, 0.8f, 0.3f, 1.0f)
-        ImGui.pushStyleColor(ImGuiCol.ButtonActive, 0.2f, 0.7f, 0.2f, 1.0f)
-        if (ImGui.button("Y", buttonSizeX, buttonSizeY)) {
-            values.y = resetValue
+    /** A label and a [Vector2f] with per-axis reset buttons. */
+    fun drawVec2Control(label: String, values: Vector2f, resetValue: Float = 0f, sens: Float = SENSIBILITY) {
+        row(label) {
+            axisFields(2, { values[it] }, { i, v -> values.setComponent(i, v) }, { values.setComponent(it, resetValue) }, sens)
         }
-        ImGui.popStyleColor(3)
+    }
 
-        ImGui.sameLine()
-        val vecValuesY = floatArrayOf(values.y)
-        ImGui.dragFloat("##y", vecValuesY, sens)
-        values.y = vecValuesY[0]
-        ImGui.popItemWidth()
-        ImGui.sameLine()
-
-        // Z
-        ImGui.pushItemWidth(widthEach)
-        ImGui.pushStyleColor(ImGuiCol.Button, Color.RED.x, Color.RED.y, Color.RED.z, Color.RED.w)
-        ImGui.pushStyleColor(ImGuiCol.ButtonHovered, 0.2f, 0.35f, 0.9f, 1.0f)
-        ImGui.pushStyleColor(ImGuiCol.ButtonActive, 0.1f, 0.25f, 0.8f, 1.0f)
-        if (ImGui.button("Z", buttonSizeX, buttonSizeY)) {
-            values.z = resetValue
+    /** A label and a [Vector3f] with per-axis reset buttons. */
+    fun drawVec3Control(label: String, values: Vector3f, resetValue: Float = 0f, sens: Float = SENSIBILITY) {
+        row(label) {
+            axisFields(3, { values[it] }, { i, v -> values.setComponent(i, v) }, { values.setComponent(it, resetValue) }, sens)
         }
-        ImGui.popStyleColor(3)
-
-        ImGui.sameLine()
-        val vecValuesZ = floatArrayOf(values.z)
-        ImGui.dragFloat("##z", vecValuesZ, sens)
-        values.z = vecValuesZ[0]
-        ImGui.popItemWidth()
-
-        ImGui.nextColumn()
-
-        ImGui.popStyleVar()
-        ImGui.columns(1)
-        ImGui.popID()
     }
 
     private var uniformScaling: Boolean = true
 
     /**
-     * Draws a customized control for editing a [Vector3f] representing a transform (e.g., scale).
-     * Includes an option for uniform scaling.
-     *
-     * @param label The label for the control.
-     * @param values The vector to be edited.
-     * @param resetValue The value to set when a component's reset button is clicked.
-     * @param sens The sensitivity of the drag float controls.
-     * @param scale Is this the scale parameter.
+     * A Transform vector (translation, rotation or scale). For [scale], the Uniform toggle next to the label makes
+     * every axis follow the one being edited or reset.
      */
     fun drawVec3TransformControl(
         label: String,
@@ -237,173 +175,76 @@ object MImGui {
         sens: Float = SENSIBILITY,
         scale: Boolean = false
     ) {
-        ImGui.pushID(label)
-        ImGui.pushStyleVar(ImGuiStyleVar.ItemSpacing, ImGui.getStyle().itemSpacingX, ImGui.getStyle().itemSpacingY)
-        ImGui.columns(2)
-        ImGui.setColumnWidth(0, DEFAULT_COLUMN_WIDTH)
-        ImGui.text(label)
-
-        if (scale) {
-            ImGui.sameLine()
-            val imBool = imgui.type.ImBoolean(uniformScaling)
-            if (ImGui.checkbox(tr("lbl.transform.uniform", "Uniform") + "###uniform_scaling", imBool)) {
-                uniformScaling = imBool.get()
+        val uniform = { uniformScaling && scale }
+        row(label, labelExtra = {
+            if (scale) {
+                // EDT-100: a small link toggle that fits the label column; its name is the tooltip.
+                ImGui.sameLine()
+                val icon = if (uniformScaling) Icons.LINK else Icons.UNLOCK
+                if (ImGui.smallButton("$icon###uniform_scaling")) uniformScaling = !uniformScaling
+                Tooltips.always(tr("lbl.transform.uniform", "Uniform"))
             }
+        }) {
+            axisFields(
+                3,
+                get = { values[it] },
+                set = { i, v ->
+                    if (uniform()) {
+                        val diff = v - values[i]
+                        for (a in 0..2) values.setComponent(a, if (a == i) v else values[a] + diff)
+                    } else values.setComponent(i, v)
+                },
+                reset = { i -> if (uniform()) values.set(resetValue) else values.setComponent(i, resetValue) },
+                sens = sens,
+            )
         }
-
-        ImGui.nextColumn()
-
-        val lineHeight = ImGui.getFontSize() + ImGui.getStyle().framePaddingY * 2f
-        val buttonSizeX = lineHeight + 3
-        val buttonSizeY = lineHeight
-        val widthEach = (ImGui.calcItemWidth() - (buttonSizeX * 3f)) / 3f
-
-        // X
-        ImGui.pushItemWidth(widthEach)
-        ImGui.pushStyleColor(ImGuiCol.Button, Color.BLUE.x, Color.BLUE.y, Color.BLUE.z, Color.BLUE.w)
-        if (ImGui.button("X", buttonSizeX, buttonSizeY)) {
-            values.x = resetValue
-            if (uniformScaling && scale) {
-                values.y = resetValue
-                values.z = resetValue
-            }
-        }
-        ImGui.popStyleColor(1)
-
-        ImGui.sameLine()
-        val vecValuesX = floatArrayOf(values.x)
-        if (ImGui.dragFloat("##x", vecValuesX, sens)) {
-            if (uniformScaling && scale) {
-                val diff = vecValuesX[0] - values.x
-                values.x = vecValuesX[0]
-                values.y += diff
-                values.z += diff
-            } else {
-                values.x = vecValuesX[0]
-            }
-        }
-        ImGui.popItemWidth()
-        ImGui.sameLine()
-
-        // Y
-        ImGui.pushItemWidth(widthEach)
-        ImGui.pushStyleColor(ImGuiCol.Button, Color.GREEN.x, Color.GREEN.y, Color.GREEN.z, Color.GREEN.w)
-        if (ImGui.button("Y", buttonSizeX, buttonSizeY)) {
-            values.y = resetValue
-            if (uniformScaling && scale) {
-                values.x = resetValue
-                values.z = resetValue
-            }
-        }
-        ImGui.popStyleColor(1)
-
-        ImGui.sameLine()
-        val vecValuesY = floatArrayOf(values.y)
-        if (ImGui.dragFloat("##y", vecValuesY, sens)) {
-            if (uniformScaling && scale) {
-                val diff = vecValuesY[0] - values.y
-                values.y = vecValuesY[0]
-                values.x += diff
-                values.z += diff
-            } else {
-                values.y = vecValuesY[0]
-            }
-        }
-        ImGui.popItemWidth()
-        ImGui.sameLine()
-
-        // Z
-        ImGui.pushItemWidth(widthEach)
-        ImGui.pushStyleColor(ImGuiCol.Button, Color.RED.x, Color.RED.y, Color.RED.z, Color.RED.w)
-        if (ImGui.button("Z", buttonSizeX, buttonSizeY)) {
-            values.z = resetValue
-            if (uniformScaling && scale) {
-                values.x = resetValue
-                values.y = resetValue
-            }
-        }
-        ImGui.popStyleColor(1)
-
-        ImGui.sameLine()
-        val vecValuesZ = floatArrayOf(values.z)
-        if (ImGui.dragFloat("##z", vecValuesZ, sens)) {
-            if (uniformScaling && scale) {
-                val diff = vecValuesZ[0] - values.z
-                values.z = vecValuesZ[0]
-                values.x += diff
-                values.y += diff
-            } else {
-                values.z = vecValuesZ[0]
-            }
-        }
-        ImGui.popItemWidth()
-
-        ImGui.nextColumn()
-
-        ImGui.popStyleVar()
-        ImGui.columns(1)
-        ImGui.popID()
     }
 
     fun sliderFloat(value: Float, label: String, min: Float = 0f, max: Float = 1f): Float {
         val valueArr = floatArrayOf(value)
-        ImGui.text(label)
-        ImGui.sameLine()
-        ImGui.pushItemWidth(ImGui.getContentRegionAvailX())
-        ImGui.sliderFloat("##slider_float_$label", valueArr, min, max)
-        ImGui.popItemWidth()
+        row(label) { ImGui.sliderFloat("##slider_float", valueArr, min, max) }
         return valueArr[0]
     }
 
-    /** Draws a drag-float control. */
+    /** A labelled checkbox in the shared row (EDT-100): its label sits on the left like every other value. */
+    fun checkbox(label: String, value: Boolean, id: String = label): Boolean {
+        var clicked = false
+        row(label, id) { clicked = ImGui.checkbox("##value", value) }
+        return clicked
+    }
+
+    /**
+     * Any labelled control in the shared row (EDT-100). [control] draws one widget with a hidden label (`##id`) and
+     * may check `isItemDeactivatedAfterEdit` right after it; returns what [control] returns.
+     */
+    fun <T> field(label: String, id: String = label, control: () -> T): T {
+        var result: T? = null
+        row(label, id) { result = control() }
+        @Suppress("UNCHECKED_CAST")
+        return result as T
+    }
+
+    /** A labelled drag-float. */
     fun dragFloat(label: String, value: Float): Float {
-        ImGui.pushID(label)
-
-        ImGui.columns(2)
-        ImGui.setColumnWidth(0, DEFAULT_COLUMN_WIDTH)
-        ImGui.text(label)
-        ImGui.nextColumn()
-
         val valArray = floatArrayOf(value)
-        ImGui.dragFloat("##dragFloat", valArray, 0.1f)
-
-        ImGui.columns(1)
-        ImGui.popID()
-
+        row(label) { ImGui.dragFloat("##dragFloat", valArray, 0.1f) }
         return valArray[0]
     }
 
-    /** Draws a drag-int control. */
-    // TODO: fix table
+    /** A labelled drag-int. */
     fun dragInt(label: String, value: Int): Int {
-        ImGui.pushID(label)
-
-        ImGui.columns(2)
-        ImGui.setColumnWidth(0, DEFAULT_COLUMN_WIDTH)
-        ImGui.text(label)
-        ImGui.nextColumn()
-
         val valArray = intArrayOf(value)
-        ImGui.dragInt("##dragInt", valArray, 1f)
-
-        ImGui.columns(1)
-        ImGui.popID()
-
+        row(label) { ImGui.dragInt("##dragInt", valArray, 1f) }
         return valArray[0]
     }
 
     @Suppress("UNCHECKED_CAST")
     fun <T : Enum<*>> enumDropdown(label: String, value: T): T {
         val index = ImInt(value.ordinal)
-
-        val enumValues = value.declaringJavaClass.enumConstants.map { it.toString() }.toTypedArray()
-        ImGui.columns(2)
-        ImGui.setColumnWidth(0, DEFAULT_COLUMN_WIDTH)
-        ImGui.text(label)
-        ImGui.nextColumn()
-        ImGui.combo("##$label", index, enumValues, enumValues.size)
-        ImGui.columns(1)
-        return value.declaringJavaClass.enumConstants[index.get()] as T
+        val constants = value.declaringJavaClass.enumConstants
+        val names = strings?.let { s -> constants.map { EnumLabels.of(s, it as Enum<*>) } } ?: constants.map { it.toString() }
+        row(label) { ImGui.combo("##$label", index, names.toTypedArray(), names.size) }
+        return constants[index.get()] as T
     }
 
     fun textureDropdown(label: String, value: Texture?, assetsManager: AssetsManager, defaultValue: String): Texture? {
@@ -415,78 +256,46 @@ object MImGui {
         val index = ImInt(max(0, values.indexOf(value)))
 
         var removed = false
-        return if (ImGui.beginTable("##${label}_table", 2, 0, 2f)) {
-            ImGui.tableSetupColumn("##Label", 0)
-            ImGui.tableSetupColumn("##Control")
-
-            ImGui.tableNextRow()
-            ImGui.tableSetColumnIndex(0)
-            ImGui.text(label)
-            ImGui.tableSetColumnIndex(1)
-
+        var result = false
+        row(label) {
             // EDT-86: the combo leaves room for Delete at the current style (it was cut off at the right end).
             val remove = "${Icons.TRASH}##remove"
-            val row = TrailingButtons.begin(remove)
-            val result = ImGui.combo("##$label", index, labels.toTypedArray(), labels.size)
-            row.next()
+            val trailing = TrailingButtons.begin(remove)
+            result = ImGui.combo("##$label", index, labels.toTypedArray(), labels.size)
+            trailing.next()
             removed = ImGui.button(remove)
             strings?.let { Tooltips.show(it, "lbl.texture.remove.tooltip") }
-
-            ImGui.endTable()
-            if (removed) null
-            else if (result) {
-                if (value == null) values.getOrNull(index.get() - 1) else values.getOrNull(index.get())
-            } else value
-        } else null
+        }
+        return when {
+            removed -> null
+            result -> if (value == null) values.getOrNull(index.get() - 1) else values.getOrNull(index.get())
+            else -> value
+        }
     }
 
-    /** Draws a two-column table with label and RGBA color picker. */
+    /** A labelled RGBA color picker. */
     fun colorPicker4(label: String, color: Vector4f): Boolean {
         var res = false
-        ImGui.pushID(label)
-
-        if (ImGui.beginTable("##${label}_table", 2, 0, 2f)) {
-            ImGui.tableSetupColumn("##Label", 0)
-            ImGui.tableSetupColumn("##Control")
-            ImGui.tableNextRow()
-            ImGui.tableSetColumnIndex(0)
-            ImGui.text(label)
-            ImGui.tableSetColumnIndex(1)
-
+        row(label) {
             val imColor = floatArrayOf(color.x, color.y, color.z, color.w)
             if (ImGui.colorEdit4("##colorPicker", imColor)) {
                 color.set(imColor[0], imColor[1], imColor[2], imColor[3])
                 res = true
             }
-
-            ImGui.endTable()
         }
-        ImGui.popID()
         return res
     }
 
-    /** Draws a two-column table with label and RGB color picker. */
+    /** A labelled RGB color picker. */
     fun colorPicker3(label: String, color: Vector3f): Boolean {
         var res = false
-        ImGui.pushID(label)
-
-        if (ImGui.beginTable("##${label}_table", 2, 0, 2f)) {
-            ImGui.tableSetupColumn("##Label", ImGuiTableColumnFlags.WidthFixed, DEFAULT_COLUMN_WIDTH)
-            ImGui.tableSetupColumn("##Control")
-            ImGui.tableNextRow()
-            ImGui.tableSetColumnIndex(0)
-            ImGui.text(label)
-            ImGui.tableSetColumnIndex(1)
-
+        row(label) {
             val imColor = floatArrayOf(color.x, color.y, color.z)
             if (ImGui.colorEdit3("##colorPicker3", imColor)) {
                 color.set(imColor[0], imColor[1], imColor[2])
                 res = true
             }
-
-            ImGui.endTable()
         }
-        ImGui.popID()
         return res
     }
 
@@ -605,142 +414,21 @@ object MImGui {
         ImGui.sameLine()
     }
 
-    /** Two-column labeled drag-float3 for Vector3 data (e.g. gravity). */
+    /** A labelled drag-float3 for Vector3 data (e.g. gravity). */
     fun dragFloat3(label: String, values: FloatArray, speed: Float = 0.01f): Boolean {
         var changed = false
-        ImGui.pushID(label)
-        if (ImGui.beginTable("##${label}_table", 2, 0, 2f)) {
-            ImGui.tableSetupColumn("##Label", 0)
-            ImGui.tableSetupColumn("##Control")
-            ImGui.tableNextRow()
-            ImGui.tableSetColumnIndex(0)
-            ImGui.text(label)
-            ImGui.tableSetColumnIndex(1)
-            ImGui.pushItemWidth(-1f)
-            changed = ImGui.dragFloat3("##dragFloat3", values, speed)
-            ImGui.popItemWidth()
-            ImGui.endTable()
-        }
-        ImGui.popID()
+        row(label) { changed = ImGui.dragFloat3("##dragFloat3", values, speed) }
         return changed
     }
 
-    /** Two-column labeled color-edit-3 for RGB colors. */
+    /** A labelled color-edit-3 for RGB colors. */
     fun colorEdit3(label: String, color: FloatArray): Boolean {
-        ImGui.pushID(label)
         var changed = false
-        if (ImGui.beginTable("##${label}_table", 2, 0, 2f)) {
-            ImGui.tableSetupColumn("##Label", 0)
-            ImGui.tableSetupColumn("##Control")
-            ImGui.tableNextRow()
-            ImGui.tableSetColumnIndex(0)
-            ImGui.text(label)
-            ImGui.tableSetColumnIndex(1)
-            ImGui.pushItemWidth(-1f)
-            changed = ImGui.colorEdit3("##colorEdit3", color)
-            ImGui.popItemWidth()
-            ImGui.endTable()
-        }
-        ImGui.popID()
+        row(label) { changed = ImGui.colorEdit3("##colorEdit3", color) }
         return changed
     }
 
-    private fun drawVec2Axis(values: Vector2f, resetValue: Float, sens: Float) {
-        val lineHeight = ImGui.getFontSize() + ImGui.getStyle().framePaddingY * 2f
-        val buttonSize = lineHeight + 3f
 
-        ImGui.pushStyleVar(ImGuiStyleVar.ItemSpacing, 0f, 0f)
-        val widthEach = (ImGui.calcItemWidth() - (buttonSize * 2f)) / 2f
-
-        ImGui.pushItemWidth(widthEach)
-        pushAxisColors(0)
-        if (ImGui.button("X", buttonSize, lineHeight)) values.x = resetValue
-        ImGui.popStyleColor(3)
-        ImGui.sameLine()
-        val vx = floatArrayOf(values.x)
-        ImGui.dragFloat("##x", vx, sens)
-        values.x = vx[0]
-        ImGui.popItemWidth()
-        ImGui.sameLine()
-
-        ImGui.pushItemWidth(widthEach)
-        pushAxisColors(1)
-        if (ImGui.button("Y", buttonSize, lineHeight)) values.y = resetValue
-        ImGui.popStyleColor(3)
-        ImGui.sameLine()
-        val vy = floatArrayOf(values.y)
-        ImGui.dragFloat("##y", vy, sens)
-        values.y = vy[0]
-        ImGui.popItemWidth()
-
-        ImGui.popStyleVar()
-    }
-
-    private fun drawVec3Axis(values: Vector3f, resetValue: Float, sens: Float, uniformScaling: Boolean = false, label: String = "") {
-        val lineHeight = ImGui.getFontSize() + ImGui.getStyle().framePaddingY * 2f
-        val buttonSize = lineHeight + 3f
-
-        ImGui.pushStyleVar(ImGuiStyleVar.ItemSpacing, 0f, 0f)
-        val widthEach = (ImGui.calcItemWidth() - (buttonSize * 3f)) / 3f
-
-        // X
-        ImGui.pushItemWidth(widthEach)
-        pushAxisColors(0)
-        if (ImGui.button("X", buttonSize, lineHeight)) {
-            values.x = resetValue
-            if (uniformScaling && label == "Scale") { values.y = resetValue; values.z = resetValue }
-        }
-        ImGui.popStyleColor(3)
-        ImGui.sameLine()
-        val vx = floatArrayOf(values.x)
-        if (ImGui.dragFloat("##x", vx, sens)) {
-            if (uniformScaling && label == "Scale") {
-                val diff = vx[0] - values.x
-                values.x = vx[0]; values.y += diff; values.z += diff
-            } else values.x = vx[0]
-        }
-        ImGui.popItemWidth()
-        ImGui.sameLine()
-
-        // Y
-        ImGui.pushItemWidth(widthEach)
-        pushAxisColors(1)
-        if (ImGui.button("Y", buttonSize, lineHeight)) {
-            values.y = resetValue
-            if (uniformScaling && label == "Scale") { values.x = resetValue; values.z = resetValue }
-        }
-        ImGui.popStyleColor(3)
-        ImGui.sameLine()
-        val vy = floatArrayOf(values.y)
-        if (ImGui.dragFloat("##y", vy, sens)) {
-            if (uniformScaling && label == "Scale") {
-                val diff = vy[0] - values.y
-                values.y = vy[0]; values.x += diff; values.z += diff
-            } else values.y = vy[0]
-        }
-        ImGui.popItemWidth()
-        ImGui.sameLine()
-
-        // Z
-        ImGui.pushItemWidth(widthEach)
-        pushAxisColors(2)
-        if (ImGui.button("Z", buttonSize, lineHeight)) {
-            values.z = resetValue
-            if (uniformScaling && label == "Scale") { values.x = resetValue; values.y = resetValue }
-        }
-        ImGui.popStyleColor(3)
-        ImGui.sameLine()
-        val vz = floatArrayOf(values.z)
-        if (ImGui.dragFloat("##z", vz, sens)) {
-            if (uniformScaling && label == "Scale") {
-                val diff = vz[0] - values.z
-                values.z = vz[0]; values.x += diff; values.y += diff
-            } else values.z = vz[0]
-        }
-        ImGui.popItemWidth()
-
-        ImGui.popStyleVar()
-    }
 
     /** Push 3 style colors for a given axis index: 0=X red, 1=Y green, 2=Z blue. */
     private fun pushAxisColors(axis: Int) {
@@ -763,60 +451,34 @@ object MImGui {
         }
     }
 
-    /**
-     * Generic property row: 2-column table with label, widget, and optional reset button.
-     */
+    /** A settings row: [label] (its [helpTooltip] on hover), the [widget], and an optional reset button. */
     fun propertyRow(
         label: String,
         helpTooltip: String? = null,
         onReset: (() -> Unit)? = null,
         widget: () -> Unit
     ) {
-        ImGui.pushID(label)
-        if (ImGui.beginTable("##${label}_prop", 2)) {
-            ImGui.tableSetupColumn("##Label")
-            ImGui.tableSetupColumn("##Control")
-            ImGui.tableNextRow()
-            ImGui.tableSetColumnIndex(0)
-            ImGui.text(label)
-            // A settings field explanation: shown even with tooltips off (EDT-57).
-            if (helpTooltip != null) Tooltips.always(helpTooltip)
-            ImGui.tableSetColumnIndex(1)
-            val resetLabel = "↺##reset_$label"
+        val resetLabel = "↺##reset_$label"
+        row(label, labelExtra = { if (helpTooltip != null) Tooltips.always(helpTooltip) }) {
             // EDT-86: a reset button gets its room first; the widget takes the rest instead of pushing it out.
-            val row = onReset?.let { TrailingButtons.begin(resetLabel) }
-            ImGui.pushItemWidth(row?.layout?.fieldWidth ?: -1f)
+            val trailing = onReset?.let { TrailingButtons.begin(resetLabel) }
+            trailing?.let { ImGui.pushItemWidth(it.layout.fieldWidth) }
             widget()
-            ImGui.popItemWidth()
+            trailing?.let { ImGui.popItemWidth() }
             if (onReset != null) {
-                row?.next()
-                if (ImGui.button(resetLabel)) {
-                    onReset()
-                }
+                trailing?.next()
+                if (ImGui.button(resetLabel)) onReset()
             }
-            ImGui.endTable()
         }
-        ImGui.popID()
     }
 
-    /**
-     * Read-only property row with label and text value.
-     */
+    /** Read-only settings row: [label] and its [value] as text. */
     fun propertyRowReadOnly(label: String, value: String, helpTooltip: String? = null) {
-        ImGui.pushID(label)
-        if (ImGui.beginTable("##${label}_prop", 2)) {
-            ImGui.tableSetupColumn("##Label")
-            ImGui.tableSetupColumn("##Control")
-            ImGui.tableNextRow()
-            ImGui.tableSetColumnIndex(0)
-            ImGui.text(label)
-            // A settings field explanation: shown even with tooltips off (EDT-57).
-            if (helpTooltip != null) Tooltips.always(helpTooltip)
-            ImGui.tableSetColumnIndex(1)
+        row(label, labelExtra = { if (helpTooltip != null) Tooltips.always(helpTooltip) }) {
+            ImGui.pushTextWrapPos(0f)
             textDisabled(value)
-            ImGui.endTable()
+            ImGui.popTextWrapPos()
         }
-        ImGui.popID()
     }
 
 }

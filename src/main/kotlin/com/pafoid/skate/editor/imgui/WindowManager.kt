@@ -78,5 +78,6 @@ class WindowManager(
         loadingScreen.render()
         errorDialog.render()
         EditorFocus.endFrame()
+        ToolWindowStates.endFrame()
     }
 }
