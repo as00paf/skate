@@ -1,5 +1,7 @@
 package com.pafoid.skate.editor.systems
 
+import com.pafoid.skate.engine.ecs.Scene
+
 /** Kinds of document the close prompt lists (EDT-82), each with its translated label `lbl.unsaved_assets.kind.<key>`. */
 enum class UnsavedKind(val key: String) {
     SCENE("scene"),
@@ -108,5 +110,20 @@ class CloseGuard(private val registry: UnsavedAssetRegistry) {
         val close = proceed
         cancel()
         close?.invoke()
+    }
+}
+
+/** The open scenes' entries of the registry (EDT-82). */
+object UnsavedScenes {
+    /**
+     * Dirty scenes among [openScenes]. Save asks the scene handler through [save] (refused during Play, so the scene
+     * stays listed). Discard clears the dirty flag: closing a project saves its dirty scenes
+     * (`ProjectManager.closeProject`), so a discarded scene must not be dirty any more; it then closes unsaved and
+     * its file stays as it was.
+     */
+    fun source(openScenes: () -> List<Scene>, save: (Scene) -> Unit): () -> List<UnsavedAsset> = {
+        openScenes().filter { it.isDirty }.map { scene ->
+            UnsavedAsset(UnsavedKind.SCENE, "scene:${scene.name}", scene.name, save = { save(scene) }, discard = { scene.isDirty = false })
+        }
     }
 }

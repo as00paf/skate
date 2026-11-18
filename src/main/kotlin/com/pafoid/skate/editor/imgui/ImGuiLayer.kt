@@ -210,6 +210,8 @@ class ImGuiLayer(
         } else {
             setupDockSpace()
         }
+        // EDT-82: at the frame's root, so the unsaved-assets prompt also shows over F12 viewport full screen.
+        unsavedAssetsModal.render()
 
         endFrame()
     }
@@ -278,7 +280,6 @@ class ImGuiLayer(
         maximize.afterDockSpace(ImGui.dockBuilderGetCentralNode(dockspaceId))
 
         windowManager.update()
-        unsavedAssetsModal.render()
 
         maximize.afterWindows(engine.runtimePlaying)
 

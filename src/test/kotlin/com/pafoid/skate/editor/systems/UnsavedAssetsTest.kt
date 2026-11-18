@@ -118,3 +118,43 @@ class UnsavedAssetsTest {
         assertEquals(listOf("editor"), closed)
     }
 }
+
+/** EDT-82 review: Discard really discards scenes, and the prompt is drawn whatever the layout. */
+class UnsavedAssetsReviewTest {
+    @Test
+    fun SceneDiscard_ClearsTheDirtyFlagSoClosingTheProjectDoesNotSaveIt() {
+        val main = com.pafoid.skate.engine.ecs.Scene("Main").apply { isDirty = true }
+        val other = com.pafoid.skate.engine.ecs.Scene("Other")
+        val saved = ArrayList<String>()
+        val registry = UnsavedAssetRegistry().also { it.register(UnsavedScenes.source({ listOf(main, other) }) { s -> saved += s.name }) }
+        val guard = CloseGuard(registry)
+        var closed = false
+        guard.request(CloseTarget.PROJECT) {
+            // What ProjectManager.closeProject does first: save the scenes still dirty.
+            listOf(main, other).filter { it.isDirty }.forEach { saved += "closeProject:${it.name}" }
+            closed = true
+        }
+        assertEquals(listOf("Main"), guard.unsaved().map { it.name })
+        guard.discard()
+        assertTrue(closed)
+        assertFalse(main.isDirty)
+        assertTrue(saved.isEmpty(), "a discarded scene is never written: $saved")
+    }
+
+    @Test
+    fun ScenesSave_GoesThroughTheSceneHandler() {
+        val main = com.pafoid.skate.engine.ecs.Scene("Main").apply { isDirty = true }
+        val registry = UnsavedAssetRegistry().also { it.register(UnsavedScenes.source({ listOf(main) }) { s -> s.isDirty = false }) }
+        assertTrue(registry.saveAll().isEmpty())
+    }
+
+    @Test
+    fun Prompt_IsDrawnOutsideTheDockedLayout() {
+        // F12 viewport full screen skips setupDockSpace(): the prompt must be drawn by update() itself.
+        val src = java.io.File("src/main/kotlin/com/pafoid/skate/editor/imgui/ImGuiLayer.kt").readText()
+        val update = src.substring(src.indexOf("fun update(dt: Float)"), src.indexOf("private fun loadThemes()"))
+        val dock = src.substring(src.indexOf("private fun setupDockSpace()"))
+        assertTrue(update.contains("unsavedAssetsModal.render()"), "update() draws the prompt")
+        assertFalse(dock.substringBefore("\n    }\n").contains("unsavedAssetsModal.render()"), "not only in the docked layout")
+    }
+}

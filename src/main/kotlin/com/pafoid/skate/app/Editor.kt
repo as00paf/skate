@@ -26,9 +26,8 @@ import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.core.Window
 import com.pafoid.skate.engine.input.PointerSource
 import com.pafoid.skate.editor.systems.CloseGuard
-import com.pafoid.skate.editor.systems.UnsavedAsset
+import com.pafoid.skate.editor.systems.UnsavedScenes
 import com.pafoid.skate.editor.systems.UnsavedAssetRegistry
-import com.pafoid.skate.editor.systems.UnsavedKind
 import com.pafoid.skate.engine.events.SceneAction
 
 class Editor(
@@ -63,12 +62,7 @@ class Editor(
 
     /** Documents with unsaved changes, by back end (EDT-82); the close prompt reads it. */
     val unsavedAssets = UnsavedAssetRegistry().also { registry ->
-        registry.register {
-            engine.sceneManager.openScenes.filter { it.isDirty }.map { scene ->
-                UnsavedAsset(UnsavedKind.SCENE, "scene:${scene.name}", scene.name,
-                    save = { engine.eventSystem.publish(SceneAction.SaveRequested(scene)) })
-            }
-        }
+        registry.register(UnsavedScenes.source({ engine.sceneManager.openScenes }) { engine.eventSystem.publish(SceneAction.SaveRequested(it)) })
     }
 
     /** Asks before the project or the editor closes with unsaved assets (EDT-82). */
