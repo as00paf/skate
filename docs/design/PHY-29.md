@@ -1,13 +1,14 @@
 # PHY-29 — Destruction system (design note)
 
-Status: **revision 2, awaiting the human's approval of the runtime-fracture additions.** No implementation code has
-been written. The human answered revision 1's questions on 2026-11-18 (§16.1). Runtime fracture is now in scope (§6.4);
-it raises four new questions (§16.2), each with a recommended answer.
+Status: **revision 3, APPROVED by the human on 2026-11-18** (answers in §16). Implementation starts with slice 29a.
 
 History:
 - Revision 1 (2026-11-17): pre-fractured pieces only; eight open questions.
 - Revision 2 (2026-11-18): records the answers; adds runtime fracture (algorithm, cost budget, determinism, slices
-  29l–29o); the editor generator (29h) now reuses the runtime algorithm offline.
+  29l–29o); the editor generator (29h) reuses the runtime algorithm offline.
+- Revision 3 (2026-11-18): records the answers to Q9–Q12. Runtime fracture keeps an anchored base piece (§6.4.5) and
+  pieces can break again, bounded by a depth limit and piece budgets (§6.4.6). The base piece is rebuilt from the
+  saved seed and impact point after a load or for a late joiner (§9, §10).
 
 Task (GameEngine.md, Physics, human on Discord 2026-11-17): "plan a destruction system (fractured meshes,
 pre-fractured vs runtime, debris pooling and lifetime, damage thresholds, effects and audio hooks, network and
@@ -79,6 +80,8 @@ Non-goals (now): structural collapse of buildings (later, §16.1 Q7), destructib
 | `surface` | `"wood"` | Key for sounds and dust (§8); free string like GPL-24 damage types |
 | `debrisCollidesWithCharacters` | false | Small pieces don't trip the skater (§7.3) |
 | `broken` | false | Saved and replicated: the prop is already broken (§9, §10) |
+| `fractureSeed`, `fracturePoint` | 0, (0,0,0) | Saved and replicated with `broken` for runtime fracture: the seed and the quantized impact point (prop frame) that rebuild the same base piece after a load or for a late joiner (§6.4.5) |
+| `fractureDepth` | 0 | 0 for an authored prop; a runtime piece is one deeper than the prop it came from (§6.4.6) |
 
 Plain data, like `HealthComponent`. All behaviour is in systems.
 
@@ -172,7 +175,7 @@ zero break-time cost); runtime fracture covers everything else without authoring
   (NEW), cached like `CollisionMeshes` (LRU, 16 MB), with a **watertight** flag computed once per model (every edge
   shared by exactly two triangles).
 - The impact point in the prop's frame (quantized to 1 mm), the piece count, and a seed (§6.4.4).
-- Limits: at most **4096 input triangles**. Bigger or non-watertight meshes don't fracture at runtime (§16.2 Q12).
+- Limits: at most **4096 input triangles**. Bigger or non-watertight meshes don't fracture at runtime; they fall back to `REMOVE` with effects (§16.2 Q12).
 
 #### 6.4.2 Algorithm (pure Kotlin, `engine/physics3d/fracture/RuntimeFracture.kt`, NEW)
 
@@ -202,7 +205,7 @@ zero break-time cost); runtime fracture covers everything else without authoring
 | Pieces spawned | main thread, `DebrisSystem` | the §7.1 caps (32 per break, 64 per step), pooled GameObjects and bodies |
 
 - **The original stays visible and solid until its pieces are ready**, normally 1–3 fixed steps (17–50 ms), then
-  swaps in one step (§16.2 Q9). After 6 steps (100 ms) without a result, the break falls back to `REMOVE` with its
+  swaps in one step (decided, §16.2 Q9). After 6 steps (100 ms) without a result, the break falls back to `REMOVE` with its
   effects, so a slow machine never shows a prop that refuses to break.
 - **Piece count** grows with the overkill: `N = clamp(4 + 8 × excessDamage / maxIntegrity, 4, maxRuntimePieces)`.
 - **Cache:** results are cached per (model, seed, impact cell of 5 cm) in an LRU of 32 entries, so a row of identical
@@ -220,12 +223,56 @@ zero break-time cost); runtime fracture covers everything else without authoring
   same pieces. Only their flight differs, as decided (§16.1 Q4).
 - Single player uses the same stream, so a replayed save breaks the same way.
 
-#### 6.4.5 What it doesn't do
+#### 6.4.5 The anchored base piece (human, Q10)
 
-- Remains: runtime-fractured props leave none (§16.2 Q10); use a pre-fractured asset with `anchored` pieces when a
-  stump must stay.
-- Re-fracture: runtime pieces don't break again (§16.2 Q11).
-- Skinned or animated meshes, and meshes over the limits, fall back as §16.2 Q12 decides.
+A runtime-fractured prop that was held in place keeps one **base piece**: it stays where it was (static, or still
+attached to its static parent) and becomes the prop's remains.
+
+- **When:** the prop's body was static or kinematic, has a static parent (a fence post in a static fence), or was
+  resting on support (asleep, or moving under 0.5 m/s with support found below). A crate flying through the air has
+  no base and breaks entirely into debris.
+- **Support side:**
+  1. a static parent: the direction from the prop's centre to the parent's attachment point (its origin);
+  2. otherwise gravity: the down direction. A ray cast down from the prop's centre (the `ScenePhysicsQueries`
+     raycast, excluding the prop) confirms there is support within 5 % of the prop's height below its lowest point;
+     without support there is no base.
+- **Which piece:** the support face is the band of the mesh within 10 % of the prop's extent along the support side.
+  The **anchor point** is the point of that band farthest from the impact point (so the base stays on the side away
+  from the hit). Before the cells are cut (§6.4.2 step 1), one extra site is placed at the anchor point, raised by 20 %
+  of the extent, so its cell reliably covers the support face. That cell is the base piece. If it falls under the 0.5 %
+  volume threshold or validation fails, the prop has no base.
+- **What it becomes:** the original body is replaced by the base piece's hull, static (or kinematic when the prop was
+  kinematic), parented like the original. It stays `DestructibleComponent`-bearing with `broken = true` and can break
+  again (§6.4.6).
+- **Saves and multiplayer:** because the algorithm is deterministic, the base piece is never stored as a mesh.
+  `fractureSeed` and `fracturePoint` are saved and replicated with `broken`, and the same base is rebuilt on load and
+  on a late joiner's client (§9, §10). A changed model (game patch) gives a slightly different base; nothing else
+  depends on it.
+
+#### 6.4.6 Re-fracture and its budgets (human, Q11)
+
+Pieces can break again: debris, base pieces and pre-fractured pieces alike, as long as these limits hold. Defaults,
+all in `DestructionSettings` (NEW, project physics settings):
+
+| Limit | Default | When it is reached |
+|---|---|---|
+| `maxFractureDepth` | 2 (the prop's pieces, then their pieces) | The piece can't break again; heavy damage turns it to dust (`REMOVE` with effects) |
+| `minRefractureVolume` | 5 % of the original prop's volume, and at least 0.001 m³ | Same as above |
+| Pieces per re-fracture | 2–6 (`N = clamp(2 + 4 × excess / maxIntegrity, 2, 6)`) | — |
+| Runtime pieces per fixed step | 64, shared with the §7.1 spawn cap | Later breaks wait in the §5.4 queue |
+| Runtime pieces per original prop (all depths, its "family") | 48 | Further breaks in that family turn pieces to dust |
+| Live debris | `maxActiveDebris` (256 High / 96 Low) | The §7.1 eviction order makes room; a break never exceeds it |
+| Fracture jobs in flight | 2; first breaks (depth 0) before re-fractures | Later jobs wait |
+
+- **A piece's toughness:** its integrity is the original's maximum integrity times its volume share, and its impact
+  threshold the original's times its mass share, so small pieces break more easily but need a real hit.
+- **Seeds:** a re-fracture's seed is derived from the parent's seed, the piece index and the break index, so it is
+  deterministic like the first break.
+- **Multiplayer:** debris is local to each client (Q4), so a debris piece's re-fracture is local and cosmetic too; only
+  base and persistent pieces break through the server (§10).
+- **Pre-fractured pieces** re-fracture at runtime when their mesh qualifies (§6.4.1).
+- **Unsuitable meshes** (not watertight, over 4096 triangles, skinned) fall back to `REMOVE` with effects and log once
+  per model (human, Q12).
 
 ## 7. Debris
 
@@ -267,9 +314,10 @@ Users, each in its own domain:
 
 ## 9. Saves and streaming (with REN-37)
 
-- **Hand-placed props:** `broken` (and `integrity`) are serialized fields, so the scene-state section of the save
-  container (REN-37 task 25, AST) keeps them. On load, a broken `SHATTER` prop spawns only its anchored remains,
-  a broken `SWAP` prop its broken prefab, a broken `REMOVE` prop nothing.
+- **Hand-placed props:** `broken`, `integrity`, `fractureSeed`, `fracturePoint` and `fractureDepth` are serialized
+  fields, so the scene-state section of the save container (REN-37 task 25, AST) keeps them. On load, a broken
+  `SHATTER` prop spawns only its anchored remains (pre-fractured anchored pieces, or the runtime base piece rebuilt
+  from its seed and point), a broken `SWAP` prop its broken prefab, a broken `REMOVE` prop nothing.
 - **Scatter props:** the break calls the `ScatterItem` destroy hook (REN-37 task 24): `REMOVE` and `SHATTER` without
   remains write `DESTROYED`; `SWAP`, remains, or a damaged but unbroken prop write `CHANGED` with the component
   override (`broken`, `integrity`). Instanced scatter (rocks with colliders, PHY-27) can be destroyed through
@@ -290,7 +338,8 @@ Users, each in its own domain:
 - **Debris is cosmetic and local:** each client spawns the pieces from the message with the same seed and initial
   velocities, then simulates them itself. Pieces end up in slightly different places per client, which is fine for
   short-lived debris. Persistent pieces (§7.2) are server-spawned networked objects.
-- **Late join:** `broken` in the snapshot spawns the remains, never debris.
+- **Late join:** `broken` in the snapshot spawns the remains, never debris; a runtime base piece is rebuilt from the
+  replicated `fractureSeed` and `fracturePoint` (§6.4.5).
 - **Lag compensation:** weapon hits on props use the same `rewound` window as characters (NET-03).
 
 ## 11. Editor (PHY writes the UI, EDT reviews)
@@ -311,6 +360,7 @@ Users, each in its own domain:
 | Break cost on the main thread | < 0.3 ms for 32 pooled pieces (no hull building, no allocation once pools are warm) |
 | Memory | a `.skfracture` of 32 pieces ≈ 30 KB; pools grow to the live peak and shrink after 30 s idle |
 | Runtime fracture | ≤ 4 ms per job on a worker, ≤ 2 jobs in flight, ≤ 8192 triangles uploaded per frame, CPU mesh cache 16 MB, result cache 32 entries (§6.4.3) |
+| Re-fracture | depth ≤ 2, ≤ 48 runtime pieces per original prop, ≤ 64 runtime pieces per step (§6.4.6) |
 
 ## 13. Tests (no GL)
 
@@ -329,6 +379,11 @@ Users, each in its own domain:
   changes it; a non-watertight mesh is rejected; benchmark (2k triangles, 12 pieces) logged against the 4 ms budget.
 - Runtime break path (29o): the original stays until the result arrives; the 100 ms fallback gives `REMOVE`; the
   cache returns the same pieces for the same key; at most 2 jobs in flight.
+- Base piece (29o): a static box hit on one side keeps a base on the floor side, away from the hit; a flying crate
+  has none; a fence post with a static parent keeps the parent side; the base rebuilt from the saved seed and point
+  is byte-identical.
+- Re-fracture budgets (29o): depth 2 stops further breaks; the family budget of 48 turns later breaks to dust; no step
+  spawns more than 64 runtime pieces; the live-debris cap is never exceeded.
 
 ## 14. Slices
 
@@ -348,7 +403,7 @@ Users, each in its own domain:
 | **29l** | PHY | `RuntimeFracture` (pure): sites, cell clipping with caps, islands, hulls, volumes; determinism and benchmark tests | — |
 | **29m** | AST | `ModelCpuMeshes`: CPU positions, normals, UVs and material slots of a model, cached, with the watertight flag | — |
 | **29n** | REN (+ VK parity) | Upload an in-memory mesh as a `MeshPart` for a `RenderComponent` and release it, pooled buffers, GL and Vulkan | — |
-| **29o** | PHY | Runtime break path in `DestructionSystem`/`DebrisSystem`: `fractureSource`, worker jobs, 100 ms fallback, result cache, seeds from ECS-14; the seed and point in `FracturedMessage` (with 29j) | 29c, 29l, 29m, 29n |
+| **29o** | PHY | Runtime break path in `DestructionSystem`/`DebrisSystem`: `fractureSource`, worker jobs, 100 ms fallback, result cache, seeds from ECS-14, the anchored base piece (rebuilt from seed and point on load), re-fracture with its depth and piece budgets (`DestructionSettings`); the seed and point in `FracturedMessage` (with 29j) | 29c, 29l, 29m, 29n |
 | (optional) | REN | Per-object dissolve for debris fade-out | 29c |
 
 29a, 29b, 29d, 29l, 29m and 29n can start right after approval, in parallel; 29a alone already gives breakable
@@ -368,7 +423,9 @@ crates (`SWAP`/`REMOVE`).
   triangles, tiny loops). Mitigation: epsilon snapping to the plane, welding before and after, loop validation, and
   the `REMOVE` fallback when a result fails validation (not watertight, volume off by > 1 %).
 - **Runtime fracture latency** (1–3 steps): fast impacts may show the intact prop for a frame or two after contact;
-  §16.2 Q9 asks whether that is acceptable.
+  accepted by the human (§16.2 Q9).
+- **Re-fracture cascades:** each break can feed more breaks; the depth limit, the family budget of 48 pieces and the
+  per-step cap of 64 bound the total work of any chain (§6.4.6).
 
 ## 16. Decisions and open questions
 
@@ -385,14 +442,11 @@ crates (`SWAP`/`REMOVE`).
 | Q7 | Structural destruction | Later |
 | Q8 | `HealthComponent` where present, `integrity` otherwise | Yes |
 
-### 16.2 New questions from runtime fracture (revision 2)
+### 16.2 Answers to revision 2 (human, 2026-11-18)
 
-9. **Latency:** a runtime-fractured prop stays intact for 1–3 fixed steps (17–50 ms) while its pieces are computed on
-   a worker, then breaks; after 100 ms it falls back to disappearing with effects. Acceptable? *Recommended:* yes.
-   The alternative, computing on the main thread, costs a 2–4 ms hitch per break.
-10. **Remains:** runtime-fractured props leave no remains (no stump or base stays). *Recommended:* yes; props that need
-    remains use a pre-fractured asset with `anchored` pieces.
-11. **Re-fracture:** runtime pieces never break again. *Recommended:* yes; one level keeps the cost bounded.
-12. **Unsuitable meshes** (not watertight, over 4096 triangles, skinned): with `AUTO`, fall back to `REMOVE` with
-    effects and log once per model. *Recommended:* yes. (Alternative: refuse `RUNTIME` in the inspector and require a
-    pre-fractured asset for such models.)
+| # | Question | Answer |
+|---|---|---|
+| Q9 | Compute runtime pieces on a worker (1–3 steps late; `REMOVE` with effects after 100 ms)? | Yes |
+| Q10 | Runtime-fractured props leave no remains? | **Changed: keep an anchored base piece**, chosen by the impact and the support side (the part touching the ground or a static parent), §6.4.5 |
+| Q11 | Runtime pieces never break again? | **Changed: re-fracture is allowed**, bounded by a maximum depth and per-step and total piece budgets with stated defaults, §6.4.6 |
+| Q12 | Unsuitable meshes fall back to `REMOVE` with effects, logged once per model? | Yes |
