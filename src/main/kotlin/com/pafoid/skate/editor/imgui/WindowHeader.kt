@@ -163,7 +163,7 @@ object WindowHeader {
         } else if (tools != null) {
             toolsRow(strings, window, tools, withButtons = true)
         } else {
-            toolsRow(strings, window, {}, withButtons = true)
+            corner(strings, window)
         }
     }
 
@@ -258,6 +258,79 @@ object WindowHeader {
     fun helpButton(strings: StringManager, window: EditorWindow, squareSize: Float? = null) {
         val size = buttonSize()
         button(strings, window, squareSize ?: size.width, squareSize ?: size.height)
+    }
+
+    /**
+     * EDT-101: a docked window without tools gets its buttons over the top-right corner of its content instead of a
+     * row of their own. They are submitted first, as invisible buttons, so the content under them cannot take their
+     * hover or clicks; their look is drawn after the window's content ([drawCornerOverlay]) so it stays on top.
+     */
+    private fun corner(strings: StringManager, window: EditorWindow) {
+        val style = ImGui.getStyle()
+        val size = buttonSize()
+        val startX = ImGui.getCursorScreenPosX()
+        val startY = ImGui.getCursorScreenPosY()
+        val count = if (window.canMaximize) 2 else 1
+        val row = HelpButtonLayout.row(
+            startX, startY, ImGui.getWindowPosX() + ImGui.getWindowContentRegionMaxX(),
+            ImGui.getWindowDrawList().clipRectMinY, HelpButtonLayout.groupWidth(size.width, count, style.itemSpacingX),
+            style.itemSpacingX, ImGui.getScrollY(),
+        )
+        val buttons = ArrayList<CornerButton>()
+        var x = row.buttonX
+        if (window.canMaximize) {
+            val maximized = MaximizeSession.isMaximized(window.name)
+            val icon = if (maximized) Icons.WINDOW_RESTORE else Icons.WINDOW_MAXIMIZE
+            ImGui.setCursorScreenPos(x, row.top)
+            if (ImGui.invisibleButton(MAXIMIZE_BUTTON_ID, size.width, size.height)) MaximizeSession.request(window.name)
+            Tooltips.show(strings, if (maximized) "btn.window.restore.tooltip" else "btn.window.maximize.tooltip", EditorShortcuts.MAXIMIZE_WINDOW)
+            buttons += CornerButton(icon, Rect(x, row.top, x + size.width, row.top + size.height), ImGui.isItemHovered(), ImGui.isItemActive())
+            lastDrawnMaximize = drawnRect()
+            x += size.width + style.itemSpacingX
+        }
+        ImGui.setCursorScreenPos(x, row.top)
+        if (ImGui.invisibleButton(BUTTON_ID, size.width, size.height)) window.openHelp()
+        Tooltips.show(strings, "window.header.help.tooltip")
+        buttons += CornerButton(Icons.QUESTION_CIRCLE, Rect(x, row.top, x + size.width, row.top + size.height), ImGui.isItemHovered(), ImGui.isItemActive())
+        lastDrawn = drawnRect()
+        window.cornerOverlay = CornerOverlay(ImGui.getFrameCount(), buttons)
+        // The content starts where the header would have: on the same row as the buttons.
+        ImGui.setCursorScreenPos(startX, startY)
+    }
+
+    /** One corner button's look, drawn over the content after the window drew ([drawCornerOverlay]). */
+    data class CornerButton(val icon: String, val rect: Rect, val hovered: Boolean, val held: Boolean)
+
+    data class CornerOverlay(val frame: Int, val buttons: List<CornerButton>)
+
+    /**
+     * Draws [window]'s corner buttons on top of its content (EDT-101): re-opens the window in ImGui's append mode
+     * (`begin` with the same title again in the frame) and paints the buttons' frames and icons. Call after the
+     * window's `imgui()`; does nothing when the window drew no corner buttons this frame.
+     */
+    fun drawCornerOverlay(window: EditorWindow) {
+        val overlay = window.cornerOverlay ?: return
+        window.cornerOverlay = null
+        val title = window.lastTitle ?: return
+        if (overlay.frame != ImGui.getFrameCount()) return
+        ImGui.begin(title)
+        val list = ImGui.getWindowDrawList()
+        list.pushClipRect(ImGui.getWindowPosX(), ImGui.getWindowPosY(), ImGui.getWindowPosX() + ImGui.getWindowWidth(), ImGui.getWindowPosY() + ImGui.getWindowHeight(), true)
+        val rounding = ImGui.getStyle().frameRounding
+        for (b in overlay.buttons) {
+            val r = b.rect
+            list.addRectFilled(r.minX, r.minY, r.maxX, r.maxY, ImGui.getColorU32(imgui.flag.ImGuiCol.WindowBg), rounding)
+            val col = when {
+                b.held -> imgui.flag.ImGuiCol.ButtonActive
+                b.hovered -> imgui.flag.ImGuiCol.ButtonHovered
+                else -> imgui.flag.ImGuiCol.Button
+            }
+            list.addRectFilled(r.minX, r.minY, r.maxX, r.maxY, ImGui.getColorU32(col), rounding)
+            val text = ImGui.calcTextSize(b.icon)
+            list.addText(r.minX + (r.maxX - r.minX - text.x) / 2f, r.minY + (r.maxY - r.minY - text.y) / 2f, ImGui.getColorU32(imgui.flag.ImGuiCol.Text), b.icon)
+        }
+        list.popClipRect()
+        ImGui.end()
     }
 
     /** [HelpButtonLayout.size] with the current font and style. */

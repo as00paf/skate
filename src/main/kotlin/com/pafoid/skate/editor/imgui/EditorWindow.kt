@@ -47,6 +47,9 @@ abstract class EditorWindow(
     /** EDT-101: the title the last `beginWindow` used (the full-editor host has its own ID). */
     internal var lastTitle: String? = null
 
+    /** EDT-101: the corner buttons drawn this frame, painted over the content by [WindowHeader.drawCornerOverlay]. */
+    internal var cornerOverlay: WindowHeader.CornerOverlay? = null
+
     /** Dialogs float: no dock to reset to. */
     open val isDialog: Boolean get() = false
 
