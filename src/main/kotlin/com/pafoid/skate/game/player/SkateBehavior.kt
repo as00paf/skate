@@ -12,6 +12,12 @@ import com.pafoid.skate.engine.gameplay.CameraPreset
 import com.pafoid.skate.game.input.SkateActions
 import com.pafoid.skate.game.input.SkateInputContext
 import com.pafoid.skate.engine.core.Engine
+import com.pafoid.skate.engine.ecs.systems.AppearanceSystem
+import com.pafoid.skate.engine.ecs.systems.BoneAttachmentSystem
+import com.pafoid.skate.engine.ecs.systems.InventorySystem
+import com.pafoid.skate.engine.gameplay.appearance.SkeletonConfigs
+import com.pafoid.skate.engine.gameplay.items.ItemDatabase
+import com.pafoid.skate.game.items.SkateItems
 import com.pafoid.skate.game.input.SkateControls
 import com.pafoid.skate.game.ui.SkateHudSystem
 import com.pafoid.skate.game.input.SkateIntent
@@ -114,6 +120,8 @@ class SkateBehavior(
     override val rideHeight: Float get() = config.mount.rideHeight
 
     override val animationBlendTimes: Map<String, Float> get() = config.blendTimes
+
+    override val skeletonConfig: String get() = config.skeletonConfig
 
     /**
      * Controller parameters (floats) for blend trees and transitions: `speed` (m/s), `verticalSpeed` (m/s, + up),
@@ -346,13 +354,27 @@ class SkateBehavior(
 object SkateGameplay {
     /**
      * Per-engine setup, called by each host (editor and exported game) once the engine has started: the control
-     * scheme option in the pause menu and the trick HUD (GPL-21); the water bail (GPL-32) is engine wiring (ECS-18). Call [register] first. Safe to call again.
+     * scheme option in the pause menu, the trick HUD (GPL-21) and the item systems (GPL-24a, e); the water bail
+     * (GPL-32) is engine wiring (ECS-18). Call [register] first. Safe to call again.
      */
     fun install(engine: Engine) {
         engine.gameOptions.register(SkateControls.option())
         // Once per engine: a second HUD would score every trick twice (GPL-25).
         if (engine.systemManager.getSystem<SkateHudSystem>() == null) {
             engine.systemManager.addSystem(SkateHudSystem(engine.eventSystem))
+        }
+        // Items and equipment (GPL-24a, e); the item set reloads on each scene init. One database for both systems.
+        if (engine.systemManager.getSystem<InventorySystem>() == null) {
+            val items = ItemDatabase()
+            engine.systemManager.addSystem(
+                InventorySystem(
+                    engine.eventSystem, items,
+                    slotsOf = SkeletonConfigs::slotsOf,
+                    reload = { SkateItems.load(it, engine.assetsManager.paths.projectRoot) },
+                ),
+            )
+            engine.systemManager.addSystem(AppearanceSystem(engine.eventSystem, items) { engine.assetsManager.loadModel(it) })
+            engine.systemManager.addSystem(BoneAttachmentSystem())
         }
     }
 
