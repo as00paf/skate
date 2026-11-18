@@ -113,4 +113,15 @@ class HeaderPlacementTest {
         assertTrue(help.minY < withTools.firstLineTop, "the ? is on the tools row")
         assertTrue(help.minY >= withTools.headerTop - 0.5f)
     }
+
+    @Test
+    fun NoWindowDrawsItsToolbarOnARowUnderTheHeader() {
+        // A toolbar drawn right after a tool-less header would sit under the corner buttons (or, floating, leave the
+        // header buttons on a row of their own in older layouts): it must be the header's tools (EDT-101 step 3).
+        val pattern = Regex("""header\((strings|stringManager)\)\s*\n\s*(\w*[tT]oolbar|renderToolbar)\(""")
+        val offenders = java.io.File("src/main/kotlin/com/pafoid/skate/editor").walkTopDown()
+            .filter { it.isFile && it.extension == "kt" && pattern.containsMatchIn(it.readText()) }
+            .map { it.name }.toList()
+        assertEquals(emptyList<String>(), offenders)
+    }
 }
