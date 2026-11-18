@@ -60,12 +60,25 @@ class AssimpLoader(
          */
         const val IMPORT_FLAGS = aiProcess_GenSmoothNormals or aiProcess_Triangulate or aiProcess_FlipUVs or
             aiProcess_JoinIdenticalVertices or aiProcess_CalcTangentSpace or aiProcess_LimitBoneWeights
+
+        /**
+         * The format hint Assimp needs for an in-memory import: [path]'s extension, lowercased (`engine:Models/rail.obj`
+         * → `obj`). AST-39: with an empty hint Assimp only sniffs the first bytes, so an OBJ that starts with 200+ bytes
+         * of comments (the engine's `rail.obj`) failed with "No suitable reader found … $$$___magic___$$$." and an
+         * exported game crashed at start-up.
+         */
+        fun formatHint(path: String): String =
+            path.substringAfterLast('/').substringAfterLast('\\').substringAfterLast('.', "").lowercase()
+
+        /** Imports a model or animation file held in memory, using [path] only for its format hint; null on failure. */
+        fun importFromMemory(buffer: ByteBuffer, path: String, flags: Int = IMPORT_FLAGS): AIScene? =
+            aiImportFileFromMemory(buffer, flags, formatHint(path))
     }
 
     fun loadModel(buffer: ByteBuffer, filePath: String): `3dModel` {
         try {
-            val scene = aiImportFileFromMemory(buffer, IMPORT_FLAGS, "")
-                ?: throw RuntimeException("Error loading model: " + aiGetErrorString())
+            val scene = importFromMemory(buffer, filePath)
+                ?: throw RuntimeException("Error loading model $filePath: " + aiGetErrorString())
             return loadModel(scene, filePath)
         } finally {
             MemoryUtil.memFree(buffer)
@@ -77,8 +90,8 @@ class AssimpLoader(
         try {
             buffer.put(modelData)
             buffer.flip()
-            val scene = aiImportFileFromMemory(buffer, IMPORT_FLAGS, "")
-                ?: throw RuntimeException("Error loading model: " + aiGetErrorString())
+            val scene = importFromMemory(buffer, filePath)
+                ?: throw RuntimeException("Error loading model $filePath: " + aiGetErrorString())
             return loadModel(scene, filePath)
         } finally {
             MemoryUtil.memFree(buffer)
