@@ -8,6 +8,7 @@ import com.pafoid.skate.engine.ecs.components.TerrainComponent
 import com.pafoid.skate.engine.ecs.components.WaterComponent
 import com.pafoid.skate.engine.physics3d.HeightfieldCollider3D
 import com.pafoid.skate.engine.physics3d.ScatterCollider3D
+import com.pafoid.skate.engine.physics3d.ScenePhysicsQueries
 import com.pafoid.skate.engine.environment.WaterQueries
 import com.pafoid.skate.engine.ecs.components.PlayerController
 import com.pafoid.skate.engine.ecs.components.RagdollComponent
@@ -80,6 +81,12 @@ class PhysicsSystem(
     /** Colliders per terrain; identity-keyed like the joints. */
     private val terrainColliders = IdentityHashMap<TerrainComponent, TerrainColliders>()
     private val terrainPosition = Vector3f()
+
+    /**
+     * Rays, shape sweeps and overlaps against this scene's physics world (PHY-22), for gameplay systems such as
+     * `CombatSystem`; they take [ScenePhysicsQueries] so tests can pass a fake.
+     */
+    val queries: ScenePhysicsQueries = ScenePhysicsQueries.of(physics3d)
 
     /**
      * Water lookups (surface, flow, depth, capsule submersion) for gameplay and audio, refreshed every fixed step

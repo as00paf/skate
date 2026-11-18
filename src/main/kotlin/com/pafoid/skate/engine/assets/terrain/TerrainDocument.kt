@@ -4,6 +4,10 @@ import com.pafoid.skate.engine.ecs.components.TerrainComponent
 import com.pafoid.skate.engine.ecs.components.TerrainLayer
 import com.pafoid.skate.engine.ecs.components.TerrainSource
 import com.pafoid.skate.engine.ecs.components.TerrainStreaming
+import com.pafoid.skate.engine.terrain.Biome
+import com.pafoid.skate.engine.terrain.BiomeClimate
+import com.pafoid.skate.engine.terrain.BiomePresets
+import com.pafoid.skate.engine.terrain.BiomeSource
 import com.pafoid.skate.engine.terrain.TerrainRecipe
 import com.pafoid.skate.engine.terrain.TerrainStamp
 import kotlinx.serialization.Serializable
@@ -11,9 +15,11 @@ import kotlinx.serialization.json.Json
 
 /**
  * `terrain.json` of a `.skterrain` asset (REN-28 §10): everything a terrain's heights and look depend on, i.e. the
- * recipe, stamps and layers plus the grid settings. Chunk heights live in the region files ([TerrainRegionFile]).
+ * recipe, stamps, layers, biomes (with their scatter rules), climate and biome source, plus the grid settings
+ * (AST-36, AST-38). Painted biome ids are chunk data, in the region files. Chunk heights live in the region files ([TerrainRegionFile]).
  * Versioned by [schema]; no migrations while the engine is a work in progress (rule 8): a newer or older schema is
- * refused with a clear message.
+ * refused with a clear message. Fields added later with defaults (AST-38: biomes, climate, biome source) keep the
+ * layout, so a schema 1 file without them still opens (with the defaults).
  */
 @Serializable
 data class TerrainDocument(
@@ -26,6 +32,9 @@ data class TerrainDocument(
     val recipe: TerrainRecipe = TerrainRecipe(),
     val stamps: List<TerrainStamp> = emptyList(),
     val layers: List<TerrainLayer> = TerrainLayer.defaults(),
+    val biomes: List<Biome> = BiomePresets.defaults(),
+    val biomeSource: BiomeSource = BiomeSource.PROCEDURAL,
+    val climate: BiomeClimate = BiomeClimate(),
     val streaming: TerrainStreaming = TerrainStreaming.AUTO,
     val seedName: String = "",
     val seedOffset: Int = 0,
@@ -40,6 +49,9 @@ data class TerrainDocument(
         terrain.recipe = recipe
         terrain.stamps.clear(); terrain.stamps.addAll(stamps)
         terrain.layers.clear(); terrain.layers.addAll(layers)
+        terrain.biomes.clear(); terrain.biomes.addAll(biomes)
+        terrain.biomeSource = biomeSource
+        terrain.climate = climate
         terrain.streaming = streaming
         if (seedName.isNotEmpty()) terrain.seedName = seedName
         terrain.seedOffset = seedOffset
@@ -61,6 +73,9 @@ data class TerrainDocument(
             recipe = terrain.recipe,
             stamps = terrain.stamps.toList(),
             layers = terrain.layers.toList(),
+            biomes = terrain.biomes.toList(),
+            biomeSource = terrain.biomeSource,
+            climate = terrain.climate,
             streaming = terrain.streaming,
             seedName = terrain.resolvedSeedName(),
             seedOffset = terrain.seedOffset,
