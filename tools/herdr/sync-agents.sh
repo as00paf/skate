@@ -1,15 +1,17 @@
 #!/usr/bin/env bash
-# Generates OpenCode agents (.opencode/agents/<name>.md) and Claude Code agents
-# (.claude/agents/<name>.md) from the Copilot CLI agent definitions
-# (.github/agents/<name>.agent.md), which are the source of truth. Also mirrors
-# .github/skills into .claude/skills.
+# Generates OpenCode agents (.opencode/agents/<name>.md), Claude Code agents
+# (.claude/agents/<name>.md), and Kiro agents (.kiro/agents/<name>.md) from the
+# Copilot CLI agent definitions (.github/agents/<name>.agent.md), which are the
+# source of truth. Also mirrors .github/skills into .claude/skills and
+# .kiro/skills.
 set -euo pipefail
 
 repo="$(git -C "$(dirname "${BASH_SOURCE[0]}")" rev-parse --show-toplevel)"
 src="$repo/.github/agents"
 oc_dst="$repo/.opencode/agents"
 cl_dst="$repo/.claude/agents"
-mkdir -p "$oc_dst" "$cl_dst"
+ki_dst="$repo/.kiro/agents"
+mkdir -p "$oc_dst" "$cl_dst" "$ki_dst"
 
 count=0
 for f in "$src"/*.agent.md; do
@@ -35,10 +37,22 @@ for f in "$src"/*.agent.md; do
     echo "$note"
     echo "$body"
   } > "$cl_dst/$name.md"
+  {
+    echo "---"
+    echo "name: $name"
+    echo "description: \"${description//\"/\\\"}\""
+    echo "---"
+    echo "$note"
+    echo "$body"
+  } > "$ki_dst/$name.md"
   count=$((count + 1))
 done
-echo "synced $count agents into ${oc_dst#"$repo"/} and ${cl_dst#"$repo"/}"
+echo "synced $count agents into ${oc_dst#"$repo"/}, ${cl_dst#"$repo"/}, and ${ki_dst#"$repo"/}"
 
 rm -rf "$repo/.claude/skills"
 cp -r "$repo/.github/skills" "$repo/.claude/skills"
 echo "synced skills into .claude/skills"
+
+rm -rf "$repo/.kiro/skills"
+cp -r "$repo/.github/skills" "$repo/.kiro/skills"
+echo "synced skills into .kiro/skills"
