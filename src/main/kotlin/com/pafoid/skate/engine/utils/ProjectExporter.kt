@@ -208,8 +208,11 @@ class ProjectExporter(
     /**
      * Writes the project's graphics backend, quality, window and runtime settings into `game.settings.json` next to
      * `game.bin` (AST-12, REN-30, GUI-15), merging into any existing player choices (locale, etc.) rather than overwriting them.
+     * The editor's game language and pause menu options (the project's own `game.settings.json`) become the game's
+     * defaults, so the exported game starts as editor Play does (GUI-20).
      */
     private fun writeGameSettings(project: Project, outputDir: File) {
+        val editor = GameSettingsStore(GameSettings.fileIn(project.getProjectDirectory()), logger).settings
         GameSettingsStore(GameSettings.fileIn(outputDir), logger).update {
             it.copy(
                 graphicsBackend = project.graphicsBackend,
@@ -217,8 +220,7 @@ class ProjectExporter(
                 msaaSamples = project.msaaSamples,
                 textureQuality = project.textureQuality.name,
                 supportedLanguages = project.supportedLanguages,
-                startupLanguage = project.startupLanguage,
-            )
+            ).withEditorChoices(editor, project.supportedLanguages, project.startupLanguage)
         }
     }
 
