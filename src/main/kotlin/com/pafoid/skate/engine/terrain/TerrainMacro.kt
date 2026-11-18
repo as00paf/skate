@@ -15,6 +15,40 @@ class TerrainMacro(val width: Int, val height: Int, val metresPerTexel: Float, v
     companion object {
         const val METRES_PER_TEXEL = 32f
 
+        /**
+         * Macro map of a streamed terrain from its [overview] and biome rules (no chunk needed): layer weights at each
+         * texel centre's height and slope, coloured by [layerColors]. Run on a worker.
+         */
+        fun bakeFromOverview(generator: TerrainGenerator, overview: TerrainOverview, layerColors: List<FloatArray>, metresPerTexel: Float = METRES_PER_TEXEL): TerrainMacro {
+            val layout = generator.layout
+            val side = ceil(layout.size / metresPerTexel).toInt().coerceAtLeast(1)
+            val rgb = ByteArray(side * side * 3)
+            val map = generator.biomeMap
+            val biomeWeights = FloatArray(generator.biomes.size)
+            val w = FloatArray(TerrainWeights.LAYERS)
+            val e = overview.spacing
+            for (tz in 0 until side) for (tx in 0 until side) {
+                val x = -layout.half + (tx + 0.5f) * metresPerTexel
+                val z = -layout.half + (tz + 0.5f) * metresPerTexel
+                val h = overview.heightAt(x, z)
+                val dx = overview.heightAt(x + e, z) - overview.heightAt(x - e, z)
+                val dz = overview.heightAt(x, z + e) - overview.heightAt(x, z - e)
+                val ny = 2f * e / kotlin.math.sqrt(dx * dx + 4f * e * e + dz * dz)
+                val slope = Math.toDegrees(kotlin.math.acos(ny.coerceIn(-1f, 1f).toDouble())).toFloat()
+                if (map != null) {
+                    map.weightsAt(x, z, h, biomeWeights)
+                    TerrainWeights.layerWeights(generator.biomes, biomeWeights, h, slope, w)
+                } else { w.fill(0f); w[0] = 1f }
+                val o = (tz * side + tx) * 3
+                for (ch in 0 until 3) {
+                    var c = 0f
+                    for (l in 0 until TerrainWeights.LAYERS) c += w[l] * (layerColors.getOrNull(l)?.get(ch) ?: 0f)
+                    rgb[o + ch] = (c.coerceIn(0f, 1f) * 255f + 0.5f).toInt().toByte()
+                }
+            }
+            return TerrainMacro(side, side, metresPerTexel, rgb)
+        }
+
         fun bake(layout: TerrainLayout, chunks: List<TerrainChunkData>, layerColors: List<FloatArray>, metresPerTexel: Float = METRES_PER_TEXEL): TerrainMacro {
             val side = ceil(layout.size / metresPerTexel).toInt().coerceAtLeast(1)
             val sum = DoubleArray(side * side * 3)

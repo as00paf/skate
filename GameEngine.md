@@ -38,6 +38,9 @@ Done tasks live in [`docs/backlog-archive.md`](docs/backlog-archive.md). A `Deps
 6. Keep the build green: `cmd.exe /c gradlew.bat test` from WSL/herdr, or `.\gradlew.bat test` on Windows.
 7. Only `skate-lead` edits checkbox state in this file. Domain agents report status back to the lead.
 8. No backward compatibility while the engine is a work in progress: don't add migrations or upgrade-on-load code for old saved scenes/projects; the human recreates content. Instead, keep the **default projects** current: when a feature lands, update the default skate project (`PrefabsGenerator` default scenes) and the CLI samples to use it, and remove test-only content from them. The default editor project includes the **Feature Showcase** scene(s), which the human uses for manual testing: every new user-visible component or feature adds a small, labeled demo there in the same task.
+9. **Feature Showcase upkeep** (human, Discord 2026-11-17): every task that adds or changes a user-visible feature either updates the Feature Showcase sample in the same task or names a `TLG` follow-up in its result; the lead adds that follow-up before marking the task done.
+10. **Responsive editor** (human, Discord 2026-11-17): process-intensive editor work (project creation, imports, packing, scene loading, generation, baking) runs off the UI thread with coroutines and reports progress; only GPU uploads and ImGui calls stay on the main thread.
+11. **Questions to the human** (human, 2026-11-17): agents never ask the human directly; they put questions in a design note or a `BLOCKED` line, and the lead asks them with the question tool, one decision per question with a recommended option.
 
 **PR size rules** (human, 2026-11-06/2026-11-07)
 
@@ -139,9 +142,18 @@ Round 27+ goals (human, 2026-11-06): post-processing quality, render-graph clari
   - Do: (REVIEW by skate-ecs, 2026-11-17): (1) cap total samples (16384 m at 0.5 m is about 4.3 GB); (2) debounce the full main-thread rebuild on every inspector drag frame; (3) `key()` writes `seedName`, so load-then-save changes the file (EDT-60), and an unattached call fixes it as "terrain/Terrain"; (4) a NaN or zero size throws in `TerrainLayout` every frame with no catch in `SystemManager`; (5) a duplicate keeps `seedName` (identical ground), `MAX_LAYERS` is not enforced, a disabled terrain keeps its chunks.
   - Done when: Each finding is fixed or answered with a reason; tests for 1, 3 and 4.
   - Deps: REN-36
+- [x] **REN-43** `P2` Grey rock material for the placeholder scatter rocks
+  - Do: (human, 2026-11-17): the default "rocks" and "boulders" scatter rules use `engine:Models/sphere.obj` with no material, so they render as plain white spheres. Give them a grey rock material (engine default `.skmat`, packed) until real CC0 rock models are bundled.
+  - Done when: Default terrain scatter renders as grey rocks in the editor, Play and an export; tests.
+  - Deps: REN-36
+- [ ] **REN-44** `P2` Terrain surface types: sand and snow
+  - Do: (human, Discord 2026-11-17): plan sand and snow (and other surfaces) as part of TerrainComponent, next to water: material layers, deformation or footprints/trails, physics response (friction, sinking, skate grip), audio, and how biomes assign them. Design note `docs/design/REN-44.md` with sliced tasks across REN, PHY and AUD; ask for approval before code.
+  - Done when: The note is approved and its slices are in the backlog.
+  - Deps: REN-36
 - [~] @skate-render **REN-37** `P2` World phase D: streaming and remembered scatter state (`docs/design/REN-28.md` §12, `docs/design/REN-29.md` §12)
   - Do: REN-28 tasks 14–27: far field, Vulkan parity, streaming core and focus, suspended bodies (PHY), streamed physics and scatter, random-access pack reads (AST), sparse edits, Play/export prefetch (GUI), *Big Island*, component state capture (ECS), scatter state deltas with optional per-rule respawn, save-game container, stateful props check.
   - Done when: *Big Island* streams within the budgets; destroyed or taken props stay that way across unload, save and load; tests per task.
+  - Progress (2026-11-17): checkpoint with tasks 14, 15 and the REN part of 16 done. Remaining REN: 17 (REN part), 18, 20 (REN part), 21–23, 25 and 27 (REN parts). Other owners: PHY-28 (17), AST-40 (19), AST-41 (25), VK-11 (12), GUI-19 (21), TLG-20 (22, 27), EDT-95 (20).
   - Deps: REN-36
 - [ ] **REN-38** `P3` World phase E: vegetation (`docs/design/REN-28.md` §12, `docs/design/REN-29.md` §12)
   - Do: REN-29 tasks 4, 5, 6, 18 (PHY: edit-mode physics queries), 17 (foliage on meshes), 10b (EDT), 11, 13b (TLG), 14b (VK).
@@ -202,6 +214,10 @@ Goal (human, after REN-13): full Vulkan support for **exported games**, chosen p
   - Do: (NEEDS from REN-36): terrain splat shading on Vulkan (sampler2DArray units 0–4, the stream at location 1 is now vec4, `uBiomeColor0..7` as separate uniforms) and instanced scatter, including the instanced shadow pipeline.
   - Done when: Splat-shaded terrain and scatter render on Vulkan at parity with GL; GPU parity tests.
   - Deps: VK-09, REN-36
+- [ ] **VK-11** `P2` Vulkan parity for the streamed far field (REN-37 task 12)
+  - Do: (NEEDS from REN-37): far field (`uFarTile`, `uMacro` on unit 0, `uMacroArea`) and the streamed upload path on Vulkan.
+  - Done when: A streamed terrain with far field renders on Vulkan at parity with GL; GPU parity tests.
+  - Deps: VK-10 (needs the REN-37 checkpoint, round 38)
 
 ### Asset management — `AST` (`skate-assets`)
 
@@ -311,13 +327,33 @@ Round 27+ goals: the Asset Browser shows every asset type, one assets folder, ex
   - Do: (NEEDS from TLG-17 and AUD-01): built-in water materials (`WaterMaterials.ALL`, no file, resolved in `WaterSchema.BUILT_IN`) break the "every engine: ref is packed" check (`ProjectLifecycleEndToEndTest.Lifecycle_9`) now that the showcase uses `WaterMaterials.POOL`: have the packer and the check treat them as built-in (or ship real `water_*.skmat` files with REN). Add the `engine:Sounds/Water/*` clips to `EngineDefaults.Sounds.ALL` so exports pack them.
   - Done when: TLG-17's showcase passes the lifecycle test; exports contain the water sounds; tests.
   - Deps: AST-36
-- [~] @skate-assets **AST-38** `P2` `.skterrain`: layers, biomes, climate and scatter references (REN-36)
+- [x] **AST-38** `P2` `.skterrain`: layers, biomes, climate and scatter references (REN-36)
   - Do: (NEEDS from REN-36): store layers, biomes, climate and biome source in `terrain.json`; persist `paintedBiomeIds` per chunk in region files; the pack's `ReferenceCollector` follows layer `.skmat`, scatter models, rule materials and prefabs.
   - Done when: A biome-painted, scattered terrain saves, reloads and exports with all its references; tests.
   - Deps: AST-36
 - [x] **AST-39** `P0` Exported game crashes: "No suitable reader found for the file format of file '$$$___magic___$$$'"
   - Do: (human, round 35 testing, 2026-11-17): running an exported game fails at start-up in `AssimpLoader.loadModel(AssimpLoader.kt:68)` ← `AssetsManager.resolveModel` ← `RenderComponent.resolveModelFromByteArray` ← `ProjectManager.openProject` ← `GameMain.main`: a RenderComponent's model path resolves to packed bytes Assimp cannot read. A new project exported from the CLI (no models) runs fine. Find which object type/asset (round 35 candidates: water, blended material, terrain, AST-34 `.glb`, animator clips, compression), fix it, and add an export-and-load regression test. Also: on a case-sensitive folder the packer writes `builds/game.bin` but the exporter expects `Builds/`.
   - Done when: A project using every round-35 feature exports and starts; regression test.
+  - Deps: none
+- [ ] **AST-40** `P2` Random-access pack reads for streamed terrain (REN-37 task 19)
+  - Do: (NEEDS from REN-37): read pack entries through a `FileChannel` (uncompressed region entries) so streamed chunks don't load all of `game.bin`; confirm `TerrainAssets.chunk` is safe from worker threads (streamed chunks call it from the common pool).
+  - Done when: An exported streamed terrain loads chunks without reading the whole pack; thread-safety test.
+  - Deps: AST-38 (needs the REN-37 checkpoint, round 38)
+- [ ] **AST-41** `P2` Save-game container with named sections (REN-37 task 25)
+  - Do: (NEEDS from REN-37): a save-game container with named sections, used for remembered scatter state (destroyed or taken props).
+  - Done when: Sections round-trip and unknown sections survive; tests.
+  - Deps: AST-38 (needs the REN-37 checkpoint, round 38)
+- [ ] **AST-42** `P3` Pack item files and their models (GPL-27)
+  - Do: (NEEDS from GPL-27): move the bundled item paths into `Assets.Items`, list `Assets/Items/` from the export pack, and pack `engine:` models referenced by item files.
+  - Done when: An exported game equips the hat and glasses; tests.
+  - Deps: none (needs the GPL-27 checkpoint, round 38)
+- [ ] **AST-43** `P2` Single-jar game packaging review
+  - Do: (human, Discord 2026-11-17): review game packaging and allow `game.bin` and everything else to be packaged inside the game jar (one file to ship), keeping the separate-file mode if it helps patching or streaming (AST-40). Design note first.
+  - Done when: An export option produces a single runnable jar; tests.
+  - Deps: AST-40
+- [ ] **AST-44** `P2` Mesh downscaling tool
+  - Do: (human, Discord 2026-11-17): a mesh simplification (decimation) tool, if not already available (check the Blender import options first): reduce a model's triangle count to a target ratio, preview the result, and optionally generate LOD levels.
+  - Done when: A model can be reduced and saved from the editor; quality and ratio tests.
   - Deps: none
 
 ### ECS — `ECS` (`skate-ecs`)
@@ -343,10 +379,22 @@ Round 27+ goals: deterministic seeds for games and procedural generation.
   - Do: Engine.kt wiring (no owner, ECS takes it): (a) (NEEDS from GUI-17) register `FrameRateOption.option(...)` in `gameOptions` with a limiter that does nothing in the editor, so editor Play shows the same Frame rate row as the exported game (GUI-12 parity); `GameMain` registers it again with the real limiter, register replaces by id. (b) (NEEDS from GPL-32) call `playerMotionSystem.listenTo(eventSystem)` where `PlayerMotionSystem` is built, then remove the temporary call in `SkateGameplay.install`. (c) (NEEDS from AUD-01) construct `AudioSystem(audioEngine, logger, assetsManager, cameraManager, assetsManager.paths::localPath, eventSystem)` in `initializeSystems()` so splashes hear `WaterEntered`.
   - Done when: Editor Play shows the Frame rate row; every game reacts to water (bail, splash) without game-specific wiring; tests.
   - Deps: GUI-17, GPL-32, AUD-01
-- [~] @skate-ecs **ECS-19** `P2` Prefab scatter: hidden child entities under the terrain (REN-28 task 7)
+- [x] **ECS-19** `P2` Prefab scatter: hidden child entities under the terrain (REN-28 task 7)
   - Do: (NEEDS from REN-36): spawn non-serialized, hierarchy-hidden child entities under the terrain for `ScatterRule.prefab`, capped per rule (`maxEntities`), from the placed instances in `TerrainChunkData.scatter`. Overlaps the phase-D ScatterItem task 24.
   - Done when: Prefab scatter rules spawn capped, unsaved, hidden children that follow chunk changes; tests.
   - Deps: REN-36
+- [ ] **ECS-20** `P2` Engine.kt: register the item, appearance and attachment systems (GPL-27)
+  - Do: (NEEDS from GPL-27): in `engine/core/Engine.kt`, register `InventorySystem` (shared `ItemDatabase`, `slotsOf = SkeletonConfigs::slotsOf`), `AppearanceSystem` (`loadModel = assetsManager::loadModel`) and `BoneAttachmentSystem` (and `playerMotionSystem.listenTo(eventSystem)` if ECS-18 missed it), then remove the temporary registrations in `SkateGameplay.install`. Mark `Equip:*` children runtime-only (`GameObject.isRuntimeOnly`, ECS-19) so they are never saved (design Q3).
+  - Done when: Every game gets inventory, appearance and attachments; equipped items are never saved; tests.
+  - Deps: ECS-19 (needs the GPL-27 checkpoint, round 38)
+- [~] @skate-ecs **ECS-21** `P1` FirstPersonCameraComponent edits don't always reach the Game Viewport
+  - Do: (human, Discord 2026-11-17): changing FirstPersonCameraComponent values in the Properties window does not always show in the Game Viewport. Find which fields are cached or not marked dirty, fix it, and add a test that each field change reaches the camera used for rendering.
+  - Done when: Every field change shows on the next frame, in edit mode and Play; tests.
+  - Deps: none
+- [ ] **ECS-22** `P2` New scenes get a camera by default
+  - Do: (human, Discord 2026-11-17): new scenes already get a sun; also add a default camera (positioned to see the origin), in the editor's + scene path and the project templates.
+  - Done when: A new scene has a sun and a camera; test.
+  - Deps: none
 
 ### Physics — `PHY` (`skate-physics`)
 
@@ -368,6 +416,14 @@ Round 27+ goals: a Jolt backend selectable per project, a terrain heightfield co
   - Do: (NEEDS from REN-36): static colliders for scatter items of rules with `collider = true`, from `TerrainChunkData.scatter` (terrain-local position, yaw, scale, normal; world matrix from `TerrainScatterRenderer.matrixOf`). Rebuild when a chunk's `scatter` list changes.
   - Done when: The character collides with scattered rocks and trees on every backend; tests.
   - Deps: PHY-26
+- [ ] **PHY-28** `P2` Streamed terrain physics (REN-37 task 17, PHY part)
+  - Do: (NEEDS from REN-37): freeze and unfreeze bodies on Bullet, Jolt and Simple, keeping and restoring velocities; `HeightfieldCollider3D` and `ScatterCollider3D` follow only physics-ring chunks (planner `physicsWanted`), at most 2 adds/removes per fixed step, with a "collider present" bitset. Bodies over a chunk without a collider freeze until it arrives; nothing outside the terrain bounds freezes. Off-thread shape building per backend.
+  - Done when: Bodies on a streamed terrain never fall through a missing chunk and resume with their velocity; tests on every backend.
+  - Deps: PHY-27 (needs the REN-37 checkpoint, round 38)
+- [~] @skate-physics **PHY-29** `P2` Destruction system design
+  - Do: (human, Discord 2026-11-17): plan a destruction system (fractured meshes, pre-fractured vs runtime, debris pooling and lifetime, damage thresholds, effects and audio hooks, network and save-state concerns with REN-37's remembered props). Design note `docs/design/PHY-29.md` with sliced tasks; ask for approval before code.
+  - Done when: The note is approved and its slices are in the backlog.
+  - Deps: none
 - [~] @skate-physics **PHY-17** `P2` REWRITE Jolt physics backend — slices a–e done; slice f (per-project selection) waits for EDT-59
   - Do: Implement the approved slices in order: a) preparation (`BodyDescription`, per-spec native loader, `ShapeWireframe` move, test helper), b) Jolt core (bodies, shapes, layers, queries, factory + fallback), c) contacts and triggers, d) joints/ragdoll/vehicle parity, e) debug draw, stats, leak/determinism tests, benchmark, f) per-project selection plumbing with EDT/AST/TLG. Decisions: physical centre of mass, ship both natives now (AST-15 strips the unused one), Bullet stays the default.
   - Done when: The physics test suite passes on Jolt as well as Bullet; the showcase runs on Jolt.
@@ -387,7 +443,7 @@ Round 27+ goals: a Jolt backend selectable per project, a terrain heightfield co
   - Do: From round 30 integration (skate-audio, skate-tooling): since PHY-18, `NativeLibraryLoader` extracts with `CLEAN_EXTRACTION` into the shared `%APPDATA%\Skate\natives`, so concurrent JVMs (parallel worktree test runs, a running editor next to an exported game) wipe or lock each other's DLLs and physics fails with `UnsatisfiedLinkError`. Use a per-version (content-hash) subfolder and skip extraction when an identical DLL is already present; never delete a DLL another process may hold.
   - Done when: Two JVMs loading Bullet and Jolt at the same time both succeed; loader tests cover reuse and the versioned path.
   - Deps: PHY-18
-- [~] @skate-physics **PHY-22** `P3` Scene query interface with overlap (GPL-24)
+- [x] **PHY-22** `P3` Scene query interface with overlap (GPL-24)
   - Do: Per (`docs/design/GPL-24.md` §8): raycast, shapeCast and a new `overlap(shape, position, rotation, layerMask)` on `IPhysics3D`, exposed from `PhysicsSystem`, implemented for Bullet, Jolt and Simple.
   - Done when: The same query tests pass on every backend.
   - Deps: GPL-24
@@ -432,7 +488,7 @@ Round 27+ goals: an animation authoring tool and animation from video.
   - Do: From the human testing PR #37 (2026-11-10): current MediaPipe releases dropped the legacy `mp.solutions` API, which `mediapipe_extract.py` uses by default. Default to the Tasks API (`PoseLandmarker`, video mode), get the `.task` model without manual steps (path override in Setup), keep `solutions` only as a fallback; Check setup reports the API in use.
   - Done when: With the current MediaPipe from pip, Check setup reports Ready and Create animation produces a `.skanim` from a local video; docs and tests updated.
   - Deps: ANI-17
-- [~] @skate-animation **ANI-19** `P3` Joint remap of skinned clothing by bone name (GPL-24)
+- [x] **ANI-19** `P3` Joint remap of skinned clothing by bone name (GPL-24)
   - Do: Per (`docs/design/GPL-24.md` §8): remap a skinned clothing mesh onto a target skeleton by bone name; refuse items whose bones don't match.
   - Done when: Pure remap function with tests, including the refusal case.
   - Deps: GPL-24
@@ -453,7 +509,7 @@ Audio needs a more complete implementation.
   - Do: (NEEDS from REN-35): play a splash on PHY-16's `WaterEntered` and a looping water ambience near water volumes.
   - Done when: Entering the showcase pool splashes and the pool has ambience; tests.
   - Deps: PHY-16
-- [~] @skate-audio **AUD-02** `P1` AudioSystemShowcaseTest ignores the showcase pool's water ambience
+- [x] **AUD-02** `P1` AudioSystemShowcaseTest ignores the showcase pool's water ambience
   - Do: (NEEDS from TLG-17): the showcase's Nature pool now adds AUD-01's water ambience when the camera is at the origin, so two `AudioSystemShowcaseTest` tests fail. In the `system()` helper set `waterAudio = WaterAudioConfig(enabled = false)` (or assert on the song's voice instead of `al.playing.single()`).
   - Done when: `AudioSystemShowcaseTest` passes with TLG-17's showcase; tests.
   - Deps: AUD-01
@@ -482,6 +538,14 @@ Round 27+ goals: input is too tightly coupled with skateboarding; it needs a gam
   - Do: (NEEDS from GPL-31): in `AnimatorWindow.parametersPanel()`, call `CharacterAnimationDriver.writtenParameters(controller.preview)` and list the ones not declared yet under a "Written by the character" heading, with a one-click declare. New `lbl.animator_window.*` keys (EN, FR).
   - Done when: The Animator window lists the character's parameters and can declare them; tests.
   - Deps: GPL-31
+- [ ] **ANI-27** `P2` Animation Editor: Mirror as a toggle, steady frame indicator
+  - Do: (human, Discord 2026-11-17): the Mirror button becomes a toggle that shows whether the clip is mirrored; the frame indicator gets a fixed width for the clip's largest frame number so it no longer shifts when 9 becomes 10.
+  - Done when: Mirror shows its state and toggles back with undo; the indicator keeps its position; tests.
+  - Deps: ANI-15
+- [~] @skate-animation **ANI-28** `P1` IK review for skateboarding and parkour
+  - Do: (human, Discord 2026-11-17): a complete review of the inverse kinematics system for skateboarding (feet on the board, hands on the rail/ledge, look-at) and parkour (hand plants, foot placement on ledges and stairs): what exists, what is missing (3D markers or targets as components, IK chains, weights, blending with animation), and a super user-friendly editor UI (gizmos for targets, presets for the skater). Design note `docs/design/ANI-28.md` with sliced tasks; ask for approval before code.
+  - Done when: The note is approved and its slices are in the backlog.
+  - Deps: none
 - [x] **INP-10** `P1` REWRITE Decouple input from skateboarding
   - Do: Design note `docs/design/INP-10.md` first. Generic action maps and input contexts (gameplay/UI/vehicle/...) with push/pop priority in the engine; skate-specific actions, bindings and gesture/flick logic move to the game layer (`game/**`, owned by gameplay). Scripts and in-game UI use the generic API.
   - Done when: The design is approved and implemented, `engine/input/**` has no skateboarding concepts (architecture-guard test), and the skate game plays as before.
@@ -510,6 +574,7 @@ Round 27+ goals: a fuller skate demo with camera modes and standard control sche
 - [~] @skate-gameplay **GPL-27** `P3` Items, inventory, health, interaction and accessories (GPL-24 slices a, b, d, e)
   - Do: Per (`docs/design/GPL-24.md` §8): 24a items and inventory (`*.item.json` in `Assets/Items/`), 24b health and damage (applied synchronously in the `HitEvent` subscriber), 24d interaction and pickup, 24e `SkeletonConfig` (in `Assets/Data/`) with a **dynamic slot list with defaults** (HEAD, EYES, NECK, TORSO, LEGS, FEET, HANDS; add/rename/remove per config) and rigid accessories on the skater. No combat in the skate demo (pickups and cosmetics only).
   - Done when: Each slice's tests in the note pass; a hat and glasses equip on the skater.
+  - Progress (2026-11-17): checkpoint with slices 24a (items, inventory) and 24e (skeleton config, hat and glasses on the skater) done; 24b and 24d remain. Other owners: ECS-20, AST-42.
   - Deps: GPL-24, AST-27
 - [ ] **GPL-28** `P3` Combat, clothes and tattoos (GPL-24 slices c, f, g)
   - Do: Per (`docs/design/GPL-24.md` §8): 24c `CombatSystem` through the PHY-22 query interface; 24f appearance, skinned clothes (same skeleton required, joint remap by bone name), covered body parts hidden by name; 24g tattoos baked into a per-character texture when the list changes.
@@ -565,6 +630,14 @@ Round 27+ goals: menu parity between the editor and the game, and a map view.
   - Do: Per (`docs/design/GPL-24.md` §8): inventory and equipment screen (move, equip, durability), gamepad navigable, driven only by the inventory request/result events.
   - Done when: Items can be moved and equipped with mouse and gamepad; tests.
   - Deps: GPL-27
+- [ ] **GUI-19** `P2` Prefetch streamed terrain behind the loading screen (REN-37 task 21)
+  - Do: (NEEDS from REN-37): Play and the exported game call `TerrainStreamingSystem.streamer(terrain)?.prefetch(spawnX, spawnZ, rings)` behind the loading screen, with radii scaled by the graphics quality.
+  - Done when: Play starts with the spawn area loaded, no pop-in; tests.
+  - Deps: none (needs the REN-37 checkpoint, round 38)
+- [~] @skate-gameui **GUI-20** `P1` The editor Play pause menu differs from the exported game's
+  - Do: (human, Discord 2026-11-17): the in-game menu in editor Play is different from the exported game's menu. List every difference (rows, order, styling, actions) after ECS-18's frame-rate row and make them identical; extend PauseMenuParityTest to compare the full menus.
+  - Done when: Both hosts build the same menu; parity test covers every row and style.
+  - Deps: none
 
 ### Scripting — `SCR` (`skate-scripting`)
 
@@ -575,10 +648,17 @@ Scripting needs to be implemented. Kotlin Script is the primary language; TypeSc
 
 Multiplayer and Steam support need to be added.
 
+- [~] @skate-online **NET-01** `P2` Publish to Steam from the editor
+  - Do: (human, Discord 2026-11-17): publish an exported game to Steam from the editor (app and depot IDs, branch, build description, SteamPipe/steamcmd upload with progress and log). Design note `docs/design/NET-01.md` first (credentials handling, steamcmd install, Steamworks SDK licensing); ask for approval before code.
+  - Done when: The note is approved; a build uploads to a Steam branch from the editor.
+  - Deps: AST-43
+
 
 ---
 
 ## Editor — `EDT` (`skate-editor`)
+
+Editor UIs for a domain's own back end may be written by that domain's agent and reviewed by `skate-editor` (human, 2026-11-17).
 
 Round 27+ goals (human, 2026-11-06): fix editor bugs, make every window, dialog and menu consistent, add beginner help, and overhaul project creation. EDT tasks may be lead-assigned to other agents (rule 1).
 
@@ -736,25 +816,78 @@ Round 27+ goals (human, 2026-11-06): fix editor bugs, make every window, dialog 
   - Do: (EDT-88 design answer, 2026-11-17): `ToggleFullScreenCommand` changes no project data but adds Undo entries. Make viewport full screen plain view state (like EDT-88's maximize) and remove it from the undo stack.
   - Done when: F12 toggles full screen without adding Undo entries; tests.
   - Deps: EDT-88
-- [ ] **EDT-90** `P2` Water inspector and Environment wind section (REN-29 task 10a)
+- [~] @skate-physics **EDT-90** `P2` Water inspector and Environment wind section (REN-29 task 10a)
   - Do: (NEEDS from REN-35): water inspector (presets `WaterPreset`, per-wave editor, material picker, volume gizmo, Freeze time via `EnvironmentComponent.animateInEditor`) and an Environment wind section with presets (`WindField.CALM/BREEZE/STRONG/STORM`). Wind strings already exist in `components.properties`; the selected-water volume box already draws through the debug renderer.
   - Done when: Water and wind can be tuned from the inspector with undo; tests.
   - Deps: REN-35
-- [ ] **EDT-91** `P2` Export dialog UI for the AST-29 settings
+- [~] @skate-assets **EDT-91** `P2` Export dialog UI for the AST-29 settings
   - Do: (NEEDS from AST-29): in `ExportWizardWindow`, build the wizard with `ExportWizard(ExportMemory.inSettings({ settingsManager.editorSettings }, settingsManager::update))`; add the Game/Build/Summary sections from AST-29 §3 using `ProjectExporter.art()`/`estimate()`, show `ExportResult.warnings` (keys `lbl.export.warning.*`), and pass art to `canStart`/`issues`.
   - Done when: Each export setting is editable in the dialog and persists; missing icon/splash warnings show; tests.
   - Deps: AST-29
-- [ ] **EDT-92** `P2` Terrain inspector and tools (REN-28 task 10)
+- [~] @skate-vulkan **EDT-92** `P2` Terrain inspector and tools (REN-28 task 10)
   - Do: (NEEDS from REN-36): terrain inspector (presets via `TerrainComponent.applyPreset`), sculpt and paint brushes writing `TerrainChunkData.setHeight` then `runtime.markEdited()`, a stamp gizmo, "Flatten terrain under", all undoable.
   - Done when: A terrain can be sculpted, painted and stamped from the editor with undo; tests.
   - Also (REN-36 tasks 5–7): inspectors for biomes, layer rules, scatter rules, layers and climate; a toggle for `TerrainDebug.showBiomes`; biome paint writing `paintedBiomeIds` with `biomeSource = PAINTED`, then `runtime.markEdited()` (sculpting calls it too and now recomputes splat and scatter). (AST-36): create a terrain asset from the inspector with `TerrainAssetStore.create(<project>/Assets/Data, name, terrain)` and call `TerrainAssets.save(terrain)` on scene save and after sculpt strokes.
   - Also (REN-42): when the editor creates a TerrainComponent, write `seedName = "terrain/<entity name>"` (Add Component path or this inspector) so renaming the entity keeps its ground (`key()` no longer does it); show a note when `spacingCapped()` is true.
+  - Design (`docs/design/EDT-92.md`, approved 2026-11-17): tools picked in the inspector only; the first stroke auto-creates the terrain asset; brushes Raise, Lower, Smooth, Flatten and Paint biome (Noise and Ramp in EDT-97); stamps edited with viewport handles plus fields; "Flatten terrain under" in the object context menu; the biome, layer-rule, scatter-rule and climate inspectors are split out to EDT-96.
   - Deps: ECS-17, AST-36
 - [ ] **EDT-93** `P2` Asset Browser: copy or replace engine assets (AST-26 §8)
   - Do: (NEEDS from EDT-69): "Copy into project" and "Replace with engine version" as undoable Commands (`EngineAssetCopier.copy` exists), plus the "update available" notification.
   - Done when: An engine asset can be copied into the project or reset to the engine version with undo; tests.
   - Deps: EDT-69
-- [ ] **EDT-82** `P2` Editor-wide "unsaved assets" prompt on close
+- [x] **EDT-94** `P2` Hide runtime-only children (terrain scatter) in the editor
+  - Do: (NEEDS from ECS-19): `SceneHierarchyWindow` (and the `ScenePlaySnapshot` selection paths and viewport picking) list `GameObject.persistentChildren` instead of `children`, so runtime-only terrain scatter entities (`isRuntimeOnly`) are hidden; they are never saved.
+  - Done when: Scatter children never show in the Hierarchy or get picked; tests.
+  - Deps: ECS-19
+- [ ] **EDT-95** `P2` Pin edited terrain chunks (REN-37 task 20, EDT part)
+  - Do: (NEEDS from REN-37): add a chunk to `runtime.pinned` on its first edit and remove it on save, with an inspector note when the detail radius was reduced.
+  - Done when: Edited chunks never unload before save; tests.
+  - Deps: EDT-92 (needs the REN-37 checkpoint, round 38)
+- [ ] **EDT-96** `P2` Terrain biome, layer-rule, scatter-rule and climate inspectors (split from EDT-92)
+  - Do: (EDT-92 design answer, 2026-11-17): inspectors for biomes, layer rules, scatter rules, layers and climate; a toggle for `TerrainDebug.showBiomes`.
+  - Done when: Every biome, layer, scatter and climate setting is editable with undo and saved in the terrain asset; tests.
+  - Deps: EDT-92
+- [ ] **EDT-97** `P3` Terrain Noise and Ramp brushes
+  - Do: (EDT-92 design answer, 2026-11-17): Noise and Ramp sculpt brushes alongside EDT-92's core set.
+  - Done when: Both brushes sculpt with undo; tests.
+  - Deps: EDT-92
+- [~] @skate-audio **EDT-98** `P0` Sounds tab of the Asset Browser crashes when an item is selected
+  - Do: (human, Discord 2026-11-17): selecting an item in the Sounds tab (EDT-69) crashes the editor. Reproduce in a headless test, fix it, and guard every Asset Browser tab against selecting each item type.
+  - Done when: Selecting any item in any tab works; guard test.
+  - Deps: EDT-69
+- [~] @skate-scripting **EDT-99** `P1` The + button creates two scenes instead of one
+  - Do: (human, Discord 2026-11-17): creating a new scene with the + button (or tab) creates two scenes. Fix it with a test on the create-scene path.
+  - Done when: One click creates exactly one scene, with undo; test.
+  - Deps: none
+- [~] @skate-editor **EDT-100** `P1` Windows docked on the right clip their values
+  - Do: (human, Discord 2026-11-17): with the Properties window docked on the right, Transform values sit too far right and some Environment values can't be reached; the same happens in many editor windows. Find the shared cause (label column width, fixed offsets, missing scroll), fix it, and add a guard that draws every inspector and window at narrow widths with no clipped or unreachable field. Also add the Environment component's missing strings (EN, FR).
+  - Done when: Every window works docked on the right at the narrowest default width; Environment has no raw keys; guard test.
+  - Deps: none
+- [ ] **EDT-101** `P1` Window header: help and maximize buttons next to the close button
+  - Do: (human, Discord 2026-11-17): the `?` button sometimes sits alone on its own row and wastes space. Move `?` and Maximize/Restore (EDT-88) into the window's title bar or tab, next to the close button, if ImGui docking allows; otherwise keep them on the first content row and never wrap them alone. Short design note if the title-bar route needs custom drawing.
+  - Done when: No window shows `?` alone on a row; both buttons sit next to the close button where possible; HelpButtonClipTest extended.
+  - Deps: EDT-88
+- [ ] **EDT-102** `P2` Every color property uses a color picker
+  - Do: (human, Discord 2026-11-17): every component color property in the Properties window uses the color picker (ColorEdit with picker), not raw numbers. Add a guard test over all registered components.
+  - Done when: The guard finds no color field without a picker; test.
+  - Deps: none
+- [ ] **EDT-103** `P2` Editor FPS counter over the Game Viewport, gray with a white outline
+  - Do: (human, Discord 2026-11-17): move the editor FPS counter so it sits over the Game Viewport (it is too far left), draw it gray instead of green, with a white outline if possible.
+  - Done when: The counter is inside the viewport rect at every layout, gray with an outline; test for its placement.
+  - Deps: none
+- [ ] **EDT-104** `P2` Export button in the top menu
+  - Do: (human, Discord 2026-11-17): add an Export button to the left of the Settings button in the editor's top menu; it opens the export dialog (EDT-91).
+  - Done when: The button opens the export dialog; tooltip and EN/FR strings; test.
+  - Deps: EDT-91
+- [ ] **EDT-105** `P2` Version Control category in Editor Settings
+  - Do: (human, Discord 2026-11-17): a Version Control category in Editor Settings for the Git settings (EDT-60/EDT-79: identity, default branch, fetch interval, line endings, …).
+  - Done when: The Git settings are editable there and persist; test.
+  - Deps: none
+- [~] @skate-input **EDT-106** `P1` Missing editor UI audit
+  - Do: (human, Discord 2026-11-17) "Plan all missing editor UI": list every engine component, system setting and asset type that has no editor UI (or only raw fields), and turn each gap into a task in the owning domain (domain agents write UIs for their own back ends, skate-editor reviews). Write the list to `docs/design/EDT-106.md` and report the proposed tasks to the lead.
+  - Done when: The audit note exists and every gap has a backlog task.
+  - Deps: none
+- [~] @skate-animation **EDT-82** `P2` Editor-wide "unsaved assets" prompt on close
   - Do: (ANI-21 design answer, 2026-11-10): one prompt when the project or editor closes, listing the unsaved scene, animation clips and animator controllers, with Save all / Discard / Cancel.
   - Done when: Closing with unsaved assets asks first; tests for the dirty-document registry.
   - Deps: ANI-21
@@ -762,9 +895,10 @@ Round 27+ goals (human, 2026-11-06): fix editor bugs, make every window, dialog 
   - Do: (EDT-79 design answer, 2026-11-10): merge another branch into the current one from the status-bar branch popup, using EDT-79's Conflicts dialog; needs its own design review (risk of losing work).
   - Done when: A clean merge and a conflicting merge both work from the popup; tests.
   - Deps: EDT-79
-- [~] @skate-editor **EDT-84** `P1` IntelliJ-style tool window bars on the left and right
+- [x] **EDT-84** `P1` IntelliJ-style tool window bars on the left and right
   - Do: (human, EDT-79 design answers, 2026-11-10): vertical bars on the left and right edges of the editor with one button per tool window, as in IntelliJ, to open, close and focus windows (Hierarchy, Inspector, Asset Browser, Version Control, …). Design note first.
   - Done when: Every registered window can be toggled from a side bar, and its position is saved with the layout; tests.
+  - Design (`docs/design/EDT-84.md`, approved 2026-11-17): no Game Viewport button; bottom-zone windows split by category (Assets and Scripting left; Debug, Project and Help right); one-way link (moving a button re-docks its window, dragging a tab does not move the button); icons with tooltips; bars hideable from View > Tool Window Bars (on by default, saved in editor settings); Alt+1…9 style shortcuts are part of EDT-84 (one rebindable shortcut per window in Key Bindings).
   - Deps: none
 
 ### Tooling & samples — `TLG` (`skate-tooling`)
@@ -792,7 +926,7 @@ Round 27+ goals: tooling fixes, an Android feasibility study and new demo projec
 - [x] **TLG-16** `P2` Logical UI hierarchies in the sample projects
   - Do: (human, Discord 2026-11-10): in the Feature Showcase, the legend panel's items become children of the legend panel object and the other UI items are regrouped logically (HUD, menus, panels); same for every sample (Tetris, Marble Run, MainScene).
   - Done when: Each sample's Hierarchy shows grouped UI; samples still play; sample tests updated.
-- [~] @skate-tooling **TLG-17** `P2` Showcase Nature area part 1 (REN-29 task 13a)
+- [x] **TLG-17** `P2` Showcase Nature area part 1 (REN-29 task 13a)
   - Do: (NEEDS from REN-35): a 10 × 6 × 1.5 m pool with `WaterComponent(material = WaterMaterials.POOL)` and steps, floating crates of three densities, a ball and a log, a UI button named in `EnvironmentComponent.windCycleButton`, and `docs/samples.md`.
   - Done when: The Showcase Nature area part 1 (pool, floating props, wind) works on GL and VK; tests.
   - Status (2026-11-17): code complete on agents/tooling (bb1e5d26); the full suite fails `ProjectLifecycleEndToEndTest.Lifecycle_9` until AST-37 lands.
@@ -806,6 +940,18 @@ Round 27+ goals: tooling fixes, an Android feasibility study and new demo projec
   - Do: (NEEDS from AST-39): `tools/cli/.../SkateCliService.kt:124` (pack) creates and checks `File(projectDir, "builds")` while `AssetsPacker` writes to `ProjectLayout.BUILDS_DIR` (`Builds/`); on a case-sensitive folder the CLI fails with "Packing did not produce …". Use `AssetsPacker.defaultOutputDir(project)`.
   - Done when: `skate export` works on a case-sensitive folder; test.
   - Deps: none
+- [ ] **TLG-20** `P2` Big Island sample and stateful props check (REN-37 tasks 22, 27)
+  - Do: (NEEDS from REN-37): a 4 km streamed island sample (flattened plateau, free-fly camera, streaming stats overlay from the `EngineStats.terrain*` counters), budget and hitch measurements; and the stateful props check (task 27).
+  - Done when: *Big Island* streams within the budgets; destroyed or taken props stay that way across unload, save and load; tests.
+  - Deps: PHY-28, AST-40, AST-41, GUI-19
+- [ ] **TLG-21** `P1` Feature Showcase audit and upkeep
+  - Do: (human, Discord 2026-11-17): make sure the Feature Showcase covers every user-visible feature done so far (list missing areas, e.g. terrain, buoyancy, blend trees, OSM city, items), add the missing ones in small slices, and keep a checklist in `docs/samples.md` that rule 9 points to.
+  - Done when: The showcase covers every done feature in the checklist; samples tests pass.
+  - Deps: none
+- [~] @skate-tooling **TLG-22** `P1` herdr setup: question tool and task observer
+  - Do: (human, Discord 2026-11-17): make the herdr agent setup (`.github/agents/*.agent.md`, `tools/herdr/sync-agents.sh`, skills) explicitly say that only the lead asks the human, with the question tool (rule 11), and make sure the `task-observer` skill is loaded for every herdr agent session. Also review the `claude-code-setup:claude-automation-recommender` suggestions for this repo and report which plugins, skills or hooks fit.
+  - Done when: Every generated agent file mentions the question rule and loads task-observer; the recommendations are reported to the lead.
+  - Deps: none
 
 ### Quality — `QA` (`skate-qa`)
 
@@ -817,6 +963,10 @@ Round 27+ goals: a warning-free build.
 - [x] **QA-18** `P3` Flaky `NoiseFieldTest`
   - Do: (reported by skate-tooling, 2026-11-17): `NoiseFieldTest` failed once in a full run and passed on rerun. Find the source of non-determinism and fix it, or list it in `docs/bugs.md`.
   - Done when: 20 consecutive runs pass; or the cause is documented.
+  - Deps: none
+- [~] @skate-qa **QA-19** `P1` Editor responsiveness audit
+  - Do: (human, Discord 2026-11-17): the editor is sometimes sluggish when creating a project or pressing Play. Profile those paths and every other heavy editor operation, list what runs on the UI thread that shouldn't (rule 10), and propose one task per owning domain to move it to coroutines with progress. Add a guard or timing test for the worst offenders.
+  - Done when: An audit note `docs/design/QA-19.md` with measured timings exists and each offender has a backlog task.
   - Deps: none
 
 ---
