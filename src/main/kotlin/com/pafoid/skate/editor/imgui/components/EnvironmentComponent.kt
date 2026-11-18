@@ -4,7 +4,6 @@ import com.pafoid.skate.editor.events.ComponentFieldAction
 import com.pafoid.skate.editor.imgui.EnumLabels
 import com.pafoid.skate.editor.imgui.MImGui
 import com.pafoid.skate.editor.imgui.Tooltips
-import com.pafoid.skate.editor.imgui.tippedWith
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.ecs.components.Component
 import com.pafoid.skate.engine.ecs.components.EnvironmentComponent
@@ -33,7 +32,7 @@ private val WIND_SPEED = EnvironmentComponent::class.java.getDeclaredField("wind
 
 /**
  * Environment inspector: the generic rows, with the wind (REN-29 §3.1) gathered in a Wind section that starts with
- * preset buttons (EDT-90). A preset sets the wind speed through an undoable field command; the other rows go through
+ * a preset combo (EDT-90). A preset sets the wind speed through an undoable field command; the other rows go through
  * the shared edit tracker.
  */
 fun EnvironmentComponent.imgui(engine: Engine) {
@@ -43,18 +42,23 @@ fun EnvironmentComponent.imgui(engine: Engine) {
     val strings = engine.stringManager
     MImGui.labeledSeparator(strings.getString("$KEY.wind"))
     Tooltips.showIfPresent(strings, "$KEY.wind${Tooltips.SUFFIX}")
-    ImGui.pushID("$KEY.windPreset")
+    windPresetRow(engine)
+    reflectedImgui(engine, skip = all - WIND_FIELDS)
+}
+
+/** The wind preset combo: a combo, not a row of buttons, so it fits a narrow inspector in any language and scale. */
+internal fun EnvironmentComponent.windPresetRow(engine: Engine) {
+    val strings = engine.stringManager
     val active = WindPreset.of(windSpeed)
-    WindPreset.entries.forEachIndexed { i, preset ->
-        if (i > 0) ImGui.sameLine()
-        val selected = preset == active
-        if (selected) ImGui.beginDisabled()
-        val clicked = ImGui.button(EnumLabels.of(strings, preset))
-        if (selected) ImGui.endDisabled()
-        if (strings.tippedWith(clicked, "$KEY.windPreset${Tooltips.SUFFIX}") && !selected) {
-            engine.eventSystem.publish(ComponentFieldAction.Set(this, WIND_SPEED, preset.speed))
+    val preview = active?.let { EnumLabels.of(strings, it) } ?: strings.getString("$KEY.windPreset.custom")
+    inspectorRow(strings, "environment.windPreset", "$KEY.windPreset") {
+        if (ImGui.beginCombo("##environment.windPreset", preview)) {
+            WindPreset.entries.forEach { preset ->
+                if (ImGui.selectable(EnumLabels.of(strings, preset), preset == active) && preset != active) {
+                    engine.eventSystem.publish(ComponentFieldAction.Set(this, WIND_SPEED, preset.speed))
+                }
+            }
+            ImGui.endCombo()
         }
     }
-    ImGui.popID()
-    reflectedImgui(engine, skip = all - WIND_FIELDS)
 }

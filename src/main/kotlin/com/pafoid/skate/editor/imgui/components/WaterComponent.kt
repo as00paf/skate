@@ -20,7 +20,6 @@ import com.pafoid.skate.engine.environment.GerstnerWave
 import com.pafoid.skate.engine.environment.WaterWaves
 import com.pafoid.skate.engine.getComponent
 import imgui.ImGui
-import imgui.type.ImInt
 import java.util.IdentityHashMap
 
 /**
@@ -94,47 +93,54 @@ private fun Component.reflectedOnly(engine: Engine, only: Set<String>) {
     reflectedImgui(engine, skip)
 }
 
-private fun WaterComponent.presetCombo(engine: Engine) {
+internal fun WaterComponent.presetCombo(engine: Engine) {
     val strings = engine.stringManager
     val presets = WaterPreset.entries
     val labels = EnumLabels.all(strings, presets)
-    val current = presets.indexOfFirst { preset -> matches(preset) }
-    val index = ImInt(current)
+    val settings = WaterWaveSettings.of(this)
+    val current = presets.indexOfFirst { settings == presetSettings(it) }
     val preview = if (current >= 0) labels[current] else strings.getString("$KEY.preset.custom")
-    if (ImGui.beginCombo(strings.label("$KEY.preset"), preview)) {
-        presets.forEachIndexed { i, preset ->
-            if (ImGui.selectable(labels[i], i == index.get())) {
-                val before = WaterWaveSettings.of(this)
-                val after = WaterComponent().apply { applyPreset(preset) }.let(WaterWaveSettings::of)
-                engine.eventSystem.publish(WaterAction.EditWaves(this, before, after))
+    inspectorRow(strings, "water.preset", "$KEY.preset") {
+        if (ImGui.beginCombo("##water.preset", preview)) {
+            presets.forEachIndexed { i, preset ->
+                if (ImGui.selectable(labels[i], i == current)) {
+                    engine.eventSystem.publish(WaterAction.EditWaves(this, settings, presetSettings(preset)))
+                }
             }
+            ImGui.endCombo()
         }
-        ImGui.endCombo()
     }
-    Tooltips.showIfPresent(strings, "$KEY.preset${Tooltips.SUFFIX}")
 }
 
-/** True when the water's waves, flow and material are exactly [preset]'s. */
-internal fun WaterComponent.matches(preset: WaterPreset): Boolean =
-    WaterWaveSettings.of(this) == WaterWaveSettings.of(WaterComponent().apply { applyPreset(preset) })
+/** Each preset's waves, flow and material, built once (read-only: commands copy what they apply). */
+private val PRESET_SETTINGS: Map<WaterPreset, WaterWaveSettings> by lazy {
+    WaterPreset.entries.associateWith { WaterWaveSettings.of(WaterComponent().apply { applyPreset(it) }) }
+}
 
-private fun freezeTime(engine: Engine) {
+internal fun presetSettings(preset: WaterPreset): WaterWaveSettings = PRESET_SETTINGS.getValue(preset)
+
+/** True when the water's waves, flow and material are exactly [preset]'s. */
+internal fun WaterComponent.matches(preset: WaterPreset): Boolean = WaterWaveSettings.of(this) == presetSettings(preset)
+
+internal fun freezeTime(engine: Engine) {
     val strings = engine.stringManager
     val environment = engine.sceneManager.currentScene?.getComponent<EnvironmentComponent>()
     if (environment == null) {
-        MImGui.textDisabled("${Icons.INFO} ${strings.getString("$KEY.freezeTime.none")}")
+        wrappedHint("${Icons.INFO} ${strings.getString("$KEY.freezeTime.none")}")
         return
     }
     val frozen = !environment.animateInEditor
-    if (strings.tipped(ImGui.checkbox(strings.label("$KEY.freezeTime"), frozen), "$KEY.freezeTime")) {
-        engine.eventSystem.publish(ComponentFieldAction.Set(environment, ANIMATE_IN_EDITOR, frozen))
+    inspectorRow(strings, "water.freezeTime", "$KEY.freezeTime") {
+        if (ImGui.checkbox("##water.freezeTime", frozen)) {
+            engine.eventSystem.publish(ComponentFieldAction.Set(environment, ANIMATE_IN_EDITOR, frozen))
+        }
     }
 }
 
 private val ANIMATE_IN_EDITOR = EnvironmentComponent::class.java.getDeclaredField("animateInEditor").apply { isAccessible = true }
 private val MATERIAL = WaterComponent::class.java.getDeclaredField("material").apply { isAccessible = true }
 
-private fun WaterComponent.waveList(engine: Engine, gestures: WaterWaveGestures) {
+internal fun WaterComponent.waveList(engine: Engine, gestures: WaterWaveGestures = WaterWaveGestures.shared) {
     val strings = engine.stringManager
     val start = WaterWaveSettings.of(this)
     var removeAt = -1
@@ -175,35 +181,37 @@ private inline fun WaterComponent.waveField(
 ) {
     val strings = engine.stringManager
     val buffer = floatArrayOf(value)
-    if (ImGui.dragFloat(strings.label("$KEY.wave.$name"), buffer, speed, min, max)) {
-        gestures.changed(this, start)
-        write(buffer[0].coerceIn(min, max))
+    inspectorRow(strings, "water.wave.$name", "$KEY.wave.$name") {
+        if (ImGui.dragFloat("##water.wave.$name", buffer, speed, min, max)) {
+            gestures.changed(this, start)
+            write(buffer[0].coerceIn(min, max))
+        }
+        if (ImGui.isItemDeactivatedAfterEdit()) gestures.finish(this)?.let(engine.eventSystem::publish)
     }
-    Tooltips.showIfPresent(strings, "$KEY.wave.$name${Tooltips.SUFFIX}")
-    if (ImGui.isItemDeactivatedAfterEdit()) gestures.finish(this)?.let(engine.eventSystem::publish)
 }
 
-private fun WaterComponent.materialPicker(engine: Engine) {
+internal fun WaterComponent.materialPicker(engine: Engine) {
     val strings = engine.stringManager
     val bundled = WaterMaterials.ALL
     val names = bundled.map { strings.getString("$KEY.material.${it.substringAfterLast('/').substringBefore(".skmat").removePrefix("water_")}") }
     val current = bundled.indexOf(material)
     val preview = if (current >= 0) names[current] else strings.getString("$KEY.material.custom", material.substringAfterLast('/'))
-    if (ImGui.beginCombo(strings.label("$KEY.material"), preview)) {
-        bundled.forEachIndexed { i, reference ->
-            if (ImGui.selectable(names[i], i == current) && reference != material) setMaterial(engine, reference)
+    inspectorRow(strings, "water.material", "$KEY.material") {
+        if (ImGui.beginCombo("##water.material", preview)) {
+            bundled.forEachIndexed { i, reference ->
+                if (ImGui.selectable(names[i], i == current) && reference != material) setMaterial(engine, reference)
+            }
+            ImGui.endCombo()
         }
-        ImGui.endCombo()
-    }
-    Tooltips.showIfPresent(strings, "$KEY.material${Tooltips.SUFFIX}")
-    // A water .skmat dragged from the Asset Browser
-    if (ImGui.beginDragDropTarget()) {
-        ImGui.acceptDragDropPayload<String>(FileListTab.PAYLOAD)?.let { path ->
-            if (isWaterMaterialPath(path) && path != material) setMaterial(engine, path)
+        // A water .skmat dragged from the Asset Browser
+        if (ImGui.beginDragDropTarget()) {
+            ImGui.acceptDragDropPayload<String>(FileListTab.PAYLOAD)?.let { path ->
+                if (isWaterMaterialPath(path) && path != material) setMaterial(engine, path)
+            }
+            ImGui.endDragDropTarget()
         }
-        ImGui.endDragDropTarget()
     }
-    MImGui.textDisabled(strings.getString("$KEY.material.drop"))
+    wrappedHint(strings.getString("$KEY.material.drop"))
 }
 
 /** Only `.skmat` files can be water materials (their schema is checked when the renderer loads them). */
