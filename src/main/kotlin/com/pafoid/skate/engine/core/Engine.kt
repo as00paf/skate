@@ -17,6 +17,8 @@ import com.pafoid.skate.engine.ecs.systems.EnvironmentClockSystem
 import com.pafoid.skate.engine.ecs.systems.EnvironmentSystem
 import com.pafoid.skate.engine.ecs.systems.TerrainSystem
 import com.pafoid.skate.engine.ecs.systems.TerrainStreamingSystem
+import com.pafoid.skate.engine.ecs.systems.TerrainScatterEntitySystem
+import com.pafoid.skate.engine.ecs.systems.PrefabFileResolver
 import com.pafoid.skate.engine.ecs.systems.CameraControlSystem
 import com.pafoid.skate.engine.ecs.systems.CameraCycleSystem
 import com.pafoid.skate.engine.events.CameraAction
@@ -185,6 +187,12 @@ class Engine {
                 source = TerrainStreamingSystem::storedChunks,
                 report = { logger.log(it, LoggerService.LogLevel.WARN) },
             ), // streams terrain chunks around the camera and StreamingFocus entities (REN-28 §15)
+            // Prefab scatter items as hidden, unsaved children of their terrain (ECS-19).
+            TerrainScatterEntitySystem(
+                PrefabFileResolver(serializer, assetsManager.paths::localPath) { ref, e ->
+                    logger.logError("Scatter prefab '$ref' could not be loaded", e)
+                },
+            ),
             physicsSystem,
             PhysicsFrameSystem(physicsSystem),
             DayNightCycleSystem(),

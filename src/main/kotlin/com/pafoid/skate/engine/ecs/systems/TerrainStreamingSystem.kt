@@ -127,8 +127,10 @@ class TerrainStreamingSystem(
             return ChunkSource { g, cx, cz ->
                 val chunk = com.pafoid.skate.engine.terrain.TerrainChunkBuilder.build(g, cx, cz)
                 val stored = com.pafoid.skate.engine.assets.terrain.TerrainAssets.chunk(ref, cx, cz, g.layout.chunkQuads, g.layout.spacing)
-                if (stored != null && stored.size == chunk.heights.size) {
-                    stored.copyInto(chunk.heights)
+                if (stored != null && stored.heights.size == chunk.heights.size) {
+                    // As TerrainAssets.afterBuild applies a record (AST-38): heights, then painted biomes
+                    stored.heights.copyInto(chunk.heights)
+                    chunk.paintedBiomeIds = stored.paintedBiomeIds
                     com.pafoid.skate.engine.terrain.TerrainChunkBuilder.refreshDerived(g, chunk)
                 }
                 chunk
