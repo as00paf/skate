@@ -48,6 +48,13 @@ scan of `TODO`/`FIXME` markers in `src/main`. Runtime repro steps are marked
 - Cause: not investigated. All Jolt cases fail together, which points at native setup (library extract/load or a shared Jolt global initialized by the first test in the JVM) rather than at the physics results.
 - Next step (PHY): capture the failure message from `build/test-results/test/TEST-*.xml` on a failing run, and make Jolt native init idempotent and thread-safe across the test JVM forks.
 
+### BUG-023 — `NoiseFieldTest` failed once in a full run, passed on rerun (P3, owner: QA) — MITIGATED by QA-18
+- Reported by skate-tooling (2026-11-17). No failure XML was kept, so the failing method is not known for sure.
+- Repro attempt (QA-18): `cmd.exe /c gradlew.bat :cleanTest :test --tests "com.pafoid.skate.engine.procedural.NoiseFieldTest"` 20 times in a row: 20/20 pass. Not reproduced in isolation.
+- Analysis: the value checks are deterministic. FastNoiseLite writes its fields only in setters, so sampling is read-only. Warp scratch is per thread. JVM 17 float math is always strict. The only check that depends on the environment is `sampling_AllocatesNothingOnceWarm`. It reads `ThreadMXBean.getThreadAllocatedBytes` over one 50-iteration window with a 4 KB limit. In a full suite the shared JVM, the JaCoCo agent and JIT deopts can add a one-off stray allocation to that window. Most likely cause.
+- Fix: the test now takes the best of 3 measurement windows. A real per-sample allocation costs megabytes in every window, so it still fails reliably.
+- If it happens again: keep `build/test-results/test/TEST-com.pafoid.skate.engine.procedural.NoiseFieldTest.xml` from the failing run and attach it here.
+
 ## Suspected (from source markers, to verify at runtime)
 
 | ID | Pri | Owner | File | Symptom / repro (to verify) |
