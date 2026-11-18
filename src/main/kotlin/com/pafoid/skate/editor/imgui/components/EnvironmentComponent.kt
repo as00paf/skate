@@ -40,7 +40,7 @@ fun EnvironmentComponent.imgui(engine: Engine) {
     reflectedImgui(engine, skip = WIND_FIELDS)
 
     val strings = engine.stringManager
-    MImGui.labeledSeparator(strings.getString("$KEY.wind"))
+    sectionHeader(strings.getString("$KEY.wind"))
     Tooltips.showIfPresent(strings, "$KEY.wind${Tooltips.SUFFIX}")
     windPresetRow(engine)
     reflectedImgui(engine, skip = all - WIND_FIELDS)

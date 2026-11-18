@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.ui.windows
 
+import com.pafoid.skate.editor.imgui.MImGui
 import com.pafoid.skate.editor.imgui.Tooltips
 import com.pafoid.skate.editor.data.EditorShortcuts
 import com.pafoid.skate.editor.data.EditorFocus
@@ -84,22 +85,24 @@ class ConsoleWindow(engine: Engine) : EditorWindow("window.console", true) {
         val autoScrollWidth = ImGui.calcTextSize(autoScrollLabel).x + 20f + ImGui.getStyle().framePaddingX * 2f
         val spacing = ImGui.getStyle().itemSpacingX
         // The header column already excludes the `?` (EDT-67).
-        val searchWidth = ImGui.getContentRegionAvailX() - clearBtnWidth - autoScrollWidth - spacing * 2f
+        val oneLine = ImGui.getContentRegionAvailX() - clearBtnWidth - autoScrollWidth - spacing * 2f
+        // EDT-100: in a narrow window the search takes the whole line and the rest wraps below it.
+        val searchWidth = if (oneLine >= ImGui.getFontSize() * MIN_SEARCH_EMS) oneLine else -1f
 
         ImGui.pushItemWidth(searchWidth)
         ImGui.inputTextWithHint("##ConsoleSearch", "${Icons.SEARCH} ${stringManager.getString("lbl.search")}...", searchText)
         Tooltips.text(stringManager.getString("tooltip.search_console"))
         ImGui.popItemWidth()
 
-        ImGui.sameLine()
-        if (ImGui.button(clearLabel)) {
+        MImGui.sameLineIfFits(clearBtnWidth)
+        if (MImGui.fitButton(clearLabel)) {
             eventSystem.publish(ConsoleAction.ClearLogs)
             selectedLogs.clear()
             lastSelectedIndex = -1
         }
         Tooltips.text(stringManager.getString("tooltip.clear_console"))
 
-        ImGui.sameLine()
+        MImGui.sameLineIfFits(autoScrollWidth)
         autoScrollCheckbox.set(autoScroll.enabled)
         if (ImGui.checkbox(autoScrollLabel, autoScrollCheckbox)) {
             autoScroll.setEnabled(autoScrollCheckbox.get())
@@ -118,19 +121,15 @@ class ConsoleWindow(engine: Engine) : EditorWindow("window.console", true) {
         renderFilterButton(null,
             stringManager.getString("btn.console.filter.all"),
             stringManager.getString("tooltip.console.filter.all"))
-        ImGui.sameLine()
         renderFilterButton(LogLevel.INFO,
             stringManager.getString("lbl.console.count.info", infoCount),
             stringManager.getString("tooltip.console.filter.info"))
-        ImGui.sameLine()
         renderFilterButton(LogLevel.WARN,
             stringManager.getString("lbl.console.count.warn", warnCount),
             stringManager.getString("tooltip.console.filter.warn"))
-        ImGui.sameLine()
         renderFilterButton(LogLevel.ERROR,
             stringManager.getString("lbl.console.count.error", errorCount),
             stringManager.getString("tooltip.console.filter.error"))
-        ImGui.sameLine()
         renderFilterButton(LogLevel.ACTION,
             stringManager.getString("lbl.console.count.action", actionCount),
             stringManager.getString("tooltip.console.filter.action"))
@@ -139,12 +138,14 @@ class ConsoleWindow(engine: Engine) : EditorWindow("window.console", true) {
     }
 
     private fun renderFilterButton(level: LogLevel?, label: String, tooltip: String) {
+        // EDT-100: the buttons flow onto the next line in a narrow window ("All" is always first on its line).
+        if (level != null) MImGui.sameLineIfFits(MImGui.buttonWidth(label))
         val isActive = logLevelFilter == level
         if (isActive) {
             ImGui.pushStyleColor(ImGuiCol.Button, 0.2f, 0.5f, 0.8f, 1f)
             ImGui.pushStyleColor(ImGuiCol.ButtonHovered, 0.3f, 0.6f, 0.9f, 1f)
         }
-        if (ImGui.button(label)) {
+        if (MImGui.fitButton(label)) {
             logLevelFilter = level
         }
         if (isActive) {
@@ -258,5 +259,9 @@ class ConsoleWindow(engine: Engine) : EditorWindow("window.console", true) {
 
         ImGui.endChild()
     }
-}
 
+    private companion object {
+        /** Below this width (in font sizes) the search box gets a line of its own (EDT-100). */
+        const val MIN_SEARCH_EMS = 8f
+    }
+}

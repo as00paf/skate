@@ -51,7 +51,7 @@ class EditorShortcutsTest {
     @Test
     fun EveryBinding_IsInTheCatalog_AndResetRestoresAll() {
         val bindings = EditorInputMappings::class.memberProperties.filter { it.returnType.classifier == InputBinding::class }.map { it.name }.toSet()
-        val catalogued = EditorShortcuts.rebindable.mapNotNull { it.binding?.name }.toSet()
+        val catalogued = EditorShortcuts.rebindable.mapNotNull { (it.binding as? PropertyBinding)?.name }.toSet()
         assertEquals(bindings, catalogued, "every key in EditorInputMappings needs a catalog entry (label, scope) and vice versa")
 
         val m = EditorInputMappings()

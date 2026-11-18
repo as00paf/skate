@@ -65,21 +65,21 @@ fun WaterComponent.imgui(engine: Engine) {
     val gestures = WaterWaveGestures.shared
     ImGui.pushID(System.identityHashCode(this))
 
-    MImGui.labeledSeparator(strings.getString("$KEY.section.surface"))
+    sectionHeader(strings.getString("$KEY.section.surface"))
     reflectedOnly(engine, SURFACE_FIELDS)
 
-    MImGui.labeledSeparator(strings.getString("$KEY.waves"))
+    sectionHeader(strings.getString("$KEY.waves"))
     Tooltips.showIfPresent(strings, "$KEY.waves${Tooltips.SUFFIX}")
     presetCombo(engine)
     reflectedOnly(engine, WAVE_FIELDS)
     freezeTime(engine)
     waveList(engine, gestures)
 
-    MImGui.labeledSeparator(strings.getString("$KEY.section.flow"))
+    sectionHeader(strings.getString("$KEY.section.flow"))
     reflectedOnly(engine, FLOW_FIELDS)
     materialPicker(engine)
 
-    MImGui.labeledSeparator(strings.getString("$KEY.section.buoyancy"))
+    sectionHeader(strings.getString("$KEY.section.buoyancy"))
     reflectedOnly(engine, BUOYANCY_FIELDS)
 
     // A drag that ended without a deactivation (inspector collapsed, selection changed) still becomes one edit
@@ -147,7 +147,7 @@ internal fun WaterComponent.waveList(engine: Engine, gestures: WaterWaveGestures
     waves.forEachIndexed { i, wave ->
         ImGui.pushID(i)
         MImGui.textDisabled(strings.getString("$KEY.wave.title", i + 1))
-        ImGui.sameLine()
+        MImGui.sameLineIfFits(ImGui.calcTextSize(Icons.TRASH).x + ImGui.getStyle().framePaddingX * 2f)
         if (strings.tipped(ImGui.smallButton(Icons.TRASH), "$KEY.wave.remove")) removeAt = i
         waveField(engine, gestures, start, "direction", wave.directionDeg, -180f, 180f, 1f) { wave.directionDeg = it }
         waveField(engine, gestures, start, "wavelength", wave.wavelength, WaterWaveSettings.MIN_WAVELENGTH, 200f, 0.1f) { wave.wavelength = it }
@@ -161,7 +161,7 @@ internal fun WaterComponent.waveList(engine: Engine, gestures: WaterWaveGestures
     }
     val full = waves.size >= WaterWaves.MAX_WAVES
     if (full) ImGui.beginDisabled()
-    if (strings.tipped(ImGui.button(strings.label("$KEY.wave.add", "${Icons.PLUS} ")), "$KEY.wave.add")) {
+    if (strings.tipped(MImGui.fitButton(strings.label("$KEY.wave.add", "${Icons.PLUS} ")), "$KEY.wave.add")) {
         engine.eventSystem.publish(WaterAction.EditWaves(this, start, start.copy(waves = start.waves + newWave())))
     }
     if (full) ImGui.endDisabled()
@@ -177,7 +177,7 @@ private inline fun WaterComponent.waveField(
     min: Float,
     max: Float,
     speed: Float,
-    write: (Float) -> Unit,
+    crossinline write: (Float) -> Unit,
 ) {
     val strings = engine.stringManager
     val buffer = floatArrayOf(value)

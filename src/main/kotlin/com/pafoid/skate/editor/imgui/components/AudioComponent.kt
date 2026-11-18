@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.imgui.components
 
+import com.pafoid.skate.editor.imgui.MImGui
 import com.pafoid.skate.editor.imgui.Tooltips
 import com.pafoid.skate.editor.imgui.tipped
 import com.pafoid.skate.editor.commands.objects.AudioComponentSettings
@@ -69,41 +70,51 @@ fun AudioComponent.imgui(engine: Engine) {
     fun <E : Enum<E>> enumField(key: String, entries: List<E>, value: E, apply: (E) -> AudioComponentSettings) {
         val names = EnumLabels.all(strings, entries)
         val index = ImInt(value.ordinal)
-        if (ImGui.combo(ImGuiIds.stable(s(key), key), index, names, names.size)) publishNow = apply(entries[index.get()])
-        tip(key)
+        // EDT-100: every value in the shared row (label left, stacks when narrow).
+        MImGui.row(s(key), key) {
+            if (ImGui.combo("##value", index, names, names.size)) publishNow = apply(entries[index.get()])
+            tip(key)
+        }
     }
 
     fun boolField(key: String, value: Boolean, apply: (Boolean) -> AudioComponentSettings) {
-        if (ImGui.checkbox("${s(key)}##$key", value)) publishNow = apply(!value)
-        tip(key)
+        MImGui.row(s(key), key) {
+            if (ImGui.checkbox("##value", value)) publishNow = apply(!value)
+            tip(key)
+        }
     }
 
     fun floatField(key: String, value: Float, speed: Float, min: Float, max: Float, apply: (Float) -> AudioComponentSettings) {
         val a = floatArrayOf(value)
-        if (ImGui.dragFloat("${s(key)}##$key", a, speed, min, max)) edit(apply(a[0]))
-        after()
-        tip(key)
+        MImGui.row(s(key), key) {
+            if (ImGui.dragFloat("##value", a, speed, min, max)) edit(apply(a[0]))
+            after()
+            tip(key)
+        }
     }
 
     // Sound file: type a path or drop a sound from the asset browser.
     val path = ImString(draft.soundFilePath, 1024)
-    if (ImGui.inputText("${s("soundFilePath")}##soundFilePath", path)) edit(draft.copy(soundFilePath = path.get()))
-    after()
-    tip("soundFilePath")
-    if (ImGui.beginDragDropTarget()) {
-        ImGui.acceptDragDropPayload<String>(SOUND_PAYLOAD)?.let { publishNow = draft.copy(soundFilePath = it) }
-        ImGui.endDragDropTarget()
+    MImGui.row(s("soundFilePath"), "soundFilePath") {
+        if (ImGui.inputText("##value", path)) edit(draft.copy(soundFilePath = path.get()))
+        after()
+        tip("soundFilePath")
+        if (ImGui.beginDragDropTarget()) {
+            ImGui.acceptDragDropPayload<String>(SOUND_PAYLOAD)?.let { publishNow = draft.copy(soundFilePath = it) }
+            ImGui.endDragDropTarget()
+        }
     }
 
     // Random clips: drop sounds on the button to add; X removes.
-    if (ImGui.treeNodeEx(ImGuiIds.stable("${s("clips")} (${draft.clips.size})", "clips"))) {
+    // A header that cuts a long label instead of widening a narrow inspector (EDT-100).
+    if (MImGui.treeHeader("${s("clips")} (${draft.clips.size})", "clips")) {
         draft.clips.forEachIndexed { i, clip ->
             if (ImGui.smallButton("X##clip$i")) publishNow = draft.copy(clips = draft.clips.filterIndexed { j, _ -> j != i })
             ImGui.sameLine()
-            ImGui.textUnformatted(File(clip).name)
+            MImGui.wrappedText(File(clip).name)
             Tooltips.always(clip)
         }
-        strings.tipped(ImGui.button("${s("clips.drop")}##clips_drop"), "component.AudioComponent.clips.drop")
+        strings.tipped(MImGui.fitButton("${s("clips.drop")}##clips_drop"), "component.AudioComponent.clips.drop")
         if (ImGui.beginDragDropTarget()) {
             ImGui.acceptDragDropPayload<String>(SOUND_PAYLOAD)?.let { publishNow = draft.copy(clips = draft.clips + it) }
             ImGui.endDragDropTarget()
@@ -115,17 +126,19 @@ fun AudioComponent.imgui(engine: Engine) {
     ImGui.separator()
     enumField("bus", BusId.entries, draft.bus) { draft.copy(bus = it) }
     val volume = floatArrayOf(draft.volume)
-    if (ImGui.sliderFloat("${s("volume")}##volume", volume, 0f, 1f)) edit(draft.copy(volume = volume[0]))
-    after()
+    MImGui.row(s("volume"), "volume") {
+        if (ImGui.sliderFloat("##value", volume, 0f, 1f)) edit(draft.copy(volume = volume[0]))
+        after()
+    }
     boolField("loops", draft.loops) { draft.copy(loops = it) }
     boolField("playOnAwake", draft.playOnAwake) { draft.copy(playOnAwake = it) }
     enumField("streamMode", StreamMode.entries, draft.streamMode) { draft.copy(streamMode = it) }
     val priority = intArrayOf(draft.priority)
-    if (ImGui.dragInt("${s("priority")}##priority", priority, 0.5f, 0, AudioComponentSettings.MAX_PRIORITY)) {
-        edit(draft.copy(priority = priority[0]))
+    MImGui.row(s("priority"), "priority") {
+        if (ImGui.dragInt("##value", priority, 0.5f, 0, AudioComponentSettings.MAX_PRIORITY)) edit(draft.copy(priority = priority[0]))
+        after()
+        tip("priority")
     }
-    after()
-    tip("priority")
 
     ImGui.separator()
     boolField("is3D", draft.is3D) { draft.copy(is3D = it) }
@@ -135,14 +148,18 @@ fun AudioComponent.imgui(engine: Engine) {
         floatField("maxDistance", draft.maxDistance, 0.1f, 0f, 10_000f) { draft.copy(maxDistance = it) }
         floatField("rolloff", draft.rolloff, 0.01f, 0f, 100f) { draft.copy(rolloff = it) }
         floatField("dopplerFactor", draft.dopplerFactor, 0.01f, 0f, 10f) { draft.copy(dopplerFactor = it) }
-        if (draft.bus == BusId.MUSIC && draft.dopplerFactor > 0f) ImGui.textDisabled(s("dopplerFactor.music"))
+        if (draft.bus == BusId.MUSIC && draft.dopplerFactor > 0f) {
+            ImGui.pushTextWrapPos(0f)
+            ImGui.textDisabled(s("dopplerFactor.music"))
+            ImGui.popTextWrapPos()
+        }
     }
 
     // Preview: plays the sound in edit mode; not saved, so not a command.
     ImGui.separator()
     if (!isPlaying) {
-        if (strings.tipped(ImGui.button("${strings.getString("btn.audio.play")}##preview_play"), "btn.audio.play")) play()
-    } else if (strings.tipped(ImGui.button("${strings.getString("btn.audio.stop")}##preview_stop"), "btn.audio.stop")) {
+        if (strings.tipped(MImGui.fitButton("${strings.getString("btn.audio.play")}##preview_play"), "btn.audio.play")) play()
+    } else if (strings.tipped(MImGui.fitButton("${strings.getString("btn.audio.stop")}##preview_stop"), "btn.audio.stop")) {
         stopPlayback()
     }
 

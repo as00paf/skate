@@ -58,7 +58,8 @@ class SceneHierarchyWindow(
     private val eventSystem = engine.eventSystem
     private val stringManager = engine.stringManager
 
-    private val searchQuery = ImString(256)
+    /** The search box text (internal for tests). */
+    internal val searchQuery = ImString(256)
     private var isLinked = false
 
     private var editingObjUid: Int? = null
@@ -72,6 +73,9 @@ class SceneHierarchyWindow(
     /** Rows in the order they were drawn (open nodes only); last frame's order is the Shift-click range (EDT-74). */
     private var drawnRows = mutableListOf<GameObject>()
     private var lastDrawnRows: List<GameObject> = emptyList()
+
+    /** Rows drawn last frame (tests). Runtime-only objects (terrain scatter, ECS-19) are never rows (EDT-94). */
+    internal val drawnRowsLastFrame: List<GameObject> get() = lastDrawnRows
 
     /** Where the last plain or Ctrl click landed: one end of a Shift range. */
     private var selectionAnchor: GameObject? = null
@@ -150,7 +154,7 @@ class SceneHierarchyWindow(
 
         rebuildFlatList(scene)
 
-        if (scene.children.none { it.isTopLevel }) {
+        if (scene.persistentChildren.none { it.isTopLevel }) {
             EmptyState.render(stringManager, Icons.CUBE, "empty.hierarchy", "empty.hierarchy.hint",
                 listOf(EmptyState.Action("empty.hierarchy.create", Icons.PLUS) { eventSystem.publish(CreateEmpty(scene)) }))
         } else if (filter.isNotEmpty() && flatObjectList.none { it.name.contains(filter, ignoreCase = true) }) {
@@ -162,7 +166,7 @@ class SceneHierarchyWindow(
             lastDrawnRows = drawnRows.toList()
             drawnRows.clear()
 
-            scene.children.toList().forEach { obj ->
+            scene.persistentChildren.toList().forEach { obj ->
                 if (obj.isTopLevel) {
                     doTreeNode(obj, filter)
                 }
@@ -276,7 +280,7 @@ class SceneHierarchyWindow(
 
     private fun buildFlatList(scene: Scene): List<GameObject> {
         val result = mutableListOf<GameObject>()
-        scene.children.toList().forEach { obj ->
+        scene.persistentChildren.toList().forEach { obj ->
             if (obj.isTopLevel) {
                 flattenTreeNode(obj, result)
             }
@@ -286,8 +290,8 @@ class SceneHierarchyWindow(
 
     private fun flattenTreeNode(obj: GameObject, result: MutableList<GameObject>) {
         result.add(obj)
-        if (expandedNodes.contains(obj.uId) || obj.children.isEmpty()) {
-            obj.children.toList().forEach { child ->
+        if (expandedNodes.contains(obj.uId) || obj.persistentChildren.isEmpty()) {
+            obj.persistentChildren.toList().forEach { child ->
                 flattenTreeNode(child, result)
             }
         }
@@ -335,7 +339,7 @@ class SceneHierarchyWindow(
         ImGui.tableNextColumn()
 
         var flags = ImGuiTreeNodeFlags.FramePadding or ImGuiTreeNodeFlags.OpenOnArrow or ImGuiTreeNodeFlags.SpanAvailWidth
-        if (obj.children.isEmpty()) {
+        if (obj.persistentChildren.isEmpty()) {
             flags = flags or ImGuiTreeNodeFlags.Leaf
         }
         if (sceneManager.currentScene?.isSelected(obj) == true) {
@@ -534,7 +538,7 @@ class SceneHierarchyWindow(
 
         if (nodeOpen) {
             expandedNodes.add(obj.uId)
-            obj.children.toList().forEach { child ->
+            obj.persistentChildren.toList().forEach { child ->
                 doTreeNode(child, filter)
             }
             ImGui.treePop()
@@ -547,7 +551,7 @@ class SceneHierarchyWindow(
 
     private fun hasMatchingChild(obj: GameObject, filter: String): Boolean {
         if (filter.isEmpty()) return true
-        for (child in obj.children) {
+        for (child in obj.persistentChildren) {
             if (child.name.contains(filter, ignoreCase = true)) return true
             if (hasMatchingChild(child, filter)) return true
         }
@@ -555,8 +559,8 @@ class SceneHierarchyWindow(
     }
 
     private fun expandAll(scene: Scene) {
-        scene.children.toList().forEach { obj ->
-            if (obj.children.isNotEmpty()) {
+        scene.persistentChildren.toList().forEach { obj ->
+            if (obj.persistentChildren.isNotEmpty()) {
                 expandedNodes.add(obj.uId)
             }
         }

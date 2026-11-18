@@ -1,29 +1,19 @@
 package com.pafoid.skate.editor.imgui.components
 
+import com.pafoid.skate.editor.imgui.MImGui
 import com.pafoid.skate.editor.imgui.Tooltips
 import com.pafoid.skate.engine.core.StringManager
 import imgui.ImGui
-import imgui.flag.ImGuiTableColumnFlags
-import imgui.flag.ImGuiTableFlags
 
 /**
- * One inspector row that fits any width (EDT-90): a wrapped label on the left, [widget] filling the right column.
- * Long translated labels wrap instead of pushing the inspector wider. [id] must not be translated text.
+ * One inspector row of the water and wind sections (EDT-90) through the shared EDT-100 row layout ([MImGui.row]): the
+ * label column adapts to the width and the row stacks in a narrow dock. [id] must not be translated text.
  */
-internal inline fun inspectorRow(strings: StringManager, id: String, labelKey: String, widget: () -> Unit) {
-    if (!ImGui.beginTable("##row.$id", 2, ImGuiTableFlags.SizingStretchProp)) return
-    ImGui.tableSetupColumn("##label", ImGuiTableColumnFlags.WidthStretch, LABEL_WEIGHT)
-    ImGui.tableSetupColumn("##value", ImGuiTableColumnFlags.WidthStretch, 1f - LABEL_WEIGHT)
-    ImGui.tableNextRow()
-    ImGui.tableSetColumnIndex(0)
-    ImGui.alignTextToFramePadding()
-    ImGui.textWrapped(strings.getString(labelKey))
-    Tooltips.showIfPresent(strings, labelKey + Tooltips.SUFFIX)
-    ImGui.tableSetColumnIndex(1)
-    ImGui.setNextItemWidth(-1f)
-    widget()
-    Tooltips.showIfPresent(strings, labelKey + Tooltips.SUFFIX)
-    ImGui.endTable()
+internal inline fun inspectorRow(strings: StringManager, id: String, labelKey: String, crossinline widget: () -> Unit) {
+    MImGui.row(strings.getString(labelKey), id, labelExtra = { Tooltips.showIfPresent(strings, labelKey + Tooltips.SUFFIX) }) {
+        widget()
+        Tooltips.showIfPresent(strings, labelKey + Tooltips.SUFFIX)
+    }
 }
 
 /** A greyed hint that wraps at the inspector's width. */
@@ -33,4 +23,14 @@ internal fun wrappedHint(text: String) {
     ImGui.endDisabled()
 }
 
-private const val LABEL_WEIGHT = 0.42f
+/**
+ * A section title that wraps, over a separator. `ImGui.separatorText` doesn't wrap, so a title such as "Flow and
+ * Material" made the narrow right dock wider than itself (EDT-100 guard).
+ */
+internal fun sectionHeader(title: String) {
+    ImGui.spacing()
+    ImGui.pushTextWrapPos(0f)
+    ImGui.textUnformatted(title)
+    ImGui.popTextWrapPos()
+    ImGui.separator()
+}
