@@ -15,9 +15,6 @@ import com.pafoid.skate.engine.ui.GameSettings
 import com.pafoid.skate.engine.ecs.random.RandomService
 import com.pafoid.skate.engine.ui.GameSettingsStore
 import com.pafoid.skate.engine.ui.FrameLimiter
-import com.pafoid.skate.engine.ui.FrameRateOption
-import com.pafoid.skate.game.ui.GameHudState
-import com.pafoid.skate.game.ui.GameUiSystem
 import org.lwjgl.glfw.GLFW
 import com.pafoid.skate.engine.assets.pack.PackBuilder
 import com.pafoid.skate.engine.assets.pack.PackedStrings
@@ -45,10 +42,8 @@ fun main(args: Array<String>) {
     // game.settings.json next to the pack: the player's backend choice (AST-12) and locale (GUI-10).
     val settings = GameSettingsStore(GameSettings.fileIn(pack.file.parentFile), engine.logger)
 
-    // Apply the project's startup language as the game's initial locale (GUI-15).
-    if (project.startupLanguage.isNotEmpty() && project.startupLanguage in project.supportedLanguages) {
-        settings.update { it.copy(startupLanguage = project.startupLanguage, supportedLanguages = project.supportedLanguages, locale = project.startupLanguage) }
-    }
+    // The player's language, else the editor's game language the export saved (GUI-15, GUI-20).
+    GameStartup.applyLanguage(project, settings)
 
     val requested = GameGraphics.requested(project.graphicsBackend, settings)
     val window = GameGraphics.start(requested, engine.logger, settings) { backend ->
@@ -71,7 +66,7 @@ fun main(args: Array<String>) {
         engine.systemManager.fixedTimeStep = 1f / project.physicsFPS
     }
     SkateGameplay.install(engine)
-    installFrameRate(project, settings)
+    GameStartup.installFrameRate(engine.gameOptions, frameLimiter, project, settings)
 
     if (projectManager.openProject(project, binFile, header, headerSize)) {
         // The project's mixer (bus volumes and mutes set in the editor) applies to the exported game too (EDT-14).
@@ -103,19 +98,9 @@ fun main(args: Array<String>) {
 }
 
 /**
- * The frame cap: the project's target FPS (AST-29) unless the player picked another rate in the pause menu (GUI-17),
- * which is saved in game.settings.json.
- */
-private fun installFrameRate(project: Project, settings: GameSettingsStore) {
-    val projectFps = Project.normalizedTargetFps(project.targetFps)
-    val option = FrameRateOption.option(frameLimiter, projectFps)
-    option.apply(FrameRateOption.saved(settings.settings))
-    engine.gameOptions.register(option)
-}
-
-/**
- * HUD plus the engine's pause menu (GUI-09), which behaves as in editor Play; only Restart and Quit are the game's:
- * Restart reloads the scene as it was at launch, Quit closes the window.
+ * The engine's pause menu (GUI-09), which behaves as in editor Play; only Restart and Quit are the game's: Restart
+ * reloads the scene as it was at launch, Quit closes the window. The game adds no HUD of its own: the scene's HUD
+ * shows, as in editor Play (GUI-20).
  */
 private fun installGameUi(window: Window, settings: GameSettingsStore, project: Project) {
     val scene = engine.sceneManager.currentScene ?: return
@@ -123,13 +108,10 @@ private fun installGameUi(window: Window, settings: GameSettingsStore, project: 
     // The player's language choice is kept in the same game.settings.json (GUI-10).
     engine.gameLocale.attach(settings)
     val launchState = ScenePlaySnapshot.capture(scene, engine.serializer)
-    val hud = GameUiSystem(GameHudState())
-    engine.systemManager.addSystem(hud)
     engine.pauseActions.restart = {
         engine.sceneManager.currentScene?.let { launchState.restore(engine.sceneManager, engine.serializer, it) }
         // A restart replays the run: same random values as at launch.
         engine.random.restart()
-        hud.resetState()
     }
     engine.pauseActions.quit = { GLFW.glfwSetWindowShouldClose(window.glfwWindow, true) }
     // Apply the post-processing quality preset from game settings (if any).
