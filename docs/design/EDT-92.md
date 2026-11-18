@@ -1,6 +1,6 @@
 # EDT-92 — Terrain inspector and tools (REN-28 task 10): design note
 
-Status: **awaiting approval** (2026-11-17). Owner: skate-vulkan under the 2026-11-17 rule (domain agents write the
+Status: **approved** (human, 2026-11-17; answers in §7). Owner: skate-vulkan under the 2026-11-17 rule (domain agents write the
 editor UI for their back end), reviewed by skate-editor.
 
 Builds on REN-36 (`TerrainComponent`, `TerrainRuntime.markEdited`, `TerrainChunkData.setHeight`, stamps, biomes),
@@ -68,13 +68,14 @@ Command tests (stroke apply/undo/redo restores heights and painted ids bit-exact
 pure brush math (falloff, smooth, flatten, seam samples, ray march hit) without a device; headless ImGui render tests
 of the inspector sections and the tool panel; string/tooltip guards (EN + FR in `components.properties`).
 
-## 7. Decisions to approve
+## 7. Decisions (approved, human, 2026-11-17)
 
-1. **Where tools are chosen**: inspector *Tools* section only (proposed), or also viewport toolbar buttons + shortcuts?
-2. **Asset on first stroke**: auto-create (proposed) or require *Create terrain asset* first?
-3. **Brush set**: Raise / Lower / Smooth / Flatten + Paint biome (proposed); add Noise or Ramp now or later?
-4. **Stamp editing**: in-viewport handles (proposed) or inspector fields only for this task?
-5. **"Flatten terrain under" entry point**: context menu on the object (proposed), or a button in the terrain
-   inspector that acts on the current selection?
-6. **Scope split**: biome / layer-rule / scatter-rule / climate inspectors are large; ship them in EDT-92 (proposed),
-   or split them into a follow-up task so sculpt/paint/stamp lands first?
+1. **Where tools are chosen**: the inspector *Tools* section only. No toolbar buttons or shortcuts.
+2. **Asset on first stroke**: auto-create the terrain asset on the first stroke (toast; undo of the stroke keeps it).
+3. **Brush set**: Raise, Lower, Smooth, Flatten, Paint biome now. Noise and Ramp later (EDT-97).
+4. **Stamp editing**: viewport handles, plus inspector fields.
+5. **"Flatten terrain under"**: in the object context menu.
+6. **Scope (changed)**: the biome, layer-rule, scatter-rule and climate inspectors move to a follow-up (EDT-96).
+   EDT-92 is sculpt, paint, stamps, asset creation, `seedName` on create and the note when the sample spacing is
+   capped. (Assumption: the "pinned-chunk note" in the approval means the REN-42 `spacingCapped()` note; streaming
+   eviction and chunk pinning are not implemented yet.) §1 item 3 therefore keeps only *Stamps* in EDT-92.
