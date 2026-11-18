@@ -290,7 +290,7 @@ object WindowHeader {
         }
         ImGui.setCursorScreenPos(x, row.top)
         if (ImGui.invisibleButton(BUTTON_ID, size.width, size.height)) window.openHelp()
-        Tooltips.show(strings, "window.header.help.tooltip")
+        Tooltips.show(strings, "window.header.help.tooltip", EditorShortcuts.HELP)
         buttons += CornerButton(Icons.QUESTION_CIRCLE, Rect(x, row.top, x + size.width, row.top + size.height), ImGui.isItemHovered(), ImGui.isItemActive())
         lastDrawn = drawnRect()
         window.cornerOverlay = CornerOverlay(ImGui.getFrameCount(), buttons)
@@ -367,7 +367,7 @@ object WindowHeader {
     }
 
     private fun clicked(strings: StringManager, width: Float, height: Float): Boolean {
-        val pressed = strings.tippedWith(ImGui.button("${Icons.QUESTION_CIRCLE}$BUTTON_ID", width, height), "window.header.help.tooltip")
+        val pressed = strings.tippedWith(ImGui.button("${Icons.QUESTION_CIRCLE}$BUTTON_ID", width, height), "window.header.help.tooltip", EditorShortcuts.HELP)
         // The tooltip adds no item to this window: the last item is still the button.
         lastDrawn = drawnRect()
         return pressed

@@ -99,6 +99,7 @@ abstract class EditorWindow(
         if (windowFlags and ImGuiWindowFlags.HorizontalScrollbar == 0) InspectorLayout.windowProbe?.invoke(name, ImGui.getScrollMaxX())
         val focused = ImGui.isWindowFocused(ImGuiFocusedFlags.RootAndChildWindows)
         ToolWindowStates.report(name, visible, focused) // EDT-84: the side-bar buttons' look and click
+        if (focused) lastFocused = name // EDT-101: F1's target
         if (canMaximize) {
             if (focused) MaximizeSession.focused = name
             // Right after `begin` the last item is the tab (docked) or the title bar (the host): double-click toggles.
@@ -116,6 +117,10 @@ abstract class EditorWindow(
     protected fun header(strings: StringManager, tools: (() -> Unit)? = null) = WindowHeader.render(strings, this, tools)
 
     companion object {
+        /** The last window that had focus (any standard window or dialog): the Help shortcut's target (EDT-101). */
+        @Volatile
+        var lastFocused: String? = null
+
         /** `window.console` -> `console`. */
         fun helpIdOf(windowName: String): String = windowName.removePrefix("window.")
 

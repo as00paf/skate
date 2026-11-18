@@ -128,6 +128,11 @@ class ImGuiLayer(
         MaximizeSession.model = maximize.model
         MaximizeSession.defaultMode = { settingsManager.editorSettings.maximizeMode }
         eventSystem.subscribe<WindowAction.ToggleMaximizeFocused> { toggleMaximizeFocused() }
+        // EDT-101: F1 opens the focused window's article, or the Help window's start page when none had focus.
+        eventSystem.subscribe<WindowAction.HelpForFocused> {
+            EditorWindow.lastFocused?.let { windowRegistry.getWindow(it) }?.openHelp()
+                ?: windowRegistry.helpWindow.isOpen.set(true)
+        }
         eventSystem.subscribe<WindowAction.RestoreMaximized> { MaximizeSession.requestRestore() }
         eventSystem.subscribe<WindowAction.ToggleToolWindow> { toolBars.toggle(it.name) }
         eventSystem.subscribe<WindowAction.Show> { event ->
