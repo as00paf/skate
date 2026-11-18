@@ -22,6 +22,7 @@ enum class ComponentType {
     FIRST_PERSON_CAMERA,
     FOLLOW_CAMERA,
     GRID_LINES,
+    HEALTH,
     INPUT_STATE,
     INVENTORY,
     JOINT,
@@ -64,6 +65,7 @@ enum class ComponentType {
             CAMERA_CYCLE -> CameraCycleComponent()
             INVENTORY -> InventoryComponent()
             BONE_ATTACHMENT -> BoneAttachment()
+            HEALTH -> HealthComponent()
             EQUIPMENT -> EquipmentComponent()
             CAPSULE_COLLIDER -> CapsuleCollider3D()
             COMPOUND_HULL_COLLIDER -> CompoundHullCollider3D()

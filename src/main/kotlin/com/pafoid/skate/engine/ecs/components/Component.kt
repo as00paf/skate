@@ -95,6 +95,7 @@ abstract class Component {
                 is InventoryComponent -> ComponentType.INVENTORY
                 is EquipmentComponent -> ComponentType.EQUIPMENT
                 is BoneAttachment -> ComponentType.BONE_ATTACHMENT
+                is HealthComponent -> ComponentType.HEALTH
                 is GridLines -> ComponentType.GRID_LINES
                 is InputStateComponent -> INPUT_STATE
                 is JointComponent -> JOINT

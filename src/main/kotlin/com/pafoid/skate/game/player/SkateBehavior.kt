@@ -14,6 +14,7 @@ import com.pafoid.skate.game.input.SkateInputContext
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.ecs.systems.AppearanceSystem
 import com.pafoid.skate.engine.ecs.systems.BoneAttachmentSystem
+import com.pafoid.skate.engine.ecs.systems.HealthSystem
 import com.pafoid.skate.engine.ecs.systems.InventorySystem
 import com.pafoid.skate.engine.gameplay.appearance.SkeletonConfigs
 import com.pafoid.skate.engine.gameplay.items.ItemDatabase
@@ -363,7 +364,7 @@ object SkateGameplay {
         if (engine.systemManager.getSystem<SkateHudSystem>() == null) {
             engine.systemManager.addSystem(SkateHudSystem(engine.eventSystem))
         }
-        // Items and equipment (GPL-24a, e); the item set reloads on each scene init. One database for both systems.
+        // Items, equipment and health (GPL-24a, b, e); the item set reloads on each scene init. One database for both systems.
         if (engine.systemManager.getSystem<InventorySystem>() == null) {
             val items = ItemDatabase()
             engine.systemManager.addSystem(
@@ -375,6 +376,7 @@ object SkateGameplay {
             )
             engine.systemManager.addSystem(AppearanceSystem(engine.eventSystem, items) { engine.assetsManager.loadModel(it) })
             engine.systemManager.addSystem(BoneAttachmentSystem())
+            engine.systemManager.addSystem(HealthSystem(engine.eventSystem, items))
         }
     }
 
