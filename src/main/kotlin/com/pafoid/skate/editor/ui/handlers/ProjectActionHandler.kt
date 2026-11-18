@@ -302,7 +302,7 @@ class ProjectActionHandler(
         var command: CreateProjectCommand? = null
         val operation = LoadingOperation.Builder("loading.create_project.title", event.name)
             .background("loading.step.copy_assets", weight = 3f) {
-                preparedDir = projectManager.prepareProjectFolder(event.name, File(event.folderPath))
+                preparedDir = projectManager.prepareProjectFolder(event.name, File(event.folderPath), event.copyEngineDefaults)
             }
             .main("loading.step.create_scenes") {
                 val dir = preparedDir?.getOrNull()
