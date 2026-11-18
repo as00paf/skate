@@ -17,10 +17,12 @@ enum class ComponentType {
     DAY_NIGHT_CYCLE,
     DIRECTIONAL_LIGHT,
     ENVIRONMENT,
+    EQUIPMENT,
     FIRST_PERSON_CAMERA,
     FOLLOW_CAMERA,
     GRID_LINES,
     INPUT_STATE,
+    INVENTORY,
     JOINT,
     MESH_COLLIDER,
     NATIVE_SCRIPT,
@@ -59,6 +61,8 @@ enum class ComponentType {
             BOX_COLLIDER_3D -> BoxCollider3D()
             CAMERA -> CameraComponent()
             CAMERA_CYCLE -> CameraCycleComponent()
+            INVENTORY -> InventoryComponent()
+            EQUIPMENT -> EquipmentComponent()
             CAPSULE_COLLIDER -> CapsuleCollider3D()
             COMPOUND_HULL_COLLIDER -> CompoundHullCollider3D()
             CUSTOM_COLLIDER -> CustomCollider3D()

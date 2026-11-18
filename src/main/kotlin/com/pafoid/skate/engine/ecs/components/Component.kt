@@ -92,6 +92,8 @@ abstract class Component {
                 is FollowCameraComponent -> ComponentType.FOLLOW_CAMERA
                 is FirstPersonCameraComponent -> ComponentType.FIRST_PERSON_CAMERA
                 is CameraCycleComponent -> ComponentType.CAMERA_CYCLE
+                is InventoryComponent -> ComponentType.INVENTORY
+                is EquipmentComponent -> ComponentType.EQUIPMENT
                 is GridLines -> ComponentType.GRID_LINES
                 is InputStateComponent -> INPUT_STATE
                 is JointComponent -> JOINT

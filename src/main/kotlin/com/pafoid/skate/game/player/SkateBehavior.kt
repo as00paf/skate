@@ -12,7 +12,10 @@ import com.pafoid.skate.engine.gameplay.CameraPreset
 import com.pafoid.skate.game.input.SkateActions
 import com.pafoid.skate.game.input.SkateInputContext
 import com.pafoid.skate.engine.core.Engine
+import com.pafoid.skate.engine.ecs.systems.InventorySystem
 import com.pafoid.skate.engine.ecs.systems.PlayerMotionSystem
+import com.pafoid.skate.engine.gameplay.items.ItemDatabase
+import com.pafoid.skate.game.items.SkateItems
 import com.pafoid.skate.game.input.SkateControls
 import com.pafoid.skate.game.ui.SkateHudSystem
 import com.pafoid.skate.game.input.SkateIntent
@@ -354,6 +357,12 @@ object SkateGameplay {
         // Once per engine: a second HUD would score every trick twice (GPL-25).
         if (engine.systemManager.getSystem<SkateHudSystem>() == null) {
             engine.systemManager.addSystem(SkateHudSystem(engine.eventSystem))
+        }
+        // Items and equipment (GPL-24a); the item set reloads on each Play start.
+        if (engine.systemManager.getSystem<InventorySystem>() == null) {
+            engine.systemManager.addSystem(
+                InventorySystem(engine.eventSystem, ItemDatabase(), reload = { SkateItems.load(it, engine.assetsManager.paths.projectRoot) }),
+            )
         }
         // Water bails (GPL-32); idempotent. To move into Engine wiring so every game gets it.
         engine.systemManager.getSystem<PlayerMotionSystem>()?.listenTo(engine.eventSystem)
