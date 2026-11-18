@@ -15,6 +15,9 @@ class ViewMenuBuilder(
     private val stringManager: StringManager,
     private val eventSystem: EventSystem,
     private val windowRegistry: WindowRegistry,
+    /** EDT-84: View > Tool Window Bars reads and flips this editor setting. */
+    private val toolBarsShown: () -> Boolean = { true },
+    private val setToolBarsShown: (Boolean) -> Unit = {},
 ) {
     fun render() = HamburgerMenuRenderer.menu(stringManager, HamburgerMenuModel.VIEW, ::action) { renderWindows() }
 
@@ -24,6 +27,7 @@ class ViewMenuBuilder(
         "open_all" -> MenuAction { dockable().values.flatten().forEach { it.isOpen.set(true) } }
         "close_all" -> MenuAction { dockable().values.flatten().forEach { it.isOpen.set(false) } }
         "reset_layout" -> MenuAction { eventSystem.publish(WindowAction.ResetLayout) }
+        "tool_window_bars" -> toolBarsShown().let { shown -> MenuAction(checked = shown) { setToolBarsShown(!shown) } }
         else -> null
     }
 

@@ -44,6 +44,8 @@ data class EditorInputMappings(
     var toggleFullScreen: InputBinding = InputBinding(keyboardKey = GLFW.GLFW_KEY_F12),
     /** With Shift (EDT-88). */
     var maximizeWindow: InputBinding = InputBinding(keyboardKey = GLFW.GLFW_KEY_SPACE),
+    /** EDT-84: each tool window's key, with Alt ([ToolWindowShortcuts]); a missing window uses its default. */
+    var toolWindows: Map<String, InputBinding> = ToolWindowShortcuts.defaults(),
 ) {
 
     /** Every binding back to its default (all of them, from the constructor defaults). */

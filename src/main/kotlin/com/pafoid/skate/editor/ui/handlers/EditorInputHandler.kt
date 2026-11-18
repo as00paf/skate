@@ -5,6 +5,7 @@ import com.pafoid.skate.editor.data.EditorInputMappings
 import com.pafoid.skate.editor.data.EditorInputState
 import com.pafoid.skate.editor.data.EditorShortcut
 import com.pafoid.skate.editor.data.EditorShortcuts
+import com.pafoid.skate.editor.data.ToolWindowBinding
 import com.pafoid.skate.editor.data.ViewportCameraGate
 import com.pafoid.skate.editor.data.ViewportFocusReport
 import com.pafoid.skate.editor.events.EditorEvent
@@ -50,11 +51,13 @@ class EditorInputHandler(
     private val inputMappings: EditorInputMappings get() = settingsManager.editorSettings.editorInputMappings
 
     private fun shiftDown() = inputProvider.isKeyPressed(GLFW.GLFW_KEY_LEFT_SHIFT) || inputProvider.isKeyPressed(GLFW.GLFW_KEY_RIGHT_SHIFT)
+    private fun altDown() = inputProvider.isKeyPressed(GLFW.GLFW_KEY_LEFT_ALT) || inputProvider.isKeyPressed(GLFW.GLFW_KEY_RIGHT_ALT)
 
     /** True on the frame [shortcut]'s combo is pressed with exactly its modifiers, unless a window claimed it. */
     private fun pressed(shortcut: EditorShortcut): Boolean {
         val combo = shortcut.combo(inputMappings)
-        if (combo.ctrl != inputProvider.isControlKeyDown() || combo.shift != shiftDown()) return false
+        if (!combo.isBound) return false
+        if (combo.ctrl != inputProvider.isControlKeyDown() || combo.shift != shiftDown() || combo.alt != altDown()) return false
         if (EditorFocus.isClaimed(combo)) return false
         return inputProvider.keyBeginPress(combo.key)
     }
@@ -127,6 +130,12 @@ class EditorInputHandler(
         if (ViewportCameraGate.maximizeShortcutAllowed(viewportFocused, textInputActive()) &&
             pressed(EditorShortcuts.MAXIMIZE_WINDOW)
         ) eventSystem.publish(WindowAction.ToggleMaximizeFocused)
+        // EDT-84: Alt+<key> opens, focuses or closes a tool window, like its side-bar button; not while typing.
+        if (!textInputActive()) {
+            EditorShortcuts.TOOL_WINDOWS.firstOrNull { pressed(it) }?.let { shortcut ->
+                eventSystem.publish(WindowAction.ToggleToolWindow((shortcut.binding as ToolWindowBinding).window))
+            }
+        }
     }
 
     private fun handleSceneShortcuts(scene: Scene) {

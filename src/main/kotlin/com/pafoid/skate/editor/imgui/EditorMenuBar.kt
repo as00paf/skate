@@ -44,7 +44,11 @@ class EditorMenuBar(
     private val aboutModal = AboutModal(stringManager)
     private val fileMenu = FileMenuBuilder(stringManager, eventSystem, projectManager, settingsManager, sceneManager)
     private val editMenu = EditMenuBuilder(stringManager, sceneManager, eventSystem)
-    private val viewMenu = ViewMenuBuilder(stringManager, eventSystem, windowRegistry)
+    private val viewMenu = ViewMenuBuilder(
+        stringManager, eventSystem, windowRegistry,
+        toolBarsShown = { editor.settingsManager.editorSettings.showToolWindowBars },
+        setToolBarsShown = { shown -> editor.settingsManager.update { it.copy(showToolWindowBars = shown) } },
+    )
     private val playMenu = PlayMenuBuilder(stringManager, eventSystem, editor.playModeHandler.controller)
     private val settingsMenu = SettingsMenuBuilder(stringManager, settingsManager, eventSystem)
     private val toolsMenu = ToolsMenuBuilder(stringManager, eventSystem)

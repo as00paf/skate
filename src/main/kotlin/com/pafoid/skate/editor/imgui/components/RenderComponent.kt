@@ -30,12 +30,12 @@ fun RenderComponent.imgui(engine: Engine) {
     renderMode = MImGui.enumDropdown(engine.stringManager.getString("component.RenderComponent.renderMode"), renderMode)
 
     val castShadowLabel = engine.stringManager.getString("component.RenderComponent.castShadow")
-    if (ImGui.checkbox(castShadowLabel, castShadow)) {
+    if (MImGui.checkbox(castShadowLabel, castShadow, "castShadow")) {
         castShadow = !castShadow
     }
 
     val receiveShadowLabel = engine.stringManager.getString("component.RenderComponent.receiveShadow")
-    if (ImGui.checkbox(receiveShadowLabel, receiveShadow)) {
+    if (MImGui.checkbox(receiveShadowLabel, receiveShadow, "receiveShadow")) {
         receiveShadow = !receiveShadow
     }
 
@@ -67,36 +67,38 @@ private fun RenderComponent.materialInspector(engine: Engine) {
 
     val mat = material
     if (mat == null) {
+        ImGui.pushTextWrapPos(0f)
         ImGui.textDisabled(s("override.none"))
-        if (ImGui.button("${s("override.create")}##override_create")) publish(MaterialAction.CreateOverride(this))
+        ImGui.popTextWrapPos()
+        if (MImGui.fitButton("${s("override.create")}##override_create")) publish(MaterialAction.CreateOverride(this))
         tooltip(s("override.create.tooltip"))
-        ImGui.sameLine()
-        if (ImGui.button("${s("asset.load")}##asset_load")) publish(MaterialAction.Load(this))
+        MImGui.sameLineIfFits(MImGui.buttonWidth(s("asset.load")))
+        if (MImGui.fitButton("${s("asset.load")}##asset_load")) publish(MaterialAction.Load(this))
         tooltip(s("asset.load.tooltip"))
         ImGui.popID()
         return
     }
 
     // Asset row
-    ImGui.text("${s("asset")}: ${materialPath?.let { File(it).name } ?: s("asset.none")}")
+    MImGui.wrappedText("${s("asset")}: ${materialPath?.let { File(it).name } ?: s("asset.none")}")
     materialPath?.let { Tooltips.always(it) }
     if (materialPath != null) {
-        if (ImGui.button("${s("asset.save")}##asset_save")) publish(MaterialAction.Save(this))
+        if (MImGui.fitButton("${s("asset.save")}##asset_save")) publish(MaterialAction.Save(this))
         tooltip(s("asset.save.tooltip"))
-        ImGui.sameLine()
+        MImGui.sameLineIfFits(MImGui.buttonWidth(s("asset.saveAs")))
     }
-    if (ImGui.button("${s("asset.saveAs")}##asset_save_as")) publish(MaterialAction.SaveAs(this))
+    if (MImGui.fitButton("${s("asset.saveAs")}##asset_save_as")) publish(MaterialAction.SaveAs(this))
     tooltip(s("asset.saveAs.tooltip"))
-    ImGui.sameLine()
-    if (ImGui.button("${s("asset.load")}##asset_load")) publish(MaterialAction.Load(this))
+    MImGui.sameLineIfFits(MImGui.buttonWidth(s("asset.load")))
+    if (MImGui.fitButton("${s("asset.load")}##asset_load")) publish(MaterialAction.Load(this))
     tooltip(s("asset.load.tooltip"))
     if (materialPath != null) {
-        ImGui.sameLine()
-        if (ImGui.button("${s("asset.unlink")}##asset_unlink")) publish(MaterialAction.Unlink(this))
+        MImGui.sameLineIfFits(MImGui.buttonWidth(s("asset.unlink")))
+        if (MImGui.fitButton("${s("asset.unlink")}##asset_unlink")) publish(MaterialAction.Unlink(this))
         tooltip(s("asset.unlink.tooltip"))
     }
-    ImGui.sameLine()
-    if (ImGui.button("${s("override.remove")}##override_remove")) publish(MaterialAction.RemoveOverride(this))
+    MImGui.sameLineIfFits(MImGui.buttonWidth(s("override.remove")))
+    if (MImGui.fitButton("${s("override.remove")}##override_remove")) publish(MaterialAction.RemoveOverride(this))
     tooltip(s("override.remove.tooltip"))
 
     materialFields(mat, engine, gameObject?.name, ::s)
@@ -190,18 +192,12 @@ private fun materialFields(mat: Material, engine: Engine, target: String?, s: (S
 }
 
 /** Label | control row with an ID that does not depend on the (translated) label. */
-private inline fun row(id: String, label: String, tooltipKey: String, control: () -> Unit) {
-    ImGui.pushID(id)
-    ImGui.columns(2, "##cols", false)
-    ImGui.setColumnWidth(0, MImGui.DEFAULT_COLUMN_WIDTH)
-    ImGui.text(label)
-    ImGui.nextColumn()
-    ImGui.pushItemWidth(-1f)
-    control()
-    MImGui.strings?.let { Tooltips.showIfPresent(it, tooltipKey) }
-    ImGui.popItemWidth()
-    ImGui.columns(1)
-    ImGui.popID()
+private fun row(id: String, label: String, tooltipKey: String, control: () -> Unit) {
+    // EDT-100: the shared row sizes the label column to the window (or stacks it when narrow).
+    MImGui.row(label, id) {
+        control()
+        MImGui.strings?.let { Tooltips.showIfPresent(it, tooltipKey) }
+    }
 }
 
 private fun tooltip(text: String) {
