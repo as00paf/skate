@@ -40,6 +40,13 @@ abstract class EditorWindow(
     /** EDT-84: a dock node to move into before the next `begin` (a side-bar button moved to another side). */
     internal var dockRequest: Int? = null
 
+    /** EDT-101: from the last `beginWindow`: whether the window has a title bar and a close button there. */
+    internal var hasTitleBar: Boolean = true
+    internal var hasCloseButton: Boolean = true
+
+    /** EDT-101: the title the last `beginWindow` used (the full-editor host has its own ID). */
+    internal var lastTitle: String? = null
+
     /** Dialogs float: no dock to reset to. */
     open val isDialog: Boolean get() = false
 
@@ -80,6 +87,9 @@ abstract class EditorWindow(
             }
             title(strings)
         }
+        hasTitleBar = windowFlags and ImGuiWindowFlags.NoTitleBar == 0
+        hasCloseButton = closable
+        lastTitle = title
         val visible = if (closable) ImGui.begin(title, isOpen, windowFlags) else ImGui.begin(title, windowFlags)
         if (!isDialog && host == null) DefaultDockLayout.docks.record(name, ImGui.getWindowDockID())
         // A window with a horizontal scrollbar can reach its overflow: only the others report it.
@@ -100,7 +110,7 @@ abstract class EditorWindow(
     }
 
     /** The one-line header strip: the window's own [tools] on the left, `?` on the right (EDT-51 §2.2). */
-    protected fun header(strings: StringManager, tools: () -> Unit = {}) = WindowHeader.render(strings, this, tools)
+    protected fun header(strings: StringManager, tools: (() -> Unit)? = null) = WindowHeader.render(strings, this, tools)
 
     companion object {
         /** `window.console` -> `console`. */

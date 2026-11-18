@@ -7,6 +7,7 @@ import com.pafoid.skate.editor.settings.Density
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.core.StringManager
 import imgui.ImGui
+import imgui.flag.ImGuiWindowFlags
 import imgui.type.ImString
 import io.mockk.mockk
 import org.junit.jupiter.api.AfterEach
@@ -25,17 +26,18 @@ class HelpButtonClipTest {
 
     private val strings: StringManager = mockk(relaxed = true)
 
+    /**
+     * [titleBar]: a floating window whose Maximize and `?` sit in its title bar (EDT-101); otherwise a window without a
+     * title bar, standing for a docked one, whose buttons share the tools row.
+     */
     private class Probe(
         private val strings: StringManager,
-        private val modalRow: Boolean,
+        private val titleBar: Boolean,
         private val tools: () -> Unit,
     ) : EditorWindow("window.console") {
         override val icon: String = Icons.LIST
         override fun imgui() {
-            if (beginWindow(strings)) {
-                // The modal's `?` row (EditorModal.helpWindow) or the standard header.
-                if (modalRow) WindowHeader.helpRow(strings) else header(strings) { tools() }
-            }
+            if (beginWindow(strings, if (titleBar) 0 else ImGuiWindowFlags.NoTitleBar)) header(strings) { tools() }
             ImGui.end()
         }
     }
@@ -73,7 +75,7 @@ class HelpButtonClipTest {
         scale: Float,
         windowPaddingY: Float?,
         tools: () -> Unit,
-        modalRow: Boolean = false,
+        titleBar: Boolean = false,
         density: Density = Density.THEME,
     ): WindowHeader.DrawnButton {
         ImGuiStyleManager.uiScale = { scale }
@@ -81,7 +83,7 @@ class HelpButtonClipTest {
         ImGuiStyleManager.invalidate()
         ImGuiStyleManager.sync(theme)
         windowPaddingY?.let { ImGui.getStyle().setWindowPadding(ImGui.getStyle().windowPaddingX, it) }
-        val probe = Probe(strings, modalRow, tools).also { it.isOpen.set(true) }
+        val probe = Probe(strings, titleBar, tools).also { it.isOpen.set(true) }
         repeat(2) {
             ImGui.newFrame()
             ImGui.setNextWindowPos(120.4f, 75.6f)
@@ -96,8 +98,8 @@ class HelpButtonClipTest {
     fun HelpButton_IsNeverClipped() {
         val failures = mutableListOf<String>()
         for (theme in listOf("dark", "light", "high_contrast")) for (scale in listOf(1f, 1.5f)) for (padY in listOf(null, 0f)) {
-            for ((toolsName, tools) in toolSets + ("modal ? row" to {})) {
-                val (button, clip) = drawn(theme, scale, padY, tools, modalRow = toolsName == "modal ? row")
+            for ((toolsName, tools) in toolSets + ("title bar" to {})) {
+                val (button, clip) = drawn(theme, scale, padY, tools, titleBar = toolsName == "title bar")
                 val case = "$theme @${(scale * 100).toInt()}% padY=${padY ?: "theme"} tools=$toolsName: button=$button clip=$clip"
                 if (button.minY < clip.minY + HelpButtonLayout.MIN_CLIP_CLEARANCE) failures += "top clipped: $case"
                 if (button.maxY > clip.maxY) failures += "bottom clipped: $case"
@@ -155,5 +157,66 @@ class HelpButtonClipTest {
             val expected = HelpButtonLayout.size(ImGui.calcTextSize(Icons.QUESTION_CIRCLE).x, font, 5f, 3f)
             assertEquals(expected.height, button.maxY - button.minY, 0.01f, "scale $scale")
         }
+    }
+
+    @Test
+    fun TitleBar_ButtonsSitInTheTitleBar_LeftOfTheClose_AtEveryDensityAndScale() {
+        // EDT-101: floating windows and dialogs carry Maximize and `?` in their title bar, never on a row of their own.
+        val failures = mutableListOf<String>()
+        for (theme in listOf("dark", "light", "high_contrast")) for (density in Density.entries) for (scale in listOf(1f, 1.5f)) {
+            val (help, bar) = drawn(theme, scale, null, {}, titleBar = true, density = density)
+            val (maximize, _) = WindowHeader.lastDrawnMaximize!!
+            val case = "$theme $density @${(scale * 100).toInt()}%: help=$help maximize=$maximize bar=$bar"
+            // The close button is one font size wide (as are ours) at the bar's right end minus the frame padding.
+            val closeLeft = bar.maxX - ImGui.getStyle().framePaddingX - (help.maxY - help.minY)
+            if (help.minY < bar.minY || help.maxY > bar.maxY) failures += "? outside the title bar: $case"
+            if (help.maxX > closeLeft) failures += "? over the close button: $case"
+            if (maximize.maxX > help.minX) failures += "maximize overlaps ?: $case"
+            if (maximize.minY != help.minY) failures += "not side by side: $case"
+            if (help.minX != kotlin.math.floor(help.minX) || help.minY != kotlin.math.floor(help.minY)) failures += "not on whole pixels: $case"
+        }
+        assertTrue(failures.isEmpty(), failures.joinToString("\n"))
+    }
+
+    @Test
+    fun TitleBar_HelpIsClickable_AndDoesNotMoveTheWindow() {
+        var opened = 0
+        val before = com.pafoid.skate.editor.help.HelpRouter.open
+        com.pafoid.skate.editor.help.HelpRouter.open = { opened++ }
+        try {
+            ImGuiStyleManager.sync("dark")
+            val probe = Probe(strings, titleBar = true) {}.also { it.isOpen.set(true) }
+            fun frame() {
+                ImGui.newFrame()
+                ImGui.setNextWindowPos(120f, 75f, imgui.flag.ImGuiCond.FirstUseEver)
+                ImGui.setNextWindowSize(480f, 300f, imgui.flag.ImGuiCond.FirstUseEver)
+                probe.imgui()
+                ImGui.render()
+            }
+            repeat(2) { frame() }
+            val (help, _) = WindowHeader.lastDrawn!!
+            val io = ImGui.getIO()
+            io.addMousePosEvent((help.minX + help.maxX) / 2f, (help.minY + help.maxY) / 2f)
+            frame()
+            io.addMouseButtonEvent(0, true)
+            frame()
+            io.addMouseButtonEvent(0, false)
+            frame()
+            assertEquals(1, opened, "the ? opened the help")
+            assertEquals(help, WindowHeader.lastDrawn!!.button, "the window did not move")
+        } finally {
+            com.pafoid.skate.editor.help.HelpRouter.open = before
+        }
+    }
+
+    @Test
+    fun TitleBarLayout_EndsLeftOfTheCloseButton() {
+        val bar = TitleBarLayout.bar(100f, 50f, 400f, 13f, 3f)
+        assertEquals(19f, bar.height)
+        val slots = TitleBarLayout.slots(bar, 13f, 2, closeButton = true, framePaddingX = 4f, spacing = 4f)
+        // close at 500 - 4 - 13 = 483; ? ends 4 px left of it; Maximize 4 px left of the ?
+        assertEquals(listOf(TitleBarLayout.Slot(449f, 53f), TitleBarLayout.Slot(466f, 53f)), slots)
+        val noClose = TitleBarLayout.slots(bar, 13f, 1, closeButton = false, framePaddingX = 4f, spacing = 4f)
+        assertEquals(TitleBarLayout.Slot(483f, 53f), noClose.single())
     }
 }

@@ -107,6 +107,40 @@ object HelpButtonLayout {
         labelWidths.sumOf { (it + framePaddingX * 2f + itemSpacingX).toDouble() }.toFloat()
 }
 
+/**
+ * Where Maximize and `?` go in a title bar (EDT-101): right-aligned, left of the close button, the size and vertical
+ * place of ImGui's own close button (one font size, centred in the bar). Pure, so it is unit-tested.
+ */
+object TitleBarLayout {
+    data class Bar(val x: Float, val y: Float, val width: Float, val height: Float)
+    data class Slot(val x: Float, val y: Float)
+
+    /** ImGui's title bar buttons (collapse, close) are one font size square. */
+    fun buttonSize(fontSize: Float): Float = fontSize
+
+    /** The title bar of a window at ([x], [y]) [width] wide: one font size plus the vertical frame padding twice. */
+    fun bar(x: Float, y: Float, width: Float, fontSize: Float, framePaddingY: Float): Bar =
+        Bar(x, y, width, fontSize + framePaddingY * 2f)
+
+    /**
+     * [count] button slots, left to right, ending left of the close button when [closeButton] (ImGui draws it at the
+     * bar's right end minus the horizontal frame padding), [spacing] apart.
+     */
+    fun slots(
+        bar: Bar, size: Float, count: Int, closeButton: Boolean, framePaddingX: Float, spacing: Float,
+        contentMaxX: Float = Float.MAX_VALUE,
+    ): List<Slot> {
+        var right = bar.x + bar.width - framePaddingX
+        if (closeButton) right -= size + spacing
+        // Never past the content's right edge (a vertical scrollbar narrows it): the window would count the buttons as
+        // content wider than itself (EDT-100).
+        right = minOf(right, contentMaxX)
+        // On whole pixels, like the content-row buttons (EDT-72): a fractional window position must not blur them.
+        val y = kotlin.math.floor(bar.y + (bar.height - size) / 2f)
+        return (0 until count).map { i -> Slot(kotlin.math.floor(right - (count - i) * size - (count - 1 - i) * spacing), y) }
+    }
+}
+
 /** The shared window header strip and tab menu (EDT-51 §2.2, §2.3). */
 object WindowHeader {
     private const val TAB_MENU_ID = "##window_tab_menu"
@@ -115,17 +149,35 @@ object WindowHeader {
     private const val MAXIMIZE_BUTTON_ID = "##window_maximize"
 
     /**
-     * The window's [tools] on the left, then the `?` button at the right end of the same line, then a separator
-     * (EDT-67, EDT-72). The tools go in a one-column table as wide as the space left of the `?`, so a stretched
-     * search box gets the right width and is clipped before the button. The `?` itself is drawn in the window's own
-     * clip rectangle at [HelpButtonLayout.row], clear of every clip edge.
+     * The window's header (EDT-51 §2.2, EDT-101 option B). Call right after `beginWindow`.
+     * - **Floating** (dialogs, undocked windows, the full-editor host of EDT-88): Maximize and `?` go in the title bar,
+     *   left of the close button ([titleBar]); [tools], if any, get the first content row.
+     * - **Docked with [tools]:** the tools, then Maximize and `?` at the right end of the same row ([toolsRow]).
+     * - **Docked without tools:** Maximize and `?` sit over the top-right corner of the content ([corner]); no row.
+     * The buttons are never alone on a row.
      */
-    fun render(strings: StringManager, window: EditorWindow, tools: () -> Unit = {}) {
+    fun render(strings: StringManager, window: EditorWindow, tools: (() -> Unit)? = null) {
+        if (!ImGui.isWindowDocked() && window.hasTitleBar) {
+            titleBar(strings, window, closeButton = window.hasCloseButton)
+            tools?.let { toolsRow(strings, window, it, withButtons = false) }
+        } else if (tools != null) {
+            toolsRow(strings, window, tools, withButtons = true)
+        } else {
+            toolsRow(strings, window, {}, withButtons = true)
+        }
+    }
+
+    /**
+     * The tools in a one-column table as wide as the space left of the buttons, then (when [withButtons]) Maximize and
+     * `?` at the right end of the same line, then a separator (EDT-67, EDT-72). A stretched search box gets the right
+     * width and is clipped before the buttons; the buttons are drawn clear of every clip edge ([HelpButtonLayout.row]).
+     */
+    private fun toolsRow(strings: StringManager, window: EditorWindow, tools: () -> Unit, withButtons: Boolean) {
         val style = ImGui.getStyle()
         val size = buttonSize()
         val startX = ImGui.getCursorScreenPosX()
         // EDT-88: the Maximize button sits left of the `?`; the row reserves both.
-        val buttons = if (window.canMaximize) 2 else 1
+        val buttons = if (!withButtons) 0 else if (window.canMaximize) 2 else 1
         val row = HelpButtonLayout.row(
             startX, ImGui.getCursorScreenPosY(), ImGui.getWindowPosX() + ImGui.getWindowContentRegionMaxX(),
             ImGui.getWindowDrawList().clipRectMinY, HelpButtonLayout.groupWidth(size.width, buttons, style.itemSpacingX),
@@ -152,35 +204,51 @@ object WindowHeader {
             tools()
         }
         val toolsNextLine = ImGui.getCursorScreenPosY()
-        var buttonX = row.buttonX
-        if (window.canMaximize) {
+        if (withButtons) {
+            var buttonX = row.buttonX
+            if (window.canMaximize) {
+                ImGui.setCursorScreenPos(buttonX, row.top)
+                maximizeButton(strings, window, size.width, size.height)
+                buttonX += size.width + style.itemSpacingX
+            }
             ImGui.setCursorScreenPos(buttonX, row.top)
-            maximizeButton(strings, window, size.width, size.height)
-            buttonX += size.width + style.itemSpacingX
+            button(strings, window, size.width, size.height)
         }
-        ImGui.setCursorScreenPos(buttonX, row.top)
-        button(strings, window, size.width, size.height)
-        ImGui.setCursorScreenPos(startX, HelpButtonLayout.nextLineY(row.top, size.height, toolsNextLine, style.itemSpacingY))
+        val buttonsHeight = if (withButtons) size.height else 0f
+        ImGui.setCursorScreenPos(startX, HelpButtonLayout.nextLineY(row.top, buttonsHeight, toolsNextLine, style.itemSpacingY))
         ImGui.separator()
     }
 
     /**
-     * A header strip with only the `?`, right-aligned, without a table (modals size themselves to their content).
-     * Returns true when it was clicked.
+     * EDT-101: Maximize (when the window can) and `?` in the current window's title bar, right-aligned, left of the
+     * close button when there is one. They are real buttons: the title bar belongs to the window, so hover and clicks
+     * reach them, and pressing one does not start a window move. The cursor is left where it was.
      */
-    fun helpRow(strings: StringManager): Boolean {
+    fun titleBar(strings: StringManager, window: EditorWindow?, closeButton: Boolean, onHelp: () -> Unit = { window?.openHelp() }): Boolean {
         val style = ImGui.getStyle()
-        val size = buttonSize()
-        val startX = ImGui.getCursorScreenPosX()
-        val row = HelpButtonLayout.row(
-            startX, ImGui.getCursorScreenPosY(), ImGui.getWindowPosX() + ImGui.getWindowContentRegionMaxX(),
-            ImGui.getWindowDrawList().clipRectMinY, size.width, style.itemSpacingX, ImGui.getScrollY(),
+        val size = TitleBarLayout.buttonSize(ImGui.getFontSize().toFloat())
+        val bar = TitleBarLayout.bar(ImGui.getWindowPosX(), ImGui.getWindowPosY(), ImGui.getWindowWidth(), ImGui.getFontSize().toFloat(), style.framePaddingY)
+        val slots = TitleBarLayout.slots(
+            bar, size, count = if (window?.canMaximize == true) 2 else 1, closeButton, style.framePaddingX, style.itemInnerSpacingX,
+            contentMaxX = ImGui.getWindowPosX() + ImGui.getWindowContentRegionMaxX(),
         )
-        ImGui.setCursorScreenPos(row.buttonX, row.top)
-        val clicked = clicked(strings, size.width, size.height)
-        ImGui.setCursorScreenPos(startX, row.top + size.height + style.itemSpacingY)
-        ImGui.separator()
-        return clicked
+        val saved = floatArrayOf(ImGui.getCursorScreenPosX(), ImGui.getCursorScreenPosY())
+        ImGui.pushClipRect(bar.x, bar.y, bar.x + bar.width, bar.y + bar.height, false)
+        ImGui.pushStyleVar(ImGuiStyleVar.FramePadding, 0f, 0f)
+        var helpClicked = false
+        slots.forEachIndexed { i, slot ->
+            ImGui.setCursorScreenPos(slot.x, slot.y)
+            val isHelp = i == slots.lastIndex
+            if (isHelp) {
+                if (clicked(strings, size, size)) { helpClicked = true; onHelp() }
+            } else {
+                maximizeButton(strings, window!!, size, size)
+            }
+        }
+        ImGui.popStyleVar()
+        ImGui.popClipRect()
+        ImGui.setCursorScreenPos(saved[0], saved[1])
+        return helpClicked
     }
 
     /**

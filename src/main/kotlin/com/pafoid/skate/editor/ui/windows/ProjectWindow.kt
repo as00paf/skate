@@ -135,7 +135,7 @@ class ProjectWindow(
                 statusTreeVersion++  // Invalidate status cache
             }
 
-            header(stringManager) { if (projectManager.hasProject()) renderHeaderTools() }
+            header(stringManager, if (projectManager.hasProject()) ({ renderHeaderTools() }) else null)
 
             lastOperationError?.let { errorMsg ->
                 MImGui.errorText("${Icons.WINDOW_CLOSE} $errorMsg")
