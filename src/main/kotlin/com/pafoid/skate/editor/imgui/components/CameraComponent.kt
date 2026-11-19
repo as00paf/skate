@@ -14,12 +14,12 @@ fun CameraComponent.imgui(engine: Engine) {
     zoom = MImGui.dragFloat(engine.stringManager.getString("component.CameraComponent.zoom"), zoom)
 
     val isOrthographicLabel = engine.stringManager.getString("component.CameraComponent.isOrthographic")
-    if (ImGui.checkbox(isOrthographicLabel, isOrthographic)) {
+    if (MImGui.checkbox(isOrthographicLabel, isOrthographic, "isOrthographic")) {
         isOrthographic = !isOrthographic
     }
 
     val isDefaultLabel = engine.stringManager.getString("component.CameraComponent.isDefault")
-    if (ImGui.checkbox(isDefaultLabel, isDefault)) {
+    if (MImGui.checkbox(isDefaultLabel, isDefault, "isDefault")) {
         isDefault = !isDefault
     }
 

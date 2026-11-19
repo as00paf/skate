@@ -45,7 +45,7 @@ class DeleteObjectsConfirmation {
 
     companion object {
         /** Every object below [gameObject], at any depth. */
-        fun descendantCount(gameObject: GameObject): Int = gameObject.children.sumOf { 1 + descendantCount(it) }
+        fun descendantCount(gameObject: GameObject): Int = gameObject.persistentChildren.sumOf { 1 + descendantCount(it) }
 
         private fun isAncestor(ancestor: GameObject, of: GameObject): Boolean {
             var node = of.parent
