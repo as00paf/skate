@@ -82,6 +82,9 @@ class TerrainRuntime {
         grid = arrayOfNulls(l.chunkCount)
         streamed = key.streamed
         overview = null
+        layout = l
+        generator = g
+        this.key = key
         if (key.streamed) {
             // Chunks arrive through a TerrainStreamer; the overview covers the rest (built on workers)
             overviewBuild?.cancel(true)
@@ -90,9 +93,6 @@ class TerrainRuntime {
         } else {
             for (c in TerrainChunkBuilder.buildAll(g, parallel)) grid[c.cz * l.chunksPerSide + c.cx] = c
         }
-        layout = l
-        generator = g
-        this.key = key
         version++
         return true
     }
