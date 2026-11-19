@@ -1111,6 +1111,10 @@ Round 27+ goals (human, 2026-11-06): fix editor bugs, make every window, dialog 
   - Do: (NEEDS from INP-11): new projects get `actionsPath` and an empty `Assets/Data/input.actions.json`; skate-editor also reviews INP-11's Key Bindings UI.
   - Done when: A new project has the actions asset and opens it in Key Bindings; test.
   - Deps: INP-11
+- [~] @skate-editor **EDT-113** `P1` Tool window sidebar polish: separators, centered icons, even padding
+  - Do: (human, 2026-11-18): the EDT-84 tool window sidebars need three visual fixes: (1) vertical separator lines between the icon buttons to visually group/divide them; (2) icons inside the sidebar buttons must be centered both horizontally and vertically, not offset; (3) the padding around each icon button must be equal on all four sides and slightly more generous than the current value. Fix all three in the sidebar rendering code; add a render test that checks button dimensions and icon centering.
+  - Done when: Sidebars show separator lines; icons are centered; all four sides of each button have equal padding; render/layout tests pass.
+  - Deps: EDT-84
 - [x] **EDT-82** `P2` Editor-wide "unsaved assets" prompt on close
   - Do: (ANI-21 design answer, 2026-11-10): one prompt when the project or editor closes, listing the unsaved scene, animation clips and animator controllers, with Save all / Discard / Cancel.
   - Done when: Closing with unsaved assets asks first; tests for the dirty-document registry.
@@ -1176,6 +1180,17 @@ Round 27+ goals: tooling fixes, an Android feasibility study and new demo projec
   - Do: (human, Discord 2026-11-17): make the herdr agent setup (`.github/agents/*.agent.md`, `tools/herdr/sync-agents.sh`, skills) explicitly say that only the lead asks the human, with the question tool (rule 11), and make sure the `task-observer` skill is loaded for every herdr agent session. Also review the `claude-code-setup:claude-automation-recommender` suggestions for this repo and report which plugins, skills or hooks fit.
   - Done when: Every generated agent file mentions the question rule and loads task-observer; the recommendations are reported to the lead.
   - Deps: none
+- [~] @skate-tooling **TLG-23** `P1` Feature Showcase and MainScene: round 38–39 demos and water audio control
+  - Do: (human, 2026-11-18): update the Feature Showcase and MainScene so every round 38–39 feature has a labeled demo there instead of requiring the human to build a scene themselves. Specifically:
+    1. **Water audio control** — add an `AudioComponent` to the `[Nature] Pool` entity so the automatic system-level ambience is suppressed and the designer controls the clip, volume and distances directly from the Properties window. Label it in the scene.
+    2. **ECS-21 FirstPersonCamera demo** — add a labeled `[Camera] FirstPerson` entity with a `FirstPersonCameraComponent` in the showcase (not the default camera; a secondary one the user can select to test that inspector edits reach the Game Viewport on the next frame).
+    3. **REN-43 grey rock scatter / terrain with biomes** — the showcase's terrain area (or a new "Terrain" area if none exists) must have a small streamed terrain with at least one scatter rule using the engine's default rock material so the grey rocks are visible in Play and the editor.
+    4. **EDT-90 water and wind** — the Nature pool already has a `WaterComponent`; make sure the `EnvironmentComponent` on the scene has a non-zero wind value and the wind-cycle button cycles visibly. Add a note (comment in `nature()` or a labeled UI text) pointing the tester to the Properties window for the water presets.
+    5. **GPL-27 skater hat and glasses** — these belong in `MainScene` (skateboarding-specific). Confirm the default skater in `MainScene` equips a hat and glasses from `Assets/Items/` and they are visible at startup; update `PrefabsGenerator` if needed.
+    6. **ANI-19 clothing remap** — `MainScene`: add a second NPC skater (or use the existing one) with a skinned clothing mesh that is remapped by bone name so the tester can see it working.
+    7. **TLG-17 existing pool** — verify the pool, floating props, ball and log all appear on a fresh New Project (run `ProjectLifecycleEndToEndTest` or equivalent); fix any missing references.
+  - Done when: A fresh New Project opens `FeatureShowcase` and `MainScene`, presses Play, and every item above is present and working; the `[Nature] Pool` has an `AudioComponent`; `ProjectLifecycleEndToEndTest` passes (or failures are pre-existing and listed in `docs/bugs.md`); tests updated.
+  - Deps: TLG-17, ECS-21, REN-43, EDT-90, GPL-27, ANI-19
 
 ### Quality — `QA` (`skate-qa`)
 
