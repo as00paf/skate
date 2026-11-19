@@ -2,6 +2,8 @@ package com.pafoid.skate.engine.physics3d.jolt
 
 import com.github.stephengold.joltjni.AllHitCastRayCollector
 import com.github.stephengold.joltjni.AllHitCastShapeCollector
+import com.github.stephengold.joltjni.AllHitCollideShapeCollector
+import com.github.stephengold.joltjni.CollideShapeSettings
 import com.github.stephengold.joltjni.BodyCreationSettings
 import com.github.stephengold.joltjni.BodyFilter
 import com.github.stephengold.joltjni.BodyInterface
@@ -42,6 +44,7 @@ import com.pafoid.skate.engine.physics3d.IPhysicsBody3D
 import com.pafoid.skate.engine.physics3d.IRigidBodyHandle
 import com.pafoid.skate.engine.physics3d.PhysicsContactListener
 import com.pafoid.skate.engine.physics3d.PhysicsHit
+import com.pafoid.skate.engine.physics3d.ScenePhysicsQueries
 import com.pafoid.skate.engine.physics3d.ShapePart
 import com.pafoid.skate.engine.physics3d.constraints.IPhysicsConstraint
 import com.pafoid.skate.engine.render.EngineStats
@@ -91,6 +94,10 @@ class JoltPhysics3D internal constructor(
     }
     private val shapeCastSettings = ShapeCastSettings().apply {
         setBackFaceModeTriangles(EBackFaceMode.CollideWithBackFaces)
+    }
+    private val overlapCollector = AllHitCollideShapeCollector()
+    private val overlapSettings = CollideShapeSettings().apply {
+        setBackFaceMode(EBackFaceMode.CollideWithBackFaces)
     }
     private val origin = RVec3()
     private val tempR = RVec3()
@@ -423,6 +430,44 @@ class JoltPhysics3D internal constructor(
         return PhysicsHit(hitHandle.gameObject, Vector3f(to).sub(from).mul(bestFraction).add(from), normal, bestFraction)
     }
 
+    override fun overlap(
+        shape: ColliderShape,
+        position: Vector3f,
+        rotation: Quaternionf,
+        layerMask: Int,
+        excludeBody: IPhysicsBody3D?,
+    ): List<GameObject> {
+        ScenePhysicsQueries.requireQueryShape(shape)
+        val queryShape = JoltShapes.create(shape)
+        val excluded = excludedHandle(excludeBody)
+        overlapCollector.reset()
+        // Jolt places the shape by its centre of mass
+        val com = queryShape.centerOfMass.let { rotation.transform(Vector3f(it.x, it.y, it.z)) }
+        val q = Quat(rotation.x, rotation.y, rotation.z, rotation.w)
+        val transform = RMat44.sRotationTranslation(
+            q, RVec3((position.x + com.x).toDouble(), (position.y + com.y).toDouble(), (position.z + com.z).toDouble()),
+        )
+        val scale = Vec3(1f, 1f, 1f)
+        try {
+            origin.set(0.0, 0.0, 0.0)
+            system.narrowPhaseQueryNoLock.collideShape(
+                queryShape, scale, transform, overlapSettings, origin, overlapCollector,
+                broadPhaseFilter, objectLayerFilter, bodyFilter, shapeFilter,
+            )
+        } finally {
+            transform.close()
+            queryShape.close()
+        }
+        val found = LinkedHashMap<GameObject, Vector3f>()
+        for (i in 0 until overlapCollector.countHits()) {
+            val handle = handles[overlapCollector.get(i).bodyId2] ?: continue
+            if (!isQueryable(handle, layerMask, excluded)) continue
+            val go = handle.gameObject ?: continue
+            if (go !in found) found[go] = handle.getLocation(Vector3f())
+        }
+        return ScenePhysicsQueries.nearestFirst(position, found)
+    }
+
     private fun excludedHandle(body: IPhysicsBody3D?): JoltRigidBodyHandle? =
         (body as? RigidBody3D)?.rawBody as? JoltRigidBodyHandle
 
@@ -443,7 +488,7 @@ class JoltPhysics3D internal constructor(
         layers.close()
         contacts.close()
         listOf(
-            rayCollector, shapeCollector, raySettings, shapeCastSettings,
+            rayCollector, shapeCollector, raySettings, shapeCastSettings, overlapCollector, overlapSettings,
             broadPhaseFilter, objectLayerFilter, bodyFilter, shapeFilter,
         ).forEach { it.close() }
     }
@@ -452,7 +497,7 @@ class JoltPhysics3D internal constructor(
     internal fun ownedNativeObjects(): List<JoltPhysicsObject> = listOf(
         system, jobSystem, tempAllocator, contacts.listener,
         layers.pairFilter, layers.broadPhaseLayers, layers.objectVsBroadPhase,
-        rayCollector, shapeCollector, raySettings, shapeCastSettings,
+        rayCollector, shapeCollector, raySettings, shapeCastSettings, overlapCollector, overlapSettings,
         broadPhaseFilter, objectLayerFilter, bodyFilter, shapeFilter,
     ) + joints.map { it.ref }
 

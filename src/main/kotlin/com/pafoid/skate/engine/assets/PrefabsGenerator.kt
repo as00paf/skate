@@ -384,5 +384,9 @@ class PrefabsGenerator(
 
         /** [GameObject.tag] of spawn points; their transform gives the spawn position and +Z heading. */
         const val SPAWN_POINT_TAG = "SpawnPoint"
+
+        /** Bundled `*.item.json` (classpath) the skater prefab wears: a hat and glasses on placeholder meshes (GPL-24e). */
+        const val SKATER_HAT_ITEM = "items/skate/hat.item.json"
+        const val SKATER_GLASSES_ITEM = "items/skate/glasses.item.json"
     }
 }

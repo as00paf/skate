@@ -142,7 +142,7 @@ class TerrainAssetTest {
         assertTrue(region.isFile)
         val header = TerrainRegionFile.readHeader(region.readBytes())
         assertEquals(listOf(TerrainRegionFile.slotOf(1, 2)), header.entries.indices.filter { header.entries[it].present }, "only the sculpted chunk")
-        assertClose(t.runtime.chunk(1, 2)!!.heights, store.readChunk(1, 2, 16, 1f)!!)
+        assertClose(t.runtime.chunk(1, 2)!!.heights, store.readChunk(1, 2, 16, 1f)!!.heights)
         assertFalse(folder.walkTopDown().any { it.name.endsWith(".tmp") }, "atomic writes leave no temp files")
 
         sculpt(t, 1, 2, -4f)
