@@ -600,10 +600,10 @@ Audio needs a more complete implementation.
   - Do: (EDT-106 audit, `docs/design/EDT-106.md`; UI written by the owner, reviewed by skate-editor): stream vs. load, default bus, loop points.
   - Done when: Settings save and apply; tests.
   - Deps: none
-- [ ] **AUD-15** `P3` Water audio settings
-  - Do: (EDT-106 audit, `docs/design/EDT-106.md`; UI written by the owner, reviewed by skate-editor): splash and ambience sounds, volumes.
-  - Done when: Water audio is configurable; test.
-  - Deps: none
+- [ ] **AUD-15** `P1` Water audio fields on WaterComponent (splash and ambience editable in the inspector)
+  - Do: (human, 2026-11-18): move splash and ambience audio settings out of `AudioSystem.waterAudio` and onto `WaterComponent` itself, so a designer can edit them in the Properties window without touching any system. Add these optional fields to `WaterComponent` (nulls mean "use engine default"): `ambienceClip: String?`, `ambienceVolume: Float?`, `ambienceMinDistance: Float?`, `ambienceMaxDistance: Float?`, `splashClips: List<String>?`, `splashVolume: Float?`, `splashMinDistance: Float?`, `splashMaxDistance: Float?`. `AudioSystem.updateAmbience` and `startSplashes` read per-entity values when set, falling back to `AudioSystem.waterAudio` defaults. Remove the `AudioComponent` escape-hatch check (`go.getComponent<AudioComponent>() != null → skip`) — a `WaterComponent` with its own audio fields is now the override path; an `AudioComponent` on the same entity still works for other sounds but no longer suppresses water audio. Update `FeatureShowcase.nature()`: set `ambienceClip`, `ambienceVolume` and `splashClips` on the pool's `WaterComponent` to their current defaults so they appear in the inspector. Inspector: the water inspector (EDT-90) already renders the `WaterComponent`; ensure the new audio fields show up in a collapsible "Audio" section with the same label/undo treatment as other fields.
+  - Done when: Selecting the pool in Properties shows an Audio section on `WaterComponent`; editing `ambienceClip` or `ambienceVolume` changes the runtime sound without restarting the editor; splashes still fire on `WaterEntered`; tests cover the per-entity override and the system-default fallback.
+  - Deps: AUD-13, EDT-90
 
 ### Input — `INP` (`skate-input`)
 
@@ -1182,15 +1182,15 @@ Round 27+ goals: tooling fixes, an Android feasibility study and new demo projec
   - Deps: none
 - [~] @skate-tooling **TLG-23** `P1` Feature Showcase and MainScene: round 38–39 demos and water audio control
   - Do: (human, 2026-11-18): update the Feature Showcase and MainScene so every round 38–39 feature has a labeled demo there instead of requiring the human to build a scene themselves. Specifically:
-    1. **Water audio control** — add an `AudioComponent` to the `[Nature] Pool` entity so the automatic system-level ambience is suppressed and the designer controls the clip, volume and distances directly from the Properties window. Label it in the scene.
+    1. **Water audio (AUD-15)** — once AUD-15 lands, the pool's `WaterComponent` will have audio fields; set them to their defaults in `nature()` so they are visible in Properties from day one. Do not add a separate `AudioComponent` for this.
     2. **ECS-21 FirstPersonCamera demo** — add a labeled `[Camera] FirstPerson` entity with a `FirstPersonCameraComponent` in the showcase (not the default camera; a secondary one the user can select to test that inspector edits reach the Game Viewport on the next frame).
     3. **REN-43 grey rock scatter / terrain with biomes** — the showcase's terrain area (or a new "Terrain" area if none exists) must have a small streamed terrain with at least one scatter rule using the engine's default rock material so the grey rocks are visible in Play and the editor.
-    4. **EDT-90 water and wind** — the Nature pool already has a `WaterComponent`; make sure the `EnvironmentComponent` on the scene has a non-zero wind value and the wind-cycle button cycles visibly. Add a note (comment in `nature()` or a labeled UI text) pointing the tester to the Properties window for the water presets.
+    4. **EDT-90 water and wind** — the Nature pool already has a `WaterComponent`; make sure the `EnvironmentComponent` on the scene has a non-zero wind value and the wind-cycle button cycles visibly.
     5. **GPL-27 skater hat and glasses** — these belong in `MainScene` (skateboarding-specific). Confirm the default skater in `MainScene` equips a hat and glasses from `Assets/Items/` and they are visible at startup; update `PrefabsGenerator` if needed.
     6. **ANI-19 clothing remap** — `MainScene`: add a second NPC skater (or use the existing one) with a skinned clothing mesh that is remapped by bone name so the tester can see it working.
     7. **TLG-17 existing pool** — verify the pool, floating props, ball and log all appear on a fresh New Project (run `ProjectLifecycleEndToEndTest` or equivalent); fix any missing references.
-  - Done when: A fresh New Project opens `FeatureShowcase` and `MainScene`, presses Play, and every item above is present and working; the `[Nature] Pool` has an `AudioComponent`; `ProjectLifecycleEndToEndTest` passes (or failures are pre-existing and listed in `docs/bugs.md`); tests updated.
-  - Deps: TLG-17, ECS-21, REN-43, EDT-90, GPL-27, ANI-19
+  - Done when: A fresh New Project opens `FeatureShowcase` and `MainScene`, presses Play, and every item above is present and working; `ProjectLifecycleEndToEndTest` passes or failures are pre-existing in `docs/bugs.md`; tests updated.
+  - Deps: TLG-17, ECS-21, REN-43, EDT-90, GPL-27, ANI-19, AUD-15
 
 ### Quality — `QA` (`skate-qa`)
 
