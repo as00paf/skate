@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.ui.windows
 
+import com.pafoid.skate.editor.imgui.MImGui
 import com.pafoid.skate.editor.imgui.Tooltips
 import com.pafoid.skate.editor.imgui.EditorWindow
 import com.pafoid.skate.editor.imgui.EmptyState
@@ -90,74 +91,76 @@ class ProfilerWindow(private val stringManager: StringManager) : EditorWindow("w
         // Frozen indicator
         if (isFrozen.get()) {
             ImGui.pushStyleColor(ImGuiCol.Text, 1f, 0.8f, 0.2f, 1f)
-            ImGui.text(stringManager.getString("lbl.profiler.frozen"))
+            MImGui.wrappedText(stringManager.getString("lbl.profiler.frozen"))
             ImGui.popStyleColor()
             ImGui.separator()
         }
 
-        ImGui.text(stringManager.getString("lbl.profiler.avg_ms", frameTime, fps))
-        ImGui.text(stringManager.getString("lbl.profiler.draw_calls", EngineStats.drawCalls.get()))
-        ImGui.text(stringManager.getString("lbl.profiler.physics_step", physicsTime))
-        ImGui.text(stringManager.getString("lbl.profiler.ram_usage", usedMemory, totalMemory))
+        MImGui.wrappedText(stringManager.getString("lbl.profiler.avg_ms", frameTime, fps))
+        MImGui.wrappedText(stringManager.getString("lbl.profiler.draw_calls", EngineStats.drawCalls.get()))
+        MImGui.wrappedText(stringManager.getString("lbl.profiler.physics_step", physicsTime))
+        MImGui.wrappedText(stringManager.getString("lbl.profiler.ram_usage", usedMemory, totalMemory))
 
         ImGui.separator()
-        ImGui.checkbox(stringManager.getString("lbl.profiler.show_mem_stats"), showMemoryStats)
+        MImGui.row(stringManager.getString("lbl.profiler.show_mem_stats"), "show_mem_stats") { ImGui.checkbox("##value", showMemoryStats) }
         if (showMemoryStats.get()) {
             val memRatio = usedMemory.toFloat() / totalMemory.toFloat()
             ImGui.progressBar(memRatio, -1f, 0f, "%d%%".format((memRatio * 100).toInt()))
         }
 
         ImGui.separator()
-        ImGui.text("${Icons.CHART_LINE} ${stringManager.getString("window.profiler.graphs")}")
-        ImGui.checkbox(stringManager.getString("lbl.profiler.show_graphs"), showGraphs)
+        MImGui.wrappedText("${Icons.CHART_LINE} ${stringManager.getString("window.profiler.graphs")}")
+        MImGui.row(stringManager.getString("lbl.profiler.show_graphs"), "show_graphs") { ImGui.checkbox("##value", showGraphs) }
         if (showGraphs.get() && history.currentSize > 0) {
             val lastIdx = if (history.currentIndex == 0) history.maxSize - 1 else history.currentIndex - 1
 
             // Frame Time Graph
-            ImGui.plotLines(
-                "${Icons.CLOCK} ${stringManager.getString("lbl.profiler.frame_time_graph")}",
+            MImGui.row("${Icons.CLOCK} ${stringManager.getString("lbl.profiler.frame_time_graph")}", "lbl.profiler.frame_time_graph") { ImGui.plotLines(
+                "##graph",
                 history.frameTimes,
                 history.currentSize,
                 history.currentIndex,
                 String.format("%.2f ms", history.frameTimes[lastIdx]),
                 0f, 100f, 0f, 80f
-            )
+            ) }
 
             // FPS Graph
-            ImGui.plotLines(
-                "${Icons.CHART_LINE} ${stringManager.getString("lbl.profiler.fps_graph")}",
+            MImGui.row("${Icons.CHART_LINE} ${stringManager.getString("lbl.profiler.fps_graph")}", "lbl.profiler.fps_graph") { ImGui.plotLines(
+                "##graph",
                 history.fpsValues,
                 history.currentSize,
                 history.currentIndex,
                 String.format("%.0f FPS", history.fpsValues[lastIdx]),
                 0f, 240f, 0f, 80f
-            )
+            ) }
 
             // Physics Step Time Graph
-            ImGui.plotLines(
-                "${Icons.MICROCHIP} ${stringManager.getString("lbl.profiler.physics_graph")}",
+            MImGui.row("${Icons.MICROCHIP} ${stringManager.getString("lbl.profiler.physics_graph")}", "lbl.profiler.physics_graph") { ImGui.plotLines(
+                "##graph",
                 history.physicsStepTimes,
                 history.currentSize,
                 history.currentIndex,
                 String.format("%.2f ms", history.physicsStepTimes[lastIdx]),
                 0f, 33f, 0f, 80f
-            )
+            ) }
 
             // Memory Usage Graph
-            ImGui.plotLines(
-                "${Icons.MEMORY} ${stringManager.getString("lbl.profiler.memory_graph")}",
+            MImGui.row("${Icons.MEMORY} ${stringManager.getString("lbl.profiler.memory_graph")}", "lbl.profiler.memory_graph") { ImGui.plotLines(
+                "##graph",
                 history.memoryUsage,
                 history.currentSize,
                 history.currentIndex,
                 String.format("%.0f MB", history.memoryUsage[lastIdx]),
                 0f, totalMemory.toFloat(), 0f, 80f
-            )
+            ) }
         }
 
         ImGui.separator()
 
         // System timing breakdown note
+        ImGui.pushTextWrapPos(0f)
         ImGui.textColored(0.5f, 0.5f, 0.5f, 1f, stringManager.getString("lbl.profiler.no_system_timings"))
+        ImGui.popTextWrapPos()
 
         ImGui.separator()
 
@@ -215,22 +218,23 @@ class ProfilerWindow(private val stringManager: StringManager) : EditorWindow("w
         if (isFrozen.get()) {
             ImGui.pushStyleColor(ImGuiCol.Button, 0.6f, 0.4f, 0.1f, 1f)
             ImGui.pushStyleColor(ImGuiCol.ButtonHovered, 0.7f, 0.5f, 0.2f, 1f)
-            if (ImGui.button("${Icons.PLAY} ${stringManager.getString("btn.profiler.unfreeze")}")) {
+            if (MImGui.fitButton("${Icons.PLAY} ${stringManager.getString("btn.profiler.unfreeze")}")) {
                 isFrozen.set(false)
             }
             ImGui.popStyleColor(2)
             Tooltips.text(stringManager.getString("tooltip.profiler.unfreeze"))
         } else {
-            if (ImGui.button("${Icons.PAUSE} ${stringManager.getString("btn.profiler.freeze")}")) {
+            if (MImGui.fitButton("${Icons.PAUSE} ${stringManager.getString("btn.profiler.freeze")}")) {
                 isFrozen.set(true)
             }
             Tooltips.text(stringManager.getString("tooltip.profiler.freeze"))
         }
 
-        ImGui.sameLine()
+        val reset = "${Icons.ARROW_ROTATE} ${stringManager.getString("btn.profiler.reset_stats")}"
+        MImGui.sameLineIfFits(MImGui.buttonWidth(reset)) // EDT-100: wraps in a narrow window
 
         // Reset Stats button
-        if (ImGui.button("${Icons.ARROW_ROTATE} ${stringManager.getString("btn.profiler.reset_stats")}")) {
+        if (MImGui.fitButton(reset)) {
             history.reset()
         }
         Tooltips.text(stringManager.getString("tooltip.profiler.reset_stats"))

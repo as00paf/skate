@@ -13,6 +13,7 @@ import com.pafoid.skate.engine.physics3d.IPhysicsBody3D
 import com.pafoid.skate.engine.physics3d.IRigidBodyHandle
 import com.pafoid.skate.engine.physics3d.PhysicsContactListener
 import com.pafoid.skate.engine.physics3d.PhysicsHit
+import com.pafoid.skate.engine.physics3d.ScenePhysicsQueries
 import com.pafoid.skate.engine.physics3d.constraints.IPhysicsConstraint
 import com.pafoid.skate.engine.utils.toRadiansF
 import org.joml.Quaternionf
@@ -249,6 +250,36 @@ class SimplePhysics3D : IPhysics3D {
     /** Sweeps a bounding sphere of [shape]: against moving bodies' spheres and static boxes (grown by its radius). */
     override fun shapeCast(shape: ColliderShape, from: Vector3f, to: Vector3f, layerMask: Int, excludeBody: IPhysicsBody3D?): PhysicsHit? =
         sweep(boundingRadius(shape), from, to, layerMask, excludeBody).minByOrNull { it.fraction }
+
+    /**
+     * Overlap as this backend sees bodies: moving bodies are spheres, static ones their box or heightfield. A box query
+     * is tested as that oriented box against moving bodies; every other test uses the query's bounding sphere.
+     */
+    override fun overlap(
+        shape: ColliderShape,
+        position: Vector3f,
+        rotation: Quaternionf,
+        layerMask: Int,
+        excludeBody: IPhysicsBody3D?,
+    ): List<GameObject> {
+        ScenePhysicsQueries.requireQueryShape(shape)
+        refreshLayout()
+        val excluded = (excludeBody as? RigidBody3D)?.rawBody
+        val radius = boundingRadius(shape)
+        val box = (shape as? ColliderShape.Box)?.let { OrientedBox(it.halfExtents).apply { place(position, rotation) } }
+        val found = LinkedHashMap<GameObject, Vector3f>()
+        fun test(b: SimpleBody) {
+            if (b === excluded || b.isTrigger || b.collisionLayer and layerMask == 0) return
+            val go = b.owner ?: return
+            val touches = b.staticSurface?.let { it.sphereContact(position, radius) != null }
+                ?: box?.let { it.sphereContact(b.position, b.radius) != null }
+                ?: (b.position.distance(position) <= radius + b.radius)
+            if (touches && go !in found) found[go] = Vector3f(b.position)
+        }
+        movers.forEach(::test)
+        grid.query(Vector3f(position).sub(radius, radius, radius), Vector3f(position).add(radius, radius, radius), ::test)
+        return ScenePhysicsQueries.nearestFirst(position, found)
+    }
 
     private fun sweep(radius: Float, from: Vector3f, to: Vector3f, layerMask: Int, excludeBody: IPhysicsBody3D?): List<PhysicsHit> {
         refreshLayout()

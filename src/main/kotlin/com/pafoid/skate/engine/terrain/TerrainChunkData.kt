@@ -48,6 +48,11 @@ class TerrainChunkData(
         dirty = true
     }
 
+    /** Approximate CPU bytes held by this chunk (heights, splat, biomes, scatter): streaming budgets (REN-28 §15.4). */
+    fun approxBytes(): Long {
+        return heights.size * 4L + (splat?.size ?: 0) + (biomeIds?.size ?: 0) + (paintedBiomeIds?.size ?: 0) + scatter.size * 64L
+    }
+
     /** Lowest and highest height over the chunk's own samples (no apron), for its AABB. */
     val minHeight: Float get() = range().first
     val maxHeight: Float get() = range().second
