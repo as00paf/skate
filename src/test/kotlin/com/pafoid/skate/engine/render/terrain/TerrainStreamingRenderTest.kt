@@ -18,6 +18,7 @@ import org.joml.Matrix4f
 import org.joml.Vector3f
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -66,20 +67,20 @@ class TerrainStreamingRenderTest {
         val d = draw(renderer, scene)
         renderer.sync(d)
         renderer.setFrustum(Matrix4f().ortho(-1000f, 1000f, -1000f, 1000f, -5000f, 5000f).lookAt(0f, 100f, 0f, 0f, 0f, 0f, 0f, 0f, -1f))
-        EngineStats.resetDrawCalls()
+        assertNotNull(t.runtime.overview, "the overview is built before drawing")
+        // Count draws on this test's own device: EngineStats is a JVM-wide static other tests also write (REN-49)
         device.events.clear()
         renderer.drawFarField(mockk<Shader>(relaxed = true), d, Vector3f(), 4000f, colour = true)
-        val withoutDetail = EngineStats.terrainFarTiles.get()
+        val withoutDetail = device.events.count { it.startsWith("drawIndexed") }
         assertTrue(withoutDetail > 0)
-        assertEquals(withoutDetail, device.events.count { it.startsWith("drawIndexed") })
         // Upload every chunk: the far field has nothing left to cover
         val g = t.runtime.generator!!
         for (cz in 0 until 16) for (cx in 0 until 16) t.runtime.putChunk(TerrainChunkBuilder.build(g, cx, cz))
         renderer.setUploadBudget(Long.MAX_VALUE, Long.MAX_VALUE)
         renderer.sync(d); renderer.drainUploads(); renderer.sync(d)
-        EngineStats.resetDrawCalls()
+        device.events.clear()
         renderer.drawFarField(mockk<Shader>(relaxed = true), d, Vector3f(), 4000f, colour = true)
-        assertEquals(0, EngineStats.terrainFarTiles.get())
+        assertEquals(0, device.events.count { it.startsWith("drawIndexed") })
         renderer.destroy()
     }
 

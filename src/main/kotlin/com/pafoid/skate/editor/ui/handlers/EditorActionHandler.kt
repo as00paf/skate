@@ -41,6 +41,7 @@ class EditorActionHandler(
         projectDir = { projectManager.currentProject?.getProjectFile()?.absoluteFile?.parentFile },
         resolveTexture = engine.assetsManager::getTexture,
         dialogs = TinyMaterialFileDialogs(engine.stringManager),
+        resolveModel = engine.assetsManager::loadModel,
     )
     val assetStoreActionHandler = AssetStoreActionHandler(engine.eventSystem, engine.jobSystem, projectManager, undoRedoManager)
     val terrainActionHandler = TerrainActionHandler(
