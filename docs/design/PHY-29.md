@@ -21,6 +21,22 @@ Reviewers: skate-gameplay (§5 damage, GPL-24), skate-render (§6.3 debris rende
 All paths are relative to `src/main/kotlin/com/pafoid/skate/` unless they start with `src/test/` or `docs/`.
 **NEW** marks a file or type that does not exist yet.
 
+## Implementation status
+
+- **29a (done, 2026-11-25):** `physics3d/ContactImpulse.kt` (one impulse on Bullet, Jolt and Simple, `ContactImpulseParityTest`);
+  `DestructibleComponent` (+ `DestructionMode`, `FractureSource`); `DestructionSystem` (impacts, own integrity, break queue of 4 per
+  step, `REMOVE`, `SWAP`); `physics3d/destruction/DestructionService` (`damage`, `breakNow`); `DestructibleDamaged` and
+  `Fractured` events. Choices made while building it:
+  - The §4.2 runtime state lives inside `DestructionSystem` (identity maps), not as a component.
+  - Until 29c, `SHATTER` breaks like `REMOVE`, and so does a `SWAP` whose prefab can't be loaded (warned once per prefab);
+    `Fractured.mode` reports what actually happened.
+  - A swapped-in prefab takes the prop's body pose (not last frame's interpolated Transform) and gets its velocities once
+    `PhysicsSystem` has created its body.
+  - `FollowCameraComponent.impactShakeImpulse` (150 N·s) checked against the new measure: it is the skater (180 kg) hitting
+    a wall at ≈ 0.8 m/s, about what Bullet reported before, so it stays.
+  - Open: registering `DestructionSystem` in `Engine.kt` with the prefab resolver (ECS); physics events are not yet
+    bridged to scripts (SCR).
+
 ## 1. What exists today
 
 | Area | Code today | What destruction can use |
