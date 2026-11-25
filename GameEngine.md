@@ -42,6 +42,7 @@ Done tasks live in [`docs/backlog-archive.md`](docs/backlog-archive.md). A `Deps
 10. **Responsive editor** (human, Discord 2026-11-17): process-intensive editor work (project creation, imports, packing, scene loading, generation, baking) runs off the UI thread with coroutines and reports progress; only GPU uploads and ImGui calls stay on the main thread.
 11. **Questions to the human** (human, 2026-11-17): agents never ask the human directly; they put questions in a design note or a `BLOCKED` line, and the lead asks them with the question tool, one decision per question with a recommended option.
 12. **Human-testable content lives in the two scenes** (human, 2026-11-25): a new feature gets a labeled demo in the **default scenes** in the same task: `MainScene` if it is skateboarding-related (player, board, tricks, camera, skatepark, HUD), the **Feature Showcase** scene otherwise (`FeatureShowcase.populate`; sample `ShowcaseSeed.kts`). Whatever needs human testing (objects, components, scripts, UI, audio, particles, ...) is placed there ready to use, so the human never creates game objects or components by hand. The task's `docs/testing/<TASK-ID>.md` steps say which scene and object to look at, not how to build it. A task with no scene content cannot be marked `DONE` unless it states why none is needed.
+13. **Minimal comments** (human, 2026-11-25): default to no comments. Never add narrating ("what") comments, section banners (`// --- ... ---`), boilerplate KDoc that restates names/types, commented-out code, or task-ID comments. Only add a comment when a non-obvious *why* (invariant, ordering constraint, or native/API quirk) cannot be conveyed through naming alone.
 
 **PR size rules** (human, 2026-11-06/2026-11-07)
 
@@ -1092,7 +1093,7 @@ Round 27+ goals (human, 2026-11-06): fix editor bugs, make every window, dialog 
   - Do: (EDT-106 audit, `docs/design/EDT-106.md`; UI written by the owner, reviewed by skate-editor): `reflectedImgui` draws `List`/`MutableList` (add, remove, reorder), `Map<String, *>` and nested `@Serializable` data classes recursively, with undo. Unblocks VehicleComponent wheels, ScriptComponent properties, CameraFocusComponent targets, PlayerController `waterResponse`, PrefabInstance overrides.
   - Done when: A guard test finds no saved component field that the inspector silently skips.
   - Deps: none
-- [ ] **EDT-108** `P0` Asset reference fields: picker and drag and drop
+- [~] @skate-editor **EDT-108** `P0` Asset reference fields: picker and drag and drop
   - Do: (EDT-106 audit, `docs/design/EDT-106.md`; UI written by the owner, reviewed by skate-editor): an `@AssetRef(kind)` annotation (with skate-ecs, next to `@GameObjectRef`); the inspector shows a picker filtered by kind, accepts drops from the Asset Browser and flags missing files. Domain agents then annotate their fields (particle/UI texture, `configPath`, `meshRef`, `materialPath`, sound paths, …).
   - Done when: Annotated fields show a filtered picker, accept drops and flag missing files; tests.
   - Priority raised to P0 (human, 2026-11-25): RenderComponent's model cannot be changed from the editor, which blocks human testing; do EDT-108 then REN-47 first.
