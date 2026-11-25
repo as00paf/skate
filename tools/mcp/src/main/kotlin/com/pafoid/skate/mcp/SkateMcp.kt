@@ -1,9 +1,6 @@
 package com.pafoid.skate.mcp
 
 import com.pafoid.skate.cli.CliException
-import com.pafoid.skate.cli.MarbleRunProjectBuilder
-import com.pafoid.skate.cli.ShowcaseProjectBuilder
-import com.pafoid.skate.cli.TetrisProjectBuilder
 import com.pafoid.skate.cli.SkateCliService
 import com.pafoid.skate.engine.assets.serialization.Serializer
 import com.pafoid.skate.engine.ecs.GameObject
@@ -23,6 +20,9 @@ import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
 import kotlinx.serialization.json.putJsonArray
 import kotlinx.serialization.json.putJsonObject
+import com.pafoid.skate.templates.EmptyTemplate
+import com.pafoid.skate.templates.NewProjectSettings
+import com.pafoid.skate.templates.TemplateRegistry
 import java.io.File
 
 private const val PROJECT = "Path to a .skateproject file or its folder"
@@ -55,20 +55,23 @@ class SkateMcpServer(
     )
 
     private val tools: List<Tool> = listOf(
-        Tool("create_project", "Create a new Skate project", mapOf("name" to "Project name", "dir" to "Parent folder"),
+        Tool("create_project", "Create a new Skate project from a template",
+            mapOf(
+                "name" to "Project name",
+                "dir" to "Parent folder",
+                "template" to "Template id: ${TemplateRegistry.ids().joinToString()} (default ${EmptyTemplate.ID})",
+            ),
             listOf("name", "dir")) { a ->
-            val file = service.createProject(a.str("name"), File(a.str("dir")))
+            val template = a.optStr("template") ?: EmptyTemplate.ID
+            if (TemplateRegistry.get(template) == null) throw ToolException("Unknown template '$template'")
+            val file = service.createProject(a.str("name"), File(a.str("dir")), NewProjectSettings(template))
             buildJsonObject { put("project", file.path) }
         },
-        Tool("create_sample", "Generate a sample project (feature-showcase, marble-run or tetris)",
+        Tool("create_sample", "Generate a sample project (${TemplateRegistry.sampleNames.keys.joinToString()})",
             mapOf("dir" to "Parent folder", "name" to "Sample name (default feature-showcase)"), listOf("dir")) { a ->
-            val dir = File(a.str("dir"))
-            val project = when (val name = a.optStr("name") ?: "feature-showcase") {
-                "feature-showcase" -> ShowcaseProjectBuilder(serializer = serializer).build(dir)
-                "marble-run" -> MarbleRunProjectBuilder(serializer).build(dir)
-                "tetris" -> TetrisProjectBuilder(serializer).build(dir)
-                else -> throw ToolException("Unknown sample '$name'")
-            }
+            val name = a.optStr("name") ?: "feature-showcase"
+            if (name !in TemplateRegistry.sampleNames) throw ToolException("Unknown sample '$name'")
+            val project = service.createSample(name, File(a.str("dir")))
             buildJsonObject { put("project", project.path) }
         },
         Tool("validate_project", "Validate a project and its scenes", mapOf("project" to PROJECT), listOf("project")) { a ->

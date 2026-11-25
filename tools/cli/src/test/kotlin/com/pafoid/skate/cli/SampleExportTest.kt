@@ -34,9 +34,9 @@ class SampleExportTest {
     }
 
     private val samples = listOf(
-        Sample("tetris") { TetrisProjectBuilder().build(it) },
-        Sample("marble-run") { MarbleRunProjectBuilder().build(it) },
-        Sample("feature-showcase") { ShowcaseProjectBuilder().build(it) },
+        Sample("tetris") { SkateCliService(out = {}).createSample("tetris", it) },
+        Sample("marble-run") { SkateCliService(out = {}).createSample("marble-run", it) },
+        Sample("feature-showcase") { SkateCliService(out = {}).createSample("feature-showcase", it) },
         Sample("new-project") { SkateCliService(out = {}).createProject("Blank", it) },
     )
 

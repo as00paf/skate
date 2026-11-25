@@ -1,56 +1,40 @@
-package com.pafoid.skate.cli
+package com.pafoid.skate.templates
 
 import com.pafoid.skate.engine.assets.EngineDefaults
 import com.pafoid.skate.engine.ecs.SceneSun
 import com.pafoid.skate.engine.ecs.components.EnvironmentComponent
+import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.editor.project.Project
-import com.pafoid.skate.engine.assets.ProjectLayout
+import com.pafoid.skate.engine.assets.PrefabsGenerator
 import com.pafoid.skate.engine.addComponent
-import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.data.models.`3dModel`
 import com.pafoid.skate.engine.assets.data.models.Material
-import com.pafoid.skate.engine.assets.serialization.Serializer
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.components.*
 import com.pafoid.skate.engine.physics3d.BodyType
-import org.joml.Vector2i
 import org.joml.Vector3f
 import org.joml.Vector4f
-import java.io.File
 
 /**
- * Builds the "Marble Run" sample project (TLG-04): rolling bodies on zig-zag ramps with hinge and slider joints.
+ * The "Marble Run" template (TLG-04, EDT-59): rolling bodies on zig-zag ramps with hinge and slider joints.
  * Triggers and camera follow are not available as public engine features yet; see docs/samples.md.
  */
-class MarbleRunProjectBuilder(private val serializer: Serializer = Serializer()) {
+object MarbleRunTemplate : ProjectTemplate {
+    const val ID = "marble-run"
+    const val SCENE_NAME = "Run"
+    const val MARBLE_COUNT = 8
+    private const val RAMP_TILT = 10f
 
-    companion object {
-        const val PROJECT_NAME = "MarbleRun"
-        const val SCENE_NAME = "Run"
-        const val MARBLE_COUNT = 8
-        private const val RAMP_TILT = 10f
-    }
+    override val id = ID
+    override val category = TemplateCategory.SAMPLE
+    override val icon = Icons.ATOM
+    override val sceneNames = listOf(SCENE_NAME)
 
+    override fun buildScenes(ctx: TemplateContext, prefabs: PrefabsGenerator): List<Scene> = listOf(run())
 
-    fun build(parent: File): File {
-        val projectDir = File(parent, PROJECT_NAME).absoluteFile.also { it.mkdirs() }
-        val assetsDir = ProjectLayout.create(projectDir)
-        val scenesDir = ProjectLayout.scenesDir(projectDir)
-        copyEngineAssets(projectDir, copyAll = false) // samples use reference mode (AST-26 §7)
-        val files = ProjectFiles(serializer, projectDir)
-
-        val scenePath = files.writeScene(scenesDir, SCENE_NAME, run()).path
-        val projectFile = File(projectDir, "$PROJECT_NAME.skateproject")
-        files.writeProject(Project(
-            name = PROJECT_NAME,
-            projectPath = projectFile.path,
-            description = "Physics-heavy sample: rolling bodies and joints",
-            defaultScene = scenePath,
-            scenesPath = listOf(scenePath),
-            resolution = Vector2i(1920, 1080),
-        ))
-        return projectFile
+    override fun configure(project: Project) {
+        project.description = "Physics-heavy sample: rolling bodies and joints"
     }
 
     private fun mesh(name: String, model: String, pos: Vector3f, scale: Vector3f, color: Vector4f, rotZ: Float = 0f) =
