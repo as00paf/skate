@@ -160,13 +160,35 @@ class CameraCycleSystemTest {
     fun editMode_LeavesThePlacedFirstPersonCameraAlone() {
         firstPerson.getComponent<Transform>()!!.translation.set(5f, 5f, 5f)
 
-        system.update(dt)
+        repeat(2) { system.update(dt) }
 
         assertEquals(Vector3f(5f, 5f, 5f), firstPerson.getComponent<Transform>()!!.translation)
     }
 
     @Test
-    fun freezesWhilePaused() {
-        assertFalse(system.runsWhilePaused)
+    fun editMode_AnEditMovesThePlacedCameraToItsEyePose() {
+        firstPerson.getComponent<Transform>()!!.translation.set(5f, 5f, 5f)
+        system.update(dt)
+        val fp = firstPerson.getComponent<FirstPersonCameraComponent>()!!
+
+        fp.eyeHeight = 1.2f
+        system.update(dt)
+
+        assertEquals(Vector3f(2f, 1.2f, fp.forwardOffset), firstPerson.getComponent<Transform>()!!.translation)
+    }
+
+    @Test
+    fun paused_RunsButNeitherSwitchesNorMovesTheCamera() {
+        assertTrue(system.runsWhilePaused) // ECS-21: edits made while paused must show
+        scene.isRunning = true
+        system.update(dt)
+        val before = Vector3f(firstPerson.getComponent<Transform>()!!.translation)
+        scene.isPaused = true
+        scene.findFirstByName("Skater")!!.getComponent<Transform>()!!.translation.add(0f, 0f, 3f)
+
+        press()
+
+        assertEquals(emptyList<String>(), switches)
+        assertEquals(before, firstPerson.getComponent<Transform>()!!.translation)
     }
 }

@@ -109,7 +109,7 @@ class SystemManagerPauseTest {
         verify(atMost = 1) { physics3d.step(any()) }
     }
 
-    /** Which engine systems freeze: simulation and gameplay cameras freeze; input, UI, audio and derived state run. */
+    /** Which engine systems freeze: simulation freezes; input, UI, audio, derived state and gameplay cameras (ECS-21) run. */
     @Test
     fun EngineSystems_PauseClassification() {
         val events = EventSystem()
@@ -119,8 +119,6 @@ class SystemManagerPauseTest {
             ParticleSystem(),
             ScriptingSystem(),
             CameraControlSystem { mockk(relaxed = true) },
-            FollowCameraSystem(),
-            CameraCycleSystem(null, { null }) { _, _ -> },
             DayNightCycleSystem(),
             RagdollSystem(),
             MountFollowSystem(),
@@ -132,6 +130,9 @@ class SystemManagerPauseTest {
             PauseMenuSystem({}),
             AudioSystem(mockk(relaxed = true), mockk(relaxed = true), mockk(relaxed = true), mockk(relaxed = true)),
             CameraManager(events),
+            // ECS-21: they run to apply camera edits made while paused; they hold the camera still otherwise.
+            FollowCameraSystem(),
+            CameraCycleSystem(null, { null }) { _, _ -> },
             TransformSystem(),
         )
         frozen.forEach { assertFalse(it.runsWhilePaused, "${it.displayName} must freeze while paused") }

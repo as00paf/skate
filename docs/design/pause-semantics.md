@@ -15,7 +15,8 @@ The runtime pause is the pause menu's freeze while the scene stays in Play. It i
 | `InputSystem` (reads actions; does not feed `InputStateComponent`) | `PhysicsSystem` (no fixed steps, no time accumulated, no catch-up on resume) and `PhysicsFrameSystem` |
 | `UiInputSystem`, UI layout, `PauseMenuSystem` | `AnimationSystem`, `RagdollSystem`, `ParticleSystem` |
 | `AudioSystem` (holds playing voices, resumes only those) | `ScriptingSystem`, `GameObject.update` (component updates) |
-| `CameraManager`, `TransformSystem` (derived state) | `CameraControlSystem` (free-fly and focus glide), `FollowCameraSystem`, `MountFollowSystem` |
+| `CameraManager`, `TransformSystem` (derived state) | `CameraControlSystem` (free-fly and focus glide), `MountFollowSystem` |
+| `FollowCameraSystem`, `CameraCycleSystem` (ECS-21: apply camera settings edited while paused; otherwise hold still and never switch) | |
 | `PlatformSystem` (platform callbacks) | `DayNightCycleSystem`, `GameObjectManager` (dead-object pruning), gameplay systems, NET systems |
 | All `RENDER`-phase systems | |
 

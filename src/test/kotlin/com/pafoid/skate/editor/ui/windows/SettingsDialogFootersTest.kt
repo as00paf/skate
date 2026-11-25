@@ -18,7 +18,7 @@ class SettingsDialogFootersTest {
     @Test
     fun KeyBindings_ResetToDefaultsOnlyOnTheRebindableEditorTabs() {
         for (tab in KeyBindingsWindow.TAB_ACTIONS..KeyBindingsWindow.TAB_TEST) {
-            val expected = if (tab in KeyBindingsWindow.TAB_EDITOR..KeyBindingsWindow.TAB_HIERARCHY) {
+            val expected = if (tab in KeyBindingsWindow.REBINDABLE_TABS) {
                 listOf("btn.reset_to_defaults", "btn.close")
             } else listOf("btn.close")
             assertEquals(expected, labels(KeyBindingsWindow.footer(tab, escapeUsedByCapture = false)), "tab $tab")

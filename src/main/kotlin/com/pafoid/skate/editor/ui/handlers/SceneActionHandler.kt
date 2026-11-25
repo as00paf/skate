@@ -220,12 +220,13 @@ class SceneActionHandler(
             return
         }
 
-        val fullPath = generateUniqueScenePath(projectDir)
-        val sceneName = File(fullPath).nameWithoutExtension
+        val sceneFile = File(generateUniqueScenePath(projectDir))
+        val sceneName = sceneFile.nameWithoutExtension
 
-        val command = CreateSceneCommand(sceneName, fullPath, eventSystem, sceneManager)
+        // createNewScene takes the folder; passing the file path made a "NewScene_1.scene" folder (EDT-99)
+        val command = CreateSceneCommand(sceneName, sceneFile.parent, eventSystem, sceneManager)
         undoRedoManager.executeCommand(command)
-        logger.logEditor("Scene create requested: $sceneName -> $fullPath")
+        logger.logEditor("Scene create requested: $sceneName -> ${sceneFile.path}")
     }
 
     private fun handleSceneCreated(scene: Scene) {

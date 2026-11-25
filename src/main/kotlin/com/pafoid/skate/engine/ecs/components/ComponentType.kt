@@ -6,6 +6,7 @@ enum class ComponentType {
     ANIMATOR,
     AUDIO,
     AUDIO_LISTENER,
+    BONE_ATTACHMENT,
     BOX_COLLIDER_3D,
     CAMERA,
     CAMERA_CYCLE,
@@ -16,12 +17,14 @@ enum class ComponentType {
     DAY_NIGHT_CYCLE,
     DIRECTIONAL_LIGHT,
     ENVIRONMENT,
+    EQUIPMENT,
     FIRST_PERSON_CAMERA,
     FOLLOW_CAMERA,
     GRID_LINES,
     IK_SETUP,
     IK_TARGET,
     INPUT_STATE,
+    INVENTORY,
     JOINT,
     MESH_COLLIDER,
     NATIVE_SCRIPT,
@@ -59,6 +62,9 @@ enum class ComponentType {
             BOX_COLLIDER_3D -> BoxCollider3D()
             CAMERA -> CameraComponent()
             CAMERA_CYCLE -> CameraCycleComponent()
+            INVENTORY -> InventoryComponent()
+            BONE_ATTACHMENT -> BoneAttachment()
+            EQUIPMENT -> EquipmentComponent()
             CAPSULE_COLLIDER -> CapsuleCollider3D()
             COMPOUND_HULL_COLLIDER -> CompoundHullCollider3D()
             CUSTOM_COLLIDER -> CustomCollider3D()

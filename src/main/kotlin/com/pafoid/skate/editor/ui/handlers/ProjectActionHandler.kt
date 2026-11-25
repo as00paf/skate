@@ -4,6 +4,10 @@ import com.pafoid.skate.editor.systems.CloseGuard
 import com.pafoid.skate.editor.systems.CloseTarget
 import com.pafoid.skate.editor.commands.project.SetGraphicsBackendCommand
 import com.pafoid.skate.editor.commands.project.SetRandomSeedCommand
+import com.pafoid.skate.editor.commands.project.SetProjectIconCommand
+import com.pafoid.skate.editor.commands.project.SetProjectPhysicsBackendCommand
+import com.pafoid.skate.editor.commands.project.SetProjectSplashCommand
+import com.pafoid.skate.editor.commands.project.SetProjectTargetFpsCommand
 import com.pafoid.skate.engine.ecs.random.RandomService
 import com.pafoid.skate.editor.commands.project.SetProjectGraphicsQualityCommand
 import com.pafoid.skate.editor.commands.project.SetProjectMsaaSamplesCommand
@@ -112,6 +116,26 @@ class ProjectActionHandler(
             val project = projectManager.currentProject ?: return@subscribe
             val command = SetGraphicsBackendCommand(project, event.backend)
             if (!command.isNoOp) undoRedoManager.executeCommand(command)
+        }
+        // Export dialog, Game section (EDT-91, AST-29).
+        eventSystem.subscribe<ProjectEvent.SetProjectIconRequested> { event ->
+            val project = projectManager.currentProject ?: return@subscribe
+            // An image picked outside the project is copied into Assets/Textures, so the project stays portable.
+            val icon = com.pafoid.skate.editor.project.ProjectImages.inProject(project.getProjectDirectory(), event.iconPath)
+            SetProjectIconCommand(project, icon).takeUnless { it.isNoOp }?.let { undoRedoManager.executeCommand(it) }
+        }
+        eventSystem.subscribe<ProjectEvent.SetProjectSplashRequested> { event ->
+            val project = projectManager.currentProject ?: return@subscribe
+            val splash = com.pafoid.skate.editor.project.ProjectImages.inProject(project.getProjectDirectory(), event.splashPath)
+            SetProjectSplashCommand(project, splash, event.seconds).takeUnless { it.isNoOp }?.let { undoRedoManager.executeCommand(it) }
+        }
+        eventSystem.subscribe<ProjectEvent.SetProjectTargetFpsRequested> { event ->
+            val project = projectManager.currentProject ?: return@subscribe
+            SetProjectTargetFpsCommand(project, event.fps).takeUnless { it.isNoOp }?.let { undoRedoManager.executeCommand(it) }
+        }
+        eventSystem.subscribe<ProjectEvent.SetProjectPhysicsBackendRequested> { event ->
+            val project = projectManager.currentProject ?: return@subscribe
+            SetProjectPhysicsBackendCommand(project, event.backend).takeUnless { it.isNoOp }?.let { undoRedoManager.executeCommand(it) }
         }
         eventSystem.subscribe<ProjectEvent.SetRandomSeedRequested> { event ->
             val project = projectManager.currentProject ?: return@subscribe

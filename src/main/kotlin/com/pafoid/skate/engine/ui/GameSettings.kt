@@ -37,9 +37,38 @@ data class GameSettings(
     val options: Map<String, String> = emptyMap(),
     /** Supported locales for the exported game (GUI-15); written from [Project.supportedLanguages]. */
     val supportedLanguages: List<String> = emptyList(),
-    /** Startup locale for the exported game (GUI-15); written from [Project.startupLanguage]. */
+    /**
+     * Startup locale for the exported game (GUI-15). The export writes the editor's game language here (GUI-20), so
+     * the game starts in the language editor Play shows; see [startLocale].
+     */
     val startupLanguage: String = DEFAULT_LOCALE,
+    /** True once [locale] was picked (pause menu Language, Project Settings): from then on it wins over [startupLanguage]. */
+    val localeChosen: Boolean = false,
 ) {
+    /**
+     * The locale the exported game starts in (GUI-20): the player's own choice when they made one, else
+     * [startupLanguage], else the first of [supported] (English when none are listed).
+     */
+    fun startLocale(supported: List<String>): String {
+        val languages = supported.ifEmpty { listOf(DEFAULT_LOCALE) }
+        return when {
+            localeChosen && locale in languages -> locale
+            startupLanguage in languages -> startupLanguage
+            else -> languages.first()
+        }
+    }
+
+    /**
+     * These settings (the export folder's, holding the player's choices) with the editor's game choices from
+     * [editor] (the project's `game.settings.json`) as defaults (GUI-20): the game starts in the editor's game
+     * language when it is one of [supported] (else [fallbackStartup]), and options the player never set take the
+     * values chosen in editor Play. The exported pause menu then starts as editor Play's does.
+     */
+    fun withEditorChoices(editor: GameSettings, supported: List<String>, fallbackStartup: String): GameSettings = copy(
+        startupLanguage = editor.locale.takeIf { it in supported } ?: fallbackStartup,
+        options = editor.options + options,
+    )
+
     companion object {
         const val DEFAULT_LOCALE = "en"
         const val FILE_NAME = "game.settings.json"
@@ -106,7 +135,7 @@ class GameLocale(val strings: com.pafoid.skate.engine.core.StringManager) {
 
     fun set(locale: String) {
         strings.setLocale(locale)
-        store?.update { it.copy(locale = locale) }
+        store?.update { it.copy(locale = locale, localeChosen = true) }
     }
 
     /** The pause menu's Language button: English <-> French. */

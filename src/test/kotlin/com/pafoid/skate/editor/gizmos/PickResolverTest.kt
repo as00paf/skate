@@ -123,4 +123,27 @@ class PickResolverTest {
         markBody(boardVisual)
         assertSame(board, PickResolver.selectionTarget(wheel, null))
     }
+
+    // EDT-94: runtime-only objects (terrain scatter, ECS-19) are never picked; a click selects their saved owner.
+
+    private val terrain = GameObject("Terrain").also { scene.addChild(it) }
+    private val scatterRock = GameObject("Rock").apply { isRuntimeOnly = true }.also { terrain.addChild(it) }
+    private val rockPart = GameObject("RockMesh").also { scatterRock.addChild(it) }
+
+    @Test
+    fun runtimeOnlyHit_selectsItsSavedOwner_atAnyDepth() {
+        assertSame(terrain, PickResolver.resolve(scene, scatterRock.uId, null))
+        assertSame(terrain, PickResolver.resolve(scene, rockPart.uId, null))
+    }
+
+    @Test
+    fun runtimeOnlyHit_neverDrillsIntoTheScatterEntity() {
+        assertSame(terrain, PickResolver.resolve(scene, rockPart.uId, terrain))
+    }
+
+    @Test
+    fun runtimeOnlyHit_underTheSceneSelectsNothing() {
+        val stray = GameObject("Stray").apply { isRuntimeOnly = true }.also { scene.addChild(it) }
+        assertNull(PickResolver.resolve(scene, stray.uId, null))
+    }
 }

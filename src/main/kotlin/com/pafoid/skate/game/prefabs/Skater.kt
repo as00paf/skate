@@ -9,6 +9,10 @@ import com.pafoid.skate.engine.assets.data.models.animations.Animation
 import com.pafoid.skate.engine.assets.data.models.animations.SkeletonPose
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.components.Animator
+import com.pafoid.skate.engine.ecs.components.EquipmentComponent
+import com.pafoid.skate.engine.ecs.components.InventoryComponent
+import com.pafoid.skate.engine.gameplay.items.ItemStack
+import com.pafoid.skate.game.items.SkateItems
 import com.pafoid.skate.engine.ecs.components.BoxCollider3D
 import com.pafoid.skate.engine.ecs.components.InputStateComponent
 import com.pafoid.skate.engine.ecs.components.PlayerController
@@ -65,6 +69,9 @@ class Skater(
         )
         addComponent(InputStateComponent())
         addComponent(playerController)
+        addComponent(InventoryComponent())
+        // Starts with the bundled hat and glasses on (GPL-24e); AppearanceSystem shows them on the head.
+        addComponent(EquipmentComponent(linkedMapOf("HEAD" to ItemStack(SkateItems.HAT, 1), "EYES" to ItemStack(SkateItems.GLASSES, 1))))
 
         animations.forEach { animator.addAnimation(it) }
         animator.controllerPath = CONTROLLER_PATH
