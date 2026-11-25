@@ -11,6 +11,7 @@ import com.pafoid.skate.engine.ecs.components.CameraComponent
 import com.pafoid.skate.engine.ecs.components.Component
 import com.pafoid.skate.engine.ecs.components.Component.Companion.getCachedFields
 import com.pafoid.skate.engine.ecs.components.DirectionalLightComponent
+import com.pafoid.skate.engine.ecs.components.EnvironmentComponent
 import com.pafoid.skate.engine.ecs.components.JointComponent
 import com.pafoid.skate.engine.ecs.components.ParticleEmitter
 import com.pafoid.skate.engine.ecs.components.PointLightComponent
@@ -20,6 +21,7 @@ import com.pafoid.skate.engine.ecs.components.ScriptComponent
 import com.pafoid.skate.engine.ecs.components.SpotLightComponent
 import com.pafoid.skate.engine.ecs.components.SpriteRenderer
 import com.pafoid.skate.engine.ecs.components.Transform
+import com.pafoid.skate.engine.ecs.components.WaterComponent
 import imgui.ImGui
 import imgui.type.ImInt
 import org.joml.Vector2f
@@ -52,6 +54,8 @@ private fun Component.dispatchInspector(engine: Engine) {
         is AudioComponent -> this.imgui(engine)
         is Animator -> this.imgui(engine)
         is ParticleEmitter -> this.imgui(engine)
+        is WaterComponent -> this.imgui(engine)
+        is EnvironmentComponent -> this.imgui(engine)
 
         else -> if (this.isUiComponent()) this.uiImgui(engine) else reflectedImgui(engine)
     }

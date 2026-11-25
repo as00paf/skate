@@ -25,6 +25,10 @@ import com.pafoid.skate.editor.assetimport.blender.BlenderSync
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.core.Window
 import com.pafoid.skate.engine.input.PointerSource
+import com.pafoid.skate.editor.systems.CloseGuard
+import com.pafoid.skate.editor.systems.UnsavedScenes
+import com.pafoid.skate.editor.systems.UnsavedAssetRegistry
+import com.pafoid.skate.engine.events.SceneAction
 
 class Editor(
     private val engine: Engine,
@@ -56,6 +60,14 @@ class Editor(
 
     val undoRedoManager = UndoRedoManager(engine.eventSystem, engine.logger)
 
+    /** Documents with unsaved changes, by back end (EDT-82); the close prompt reads it. */
+    val unsavedAssets = UnsavedAssetRegistry().also { registry ->
+        registry.register(UnsavedScenes.source({ engine.sceneManager.openScenes }) { engine.eventSystem.publish(SceneAction.SaveRequested(it)) })
+    }
+
+    /** Asks before the project or the editor closes with unsaved assets (EDT-82). */
+    val closeGuard = CloseGuard(unsavedAssets)
+
     /** Play/Pause/Stop/Reset (EDT-45); subscribed before any window so project close always stops Play first. */
     val playModeHandler = PlayModeHandler(engine, undoRedoManager).also { it.init() }
 
@@ -73,7 +85,8 @@ class Editor(
             projectManager,
             engine.stringManager,
             settingsManager,
-            editorCamera
+            editorCamera,
+            closeGuard,
         )
 
     /** The project's local Git repository (EDT-60), shared by the branch button, the VCS dialogs and the Git log (EDT-79). */
