@@ -161,7 +161,7 @@ Round 27+ goals (human, 2026-11-06): post-processing quality, render-graph clari
   - Do: (EDT-106 audit, `docs/design/EDT-106.md`; UI written by the owner, reviewed by skate-editor): a picker for `EnvironmentComponent.skyTexture`.
   - Done when: The sky can be picked or dropped, with undo; test.
   - Deps: EDT-108
-- [ ] **REN-47** `P2` Change the model of an existing RenderComponent
+- [ ] **REN-47** `P0` Change the model of an existing RenderComponent
   - Do: (EDT-106 audit, `docs/design/EDT-106.md`; UI written by the owner, reviewed by skate-editor): picker or drop to change the model, keeping material overrides where slot names match.
   - Done when: The model changes with undo and keeps matching overrides; test.
   - Deps: EDT-108
@@ -1092,9 +1092,10 @@ Round 27+ goals (human, 2026-11-06): fix editor bugs, make every window, dialog 
   - Do: (EDT-106 audit, `docs/design/EDT-106.md`; UI written by the owner, reviewed by skate-editor): `reflectedImgui` draws `List`/`MutableList` (add, remove, reorder), `Map<String, *>` and nested `@Serializable` data classes recursively, with undo. Unblocks VehicleComponent wheels, ScriptComponent properties, CameraFocusComponent targets, PlayerController `waterResponse`, PrefabInstance overrides.
   - Done when: A guard test finds no saved component field that the inspector silently skips.
   - Deps: none
-- [ ] **EDT-108** `P1` Asset reference fields: picker and drag and drop
+- [ ] **EDT-108** `P0` Asset reference fields: picker and drag and drop
   - Do: (EDT-106 audit, `docs/design/EDT-106.md`; UI written by the owner, reviewed by skate-editor): an `@AssetRef(kind)` annotation (with skate-ecs, next to `@GameObjectRef`); the inspector shows a picker filtered by kind, accepts drops from the Asset Browser and flags missing files. Domain agents then annotate their fields (particle/UI texture, `configPath`, `meshRef`, `materialPath`, sound paths, …).
   - Done when: Annotated fields show a filtered picker, accept drops and flag missing files; tests.
+  - Priority raised to P0 (human, 2026-11-25): RenderComponent's model cannot be changed from the editor, which blocks human testing; do EDT-108 then REN-47 first.
   - Deps: none
 - [ ] **EDT-109** `P2` Add Component menu: translated names, categories and search
   - Do: (EDT-106 audit, `docs/design/EDT-106.md`; UI written by the owner, reviewed by skate-editor): translated component names, categories, and search on the translated name.
