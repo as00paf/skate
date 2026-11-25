@@ -20,6 +20,7 @@ import com.pafoid.skate.engine.ecs.components.ReverbZone
 import com.pafoid.skate.engine.ecs.components.ScriptComponent
 import com.pafoid.skate.engine.ecs.components.SpotLightComponent
 import com.pafoid.skate.engine.ecs.components.SpriteRenderer
+import com.pafoid.skate.engine.ecs.components.TerrainComponent
 import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.ecs.components.WaterComponent
 import imgui.ImGui
@@ -54,6 +55,7 @@ private fun Component.dispatchInspector(engine: Engine) {
         is AudioComponent -> this.imgui(engine)
         is Animator -> this.imgui(engine)
         is ParticleEmitter -> this.imgui(engine)
+        is TerrainComponent -> this.imgui(engine)
         is WaterComponent -> this.imgui(engine)
         is EnvironmentComponent -> this.imgui(engine)
 

@@ -103,7 +103,7 @@ class SceneHierarchyWindow(
     override fun imgui() {
         val scene = sceneManager.currentScene
         beginWindow(stringManager, closable = false)
-        header(stringManager) { if (scene != null) toolbar(scene) }
+        header(stringManager, scene?.let { s -> { toolbar(s) } })
         if (scene == null) {
             if (hasProject()) EmptyState.noScene(stringManager)
             else EmptyState.noProject(stringManager, eventSystem)
@@ -450,6 +450,14 @@ class SceneHierarchyWindow(
             }
             if (stringManager.tipped(ImGui.menuItem("${Icons.CLONE} ${stringManager.getString("context.hierarchy.duplicate")}", EditorShortcuts.DUPLICATE.display()), "context.hierarchy.duplicate", EditorShortcuts.DUPLICATE)) {
                 eventSystem.publish(Duplicate(obj))
+            }
+            // EDT-92: a FLATTEN stamp under the object, on the terrain beneath it
+            val scene = sceneManager.currentScene
+            if (scene != null && obj.components.none { it is com.pafoid.skate.engine.ecs.components.TerrainComponent } &&
+                com.pafoid.skate.editor.terrain.TerrainEditing.terrainsIn(scene).isNotEmpty() &&
+                stringManager.tipped(ImGui.menuItem("${Icons.MAGIC} ${stringManager.getString("context.hierarchy.flatten_terrain_under")}"), "context.hierarchy.flatten_terrain_under")
+            ) {
+                eventSystem.publish(com.pafoid.skate.editor.events.TerrainAction.FlattenUnder(obj))
             }
             if (stringManager.tipped(ImGui.menuItem("${Icons.EYE} ${stringManager.getString("context.hierarchy.focus_in_viewport")}", EditorShortcuts.FOCUS.display()), "context.hierarchy.focus_in_viewport", EditorShortcuts.FOCUS)) {
                 eventSystem.publish(GameObjectSelected(obj))

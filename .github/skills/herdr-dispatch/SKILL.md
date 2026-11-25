@@ -7,7 +7,7 @@ description: Start, dispatch to, poll and read results from the Skate domain age
 
 ## Start agents
 
-`tools/herdr/herd.sh --kind claude --no-lead --worktrees <domain...>` (idempotent; skips agents already running; `--kind` defaults to `copilot`). Worktrees live in `../skate-worktrees/<domain>` on branch `agents/<domain>`. Agent definitions come from `.github/agents/*.agent.md`; `tools/herdr/sync-agents.sh` generates `.claude/agents/` and `.opencode/agents/` and mirrors `.github/skills` into `.claude/skills` (`herd.sh` runs it for non-Copilot kinds). Worktrees only contain committed files, so commit `.github/`, `.claude/` and `.opencode/agents/` first, and merge master into the agent branches. The script can exceed shell time limits, so start large batches in groups of 3 or fewer.
+`tools/herdr/herd.sh --kind claude --no-lead --worktrees <domain...>` (idempotent; skips agents already running; `--kind` defaults to `copilot`). Worktrees live in `../skate-worktrees/<domain>` on branch `agents/<domain>`. Agent definitions come from `.github/agents/*.agent.md`; `tools/herdr/sync-agents.sh` generates `.claude/agents/`, `.opencode/agents/` and `.kiro/agents/` and mirrors `.github/skills` into `.claude/skills` and `.kiro/skills` (`herd.sh` runs it for non-Copilot kinds). Worktrees only contain committed files, so commit `.github/`, `.claude/`, `.opencode/agents/` and `.kiro/agents/` first, and merge master into the agent branches. The script can exceed shell time limits, so start large batches in groups of 3 or fewer.
 
 ## Dispatch
 

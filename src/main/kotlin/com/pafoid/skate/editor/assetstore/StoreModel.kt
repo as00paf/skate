@@ -39,6 +39,8 @@ data class StoreAssetDetails(
     val license: LicenseInfo,
     val variants: List<StoreVariant>,
     val tags: List<String> = emptyList(),
+    /** Why this item cannot be imported right now (e.g. Blender is missing for USD), or null; disables Import. */
+    val blocker: String? = null,
 )
 
 /** One downloadable form of an item, e.g. glTF at 2k. [sizeBytes] is the main file plus its includes when known. */

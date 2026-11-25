@@ -9,7 +9,7 @@ import org.junit.jupiter.api.Test
 import java.io.File
 import kotlin.math.PI
 
-/** AUD-01: the pure parts of the water sounds. */
+/** AUD-01, AUD-15: the pure parts of the water sounds. */
 class WaterAudioTest {
 
     private fun assertVec(expected: Vector3f, actual: Vector3f) =
@@ -70,5 +70,32 @@ class WaterAudioTest {
             assertTrue(it.startsWith("engine:Sounds/Water/"), it)
             assertTrue(File(paths.localPath(it)).isFile, "missing bundled sound $it")
         }
+    }
+
+    @Test
+    fun WithOverrides_ReplacesOnlyTheGivenValues() {
+        val defaults = WaterAudioConfig()
+        assertEquals(defaults, defaults.withOverrides())
+        val own = defaults.withOverrides(
+            ambienceClip = "river.wav", ambienceVolume = 0.2f, ambienceMaxDistance = 80f,
+            splashClips = listOf("plop.wav"), splashMinDistance = 1f,
+        )
+        assertEquals("river.wav", own.ambienceClip)
+        assertEquals(0.2f, own.ambienceVolume)
+        assertEquals(defaults.ambienceMinDistance, own.ambienceMinDistance)
+        assertEquals(80f, own.ambienceMaxDistance)
+        assertEquals(listOf("plop.wav"), own.splashClips)
+        assertEquals(defaults.splashVolume, own.splashVolume)
+        assertEquals(1f, own.splashMinDistance)
+        assertEquals(defaults.splashMaxDistance, own.splashMaxDistance)
+        // Engine-wide limits are never per water
+        assertEquals(defaults.maxSplashesPerFrame, own.maxSplashesPerFrame)
+        assertEquals(defaults.splashCooldown, own.splashCooldown)
+    }
+
+    @Test
+    fun WithOverrides_AnEmptySplashListFallsBackToTheDefaults() {
+        val defaults = WaterAudioConfig()
+        assertEquals(defaults.splashClips, defaults.withOverrides(splashClips = emptyList()).splashClips)
     }
 }

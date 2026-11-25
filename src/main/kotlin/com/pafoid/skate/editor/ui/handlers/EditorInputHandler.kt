@@ -130,6 +130,8 @@ class EditorInputHandler(
         if (ViewportCameraGate.maximizeShortcutAllowed(viewportFocused, textInputActive()) &&
             pressed(EditorShortcuts.MAXIMIZE_WINDOW)
         ) eventSystem.publish(WindowAction.ToggleMaximizeFocused)
+        // EDT-101: F1 opens the focused window's help; not while typing (a text field may use the key).
+        if (!textInputActive() && pressed(EditorShortcuts.HELP)) eventSystem.publish(WindowAction.HelpForFocused)
         // EDT-84: Alt+<key> opens, focuses or closes a tool window, like its side-bar button; not while typing.
         if (!textInputActive()) {
             EditorShortcuts.TOOL_WINDOWS.firstOrNull { pressed(it) }?.let { shortcut ->

@@ -14,6 +14,7 @@ Les raccourcis font gagner du temps, mais vous n'êtes jamais obligé de les uti
 - **Ctrl+P** : ouvrir la [Recherche globale](search.md).
 - **F5** : lancer ou arrêter le mode Jeu.
 - **F12** : passer l'éditeur en plein écran et revenir.
+- **F1** : ouvrir l'article d'aide de la fenêtre dans laquelle vous travaillez. Sans effet pendant la saisie.
 - **Alt+1** à **Alt+9**, **Alt+F12** : ouvrir, mettre devant ou fermer une fenêtre d'outil (Projet, Hiérarchie, Propriétés, Console, Navigateur de ressources, Éditeur de scripts, Éditeur d'animation, Profileur, Gestion de versions ; Alt+F12 le Shell). Modifiez-les dans Raccourcis clavier > Fenêtres d'outils.
 - **Maj+Espace** : agrandir la fenêtre d'outil active, ou restaurer la disposition. Sans effet pendant la saisie ou quand la vue du jeu a le focus.
 - **Échap** : désélectionner l'objet courant.
