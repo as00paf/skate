@@ -1,0 +1,20 @@
+[
+ {
+  "type": "directory",
+  "oid": "ebd36381313cebc40e720ee48a686d0a4dc8a438",
+  "size": 0,
+  "path": "IV_pole_a01"
+ },
+ {
+  "type": "directory",
+  "oid": "bac6da4850ef0741ddcaffa5042f655a6b502e88",
+  "size": 0,
+  "path": "IV_pole_a02"
+ },
+ {
+  "type": "directory",
+  "oid": "9040eaf6e05cb568107705d5a591190c190b4909",
+  "size": 0,
+  "path": "cleaning_barSoap_d01"
+ }
+]
