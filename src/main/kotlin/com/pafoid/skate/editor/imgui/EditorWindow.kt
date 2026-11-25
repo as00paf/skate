@@ -40,6 +40,16 @@ abstract class EditorWindow(
     /** EDT-84: a dock node to move into before the next `begin` (a side-bar button moved to another side). */
     internal var dockRequest: Int? = null
 
+    /** EDT-101: from the last `beginWindow`: whether the window has a title bar and a close button there. */
+    internal var hasTitleBar: Boolean = true
+    internal var hasCloseButton: Boolean = true
+
+    /** EDT-101: the title the last `beginWindow` used (the full-editor host has its own ID). */
+    internal var lastTitle: String? = null
+
+    /** EDT-101: the corner buttons drawn this frame, painted over the content by [WindowHeader.drawCornerOverlay]. */
+    internal var cornerOverlay: WindowHeader.CornerOverlay? = null
+
     /** Dialogs float: no dock to reset to. */
     open val isDialog: Boolean get() = false
 
@@ -80,12 +90,16 @@ abstract class EditorWindow(
             }
             title(strings)
         }
+        hasTitleBar = windowFlags and ImGuiWindowFlags.NoTitleBar == 0
+        hasCloseButton = closable
+        lastTitle = title
         val visible = if (closable) ImGui.begin(title, isOpen, windowFlags) else ImGui.begin(title, windowFlags)
         if (!isDialog && host == null) DefaultDockLayout.docks.record(name, ImGui.getWindowDockID())
         // A window with a horizontal scrollbar can reach its overflow: only the others report it.
         if (windowFlags and ImGuiWindowFlags.HorizontalScrollbar == 0) InspectorLayout.windowProbe?.invoke(name, ImGui.getScrollMaxX())
         val focused = ImGui.isWindowFocused(ImGuiFocusedFlags.RootAndChildWindows)
         ToolWindowStates.report(name, visible, focused) // EDT-84: the side-bar buttons' look and click
+        if (focused) lastFocused = name // EDT-101: F1's target
         if (canMaximize) {
             if (focused) MaximizeSession.focused = name
             // Right after `begin` the last item is the tab (docked) or the title bar (the host): double-click toggles.
@@ -100,9 +114,13 @@ abstract class EditorWindow(
     }
 
     /** The one-line header strip: the window's own [tools] on the left, `?` on the right (EDT-51 §2.2). */
-    protected fun header(strings: StringManager, tools: () -> Unit = {}) = WindowHeader.render(strings, this, tools)
+    protected fun header(strings: StringManager, tools: (() -> Unit)? = null) = WindowHeader.render(strings, this, tools)
 
     companion object {
+        /** The last window that had focus (any standard window or dialog): the Help shortcut's target (EDT-101). */
+        @Volatile
+        var lastFocused: String? = null
+
         /** `window.console` -> `console`. */
         fun helpIdOf(windowName: String): String = windowName.removePrefix("window.")
 

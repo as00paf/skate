@@ -31,12 +31,13 @@ import org.lwjgl.openal.AL10.AL_STOPPED
 import java.io.File
 import kotlin.io.path.createTempDirectory
 
-/** AUD-01: a splash on PHY-16's WaterEntered and a looping ambience near water volumes, on a fake OpenAL device. */
+/** AUD-01, AUD-15: a splash on PHY-16's WaterEntered and a looping ambience near water volumes, on a fake OpenAL device. */
 class AudioWaterSoundsTest {
 
     private val dir = createTempDirectory("aud01").toFile()
     private val splashClip = File(dir, "splash.wav").apply { writeBytes(ByteArray(1)) }.path
     private val ambienceClip = File(dir, "ambience.wav").apply { writeBytes(ByteArray(1)) }.path
+    private val otherAmbienceClip = File(dir, "river.wav").apply { writeBytes(ByteArray(1)) }.path
     private val al = FakeAudioBackend()
     private val logger = mockk<LoggerService>(relaxed = true)
     private val camera = Transform()
@@ -45,7 +46,15 @@ class AudioWaterSoundsTest {
         every { it.transform } returns camera
     }
     private val assets = mockk<AssetsManager>(relaxed = true).also {
-        every { it.getSound(any()) } answers { SoundBuffer(firstArg()).apply { bufferId = if (firstArg<String>() == splashClip) 11 else 22 } }
+        every { it.getSound(any()) } answers {
+            SoundBuffer(firstArg()).apply {
+                bufferId = when (firstArg<String>()) {
+                    splashClip -> 11
+                    otherAmbienceClip -> 33
+                    else -> 22
+                }
+            }
+        }
     }
     private val events = EventSystem(logger)
     private val transforms = TransformSystem()
@@ -172,10 +181,11 @@ class AudioWaterSoundsTest {
     }
 
     @Test
-    fun Ambience_SkipsWaterWithItsOwnAudio_AndDisabledConfig() {
-        pool().addComponent(AudioComponent(ambienceClip, playOnAwake = false))
+    fun Ambience_StillPlaysWithAnAudioComponent_AndStopsWhenDisabled() {
+        // AUD-15: an AudioComponent on the water plays its own sounds and no longer silences the water
+        pool().addComponent(AudioComponent(splashClip, playOnAwake = false))
         frame()
-        assertTrue(ambiences.isEmpty())
+        assertEquals(1, ambiences.size)
 
         val other = pool(at = Vector3f(5f, 0f, 0f))
         system.waterAudio = WaterAudioConfig(enabled = false, ambienceClip = ambienceClip)
@@ -183,10 +193,67 @@ class AudioWaterSoundsTest {
         assertTrue(ambiences.isEmpty())
         system.waterAudio = WaterAudioConfig(ambienceClip = ambienceClip)
         frame()
-        assertEquals(1, ambiences.size)
+        assertEquals(2, ambiences.size)
         scene.removeChild(other)
         frame()
-        assertTrue(ambiences.isEmpty(), "a removed water releases its loop")
+        assertEquals(1, ambiences.size, "a removed water releases its loop")
+    }
+
+    @Test
+    fun Ambience_UsesTheWatersOwnClipAndVolume_AndFollowsEditsLive() {
+        pool(at = Vector3f(0f, 0f, 0f))
+        val custom = pool(at = Vector3f(0f, 0f, 0f))
+        val water = custom.getComponent<WaterComponent>()!!
+        water.ambienceClip = otherAmbienceClip
+        water.ambienceVolume = 0.1f
+        frame()
+        val own = al.sources.values.single { it.buffer == 33 }
+        val fallback = ambiences.single()
+        assertTrue(own.isPlaying && own.looping)
+        assertEquals(fallback.gain * 0.1f / WaterAudioConfig().ambienceVolume, own.gain, 1e-5f)
+
+        // Volume: same loop, new gain on the next frame
+        water.ambienceVolume = 0.4f
+        frame()
+        assertTrue(own.isPlaying)
+        assertEquals(fallback.gain * 0.4f / WaterAudioConfig().ambienceVolume, own.gain, 1e-5f)
+
+        // Clip: the loop restarts with the new clip; back to null falls back to the default
+        water.ambienceClip = null
+        frame()
+        assertTrue(al.sources.values.none { it.buffer == 33 })
+        assertEquals(2, ambiences.size)
+        assertTrue(ambiences.all { it.isPlaying })
+    }
+
+    @Test
+    fun Ambience_UsesTheWatersOwnReach() {
+        val water = pool(at = Vector3f(0f, 1f, 0f), sizeX = 10f, sizeZ = 6f).getComponent<WaterComponent>()!!
+        camera.translation.set(50f, 1f, 0f) // 45 m from the edge: beyond the default 30 m
+        frame()
+        assertTrue(ambiences.isEmpty())
+        water.ambienceMaxDistance = 60f
+        frame()
+        assertEquals(1, ambiences.size)
+    }
+
+    @Test
+    fun Splash_UsesTheEnteredWatersOwnClipsAndVolume() {
+        val far = Vector3f(0f, 0f, 100f) // ambience out of reach
+        val plain = pool(at = far)
+        val custom = pool(at = far).also {
+            it.getComponent<WaterComponent>()!!.apply {
+                splashClips = listOf(otherAmbienceClip)
+                splashVolume = 0.5f
+            }
+        }
+        events.publish(WaterEntered(plain, body(Vector3f(1f, 0f, 0f))))
+        events.publish(WaterEntered(custom, body(Vector3f(-1f, 0f, 0f))))
+        frame()
+        val fallback = splashes.single()
+        val own = al.sources.values.single { it.buffer == 33 }
+        assertTrue(fallback.isPlaying && own.isPlaying)
+        assertEquals(fallback.gain * 0.5f, own.gain, 1e-5f)
     }
 
     @Test

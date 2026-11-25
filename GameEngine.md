@@ -38,9 +38,10 @@ Done tasks live in [`docs/backlog-archive.md`](docs/backlog-archive.md). A `Deps
 6. Keep the build green: `cmd.exe /c gradlew.bat test` from WSL/herdr, or `.\gradlew.bat test` on Windows.
 7. Only `skate-lead` edits checkbox state in this file. Domain agents report status back to the lead.
 8. No backward compatibility while the engine is a work in progress: don't add migrations or upgrade-on-load code for old saved scenes/projects; the human recreates content. Instead, keep the **default projects** current: when a feature lands, update the default skate project (`PrefabsGenerator` default scenes) and the CLI samples to use it, and remove test-only content from them. The default editor project includes the **Feature Showcase** scene(s), which the human uses for manual testing: every new user-visible component or feature adds a small, labeled demo there in the same task.
-9. **Feature Showcase upkeep** (human, Discord 2026-11-17): every task that adds or changes a user-visible feature either updates the Feature Showcase sample in the same task or names a `TLG` follow-up in its result; the lead adds that follow-up before marking the task done.
+9. **Feature Showcase upkeep** (human, Discord 2026-11-17): every task that adds or changes a user-visible feature puts its demo in the right scene (rule 12: `MainScene` if skateboarding-related, else the Feature Showcase) in the same task or names a `TLG` follow-up in its result; the lead adds that follow-up before marking the task done.
 10. **Responsive editor** (human, Discord 2026-11-17): process-intensive editor work (project creation, imports, packing, scene loading, generation, baking) runs off the UI thread with coroutines and reports progress; only GPU uploads and ImGui calls stay on the main thread.
 11. **Questions to the human** (human, 2026-11-17): agents never ask the human directly; they put questions in a design note or a `BLOCKED` line, and the lead asks them with the question tool, one decision per question with a recommended option.
+12. **Human-testable content lives in the two scenes** (human, 2026-11-25): a new feature gets a labeled demo in the **default scenes** in the same task: `MainScene` if it is skateboarding-related (player, board, tricks, camera, skatepark, HUD), the **Feature Showcase** scene otherwise (`FeatureShowcase.populate`; sample `ShowcaseSeed.kts`). Whatever needs human testing (objects, components, scripts, UI, audio, particles, ...) is placed there ready to use, so the human never creates game objects or components by hand. The task's `docs/testing/<TASK-ID>.md` steps say which scene and object to look at, not how to build it. A task with no scene content cannot be marked `DONE` unless it states why none is needed.
 
 **PR size rules** (human, 2026-11-06/2026-11-07)
 
@@ -160,7 +161,7 @@ Round 27+ goals (human, 2026-11-06): post-processing quality, render-graph clari
   - Do: (EDT-106 audit, `docs/design/EDT-106.md`; UI written by the owner, reviewed by skate-editor): a picker for `EnvironmentComponent.skyTexture`.
   - Done when: The sky can be picked or dropped, with undo; test.
   - Deps: EDT-108
-- [ ] **REN-47** `P2` Change the model of an existing RenderComponent
+- [ ] **REN-47** `P0` Change the model of an existing RenderComponent
   - Do: (EDT-106 audit, `docs/design/EDT-106.md`; UI written by the owner, reviewed by skate-editor): picker or drop to change the model, keeping material overrides where slot names match.
   - Done when: The model changes with undo and keeps matching overrides; test.
   - Deps: EDT-108
@@ -1017,7 +1018,7 @@ Round 27+ goals (human, 2026-11-06): fix editor bugs, make every window, dialog 
   - Do: (NEEDS from REN-35): water inspector (presets `WaterPreset`, per-wave editor, material picker, volume gizmo, Freeze time via `EnvironmentComponent.animateInEditor`) and an Environment wind section with presets (`WindField.CALM/BREEZE/STRONG/STORM`). Wind strings already exist in `components.properties`; the selected-water volume box already draws through the debug renderer.
   - Done when: Water and wind can be tuned from the inspector with undo; tests.
   - Deps: REN-35
-- [~] @skate-assets **EDT-91** `P2` Export dialog UI for the AST-29 settings
+- [x] **EDT-91** `P2` Export dialog UI for the AST-29 settings
   - Do: (NEEDS from AST-29): in `ExportWizardWindow`, build the wizard with `ExportWizard(ExportMemory.inSettings({ settingsManager.editorSettings }, settingsManager::update))`; add the Game/Build/Summary sections from AST-29 §3 using `ProjectExporter.art()`/`estimate()`, show `ExportResult.warnings` (keys `lbl.export.warning.*`), and pass art to `canStart`/`issues`.
   - Done when: Each export setting is editable in the dialog and persists; missing icon/splash warnings show; tests.
   - Deps: AST-29
@@ -1091,9 +1092,10 @@ Round 27+ goals (human, 2026-11-06): fix editor bugs, make every window, dialog 
   - Do: (EDT-106 audit, `docs/design/EDT-106.md`; UI written by the owner, reviewed by skate-editor): `reflectedImgui` draws `List`/`MutableList` (add, remove, reorder), `Map<String, *>` and nested `@Serializable` data classes recursively, with undo. Unblocks VehicleComponent wheels, ScriptComponent properties, CameraFocusComponent targets, PlayerController `waterResponse`, PrefabInstance overrides.
   - Done when: A guard test finds no saved component field that the inspector silently skips.
   - Deps: none
-- [ ] **EDT-108** `P1` Asset reference fields: picker and drag and drop
+- [~] @skate-editor **EDT-108** `P0` Asset reference fields: picker and drag and drop
   - Do: (EDT-106 audit, `docs/design/EDT-106.md`; UI written by the owner, reviewed by skate-editor): an `@AssetRef(kind)` annotation (with skate-ecs, next to `@GameObjectRef`); the inspector shows a picker filtered by kind, accepts drops from the Asset Browser and flags missing files. Domain agents then annotate their fields (particle/UI texture, `configPath`, `meshRef`, `materialPath`, sound paths, …).
   - Done when: Annotated fields show a filtered picker, accept drops and flag missing files; tests.
+  - Priority raised to P0 (human, 2026-11-25): RenderComponent's model cannot be changed from the editor, which blocks human testing; do EDT-108 then REN-47 first.
   - Deps: none
 - [ ] **EDT-109** `P2` Add Component menu: translated names, categories and search
   - Do: (EDT-106 audit, `docs/design/EDT-106.md`; UI written by the owner, reviewed by skate-editor): translated component names, categories, and search on the translated name.

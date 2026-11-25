@@ -7,7 +7,6 @@ enum class ComponentType {
     AUDIO,
     AUDIO_LISTENER,
     BONE_ATTACHMENT,
-    BONE_OVERRIDE,
     BOX_COLLIDER_3D,
     CAMERA,
     CAMERA_CYCLE,
@@ -23,6 +22,8 @@ enum class ComponentType {
     FOLLOW_CAMERA,
     GRID_LINES,
     HEALTH,
+    IK_SETUP,
+    IK_TARGET,
     INPUT_STATE,
     INTERACTABLE,
     INVENTORY,
@@ -61,7 +62,6 @@ enum class ComponentType {
             ANIMATOR -> Animator()
             AUDIO -> AudioComponent()
             AUDIO_LISTENER -> AudioListener()
-            BONE_OVERRIDE -> BoneOverride()
             BOX_COLLIDER_3D -> BoxCollider3D()
             CAMERA -> CameraComponent()
             CAMERA_CYCLE -> CameraCycleComponent()
@@ -81,6 +81,8 @@ enum class ComponentType {
             FIRST_PERSON_CAMERA -> FirstPersonCameraComponent()
             FOLLOW_CAMERA -> FollowCameraComponent()
             GRID_LINES -> GridLines()
+            IK_SETUP -> IkSetup()
+            IK_TARGET -> IkTarget()
             INPUT_STATE -> InputStateComponent()
             JOINT -> JointComponent()
             MESH_COLLIDER -> MeshCollider3D()

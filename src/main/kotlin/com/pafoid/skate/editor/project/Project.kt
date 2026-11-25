@@ -5,6 +5,7 @@ import com.pafoid.skate.editor.settings.GraphicsQuality
 import com.pafoid.skate.editor.settings.ShadowQuality
 import com.pafoid.skate.editor.settings.TextureQuality
 import com.pafoid.skate.engine.physics3d.PhysicsBackend
+import com.pafoid.skate.engine.platform.steampipe.SteamPublishTarget
 import com.pafoid.skate.engine.render.rhi.GraphicsBackend
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
@@ -57,6 +58,8 @@ data class Project(
     var targetFps: Int = 0,
     /** Physics backend of the exported game and Play (AST-29); the game falls back to Bullet if Jolt fails to load. */
     var physicsBackend: PhysicsBackend = PhysicsBackend.BULLET,
+    /** Steam app and depot this project uploads to (NET-07); null until set up. Holds no credentials. */
+    var steamPublish: SteamPublishTarget? = null,
 ) {
     companion object {
         const val DEFAULT_SPLASH_SECONDS = 2f

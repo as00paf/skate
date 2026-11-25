@@ -19,6 +19,8 @@ interface StoreJobs {
 class StoreDownload(val title: String, val cancel: CancelToken) {
     @Volatile var done: Long = 0
     @Volatile var total: Long? = null
+    /** True once the download is done and the provider converts the files (SimReady: Blender). */
+    @Volatile var converting: Boolean = false
     val fraction: Float get() = total?.takeIf { it > 0 }?.let { (done.toFloat() / it).coerceIn(0f, 1f) } ?: 0f
 }
 
@@ -65,6 +67,9 @@ class AssetStoreService(
     var lastImport: AssetStoreEvent.ImportFinished? = null
         private set
     var downloadError: String? = null
+        private set
+    /** Warnings from the last import's conversion (materials left at defaults, missing textures). */
+    var importWarnings: List<String> = emptyList()
         private set
 
     var ledger: AttributionLedger = AttributionLedger()
@@ -146,8 +151,10 @@ class AssetStoreService(
         val job = StoreDownload(target.summary.title, CancelToken())
         download = job
         downloadError = null
+        importWarnings = emptyList()
         jobs.io {
             val result = runCatching {
+                target.blocker?.let { throw IOException(it) }
                 StorePaths.ensureHiddenDir(project)
                 val staging = StorePaths.stagingDir(project, ref.providerId, ref.sourceId, variant.id)
                 val plan = p.resolveDownload(target, variant)
@@ -156,13 +163,19 @@ class AssetStoreService(
                     job.total = total
                 }
                 if (job.cancel.isCancelled) throw StoreCancelledException()
-                val prepared = p.postProcess(target, variant, staging, staged)
-                StoreImportRequest(target, variant, staging, p.importPlan(target, variant, prepared))
+                job.converting = variant.format == SourceFormat.USD
+                val prepared = p.prepare(target, variant, staging, staged, job.cancel)
+                if (job.cancel.isCancelled) throw StoreCancelledException()
+                val importPlan = p.importPlan(target, variant, prepared.staged)
+                if (importPlan.entries.isEmpty()) throw IOException("Nothing importable in ${target.summary.title}")
+                StoreImportRequest(target, variant, staging, importPlan, prepared.modifications) to prepared.warnings
             }
             jobs.main {
                 download = null
-                result.onSuccess { publish(AssetStoreEvent.ImportRequested(it)) }
-                    .onFailure { if (it !is StoreCancelledException) downloadError = it.message ?: it.javaClass.simpleName }
+                result.onSuccess { (request, warnings) ->
+                    importWarnings = warnings
+                    publish(AssetStoreEvent.ImportRequested(request))
+                }.onFailure { if (it !is StoreCancelledException) downloadError = it.message ?: it.javaClass.simpleName }
             }
         }
     }

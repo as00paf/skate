@@ -43,6 +43,9 @@ class EditorActionHandler(
         dialogs = TinyMaterialFileDialogs(engine.stringManager),
     )
     val assetStoreActionHandler = AssetStoreActionHandler(engine.eventSystem, engine.jobSystem, projectManager, undoRedoManager)
+    val terrainActionHandler = TerrainActionHandler(
+        engine.eventSystem, undoRedoManager, projectManager, engine.sceneManager, stringManager, engine.logger,
+    )
     val keyBindingsActionHandler = KeyBindingsActionHandler(
         engine.eventSystem, projectManager, undoRedoManager
     ) { engine.systemManager.getSystem<com.pafoid.skate.engine.ecs.systems.InputSystem>()?.actionMap }

@@ -437,8 +437,19 @@ class AudioSystem(
 
     // --- Water sounds (AUD-01) ---
 
-    /** An engine-owned water voice: a splash at a fixed point, or an ambience that follows the nearest edge. */
-    private class WaterSound(val playback: Playback, val position: Vector3f, val volume: Float, val ambience: Boolean)
+    /**
+     * An engine-owned water voice: a splash at a fixed point, or an ambience that follows the nearest edge. [clip] is
+     * the reference it was started with, so an ambience restarts when its water's clip is edited (AUD-15).
+     */
+    private class WaterSound(
+        val playback: Playback,
+        val position: Vector3f,
+        val volume: Float,
+        val ambience: Boolean,
+        val clip: String,
+        val minDistance: Float,
+        val maxDistance: Float,
+    )
 
     private val waterCenter = Vector3f()
 
@@ -457,32 +468,34 @@ class AudioSystem(
                 releaseWaterSound(key)
                 return@forEach
             }
-            applyWater(key, ws, splashGain(config, ws.position, ws.volume))
+            applyWater(key, ws, splashGain(ws.position, ws.volume, ws.minDistance, ws.maxDistance))
         }
     }
 
-    private fun splashGain(config: WaterAudioConfig, position: Vector3f, volume: Float): Float =
+    private fun splashGain(position: Vector3f, volume: Float, minDistance: Float, maxDistance: Float): Float =
         audioEngine.mixer.sourceGain(BusId.SFX, volume) * SpatialAudio.attenuation(
-            AttenuationModel.INVERSE_CLAMPED, position.distance(listenerPos),
-            config.splashMinDistance, config.splashMaxDistance, 1f,
+            AttenuationModel.INVERSE_CLAMPED, position.distance(listenerPos), minDistance, maxDistance, 1f,
         )
 
-    private fun startSplashes(config: WaterAudioConfig) {
+    private fun startSplashes(defaults: WaterAudioConfig) {
         var started = 0
         while (true) {
             val event = pendingSplashes.poll() ?: break
             // The rest of a burst is dropped, not delayed: a late splash sounds wrong.
-            if (started >= config.maxSplashesPerFrame) continue
-            if (!splashCooldown.tryStart(event.body.uId, clock, config.splashCooldown)) continue
+            if (started >= defaults.maxSplashesPerFrame) continue
+            if (!splashCooldown.tryStart(event.body.uId, clock, defaults.splashCooldown)) continue
             val position = event.body.getComponent<Transform>()?.worldMatrix?.getTranslation(Vector3f()) ?: continue
+            val config = defaults.forWater(event.water.getComponent<WaterComponent>())
             val body = event.body.getComponent<RigidBody3D>()?.takeIf { it.rawBody != null }
             val volume = config.splashVolume * WaterAudio.splashGain(body?.linearVelocity ?: Vector3f())
             val clip = splashPicker.pick(SPLASH_PICKER_OWNER, "", config.splashClips)
             val key = nextSplashKey
             nextSplashKey = if (nextSplashKey <= Int.MIN_VALUE + 2) -1 else nextSplashKey - 2
-            val gain = splashGain(config, position, volume)
+            val gain = splashGain(position, volume, config.splashMinDistance, config.splashMaxDistance)
             val sound = startWaterSound(key, clip, looping = false, config.splashPriority, gain) ?: continue
-            WaterSound(sound, position, volume, ambience = false).also {
+            WaterSound(
+                sound, position, volume, ambience = false, clip, config.splashMinDistance, config.splashMaxDistance,
+            ).also {
                 waterSounds[key] = it
                 applyWater(key, it, gain)
             }
@@ -491,16 +504,24 @@ class AudioSystem(
         }
     }
 
-    private fun updateAmbience(config: WaterAudioConfig) {
+    /**
+     * One ambience per enabled water within reach. Its settings are read every frame (AUD-15), so an inspector edit
+     * of the volume or distances is heard at once, and an edited clip restarts the loop.
+     */
+    private fun updateAmbience(defaults: WaterAudioConfig) {
         val seen = mutableSetOf<Int>()
-        if (config.ambienceClip.isNotBlank()) scene.children.forEach { go ->
+        scene.children.forEach { go ->
             val water = go.getComponent<WaterComponent>()?.takeIf { it.enabled } ?: return@forEach
-            // A water with its own AudioComponent has chosen its sound.
-            if (go.getComponent<AudioComponent>() != null) return@forEach
+            val config = defaults.forWater(water)
+            if (config.ambienceClip.isBlank()) return@forEach
             val m = go.getComponent<Transform>()?.takeIf { it.enabled }?.worldMatrix ?: return@forEach
             waterCenter.set(m.m30(), m.m31(), m.m32())
             val key = ambienceKey(go.uId)
-            val existing = waterSounds[key]
+            var existing = waterSounds[key]
+            if (existing != null && existing.clip != config.ambienceClip) {
+                releaseWaterSound(key)
+                existing = null
+            }
             val point = WaterAudio.nearestSurfacePoint(
                 waterCenter, atan2(m.m20(), m.m22()), water.sizeX, water.sizeZ, listenerPos, existing?.position ?: Vector3f()
             )
@@ -514,7 +535,10 @@ class AudioSystem(
             val ws = existing ?: run {
                 val sound = startWaterSound(key, config.ambienceClip, looping = true, config.ambiencePriority, gain)
                     ?: return@forEach
-                WaterSound(sound, point, config.ambienceVolume, ambience = true).also {
+                WaterSound(
+                    sound, point, config.ambienceVolume, ambience = true, config.ambienceClip,
+                    config.ambienceMinDistance, config.ambienceMaxDistance,
+                ).also {
                     waterSounds[key] = it
                     applyWater(key, it, gain)
                     sound.source.play()
@@ -525,6 +549,18 @@ class AudioSystem(
         }
         waterSounds.filter { it.value.ambience && it.key !in seen }.keys.forEach { releaseWaterSound(it) }
     }
+
+    /** The defaults with [water]'s own audio fields over them (AUD-15); the defaults alone without a water. */
+    private fun WaterAudioConfig.forWater(water: WaterComponent?): WaterAudioConfig = if (water == null) this else withOverrides(
+        ambienceClip = water.ambienceClip,
+        ambienceVolume = water.ambienceVolume,
+        ambienceMinDistance = water.ambienceMinDistance,
+        ambienceMaxDistance = water.ambienceMaxDistance,
+        splashClips = water.splashClips,
+        splashVolume = water.splashVolume,
+        splashMinDistance = water.splashMinDistance,
+        splashMaxDistance = water.splashMaxDistance,
+    )
 
     private fun applyWater(key: Int, ws: WaterSound, gain: Float) {
         val source = ws.playback.source
