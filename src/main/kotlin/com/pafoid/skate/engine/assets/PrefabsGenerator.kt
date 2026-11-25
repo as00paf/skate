@@ -254,30 +254,6 @@ class PrefabsGenerator(
         type.name.split('_').joinToString("") { part -> part.lowercase().replaceFirstChar { it.uppercase() } }
 
     /**
-     * The scenes of a new project: `MainScene` (sky and ambient light, a "Sun" entity driven by the day/night cycle, the skater and board on an asphalt floor,
-     * a concrete ledge to grind and a HUD canvas) and the [FeatureShowcase] scene (one labelled area per engine
-     * feature). See docs/samples.md.
-     */
-    fun createDefaultScenes(sceneDir: File): List<Scene> {
-        val scene = sceneManager.createNewScene(DEFAULT_SCENE, sceneDir.path)
-        val skyTexture = assetsManager.getTexture(EngineDefaults.Textures.SKY_HDRI)
-        scene.addComponent(ScenePhysicsComponent())
-            .addComponent(GridLines())
-            .addComponent(EnvironmentComponent(skyTexture = skyTexture))
-            .addComponent(DayNightCycleComponent())
-        SceneSun.addDefaults(scene) // the "Sun" entity, driven by the day/night cycle (REN-26)
-
-        spawnDefaultsSync().forEach { scene.addChild(it) }
-        sceneManager.saveScene(scene, sceneDir.path)
-
-        val showcase = FeatureShowcase(this).populate(sceneManager.createNewScene(FeatureShowcase.SCENE_NAME, sceneDir.path))
-        sceneManager.saveScene(showcase, sceneDir.path)
-
-        // Not opened here: ProjectManager.loadDefaultScenes reopens the saved files (opening twice duplicated bodies).
-        return listOf(scene, showcase)
-    }
-
-    /**
      * The default skate scene: a follow camera (GPL-05) on the skater, the board, the floor and a few obstacles. The
      * quarter pipe behind the spawn and the funbox give the camera's spring arm something to collide with. The
      * [CameraCycle.ACTION] input cycles third-person, first-person and spot cameras (GPL-22, GPL-23); there is no HUD button

@@ -25,12 +25,7 @@ class ProjectManagerCloseTest {
         every { it.eventSystem } returns events
         every { it.sceneManager } returns sceneManager
         every { it.serializer } returns serializer
-        every { it.prefabsGenerator.createDefaultScenes(any()) } answers {
-            val main = Scene("MainScene").also { s -> s.addChild(GameObject("Player")) }
-            val folder = firstArg<File>().also { f -> f.mkdirs() }
-            File(folder, "MainScene.scene").writeText(serializer.encodeFile(FileKind.SCENE, main))
-            listOf(main)
-        }
+        every { it.prefabsGenerator.spawnDefaultsSync() } answers { listOf(GameObject("Player")) }
     }
 
     @AfterEach
@@ -66,6 +61,6 @@ class ProjectManagerCloseTest {
 
         val saved = File(dir, "P/Scenes").walkTopDown().filter { it.name == "MainScene.scene" }.toList()
         val names = saved.map { serializer.decodeFile<Scene>(FileKind.SCENE, it.readText()).children.map { c -> c.name } }
-        names.forEach { assertEquals(listOf("Player"), it) }
+        names.forEach { assertEquals(listOf("Sun", "Player"), it) }
     }
 }

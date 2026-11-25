@@ -1,5 +1,6 @@
 package com.pafoid.skate.game
 
+import com.pafoid.skate.templates.NewProjectSettings
 import com.pafoid.skate.editor.systems.ProjectManager
 import com.pafoid.skate.engine.animation.procedural.TestHumanoid
 import com.pafoid.skate.engine.assets.AssetsManager
@@ -78,7 +79,7 @@ class ExportedGameModelsTest {
 
         // File > New Project (default template, defaults copied), then File > Export with the default options.
         val projects = ProjectManager(engine)
-        val created = projects.createProject("Repro", File(dir, "Workspace").also { it.mkdirs() })
+        val created = projects.createProject("Repro", File(dir, "Workspace").also { it.mkdirs() }, NewProjectSettings(template = "feature-showcase"))
         assertTrue(created.isSuccess, created.exceptionOrNull()?.toString())
         val project = projects.currentProject!!
         val out = File(dir, "Export")

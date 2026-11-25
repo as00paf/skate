@@ -1,5 +1,6 @@
 package com.pafoid.skate.architecture
 
+import com.pafoid.skate.templates.createDefaultScenes
 import com.pafoid.skate.engine.assets.AssetPaths
 import com.pafoid.skate.engine.assets.AssetsManager
 import com.pafoid.skate.engine.assets.PrefabsGenerator
@@ -65,8 +66,8 @@ class ProjectRelativePathsGuardTest {
         every { sceneManager.createNewScene(any(), any()) } answers { Scene(firstArg()) }
 
         val generator = PrefabsGenerator(engine).apply { projectAssetsDir = assets.absolutePath + File.separator }
-        val scenes = generator.createDefaultScenes(File(root, "Scenes").also { it.mkdirs() })
         val serializer = Serializer(AssetPaths().apply { projectRoot = root })
+        val scenes = generator.createDefaultScenes(serializer, File(root, "Scenes").also { it.mkdirs() })
 
         val absolute = scenes.flatMap { scene ->
             strings(Json.parseToJsonElement(serializer.encodeFile(FileKind.SCENE, scene)), scene.name)

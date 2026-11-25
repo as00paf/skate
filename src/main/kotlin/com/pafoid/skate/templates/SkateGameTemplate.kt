@@ -14,7 +14,7 @@ import com.pafoid.skate.engine.ecs.components.ScenePhysicsComponent
 
 /**
  * The "Skate Game" template (EDT-59, preselected in the wizard): the skate `MainScene` every new project used to get
- * from `PrefabsGenerator.createDefaultScenes` (GPL-23 park, skater, board, cameras, HUD), without the Feature
+ * from `PrefabsGenerator.spawnDefaults` (GPL-23 park, skater, board, cameras, HUD), without the Feature
  * Showcase, which is its own template now.
  */
 object SkateGameTemplate : ProjectTemplate {

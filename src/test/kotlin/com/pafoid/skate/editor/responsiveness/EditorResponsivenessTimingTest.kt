@@ -1,5 +1,7 @@
 package com.pafoid.skate.editor.responsiveness
 
+import com.pafoid.skate.templates.NewProjectSettings
+import com.pafoid.skate.templates.createDefaultScenes
 import com.pafoid.skate.editor.commands.project.OpenSceneFileCommand
 import com.pafoid.skate.editor.systems.ProjectManager
 import com.pafoid.skate.editor.systems.ScenePlaySnapshot
@@ -109,9 +111,9 @@ class EditorResponsivenessTimingTest {
         repeat(2) { run ->
             val label = if (run == 0) "cold" else "warm"
             val name = "Timing$run"
-            val (folder, folderMs) = timed { projects.prepareProjectFolder(name, dir) }
+            val (folder, folderMs) = timed { projects.prepareProjectFolder(name, dir, SHOWCASE) }
             record("create project: copy assets (bg, $label)", folderMs)
-            val (created, mainMs) = timed { projects.createProject(name, dir, preparedDir = folder.getOrThrow()) }
+            val (created, mainMs) = timed { projects.createProject(name, dir, SHOWCASE, folder.getOrThrow()) }
             assertTrue(created.isSuccess, created.exceptionOrNull()?.toString())
             record("create project: scenes (MAIN, fake assets, $label)", mainMs)
         }
@@ -207,7 +209,7 @@ class EditorResponsivenessTimingTest {
     @Test
     @Order(6)
     fun CreateProject_SceneGenerationAlone() {
-        val (scenes, ms) = timed { prefabs.createDefaultScenes(File(dir, "generated")) }
+        val (scenes, ms) = timed { prefabs.createDefaultScenes(serializer, File(dir, "generated")) }
         record("create project: generate+save ${scenes.size} scenes (MAIN, warm)", ms)
         assertTrue(scenes.any { it.name == FeatureShowcase.SCENE_NAME })
     }
@@ -219,6 +221,7 @@ class EditorResponsivenessTimingTest {
     }
 
     private companion object {
+        val SHOWCASE = NewProjectSettings(template = "feature-showcase")
         const val PLAY_CAPTURE_BUDGET_MS = 500.0
         const val STOP_RESTORE_BUDGET_MS = 500.0
     }

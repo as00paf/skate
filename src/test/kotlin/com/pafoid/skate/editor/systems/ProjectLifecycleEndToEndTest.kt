@@ -1,5 +1,10 @@
 package com.pafoid.skate.editor.systems
 
+import com.pafoid.skate.templates.FeatureShowcaseTemplate
+import com.pafoid.skate.templates.NewProjectSettings
+import com.pafoid.skate.templates.createWithShowcase
+import com.pafoid.skate.templates.ProjectFiles
+import com.pafoid.skate.templates.TemplateContext
 import com.pafoid.skate.engine.assets.pack.PackBuilder
 import com.pafoid.skate.engine.assets.EngineDefaults
 import com.pafoid.skate.editor.commands.project.LoadLastProjectCommand
@@ -229,10 +234,13 @@ class ProjectLifecycleEndToEndTest {
         sounds.forEach { assertTrue(File(assets.paths.localPath(it)).isFile, "$step: sound $it") }
     }
 
+    private fun createWithShowcase(name: String, settings: NewProjectSettings) =
+        projects.createWithShowcase(engine, serializer, name, workspace, settings)
+
     @Test
     @Order(1)
     fun Lifecycle_1_CreateEditAndSaveANewProject() {
-        val created = projects.createProject(projectName, workspace)
+        val created = createWithShowcase(projectName, NewProjectSettings())
         assertTrue(created.isSuccess, created.exceptionOrNull()?.toString())
         projectFile = File(workspace, "$projectName/$projectName.skateproject").absoluteFile
         assertTrue(projectFile.isFile)
@@ -441,7 +449,7 @@ class ProjectLifecycleEndToEndTest {
         // New Project wizard with "Graphics backend: Vulkan" (EDT-43), saved, closed and reopened from Recent Projects.
         // AST-27 / EDT-70: this one references the engine defaults instead of copying them ("Copy engine default
         // assets" off; only the basic shaders and skater configs are copied). Steps 1-8 cover the copy mode.
-        val created = projects.createProject(VK_PROJECT, workspace, GraphicsBackend.VULKAN, copyDefaults = false)
+        val created = createWithShowcase(VK_PROJECT, NewProjectSettings(graphicsBackend = GraphicsBackend.VULKAN, copyEngineDefaults = false))
         assertTrue(created.isSuccess, created.exceptionOrNull()?.toString())
         vkProjectFile = File(workspace, "$VK_PROJECT/$VK_PROJECT.skateproject").absoluteFile
         val vkAssets = File(vkProjectFile.parentFile, "Assets")

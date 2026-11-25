@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.systems
 
+import com.pafoid.skate.templates.NewProjectSettings
 import com.pafoid.skate.engine.assets.serialization.Serializer
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.core.EventSystem
@@ -33,20 +34,13 @@ class ProjectManagerCreateTest {
         every { engine.eventSystem } returns EventSystem()
         every { engine.sceneManager } returns sceneManager
         every { engine.serializer } returns serializer
-        every { engine.prefabsGenerator.createDefaultScenes(any()) } answers {
-            val main = Scene("MainScene").also { it.addChild(GameObject("Player")) }
-            val folder = firstArg<File>().also { it.mkdirs() }
-            File(folder, "MainScene.scene").writeText(
-                serializer.encodeFile(com.pafoid.skate.engine.assets.serialization.FileKind.SCENE, main)
-            )
-            listOf(main)
-        }
+        every { engine.prefabsGenerator.spawnDefaultsSync() } answers { listOf(GameObject("Player")) }
 
         val result = ProjectManager(engine).createProject("P", dir)
 
         assertTrue(result.isSuccess, result.exceptionOrNull()?.toString())
         assertEquals("MainScene", sceneManager.currentScene?.name)
-        assertEquals(listOf("Player"), sceneManager.currentScene?.children?.map { it.name })
+        assertEquals(listOf("Sun", "Player"), sceneManager.currentScene?.children?.map { it.name })
     }
 
     @Test
@@ -57,14 +51,6 @@ class ProjectManagerCreateTest {
         every { engine.eventSystem } returns EventSystem()
         every { engine.sceneManager } returns sceneManager
         every { engine.serializer } returns serializer
-        every { engine.prefabsGenerator.createDefaultScenes(any()) } answers {
-            val main = Scene("MainScene")
-            val folder = firstArg<File>().also { it.mkdirs() }
-            File(folder, "MainScene.scene").writeText(
-                serializer.encodeFile(com.pafoid.skate.engine.assets.serialization.FileKind.SCENE, main)
-            )
-            listOf(main)
-        }
 
         assertTrue(ProjectManager(engine).createProject("P", dir).isSuccess)
 
@@ -73,7 +59,7 @@ class ProjectManagerCreateTest {
     }
 
     @Test
-    fun ProjectManager_CreateProject_ContainsAndOpensTheFeatureShowcase() {
+    fun ProjectManager_CreateProject_FeatureShowcaseTemplate_ContainsAndOpensTheFeatureShowcase() {
         val serializer = Serializer()
         val sceneManager = SceneManager(mockk(relaxed = true), EventSystem(), serializer, mockk(relaxed = true), mockk(relaxed = true))
         val assets = mockk<com.pafoid.skate.engine.assets.AssetsManager>(relaxed = true)
@@ -93,14 +79,15 @@ class ProjectManagerCreateTest {
         val prefabs = com.pafoid.skate.engine.assets.PrefabsGenerator(engine)
         every { engine.prefabsGenerator } returns prefabs
 
-        val result = ProjectManager(engine).createProject("P", dir)
+        val result = ProjectManager(engine).createProject("P", dir, NewProjectSettings(template = "feature-showcase"))
 
         assertTrue(result.isSuccess, result.exceptionOrNull()?.toString())
         val project = result.getOrThrow()
         assertTrue(project.scenesPath.any { it.endsWith("FeatureShowcase.scene") }, project.scenesPath.toString())
         assertTrue(File(dir, "P/Scenes/FeatureShowcase.scene").exists())
-        assertEquals(listOf("MainScene", "FeatureShowcase"), sceneManager.openScenes.map { it.name })
-        assertEquals("MainScene", sceneManager.currentScene?.name)
+        assertEquals(listOf("FeatureShowcase"), sceneManager.openScenes.map { it.name })
+        assertEquals("FeatureShowcase", sceneManager.currentScene?.name)
+        assertTrue(!File(dir, "P/Scenes/MainScene.scene").exists())
         val showcase = sceneManager.openScenes.single { it.name == "FeatureShowcase" }
         assertTrue(showcase.children.any { it.name == "[Vehicle] Car" })
         // AUD-10: the audio emitter's MP3 resolves to the project's copy of the bundled track.
@@ -108,5 +95,30 @@ class ProjectManagerCreateTest {
             .filterIsInstance<com.pafoid.skate.engine.ecs.components.AudioComponent>().single()
         assertTrue(File(music.soundFilePath).isFile, music.soundFilePath)
         assertTrue(music.soundFilePath.startsWith(File(dir, "P/Assets").absolutePath))
+    }
+
+    @Test
+    fun ProjectManager_CreateProject_AppliesTheTemplateAndSettings() {
+        val serializer = Serializer()
+        val sceneManager = SceneManager(mockk(relaxed = true), EventSystem(), serializer, mockk(relaxed = true), mockk(relaxed = true))
+        val engine = mockk<Engine>(relaxed = true)
+        every { engine.eventSystem } returns EventSystem()
+        every { engine.sceneManager } returns sceneManager
+        every { engine.serializer } returns serializer
+        val splash = File(dir, "my.png").apply { writeBytes(byteArrayOf(1, 2, 3)) }
+        val settings = NewProjectSettings(
+            template = "empty", targetFps = 90, physicsBackend = com.pafoid.skate.engine.physics3d.PhysicsBackend.SIMPLE,
+            splashImage = splash, includeAiFiles = true, copyEngineDefaults = false,
+        )
+
+        val project = ProjectManager(engine).createProject("T", dir, settings).getOrThrow()
+
+        assertEquals(90, project.targetFps)
+        assertEquals(com.pafoid.skate.engine.physics3d.PhysicsBackend.SIMPLE, project.physicsBackend)
+        assertTrue(project.splashPath.endsWith("splash.png"), project.splashPath)
+        assertTrue(File(dir, "T/Assets/Textures/splash.png").isFile)
+        assertTrue(File(dir, "T/AGENTS.md").isFile)
+        assertEquals(listOf("MainScene"), sceneManager.openScenes.map { it.name })
+        assertTrue(File(dir, "T/Assets/Models").isDirectory)
     }
 }

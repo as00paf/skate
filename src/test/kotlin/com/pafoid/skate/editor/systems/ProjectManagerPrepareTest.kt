@@ -28,12 +28,7 @@ class ProjectManagerPrepareTest {
         every { engine.eventSystem } returns EventSystem()
         every { engine.sceneManager } returns sceneManager
         every { engine.serializer } returns serializer
-        every { engine.prefabsGenerator.createDefaultScenes(any()) } answers {
-            val main = Scene("MainScene").also { it.addChild(GameObject("Player")) }
-            val folder = firstArg<File>().also { it.mkdirs() }
-            File(folder, "MainScene.scene").writeText(serializer.encodeFile(FileKind.SCENE, main))
-            listOf(main)
-        }
+        every { engine.prefabsGenerator.spawnDefaultsSync() } answers { listOf(GameObject("Player")) }
     }
     private val projects = ProjectManager(engine)
 
@@ -55,7 +50,7 @@ class ProjectManagerPrepareTest {
         assertNotNull(prepared)
         assertEquals("B", prepared!!.project.name)
         assertEquals(listOf("MainScene"), prepared.scenes.scenes.map { it.name })
-        assertEquals(listOf("Player"), prepared.scenes.scenes.single().children.map { it.name })
+        assertEquals(listOf("Sun", "Player"), prepared.scenes.scenes.single().children.map { it.name })
         assertTrue(prepared.scenes.failed.isEmpty())
         assertEquals("A", projects.currentProject?.name)
         assertEquals(rootOfA, serializer.assetPaths.projectRoot)
@@ -72,7 +67,7 @@ class ProjectManagerPrepareTest {
         assertTrue(projects.openProjectFile(projectFile("B"), prepared))
 
         assertEquals("B", projects.currentProject?.name)
-        assertEquals(listOf("Player"), sceneManager.currentScene?.children?.map { it.name })
+        assertEquals(listOf("Sun", "Player"), sceneManager.currentScene?.children?.map { it.name })
     }
 
     @Test

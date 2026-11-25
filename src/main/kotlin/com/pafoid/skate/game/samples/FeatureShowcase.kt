@@ -70,7 +70,7 @@ import java.io.File
 /**
  * The Feature Showcase scene (TLG-05/TLG-08): one labelled demo area per engine feature on a shared floor, plus an
  * in-game UI overlay with a legend. Every new editor project gets it next to `MainScene` (see
- * [PrefabsGenerator.createDefaultScenes]) and the CLI writes it as the `FeatureShowcase` sample. New features add an
+ * [FeatureShowcaseTemplate]) and the CLI writes it as the `FeatureShowcase` sample. New features add an
  * area here (GameEngine.md rule 8); see docs/samples.md for what to check in each.
  *
  * Objects are top-level (physics and animation only drive top-level objects) and named `[Area] Name`; each area also

@@ -331,15 +331,15 @@ class ProjectActionHandler(
     }
 
     /**
-     * Creates a project behind the loading screen (EDT-56): folders and the bundled assets are written in the
-     * background, then the default scenes (which load textures) are made and opened on the main thread.
+     * Creates a project behind the loading screen (EDT-56): folders, the engine defaults and the template's files are written in the
+     * background, then the template's scenes (which load textures) are made and opened on the main thread.
      */
     private fun createWithLoading(event: CreateProjectRequested) {
         var preparedDir: Result<File>? = null
         var command: CreateProjectCommand? = null
         val operation = LoadingOperation.Builder("loading.create_project.title", event.name)
             .background("loading.step.copy_assets", weight = 3f) {
-                preparedDir = projectManager.prepareProjectFolder(event.name, File(event.folderPath), event.copyEngineDefaults)
+                preparedDir = projectManager.prepareProjectFolder(event.name, File(event.folderPath), event.settings)
             }
             .main("loading.step.create_scenes") {
                 val dir = preparedDir?.getOrNull()
