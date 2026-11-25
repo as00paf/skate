@@ -1,6 +1,7 @@
 package com.pafoid.skate.editor.ui.windows
 
 import com.pafoid.skate.editor.imgui.Tooltips
+import com.pafoid.skate.editor.imgui.label
 import com.pafoid.skate.editor.imgui.tipped
 import com.pafoid.skate.editor.commands.input.BindingOperation
 import com.pafoid.skate.editor.events.ConsoleAction
@@ -11,9 +12,12 @@ import com.pafoid.skate.engine.core.StringManager
 import com.pafoid.skate.engine.input.ActionBinding
 import com.pafoid.skate.engine.input.ActionConflict
 import com.pafoid.skate.engine.input.ActionMap
+import com.pafoid.skate.engine.input.ActionOrigin
 import com.pafoid.skate.engine.input.BindingProfile
 import com.pafoid.skate.engine.input.ConflictResolution
 import com.pafoid.skate.engine.input.InputContext
+import com.pafoid.skate.engine.input.ProjectActionSet
+import com.pafoid.skate.engine.input.ProjectActions
 import com.pafoid.skate.engine.input.RawInput
 import imgui.ImGui
 import imgui.type.ImString
@@ -28,6 +32,8 @@ class ActionBindingsPanel(
     private val actionMap: () -> ActionMap?,
     private val raw: RawInput,
     private val profileStore: () -> BindingProfileStore?,
+    /** The project's own actions (INP-11); null hides the project action tools. */
+    private val projectActions: () -> ProjectActions? = { null },
 ) {
     private class CaptureTarget(val actionId: String, val index: Int?, val capture: BindingCapture)
     private class PendingConflict(val operation: BindingOperation.Rebind, val conflicts: List<ActionConflict>)
@@ -41,6 +47,9 @@ class ActionBindingsPanel(
     private var profiles: List<String> = emptyList()
     private var profilesStale = true
     private var status: String? = null
+    private val dialog = ProjectActionDialog(strings, events)
+    private var pendingDelete: String? = null
+    private var openDelete = false
 
     /** A click-to-rebind capture is waiting for input; the dialog must not treat that key as its own (Esc). */
     val isCapturing: Boolean get() = capturing != null
@@ -66,11 +75,29 @@ class ActionBindingsPanel(
         renderToolbar(map)
         ImGui.separator()
         renderGroups(map)
+        projectActions()?.let { actions ->
+            renderContexts(actions)
+            dialog.render(map, actions)
+            renderDeleteDialog(actions)
+        }
         renderMousePopup()
         renderConflictDialog()
     }
 
+    private fun project(): ProjectActionSet? = projectActions()?.current
+
+    private fun nameOf(map: ActionMap, id: String): String =
+        map.definition(id)?.let { ActionBindingsModel.actionName(it, ::translated) } ?: id
+
+    private fun editProject(after: ProjectActionSet, labelKey: String, vararg args: Any) =
+        events.publish(KeyBindingsAction.EditProjectActions(after, labelKey, args.toList()))
+
     private fun renderToolbar(map: ActionMap) {
+        if (projectActions() != null) {
+            if (ImGui.button(s("btn.keybindings.new_action") + "##kb_new_action")) dialog.newAction()
+            tip("tip.keybindings.new_action")
+            ImGui.sameLine()
+        }
         ImGui.setNextItemWidth(220f)
         ImGui.inputTextWithHint("##kb_search", s("lbl.keybindings.search_hint"), search)
         tip("tip.keybindings.search")
@@ -145,7 +172,7 @@ class ActionBindingsPanel(
     private fun renderGroups(map: ActionMap) {
         val groups = ActionBindingsModel.groups(
             map, search.get(),
-            nameOf = { translated(it.displayKey) ?: it.id },
+            nameOf = { ActionBindingsModel.actionName(it, ::translated) },
             categoryOf = { categoryLabel(it.category) },
             bindingLabel = { ActionBindingsModel.label(it, strings) },
         )
@@ -167,7 +194,9 @@ class ActionBindingsPanel(
         val id = row.definition.id
         ImGui.text(row.name + if (row.customized) " *" else "")
         if (row.customized) Tooltips.text(s("tip.keybindings.customized"))
-        ImGui.sameLine(220f)
+        ImGui.sameLine()
+        renderOrigin(row)
+        ImGui.sameLine(260f)
         row.bindings.forEachIndexed { i, binding ->
             val active = capturing?.let { it.actionId == id && it.index == i } == true
             val text = if (active) s("lbl.keybindings.press_input") else ActionBindingsModel.label(binding, strings)
@@ -198,6 +227,89 @@ class ActionBindingsPanel(
         }
     }
 
+    /** INP-11: every row shows where it is defined; project actions get Edit, Duplicate, Change id and Delete. */
+    private fun renderOrigin(row: ActionRow) {
+        val id = row.definition.id
+        if (row.definition.origin != ActionOrigin.PROJECT) {
+            ImGui.textDisabled(s("lbl.keybindings.origin.code"))
+            Tooltips.text(s("tip.keybindings.origin.code"))
+            return
+        }
+        if (ImGui.smallButton(s("lbl.keybindings.origin.project") + "##kb_${id}_menu")) ImGui.openPopup("##kb_menu_$id")
+        tip("tip.keybindings.origin.project")
+        if (!ImGui.beginPopup("##kb_menu_$id")) return
+        val set = project()
+        val action = set?.action(id)
+        if (set != null && action != null) {
+            if (strings.tipped(ImGui.menuItem(s("menu.keybindings.edit")), "menu.keybindings.edit")) dialog.editAction(action)
+            if (strings.tipped(ImGui.menuItem(s("menu.keybindings.duplicate")), "menu.keybindings.duplicate")) {
+                dialog.duplicateAction(action, set.actions.map { it.id }.toSet() + (actionMap()?.names ?: emptySet()))
+            }
+            if (strings.tipped(ImGui.menuItem(s("menu.keybindings.change_id")), "menu.keybindings.change_id")) dialog.changeId(action)
+            ImGui.separator()
+            if (strings.tipped(ImGui.menuItem(s("menu.keybindings.delete")), "menu.keybindings.delete")) {
+                pendingDelete = id
+                openDelete = true
+            }
+        }
+        ImGui.endPopup()
+    }
+
+    private fun renderDeleteDialog(actions: ProjectActions) {
+        val id = pendingDelete ?: return
+        if (openDelete) {
+            ImGui.openPopup(DELETE_POPUP)
+            openDelete = false
+        }
+        if (!ImGui.beginPopupModal(DELETE_POPUP, imgui.flag.ImGuiWindowFlags.AlwaysAutoResize)) return
+        ImGui.text(strings.getString("msg.keybindings.delete_confirm", actionMap()?.let { nameOf(it, id) } ?: id))
+        ImGui.textDisabled(s("msg.keybindings.delete_scripts"))
+        if (ImGui.button(s("menu.keybindings.delete") + "##kb_delete_ok")) {
+            editProject(actions.current.withoutAction(id), "command.project_actions.delete", id)
+            pendingDelete = null
+            ImGui.closeCurrentPopup()
+        }
+        tip("menu.keybindings.delete.tooltip")
+        ImGui.sameLine()
+        if (ImGui.button(s("btn.cancel") + "##kb_delete_cancel")) {
+            pendingDelete = null
+            ImGui.closeCurrentPopup()
+        }
+        tip("tip.keybindings.dialog_cancel")
+        ImGui.endPopup()
+    }
+
+    /** INP-11: built-in contexts read-only, project contexts editable. A context still used by an action cannot be deleted. */
+    private fun renderContexts(actions: ProjectActions) {
+        if (!ImGui.collapsingHeader(strings.label("lbl.keybindings.contexts"))) return
+        val set = actions.current
+        for (id in ProjectActionSet.BUILT_IN_CONTEXTS.sortedBy { InputContext(it).displayOrder }) {
+            ImGui.bulletText(contextLabel(InputContext(id)))
+            ImGui.sameLine()
+            ImGui.textDisabled(s("lbl.keybindings.origin.built_in"))
+            Tooltips.text(s("tip.keybindings.origin.built_in"))
+        }
+        for (ctx in set.contexts) {
+            ImGui.bulletText(contextLabel(InputContext(ctx.id)))
+            ImGui.sameLine()
+            ImGui.textDisabled(strings.getString("lbl.keybindings.context_summary", ctx.id, ctx.priority, s("lbl.keybindings.blocking.${ctx.blocking.name.lowercase()}")) +
+                if (ctx.activeAtStart) " " + s("lbl.keybindings.context_start_tag") else "")
+            ImGui.sameLine()
+            if (ImGui.smallButton(s("menu.keybindings.edit") + "##kb_ctx_edit_${ctx.id}")) dialog.editContext(ctx)
+            tip("menu.keybindings.edit.tooltip")
+            ImGui.sameLine()
+            val users = ActionBindingsModel.contextUsers(set, ctx.id)
+            if (users.isNotEmpty()) ImGui.beginDisabled()
+            if (ImGui.smallButton(s("menu.keybindings.delete") + "##kb_ctx_delete_${ctx.id}")) {
+                editProject(set.withoutContext(ctx.id), "command.project_actions.delete_context", ctx.id)
+            }
+            if (users.isNotEmpty()) ImGui.endDisabled()
+            Tooltips.text(if (users.isEmpty()) s("tip.keybindings.delete_context") else strings.getString("tip.keybindings.context_in_use", users.joinToString(", ")))
+        }
+        if (ImGui.button(s("btn.keybindings.new_context") + "##kb_new_context")) dialog.newContext()
+        tip("tip.keybindings.new_context")
+    }
+
     /** INP-10: the same input is bound in another context; the higher-priority one takes it while active. */
     private fun renderSharedHint(id: String, binding: ActionBinding) {
         val map = actionMap() ?: return
@@ -207,7 +319,7 @@ class ActionBindingsPanel(
         if (ImGui.isItemHovered()) {
             val names = shared.map { it.actionId }.distinct().joinToString(", ") { other ->
                 val def = map.definition(other)
-                val name = def?.let { translated(it.displayKey) } ?: other
+                val name = nameOf(map, other)
                 def?.let { "$name (${contextLabel(it.context)})" } ?: name
             }
             Tooltips.always(strings.getString("tip.keybindings.shared", names))
@@ -286,7 +398,7 @@ class ActionBindingsPanel(
         val map = actionMap()
         ImGui.text(s("lbl.keybindings.conflict_intro"))
         pending.conflicts.map { it.actionId }.distinct().forEach { other ->
-            val name = map?.definition(other)?.let { translated(it.displayKey) } ?: other
+            val name = map?.let { nameOf(it, other) } ?: other
             ImGui.bulletText("$name (${ActionBindingsModel.label(pending.operation.binding, strings)})")
         }
         if (pending.operation.index != null && ImGui.button(s("btn.keybindings.conflict_swap") + "##kb_swap")) {
@@ -309,7 +421,7 @@ class ActionBindingsPanel(
         ImGui.closeCurrentPopup()
     }
 
-    private fun contextLabel(context: InputContext) = s("lbl.keybindings.context.${context.id}")
+    private fun contextLabel(context: InputContext) = ActionBindingsModel.contextLabel(context, ::translated, project())
 
     private fun categoryLabel(category: String): String {
         return translated("lbl.keybindings.category.${category.lowercase()}") ?: category
@@ -320,5 +432,6 @@ class ActionBindingsPanel(
         /** Menu labels of mouse buttons 0..4 (GLFW order). */
         val MOUSE_BUTTON_KEYS = ActionBindingsModel.MOUSE_BUTTON_KEYS
         const val CONFLICT_POPUP = "kb_conflict_dialog"
+        const val DELETE_POPUP = "kb_delete_action_dialog"
     }
 }
