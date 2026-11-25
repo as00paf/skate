@@ -220,6 +220,11 @@ object ShaderConst {
         const val TERRAIN_TRIPLANAR_A = "uLayerTriplanarA"
         const val TERRAIN_TRIPLANAR_B = "uLayerTriplanarB"
         const val TERRAIN_BIOME_DEBUG = "uBiomeDebug"
+        /** Far field (REN-28 §15.4): 1 = macro-coloured tile, 2 = tile without macro yet, 0 = detail chunk. */
+        const val TERRAIN_FAR_TILE = "uFarTile"
+        const val TERRAIN_MACRO = "uMacro"
+        /** (min x, min z, size) of the macro map in world metres. */
+        const val TERRAIN_MACRO_AREA = "uMacroArea"
         /** Separate uniforms, not an array, so every backend maps them the same. */
         val TERRAIN_BIOME_COLORS = Array(8) { "uBiomeColor$it" }
 

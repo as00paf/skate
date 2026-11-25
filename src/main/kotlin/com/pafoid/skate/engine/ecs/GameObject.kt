@@ -5,7 +5,12 @@ import com.pafoid.skate.engine.core.MainThread
 import com.pafoid.skate.engine.ecs.components.Component
 import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.getComponent
+import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.builtins.ListSerializer
+import kotlinx.serialization.descriptors.SerialDescriptor
+import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.Transient
 
 @Serializable
@@ -68,7 +73,23 @@ open class GameObject(
      */
     @Transient
     var parent: GameObject? = null
+
+    /**
+     * Children in order. Runtime-only ones ([isRuntimeOnly]) are skipped when saving, so scene files, prefabs, the
+     * clipboard and Play snapshots never contain them.
+     */
+    @Serializable(with = PersistentChildrenSerializer::class)
     val children = mutableListOf<GameObject>()
+
+    /**
+     * Owned by a system that spawns it at runtime (ECS-19: terrain prefab scatter): never saved or copied with its
+     * parent, and not shown in the hierarchy. Not serialized itself (a saved object is never runtime-only).
+     */
+    @Transient
+    var isRuntimeOnly: Boolean = false
+
+    /** [children] without runtime-only objects: what the scene saves and the hierarchy shows. */
+    val persistentChildren: List<GameObject> get() = children.filterNot { it.isRuntimeOnly }
 
     /** The one rule for "top-level": directly under its [Scene]. */
     val isTopLevel: Boolean get() = parent is Scene
@@ -167,4 +188,13 @@ open class GameObject(
     override fun toString(): String {
         return super.toString() + "::$name"
     }
+}
+
+/** [GameObject.children] as a plain list, leaving out runtime-only objects (ECS-19). */
+internal object PersistentChildrenSerializer : KSerializer<MutableList<GameObject>> {
+    private val delegate by lazy { ListSerializer(GameObject.serializer()) }
+    override val descriptor: SerialDescriptor get() = delegate.descriptor
+    override fun serialize(encoder: Encoder, value: MutableList<GameObject>) =
+        delegate.serialize(encoder, value.filterNot { it.isRuntimeOnly })
+    override fun deserialize(decoder: Decoder): MutableList<GameObject> = delegate.deserialize(decoder).toMutableList()
 }

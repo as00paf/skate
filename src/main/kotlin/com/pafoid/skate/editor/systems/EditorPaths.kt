@@ -19,6 +19,8 @@ object EditorPaths {
     const val SETTINGS_FILE = "editor.config"
     const val IMGUI_INI = "imgui.ini"
     const val OPEN_WINDOWS_FILE = "imgui.windows"
+    /** EDT-84: which tool window button sits on which side bar. */
+    const val TOOL_BARS_FILE = "imgui.toolbars"
     const val SEARCH_HISTORY_FILE = "search_history.json"
 
     /** The user-data folder for this OS; pure, so callers can pass their own environment. */

@@ -23,6 +23,8 @@ data class SkateControllerConfig(
     val tricks: TrickTuning = TrickTuning(),
     /** Kinematic network step (GPL-17, [com.pafoid.skate.game.net.SkaterPredictionStep]). */
     val prediction: PredictionTuning = PredictionTuning(),
+    /** `*.skeleton.json` (in `Assets/Data/`) with the skater's sockets and equip slots; blank = built-in humanoid. */
+    val skeletonConfig: String = "",
     /** Animation clip per [SkateState] name. */
     val animations: Map<String, String> = mapOf(
         // State requests for configs/skater.controller.json (ANI-09); its procedural poses stand in until real clips ship.

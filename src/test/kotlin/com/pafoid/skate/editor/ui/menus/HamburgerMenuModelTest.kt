@@ -43,7 +43,8 @@ class HamburgerMenuModelTest {
             listOf("undo", "redo", "-", "cut", "copy", "paste", "duplicate", "delete", "-", "search"),
             shape(HamburgerMenuModel.EDIT.entries),
         )
-        assertEquals(listOf("windows>", "open_all", "close_all", "reset_layout"), shape(HamburgerMenuModel.VIEW.entries))
+        // EDT-84: Tool Window Bars after the windows submenu.
+        assertEquals(listOf("windows>", "tool_window_bars", "open_all", "close_all", "reset_layout"), shape(HamburgerMenuModel.VIEW.entries))
         assertEquals(listOf("play_pause", "stop", "reset"), shape(HamburgerMenuModel.PLAY.entries))
         assertEquals(listOf("test_input", "shell"), shape(HamburgerMenuModel.TOOLS.entries))
         // EDT-68 decision 6: Help Window… first, About last.

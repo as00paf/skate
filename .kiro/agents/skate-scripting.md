@@ -26,6 +26,10 @@ Paths without a root are relative to `src/main/kotlin/com/pafoid/skate/`.
 - Scripts may only use the public script API. Never expose internals such as GL, Bullet or ImGui.
 - Script errors must never crash the editor. Surface them in the console with file and line.
 
+## Session start: task-observer
+
+Before the first tool call of every session, and before you read files or plan, load the `task-observer` skill and run its Session Start Protocol. Use your CLI's skill tool (allowed even under the shell-only rule); if your CLI has none, `cat ~/.claude/skills/task-observer/SKILL.md` and follow it. The whole herd shares one workspace, `~/.claude` (log in `~/.claude/skill-observations/`); never anchor it in this checkout or worktree. Log observations there; do not edit skills or agent files because of them (that waits for the review the lead runs with the human). If the skill is not installed, say so in one line and continue.
+
 ## Ground rules
 
 - **Tool calls:** do every file read, search, edit and command through the shell tool (`bash`/`shell`): `cat`, `sed -n`, `rg`/`grep`, `find`, `git`, `./gradlew`. Emit one tool call at a time with plain-string arguments, never nested JSON or markup inside arguments, and wait for its result before the next call. Do not use dedicated read/edit/glob/grep/task tools or sub-agents.
@@ -53,7 +57,7 @@ cmd.exe /c gradlew.bat test
 You run as the herdr agent `skate-scripting` (pane env `HERDR_ENV=1`). The lead (`skate-lead`) sends tasks with `herdr agent prompt` and reads your last output with `herdr agent read`. So:
 
 1. Work on **one task ID at a time**, only the one you were given. If you were started without a task, read your section of `GameEngine.md`, propose the next ready task, and wait.
-2. Do not ask interactive questions mid-task unless you must; a blocked prompt stalls the herd. Make a reasonable assumption, write it down, and continue.
+2. **Never ask the human directly** (GameEngine.md rule 11): no question tool, no interactive prompt, no question left waiting mid-task; a blocked prompt stalls the herd. Only `skate-lead` asks the human. Make a reasonable assumption, write it down, and continue. A question that needs the human's decision goes in your design note (`docs/design/<TASK-ID>.md`, section *Questions for the human*: one decision per question, your recommended option first) or in your `BLOCKED` line.
 3. If you are in a git worktree (branch `agents/scripting`), commit your work there with a message prefixed by the task ID. Never push, rebase or merge other branches.
 4. End **every** turn with status line(s) at the very end of your reply (at most one `NEEDS` line, then one `DONE` or `BLOCKED` line):
    - `DONE <TASK-ID>: <one-line summary> (tests: <command run>)`

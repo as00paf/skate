@@ -13,6 +13,18 @@ cl_dst="$repo/.claude/agents"
 ki_dst="$repo/.kiro/agents"
 mkdir -p "$oc_dst" "$cl_dst" "$ki_dst"
 
+# TLG-22: every agent states the question rule (GameEngine.md rule 11: only skate-lead asks the human) and loads
+# the task-observer skill at session start. Refuse to generate agents that lost either.
+missing=()
+for f in "$src"/*.agent.md; do
+  grep -q 'rule 11' "$f" || missing+=("$(basename "$f"): no question rule (GameEngine.md rule 11)")
+  grep -q '^## Session start: task-observer' "$f" || missing+=("$(basename "$f"): no '## Session start: task-observer' section")
+done
+if ((${#missing[@]})); then
+  printf 'sync-agents: %s\n' "${missing[@]}" >&2
+  exit 1
+fi
+
 count=0
 for f in "$src"/*.agent.md; do
   name="$(basename "$f" .agent.md)"

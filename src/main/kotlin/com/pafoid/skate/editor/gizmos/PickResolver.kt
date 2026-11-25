@@ -50,7 +50,21 @@ object PickResolver {
 
     /** Resolves a picked [uid] in [scene] to the object to select, or null when nothing was hit. */
     fun resolve(scene: Scene, uid: Int, current: GameObject?): GameObject? =
-        findByUid(scene, uid)?.let { selectionTarget(it, current) }
+        findByUid(scene, uid)?.let(::pickable)?.let { selectionTarget(it, current) }
+
+    /**
+     * What a click on [hit] stands for (EDT-94): [hit] itself, or, inside a runtime-only subtree (terrain scatter,
+     * ECS-19), the saved object that owns that subtree. Null when the subtree hangs directly under the scene.
+     */
+    fun pickable(hit: GameObject): GameObject? {
+        var target: GameObject? = hit
+        var node: GameObject? = hit
+        while (node != null && node !is Scene) {
+            if (node.isRuntimeOnly) target = node.parent
+            node = node.parent
+        }
+        return target?.takeIf { it !is Scene }
+    }
 
     private fun ancestorChain(hit: GameObject): List<GameObject> {
         return (listOf(hit) + hit.ancestors()).asReversed()

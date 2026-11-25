@@ -97,6 +97,16 @@ object EngineDefaults {
         val ALL = listOf(SKATER_CHARACTER)
     }
 
+    /**
+     * Engine default materials (REN-43). [ROCK] is the grey rock of the default terrain scatter rules until real CC0
+     * rock models are bundled (`BiomePresets.ROCK_MATERIAL`).
+     */
+    object Materials {
+        const val ROCK = "engine:Materials/rock.skmat"
+
+        val ALL = listOf(ROCK)
+    }
+
     object Textures {
         const val ASPHALT = "engine:Textures/asphalt.png"
         const val CONCRETE_SIMPLE = "engine:Textures/concrete_simple.png"
@@ -190,7 +200,7 @@ object EngineDefaults {
 
     /** Every engine default a project can copy or reference, in copy order. */
     val CATALOG: List<String> =
-        Models.ALL + Animations.ALL + Animations.CONTROLLERS + Data.ALL + Textures.ALL + Sounds.ALL + Shaders.BASIC
+        Models.ALL + Animations.ALL + Animations.CONTROLLERS + Data.ALL + Materials.ALL + Textures.ALL + Sounds.ALL + Shaders.BASIC
 
     /**
      * Defaults every new project gets a copy of, in both copy modes: the basic shaders (AST-26 §5.1) and the skater

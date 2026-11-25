@@ -62,6 +62,8 @@ class FollowCameraComponent(
 /** Per-play state of a [FollowCameraComponent]; [initialized] false makes the next update snap instead of easing. */
 class FollowCameraState {
     var initialized = false
+    /** [ComponentSettings] seen last frame: an edit snaps the camera to the new pose (ECS-21). */
+    var settings: List<Any?>? = null
     /** Orbit angles in degrees, camera convention (see [Transform.lookAt]). */
     var yaw = 0f
     var pitch = 0f

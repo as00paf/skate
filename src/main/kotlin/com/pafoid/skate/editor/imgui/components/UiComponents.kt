@@ -1,5 +1,7 @@
 package com.pafoid.skate.editor.imgui.components
 
+import com.pafoid.skate.editor.imgui.EnumLabels
+import com.pafoid.skate.editor.imgui.MImGui
 import com.pafoid.skate.editor.imgui.TrailingButtons
 import com.pafoid.skate.editor.imgui.Tooltips
 import com.pafoid.skate.editor.imgui.tipped
@@ -44,17 +46,20 @@ private fun Component.requirementHint(engine: Engine) {
         UiProblem.NO_ELEMENT -> strings.getString("ui.hint.no_element") to ComponentType.UI_ELEMENT
         UiProblem.NO_CANVAS -> strings.getString("ui.hint.no_canvas") to ComponentType.UI_CANVAS
     }
+    ImGui.pushTextWrapPos(0f) // EDT-100: wraps in a narrow inspector
     ImGui.textColored(1f, 0.75f, 0.2f, 1f, message)
-    if (strings.tipped(ImGui.button(strings.getString("ui.hint.fix")), "ui.hint.fix")) engine.eventSystem.publish(ViewportAction.AddComponent(go, fix))
+    ImGui.popTextWrapPos()
+    if (strings.tipped(MImGui.fitButton(strings.getString("ui.hint.fix")), "ui.hint.fix")) engine.eventSystem.publish(ViewportAction.AddComponent(go, fix))
 }
 
 private fun UIElementComponent.anchorPresetCombo(engine: Engine) {
     val presets = UiAnchorPreset.entries
     val names = presets.map { engine.stringManager.getString("ui.anchor.${it.name.lowercase()}") }.toTypedArray()
     val index = ImInt(-1)
-    if (ImGui.combo(engine.stringManager.label("ui.inspector.anchorPreset"), index, names, names.size) && index.get() >= 0) {
-        presets[index.get()].apply(this)
+    val picked = MImGui.field(engine.stringManager.getString("ui.inspector.anchorPreset"), "ui.inspector.anchorPreset") {
+        ImGui.combo("##value", index, names, names.size)
     }
+    if (picked && index.get() >= 0) presets[index.get()].apply(this)
 }
 
 private fun drawObject(target: Any, engine: Engine, owner: Component) {
@@ -65,7 +70,6 @@ private fun drawObject(target: Any, engine: Engine, owner: Component) {
         val label = engine.stringManager.getString("ui.inspector.${field.name}")
         ImGui.pushID(field.name)
         drawField(target, field, label, engine, owner)
-        Tooltips.showIfPresent(engine.stringManager, "ui.inspector.${field.name}${Tooltips.SUFFIX}")
         ImGui.popID()
     }
 }
@@ -78,46 +82,51 @@ private fun allFields(c: Class<*>): List<Field> {
 private fun drawField(target: Any, field: Field, label: String, engine: Engine, owner: Component) {
     val type = field.type
     val value = field.get(target)
+    val tooltipKey = "ui.inspector.${field.name}${Tooltips.SUFFIX}"
+    // EDT-100: each value in the shared row, its label on the left, so a narrow inspector stacks instead of clipping.
+    fun row(control: () -> Unit) = MImGui.row(label, field.name) {
+        control()
+        Tooltips.showIfPresent(engine.stringManager, tooltipKey)
+    }
     when {
-        type == Int::class.javaPrimitiveType -> {
+        type == Int::class.javaPrimitiveType -> row {
             val v = intArrayOf(value as Int)
-            if (ImGui.dragInt(label, v, 1f)) field.set(target, v[0])
+            if (ImGui.dragInt("##value", v, 1f)) field.set(target, v[0])
         }
-        type == Float::class.javaPrimitiveType -> {
+        type == Float::class.javaPrimitiveType -> row {
             val v = floatArrayOf(value as Float)
-            if (ImGui.dragFloat(label, v, 0.5f)) field.set(target, v[0])
+            if (ImGui.dragFloat("##value", v, 0.5f)) field.set(target, v[0])
         }
-        type == Boolean::class.javaPrimitiveType -> {
-            if (ImGui.checkbox(label, value as Boolean)) field.set(target, !(value))
+        type == Boolean::class.javaPrimitiveType -> row {
+            if (ImGui.checkbox("##value", value as Boolean)) field.set(target, !(value))
         }
-        type == String::class.java -> {
+        type == String::class.java -> row {
             val s = ImString((value as? String) ?: "", 256)
-            if (ImGui.inputText(label, s)) field.set(target, s.get())
+            if (ImGui.inputText("##value", s)) field.set(target, s.get())
         }
-        type == Integer::class.java -> {
+        type == Integer::class.java -> row {
             // Nullable Int: a checkbox toggles presence.
             var present = value != null
             if (ImGui.checkbox("##present", present)) {
                 present = !present
                 field.set(target, if (present) 1 else null)
             }
-            ImGui.sameLine()
             if (value != null) {
+                ImGui.sameLine()
+                ImGui.setNextItemWidth(-1f)
                 val v = intArrayOf(value as Int)
-                if (ImGui.dragInt(label, v, 1f)) field.set(target, v[0])
-            } else {
-                ImGui.textDisabled(label)
+                if (ImGui.dragInt("##value", v, 1f)) field.set(target, v[0])
             }
         }
-        value is Vector4f -> {
+        value is Vector4f -> row {
             val c = floatArrayOf(value.x, value.y, value.z, value.w)
-            if (ImGui.colorEdit4(label, c)) value.set(c[0], c[1], c[2], c[3])
+            if (ImGui.colorEdit4("##value", c)) value.set(c[0], c[1], c[2], c[3])
         }
-        type.isEnum -> {
+        type.isEnum -> row {
             val constants = type.enumConstants
-            val names = constants.map { it.toString() }.toTypedArray()
+            val names = EnumLabels.all(engine.stringManager, constants.map { it as Enum<*> })
             val idx = ImInt((value as Enum<*>).ordinal)
-            if (ImGui.combo("$label###${field.name}", idx, names, names.size)) field.set(target, constants[idx.get()])
+            if (ImGui.combo("##value", idx, names, names.size)) field.set(target, constants[idx.get()])
         }
         value is List<*> && isStringList(field) -> stringList(target, field, label, engine, value)
         value != null && value !is List<*> && type.name.startsWith("com.pafoid.skate.engine.ui.") -> {
@@ -125,6 +134,7 @@ private fun drawField(target: Any, field: Field, label: String, engine: Engine, 
                 drawObject(value, engine, owner)
                 ImGui.treePop()
             }
+            Tooltips.showIfPresent(engine.stringManager, tooltipKey)
         }
     }
 }
