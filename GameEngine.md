@@ -166,7 +166,7 @@ Round 27+ goals (human, 2026-11-06): post-processing quality, render-graph clari
   - Do: (EDT-106 audit, `docs/design/EDT-106.md`; UI written by the owner, reviewed by skate-editor): a picker for `EnvironmentComponent.skyTexture`.
   - Done when: The sky can be picked or dropped, with undo; test.
   - Deps: EDT-108
-- [~] @skate-render **REN-47** `P0` Change the model of an existing RenderComponent
+- [x] **REN-47** `P0` Change the model of an existing RenderComponent
   - Do: (EDT-106 audit, `docs/design/EDT-106.md`; UI written by the owner, reviewed by skate-editor): picker or drop to change the model, keeping material overrides where slot names match.
   - Done when: The model changes with undo and keeps matching overrides; test.
   - Deps: EDT-108
@@ -174,7 +174,7 @@ Round 27+ goals (human, 2026-11-06): post-processing quality, render-graph clari
   - Do: (EDT-106 audit, `docs/design/EDT-106.md`; UI written by the owner, reviewed by skate-editor): select a material in the Project window to edit it (a `FileInspector`).
   - Done when: A material file can be edited and saved from the inspector; test.
   - Deps: none
-- [~] @skate-render **REN-49** `P1` Flaky `TerrainStreamingRenderTest.FarField_DrawsTilesWhereNoChunkIsUploaded`
+- [x] **REN-49** `P1` Flaky `TerrainStreamingRenderTest.FarField_DrawsTilesWhereNoChunkIsUploaded`
   - Do: (lead, round 39 integration, 2026-11-18): the test failed once in a full suite run and passes alone (3/3). Find the timing or shared-state dependency (async uploads, frame budget, a static streamer) and make it deterministic.
   - Done when: 20 full-suite runs pass it; or it is listed in `docs/bugs.md` with the cause.
   - Deps: REN-37
@@ -401,7 +401,7 @@ Round 27+ goals: the Asset Browser shows every asset type, one assets folder, ex
   - Do: (NEEDS from INP-11): confirm or make `Assets/Data/input.actions.json` packed in exports.
   - Done when: An exported game loads the project actions; test.
   - Deps: INP-11
-- [~] @skate-assets **AST-49** `P1` AssetsManager.loadModel recurses forever when the default cube cannot load
+- [x] **AST-49** `P1` AssetsManager.loadModel recurses forever when the default cube cannot load
   - Do: (NEEDS from EDT-59): fix the path-compare bug that makes `loadModel` recurse endlessly when the default cube fails to load (seen without a headless RHI device).
   - Done when: A failing default cube returns a fallback or error without recursion; regression test.
 
@@ -1229,7 +1229,7 @@ Round 27+ goals: a warning-free build.
   - Do: (human, Discord 2026-11-17): the editor is sometimes sluggish when creating a project or pressing Play. Profile those paths and every other heavy editor operation, list what runs on the UI thread that shouldn't (rule 10), and propose one task per owning domain to move it to coroutines with progress. Add a guard or timing test for the worst offenders.
   - Done when: An audit note `docs/design/QA-19.md` with measured timings exists and each offender has a backlog task.
   - Deps: none
-- [~] @skate-qa **QA-20** `P0` Editor coverage audit: every engine feature configurable, every component inspector complete
+- [x] **QA-20** `P0` Editor coverage audit: every engine feature configurable, every component inspector complete
   - Do: (human, 2026-11-25): list each engine feature and component and check it is configurable in the editor; for every existing component inspector, check each serialized field and setting is shown, editable (right widget, ranges, asset pickers, lists/maps/nested objects), tooltipped and translated. Write the gap list to `docs/design/QA-20.md` by domain (feature or field, where it is hardcoded, owner, proposed task); the lead adds the tasks to the backlog.
   - Done when: The report covers every component and engine system; each gap has an owner and a task ID; a guard test fails when a serialized component field has no inspector entry (with an explicit allowlist).
   - Deps: EDT-107, EDT-108
