@@ -38,6 +38,7 @@ import com.pafoid.skate.engine.physics3d.ShapePart
 import com.pafoid.skate.engine.physics3d.LongSet
 import com.pafoid.skate.engine.physics3d.ShapeWireframe
 import com.pafoid.skate.engine.physics3d.ColliderShape
+import com.pafoid.skate.engine.physics3d.ContactImpulse
 import com.pafoid.skate.engine.physics3d.IPhysics3D
 import com.pafoid.skate.engine.physics3d.IPhysicsBody3D
 import com.pafoid.skate.engine.physics3d.IRigidBodyHandle
@@ -465,6 +466,7 @@ class BulletPhysics3D(
     override fun step(fixedDt: Float) {
         if (!fixedDt.isFinite() || fixedDt <= 0f) return
 
+        recordPreStepVelocities(fixedDt)
         val startTime = System.nanoTime()
         physicsSpace.update(fixedDt, 0)
         EngineStats.physicsStepTime.set(System.nanoTime() - startTime)
@@ -481,6 +483,51 @@ class BulletPhysics3D(
     }
 
     private val contactBodies = ArrayList<PhysicsRigidBody>()
+
+    /** Velocities of the contact bodies before the last step, for the backend-neutral impulse ([ContactImpulse]). */
+    private val preStepVelocity = java.util.IdentityHashMap<PhysicsRigidBody, JomlVector3f>()
+
+    /** Kinematic bodies' locations at the previous step: Bullet keeps no velocity for them, so it is derived. */
+    private val kinematicLocation = java.util.IdentityHashMap<PhysicsRigidBody, JomlVector3f>()
+
+    private fun recordPreStepVelocities(fixedDt: Float) {
+        if (contactListener == null) return
+        if (preStepVelocity.size > contactBodies.size * 2) {
+            val live = contactBodies.toSet()
+            preStepVelocity.keys.retainAll(live)
+            kinematicLocation.keys.retainAll(live)
+        }
+        for (i in contactBodies.indices) {
+            val body = contactBodies[i]
+            val out = preStepVelocity.getOrPut(body) { JomlVector3f() }
+            when {
+                body.isKinematic -> {
+                    val now = body.getPhysicsLocation(tempContactVec)
+                    val last = kinematicLocation.getOrPut(body) { JomlVector3f(now.x, now.y, now.z) }
+                    out.set(now.x - last.x, now.y - last.y, now.z - last.z).div(fixedDt)
+                    last.set(now.x, now.y, now.z)
+                }
+                // libbulletjme only gives velocities of dynamic bodies; static ones are at rest
+                body.isDynamic -> body.getLinearVelocity(tempContactVec).let { out.set(it.x, it.y, it.z) }
+                else -> out.zero()
+            }
+        }
+    }
+
+    /** [obj]'s velocity before the last step (now, for a body that wasn't recorded) and its inverse mass. */
+    private fun preStepVelocity(obj: PhysicsCollisionObject, out: JomlVector3f): Float {
+        val body = obj as? PhysicsRigidBody ?: return 0f.also { out.zero() }
+        val recorded = preStepVelocity[body]
+        when {
+            recorded != null -> out.set(recorded)
+            body.isDynamic -> body.getLinearVelocity(tempContactVec).let { out.set(it.x, it.y, it.z) }
+            else -> out.zero()
+        }
+        return if (body.isDynamic) 1f / body.mass else 0f
+    }
+
+    private val selfVelocity = JomlVector3f()
+    private val otherVelocity = JomlVector3f()
     private val pending = ArrayList<PendingContact>()
     private var pendingCount = 0
     private var collisionsNow = LongSet()
@@ -518,7 +565,10 @@ class BulletPhysics3D(
                 event.getNormalWorldOnB(tempContactVec)
                 contact.normal.set(tempContactVec.x, tempContactVec.y, tempContactVec.z)
                 if (!bodyIsA) contact.normal.negate()
-                contact.impulse = event.appliedImpulse
+                // The normal points from the other body to this one
+                val selfInverse = preStepVelocity(body, selfVelocity)
+                val otherInverse = preStepVelocity(other, otherVelocity)
+                contact.impulse = ContactImpulse.of(selfVelocity.sub(otherVelocity).dot(contact.normal), selfInverse, otherInverse)
             }
         }
     }

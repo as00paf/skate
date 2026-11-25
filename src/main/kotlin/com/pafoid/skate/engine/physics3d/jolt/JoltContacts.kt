@@ -306,11 +306,8 @@ internal class JoltContacts(private val handleOf: (Int) -> JoltRigidBodyHandle?)
         }
 
         /** Native-free core of [impulseEstimate]: [relativeNormalSpeed] < 0 means the bodies approach. */
-        fun impulse(relativeNormalSpeed: Float, inverseMass1: Float, inverseMass2: Float): Float {
-            val inverseSum = inverseMass1 + inverseMass2
-            if (inverseSum <= 0f || relativeNormalSpeed >= 0f) return 0f
-            return -relativeNormalSpeed / inverseSum
-        }
+        fun impulse(relativeNormalSpeed: Float, inverseMass1: Float, inverseMass2: Float): Float =
+            com.pafoid.skate.engine.physics3d.ContactImpulse.of(relativeNormalSpeed, inverseMass1, inverseMass2)
 
         private fun inverseMass(body: Body): Float = if (body.isDynamic) body.motionProperties.inverseMass else 0f
     }
