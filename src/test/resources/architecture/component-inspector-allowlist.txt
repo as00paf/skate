@@ -67,7 +67,6 @@ NetworkIdentity.netId  # NET-09
 NetworkIdentity.ownerClientId  # NET-09
 PrefabInstance.overrides  # ECS-28
 RagdollComponent.state  # ANI-35
-RenderComponent.model  # REN-50
 RenderComponent.materialPath  # REN-50
 RigidBody3D.restitution  # PHY-36
 RigidBody3D.collisionLayer  # PHY-36
