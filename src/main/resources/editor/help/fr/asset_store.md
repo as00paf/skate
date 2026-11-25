@@ -8,6 +8,7 @@ La boutique réunit plusieurs bibliothèques gratuites :
 
 - **Poly Haven** et **ambientCG** : l'éditeur télécharge les fichiers pour vous.
 - **Kenney** et **Quaternius** : des packs sélectionnés. Vous téléchargez le zip sur leur site, et l'éditeur l'importe.
+- **NVIDIA SimReady** : des objets réalistes de NVIDIA, au format USD. L'éditeur les convertit en glTF avec Blender à l'import, il vous faut donc Blender 4.2 ou plus récent (son chemin est dans les [Paramètres de l'éditeur](editor_settings.md)). Certains matériaux peuvent paraître plus simples que dans les aperçus de NVIDIA.
 
 Gratuit ne veut pas toujours dire « sans conditions ». Chaque élément a une **licence** qui dit comment vous pouvez l'utiliser et si vous devez citer l'auteur. La boutique note la licence et l'auteur de tout ce que vous importez dans la liste d'**attributions** du projet.
 
