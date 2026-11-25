@@ -172,8 +172,19 @@ class AnimatorWindowController(
     }
 
     /** Saves the open controller; on success the characters using it are rebuilt (Q5: even in play mode). */
-    fun save(): Boolean {
-        val doc = document ?: return false
+    fun save(): Boolean = document?.let(::save) ?: false
+
+    /** Controllers with unsaved changes, shown in the window or not (EDT-82). */
+    fun unsavedDocuments(): List<ControllerDocument> = documents.values.filter { it.dirty && !it.readOnly }
+
+    /** Forgets [doc] and its unsaved changes (the file is untouched); reopening reads the file again. */
+    fun discard(doc: ControllerDocument) {
+        documents.values.remove(doc)
+        if (document === doc) close()
+    }
+
+    /** Saves [doc] (shown or not), e.g. from the editor's close prompt (EDT-82). */
+    fun save(doc: ControllerDocument): Boolean {
         if (doc.readOnly) { message = READ_ONLY; return false }
         val command = SaveControllerCommand(doc)
         execute(command)

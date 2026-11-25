@@ -23,7 +23,7 @@ class ScenePlaySnapshot private constructor(
     /** Resolves the saved selection against [scene]; paths that no longer exist are skipped. */
     fun selectionIn(scene: Scene): List<GameObject> = selectionPaths.mapNotNull { path ->
         var node: GameObject = scene
-        for (i in path) node = node.children.getOrNull(i) ?: return@mapNotNull null
+        for (i in path) node = node.persistentChildren.getOrNull(i) ?: return@mapNotNull null
         node
     }
 
@@ -65,7 +65,8 @@ class ScenePlaySnapshot private constructor(
 
         private fun pathOf(root: GameObject, target: GameObject): List<Int>? {
             if (root === target) return emptyList()
-            root.children.forEachIndexed { i, child -> pathOf(child, target)?.let { return listOf(i) + it } }
+            // Indices among saved children: the snapshot holds no runtime-only objects (EDT-94).
+            root.persistentChildren.forEachIndexed { i, child -> pathOf(child, target)?.let { return listOf(i) + it } }
             return null
         }
     }

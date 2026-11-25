@@ -67,12 +67,9 @@ class SoundsTab(
         ImGui.text(Icons.MUSIC)
 
         ImGui.tableNextColumn()
+        // The context menu and drag source attach to the last item, so they must follow the selectable directly: the
+        // engine badge is text with no ID, and a drag source on it is an ImGui assert, which aborts the editor (EDT-98).
         ImGui.selectable(file.name, false)
-        if (entry.badges.isNotEmpty()) {
-            ImGui.sameLine()
-            ImGui.textDisabled(EngineBadges.inline(stringManager, entry))
-            Tooltips.always(entry.badges.joinToString("\n") { stringManager.getString(it.tooltipKey) })
-        }
 
         if (ImGui.beginPopupContextItem(contextPopupId("sound"))) {
             val playStopLabel = if (isPlaying) 
@@ -109,6 +106,12 @@ class SoundsTab(
             ImGui.endDragDropSource()
         }
 
+        if (entry.badges.isNotEmpty()) {
+            ImGui.sameLine()
+            ImGui.textDisabled(EngineBadges.inline(stringManager, entry))
+            Tooltips.always(entry.badges.joinToString("\n") { stringManager.getString(it.tooltipKey) })
+        }
+
         ImGui.tableNextColumn()
         ImGui.text(durationText)
 
@@ -140,15 +143,23 @@ class SoundsTab(
             // Stop any currently playing sound
             playingSource?.close()
 
-            currentPlayingFile = file
+            playingSource = null
+            currentPlayingFile = null
+            // No audio device: say so instead of calling OpenAL without a context, which throws an Error (EDT-98)
+            val audio = engine.audioEngine
+            if (!audio.isInitialized) {
+                engine.logger.logEditor("SoundsTab: Audio is unavailable - cannot preview '${file.name}'", LogLevel.WARN)
+                return
+            }
             try {
+                audio.ensureContextCurrent()
                 val buffer = assetsManager.getSound(file.absolutePath)
                 if (buffer.bufferId != -1) {
-                    playingSource = SoundSource(isLooping = false, isRelative = true)
-                    playingSource?.setBuffer(buffer.bufferId)
-                    playingSource?.play()
-                } else {
-                    currentPlayingFile = null
+                    currentPlayingFile = file
+                    playingSource = audio.createSource(looping = false, relative = true).apply {
+                        setBuffer(buffer.bufferId)
+                        play()
+                    }
                 }
             } catch (e: Exception) {
                 engine.logger.logEditor("SoundsTab: Failed to load sound '${file.name}' - ${e.message}", LogLevel.ERROR)

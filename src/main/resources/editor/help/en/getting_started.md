@@ -14,6 +14,8 @@ The editor is made of dockable windows. The default layout shows:
 
 Every window has a tab. Drag a tab to move a window, close it with the X, and reopen it from **View > Windows**. The **?** button in a window header opens the help article for that window.
 
+The bars on the left and right edges have one button per tool window. Click a button to open its window; click it again to bring the window to the front, or to close it when it is already in front. **Alt+1** to **Alt+9** do the same for the most used windows (see **Settings > Key Bindings > Tool Windows**). Drag a button to another place on the bars, or right-click it and choose **Move to**: the window docks on that side. **View > Tool Window Bars** hides or shows the bars.
+
 To give a tool window more room, click the **Maximize** button next to its **?**, double-click its tab or press **Shift+Space**. By default the window fills the whole editor; you can choose to dock it over the Game Viewport instead in **Editor Settings > Interface**, and the tab's right-click menu offers both. Click **Restore** (in the window header or in the status bar), or press **Shift+Space** again, to put every window back where it was.
 
 ## Words you will see

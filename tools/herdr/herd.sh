@@ -7,7 +7,7 @@
 #          scripting online editor tooling qa vulkan   (default: all)
 #
 # Options:
-#   --kind copilot|opencode|claude  Agent CLI to run (default: copilot)
+#   --kind copilot|opencode|claude|kiro  Agent CLI to run (default: copilot)
 #   --worktrees              One git worktree + herdr workspace per domain agent
 #                            (branch agents/<domain>) instead of tabs in one workspace
 #   --no-lead                Don't start the skate-lead orchestrator
@@ -45,9 +45,15 @@ while (($#)); do
   esac
 done
 ((${#domains[@]})) || domains=("${ALL_DOMAINS[@]}")
-[[ "$kind" == copilot || "$kind" == opencode || "$kind" == claude ]] || { echo "--kind must be copilot, opencode or claude" >&2; exit 2; }
+[[ "$kind" == copilot || "$kind" == opencode || "$kind" == claude || "$kind" == kiro ]] || { echo "--kind must be copilot, opencode, claude or kiro" >&2; exit 2; }
 
-for bin in herdr jq git "$kind"; do
+# Map kind to the actual CLI binary name.
+case "$kind" in
+  kiro) cli=kiro-cli ;;
+  *)    cli="$kind" ;;
+esac
+
+for bin in herdr jq git "$cli"; do
   command -v "$bin" >/dev/null || { echo "missing required command: $bin" >&2; exit 1; }
 done
 herdr status server >/dev/null 2>&1 || { echo "herdr server is not running (run 'herdr' first)" >&2; exit 1; }
@@ -60,6 +66,7 @@ if ((worktrees)); then
   case "$kind" in
     opencode) agent_dir=".opencode/agents" ;;
     claude) agent_dir=".claude/agents" ;;
+    kiro) agent_dir=".kiro/agents" ;;
     *) agent_dir=".github/agents" ;;
   esac
   if ! git -C "$repo" ls-tree -r --name-only HEAD -- "$agent_dir" | grep -q .; then
@@ -99,13 +106,13 @@ worktree_pane() { # domain -> pane id (root pane of the worktree workspace)
 start_agent() { # name pane
   local name="$1" pane="$2" i
   ((start)) || { echo "  $name -> $pane (layout only)"; return; }
-  local args=(agent start "$name" --kind "$kind" --pane "$pane" --timeout 120000 --)
+  local args=(agent start "$name" --kind "$cli" --pane "$pane" --timeout 120000 --)
   if [[ "$kind" == claude ]]; then
     # Panes inherit the herdr server's environment; if it was started from a shell pointed at a
     # local model server (e.g. LM Studio), Claude Code would send its requests there instead.
     herdr pane run "$pane" "unset ANTHROPIC_BASE_URL ANTHROPIC_AUTH_TOKEN ANTHROPIC_API_KEY ANTHROPIC_MODEL" >/dev/null
   fi
-  if [[ "$kind" == copilot || "$kind" == claude ]]; then
+  if [[ "$kind" == copilot || "$kind" == claude || "$kind" == kiro ]]; then
     args+=(--agent "$name")
   else
     # OpenCode's TUI has no --agent flag: select the primary agent through inline config,

@@ -3,6 +3,7 @@ package com.pafoid.skate.engine.ecs.systems
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.components.CameraComponent
 import com.pafoid.skate.engine.ecs.components.CameraCycleComponent
+import com.pafoid.skate.engine.ecs.components.ComponentSettings
 import com.pafoid.skate.engine.ecs.components.FirstPersonCameraComponent
 import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.gameplay.camera.CameraCycle
@@ -18,7 +19,11 @@ import com.pafoid.skate.engine.ui.UIButtonComponent
  *   current position in the cycle is the [activeCamera], so Restart or Stop/Play, which reselect the default
  *   camera, never leave the cycle out of step;
  * - drives every [FirstPersonCameraComponent] (see [FirstPersonCameraRig]).
- * In edit mode nothing switches and first-person cameras stay where they were placed.
+ *
+ * In edit mode nothing switches and first-person cameras stay where they were placed; in a paused Play nothing switches
+ * either (clicks wait for Resume) and cameras hold still. In every mode an edit of a camera's settings shows on the
+ * next frame (ECS-21): the camera snaps to the pose for the new settings instead of easing toward it (or not moving).
+ * The first frame a camera is seen only records its settings, so loading a scene never moves a placed camera.
  */
 class CameraCycleSystem(
     private val reader: InputReader?,
@@ -29,6 +34,7 @@ class CameraCycleSystem(
     override val phase = SystemPhase.LATE_UPDATE
     override val runsAfter = listOf(MountFollowSystem::class)
     override val runsBefore = listOf(TransformSystem::class)
+    override val runsWhilePaused: Boolean get() = true
 
     private val cycles = query(CameraCycleComponent::class)
     private val firstPerson = query(FirstPersonCameraComponent::class, Transform::class)
@@ -36,11 +42,32 @@ class CameraCycleSystem(
 
     override fun update(dt: Float) {
         bindButtons()
-        if (!scene.isRunning) {
-            cycles.forEach { it.getComponent<CameraCycleComponent>()?.pendingClicks = 0 }
-            firstPerson.forEach { it.getComponent<FirstPersonCameraComponent>()?.state?.initialized = false }
-            return
+        val running = scene.isRunning
+        val paused = running && scene.isPaused
+        if (!running) cycles.forEach { it.getComponent<CameraCycleComponent>()?.pendingClicks = 0 }
+        else if (!paused) switchCameras()
+        firstPerson.forEach { go ->
+            val camera = go.getComponent<FirstPersonCameraComponent>() ?: return@forEach
+            val transform = go.getComponent<Transform>() ?: return@forEach
+            val settings = ComponentSettings.of(camera, RUNTIME_FIELDS)
+            val edited = camera.state.settings.let { it != null && it != settings }
+            camera.state.settings = settings
+            if (!running) camera.state.initialized = false // the next Play snaps
+            if (!camera.enabled) return@forEach
+            if (!running && !edited) return@forEach
+            if (paused && !edited) return@forEach
+            val target = scene.findFirstByName(camera.targetName, exclude = go) ?: return@forEach
+            val pose = FollowCameraSystem.followTarget(target)
+            if (edited) {
+                FirstPersonCameraRig.snap(camera, pose, transform)
+                if (!running) camera.state.initialized = false
+            } else {
+                FirstPersonCameraRig.update(camera, pose, dt, transform)
+            }
         }
+    }
+
+    private fun switchCameras() {
         cycles.forEach { go ->
             val cycle = go.getComponent<CameraCycleComponent>() ?: return@forEach
             if (!cycle.enabled) return@forEach
@@ -48,13 +75,6 @@ class CameraCycleSystem(
             cycle.pendingClicks = 0
             if (cycle.actionId.isNotEmpty() && reader?.wasActionPressed(cycle.actionId) == true) presses++
             if (presses > 0) advance(cycle, presses)
-        }
-        firstPerson.forEach { go ->
-            val camera = go.getComponent<FirstPersonCameraComponent>() ?: return@forEach
-            val transform = go.getComponent<Transform>() ?: return@forEach
-            if (!camera.enabled) return@forEach
-            val target = scene.findFirstByName(camera.targetName, exclude = go) ?: return@forEach
-            FirstPersonCameraRig.update(camera, FollowCameraSystem.followTarget(target), dt, transform)
         }
     }
 
@@ -91,5 +111,10 @@ class CameraCycleSystem(
             } ?: return@forEach
             button.onClick = { cycle.pendingClicks++ }
         }
+    }
+
+    private companion object {
+        /** Runtime state, not settings. */
+        val RUNTIME_FIELDS = setOf("state")
     }
 }

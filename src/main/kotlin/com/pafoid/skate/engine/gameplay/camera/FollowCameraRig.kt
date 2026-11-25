@@ -34,6 +34,15 @@ object FollowCameraRig {
     /** Camera yaw (degrees, [Transform.lookAt] convention) that looks the way a target facing [targetYaw] faces. */
     fun yawBehind(targetYaw: Float): Float = 180f - Math.toDegrees(targetYaw.toDouble()).toFloat()
 
+    /** Puts [camera] on its rest pose behind [target] at once (edit mode, a paused Play, a settings edit). */
+    fun snap(camera: FollowCameraComponent, target: FollowTarget, probe: SphereProbe?, out: Transform) {
+        camera.state.initialized = false
+        update(camera, target, 0f, probe, out)
+    }
+
+    /** Easing factor for [sharpness] over [dt]; 0 or less means no easing (ECS-21: 0 used to freeze the camera). */
+    private fun ease(sharpness: Float, dt: Float): Float = if (sharpness <= 0f) 1f else CameraMotion.smoothing(sharpness, dt)
+
     /** Advances [camera] by [dt] seconds and writes the camera pose to [out]. */
     fun update(camera: FollowCameraComponent, target: FollowTarget, dt: Float, probe: SphereProbe?, out: Transform) {
         val s = camera.state
@@ -53,10 +62,10 @@ object FollowCameraRig {
             s.idle = 0f
             s.time = 0f
         } else {
-            val preset = CameraMotion.smoothing(camera.presetSharpness, step)
+            val preset = ease(camera.presetSharpness, step)
             s.distance += (wantDistance - s.distance) * preset
             s.pivotHeight += (wantHeight - s.pivotHeight) * preset
-            s.pivot.lerp(Vector3f(target.position).add(0f, s.pivotHeight, 0f), CameraMotion.smoothing(camera.followSharpness, step))
+            s.pivot.lerp(Vector3f(target.position).add(0f, s.pivotHeight, 0f), ease(camera.followSharpness, step))
         }
 
         orbit(camera, target, step)

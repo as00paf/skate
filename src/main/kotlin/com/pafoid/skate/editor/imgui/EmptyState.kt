@@ -34,10 +34,12 @@ object EmptyState {
         val labels = actions.map { a -> strings.label(a.labelKey, a.icon?.let { "$it " } ?: "") }
         val widths = labels.map { ImGui.calcTextSize(it.substringBefore("###")).x + ImGui.getStyle().framePaddingX * 2 }
         val total = widths.sum() + spacing * (actions.size - 1)
-        ImGui.setCursorPosX(ImGui.getCursorPosX() + ((ImGui.getContentRegionAvailX() - total) / 2f).coerceAtLeast(0f))
+        // EDT-100: side by side and centred when they fit, else one under the other, each no wider than the window.
+        val oneLine = total <= ImGui.getContentRegionAvailX()
+        if (oneLine) ImGui.setCursorPosX(ImGui.getCursorPosX() + ((ImGui.getContentRegionAvailX() - total) / 2f).coerceAtLeast(0f))
         actions.forEachIndexed { i, action ->
-            if (i > 0) ImGui.sameLine()
-            if (strings.tipped(ImGui.button(labels[i]), action.labelKey)) action.onClick()
+            if (i > 0 && oneLine) ImGui.sameLine()
+            if (strings.tipped(MImGui.fitButton(labels[i]), action.labelKey)) action.onClick()
         }
     }
 
@@ -67,9 +69,16 @@ object EmptyState {
     fun nothingYet(strings: StringManager, icon: String, messageKey: String, hintKey: String? = null) =
         render(strings, icon, messageKey, hintKey)
 
+    /** Centred when it fits on one line; wrapped at the window's edge when it does not (EDT-100). */
     private fun centredDisabled(text: String) {
         val width = ImGui.calcTextSize(text).x
-        ImGui.setCursorPosX(ImGui.getCursorPosX() + ((ImGui.getContentRegionAvailX() - width) / 2f).coerceAtLeast(0f))
+        if (width <= ImGui.getContentRegionAvailX()) {
+            ImGui.setCursorPosX(ImGui.getCursorPosX() + ((ImGui.getContentRegionAvailX() - width) / 2f).coerceAtLeast(0f))
+            ImGui.textDisabled(text)
+            return
+        }
+        ImGui.pushTextWrapPos(0f)
         ImGui.textDisabled(text)
+        ImGui.popTextWrapPos()
     }
 }

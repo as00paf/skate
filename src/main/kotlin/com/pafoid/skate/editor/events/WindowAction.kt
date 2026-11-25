@@ -14,4 +14,7 @@ sealed class WindowAction(eventName: String) : Event(eventName) {
 
     /** EDT-88: puts the layout back as it was before maximizing (Search Everywhere). */
     object RestoreMaximized : WindowAction("window.restoreMaximized")
+
+    /** EDT-84: a tool window's side-bar button or shortcut: open it, bring it to the front, or close it. */
+    data class ToggleToolWindow(val name: String) : WindowAction("window.toggleToolWindow")
 }

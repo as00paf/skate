@@ -167,8 +167,7 @@ class ProjectExporter(
         } else null
 
         return try {
-            notices.addAll(0, assetsPacker.art(project).notices)
-            if (project.physicsBackend == PhysicsBackend.JOLT) notices += ExportNotice(ExportWarning.PHYSICS_JOLT_FALLBACK)
+            notices.addAll(0, warnings(project, assetsPacker.art(project), staleJar = null))
             notices.forEach { logger.logEngine("Export warning ${it.warning}: ${it.args.joinToString()}", LogLevel.WARN) }
             val debug = options.mode == BuildMode.DEBUG
             assetsPacker.pack(project, options.compress, options.onlyReferenced, outputDir, options.excludedScenes, writeReport = debug) { step, f, detail ->
@@ -208,8 +207,11 @@ class ProjectExporter(
     /**
      * Writes the project's graphics backend, quality, window and runtime settings into `game.settings.json` next to
      * `game.bin` (AST-12, REN-30, GUI-15), merging into any existing player choices (locale, etc.) rather than overwriting them.
+     * The editor's game language and pause menu options (the project's own `game.settings.json`) become the game's
+     * defaults, so the exported game starts as editor Play does (GUI-20).
      */
     private fun writeGameSettings(project: Project, outputDir: File) {
+        val editor = GameSettingsStore(GameSettings.fileIn(project.getProjectDirectory()), logger).settings
         GameSettingsStore(GameSettings.fileIn(outputDir), logger).update {
             it.copy(
                 graphicsBackend = project.graphicsBackend,
@@ -217,8 +219,7 @@ class ProjectExporter(
                 msaaSamples = project.msaaSamples,
                 textureQuality = project.textureQuality.name,
                 supportedLanguages = project.supportedLanguages,
-                startupLanguage = project.startupLanguage,
-            )
+            ).withEditorChoices(editor, project.supportedLanguages, project.startupLanguage)
         }
     }
 
@@ -252,6 +253,16 @@ class ProjectExporter(
         const val LAUNCHER = "run-game.bat"
         const val DEBUG_PROPERTY = "skate.debug"
         const val CREDITS_FILE = "CREDITS.txt"
+
+        /**
+         * The warnings an export of [project] gives (EDT-91 shows them before exporting): [art]'s icon/splash
+         * fallbacks, Jolt's fallback, and a stale game jar ([staleJar], when known).
+         */
+        fun warnings(project: Project, art: ExportArt, staleJar: File?): List<ExportNotice> = buildList {
+            addAll(art.notices)
+            if (project.physicsBackend == PhysicsBackend.JOLT) add(ExportNotice(ExportWarning.PHYSICS_JOLT_FALLBACK))
+            staleJar?.let { add(ExportNotice(ExportWarning.GAME_JAR_STALE, listOf(it.path))) }
+        }
 
         /** The credits text for [entries] (sorted by title, one block each; OSM data gets its ODbL line). */
         fun credits(gameName: String, entries: List<LedgerEntry>): String = buildString {
