@@ -28,6 +28,13 @@ object EngineStats {
     val terrainUploadNs = AtomicLong(0)
     val terrainGpuBytes = AtomicLong(0)
     val terrainCpuBytes = AtomicLong(0)
+    /**
+     * `StreamingFocus` bodies frozen because their ground had no collider yet (REN-28 §15.5): PHY-28 increments it;
+     * the *Big Island* check (task 22) shows it stays 0 at normal speeds.
+     */
+    val terrainFrozenFocus = AtomicInteger(0)
+    /** Bytes of remembered scatter state over all terrains (REN-28 §15.10.4). */
+    val terrainStateBytes = AtomicLong(0)
     /** Far-field tiles drawn this frame (REN-28 §15.4). */
     val terrainFarTiles = AtomicInteger(0)
 

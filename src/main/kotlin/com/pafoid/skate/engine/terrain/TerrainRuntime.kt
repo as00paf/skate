@@ -49,11 +49,66 @@ class TerrainRuntime {
     /** Chunk indices (`cz * chunksPerSide + cx`) never evicted: unsaved edits (REN-28 §15.7). */
     val pinned: MutableSet<Int> = java.util.Collections.synchronizedSet(HashSet())
 
+    /**
+     * Remembered scatter state (REN-28 §15.10): destroyed, taken, moved and changed items, kept across chunk unloads
+     * and saved with the game. Cleared when the world changes (a different key).
+     */
+    val scatterState = com.pafoid.skate.engine.terrain.scatter.ScatterStateStore()
+
+    /** Game time for scatter records (respawn timers), advanced by `TerrainSystem` while the scene runs. */
+    var stateTime = 0f
+
+    /**
+     * Chunks in some focus's physics ring (REN-28 §15.1), by index; null when every chunk counts (not streamed).
+     * Published by the streamer each update; colliders and scatter entities follow it (PHY-28, ECS).
+     */
+    @Volatile
+    var physicsRing: BooleanArray? = null
+
+    /** Per chunk index: its collider is in the physics world (set by PHY-28); bodies over a chunk without one freeze. */
+    @Volatile
+    var colliderPresent: BooleanArray = BooleanArray(0)
+
+    /** True when chunk ([cx], [cz]) is in the physics ring (always, when not streamed). */
+    fun isPhysicsChunk(cx: Int, cz: Int): Boolean {
+        val l = layout ?: return false
+        if (!l.isValidChunk(cx, cz)) return false
+        return physicsRing?.get(cz * l.chunksPerSide + cx) ?: true
+    }
+
+    /** Chunk indices edited (sculpted, painted) since the terrain was built: sparse edits (REN-28 §15.2). */
+    val edited: MutableSet<Int> = java.util.Collections.synchronizedSet(HashSet())
+
+    /** True when the terrain has edits a reroll would leave behind (the editor warns, REN-28 §5.1). */
+    val hasEdits: Boolean get() = edited.isNotEmpty()
+
+    /** Bumped when [overview] changes in place (edited chunks refreshed into it), so far tiles and the macro redo. */
+    var overviewVersion = 0L
+        private set
+
+    /**
+     * Applies [scatterState] to a chunk that just became resident: drops records whose items no longer match the
+     * placement (a patch changed a rule or the ground), and lets expired `DESTROYED` / `TAKEN` items respawn.
+     */
+    fun applyScatterState(chunk: TerrainChunkData) {
+        val g = generator ?: return
+        val store = scatterState
+        if (store.delta(chunk.cx, chunk.cz) == null) return
+        val entries = g.scatterEntries
+        val fingerprints = HashMap<String, Long>()
+        for (e in entries) fingerprints[e.rule.id] = com.pafoid.skate.engine.terrain.scatter.ScatterFingerprint.of(g.projectSeed, g.seedName, g.seedOffset, e.rule, chunk)
+        store.validate(chunk.cx, chunk.cz, fingerprints) { ruleId, ordinal ->
+            chunk.scatter.firstOrNull { entries.getOrNull(it.rule)?.rule?.id == ruleId && it.key == ordinal }?.let { floatArrayOf(it.x, it.z) }
+        }
+        store.expire(chunk.cx, chunk.cz, stateTime) { ruleId -> entries.firstOrNull { it.rule.id == ruleId }?.rule?.respawnAfterSeconds ?: 0f }
+    }
+
     /** Adds a streamed-in chunk (replacing any at its position). */
     fun putChunk(chunk: TerrainChunkData) {
         val l = layout ?: return
         if (!l.isValidChunk(chunk.cx, chunk.cz)) return
         grid[chunk.cz * l.chunksPerSide + chunk.cx] = chunk
+        applyScatterState(chunk)
         version++
     }
 
@@ -68,10 +123,10 @@ class TerrainRuntime {
         return old
     }
 
-    /** Rebuilds every chunk when [key] differs from the built one; returns true when it did. */
     /** Waits for the overview of a streamed terrain (tests, loading screens); null when not streamed. */
     fun awaitOverview(): TerrainOverview? = overviewBuild?.join()?.takeIf { overview === it }
 
+    /** Rebuilds every chunk when [key] differs from the built one; returns true when it did. */
     fun ensureBuilt(key: TerrainKey, parallel: Boolean = true): Boolean {
         if (key == this.key) return false
         val l = TerrainLayout(key.size, key.spacing, key.chunkQuads)
@@ -82,6 +137,12 @@ class TerrainRuntime {
         grid = arrayOfNulls(l.chunkCount)
         streamed = key.streamed
         overview = null
+        physicsRing = null
+        colliderPresent = BooleanArray(l.chunkCount)
+        edited.clear(); pinned.clear()
+        // A different world: remembered items no longer exist (runtime reseed, recipe or rule edit in Play)
+        val previous = this.key
+        if (previous != null && worldOf(previous) != worldOf(key)) scatterState.clear()
         layout = l
         generator = g
         this.key = key
@@ -92,6 +153,7 @@ class TerrainRuntime {
                 .thenApply { o -> if (this.generator === g) overview = o; o }
         } else {
             for (c in TerrainChunkBuilder.buildAll(g, parallel)) grid[c.cz * l.chunksPerSide + c.cx] = c
+            for (c in grid) if (c != null) applyScatterState(c)
         }
         version++
         return true
@@ -103,13 +165,36 @@ class TerrainRuntime {
      */
     fun markEdited() {
         val g = generator
-        if (g != null) for (c in chunks) if (c.dirty) TerrainChunkBuilder.refreshDerived(g, c)
+        val l = layout
+        val o = overview
+        for (c in chunks) if (c.dirty) {
+            if (g != null) TerrainChunkBuilder.refreshDerived(g, c)
+            if (l != null) edited += c.cz * l.chunksPerSide + c.cx
+            // Sparse edits keep the overview (far field, far queries) in step, incrementally (REN-28 §15.7)
+            o?.refresh(c)
+        }
+        if (o != null) overviewVersion++
         version++
     }
 
+    /**
+     * Throws the edits away (the reroll warning's "discard"): rebuilds from the recipe on the next `ensureBuilt`.
+     * Saved region records are the asset's business (AST); this only drops the in-memory edits.
+     */
+    fun discardEdits() {
+        edited.clear(); pinned.clear()
+        key = null
+        version++
+    }
+
+    /** Only what makes the world itself (not streaming or rendering settings). */
+    private fun worldOf(k: TerrainKey) = k.copy(streamed = false)
+
     fun clear() {
         overviewBuild?.cancel(true); overviewBuild = null; overview = null
-        key = null; generator = null; layout = null; grid = emptyArray(); streamed = false; pinned.clear(); version++
+        key = null; generator = null; layout = null; grid = emptyArray(); streamed = false; pinned.clear(); edited.clear()
+        physicsRing = null
+        version++
     }
 }
 

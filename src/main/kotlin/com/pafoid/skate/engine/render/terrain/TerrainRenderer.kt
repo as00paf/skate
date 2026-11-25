@@ -55,6 +55,7 @@ class TerrainRenderer(
         val byIndex = HashMap<Int, GpuChunk>()
         var far: FarFieldRenderer? = null
         var macroFor: com.pafoid.skate.engine.terrain.TerrainOverview? = null
+        var macroVersion = Long.MIN_VALUE
         var macroJob: java.util.concurrent.CompletableFuture<*>? = null
         var version = -1L
         var layers: TerrainLayerArrays? = null
@@ -196,8 +197,9 @@ class TerrainRenderer(
         val runtime = terrain.runtime
         val overview = runtime.overview ?: return
         val generator = runtime.generator ?: return
-        if (resident.macroFor === overview) return
+        if (resident.macroFor === overview && resident.macroVersion == runtime.overviewVersion) return
         resident.macroFor = overview
+        resident.macroVersion = runtime.overviewVersion
         resident.macroJob?.cancel(true)
         val colours = resident.layers?.averageColors ?: TerrainLayerImages.DEFAULT_COLORS
         resident.macroJob = java.util.concurrent.CompletableFuture.supplyAsync { TerrainMacro.bakeFromOverview(generator, overview, colours) }
@@ -217,7 +219,7 @@ class TerrainRenderer(
         val vertexLayout = layout ?: return
         val far = resident.far ?: FarFieldRenderer(device(), vertexLayout).also { resident.far = it }
         far.draw(shader, chunkLayout, overview, runtime.macro, draw.position, camera, farDistance, frustum,
-            { cx, cz -> resident.byIndex.containsKey(cz * chunkLayout.chunksPerSide + cx) }, colour,
+            { cx, cz -> resident.byIndex.containsKey(cz * chunkLayout.chunksPerSide + cx) }, colour, runtime.overviewVersion,
         ) { colourPipelines.get(shader, vertexLayout) }
     }
 

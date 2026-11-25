@@ -20,6 +20,16 @@ data class StreamingRings(
     companion object {
         /** The detail ring never shrinks below this under memory pressure (REN-28 §15.4). */
         const val MIN_DETAIL = 256f
+
+        /**
+         * Rings for a graphics quality preset (REN-28 §15.4, task 21): Low and Medium shrink the detail and far rings,
+         * High and Ultra use the defaults. The physics ring never changes with quality (gameplay must not).
+         */
+        fun forQuality(quality: String?): StreamingRings = when (quality?.uppercase()) {
+            "LOW" -> StreamingRings(detail = 256f, far = 2000f)
+            "MEDIUM" -> StreamingRings(detail = 384f, far = 3000f)
+            else -> StreamingRings()
+        }
     }
 }
 

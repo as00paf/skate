@@ -173,6 +173,21 @@ data class TerrainComponent(
          * grass with rocks, rocky peak) and one flattened pad at local ([padX], [padZ]) for a ramp. TLG places it and
          * wires a "Reroll seed" button to [reroll].
          */
+        /**
+         * The *Big Island* sample terrain (REN-28 §11, task 22): a 4 km streamed island at 2 m spacing with the default
+         * biomes and a flattened skatepark plateau at local ([plateauX], [plateauZ]), [plateauHeight] m up.
+         */
+        fun bigIsland(plateauX: Float = 0f, plateauZ: Float = 400f, plateauHeight: Float = 12f): TerrainComponent = TerrainComponent(
+            sizeMetres = 4096f,
+            sampleSpacing = 2f,
+            heightScaleMetres = 140f,
+            chunkQuads = 64,
+            recipe = TerrainPreset.ISLAND.recipe(),
+            stamps = mutableListOf(TerrainStamp(x = plateauX, y = plateauHeight, z = plateauZ, width = 160f, depth = 120f, falloff = 40f, priority = 10)),
+            streaming = TerrainStreaming.ON,
+            seedName = "terrain/big-island",
+        )
+
         fun showcaseIsland(padX: Float = -18f, padZ: Float = 10f, padHeight: Float = 3f): TerrainComponent = TerrainComponent(
             sizeMetres = 96f,
             sampleSpacing = 0.5f,
