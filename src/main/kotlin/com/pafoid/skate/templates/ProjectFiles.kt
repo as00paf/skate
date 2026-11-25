@@ -1,6 +1,5 @@
-package com.pafoid.skate.cli
+package com.pafoid.skate.templates
 
-import com.pafoid.skate.editor.project.EngineAssetCopier
 import com.pafoid.skate.editor.project.Project
 import com.pafoid.skate.engine.assets.serialization.FileKind
 import com.pafoid.skate.engine.assets.serialization.Serializer
@@ -11,7 +10,7 @@ import java.io.File
  * Writes scene and project files the way the editor saves them (AST-09, TLG-14): versioned, with every asset
  * reference relative to the project folder, so the project can be moved or exported and still load.
  */
-internal class ProjectFiles(private val serializer: Serializer, projectDir: File) {
+class ProjectFiles(private val serializer: Serializer, projectDir: File) {
     val projectDir: File = projectDir.absoluteFile.normalize()
 
     /** Runs [block] with the serializer's project root set to [projectDir], then restores the previous root. */
@@ -26,7 +25,7 @@ internal class ProjectFiles(private val serializer: Serializer, projectDir: File
         }
     }
 
-    /** Saves [scene] to `Scenes/<name>.scene` and returns the file. */
+    /** Saves [scene] to `<scenesDir>/<name>.scene` and returns the file. */
     fun writeScene(scenesDir: File, name: String, scene: Scene): File =
         File(scenesDir.absoluteFile, "$name.scene").also { file ->
             inProject { file.writeText(serializer.encodeFile(FileKind.SCENE, scene)) }
@@ -35,17 +34,5 @@ internal class ProjectFiles(private val serializer: Serializer, projectDir: File
     /** Saves [project] to its `projectPath`. */
     fun writeProject(project: Project): File = File(project.projectPath).also { file ->
         inProject { file.writeText(serializer.encodeFile(FileKind.PROJECT, project)) }
-    }
-}
-
-/**
- * Copies the engine defaults into [projectDir] (AST-26 §4.3): the whole catalog when [copyAll], else only the basic
- * shaders (reference mode, used by the samples). They are read relative to the working directory, so running from
- * anywhere but the repository root would write a project whose `engine:` references resolve to nothing; that is an
- * error instead.
- */
-internal fun copyEngineAssets(projectDir: File, copyAll: Boolean = true, copier: EngineAssetCopier = EngineAssetCopier()) {
-    copier.copyEngineDefaults(projectDir, copyAll).onFailure { e ->
-        throw CliException("Could not copy the engine assets into ${projectDir.path} (run from the repository root): ${e.message}")
     }
 }

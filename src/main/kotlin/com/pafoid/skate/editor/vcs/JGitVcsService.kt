@@ -1,22 +1,32 @@
 package com.pafoid.skate.editor.vcs
 
+import com.pafoid.skate.editor.vcs.auth.GitCredential
+import com.pafoid.skate.editor.vcs.auth.RemoteUrls
 import org.eclipse.jgit.api.CheckoutCommand
+import org.eclipse.jgit.api.MergeResult
+import org.eclipse.jgit.api.TransportCommand
 import org.eclipse.jgit.api.Git
 import org.eclipse.jgit.api.errors.CheckoutConflictException
 import org.eclipse.jgit.api.errors.GitAPIException
 import org.eclipse.jgit.api.errors.NotMergedException
 import org.eclipse.jgit.api.errors.RefAlreadyExistsException
+import org.eclipse.jgit.api.errors.TransportException
 import org.eclipse.jgit.diff.DiffAlgorithm
 import org.eclipse.jgit.diff.DiffEntry
 import org.eclipse.jgit.diff.Edit
 import org.eclipse.jgit.diff.RawText
 import org.eclipse.jgit.diff.RawTextComparator
+import org.eclipse.jgit.lib.BranchTrackingStatus
+import org.eclipse.jgit.lib.ConfigConstants
 import org.eclipse.jgit.lib.Constants
 import org.eclipse.jgit.lib.Repository
 import org.eclipse.jgit.lib.RepositoryState
 import org.eclipse.jgit.revwalk.RevCommit
 import org.eclipse.jgit.revwalk.RevWalk
 import org.eclipse.jgit.storage.file.FileRepositoryBuilder
+import org.eclipse.jgit.transport.RemoteRefUpdate
+import org.eclipse.jgit.transport.URIish
+import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider
 import org.eclipse.jgit.treewalk.CanonicalTreeParser
 import org.eclipse.jgit.treewalk.EmptyTreeIterator
 import org.eclipse.jgit.treewalk.TreeWalk
@@ -161,6 +171,7 @@ class JGitVcsService(private val root: File) : VcsService {
             local = refs.map { Repository.shortenRefName(it.name) }.sorted(),
             tips = refs.mapNotNull { ref -> ref.objectId?.let { Repository.shortenRefName(ref.name) to it.name } }.toMap(),
             head = repo.resolve(Constants.HEAD)?.name,
+            tracking = if (onBranch) tracking(repo, repo.branch) else null,
         )
     }
 
@@ -278,8 +289,161 @@ class JGitVcsService(private val root: File) : VcsService {
         }
     }
 
+    private fun tracking(repo: Repository, branch: String): VcsTracking? =
+        BranchTrackingStatus.of(repo, branch)?.let {
+            VcsTracking(Repository.shortenRefName(it.remoteTrackingBranch), it.aheadCount, it.behindCount)
+        }
+
+    override fun remotes(): List<VcsRemote> = git { g ->
+        g.remoteList().call().map { r -> VcsRemote(r.name, r.urIs.firstOrNull()?.toString().orEmpty()) }.sortedBy { it.name }
+    }
+
+    override fun setRemote(url: String, name: String) {
+        val parsed = RemoteUrls.strip(url)
+        if (parsed.hadCredentials) throw VcsException("vcs.error.credentials_in_url")
+        if (parsed.url.isEmpty()) throw VcsException("vcs.error.invalid_remote", url)
+        val uri = try {
+            URIish(parsed.url)
+        } catch (e: java.net.URISyntaxException) {
+            throw VcsException("vcs.error.invalid_remote", parsed.url, cause = e)
+        }
+        git { g ->
+            if (g.remoteList().call().any { it.name == name }) g.remoteSetUrl().setRemoteName(name).setRemoteUri(uri).call()
+            else g.remoteAdd().setName(name).setUri(uri).call()
+        }
+    }
+
+    private fun remoteUrl(g: Git): String =
+        g.remoteList().call().firstOrNull { it.name == VcsService.ORIGIN }?.urIs?.firstOrNull()?.toString()
+            ?: throw VcsException("vcs.error.no_remote")
+
+    /** Runs a network command with [credential]; maps authentication and network failures to clear messages. */
+    private fun <C : TransportCommand<C, T>, T> C.withAuth(g: Git, credential: GitCredential?): T {
+        val url = remoteUrl(g)
+        credential?.let { setCredentialsProvider(UsernamePasswordCredentialsProvider(it.username, it.secret)) }
+        return try {
+            call()
+        } catch (e: TransportException) {
+            throw transportError(url, e)
+        }
+    }
+
+    override fun fetch(credential: GitCredential?) = git { g ->
+        g.fetch().setRemote(VcsService.ORIGIN).withAuth(g, credential)
+        Unit
+    }
+
+    override fun pull(credential: GitCredential?, author: VcsAuthor): PullOutcome {
+        if (status().any { it.kind != ChangeKind.UNTRACKED }) throw VcsException("vcs.error.uncommitted_changes_pull")
+        return git { g ->
+            val repo = g.repository
+            val branch = currentBranch(repo)
+            g.fetch().setRemote(VcsService.ORIGIN).withAuth(g, credential)
+            val remoteRef = repo.findRef(Constants.R_REMOTES + VcsService.ORIGIN + "/" + branch)
+                ?: return@git PullOutcome.UP_TO_DATE
+            setUpstreamIfMissing(repo, branch)
+            if (repo.resolve(Constants.HEAD) == null) throw VcsException("vcs.error.no_commits")
+            val result = g.merge().include(remoteRef).setCommit(false)
+                .setMessage("Merge ${Repository.shortenRefName(remoteRef.name)} into $branch").call()
+            when (result.mergeStatus) {
+                MergeResult.MergeStatus.ALREADY_UP_TO_DATE -> PullOutcome.UP_TO_DATE
+                MergeResult.MergeStatus.FAST_FORWARD -> PullOutcome.FAST_FORWARD
+                MergeResult.MergeStatus.MERGED_NOT_COMMITTED, MergeResult.MergeStatus.MERGED -> {
+                    if (result.mergeStatus == MergeResult.MergeStatus.MERGED_NOT_COMMITTED) {
+                        g.commit().setAuthor(author.name, author.email).setCommitter(author.name, author.email).call()
+                    }
+                    PullOutcome.MERGED
+                }
+                MergeResult.MergeStatus.CONFLICTING -> {
+                    keepOursOnDisk(g, result.conflicts?.keys.orEmpty())
+                    PullOutcome.CONFLICTS
+                }
+                else -> throw VcsException(
+                    "vcs.error.pull_blocked",
+                    (result.failingPaths?.keys ?: result.checkoutConflicts.orEmpty()).joinToString(),
+                )
+            }
+        }
+    }
+
+    /** EDT-60 §7.2: structured files never hold conflict markers on disk; they keep our version until resolved. */
+    private fun keepOursOnDisk(g: Git, conflicted: Set<String>) {
+        conflicted.filter { isStructured(it) }.forEach { path ->
+            val ours = stageBytes(g, path, 2)
+            val file = File(root, path)
+            if (ours != null) file.writeBytes(ours) else file.delete()
+        }
+    }
+
+    override fun push(credential: GitCredential?) = git { g ->
+        val repo = g.repository
+        val branch = currentBranch(repo)
+        if (repo.resolve(Constants.HEAD) == null) throw VcsException("vcs.error.no_commits")
+        val results = g.push().setRemote(VcsService.ORIGIN).add(branch).withAuth(g, credential)
+        results.flatMap { it.remoteUpdates }.forEach { update ->
+            when (update.status) {
+                RemoteRefUpdate.Status.OK, RemoteRefUpdate.Status.UP_TO_DATE -> Unit
+                RemoteRefUpdate.Status.REJECTED_NONFASTFORWARD, RemoteRefUpdate.Status.REJECTED_REMOTE_CHANGED ->
+                    throw VcsException("vcs.error.push_rejected")
+                else -> throw VcsException("vcs.error.push_failed", update.message ?: update.status.name)
+            }
+        }
+        setUpstreamIfMissing(repo, branch)
+        Unit
+    }
+
+    private fun currentBranch(repo: Repository): String {
+        if (repo.fullBranch?.startsWith(Constants.R_HEADS) != true) throw VcsException("vcs.error.detached")
+        return repo.branch
+    }
+
+    private fun setUpstreamIfMissing(repo: Repository, branch: String) {
+        val config = repo.config
+        if (config.getString(ConfigConstants.CONFIG_BRANCH_SECTION, branch, ConfigConstants.CONFIG_KEY_REMOTE) != null) return
+        config.setString(ConfigConstants.CONFIG_BRANCH_SECTION, branch, ConfigConstants.CONFIG_KEY_REMOTE, VcsService.ORIGIN)
+        config.setString(ConfigConstants.CONFIG_BRANCH_SECTION, branch, ConfigConstants.CONFIG_KEY_MERGE, Constants.R_HEADS + branch)
+        config.save()
+    }
+
     companion object {
         const val DEFAULT_BRANCH = "main"
+
+        private val STRUCTURED = setOf("scene", "prefab", "meta", "skateproject")
+
+        fun isStructured(path: String): Boolean = path.substringAfterLast('.', "").lowercase() in STRUCTURED
+
+        /** An authentication failure asks for sign-in ([host] as the argument); anything else is a network error. */
+        internal fun transportError(url: String, e: Exception): VcsException {
+            val m = (e.message ?: "").lowercase()
+            val auth = listOf("not authorized", "authentication", "credentialsprovider", "not permitted", "401", "403")
+            return if (auth.any { it in m }) {
+                VcsException("vcs.error.auth_required", RemoteUrls.host(url) ?: url, cause = e)
+            } else {
+                VcsException("vcs.error.network", e.message ?: e.javaClass.simpleName, cause = e)
+            }
+        }
+    }
+}
+
+/** [VcsCloner] on JGit; a failed clone leaves no half-made folder behind. */
+object JGitCloner : VcsCloner {
+    override fun clone(url: String, into: File, credential: GitCredential?) {
+        val parsed = RemoteUrls.strip(url)
+        if (parsed.hadCredentials) throw VcsException("vcs.error.credentials_in_url")
+        if (into.exists() && into.list()?.isNotEmpty() == true) throw VcsException("vcs.error.clone_target_not_empty", into.path)
+        val created = !into.exists()
+        try {
+            Git.cloneRepository().setURI(parsed.url).setDirectory(into)
+                .apply { credential?.let { setCredentialsProvider(UsernamePasswordCredentialsProvider(it.username, it.secret)) } }
+                .call().close()
+        } catch (e: Exception) {
+            if (created) into.deleteRecursively() else into.listFiles()?.forEach { it.deleteRecursively() }
+            throw when (e) {
+                is TransportException -> JGitVcsService.transportError(parsed.url, e)
+                is GitAPIException -> VcsException("vcs.error.git", e.message ?: e.javaClass.simpleName, cause = e)
+                else -> e
+            }
+        }
     }
 }
 

@@ -21,8 +21,8 @@ import java.util.logging.Logger
 /**
  * Shows what characters wear (GPL-24 §6.5, rigid items for now). On [ItemEquipped] it adds a child `Equip:<slot>`
  * with the item's model and a [BoneAttachment] on the slot's socket; on [ItemUnequipped] it removes that child.
- * After each scene init (on the first update) it rebuilds every character's children from its [EquipmentComponent],
- * replacing `Equip:*` children that a save may have kept. Skinned clothes, hidden body parts and material overrides come with GPL-24f.
+ * The children are runtime-only (never saved); after each scene init (on the first update) they are rebuilt from
+ * each character's [EquipmentComponent], replacing any `Equip:*` child an older save kept. Skinned clothes, hidden body parts and material overrides come with GPL-24f.
  *
  * [loadModel] loads a model by path (the engine's assets; a fake in tests); a model that fails to load shows nothing.
  */
@@ -77,7 +77,7 @@ class AppearanceSystem(
             ?: return logger.warning("Slot '$slotId' has no socket for rigid item '${stack.itemId}'")
         val model = runCatching { loadModel(equip.model) }.getOrNull()
             ?: return logger.warning("Item '${stack.itemId}': model '${equip.model}' could not be loaded")
-        val child = GameObject(PREFIX + slotId)
+        val child = GameObject(PREFIX + slotId).apply { isRuntimeOnly = true }
             .addComponent(Transform())
             .addComponent(RenderComponent(model))
             .addComponent(BoneAttachment(socket, Vector3f(equip.offset), Vector3f(equip.rotationDeg), Vector3f(equip.scale)))

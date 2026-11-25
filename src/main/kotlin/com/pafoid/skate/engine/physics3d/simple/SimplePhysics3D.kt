@@ -8,6 +8,7 @@ import com.pafoid.skate.engine.getComponent
 import com.pafoid.skate.engine.physics3d.ALL_LAYERS
 import com.pafoid.skate.engine.physics3d.BodyType
 import com.pafoid.skate.engine.physics3d.ColliderShape
+import com.pafoid.skate.engine.physics3d.ContactImpulse
 import com.pafoid.skate.engine.physics3d.IPhysics3D
 import com.pafoid.skate.engine.physics3d.IPhysicsBody3D
 import com.pafoid.skate.engine.physics3d.IRigidBodyHandle
@@ -196,7 +197,11 @@ class SimplePhysics3D : IPhysics3D {
             if (isNew) notifyTrigger(a, b, enter = true)
             return
         }
-        val impulse = resolve(a, b, contact.normal, contact.depth)
+        // Backend-neutral impulse (ContactImpulse): closing speed before resolving; the normal points from a to b
+        val impulse = ContactImpulse.of(
+            Vector3f(a.linearVelocity).sub(b.linearVelocity).dot(Vector3f(contact.normal).negate()), a.inverseMass, b.inverseMass,
+        )
+        resolve(a, b, contact.normal, contact.depth)
         val ga = a.owner
         val gb = b.owner
         if (isNew && ga != null && gb != null) contactListener?.onCollisionStarted(ga, gb, contact.point, contact.normal, impulse)

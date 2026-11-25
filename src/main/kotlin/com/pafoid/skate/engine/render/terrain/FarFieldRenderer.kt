@@ -35,6 +35,7 @@ class FarFieldRenderer(private val device: RhiDevice, layout: RhiVertexLayout) :
     private val selected = ArrayList<FarTile>()
     private val staging = FloatArray(mesh.vertexCount * TerrainMeshBuilder.STREAM_FLOATS)
     private var overview: TerrainOverview? = null
+    private var overviewVersion = Long.MIN_VALUE
     private var macro: RhiTexture? = null
     private var macroSource: TerrainMacro? = null
     private val corner = Vector3f()
@@ -50,9 +51,14 @@ class FarFieldRenderer(private val device: RhiDevice, layout: RhiVertexLayout) :
     fun draw(
         shader: Shader, layout: TerrainLayout, overview: TerrainOverview, macro: TerrainMacro?, position: Vector3f,
         camera: Vector3f, farDistance: Float, frustum: FrustumIntersection, detailed: (Int, Int) -> Boolean, colour: Boolean,
+        overviewVersion: Long = 0L,
         pipeline: () -> com.pafoid.skate.engine.render.rhi.RhiPipeline?,
     ) {
-        if (overview !== this.overview) { tiles.values.forEach(pool::release); tiles.clear(); this.overview = overview }
+        // A new overview, or edits refreshed into it (REN-28 §15.7): rebuild the tiles from it
+        if (overview !== this.overview || overviewVersion != this.overviewVersion) {
+            tiles.values.forEach(pool::release); tiles.clear()
+            this.overview = overview; this.overviewVersion = overviewVersion
+        }
         if (colour && macro != null && macro !== macroSource) uploadMacro(macro)
         FarFieldQuadtree.select(layout, camera.x - position.x, camera.z - position.z, farDistance, detailed, selected)
         val p = pipeline() ?: return

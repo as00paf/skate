@@ -34,9 +34,11 @@ import com.pafoid.skate.engine.getComponent
 import com.pafoid.skate.engine.physics3d.BodyType
 import com.pafoid.skate.engine.ui.UICanvasComponent
 import com.pafoid.skate.engine.ui.UIElementComponent
+import com.pafoid.skate.engine.ui.UIProgressBarComponent
 import com.pafoid.skate.engine.ui.UITextComponent
 import com.pafoid.skate.game.prefabs.Floor
 import com.pafoid.skate.game.samples.FeatureShowcase
+import com.pafoid.skate.game.ui.GameUi
 import com.pafoid.skate.game.prefabs.MaterialType
 import com.pafoid.skate.game.prefabs.PrefabCatalog
 import com.pafoid.skate.game.prefabs.PrefabType
@@ -44,6 +46,7 @@ import com.pafoid.skate.game.prefabs.Skateboard
 import com.pafoid.skate.game.prefabs.Skater
 import com.pafoid.skate.game.prefabs.SkateparkShapes
 import org.joml.Vector3f
+import org.joml.Vector4f
 import java.io.File
 
 /**
@@ -277,7 +280,7 @@ class PrefabsGenerator(
     /**
      * The default skate scene: a follow camera (GPL-05) on the skater, the board, the floor and a few obstacles. The
      * quarter pipe behind the spawn and the funbox give the camera's spring arm something to collide with. The
-     * [CameraCycle.ACTION] input cycles third-person, first-person and fixed cameras (GPL-22); there is no HUD button
+     * [CameraCycle.ACTION] input cycles third-person, first-person and spot cameras (GPL-22, GPL-23); there is no HUD button
      * for it (GPL-30).
      */
     fun spawnDefaultsSync(): List<GameObject> {
@@ -286,19 +289,33 @@ class PrefabsGenerator(
             .addComponent(Transform(Vector3f(0f, 2.2f, -3.9f)))
             .addComponent(FollowCameraComponent(targetName = "Skater"))
             .addComponent(CameraCycleComponent(
-                cameraNames = listOf(CAMERA_THIRD_PERSON, CAMERA_FIRST_PERSON, CAMERA_FIXED).joinToString(", "),
+                cameraNames = listOf(CAMERA_THIRD_PERSON, CAMERA_FIRST_PERSON, CAMERA_SPOT).joinToString(", "),
             ))
         val firstPerson = GameObject(CAMERA_FIRST_PERSON)
             .addComponent(CameraComponent(fov = 70f, nearPlane = 0.05f))
             .addComponent(Transform(Vector3f(0f, 1.75f, 0.25f)))
             .addComponent(FirstPersonCameraComponent(targetName = "Skater"))
-        // High front-right corner of the starting area, looking back at the spawn.
-        val fixed = GameObject(CAMERA_FIXED)
+        // Placed at the start plaza's spot; SpotCameraSystem moves it to the zone's spot and follows the skater (GPL-23).
+        val spotCamera = GameObject(CAMERA_SPOT)
             .addComponent(CameraComponent())
             .addComponent(Transform(Vector3f(5f, 3.5f, 7f)).apply { lookAt(Vector3f(0f, 0.8f, 0f)) })
         val skater = spawnSkater()
         val skate = spawnSkateboard()
-        return listOf(camera, firstPerson, fixed, skate, skater) + spawnSkatepark() + spawnHud()
+        return listOf(camera, firstPerson, spotCamera, skate, skater) + spawnSkatepark() + spawnCameraSpots() + spawnHud()
+    }
+
+    /**
+     * One filmer's spot per park zone (GPL-23 §7), tagged [CAMERA_SPOT_TAG]: the spot camera films from the one
+     * nearest the skater. Move them in the editor to change the angles.
+     */
+    fun spawnCameraSpots(): List<GameObject> = listOf(
+        "Plaza" to Vector3f(5f, 3.5f, 7f),
+        "Street" to Vector3f(-6f, 4f, 18f),
+        "Flat" to Vector3f(-18f, 3f, -4f),
+        "Transition" to Vector3f(18f, 4.5f, 6f),
+        "Bowl" to Vector3f(16f, 4f, -16f),
+    ).map { (zone, position) ->
+        GameObject("CameraSpot_$zone").addComponent(Transform(position)).also { it.tag = CAMERA_SPOT_TAG }
     }
 
     /**
@@ -348,21 +365,27 @@ class PrefabsGenerator(
     }
 
     /**
-     * In-game (non-ImGui) HUD: a score line top-left and the trick name bottom-centre, which the trick HUD fills while
-     * riding (GPL-21). Restart is in the Esc menu; cameras cycle with the [CameraCycle.ACTION] input (GPL-30).
+     * In-game (non-ImGui) HUD, the one HUD of editor Play and the exported game (GPL-23 §6): the combo chain top
+     * centre, the trick name bottom centre with the control hint under it, the manual balance meter and the
+     * interaction prompt (GPL-24d) above it. [com.pafoid.skate.game.ui.SkateHudSystem] fills them while riding; no
+     * score yet. Restart is in the Esc menu; cameras cycle with the [CameraCycle.ACTION] input (GPL-30).
      */
     fun spawnHud(): GameObject {
         val canvas = GameObject("HUD").addComponent(UICanvasComponent())
-        canvas.addChild(
-            GameObject("ScoreText")
-                .addComponent(UIElementComponent().placed(0f, 0f, 40f, 30f, 500f, 60f))
-                .addComponent(UITextComponent("hud.score", listOf("0"), fontSize = 44f))
+        fun text(name: String, size: Float, anchorY: Float, y: Float, width: Float) = canvas.addChild(
+            GameObject(name)
+                .addComponent(UIElementComponent().placed(0.5f, anchorY, 0f, y, width, size * 1.3f))
+                .addComponent(UITextComponent("", fontSize = size, alignX = 0.5f))
         )
+        text(COMBO_TEXT, 48f, 0f, 30f, 1600f)
+        text(TRICK_TEXT, 72f, 1f, -120f, 1000f)
+        text(HINT_TEXT, 30f, 1f, -50f, 1600f)
         canvas.addChild(
-            GameObject(TRICK_TEXT)
-                .addComponent(UIElementComponent().placed(0.5f, 1f, 0f, -120f, 1000f, 96f))
-                .addComponent(UITextComponent("", fontSize = 72f))
+            GameObject(BALANCE_METER)
+                .addComponent(UIElementComponent(visible = false).placed(0.5f, 1f, 0f, -230f, 360f, 18f))
+                .addComponent(UIProgressBarComponent(value = 0.5f, fillColor = Vector4f(0.95f, 0.75f, 0.2f, 1f)))
         )
+        text(PROMPT_TEXT, 40f, 1f, -280f, 800f)
         return canvas
     }
 
@@ -375,9 +398,20 @@ class PrefabsGenerator(
         /** MainScene cameras, in the order the [CameraCycle.ACTION] input cycles them (GPL-22). */
         const val CAMERA_THIRD_PERSON = "Camera"
         const val CAMERA_FIRST_PERSON = "FirstPersonCamera"
-        const val CAMERA_FIXED = "FixedCamera"
+        /** Follows the skater from the nearest zone spot (GPL-23; it replaced the fixed camera). */
+        const val CAMERA_SPOT = "SpotCamera"
+        /** [GameObject.tag] of the spot camera's zone spots. */
+        const val CAMERA_SPOT_TAG = "CameraSpot"
         /** HUD text showing the current / last landed trick (empty key: hidden). */
-        const val TRICK_TEXT = "TrickText"
+        const val TRICK_TEXT = GameUi.TRICK_NAME
+        /** HUD text showing the combo chain (GPL-23; empty key: hidden). */
+        const val COMBO_TEXT = GameUi.COMBO_NAME
+        /** HUD text showing the control hint (GPL-23; empty key: hidden). */
+        const val HINT_TEXT = GameUi.HINT_NAME
+        /** HUD progress bar showing the manual balance (GPL-23; hidden outside manuals). */
+        const val BALANCE_METER = GameUi.BALANCE_NAME
+        /** HUD text showing the interaction prompt (GPL-24d; empty key: hidden). */
+        const val PROMPT_TEXT = GameUi.PROMPT_NAME
 
         /** [GameObject.tag] of rails, ledges and boxes that trucks can lock onto (docs/obstacles.md). */
         const val GRINDABLE_TAG = "GRINDABLE"

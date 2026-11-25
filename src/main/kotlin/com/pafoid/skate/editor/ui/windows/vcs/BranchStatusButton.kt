@@ -139,6 +139,9 @@ class BranchStatusButton(
     private fun actionRow(entry: BranchPopupModel.Entry) {
         val (key, icon) = when (entry.action) {
             Action.UPDATE -> "vcs.popup.update" to Icons.ARROW_DOWN
+            Action.PUSH -> "vcs.popup.push" to Icons.ARROW_UP
+            Action.REMOTE -> "vcs.popup.remote" to Icons.LINK
+            Action.SIGN_IN -> "vcs.popup.sign_in" to Icons.USER
             Action.COMMIT -> "vcs.popup.commit" to Icons.CHECK
             Action.CHANGES -> "vcs.popup.changes" to Icons.LIST
             Action.RESOLVE -> "vcs.popup.resolve" to Icons.WARNING
@@ -161,7 +164,11 @@ class BranchStatusButton(
             Action.HISTORY -> show(VcsWindows.LOG)
             Action.NEW_BRANCH -> modals.newBranch.show(null)
             Action.INITIALIZE -> modals.initialize.open()
-            Action.UPDATE, Action.CLONE -> Unit
+            Action.UPDATE -> eventSystem.publish(VcsAction.Pull)
+            Action.PUSH -> eventSystem.publish(VcsAction.Push)
+            Action.REMOTE -> modals.remote.show()
+            Action.SIGN_IN -> BranchPopupModel.signInHost(session.state)?.let { modals.signIn.show(it) }
+            Action.CLONE -> Unit
         }
     }
 

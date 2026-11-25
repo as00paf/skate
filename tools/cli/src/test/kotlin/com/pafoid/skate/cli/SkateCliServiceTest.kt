@@ -79,7 +79,7 @@ class SkateCliServiceTest {
     fun Samples_HaveOneAssetsFolder() {
         val dir = Files.createTempDirectory("skate-cli").toFile()
         try {
-            listOf(TetrisProjectBuilder().build(dir), MarbleRunProjectBuilder().build(dir), ShowcaseProjectBuilder().build(dir)).forEach { project ->
+            listOf(SkateCliService(out = {}).createSample("tetris", dir), SkateCliService(out = {}).createSample("marble-run", dir), SkateCliService(out = {}).createSample("feature-showcase", dir)).forEach { project ->
                 val projectDir = project.parentFile
                 assertTrue(ProjectLayout.duplicateAssetFolders(projectDir).isEmpty(), "${projectDir.name}: ${ProjectLayout.duplicateAssetFolders(projectDir)}")
             }

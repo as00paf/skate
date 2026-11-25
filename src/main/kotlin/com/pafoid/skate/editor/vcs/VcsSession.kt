@@ -1,5 +1,8 @@
 package com.pafoid.skate.editor.vcs
 
+import com.pafoid.skate.editor.vcs.auth.GitCredential
+import com.pafoid.skate.editor.vcs.auth.GitCredentials
+import com.pafoid.skate.editor.vcs.auth.SessionCredentialStore
 import com.pafoid.skate.engine.core.JobSystem
 import java.io.File
 
@@ -63,6 +66,8 @@ class VcsSession(
     private val factory: (File) -> VcsService = ::JGitVcsService,
     private val historyLimit: Int = 300,
     private val clock: () -> Long = System::currentTimeMillis,
+    /** Git credentials per host (EDT-60 §5); the editor passes the OS store. */
+    val credentials: GitCredentials = GitCredentials(SessionCredentialStore()),
 ) {
     data class State(
         val root: File? = null,
@@ -72,6 +77,8 @@ class VcsSession(
         /** Every local branch's history, newest first (the Git log). */
         val history: List<VcsCommit> = emptyList(),
         val error: VcsException? = null,
+        /** The remotes (EDT-60 phase 2), without credentials. */
+        val remotes: List<VcsRemote> = emptyList(),
         val busy: Boolean = false,
         val loaded: Boolean = false,
         /** Goes up with every completed read, so views can tell their data is stale. */
@@ -80,6 +87,7 @@ class VcsSession(
         val entries: List<ChangeEntry> get() = VcsStatusModel.entries(changes)
         val conflicts: List<String> get() = changes.filter { it.kind == ChangeKind.CONFLICTING }.map { it.path }
         val hasConflicts: Boolean get() = changes.any { it.kind == ChangeKind.CONFLICTING }
+        val origin: VcsRemote? get() = remotes.firstOrNull { it.name == VcsService.ORIGIN }
     }
 
     /** Called on the main side with every refused or failed action. */
@@ -167,7 +175,7 @@ class VcsSession(
         if (!svc.isRepository()) State(loaded = true)
         else State(
             isRepository = true, changes = svc.status(), branches = svc.branches(),
-            history = svc.log(historyLimit, allBranches = true), loaded = true,
+            history = svc.log(historyLimit, allBranches = true), remotes = svc.remotes(), loaded = true,
         )
     } catch (e: VcsException) {
         State(loaded = true, isRepository = svc.isRepository(), error = e)
@@ -203,6 +211,10 @@ class VcsSession(
     fun refuse(error: VcsException) {
         onActionFailed(error)
     }
+
+    /** The stored credential for [vcs]'s `origin` host, or null (public remotes, local paths, not signed in). */
+    fun credentialFor(vcs: VcsService): GitCredential? =
+        vcs.remotes().firstOrNull { it.name == VcsService.ORIGIN }?.let { credentials.forUrl(it.url) }
 
     /** The author for a new commit: Git's own configuration, else the OS user name. */
     fun author(): VcsAuthor {

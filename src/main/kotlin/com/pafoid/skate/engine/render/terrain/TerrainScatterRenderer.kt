@@ -11,6 +11,8 @@ import com.pafoid.skate.engine.terrain.ScatterInstance
 import com.pafoid.skate.engine.terrain.ScatterPlacer
 import com.pafoid.skate.engine.terrain.ScatterRule
 import com.pafoid.skate.engine.terrain.TerrainChunkData
+import com.pafoid.skate.engine.terrain.TerrainRuntime
+import com.pafoid.skate.engine.terrain.scatter.TerrainScatter
 import org.joml.FrustumIntersection
 import org.joml.Matrix4f
 import org.joml.Quaternionf
@@ -33,7 +35,11 @@ class TerrainScatterRenderer(
 ) {
     class RuleBatches(val rule: ScatterRule, val batches: List<InstanceBatch>, val count: Int, val radius: Float)
 
-    private class ChunkScatter(val source: List<ScatterInstance>, val rules: List<RuleBatches>)
+    private class ChunkScatter(val source: List<ScatterInstance>, val rules: List<RuleBatches>, val stateVersion: Int)
+
+    /** Batch (re)builds allowed per frame (REN-28 §15.5): streamed chunks get their scatter over a few frames. */
+    var buildsPerFrame = DEFAULT_BUILDS_PER_FRAME
+    private var buildsLeft = DEFAULT_BUILDS_PER_FRAME
 
     private val chunks = IdentityHashMap<TerrainChunkData, ChunkScatter>()
     private val models = HashMap<String, `3dModel`?>()
@@ -50,17 +56,23 @@ class TerrainScatterRenderer(
     var instancesDrawn = 0
         private set
 
-    fun resetCounters() { instancesDrawn = 0 }
+    fun resetCounters() { instancesDrawn = 0; buildsLeft = buildsPerFrame }
 
     fun setFrustum(viewProjection: Matrix4f) { frustum.set(viewProjection) }
     fun setFrustum(projection: Matrix4f, view: Matrix4f) { frustum.set(vp.set(projection).mul(view)) }
 
     /** The batches of [chunk] (terrain at [terrainPosition]), built or rebuilt when its scatter list changed. */
-    fun batches(chunk: TerrainChunkData, rules: List<ScatterPlacer.Entry>, terrainPosition: Vector3f): List<RuleBatches> {
+    fun batches(chunk: TerrainChunkData, rules: List<ScatterPlacer.Entry>, terrainPosition: Vector3f, runtime: TerrainRuntime? = null): List<RuleBatches> {
         val existing = chunks[chunk]
-        if (existing != null && existing.source === chunk.scatter) return existing.rules
+        val stateVersion = runtime?.scatterState?.chunkVersion(chunk.cx, chunk.cz) ?: 0
+        if (existing != null && existing.source === chunk.scatter && existing.stateVersion == stateVersion) return existing.rules
+        // Over this frame's build budget: keep drawing what exists (or nothing yet)
+        if (buildsLeft <= 0) return existing?.rules ?: emptyList()
+        buildsLeft--
         existing?.rules?.forEach { r -> r.batches.forEach { it.close() } }
-        val byRule = chunk.scatter.groupBy { it.rule }
+        // Items with a record (destroyed, taken, moved, changed) never come from placement (REN-28 §15.10.3)
+        val visible = if (runtime == null) chunk.scatter else chunk.scatter.filterNot { TerrainScatter.hidden(runtime, chunk, it) }
+        val byRule = visible.groupBy { it.rule }
         val built = byRule.mapNotNull { (ruleIndex, items) ->
             val rule = rules.getOrNull(ruleIndex)?.rule ?: return@mapNotNull null
             if (rule.model.isBlank()) return@mapNotNull null
@@ -74,7 +86,7 @@ class TerrainScatterRenderer(
             }
             RuleBatches(rule, batches, sorted.size, sorted.maxOfOrNull { it.scale } ?: 1f)
         }
-        chunks[chunk] = ChunkScatter(chunk.scatter, built)
+        chunks[chunk] = ChunkScatter(chunk.scatter, built, stateVersion)
         return built
     }
 
@@ -93,7 +105,7 @@ class TerrainScatterRenderer(
      */
     fun draw(
         shader: Shader, chunk: TerrainChunkData, rules: List<ScatterPlacer.Entry>, terrainPosition: Vector3f,
-        chunkMin: Vector3f, chunkMax: Vector3f, camera: Vector3f, simple: Boolean = false,
+        chunkMin: Vector3f, chunkMax: Vector3f, camera: Vector3f, simple: Boolean = false, runtime: TerrainRuntime? = null,
     ) {
         if (chunk.scatter.isEmpty()) return
         val margin = 4f
@@ -101,7 +113,7 @@ class TerrainScatterRenderer(
         centre.set((chunkMin.x + chunkMax.x) * 0.5f, (chunkMin.y + chunkMax.y) * 0.5f, (chunkMin.z + chunkMax.z) * 0.5f)
         val half = (chunkMax.x - chunkMin.x) * 0.5f
         val distance = (centre.distance(camera) - half * 1.42f).coerceAtLeast(0f)
-        for (r in batches(chunk, rules, terrainPosition)) {
+        for (r in batches(chunk, rules, terrainPosition, runtime)) {
             val count = visibleCount(r.count, distance, r.rule.fadeStart, r.rule.streamRadius)
             if (count == 0) continue
             for (batch in r.batches) if (modelRenderer.drawInstanced(batch, shader, simple, count)) instancesDrawn += count
@@ -111,14 +123,14 @@ class TerrainScatterRenderer(
     /** Shadow casters: [draw] with the shadow pipeline, items whose rule has colliders or any size, no material. */
     fun drawShadow(
         shader: Shader, chunk: TerrainChunkData, rules: List<ScatterPlacer.Entry>, terrainPosition: Vector3f,
-        chunkMin: Vector3f, chunkMax: Vector3f, camera: Vector3f,
+        chunkMin: Vector3f, chunkMax: Vector3f, camera: Vector3f, runtime: TerrainRuntime? = null,
     ) {
         if (chunk.scatter.isEmpty()) return
         val margin = 4f
         if (!frustum.testAab(chunkMin.x - margin, chunkMin.y - margin, chunkMin.z - margin, chunkMax.x + margin, chunkMax.y + margin * 2, chunkMax.z + margin)) return
         centre.set((chunkMin.x + chunkMax.x) * 0.5f, (chunkMin.y + chunkMax.y) * 0.5f, (chunkMin.z + chunkMax.z) * 0.5f)
         val distance = (centre.distance(camera) - (chunkMax.x - chunkMin.x) * 0.71f).coerceAtLeast(0f)
-        for (r in batches(chunk, rules, terrainPosition)) {
+        for (r in batches(chunk, rules, terrainPosition, runtime)) {
             val count = visibleCount(r.count, distance, r.rule.fadeStart, r.rule.streamRadius)
             for (batch in r.batches) modelRenderer.drawInstanced(batch, shader, simple = true, count = count, shadow = true)
         }
@@ -137,6 +149,8 @@ class TerrainScatterRenderer(
     }
 
     companion object {
+        const val DEFAULT_BUILDS_PER_FRAME = 8
+
         /** How many of [count] items (sorted by random) draw at [distance]: all before [fadeStart], none past [radius]. */
         fun visibleCount(count: Int, distance: Float, fadeStart: Float, radius: Float): Int = when {
             distance >= radius -> 0

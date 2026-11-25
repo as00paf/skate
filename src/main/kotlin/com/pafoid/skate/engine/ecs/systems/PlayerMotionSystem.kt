@@ -10,6 +10,7 @@ import com.pafoid.skate.engine.ecs.components.InputStateComponent
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.components.PlayerController
 import com.pafoid.skate.engine.ecs.components.RigidBody3D
+import com.pafoid.skate.engine.ecs.components.SkeletonComponent
 import com.pafoid.skate.engine.ecs.systems.SystemManager.ExecutionPriority
 import com.pafoid.skate.engine.gameplay.ActionQuery
 import com.pafoid.skate.engine.gameplay.CharacterInput
@@ -115,7 +116,7 @@ class PlayerMotionSystem(
             go.getComponent<Animator>()?.let { animator ->
                 val footIk = footBinders.getOrPut(controller) { FootIkBinder(controller.footIk) }
                 val riding = (controller.behavior as? Mountable)?.mounted == true
-                footIk.update(animator.ik, controller.footTargets, controller.ground.standing && !riding, dt)
+                footIk.update(animator.ik, controller.footTargets, controller.footIk.enabled && controller.ground.standing && !riding, dt, go.getComponent<SkeletonComponent>()?.pose?.skeleton)
             }
 
             controller.state = CharacterAnimationDriver.drive(controller.behavior, motion, controller.state, go.getComponent<Animator>())

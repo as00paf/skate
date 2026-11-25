@@ -35,8 +35,10 @@ class TerrainSystem(
         rebuilt = 0
         val seed = randomService?.seed ?: RandomService.DEFAULT_SEED
         TerrainAssets.poll() // AST-36: hot reload of `.skterrain` assets (editor; throttled)
+        val running = scene.isRunning
         terrains.forEach { go ->
             val terrain = go.getComponent<TerrainComponent>() ?: return@forEach
+            if (running) terrain.runtime.stateTime += dt // scatter respawn timers run in game time
             if (!terrain.enabled) {
                 // A disabled terrain frees its chunks (and with them the GPU slots and colliders); enabling rebuilds
                 if (terrain.runtime.key != null) terrain.runtime.clear()
@@ -66,8 +68,14 @@ class TerrainSystem(
 
     private fun build(terrain: TerrainComponent, key: TerrainKey): Boolean {
         pending.remove(terrain)
+        val hadState = terrain.runtime.scatterState.chunkCount > 0
         return try {
-            terrain.runtime.ensureBuilt(key).also { failed.remove(terrain) }
+            terrain.runtime.ensureBuilt(key).also {
+                failed.remove(terrain)
+                if (hadState && terrain.runtime.scatterState.chunkCount == 0) {
+                    report("Terrain '${terrain.gameObject?.name}': the world changed, remembered scatter state was cleared")
+                }
+            }
         } catch (e: Exception) {
             // Never throw out of the system manager every frame: report once, retry when the settings change
             failed[terrain] = key

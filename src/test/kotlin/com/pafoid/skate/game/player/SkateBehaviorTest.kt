@@ -101,7 +101,7 @@ class SkateBehaviorTest {
     fun Skate_LandingSidewaysBails() {
         val b = mounted()
         b.step(input(speed = 3f, jump = true))
-        val sideways = input(speed = 3f, velocityYaw = Math.toRadians(120.0).toFloat())
+        val sideways = input(speed = 3f, velocityYaw = Math.toRadians(90.0).toFloat())
         assertEquals("BAIL", b.step(sideways, 0.2f))
         assertEquals("BAIL", b.step(input(), 0.5f))
         assertEquals("IDLE", b.step(input(), cfg.bail.recoverySec))

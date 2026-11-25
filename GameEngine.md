@@ -42,6 +42,7 @@ Done tasks live in [`docs/backlog-archive.md`](docs/backlog-archive.md). A `Deps
 10. **Responsive editor** (human, Discord 2026-11-17): process-intensive editor work (project creation, imports, packing, scene loading, generation, baking) runs off the UI thread with coroutines and reports progress; only GPU uploads and ImGui calls stay on the main thread.
 11. **Questions to the human** (human, 2026-11-17): agents never ask the human directly; they put questions in a design note or a `BLOCKED` line, and the lead asks them with the question tool, one decision per question with a recommended option.
 12. **Human-testable content lives in the two scenes** (human, 2026-11-25): a new feature gets a labeled demo in the **default scenes** in the same task: `MainScene` if it is skateboarding-related (player, board, tricks, camera, skatepark, HUD), the **Feature Showcase** scene otherwise (`FeatureShowcase.populate`; sample `ShowcaseSeed.kts`). Whatever needs human testing (objects, components, scripts, UI, audio, particles, ...) is placed there ready to use, so the human never creates game objects or components by hand. The task's `docs/testing/<TASK-ID>.md` steps say which scene and object to look at, not how to build it. A task with no scene content cannot be marked `DONE` unless it states why none is needed.
+13. **Minimal comments** (human, 2026-11-25): default to no comments. Never add narrating ("what") comments, section banners (`// --- ... ---`), boilerplate KDoc that restates names/types, commented-out code, or task-ID comments. Only add a comment when a non-obvious *why* (invariant, ordering constraint, or native/API quirk) cannot be conveyed through naming alone.
 
 **PR size rules** (human, 2026-11-06/2026-11-07)
 
@@ -53,6 +54,10 @@ Done tasks live in [`docs/backlog-archive.md`](docs/backlog-archive.md). A `Deps
 6. Integrate early and often: the lead opens a PR as soon as a coherent group of verified tasks is ready instead of batching a whole round, and splits a large round into **several PRs by area** (e.g. physics, editor windows, assets), **each based on the previous merged master**. Check the size with `git diff --stat origin/master...HEAD` before opening a PR.
 
 ---
+
+## Stabilization phase (human decision 2026-11-25)
+
+Engine stabilization comes before any new feature: no new P2/P3 feature work and no new slices of in-progress features until step 5 is done. Order: (1) finish EDT-108, then EDT-107; (2) QA-20 audit; (3) GPL-40 design, then rewrite; (4) bug and P0/P1 fixes (BUG-019/020/021, flaky tests, REN-47, REN-49, AST-49, EDT-114); (5) round 41b green and tested by the human, then features restart. Every engine feature must be represented and configurable in the editor.
 
 ## Ownership map
 
@@ -396,6 +401,9 @@ Round 27+ goals: the Asset Browser shows every asset type, one assets folder, ex
   - Do: (NEEDS from INP-11): confirm or make `Assets/Data/input.actions.json` packed in exports.
   - Done when: An exported game loads the project actions; test.
   - Deps: INP-11
+- [ ] **AST-49** `P1` AssetsManager.loadModel recurses forever when the default cube cannot load
+  - Do: (NEEDS from EDT-59): fix the path-compare bug that makes `loadModel` recurse endlessly when the default cube fails to load (seen without a headless RHI device).
+  - Done when: A failing default cube returns a fallback or error without recursion; regression test.
 
 ### ECS — `ECS` (`skate-ecs`)
 
@@ -663,6 +671,10 @@ Round 27+ goals: input is too tightly coupled with skateboarding; it needs a gam
   - Do: (ANI-28 §6 slice i): own design note for parkour IK (vault, stairs, ledge grab, motion warping), using ANI-28b–g results.
   - Done when: The human approves the note and its slices are in the backlog.
   - Deps: ANI-28b, ANI-29, ANI-30, ANI-31
+- [ ] **ANI-34** `P1` Foot IK is editable in the inspector and the walk looks right again (off by default since round 41a via FootIkConfig.enabled; do after GPL-40)
+  - Do: (human, round 41a test): since GPL-38 foot IK runs on the skater and the walk looks wrong, and `PlayerController.footIk` (`FootIkConfig`) is not editable in the editor. Expose it in the PlayerController inspector: enabled toggle, global weight, per-leg bones and probe offset, blend speed, plus a debug view of the targets and resolved bones (strings and tooltips EN+FR). Find why the walk is distorted (targets, hip offset, weight while moving) and fix it; default to IK only when standing or slow if needed.
+  - Done when: The Skater in MainScene can toggle and tune foot IK live from the inspector; walking looks natural with IK on and off; tests.
+  - Deps: GPL-38
 - [x] **INP-10** `P1` REWRITE Decouple input from skateboarding
   - Do: Design note `docs/design/INP-10.md` first. Generic action maps and input contexts (gameplay/UI/vehicle/...) with push/pop priority in the engine; skate-specific actions, bindings and gesture/flick logic move to the game layer (`game/**`, owned by gameplay). Scripts and in-game UI use the generic API.
   - Done when: The design is approved and implemented, `engine/input/**` has no skateboarding concepts (architecture-guard test), and the skate game plays as before.
@@ -765,6 +777,10 @@ Round 27+ goals: menu parity between the editor and the game, and a map view.
   - Do: (ANI-28 review, approved (human, 2026-11-18)): the skater's ground foot IK never runs because of wrong bone names. Fix the bone names (or resolve by humanoid slot) and add a test that foot IK runs on the skater.
   - Done when: Foot IK runs on the skater in Play; test.
   - Deps: none
+- [ ] **GPL-40** `P0` REWRITE Player and skater control in the standard ECS way (design first)
+  - Do: (human, 2026-11-25): player/skater control is not ECS-standard today (PlayerController holds config, behavior, ground state and foot IK; PlayerMotionSystem drives it). Write `docs/design/GPL-40.md`: split into small data components and systems (input state, motion/intent, ground and character state, skate state, foot IK, camera follow); systems read and write components, no behaviour object with hidden state, everything serialized and shown in the inspector. InputStateComponent is part of the refactor (who writes it, who reads it, how the project input actions of INP-11 feed it). Include migration of saved scenes and prefabs and the MainScene and Feature Showcase impact. Folds in GPL-34 and ANI-34. Needs human approval before code.
+  - Done when: The human approves the design; the rewrite then lands with tests, the Skater is fully editable in the inspector, and walking, riding and tricks behave as before.
+  - Deps: EDT-107, EDT-108
 - [ ] **GPL-39** `P2` Board sockets as IkTargets; skater preset feet, hands and look-at (ANI-28 slice f)
   - Do: (ANI-28 §6 slice f): `IkTarget` GameObjects on the board prefab (front/back foot sockets); the Skater IK preset drives feet while riding, hands for grabs/handplants, and look-at the landing; tests.
   - Done when: The skater's feet track the board sockets while riding; the foot IK targets follow the sockets; tests.
@@ -1088,11 +1104,11 @@ Round 27+ goals (human, 2026-11-06): fix editor bugs, make every window, dialog 
   - Do: (human, Discord 2026-11-17) "Plan all missing editor UI": list every engine component, system setting and asset type that has no editor UI (or only raw fields), and turn each gap into a task in the owning domain (domain agents write UIs for their own back ends, skate-editor reviews). Write the list to `docs/design/EDT-106.md` and report the proposed tasks to the lead.
   - Done when: The audit note exists and every gap has a backlog task.
   - Deps: none
-- [ ] **EDT-107** `P1` Generic inspector draws lists, maps and nested objects
+- [~] @skate-editor **EDT-107** `P1` Generic inspector draws lists, maps and nested objects
   - Do: (EDT-106 audit, `docs/design/EDT-106.md`; UI written by the owner, reviewed by skate-editor): `reflectedImgui` draws `List`/`MutableList` (add, remove, reorder), `Map<String, *>` and nested `@Serializable` data classes recursively, with undo. Unblocks VehicleComponent wheels, ScriptComponent properties, CameraFocusComponent targets, PlayerController `waterResponse`, PrefabInstance overrides.
   - Done when: A guard test finds no saved component field that the inspector silently skips.
   - Deps: none
-- [ ] **EDT-108** `P0` Asset reference fields: picker and drag and drop
+- [~] @skate-editor **EDT-108** `P0` Asset reference fields: picker and drag and drop
   - Do: (EDT-106 audit, `docs/design/EDT-106.md`; UI written by the owner, reviewed by skate-editor): an `@AssetRef(kind)` annotation (with skate-ecs, next to `@GameObjectRef`); the inspector shows a picker filtered by kind, accepts drops from the Asset Browser and flags missing files. Domain agents then annotate their fields (particle/UI texture, `configPath`, `meshRef`, `materialPath`, sound paths, …).
   - Done when: Annotated fields show a filtered picker, accept drops and flag missing files; tests.
   - Priority raised to P0 (human, 2026-11-25): RenderComponent's model cannot be changed from the editor, which blocks human testing; do EDT-108 then REN-47 first.
@@ -1117,6 +1133,10 @@ Round 27+ goals (human, 2026-11-06): fix editor bugs, make every window, dialog 
   - Do: (human, 2026-11-18): the EDT-84 tool window sidebars need three visual fixes: (1) vertical separator lines between the icon buttons to visually group/divide them; (2) icons inside the sidebar buttons must be centered both horizontally and vertically, not offset; (3) the padding around each icon button must be equal on all four sides and slightly more generous than the current value. Fix all three in the sidebar rendering code; add a render test that checks button dimensions and icon centering.
   - Done when: Sidebars show separator lines; icons are centered; all four sides of each button have equal padding; render/layout tests pass.
   - Deps: EDT-84
+- [ ] **EDT-114** `P1` Wire the editor wizard to ProjectCreator (EDT-59 slice 2)
+  - Do: (NEEDS from EDT-59 slice 1): wire `ProjectWizardWindow` and `ProjectActionHandler` to `templates/ProjectCreator`, add the new `Project` settings fields and typed folders, remove `createDefaultScenes`.
+  - Done when: Each template created from the wizard opens and runs; tests for the settings and the wizard model.
+  - Deps: EDT-59 slice 1
 - [x] **EDT-82** `P2` Editor-wide "unsaved assets" prompt on close
   - Do: (ANI-21 design answer, 2026-11-10): one prompt when the project or editor closes, listing the unsaved scene, animation clips and animator controllers, with Save all / Discard / Cancel.
   - Done when: Closing with unsaved assets asks first; tests for the dirty-document registry.
@@ -1209,6 +1229,10 @@ Round 27+ goals: a warning-free build.
   - Do: (human, Discord 2026-11-17): the editor is sometimes sluggish when creating a project or pressing Play. Profile those paths and every other heavy editor operation, list what runs on the UI thread that shouldn't (rule 10), and propose one task per owning domain to move it to coroutines with progress. Add a guard or timing test for the worst offenders.
   - Done when: An audit note `docs/design/QA-19.md` with measured timings exists and each offender has a backlog task.
   - Deps: none
+- [ ] **QA-20** `P0` Editor coverage audit: every engine feature configurable, every component inspector complete
+  - Do: (human, 2026-11-25): list each engine feature and component and check it is configurable in the editor; for every existing component inspector, check each serialized field and setting is shown, editable (right widget, ranges, asset pickers, lists/maps/nested objects), tooltipped and translated. Write the gap list to `docs/design/QA-20.md` by domain (feature or field, where it is hardcoded, owner, proposed task); the lead adds the tasks to the backlog.
+  - Done when: The report covers every component and engine system; each gap has an owner and a task ID; a guard test fails when a serialized component field has no inspector entry (with an explicit allowlist).
+  - Deps: EDT-107, EDT-108
 
 ---
 

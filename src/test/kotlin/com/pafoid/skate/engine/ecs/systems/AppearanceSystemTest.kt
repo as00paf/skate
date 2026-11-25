@@ -134,4 +134,15 @@ class AppearanceSystemTest {
         transforms.updateTransform(hat)
         assertTrue(Vector3f(0.5f, 1.37f, 0.02f).distance(hat.worldMatrix.getTranslation(Vector3f())) < 1e-4f)
     }
+
+    @Test
+    fun Appearance_EquipChildrenAreRuntimeOnlyAndNeverSaved() {
+        val hero = character("hat")
+        hero.equip(0)
+        assertTrue(hero.child("HEAD")!!.isRuntimeOnly)
+        val serializer = com.pafoid.skate.engine.assets.serialization.Serializer()
+        val saved = serializer.decode<GameObject>(serializer.encode(hero))
+        assertTrue(saved.children.none { it.name.startsWith(AppearanceSystem.PREFIX) })
+        assertEquals("hat", saved.getComponent<EquipmentComponent>()!!.equipped["HEAD"]!!.itemId, "what is worn is saved")
+    }
 }

@@ -91,10 +91,22 @@
         "flipSec": 0.4,
         "shoveItSec": 0.3,
         "threeSixtyShoveItSec": 0.5,
-        "olliePoints": 100,
-        "flipPoints": 500,
-        "shoveItPoints": 300,
-        "threeSixtyShoveItPoints": 800
+        "spinStickThreshold": 0.5,
+        "spinTurnRate": 8.0,
+        "leanThreshold": 0.5,
+        "boardslideMinDeg": 45.0
+    },
+    "combo": {
+        "linkWindowSec": 0.3
+    },
+    "preferredStance": "REGULAR",
+    "spotCamera": {
+        "cameraName": "SpotCamera",
+        "spotTag": "CameraSpot",
+        "minDistance": 3.0,
+        "maxDistance": 9.0,
+        "followSharpness": 3.0,
+        "aimHeight": 1.0
     },
     "prediction": {
         "mass": 180.0,

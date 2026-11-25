@@ -41,6 +41,7 @@ import com.pafoid.skate.engine.physics3d.BodyType
 import com.pafoid.skate.game.prefabs.MaterialType
 import com.pafoid.skate.game.prefabs.PrefabCatalog
 import com.pafoid.skate.game.prefabs.PrefabType
+import com.pafoid.skate.game.player.SkateControllerConfig
 import org.joml.Vector3f
 import io.mockk.every
 import io.mockk.mockk
@@ -80,8 +81,9 @@ class PrefabsGeneratorTest {
         val spawned = PrefabsGenerator(engine).spawnDefaultsSync()
 
         assertEquals(
-            listOf("Camera", "FirstPersonCamera", "FixedCamera", "Skateboard", "Skater") +
-                PrefabsGenerator(engine).spawnSkatepark().map { it.name } + "HUD",
+            listOf("Camera", "FirstPersonCamera", "SpotCamera", "Skateboard", "Skater") +
+                PrefabsGenerator(engine).spawnSkatepark().map { it.name } +
+                PrefabsGenerator(engine).spawnCameraSpots().map { it.name } + "HUD",
             spawned.map { it.name },
         )
         assertNotNull(spawned[0].getComponent<CameraComponent>())
@@ -154,39 +156,47 @@ class PrefabsGeneratorTest {
                 pressed = false
             }
 
-            assertEquals(listOf(PrefabsGenerator.CAMERA_FIRST_PERSON, PrefabsGenerator.CAMERA_FIXED, PrefabsGenerator.CAMERA_THIRD_PERSON), seen)
+            assertEquals(listOf(PrefabsGenerator.CAMERA_FIRST_PERSON, PrefabsGenerator.CAMERA_SPOT, PrefabsGenerator.CAMERA_THIRD_PERSON), seen)
         }
     }
 
     @Test
-    fun `MainScene fixed camera looks at the spawn from above`() {
-        val fixed = PrefabsGenerator(engine).spawnDefaultsSync().single { it.name == PrefabsGenerator.CAMERA_FIXED }
-        val t = fixed.getComponent<Transform>()!!
+    fun `MainScene spot camera starts at the plaza spot looking at the spawn, with one tagged spot per zone`() {
+        val spawned = PrefabsGenerator(engine).spawnDefaultsSync()
+        val t = spawned.single { it.name == PrefabsGenerator.CAMERA_SPOT }.getComponent<Transform>()!!
         val expected = Transform(Vector3f(t.translation)).apply { lookAt(Vector3f(0f, 0.8f, 0f)) }
 
         assertTrue(t.translation.y > 2f)
         assertEquals(expected.rotation, t.rotation)
+        // GPL-23 D7: no static camera; spots for the plaza and the four zones, all inside the 40 m park.
+        val spots = spawned.filter { it.tag == PrefabsGenerator.CAMERA_SPOT_TAG }
+        assertEquals(5, spots.size)
+        val half = PrefabsGenerator.PARK_SIZE / 2f
+        assertTrue(spots.all { s -> s.getComponent<Transform>()!!.translation.let { kotlin.math.abs(it.x) <= half && kotlin.math.abs(it.z) <= half } })
+        assertEquals(SkateControllerConfig().spotCamera.spotTag, PrefabsGenerator.CAMERA_SPOT_TAG)
+        assertEquals(SkateControllerConfig().spotCamera.cameraName, PrefabsGenerator.CAMERA_SPOT)
     }
 
     @Test
-    fun `HUD canvas holds a score text using bundled game string keys and no camera button`() {
+    fun `HUD canvas holds the combo, trick, hint, balance and prompt widgets and no score or camera button`() {
         val hud = PrefabsGenerator(engine).spawnHud()
 
         assertNotNull(hud.getComponent<UICanvasComponent>())
-        val text = hud.children.single { it.name == "ScoreText" }.getComponent<UITextComponent>()!!
-        assertEquals("hud.score", text.key)
+        // GPL-23: no points or score yet.
+        assertTrue(hud.children.none { it.name == "ScoreText" })
         // GPL-30: the Camera button was removed at the human's request; cameras cycle with the camera.cycle action.
         assertTrue(hud.children.none { it.getComponent<UIButtonComponent>() != null })
         assertTrue(hud.children.none { it.name == "CameraButton" })
         // GPL-22: restart moved to the Esc pause menu.
         assertTrue(hud.children.none { it.name == "RestartButton" })
-        // GPL-21: the trick name, filled by the trick HUD while riding; hidden (no key) until then.
-        assertEquals("", hud.children.single { it.name == PrefabsGenerator.TRICK_TEXT }.getComponent<UITextComponent>()!!.key)
-        // Keys must resolve both in the editor viewport and in the exported game.
-        listOf(com.pafoid.skate.engine.assets.Assets.Strings.GAME_STRINGS).forEach { path ->
-            val props = com.pafoid.skate.engine.core.StringTables.merged(File(path))
-            assertTrue(props.containsKey(text.key), "${text.key} missing from $path")
+        // GPL-21 / GPL-23 / GPL-24d: texts filled by the skate HUD while riding; hidden (no key) until then.
+        listOf(PrefabsGenerator.TRICK_TEXT, PrefabsGenerator.COMBO_TEXT, PrefabsGenerator.HINT_TEXT, PrefabsGenerator.PROMPT_TEXT).forEach { name ->
+            assertEquals("", hud.children.single { it.name == name }.getComponent<UITextComponent>()!!.key, name)
         }
+        // The balance meter shows only during a manual.
+        val meter = hud.children.single { it.name == PrefabsGenerator.BALANCE_METER }
+        assertNotNull(meter.getComponent<com.pafoid.skate.engine.ui.UIProgressBarComponent>())
+        assertEquals(false, meter.getComponent<com.pafoid.skate.engine.ui.UIElementComponent>()!!.visible)
     }
 
     @Test

@@ -1,8 +1,23 @@
 package com.pafoid.skate.engine.input
 
+import kotlinx.serialization.KSerializer
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.SerializationException
+import kotlinx.serialization.Transient
+import kotlinx.serialization.descriptors.SerialDescriptor
+import kotlinx.serialization.descriptors.buildClassSerialDescriptor
+import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonDecoder
+import kotlinx.serialization.json.JsonEncoder
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.float
+import kotlinx.serialization.json.int
+import kotlinx.serialization.json.jsonPrimitive
 import kotlin.math.sign
 
 /**
@@ -25,21 +40,27 @@ value class InputContext(val id: String) {
     }
 }
 
+/** Where an action is defined (INP-11): engine or game code, or the project's actions asset. */
+enum class ActionOrigin { CODE, PROJECT }
+
+/** UI metadata (INP-11): an axis shows "+" and "-" slots. Both kinds are read the same way, as a scaled float. */
 @Serializable
+enum class ActionKind {
+    @SerialName("button") BUTTON,
+    @SerialName("axis") AXIS,
+}
+
+@Serializable(with = ActionBindingSerializer::class)
 sealed class ActionBinding {
     /** Multiplier applied to the source value; negative scales build the "negative" half of an analog action. */
     abstract val scale: Float
 
-    @Serializable
     data class Key(val key: Int, override val scale: Float = 1f) : ActionBinding()
 
-    @Serializable
     data class MouseButton(val button: Int, override val scale: Float = 1f) : ActionBinding()
 
-    @Serializable
     data class GamepadButton(val button: Int, override val scale: Float = 1f) : ActionBinding()
 
-    @Serializable
     data class GamepadAxis(val axis: Int, override val scale: Float = 1f) : ActionBinding()
 
     /** Physical source identity used for conflict detection (ignores magnitude, keeps axis direction). */
@@ -82,12 +103,54 @@ data class ActionDefinition(
     val context: InputContext,
     /** Grouping used by binding UIs (e.g. "Movement", "Camera"). */
     val category: String,
-    /** Translation key for the action name; falls back to [id] in UIs. */
+    /** Translation key for the action name; falls back to [displayName], then [id], in UIs. */
     val displayKey: String = "action.$id",
     val defaults: List<ActionBinding> = emptyList(),
     /** When true, `InputSystem` publishes an `ActionEvent` on each press and release of this action. */
     val publishEvents: Boolean = false,
+    /** Runtime only: who defined the action. Project actions are edited in their asset, not as overrides. */
+    @Transient val origin: ActionOrigin = ActionOrigin.CODE,
+    @Transient val kind: ActionKind = ActionKind.BUTTON,
+    /** Runtime only: plain name of a project action (no translation key). */
+    @Transient val displayName: String? = null,
 )
+
+/**
+ * Compact binding JSON (INP-11): `{"type":"key","key":70}`, with `scale` only when it is not 1. Still reads the class
+ * names that older profiles were written with (`com.pafoid.skate.engine.input.ActionBinding.Key`, ...).
+ */
+object ActionBindingSerializer : KSerializer<ActionBinding> {
+    private val LEGACY_PREFIX = ActionBinding::class.qualifiedName + "."
+
+    override val descriptor: SerialDescriptor = buildClassSerialDescriptor("ActionBinding")
+
+    override fun serialize(encoder: Encoder, value: ActionBinding) {
+        val json = encoder as? JsonEncoder ?: throw SerializationException("ActionBinding is only serializable to JSON")
+        val (type, field, number) = when (value) {
+            is ActionBinding.Key -> Triple("key", "key", value.key)
+            is ActionBinding.MouseButton -> Triple("mouse", "button", value.button)
+            is ActionBinding.GamepadButton -> Triple("pad", "button", value.button)
+            is ActionBinding.GamepadAxis -> Triple("axis", "axis", value.axis)
+        }
+        val fields = linkedMapOf("type" to JsonPrimitive(type), field to JsonPrimitive(number))
+        if (value.scale != 1f) fields["scale"] = JsonPrimitive(value.scale)
+        json.encodeJsonElement(JsonObject(fields))
+    }
+
+    override fun deserialize(decoder: Decoder): ActionBinding {
+        val json = decoder as? JsonDecoder ?: throw SerializationException("ActionBinding is only deserializable from JSON")
+        val obj = json.decodeJsonElement() as? JsonObject ?: throw SerializationException("Binding must be an object")
+        fun int(name: String) = obj[name]?.jsonPrimitive?.int ?: throw SerializationException("Binding is missing '$name'")
+        val scale = obj["scale"]?.jsonPrimitive?.float ?: 1f
+        return when (val type = obj["type"]?.jsonPrimitive?.content?.removePrefix(LEGACY_PREFIX)) {
+            "key", "Key" -> ActionBinding.Key(int("key"), scale)
+            "mouse", "MouseButton" -> ActionBinding.MouseButton(int("button"), scale)
+            "pad", "GamepadButton" -> ActionBinding.GamepadButton(int("button"), scale)
+            "axis", "GamepadAxis" -> ActionBinding.GamepadAxis(int("axis"), scale)
+            else -> throw SerializationException("Unknown binding type '$type'")
+        }
+    }
+}
 
 /** User customizations of an [ActionMap]; only actions that differ from the defaults are stored. */
 @Serializable
@@ -145,6 +208,17 @@ class ActionMap {
         pending.remove(definition.id)?.let { if (it != definition.defaults) overrides[definition.id] = it }
         revision++
         return this
+    }
+
+    /**
+     * Removes the action [id] (INP-11: a project action deleted from its asset). Its override is kept aside, like a
+     * profile override of an unknown action, so it comes back if the action is defined again.
+     */
+    fun remove(id: String): Boolean {
+        if (definitions.remove(id) == null) return false
+        overrides.remove(id)?.let { pending[id] = it }
+        revision++
+        return true
     }
 
     fun definitions(): List<ActionDefinition> = definitions.values.toList()

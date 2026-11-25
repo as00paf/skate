@@ -9,6 +9,9 @@ import com.pafoid.skate.engine.ecs.components.WaterComponent
 import com.pafoid.skate.engine.ecs.components.InventoryComponent
 import com.pafoid.skate.engine.ecs.components.EquipmentComponent
 import com.pafoid.skate.engine.ecs.components.BoneAttachment
+import com.pafoid.skate.engine.ecs.components.HealthComponent
+import com.pafoid.skate.engine.ecs.components.InteractableComponent
+import com.pafoid.skate.engine.ecs.components.PickupComponent
 import com.pafoid.skate.engine.ecs.components.TerrainComponent
 import com.pafoid.skate.engine.ecs.components.StreamingFocus
 import com.pafoid.skate.engine.ecs.components.ReverbZone
@@ -98,6 +101,9 @@ class Serializer(val assetPaths: AssetPaths = AssetPaths()) {
             subclass(InventoryComponent::class)
             subclass(EquipmentComponent::class)
             subclass(BoneAttachment::class)
+            subclass(HealthComponent::class)
+            subclass(InteractableComponent::class)
+            subclass(PickupComponent::class)
 
             // Physics components
             subclass(RigidBody3D::class)
@@ -108,6 +114,7 @@ class Serializer(val assetPaths: AssetPaths = AssetPaths()) {
             subclass(MeshCollider3D::class)
             subclass(CapsuleCollider3D::class)
             subclass(JointComponent::class)
+            subclass(com.pafoid.skate.engine.ecs.components.DestructibleComponent::class)
 
             // Animation components
             subclass(IkSetup::class)

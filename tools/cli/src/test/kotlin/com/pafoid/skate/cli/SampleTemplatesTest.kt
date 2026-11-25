@@ -11,13 +11,13 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
-class ShowcaseProjectBuilderTest {
+class SampleTemplatesTest {
 
     @Test
     fun Showcase_GeneratesValidProjectWithTheSharedShowcaseScene() {
         val dir = Files.createTempDirectory("skate-showcase").toFile()
         try {
-            val project = ShowcaseProjectBuilder().build(dir)
+            val project = SkateCliService(out = {}).createSample("feature-showcase", dir)
             val service = SkateCliService(out = {})
             val report = service.validate(project.path)
             assertTrue(report.isValid, report.toString())
@@ -33,7 +33,7 @@ class ShowcaseProjectBuilderTest {
     fun Showcase_SavedSceneKeepsEveryAreaAndTheUiOverlay() {
         val dir = Files.createTempDirectory("skate-showcase-ui").toFile()
         try {
-            val project = ShowcaseProjectBuilder().build(dir)
+            val project = SkateCliService(out = {}).createSample("feature-showcase", dir)
             val service = SkateCliService(out = {})
             val scene = service.loadScenes(service.loadProject(project.path)).single()
             FeatureShowcase.AREAS.forEach { area -> assertTrue(scene.children.any { it.name == "[${area.label}] Area" }, area.key) }
@@ -67,11 +67,11 @@ class ShowcaseProjectBuilderTest {
     fun MarbleRun_GeneratesValidProjectWithMarblesAndJoints() {
         val dir = Files.createTempDirectory("skate-marble").toFile()
         try {
-            val project = MarbleRunProjectBuilder().build(dir)
+            val project = SkateCliService(out = {}).createSample("marble-run", dir)
             val service = SkateCliService(out = {})
             assertTrue(service.validate(project.path).isValid)
             val scene = service.loadScenes(service.loadProject(project.path)).single()
-            assertEquals(MarbleRunProjectBuilder.MARBLE_COUNT, scene.children.count { it.name.startsWith("Marble_") })
+            assertEquals(com.pafoid.skate.templates.MarbleRunTemplate.MARBLE_COUNT, scene.children.count { it.name.startsWith("Marble_") })
             val joints = scene.children.flatMap { it.components }.filterIsInstance<JointComponent>().map { it.jointType }
             assertEquals(setOf(JointType.HINGE, JointType.SLIDER), joints.toSet())
             service.run(project.path, null, 2, 0.016f)
