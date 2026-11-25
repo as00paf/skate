@@ -1,6 +1,8 @@
 package com.pafoid.skate.engine.gameplay.ik
 
 import com.pafoid.skate.engine.animation.ik.IkRig
+import com.pafoid.skate.engine.assets.data.models.animations.Bone
+import com.pafoid.skate.engine.assets.data.models.animations.Skeleton
 import com.pafoid.skate.engine.physics3d.PhysicsHit
 import org.joml.Vector3f
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -11,6 +13,20 @@ import org.junit.jupiter.api.Test
 class FootIkTest {
     private val config = FootIkConfig()
     private val left = config.legs[0]
+
+    /** Hips with two three-bone legs; [withRight] false leaves the right leg out. */
+    private fun legs(withRight: Boolean = true): Skeleton {
+        val hips = Bone(0, "Hips")
+        var i = 1
+        fun leg(side: String) {
+            val up = Bone(i++, "${side}UpLeg").also(hips::addChild)
+            val mid = Bone(i++, "${side}Leg").also(up::addChild)
+            Bone(i++, "${side}Foot").also(mid::addChild)
+        }
+        leg("Left")
+        if (withRight) leg("Right")
+        return Skeleton(hips, i)
+    }
 
     private fun hit(point: Vector3f, normal: Vector3f = Vector3f(0f, 1f, 0f)) = PhysicsHit(null, point, normal, 0.5f)
 
@@ -63,15 +79,30 @@ class FootIkTest {
             FootTarget(Vector3f(1f, 2f, 3f), true),
             FootTarget(Vector3f(), false),
         )
-        binder.update(rig, targets, enabled = true, dt = 0.016f)
-        binder.update(rig, targets, enabled = true, dt = 0.016f)
+        binder.update(rig, targets, enabled = true, dt = 0.016f, skeleton = legs())
+        binder.update(rig, targets, enabled = true, dt = 0.016f, skeleton = legs())
 
         assertEquals(2, rig.twoBone.size)
+        assertEquals(listOf("LeftUpLeg", "LeftLeg", "LeftFoot"), rig.twoBone[0].let { listOf(it.rootBone, it.midBone, it.endBone) })
         assertEquals(Vector3f(1f, 2f, 3f), rig.twoBone[0].target)
         assertEquals(1f, rig.twoBone[0].weight)
         assertEquals(0f, rig.twoBone[1].weight)
 
-        binder.update(rig, targets, enabled = false, dt = 0.016f)
+        binder.update(rig, targets, enabled = false, dt = 0.016f, skeleton = legs())
         assertEquals(0f, rig.twoBone[0].weight)
+    }
+
+    @Test
+    fun FootIk_BinderWaitsForASkeletonAndSkipsLegsTheRigLacks() {
+        val rig = IkRig()
+        val binder = FootIkBinder(config.copy(rampSeconds = 0f))
+        val targets = listOf(FootTarget(Vector3f(1f, 0f, 0f), true), FootTarget(Vector3f(-1f, 0f, 0f), true))
+        binder.update(rig, targets, enabled = true, dt = 0.016f, skeleton = null)
+        assertTrue(rig.twoBone.isEmpty(), "nothing is bound before the skeleton is known")
+
+        binder.update(rig, targets, enabled = true, dt = 0.016f, skeleton = legs(withRight = false))
+        assertEquals(listOf("LeftFoot"), rig.twoBone.map { it.endBone })
+        assertEquals(null, binder.resolvedLegs[1])
+        assertEquals(Vector3f(1f, 0f, 0f), rig.twoBone[0].target, "the left leg still follows target 0")
     }
 }

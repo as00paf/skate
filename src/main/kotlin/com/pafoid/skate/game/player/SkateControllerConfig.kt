@@ -1,6 +1,7 @@
 package com.pafoid.skate.game.player
 
 import com.pafoid.skate.engine.gameplay.LocomotionConfig
+import com.pafoid.skate.game.skateboard.PreferredStance
 import kotlinx.serialization.Serializable
 
 enum class SkateState { IDLE, PUSH, RIDE, AIR, GRIND, MANUAL, BAIL }
@@ -19,8 +20,14 @@ data class SkateControllerConfig(
     val grind: GrindTuning = GrindTuning(),
     val manual: ManualTuning = ManualTuning(),
     val bail: BailTuning = BailTuning(),
-    /** Air time and points of each trick of the core set (GPL-21). */
+    /** Air time of each trick of the core set (GPL-21), body spins and named grinds (GPL-23). */
     val tricks: TrickTuning = TrickTuning(),
+    /** Combo chaining (GPL-23). */
+    val combo: ComboTuning = ComboTuning(),
+    /** Foot forward; decides which way a body spin is frontside. */
+    val preferredStance: PreferredStance = PreferredStance.REGULAR,
+    /** The spot cameras that follow this skater (GPL-23). */
+    val spotCamera: SpotCameraTuning = SpotCameraTuning(),
     /** Kinematic network step (GPL-17, [com.pafoid.skate.game.net.SkaterPredictionStep]). */
     val prediction: PredictionTuning = PredictionTuning(),
     /** `*.skeleton.json` (in `Assets/Data/`) with the skater's sockets and equip slots; blank = built-in humanoid. */
@@ -73,6 +80,22 @@ data class MountTuning(
 
 @Serializable
 data class CameraTuning(val distance: Float, val height: Float)
+
+/** Spot camera that follows the skater from the nearest zone spot (GPL-23, [com.pafoid.skate.game.camera.SpotCameraSystem]). */
+@Serializable
+data class SpotCameraTuning(
+    /** Scene object name of the camera driven from the spots. */
+    val cameraName: String = "SpotCamera",
+    /** [com.pafoid.skate.engine.ecs.GameObject.tag] of the spot markers (one per park zone). */
+    val spotTag: String = "CameraSpot",
+    /** Horizontal distance kept to the skater, in metres. */
+    val minDistance: Float = 3f,
+    val maxDistance: Float = 9f,
+    /** How fast the camera catches up, in 1/s. */
+    val followSharpness: Float = 3f,
+    /** Height above the skater's feet it aims at, in metres. */
+    val aimHeight: Float = 1f,
+)
 
 @Serializable
 data class InputTuning(

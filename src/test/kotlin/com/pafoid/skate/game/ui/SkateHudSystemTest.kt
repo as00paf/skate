@@ -10,6 +10,7 @@ import com.pafoid.skate.engine.ecs.components.PlayerController
 import com.pafoid.skate.engine.events.TrickCompleted
 import com.pafoid.skate.engine.gameplay.CharacterInput
 import com.pafoid.skate.engine.getComponent
+import com.pafoid.skate.engine.ui.UIElementComponent
 import com.pafoid.skate.engine.ui.UITextComponent
 import com.pafoid.skate.game.input.ControlSchemes
 import com.pafoid.skate.game.input.FakeActions
@@ -21,15 +22,19 @@ import com.pafoid.skate.game.player.TrickType
 import org.joml.Vector2f
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertNotNull
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
-/** GPL-21: the HUD names tricks and scores the landed ones, in the MainScene HUD. */
+/** GPL-21 / GPL-23: the HUD names tricks, shows the combo chain, hints and the manual meter in the MainScene HUD. */
 class SkateHudSystemTest {
 
     private val dt = 1f / 60f
     private val events = EventSystem()
     private val completed = mutableListOf<TrickCompleted>()
-    private val hud = SkateHudSystem(events, showSec = 0.5f)
+    /** Strings resolve to "[key]" so the tests see what was composed. */
+    private val hud = SkateHudSystem(events, showSec = 0.5f) { key, args -> if (args.isEmpty()) "[$key]" else "[$key ${args.joinToString(",")}]" }
     private val scene = Scene("MainScene")
     private val rider: SkateBehavior
 
@@ -46,10 +51,18 @@ class SkateHudSystemTest {
     }
 
     @AfterEach
-    fun resetScheme() = SkateControls.select(ControlSchemes.DEFAULT.id)
+    fun resetScheme() {
+        SkateControls.select(ControlSchemes.DEFAULT.id)
+        ControlHints.option().apply(ControlHints.ON)
+    }
 
-    private fun frame(actions: FakeActions = FakeActions(), move: Vector2f = Vector2f(), grounded: Boolean = true) {
-        rider.update(CharacterInput(move = move, grounded = grounded, horizontalSpeed = 3f, actions = actions), dt)
+    private fun frame(
+        actions: FakeActions = FakeActions(),
+        move: Vector2f = Vector2f(),
+        grounded: Boolean = true,
+        speed: Float = 3f,
+    ) {
+        rider.update(CharacterInput(move = move, grounded = grounded, horizontalSpeed = speed, actions = actions), dt)
         hud.update(dt)
     }
 
@@ -60,39 +73,102 @@ class SkateHudSystemTest {
         frame(FakeActions(pressed = setOf(SkateActions.FLIP)), Vector2f(-1f, 0f))
     }
 
+    private fun landKickflip() {
+        kickflip()
+        repeat(37) { frame(grounded = false) }
+        frame()
+    }
+
     @Test
-    fun aFlipInTheAir_IsNamed_ThenScoredOnLanding() {
+    fun aFlipInTheAir_IsNamed_ThenShownAfterLanding_WithNoScore() {
         kickflip()
         frame(grounded = false)
-        assertEquals(TrickType.KICKFLIP.nameKey, text(SkateHudSystem.TRICK_TEXT).key)
+        assertEquals(SkateHudSystem.LINE_KEY, text(SkateHudSystem.TRICK_TEXT).key)
+        assertEquals(listOf("[trick.kickflip]"), text(SkateHudSystem.TRICK_TEXT).args)
 
         repeat(36) { frame(grounded = false) }
         frame()
 
-        val points = rider.config.tricks.points(TrickType.KICKFLIP)
-        assertEquals(points, hud.score)
-        assertEquals(listOf(points.toString()), text(SkateHudSystem.SCORE_TEXT).args)
-        assertEquals(listOf(TrickCompleted(TrickType.KICKFLIP.nameKey, points, 1f)), completed)
+        // GPL-23: no points yet; the event still reports the trick.
+        assertEquals(listOf(TrickCompleted(TrickType.KICKFLIP.nameKey, 0, 1f)), completed)
+        assertTrue(scene.findFirstByName("ScoreText") == null)
         // The landed trick stays up briefly, then the text hides.
         repeat(40) { frame() }
         assertEquals("", text(SkateHudSystem.TRICK_TEXT).key)
-
-        // A new scene (Play again, Restart) starts a new run.
-        hud.init(scene)
-        hud.update(dt)
-        assertEquals(0, hud.score)
-        assertEquals(listOf("0"), text(SkateHudSystem.SCORE_TEXT).args)
     }
 
     @Test
-    fun aBail_ScoresNothing() {
+    fun aLandedCombo_ShowsTheChainAndCount_ThenHides() {
+        landKickflip()
+        val combo = text(SkateHudSystem.COMBO_TEXT)
+        assertEquals(SkateHudSystem.COMBO_KEY, combo.key)
+        assertEquals(listOf("[trick.kickflip]", "1"), combo.args)
+
+        // The link window passes: the combo lands and stays up for showSec, in white.
+        repeat(25) { frame() }
+        assertEquals(listOf("[trick.kickflip]", "1"), combo.args)
+        assertEquals(1f, combo.color.y)
+        repeat(40) { frame() }
+        assertEquals("", combo.key)
+    }
+
+    @Test
+    fun aComboLinkedIntoAManual_ChainsBoth() {
+        landKickflip()
+        frame(FakeActions(down = setOf(SkateActions.MANUAL)))
+
+        assertEquals(listOf("[trick.kickflip] + [trick.manual]", "2"), text(SkateHudSystem.COMBO_TEXT).args)
+        assertEquals(2, rider.combo.moves.size)
+    }
+
+    @Test
+    fun aBail_ShowsBailInRed_AndReportsNothing() {
+        // A first trick, linked into a manual, then the manual is lost.
+        landKickflip()
+        frame(FakeActions(down = setOf(SkateActions.MANUAL)))
+        repeat(600) {
+            if (rider.state != "BAIL") frame(FakeActions(down = setOf(SkateActions.MANUAL)))
+        }
+        assertEquals("BAIL", rider.state)
+
+        val combo = text(SkateHudSystem.COMBO_TEXT)
+        assertEquals(SkateHudSystem.BAIL_KEY, combo.key)
+        assertTrue(combo.color.y < 0.5f, "red")
+    }
+
+    @Test
+    fun anUnfinishedFlip_Bails_WithoutReportingTheTrick() {
         kickflip()
         repeat(12) { frame(grounded = false) }
         frame()
 
         assertEquals("BAIL", rider.state)
-        assertEquals(0, hud.score)
         assertEquals(emptyList<TrickCompleted>(), completed)
+    }
+
+    @Test
+    fun hints_FollowTheSchemeAndSituation_AndTheOptionHidesThem() {
+        frame()
+        assertEquals("hint.thps.ride", text(SkateHudSystem.HINT_TEXT).key)
+        kickflip()
+        frame(grounded = false)
+        assertEquals("hint.thps.air", text(SkateHudSystem.HINT_TEXT).key)
+
+        ControlHints.option().apply(ControlHints.OFF)
+        frame(grounded = false)
+        assertEquals("", text(SkateHudSystem.HINT_TEXT).key)
+    }
+
+    @Test
+    fun theBalanceMeter_ShowsOnlyDuringAManual() {
+        val meter = scene.findFirstByName(SkateHudSystem.BALANCE_METER)!!.getComponent<UIElementComponent>()!!
+        frame()
+        assertFalse(meter.visible)
+        frame(FakeActions(down = setOf(SkateActions.MANUAL)))
+        assertTrue(meter.visible)
+        assertNotNull(hud.balanceFill)
+        frame()
+        assertFalse(meter.visible)
     }
 
     @Test
@@ -116,7 +192,7 @@ class SkateHudSystemTest {
         step(FakeActions(pressed = setOf(SkateActions.FLIP)), Vector2f(-1f, 0f))
         step(grounded = false)
 
-        assertEquals(TrickType.KICKFLIP.nameKey, nested.findFirstByName(SkateHudSystem.TRICK_TEXT)!!.getComponent<UITextComponent>()!!.key)
+        assertEquals(listOf(TrickType.KICKFLIP.nameKey), nested.findFirstByName(SkateHudSystem.TRICK_TEXT)!!.getComponent<UITextComponent>()!!.args)
     }
 
     @Test
@@ -127,14 +203,14 @@ class SkateHudSystemTest {
         frame()
         val texts = mutableListOf<UITextComponent>()
         fun walk(go: GameObject) {
-            go.children.forEach { c -> if (c.name == SkateHudSystem.SCORE_TEXT) c.getComponent<UITextComponent>()?.let(texts::add); walk(c) }
+            go.children.forEach { c -> if (c.name == SkateHudSystem.HINT_TEXT) c.getComponent<UITextComponent>()?.let(texts::add); walk(c) }
         }
         walk(scene)
         assertEquals(2, texts.size)
-        texts.forEach { assertEquals(listOf("0"), it.args) }
+        texts.forEach { assertEquals("hint.thps.ride", it.key) }
     }
 
-    /** The MainScene HUD as the project generator builds it (holds TrickText and ScoreText). */
+    /** The MainScene HUD as the project generator builds it. */
     private object PrefabsGeneratorHud {
         fun create(): GameObject = PrefabsGenerator(io.mockk.mockk(relaxed = true)).spawnHud()
     }

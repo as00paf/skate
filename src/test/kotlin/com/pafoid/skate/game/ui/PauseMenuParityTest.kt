@@ -170,6 +170,7 @@ class PauseMenuParityTest {
             // ECS-18: every engine registers the Frame rate row (GUI-17), so editor Play shows it too.
             PauseMenuEntry(PauseMenu.OPTION_PREFIX + FrameRateOption.OPTION_ID, Kind.BUTTON, FrameRateOption.labelKey(FrameRateOption.PROJECT), 80f),
             PauseMenuEntry(PauseMenu.OPTION_PREFIX + SkateControls.OPTION_ID, Kind.BUTTON, "controls.ea_skate", 80f),
+            PauseMenuEntry(PauseMenu.OPTION_PREFIX + ControlHints.OPTION_ID, Kind.BUTTON, "hints.on", 80f),
             PauseMenuEntry(PauseMenu.QUIT, Kind.BUTTON, "pause.quit", 80f),
             PauseMenuEntry("VolumeLabel", Kind.TEXT, "pause.volume", 48f),
             PauseMenuEntry(PauseMenu.VOLUME, Kind.SLIDER, "", 40f),
