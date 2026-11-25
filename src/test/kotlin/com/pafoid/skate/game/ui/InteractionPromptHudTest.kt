@@ -1,5 +1,6 @@
 package com.pafoid.skate.game.ui
 
+import com.pafoid.skate.engine.assets.PrefabsGenerator
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
@@ -13,6 +14,7 @@ import com.pafoid.skate.engine.ui.UITextComponent
 import com.pafoid.skate.game.player.SkateGameplay
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
+import io.mockk.mockk
 import org.junit.jupiter.api.Test
 
 /** GPL-24d: the skate HUD shows the interaction prompt, and the game registers the `interact` action. */
@@ -22,7 +24,7 @@ class InteractionPromptHudTest {
     fun Hud_ShowsThePromptOfTheFocusedInteractableAndHidesItAfter() {
         val events = EventSystem()
         val hud = SkateHudSystem(events)
-        val scene = Scene("Park").apply { isRunning = true; addChild(GameUi.createHud()) }
+        val scene = Scene("Park").apply { isRunning = true; addChild(PrefabsGenerator(mockk(relaxed = true)).spawnHud()) }
         hud.init(scene)
         val prompt = scene.children.single().children.single { it.name == GameUi.PROMPT_NAME }.getComponent<UITextComponent>()!!
 

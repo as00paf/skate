@@ -7,7 +7,8 @@ import org.joml.Vector3f
 /**
  * First-person camera (GPL-22), put on a camera object; `CameraCycleSystem` drives it while the scene runs. The camera
  * sits [eyeHeight] above the object named [targetName], [forwardOffset] ahead of it (clear of the head mesh), looks
- * the way the target faces, tilted down by [pitch] degrees, and eases toward that pose at [followSharpness].
+ * the way the target faces, tilted down by [pitch] degrees, and eases toward that pose at [followSharpness] (0 or less:
+ * no easing). In edit mode and in a paused Play it sits on that pose, and any edit applies on the next frame (ECS-21).
  */
 @Serializable
 class FirstPersonCameraComponent(
@@ -25,6 +26,8 @@ class FirstPersonCameraComponent(
 /** Per-play state of a [FirstPersonCameraComponent]; [initialized] false makes the next update snap. */
 class FirstPersonCameraState {
     var initialized = false
+    /** [ComponentSettings] seen last frame: an edit snaps the camera to the new pose (ECS-21). */
+    var settings: List<Any?>? = null
     val position = Vector3f()
     /** Camera yaw in degrees ([Transform.lookAt] convention). */
     var yaw = 0f

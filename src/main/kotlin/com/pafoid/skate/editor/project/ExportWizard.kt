@@ -157,9 +157,17 @@ class ExportWizard(private val memory: ExportMemory = ExportMemory.None) {
 
     fun canStart(project: Project, gameJar: File?, art: ExportArt? = null): Boolean = !isBusy && issues(project, gameJar, art).isEmpty()
 
+    /**
+     * Remembers the current choices for the loaded project (EDT-91): the dialog calls it every frame, and
+     * [ExportMemory] only saves when something changed, so a choice survives Cancel and an editor restart.
+     */
+    fun remember() {
+        projectPath?.let { memory.remember(it, preferences()) }
+    }
+
     /** Called when the export request is sent: the editor saves the project first; the choices are remembered. */
     fun start() {
-        projectPath?.let { memory.remember(it, preferences()) }
+        remember()
         phase = Phase.SAVING
         progress = null
         result = null

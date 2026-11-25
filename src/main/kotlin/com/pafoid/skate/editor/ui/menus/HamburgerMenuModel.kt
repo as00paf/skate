@@ -79,6 +79,7 @@ object HamburgerMenuModel {
         "view", "menu.view",
         listOf(
             Submenu("windows", "menu.view.windows"),
+            Item("tool_window_bars", "menu.view.tool_window_bars", kind = Kind.CHECK),
             Item("open_all", "menu.view.windows.open_all", Icons.WINDOW_RESTORE),
             Item("close_all", "menu.view.windows.close_all", Icons.WINDOW_CLOSE),
             Item("reset_layout", "menu.view.reset_layout", Icons.ARROW_ROTATE),

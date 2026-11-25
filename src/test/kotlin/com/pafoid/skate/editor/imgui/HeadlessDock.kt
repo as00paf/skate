@@ -58,6 +58,8 @@ class HeadlessDock(
         afterDockSpace: (ImGuiDockNode) -> Unit = {},
         windows: () -> Unit = { drawWindows() },
         afterWindows: () -> Unit = {},
+        /** The dock space's size (0 fills the rest of the host from the cursor). */
+        dockSpaceSize: () -> Pair<Float, Float> = { 0f to 0f },
     ) {
         ImGui.newFrame()
         ImGui.setNextWindowPos(0f, 0f)
@@ -69,7 +71,8 @@ class HeadlessDock(
         dockspaceId = ImGui.getID("DockSpace")
         beforeDockSpace()
         if (!built) build()
-        ImGui.dockSpace(dockspaceId, 0f, 0f, dockSpaceFlags)
+        val (dockWidth, dockHeight) = dockSpaceSize()
+        ImGui.dockSpace(dockspaceId, dockWidth, dockHeight, dockSpaceFlags)
         val central = Internal.dockBuilderGetCentralNode(dockspaceId)
         centralId = central.id
         afterDockSpace(central)
