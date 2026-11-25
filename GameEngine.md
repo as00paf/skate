@@ -1092,7 +1092,7 @@ Round 27+ goals (human, 2026-11-06): fix editor bugs, make every window, dialog 
   - Do: (EDT-106 audit, `docs/design/EDT-106.md`; UI written by the owner, reviewed by skate-editor): `reflectedImgui` draws `List`/`MutableList` (add, remove, reorder), `Map<String, *>` and nested `@Serializable` data classes recursively, with undo. Unblocks VehicleComponent wheels, ScriptComponent properties, CameraFocusComponent targets, PlayerController `waterResponse`, PrefabInstance overrides.
   - Done when: A guard test finds no saved component field that the inspector silently skips.
   - Deps: none
-- [~] @skate-editor **EDT-108** `P0` Asset reference fields: picker and drag and drop
+- [ ] **EDT-108** `P0` Asset reference fields: picker and drag and drop
   - Do: (EDT-106 audit, `docs/design/EDT-106.md`; UI written by the owner, reviewed by skate-editor): an `@AssetRef(kind)` annotation (with skate-ecs, next to `@GameObjectRef`); the inspector shows a picker filtered by kind, accepts drops from the Asset Browser and flags missing files. Domain agents then annotate their fields (particle/UI texture, `configPath`, `meshRef`, `materialPath`, sound paths, …).
   - Done when: Annotated fields show a filtered picker, accept drops and flag missing files; tests.
   - Priority raised to P0 (human, 2026-11-25): RenderComponent's model cannot be changed from the editor, which blocks human testing; do EDT-108 then REN-47 first.
