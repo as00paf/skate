@@ -67,6 +67,11 @@ class ReferenceCollector(
             val companion = normalizeLogical(if (dir.isEmpty()) name else "$dir/$name") ?: return@forEach
             addEngine(EngineDefaults.reference(companion))
         }
+        // REN-43: an engine default that is itself a JSON asset (an engine `.skmat`) brings the engine defaults it names,
+        // e.g. engine:Materials/rock.skmat → its engine texture.
+        if (file.extension.lowercase() in scanExtensions) {
+            stringLiteral.findAll(file.readText()).map { unescape(it.groupValues[1]) }.filter(EngineDefaults::isReference).forEach(::addEngine)
+        }
     }
 
     /** Relative names of the files [file] loads with it (see the class doc). */
