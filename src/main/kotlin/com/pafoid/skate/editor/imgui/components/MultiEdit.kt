@@ -46,7 +46,7 @@ object MultiEdit {
     /** The field edits that copy [changes] (made on [component]) to its mirrors; each mirror keeps its own "before". */
     fun mirrorFields(component: Component, changes: Map<Field, Change>): List<Pair<Component, Map<Field, Change>>> =
         mirrorsOf(component).map { other ->
-            other to changes.mapValues { (field, change) -> Change(ComponentValues.copy(field.get(other)), change.after) }
+            other to changes.mapValues { (field, change) -> Change(ComponentValues.capture(other, field), change.after) }
         }.filter { (_, c) -> c.values.any { it.before != it.after } }
 
     /** The Transform edits that copy what [entry] changed (per vector axis) to the mirrors of its Transform. */
