@@ -28,19 +28,31 @@ class HelpButtonClipTest {
 
     /**
      * [titleBar]: a floating window whose Maximize and `?` sit in its title bar (EDT-101); otherwise a window without a
-     * title bar, standing for a docked one, whose buttons share the tools row.
+     * title bar, standing for a docked one, whose buttons share the tools row. [corner]: no tools at all, so the
+     * buttons sit over the top-right corner of the content (EDT-101).
      */
     private class Probe(
         private val strings: StringManager,
         private val titleBar: Boolean,
         private val tools: () -> Unit,
+        private val corner: Boolean = false,
     ) : EditorWindow("window.console") {
         override val icon: String = Icons.LIST
+        var headerTop = 0f
+        var firstLineTop = 0f
         override fun imgui() {
-            if (beginWindow(strings, if (titleBar) 0 else ImGuiWindowFlags.NoTitleBar)) header(strings) { tools() }
+            if (beginWindow(strings, if (titleBar) 0 else ImGuiWindowFlags.NoTitleBar)) {
+                headerTop = ImGui.getCursorScreenPosY()
+                header(strings, if (corner) null else tools)
+                firstLineTop = ImGui.getCursorScreenPosY()
+                ImGui.text("first line")
+            }
             ImGui.end()
+            WindowHeader.drawCornerOverlay(this)
         }
     }
+
+    private var lastProbe: Probe? = null
 
     @BeforeEach
     fun setup() {
@@ -77,13 +89,15 @@ class HelpButtonClipTest {
         tools: () -> Unit,
         titleBar: Boolean = false,
         density: Density = Density.THEME,
+        corner: Boolean = false,
     ): WindowHeader.DrawnButton {
         ImGuiStyleManager.uiScale = { scale }
         ImGuiStyleManager.appearance = { AppearanceSettings(density = density) }
         ImGuiStyleManager.invalidate()
         ImGuiStyleManager.sync(theme)
         windowPaddingY?.let { ImGui.getStyle().setWindowPadding(ImGui.getStyle().windowPaddingX, it) }
-        val probe = Probe(strings, titleBar, tools).also { it.isOpen.set(true) }
+        val probe = Probe(strings, titleBar, tools, corner).also { it.isOpen.set(true) }
+        lastProbe = probe
         repeat(2) {
             ImGui.newFrame()
             ImGui.setNextWindowPos(120.4f, 75.6f)
@@ -185,7 +199,7 @@ class HelpButtonClipTest {
         com.pafoid.skate.editor.help.HelpRouter.open = { opened++ }
         try {
             ImGuiStyleManager.sync("dark")
-            val probe = Probe(strings, titleBar = true) {}.also { it.isOpen.set(true) }
+            val probe = Probe(strings, titleBar = true, tools = {}).also { it.isOpen.set(true) }
             fun frame() {
                 ImGui.newFrame()
                 ImGui.setNextWindowPos(120f, 75f, imgui.flag.ImGuiCond.FirstUseEver)
@@ -218,5 +232,41 @@ class HelpButtonClipTest {
         assertEquals(listOf(TitleBarLayout.Slot(449f, 53f), TitleBarLayout.Slot(466f, 53f)), slots)
         val noClose = TitleBarLayout.slots(bar, 13f, 1, closeButton = false, framePaddingX = 4f, spacing = 4f)
         assertEquals(TitleBarLayout.Slot(483f, 53f), noClose.single())
+    }
+
+    @Test
+    fun Corner_ButtonsAreNeverClipped_NeverAloneOnARow_AtEveryDensityAndScale() {
+        // EDT-101: a docked window without tools puts Maximize and `?` over the top-right of its content; its first
+        // line starts on their row, and both stay clear of every clip edge, flush right, on whole pixels.
+        val failures = mutableListOf<String>()
+        for (theme in listOf("dark", "light", "high_contrast")) for (density in Density.entries) for (scale in listOf(1f, 1.5f)) {
+            val padY = if (density == Density.CUSTOM) 0f else null
+            val (help, clip) = drawn(theme, scale, padY, {}, density = density, corner = true)
+            val (maximize, _) = WindowHeader.lastDrawnMaximize!!
+            val probe = lastProbe!!
+            val case = "$theme $density @${(scale * 100).toInt()}%: help=$help maximize=$maximize clip=$clip"
+            if (probe.firstLineTop != probe.headerTop) failures += "buttons on a row of their own: $case"
+            if (help.minY < clip.minY + HelpButtonLayout.MIN_CLIP_CLEARANCE) failures += "top clipped: $case"
+            if (help.maxY > clip.maxY || help.minX < clip.minX || help.maxX > clip.maxX) failures += "clipped: $case"
+            if (maximize.maxX > help.minX) failures += "maximize overlaps ?: $case"
+            if (maximize.minY != help.minY) failures += "not side by side: $case"
+            if (help.minX != kotlin.math.floor(help.minX) || help.minY != kotlin.math.floor(help.minY)) failures += "not on whole pixels: $case"
+            if (probe.cornerOverlay != null) failures += "overlay not painted: $case"
+        }
+        assertTrue(failures.isEmpty(), failures.joinToString("\n"))
+    }
+
+    @Test
+    fun NoPlacement_LeavesTheButtonsAloneOnARow() {
+        // EDT-101 acceptance: title bar, tools row and corner; in none of them does the `?` get a line to itself. A
+        // window without tools passes none (null), on a floating window too.
+        for ((name, titleBar, corner) in listOf(Triple("title bar", true, true), Triple("corner", false, true))) {
+            drawn("dark", 1f, null, {}, titleBar = titleBar, corner = corner)
+            val probe = lastProbe!!
+            assertEquals(probe.headerTop, probe.firstLineTop, "$name: the content starts where the header did")
+        }
+        val (help, _) = drawn("dark", 1f, null, { ImGui.smallButton("x##probe") })
+        val probe = lastProbe!!
+        assertTrue(help.minY < probe.firstLineTop, "tools row: the ? shares the tools' row")
     }
 }
