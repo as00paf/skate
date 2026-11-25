@@ -69,6 +69,9 @@ class GizmoSystem(
 
     val measureGizmo by lazy { MeasureTool(engine, undoRedoManager, debugRenderer, settingsManager) }
 
+    /** Terrain sculpt, paint and stamp tools (EDT-92), chosen in the terrain inspector. */
+    val terrainTool by lazy { com.pafoid.skate.editor.gizmos.TerrainBrushTool(engine, undoRedoManager, debugRenderer) }
+
     fun update(dt: Float) {
         val scene = engine.sceneManager.currentScene ?: return
         // Reset all gizmos to inactive state
@@ -79,6 +82,7 @@ class GizmoSystem(
         measureGizmo.inUse = false
 
         if (scene.isRunning) {
+            terrainTool.endStroke()
             return
         }
 
@@ -103,6 +107,9 @@ class GizmoSystem(
         // Tool keys (EDT-10: not while Ctrl is held, so Ctrl+<key> shortcuts do not also switch tools).
         val bindings = settingsManager.editorSettings.editorInputMappings
         val input = engine.inputProvider
+        val gizmoKey = !input.isControlKeyDown() && listOf(
+            bindings.gizmoTranslate, bindings.gizmoRotate, bindings.gizmoScale, bindings.gizmoSelect, bindings.measureTool,
+        ).any { input.isKeyPressed(it.keyboardKey) }
         if (!input.isControlKeyDown()) {
             if (input.isKeyPressed(bindings.gizmoTranslate.keyboardKey)) {
                 usingGizmo = TRANSLATE_GIZMO
@@ -116,6 +123,20 @@ class GizmoSystem(
                 usingGizmo = MEASURE_GIZMO
             }
         }
+
+        // A gizmo key hands the viewport back from the terrain tools (EDT-92)
+        if (gizmoKey) com.pafoid.skate.editor.terrain.TerrainToolState.shared.tool = com.pafoid.skate.editor.terrain.TerrainTool.NONE
+        val terrain = terrainTool.claims(scene.selectedGameObjects)
+        if (terrain != null) {
+            selectionGizmo.inUse = false
+            translateGizmo.inUse = false
+            rotationGizmo.inUse = false
+            scaleGizmo.inUse = false
+            measureGizmo.inUse = false
+            terrainTool.update(terrain, editorCamera.camera, editorCamera.transform.translation, dt)
+            return
+        }
+        terrainTool.endStroke()
 
         // Update only the active gizmo
         when (usingGizmo) {
