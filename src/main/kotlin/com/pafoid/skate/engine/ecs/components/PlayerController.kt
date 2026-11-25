@@ -1,5 +1,6 @@
 package com.pafoid.skate.engine.ecs.components
 
+import com.pafoid.skate.engine.assets.AssetFolder
 import com.pafoid.skate.engine.gameplay.CharacterBehavior
 import com.pafoid.skate.engine.gameplay.CharacterBehaviors
 import com.pafoid.skate.engine.gameplay.LocomotionBehavior
@@ -17,7 +18,7 @@ import kotlinx.serialization.Transient
 @Serializable
 class PlayerController(
     var behaviorId: String = LocomotionBehavior.ID,
-    var configPath: String = "",
+    @AssetRef(AssetFolder.DATA) var configPath: String = "",
     /** What entering water does to this player (GPL-32): nothing, or bail then respawn. */
     var waterResponse: WaterResponse = WaterResponse.NONE,
 ) : Component() {

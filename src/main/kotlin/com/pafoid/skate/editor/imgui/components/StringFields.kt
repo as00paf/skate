@@ -6,6 +6,7 @@ import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.components.Component
+import com.pafoid.skate.engine.ecs.components.AssetRef
 import com.pafoid.skate.engine.ecs.components.GameObjectRef
 import imgui.ImGui
 import imgui.flag.ImGuiInputTextFlags
@@ -19,7 +20,8 @@ import java.util.IdentityHashMap
  * String fields in the generic inspector (EDT-36). Every saved `String` field gets a text field; the edit is applied
  * through [ComponentFieldAction.Set] (one undoable command) when the field loses focus or Enter is pressed. Fields
  * annotated [GameObjectRef] also get an object picker: a dropdown of the scene's object names and a drop target for
- * objects dragged from the hierarchy.
+ * objects dragged from the hierarchy. Fields annotated [AssetRef] get an [AssetRefPicker] (filtered list, Asset Browser
+ * drops, missing-file flag).
  *
  * A field being typed in that stops being drawn (another object selected, header collapsed, window closed) is
  * committed by [endFrame] instead of being lost (EDT-40).
@@ -107,7 +109,8 @@ object StringFields {
         d.frame = ImGui.getFrameCount()
         val draft = d.text
         val id = "##string.${field.name}"
-        val isRef = isGameObjectRef(field)
+        val assetKind = AssetRefs.kindOf(field)
+        val isRef = isGameObjectRef(field) || assetKind != null
 
         // EDT-100: the label wraps and the field fills the width, so a narrow inspector never clips them.
         ImGui.pushTextWrapPos(0f)
@@ -126,6 +129,16 @@ object StringFields {
         if (!ImGui.isItemActive()) draft.set((field.get(component) as String?).orEmpty())
         if (!isRef) return
 
+        if (assetKind != null) {
+            AssetRefPicker.dropTarget(assetKind) { set(engine.eventSystem, component, field, it) }
+            Tooltips.text(strings.getString("inspector.asset_ref.drop_hint", assetKind.dirName))
+            if (pickerBeside) ImGui.sameLine()
+            AssetRefPicker.combo(engine, "${System.identityHashCode(component)}.${field.name}", current, assetKind) {
+                set(engine.eventSystem, component, field, valueFor(current, it.orEmpty()))
+            }
+            AssetRefPicker.flag(engine, current, assetKind)
+            return
+        }
         acceptHierarchyDrop(engine, component, field)
         Tooltips.text(strings.getString("inspector.string_field.drop_hint"))
 
