@@ -4,6 +4,8 @@ import com.pafoid.skate.app.Editor
 import com.pafoid.skate.editor.animation.AnimatorControllerCatalog
 import com.pafoid.skate.editor.events.AnimatorAction
 import com.pafoid.skate.editor.events.WindowAction
+import com.pafoid.skate.editor.systems.UnsavedAsset
+import com.pafoid.skate.editor.systems.UnsavedKind
 import com.pafoid.skate.editor.systems.ProjectManager
 import com.pafoid.skate.engine.animation.edit.SkAnimFormat
 import com.pafoid.skate.engine.assets.AssetPaths
@@ -49,6 +51,12 @@ object AnimatorWindowWiring {
             engine.eventSystem.publish(WindowAction.Show(WINDOW))
         }
         engine.eventSystem.subscribe<AnimatorControllerSaved> { e -> reload(engine, projectManager.getProjectDirectory(), e.file) }
+        // EDT-82: unsaved controllers are listed by the editor's close prompt.
+        editor.unsavedAssets.register {
+            controller.unsavedDocuments().map { doc ->
+                UnsavedAsset(UnsavedKind.ANIMATOR_CONTROLLER, doc.file!!.path, doc.displayName, save = { controller.save(doc) }, discard = { controller.discard(doc) })
+            }
+        }
         return controller
     }
 

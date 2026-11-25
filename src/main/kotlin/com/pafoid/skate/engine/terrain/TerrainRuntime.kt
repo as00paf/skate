@@ -123,10 +123,10 @@ class TerrainRuntime {
         return old
     }
 
-    /** Rebuilds every chunk when [key] differs from the built one; returns true when it did. */
     /** Waits for the overview of a streamed terrain (tests, loading screens); null when not streamed. */
     fun awaitOverview(): TerrainOverview? = overviewBuild?.join()?.takeIf { overview === it }
 
+    /** Rebuilds every chunk when [key] differs from the built one; returns true when it did. */
     fun ensureBuilt(key: TerrainKey, parallel: Boolean = true): Boolean {
         if (key == this.key) return false
         val l = TerrainLayout(key.size, key.spacing, key.chunkQuads)
@@ -143,6 +143,9 @@ class TerrainRuntime {
         // A different world: remembered items no longer exist (runtime reseed, recipe or rule edit in Play)
         val previous = this.key
         if (previous != null && worldOf(previous) != worldOf(key)) scatterState.clear()
+        layout = l
+        generator = g
+        this.key = key
         if (key.streamed) {
             // Chunks arrive through a TerrainStreamer; the overview covers the rest (built on workers)
             overviewBuild?.cancel(true)
@@ -150,12 +153,8 @@ class TerrainRuntime {
                 .thenApply { o -> if (this.generator === g) overview = o; o }
         } else {
             for (c in TerrainChunkBuilder.buildAll(g, parallel)) grid[c.cz * l.chunksPerSide + c.cx] = c
-            this.generator = g
             for (c in grid) if (c != null) applyScatterState(c)
         }
-        layout = l
-        generator = g
-        this.key = key
         version++
         return true
     }

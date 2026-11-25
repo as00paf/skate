@@ -1,5 +1,6 @@
 package com.pafoid.skate.engine.terrain
 
+import com.pafoid.skate.engine.assets.EngineDefaults
 import com.pafoid.skate.engine.procedural.NoiseSettings
 import kotlinx.serialization.Serializable
 
@@ -80,6 +81,9 @@ object BiomePresets {
     /** Placeholder rock model until the bundled CC0 rocks (AST): a squashed engine sphere. */
     const val ROCK_MODEL = "engine:Models/sphere.obj"
 
+    /** Grey rock material of the default scatter rules (REN-43): without it the sphere renders plain white. */
+    const val ROCK_MATERIAL = EngineDefaults.Materials.ROCK
+
     /**
      * A scatter rule of breakable crates for the stateful props check (REN-28 task 27): a prefab with behaviour,
      * spawned as entities near the player; broken or taken crates stay that way (§15.10), optionally coming back after
@@ -98,7 +102,7 @@ object BiomePresets {
                 LayerRule(ROCK, minSlope = 30f, blendSlope = 8f),
                 LayerRule(SAND, maxHeight = 0.5f, blendHeight = 1f, weight = 2f),
             ),
-            scatter = listOf(ScatterRule(id = "rocks", model = ROCK_MODEL, densityPer100m2 = 0.4f, minSpacing = 5f,
+            scatter = listOf(ScatterRule(id = "rocks", model = ROCK_MODEL, material = ROCK_MATERIAL, densityPer100m2 = 0.4f, minSpacing = 5f,
                 scaleMin = 0.3f, scaleMax = 0.9f, maxSlope = 30f, collider = true, alignToNormal = 0.6f)),
         ),
         Biome(
@@ -108,7 +112,7 @@ object BiomePresets {
         Biome(
             name = "Rocky peak", debugColor = listOf(0.55f, 0.55f, 0.6f),
             layerRules = listOf(LayerRule(ROCK), LayerRule(SNOW, minHeight = 40f, blendHeight = 6f, maxSlope = 40f, blendSlope = 8f, weight = 2f)),
-            scatter = listOf(ScatterRule(id = "boulders", model = ROCK_MODEL, densityPer100m2 = 0.2f, minSpacing = 8f,
+            scatter = listOf(ScatterRule(id = "boulders", model = ROCK_MODEL, material = ROCK_MATERIAL, densityPer100m2 = 0.2f, minSpacing = 8f,
                 scaleMin = 0.8f, scaleMax = 2f, maxSlope = 45f, collider = true, alignToNormal = 0.8f)),
         ),
     )

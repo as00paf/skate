@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.imgui.components
 
+import com.pafoid.skate.editor.imgui.EnumLabels
 import com.pafoid.skate.editor.imgui.Tooltips
 import com.pafoid.skate.editor.imgui.ImGuiIds
 import com.pafoid.skate.editor.commands.objects.JointSettings
@@ -22,7 +23,7 @@ private val working = WeakHashMap<JointComponent, JointSettings>()
 private fun bodies(root: GameObject?, out: MutableList<GameObject> = ArrayList()): List<GameObject> {
     root ?: return out
     if (root.getComponent<RigidBody3D>() != null) out.add(root)
-    root.children.forEach { bodies(it, out) }
+    root.persistentChildren.forEach { bodies(it, out) }
     return out
 }
 
@@ -44,39 +45,47 @@ fun JointComponent.imgui(engine: Engine) {
 
     fun vec(label: String, v: Vector3f) {
         val a = floatArrayOf(v.x, v.y, v.z)
-        if (MImGui.dragFloat3(s(label), a, 0.01f)) { v.set(a[0], a[1], a[2]); edited = true }
-        after()
+        MImGui.row(s(label), label) {
+            if (ImGui.dragFloat3("##value", a, 0.01f)) { v.set(a[0], a[1], a[2]); edited = true }
+            after()
+        }
     }
 
     fun flt(label: String, get: Float, set: (Float) -> Unit) {
         val a = floatArrayOf(get)
-        if (ImGui.dragFloat(s(label), a, 0.01f)) { set(a[0]); edited = true }
-        after()
+        MImGui.row(s(label), label) {
+            if (ImGui.dragFloat("##value", a, 0.01f)) { set(a[0]); edited = true }
+            after()
+        }
     }
 
-    val types = JointType.entries.map { it.name }.toTypedArray()
+    val types = EnumLabels.all(strings, JointType.entries)
     val typeIndex = ImInt(draft.jointType.ordinal)
-    if (ImGui.combo(ImGuiIds.stable(s("jointType"), "jointType"), typeIndex, types, types.size)) {
+    val typePicked = MImGui.field(s("jointType"), "jointType") {
+        ImGui.combo("##value", typeIndex, types, types.size).also { Tooltips.showIfPresent(strings, "component.JointComponent.jointType.tooltip") }
+    }
+    if (typePicked) {
         next = draft.copy(jointType = JointType.entries[typeIndex.get()])
         working.remove(this)
         engine.eventSystem.publish(JointAction.Edit(this, next))
         ImGui.popID()
         return
     }
-    Tooltips.showIfPresent(strings, "component.JointComponent.jointType.tooltip")
 
     val candidates = bodies(engine.sceneManager.currentScene).filter { it !== gameObject }
     val names = (listOf(s("worldAnchor")) + candidates.map { it.name }).toTypedArray()
     val currentIndex = candidates.indexOfFirst { it.guid == draft.connectedBodyGuid } + 1
     val connected = ImInt(currentIndex)
-    if (ImGui.combo(ImGuiIds.stable(s("connectedBody"), "connectedBody"), connected, names, names.size)) {
+    val bodyPicked = MImGui.field(s("connectedBody"), "connectedBody") {
+        ImGui.combo("##value", connected, names, names.size).also { Tooltips.showIfPresent(strings, "component.JointComponent.connectedBody.tooltip") }
+    }
+    if (bodyPicked) {
         val guid = if (connected.get() == 0) "" else candidates[connected.get() - 1].guid
         working.remove(this)
         engine.eventSystem.publish(JointAction.Edit(this, draft.copy(connectedBodyGuid = guid)))
         ImGui.popID()
         return
     }
-    Tooltips.showIfPresent(strings, "component.JointComponent.connectedBody.tooltip")
 
     vec("anchor", draft.anchor)
     if (draft.connectedBodyGuid.isNotEmpty()) vec("connectedAnchor", draft.connectedAnchor)
