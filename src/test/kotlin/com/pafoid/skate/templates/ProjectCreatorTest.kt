@@ -144,7 +144,7 @@ class ProjectCreatorTest {
         val agents = File(dir, "Ai/AGENTS.md").readText()
         assertTrue(agents.contains("# Ai:") && agents.contains("`tetris` template"), agents.lines().take(3).toString())
         assertFalse(agents.contains("{{"))
-        assertTrue(File(dir, "Ai/.claude/skills/skate-project/SKILL.md").readText().startsWith("---\nname: skate-project"))
+        assertTrue(File(dir, "Ai/.claude/skills/skate-project/SKILL.md").readText().replace("\r\n", "\n").startsWith("---\nname: skate-project"))
         assertEquals("mine", File(dir, "Ai/.github/copilot-instructions.md").readText())
     }
 
