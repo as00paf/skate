@@ -19,6 +19,8 @@ import com.pafoid.skate.editor.ui.handlers.PlayModeHandler
 import com.pafoid.skate.editor.systems.EditorResources
 import com.pafoid.skate.editor.ui.handlers.VcsActionHandler
 import com.pafoid.skate.editor.vcs.VcsRunner
+import com.pafoid.skate.editor.vcs.auth.CredentialStores
+import com.pafoid.skate.editor.vcs.auth.GitCredentials
 import com.pafoid.skate.editor.vcs.VcsSession
 import com.pafoid.skate.engine.assets.Assets.Strings.GAME_STRINGS
 import com.pafoid.skate.editor.assetimport.blender.BlenderSync
@@ -93,6 +95,8 @@ class Editor(
     val vcsSession = VcsSession(
         projectRoot = { projectManager.currentProject?.getProjectFile()?.absoluteFile?.parentFile },
         runner = VcsRunner.Jobs(engine.jobSystem),
+        // EDT-60 §5: Windows Credential Manager; memory only (with a notice) when it cannot be reached.
+        credentials = GitCredentials(CredentialStores.platformDefault()),
     )
     val vcsActionHandler = VcsActionHandler(
         engine.eventSystem, undoRedoManager, vcsSession,

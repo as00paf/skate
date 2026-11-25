@@ -60,11 +60,32 @@ class BranchModelsTest {
     @Test
     fun Popup_ActionsOfARepository() {
         val entries = BranchPopupModel.actions(clean, playing = false)
-        assertEquals(listOf(Action.UPDATE, Action.COMMIT, Action.CHANGES, Action.HISTORY, Action.NEW_BRANCH), entries.map { it.action })
+        assertEquals(listOf(Action.UPDATE, Action.PUSH, Action.COMMIT, Action.CHANGES, Action.HISTORY, Action.NEW_BRANCH, Action.REMOTE), entries.map { it.action })
         val update = entries.first { it.action == Action.UPDATE }
         assertFalse(update.enabled)
         assertEquals("vcs.popup.needs_remote", update.reasonKey)
         assertTrue(entries.first { it.action == Action.COMMIT }.enabled)
+    }
+
+    @Test
+    fun Popup_WithAnHttpsRemote_EnablesUpdateAndPushWithCountsAndOffersSignIn() {
+        val remote = clean.copy(
+            remotes = listOf(VcsRemote("origin", "https://github.com/me/game.git")),
+            branches = branches.copy(tracking = VcsTracking("origin/main", ahead = 2, behind = 3)),
+        )
+        val entries = BranchPopupModel.actions(remote, playing = false).associateBy { it.action }
+        assertTrue(entries.getValue(Action.UPDATE).enabled)
+        assertEquals(3, entries.getValue(Action.UPDATE).count)
+        assertTrue(entries.getValue(Action.PUSH).enabled)
+        assertEquals(2, entries.getValue(Action.PUSH).count)
+        assertTrue(Action.SIGN_IN in entries)
+        assertEquals("github.com", BranchPopupModel.signInHost(remote))
+        assertEquals("vcs.error.playing", BranchPopupModel.actions(remote, playing = true).first { it.action == Action.PUSH }.reasonKey)
+        val detached = remote.copy(branches = remote.branches!!.copy(current = null))
+        assertEquals("vcs.error.detached", BranchPopupModel.actions(detached, false).first { it.action == Action.PUSH }.reasonKey)
+        // An SSH or local remote has nothing to sign in to here.
+        val ssh = remote.copy(remotes = listOf(VcsRemote("origin", "git@github.com:me/game.git")))
+        assertFalse(BranchPopupModel.actions(ssh, false).any { it.action == Action.SIGN_IN })
     }
 
     @Test

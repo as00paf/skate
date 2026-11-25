@@ -1,5 +1,8 @@
 package com.pafoid.skate.editor.vcs
 
+import com.pafoid.skate.editor.vcs.auth.GitCredential
+import java.io.File
+
 /** How a file differs from the last commit. */
 enum class ChangeKind { ADDED, MODIFIED, DELETED, UNTRACKED, CONFLICTING }
 
@@ -29,9 +32,20 @@ data class VcsBranches(
     val local: List<String>,
     val tips: Map<String, String> = emptyMap(),
     val head: String? = null,
+    /** How the current branch compares with its remote branch (EDT-60 phase 2); null without one. */
+    val tracking: VcsTracking? = null,
 ) {
     val detached: Boolean get() = current == null && head != null
 }
+
+/** A remote, stored without credentials (EDT-60 §5). */
+data class VcsRemote(val name: String, val url: String)
+
+/** The current branch's remote branch (e.g. `origin/main`) and how many commits each side has that the other lacks. */
+data class VcsTracking(val remoteBranch: String, val ahead: Int, val behind: Int)
+
+/** What a pull did. [CONFLICTS] leaves a merge in progress for the Conflicts dialog. */
+enum class PullOutcome { UP_TO_DATE, FAST_FORWARD, MERGED, CONFLICTS }
 
 data class DiffLine(val kind: Kind, val text: String) {
     enum class Kind { HUNK, CONTEXT, ADDED, REMOVED }
@@ -102,4 +116,32 @@ interface VcsService {
 
     /** The author from Git's own configuration, when it has one. */
     fun configuredAuthor(): VcsAuthor?
+
+    /** The remotes, stored without credentials. */
+    fun remotes(): List<VcsRemote>
+
+    /** Adds [name] or changes its URL. Refused when [url] holds credentials (strip them first, `RemoteUrls`). */
+    fun setRemote(url: String, name: String = ORIGIN)
+
+    /** Downloads the remote's commits; the working tree is not touched. */
+    fun fetch(credential: GitCredential?)
+
+    /**
+     * Fetch, then merge the current branch's remote branch (no rebase). Refused while tracked files have uncommitted
+     * changes. A merge commit uses [author]. On conflicts, scenes, prefabs, `.meta` and project files are put back to
+     * our version on disk (still conflicted in Git) so nothing loads conflict markers (EDT-60 §7.2).
+     */
+    fun pull(credential: GitCredential?, author: VcsAuthor): PullOutcome
+
+    /** Pushes the current branch and sets its upstream on the first push. A non-fast-forward is refused: "Pull first". */
+    fun push(credential: GitCredential?)
+
+    companion object {
+        const val ORIGIN = "origin"
+    }
+}
+
+/** Copies a remote repository into a new folder (EDT-60 phase 2: Clone, used by the project wizard, EDT-59). */
+fun interface VcsCloner {
+    fun clone(url: String, into: File, credential: GitCredential?)
 }

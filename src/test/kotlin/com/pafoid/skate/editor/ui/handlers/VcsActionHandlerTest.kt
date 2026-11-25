@@ -6,6 +6,13 @@ import com.pafoid.skate.editor.events.EditorError
 import com.pafoid.skate.editor.events.ProjectEvent
 import com.pafoid.skate.editor.events.VcsCommitted
 import com.pafoid.skate.editor.events.VcsAction
+import com.pafoid.skate.editor.events.VcsSignInRequested
+import com.pafoid.skate.editor.vcs.VcsException
+import com.pafoid.skate.editor.vcs.VcsService
+import com.pafoid.skate.editor.vcs.auth.GitCredential
+import com.pafoid.skate.editor.vcs.auth.GitCredentials
+import com.pafoid.skate.editor.vcs.auth.SessionCredentialStore
+import org.eclipse.jgit.api.Git
 import com.pafoid.skate.editor.systems.UndoRedoManager
 import com.pafoid.skate.editor.vcs.VcsAuthor
 import com.pafoid.skate.editor.vcs.VcsRunner
@@ -144,5 +151,71 @@ class VcsActionHandlerTest {
         events.publish(VcsAction.SwitchBranch("main"))
         assertTrue(captured.captured is SwitchBranchCommand)
         verify(exactly = 2) { manager.executeCommand(any()) }
+    }
+
+    // --- EDT-60 phase 2: remotes and sign-in ---
+
+    @Test
+    fun SetRemote_MovesUrlCredentialsToTheStoreAndWritesNoSecretUnderTheProject() {
+        handler()
+        repo()
+        events.publish(VcsAction.SetRemote("https://me:ghp_SECRET@github.com/me/game.git"))
+        assertEquals("https://github.com/me/game.git", session.state.origin?.url)
+        assertEquals(GitCredential("me", "ghp_SECRET"), session.credentials.forUrl("https://github.com/me/game.git"))
+        assertEquals("vcs.toast.remote_set_credentials_moved[https://github.com/me/game.git]", toasts.last())
+        val leaks = dir.walkTopDown().filter { it.isFile && it.readBytes().toString(Charsets.ISO_8859_1).contains("ghp_SECRET") }.toList()
+        assertEquals(emptyList<File>(), leaks)
+    }
+
+    @Test
+    fun SignIn_StoresTheTokenAndSignOutRemovesIt() {
+        handler()
+        events.publish(VcsAction.SignIn("github.com", " ", " tok "))
+        assertEquals(GitCredential("git", "tok"), session.credentials.forUrl("https://github.com/x.git"))
+        assertEquals("vcs.toast.signed_in_session[github.com]", toasts.last())
+        events.publish(VcsAction.SignIn("github.com", "me", "  "))
+        assertEquals("vcs.signin.token_required", errors.last().messageKey)
+        events.publish(VcsAction.SignOut("github.com"))
+        assertEquals(null, session.credentials.forUrl("https://github.com/x.git"))
+    }
+
+    @Test
+    fun PushAndPull_ThroughALocalRemote_ReloadOnlyWhenFilesChanged() {
+        handler()
+        repo()
+        val bare = File(dir.parentFile, "${dir.name}-remote.git")
+        Git.init().setBare(true).setDirectory(bare).setInitialBranch("main").call().close()
+        try {
+            val reloads = mutableListOf<String>()
+            events.subscribe<ProjectEvent.OpenProjectRequested> { reloads += it.projectPath }
+            events.publish(VcsAction.SetRemote(bare.toURI().toString()))
+            events.publish(VcsAction.Push)
+            assertEquals("vcs.toast.pushed[]", toasts.last())
+            assertEquals(0, session.state.branches?.tracking?.ahead)
+            events.publish(VcsAction.Pull)
+            assertEquals("vcs.toast.up_to_date[]", toasts.last())
+            assertEquals(emptyList<String>(), reloads)
+            unsaved = true
+            events.publish(VcsAction.Pull)
+            assertEquals("vcs.error.unsaved_scenes", errors.last().messageKey)
+        } finally {
+            bare.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun AuthenticationFailure_AsksForSignInInsteadOfAnError() {
+        val vcs = mockk<VcsService>(relaxed = true)
+        every { vcs.isRepository() } returns true
+        every { vcs.push(any()) } throws VcsException("vcs.error.auth_required", "github.com")
+        val authSession = VcsSession({ dir }, VcsRunner.Immediate, factory = { vcs }, credentials = GitCredentials(SessionCredentialStore()))
+        VcsActionHandler(events, undo, authSession, { false }, { false }, { null })
+        events.subscribe<EditorError> { errors += it }
+        val asked = mutableListOf<String>()
+        events.subscribe<VcsSignInRequested> { asked += it.host }
+        authSession.followProject()
+        events.publish(VcsAction.Push)
+        assertEquals(listOf("github.com"), asked)
+        assertTrue(errors.isEmpty())
     }
 }
