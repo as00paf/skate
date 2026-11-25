@@ -108,6 +108,7 @@ class Serializer(val assetPaths: AssetPaths = AssetPaths()) {
             subclass(MeshCollider3D::class)
             subclass(CapsuleCollider3D::class)
             subclass(JointComponent::class)
+            subclass(com.pafoid.skate.engine.ecs.components.DestructibleComponent::class)
 
             // Animation components
             subclass(IkSetup::class)

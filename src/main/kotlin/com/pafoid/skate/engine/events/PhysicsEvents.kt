@@ -1,6 +1,7 @@
 package com.pafoid.skate.engine.events
 
 import com.pafoid.skate.engine.ecs.GameObject
+import com.pafoid.skate.engine.ecs.components.DestructionMode
 import com.pafoid.skate.engine.physics3d.PhysicsBackend
 import org.joml.Vector3f
 
@@ -39,3 +40,29 @@ data class WaterEntered(val water: GameObject, val body: GameObject) : PhysicsEv
 
 /** [body] left the water held by [water], or the water or body went away while touching (PHY-16). */
 data class WaterExited(val water: GameObject, val body: GameObject) : PhysicsEvent("physics.water_exited")
+
+/**
+ * [target]'s `DestructibleComponent` took [amount] damage of [type] (`"impact"`, or the caller's type) at [point], and
+ * has [remaining] integrity left (PHY-29 §8). For crack sounds and hit feedback.
+ */
+data class DestructibleDamaged(
+    val target: GameObject,
+    val amount: Float,
+    val remaining: Float,
+    val point: Vector3f,
+    val type: String,
+) : PhysicsEvent("physics.destructible_damaged")
+
+/**
+ * [target] broke at [point] (PHY-29 §8), published once before it is removed or replaced, so listeners can still read
+ * its Transform. [impulse] is the impact that broke it (0 for API damage), [surface] its sound and dust key, [mode] how
+ * it broke and [pieces] how many objects replaced it (0 for a removal, 1 for a swap).
+ */
+data class Fractured(
+    val target: GameObject,
+    val point: Vector3f,
+    val impulse: Float,
+    val surface: String,
+    val mode: DestructionMode,
+    val pieces: Int,
+) : PhysicsEvent("physics.fractured")
