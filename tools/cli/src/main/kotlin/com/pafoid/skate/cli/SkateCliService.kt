@@ -1,7 +1,7 @@
 package com.pafoid.skate.cli
 
 import com.pafoid.skate.editor.project.Project
-import com.pafoid.skate.editor.project.ProjectWizard
+import com.pafoid.skate.engine.assets.PrefabsGenerator
 import com.pafoid.skate.engine.assets.ProjectLayout
 import com.pafoid.skate.engine.assets.serialization.FileKind
 import com.pafoid.skate.engine.assets.serialization.Serializer
@@ -11,7 +11,10 @@ import com.pafoid.skate.engine.getComponent
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.utils.AssetsPacker
-import org.joml.Vector2i
+import com.pafoid.skate.templates.EmptyTemplate
+import com.pafoid.skate.templates.NewProjectSettings
+import com.pafoid.skate.templates.ProjectCreator
+import com.pafoid.skate.templates.TemplateRegistry
 import java.io.File
 
 class CliException(message: String) : Exception(message)
@@ -36,38 +39,27 @@ class SkateCliService(
     private val out: (String) -> Unit = ::println,
 ) {
 
-    fun createProject(name: String, parent: File): File {
-        val wizard = ProjectWizard().apply {
-            setProjectName(name)
-            setProjectLocation(parent.absolutePath)
+    /**
+     * Creates [name] in [parent] from [settings] through the shared [ProjectCreator] (EDT-59), headless: prefabs keep
+     * path references only. `skate create` defaults to the Empty template.
+     */
+    fun createProject(name: String, parent: File, settings: NewProjectSettings = NewProjectSettings(EmptyTemplate.ID)): File {
+        val prefabs = PrefabsGenerator(engine, loadAssets = false)
+        val project = ProjectCreator(serializer).create(name, parent, settings, prefabs).getOrElse { e ->
+            throw CliException(e.message ?: e.javaClass.simpleName)
         }
-        if (!wizard.isProjectNameValid()) throw CliException("Invalid project name '$name'")
-        if (!wizard.isProjectPathValid()) throw CliException("Folder '${parent.path}' does not exist or is not writable")
+        out("Created project '${project.name}' from the ${settings.template} template at ${project.projectPath}")
+        return File(project.projectPath)
+    }
 
-        val projectDir = wizard.getProjectDirectory()
-        val projectFile = File(projectDir, "$name.skateproject")
-        if (projectFile.exists()) throw CliException("Project '$name' already exists in ${parent.path}")
-
-        val assetsDir = ProjectLayout.create(projectDir)
-        val scenesDir = ProjectLayout.scenesDir(projectDir)
-        File(assetsDir, ProjectLayout.STRINGS_FILE).writeText("project.name=$name")
-        copyEngineAssets(projectDir)
-
-        val files = ProjectFiles(serializer, projectDir)
-        val sceneName = "MainScene"
-        // The scene manager saves with the engine serializer.
-        ProjectFiles(engine.serializer, projectDir).inProject { engine.sceneManager.createNewScene(sceneName, scenesDir.absolutePath) }
-        val scenePath = File(scenesDir.absoluteFile, "$sceneName.scene").path
-        val project = Project(
-            name = name,
-            projectPath = projectFile.path,
-            defaultScene = scenePath,
-            scenesPath = listOf(scenePath),
-            resolution = Vector2i(1920, 1080),
-        )
-        files.writeProject(project)
-        out("Created project '$name' at ${projectFile.path}")
-        return projectFile
+    /**
+     * `skate sample <id>`: the [TemplateRegistry.sampleNames] project from that template, in reference mode (AST-26
+     * §6, EDT-59 answer 8).
+     */
+    fun createSample(templateId: String, parent: File): File {
+        val name = TemplateRegistry.sampleNames[templateId]
+            ?: throw CliException("Unknown sample '$templateId' (available: ${TemplateRegistry.sampleNames.keys.joinToString()})")
+        return createProject(name, parent, NewProjectSettings(template = templateId, copyEngineDefaults = false))
     }
 
     fun loadProject(path: String): Project {

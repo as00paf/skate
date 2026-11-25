@@ -1,19 +1,18 @@
-package com.pafoid.skate.cli
+package com.pafoid.skate.templates
 
 import com.pafoid.skate.engine.assets.EngineDefaults
 import com.pafoid.skate.engine.ecs.SceneSun
 import com.pafoid.skate.engine.ecs.components.EnvironmentComponent
+import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.editor.project.Project
+import com.pafoid.skate.engine.assets.PrefabsGenerator
 import com.pafoid.skate.engine.assets.ProjectLayout
 import com.pafoid.skate.engine.addComponent
-import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.data.models.`3dModel`
 import com.pafoid.skate.engine.assets.data.models.Material
-import com.pafoid.skate.engine.assets.serialization.Serializer
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.components.*
-import org.joml.Vector2i
 import org.joml.Vector3f
 import org.joml.Vector4f
 import com.pafoid.skate.engine.ui.UICanvasComponent
@@ -26,64 +25,59 @@ import kotlin.math.PI
 import kotlin.math.sin
 
 /**
- * Builds the "Tetris" sample project (TLG-03): a 3D Tetris whose rules live in a Kotlin script
- * (`Assets/Scripts/tetris.kts`) driving a pool of cube entities. See docs/samples.md.
+ * The "Tetris" template (TLG-03, EDT-59): a 3D Tetris whose rules live in a Kotlin script
+ * (`Assets/Scripts/tetris.kts`) driving a pool of cube entities, and a game-over scene. See docs/samples.md.
  */
-class TetrisProjectBuilder(private val serializer: Serializer = Serializer()) {
+object TetrisTemplate : ProjectTemplate {
+    const val ID = "tetris"
+    const val SCENE_NAME = "Game"
+    const val SCRIPT_RESOURCE = "/samples/tetris/tetris.kts"
+    const val SCRIPT_FILE = "tetris.kts"
+    const val GAME_OVER_SCENE = "GameOver"
+    const val GAME_OVER_RESOURCE = "/samples/tetris/gameover.kts"
+    const val GAME_OVER_SCRIPT_FILE = "gameover.kts"
+    private val SFX = mapOf("SfxLock" to 330.0, "SfxClear" to 660.0, "SfxOver" to 110.0)
+    const val POOL_SIZE = 10 * 20 + 4
 
-    companion object {
-        const val PROJECT_NAME = "Tetris"
-        const val SCENE_NAME = "Game"
-        const val SCRIPT_RESOURCE = "/samples/tetris/tetris.kts"
-        const val SCRIPT_FILE = "tetris.kts"
-        const val GAME_OVER_SCENE = "GameOver"
-        const val GAME_OVER_RESOURCE = "/samples/tetris/gameover.kts"
-        const val GAME_OVER_SCRIPT_FILE = "gameover.kts"
-        private val SFX = mapOf("SfxLock" to 330.0, "SfxClear" to 660.0, "SfxOver" to 110.0)
-        const val POOL_SIZE = 10 * 20 + 4
+    override val id = ID
+    override val category = TemplateCategory.SAMPLE
+    override val icon = Icons.CUBE
+    override val sceneNames = listOf(SCENE_NAME, GAME_OVER_SCENE)
+    override val ownFiles = listOf("Assets/Scripts/$SCRIPT_FILE", "Assets/Scripts/$GAME_OVER_SCRIPT_FILE") +
+        SFX.keys.map { "Assets/Sounds/$it.wav" }
+
+    private val strings = listOf(
+        "tetris.hud=Score %s   Lines %s   Level %s",
+        "tetris.gameover.title=GAME OVER",
+        "tetris.gameover.hint=Press R to play again",
+    )
+
+    override fun writeFiles(ctx: TemplateContext) {
+        val scriptsDir = scriptsDir(ctx)
+        copyResource(SCRIPT_RESOURCE, File(scriptsDir, SCRIPT_FILE))
+        copyResource(GAME_OVER_RESOURCE, File(scriptsDir, GAME_OVER_SCRIPT_FILE))
+        File(ctx.assetsDir, ProjectLayout.STRINGS_FILE).appendText(strings.joinToString("\n", postfix = "\n"))
+        SFX.forEach { (name, hz) -> writeTone(File(ctx.assetsDir, "Sounds/$name.wav").also { it.parentFile.mkdirs() }, hz) }
     }
 
-    private lateinit var assetsPrefix: String
-
-    fun build(parent: File): File {
-        val projectDir = File(parent, PROJECT_NAME).absoluteFile.also { it.mkdirs() }
-        val assetsDir = ProjectLayout.create(projectDir)
-        val scenesDir = ProjectLayout.scenesDir(projectDir)
-        copyEngineAssets(projectDir, copyAll = false) // samples use reference mode (AST-26 §7)
-        assetsPrefix = assetsDir.absolutePath + File.separator
-        val files = ProjectFiles(serializer, projectDir)
-
-        val scriptsDir = File(assetsDir, "Scripts").also { it.mkdirs() }
-        val script = TetrisProjectBuilder::class.java.getResourceAsStream(SCRIPT_RESOURCE)
-            ?: error("Missing resource $SCRIPT_RESOURCE")
-        File(scriptsDir, SCRIPT_FILE).outputStream().use { script.copyTo(it) }
-        val overScript = TetrisProjectBuilder::class.java.getResourceAsStream(GAME_OVER_RESOURCE)
-            ?: error("Missing resource $GAME_OVER_RESOURCE")
-        File(scriptsDir, GAME_OVER_SCRIPT_FILE).outputStream().use { overScript.copyTo(it) }
-
-        File(assetsDir, "strings.properties").writeText(
-            "project.name=$PROJECT_NAME\n" +
-                "tetris.hud=Score %s   Lines %s   Level %s\n" +
-                "tetris.gameover.title=GAME OVER\n" +
-                "tetris.gameover.hint=Press R to play again\n"
+    override fun buildScenes(ctx: TemplateContext, prefabs: PrefabsGenerator): List<Scene> {
+        val scriptsDir = scriptsDir(ctx)
+        val assetsPrefix = ctx.assetsDir.absolutePath + File.separator
+        return listOf(
+            game(File(scriptsDir, SCRIPT_FILE).absolutePath, assetsPrefix),
+            gameOver(File(scriptsDir, GAME_OVER_SCRIPT_FILE).absolutePath),
         )
-        SFX.forEach { (name, hz) -> writeTone(File(assetsDir, "Sounds/$name.wav").also { it.parentFile.mkdirs() }, hz) }
+    }
 
-        val scenePaths = listOf(
-            SCENE_NAME to game(File(scriptsDir, SCRIPT_FILE).absolutePath),
-            GAME_OVER_SCENE to gameOver(File(scriptsDir, GAME_OVER_SCRIPT_FILE).absolutePath),
-        ).map { (name, scene) -> files.writeScene(scenesDir, name, scene).path }
-        val scenePath = scenePaths.first()
-        val projectFile = File(projectDir, "$PROJECT_NAME.skateproject")
-        files.writeProject(Project(
-            name = PROJECT_NAME,
-            projectPath = projectFile.path,
-            description = "Tetris driven by a Kotlin script",
-            defaultScene = scenePath,
-            scenesPath = scenePaths,
-            resolution = Vector2i(1920, 1080),
-        ))
-        return projectFile
+    override fun configure(project: Project) {
+        project.description = "Tetris driven by a Kotlin script"
+    }
+
+    private fun scriptsDir(ctx: TemplateContext) = File(ctx.assetsDir, "Scripts").also { it.mkdirs() }
+
+    private fun copyResource(resource: String, target: File) {
+        val input = TetrisTemplate::class.java.getResourceAsStream(resource) ?: error("Missing resource $resource")
+        input.use { source -> target.outputStream().use { source.copyTo(it) } }
     }
 
     private fun cube(name: String, pos: Vector3f, half: Vector3f, color: Vector4f) = GameObject(name)
@@ -126,7 +120,7 @@ class TetrisProjectBuilder(private val serializer: Serializer = Serializer()) {
         file.writeBytes(header.array() + data.array())
     }
 
-    private fun game(scriptPath: String): Scene {
+    private fun game(scriptPath: String, assetsPrefix: String): Scene {
         val scene = Scene(SCENE_NAME)
         // Ambient lives in the environment and the sun is an entity (REN-26); no sky or fog, as before
         scene.addComponent(EnvironmentComponent(renderSky = false, renderFog = false, ambientIntensity = 0.4f))

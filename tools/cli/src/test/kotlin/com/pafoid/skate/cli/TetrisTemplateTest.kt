@@ -22,7 +22,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
-class TetrisProjectBuilderTest {
+class TetrisTemplateTest {
 
     private class FakeInput : ScriptInput {
         val pressed = mutableSetOf<Int>()
@@ -52,7 +52,7 @@ class TetrisProjectBuilderTest {
     @BeforeTest
     fun setUp() {
         dir = Files.createTempDirectory("skate-tetris").toFile()
-        val project = TetrisProjectBuilder().build(dir)
+        val project = SkateCliService(out = {}).createSample("tetris", dir)
         val service = SkateCliService(out = {})
         scene = service.loadScenes(service.loadProject(project.path)).first { it.name == "Game" }
         // Mirrors SceneManager.resolveSceneReferences, which binds components after a scene is loaded
@@ -87,7 +87,7 @@ class TetrisProjectBuilderTest {
 
     @Test
     fun Tetris_PoolAndScriptAreGenerated() {
-        assertEquals(TetrisProjectBuilder.POOL_SIZE, scene.children.count { it.name.startsWith("Cell_") })
+        assertEquals(com.pafoid.skate.templates.TetrisTemplate.POOL_SIZE, scene.children.count { it.name.startsWith("Cell_") })
         assertTrue(java.io.File(component.path).isFile)
     }
 

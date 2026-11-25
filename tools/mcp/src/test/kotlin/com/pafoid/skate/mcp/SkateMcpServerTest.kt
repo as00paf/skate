@@ -1,6 +1,5 @@
 package com.pafoid.skate.mcp
 
-import com.pafoid.skate.cli.ShowcaseProjectBuilder
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonArray
@@ -47,7 +46,7 @@ class SkateMcpServerTest {
     fun Mcp_ListsScenesEntitiesAndExports() {
         val dir = Files.createTempDirectory("skate-mcp").toFile()
         try {
-            val project = ShowcaseProjectBuilder().build(dir).path.replace("\\", "\\\\")
+            val project = com.pafoid.skate.cli.SkateCliService(out = {}).createSample("feature-showcase", dir).path.replace("\\", "\\\\")
             val (e1, scenes) = call(10, "list_scenes", """{"project":"$project"}""")
             assertTrue(!e1 && scenes.contains("FeatureShowcase"), scenes)
 
