@@ -51,7 +51,7 @@ object StringFields {
     fun objectNames(root: GameObject): List<String> {
         val out = LinkedHashSet<String>()
         fun walk(node: GameObject) {
-            node.children.forEach { out.add(it.name); walk(it) }
+            node.persistentChildren.forEach { out.add(it.name); walk(it) }
         }
         walk(root)
         return out.toList()
