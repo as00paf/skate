@@ -1,11 +1,13 @@
 package com.pafoid.skate.editor.vcs
 
+import com.pafoid.skate.editor.vcs.auth.RemoteUrls
+
 /**
  * EDT-79 §3: the branch popup's entries and their enabling rules, free of ImGui. The rules reuse
  * [VcsStatusModel.actionRefusal], so the popup, the dialogs and `VcsActionHandler` agree on what is refused.
  */
 object BranchPopupModel {
-    enum class Action { UPDATE, COMMIT, CHANGES, RESOLVE, HISTORY, NEW_BRANCH, INITIALIZE, CLONE }
+    enum class Action { UPDATE, PUSH, COMMIT, CHANGES, RESOLVE, HISTORY, NEW_BRANCH, REMOTE, SIGN_IN, INITIALIZE, CLONE }
 
     /** One action row. [reasonKey] says why a disabled row is disabled (shown as its tooltip). */
     data class Entry(val action: Action, val enabled: Boolean, val reasonKey: String? = null, val count: Int = 0)
@@ -29,14 +31,31 @@ object BranchPopupModel {
         }
         val playRefusal = VcsStatusModel.actionRefusal(false, playing, false)
         return buildList {
-            add(Entry(Action.UPDATE, false, "vcs.popup.needs_remote"))
+            // EDT-60 phase 2: Update (pull) shows how many commits are behind, Push how many are ahead.
+            val tracking = state.branches?.tracking
+            if (state.origin == null) {
+                add(Entry(Action.UPDATE, false, "vcs.popup.needs_remote"))
+                add(Entry(Action.PUSH, false, "vcs.popup.needs_remote"))
+            } else {
+                add(gate(Action.UPDATE, tracking?.behind ?: 0, playRefusal))
+                val pushRefusal = playRefusal ?: "vcs.error.no_commits".takeIf { state.history.isEmpty() }
+                    ?: "vcs.error.detached".takeIf { state.branches?.detached == true }
+                add(gate(Action.PUSH, tracking?.ahead ?: 0, pushRefusal))
+            }
             add(gate(Action.COMMIT, state.entries.count { it.change.kind != ChangeKind.CONFLICTING }, playRefusal))
             add(Entry(Action.CHANGES, true))
             if (state.hasConflicts) add(Entry(Action.RESOLVE, true, count = state.conflicts.size))
             add(Entry(Action.HISTORY, true))
             add(gate(Action.NEW_BRANCH, refusal = playRefusal ?: "vcs.error.no_commits".takeIf { state.history.isEmpty() }))
+            add(gate(Action.REMOTE, refusal = playRefusal))
+            // Sign in only makes sense for an HTTPS remote; SSH keys come in phase 3.
+            signInHost(state)?.let { add(Entry(Action.SIGN_IN, true)) }
         }
     }
+
+    /** The host to sign in to: `origin`'s, when it is an http(s) URL. */
+    fun signInHost(state: VcsSession.State): String? =
+        state.origin?.url?.takeIf { RemoteUrls.isHttp(it) }?.let { RemoteUrls.host(it) }
 
     /** The local branches matching [query] (case-insensitive substring), the current branch first. */
     fun branches(state: VcsSession.State, query: String): List<BranchRow> {

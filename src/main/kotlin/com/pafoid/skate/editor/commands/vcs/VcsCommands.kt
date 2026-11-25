@@ -2,6 +2,7 @@ package com.pafoid.skate.editor.commands.vcs
 
 import com.pafoid.skate.editor.commands.ExecuteOnlyCommand
 import com.pafoid.skate.editor.commands.KeyedCommand
+import com.pafoid.skate.editor.vcs.PullOutcome
 import com.pafoid.skate.editor.vcs.Resolution
 import com.pafoid.skate.editor.vcs.VcsException
 import com.pafoid.skate.editor.vcs.VcsService
@@ -106,4 +107,43 @@ class ResolveConflictCommand(
         get() = if (resolution == Resolution.MINE) "command.ResolveConflictCommand.mine" else "command.ResolveConflictCommand.theirs"
     override fun getDisplayName(): String = if (resolution == Resolution.MINE) "Keep Mine" else "Take Theirs"
     override fun getTargetName(): String = paths.joinToString()
+}
+
+/** EDT-60 phase 2: sets `origin` to [url] (already stripped of credentials). */
+class SetRemoteCommand(session: VcsSession, private val url: String, onSuccess: () -> Unit = {}) : VcsCommand(session, onSuccess) {
+    override fun action(vcs: VcsService) = vcs.setRemote(url)
+    override fun getDisplayName(): String = "Set Remote"
+    override fun getTargetName(): String? = url
+}
+
+class FetchCommand(private val session: VcsSession, onSuccess: () -> Unit = {}) : VcsCommand(session, onSuccess) {
+    override fun action(vcs: VcsService) = vcs.fetch(session.credentialFor(vcs))
+    override fun getDisplayName(): String = "Fetch"
+    override fun getTargetName(): String? = null
+}
+
+/** Fetch and merge (no rebase); [onSuccess] gets what the pull did, on the main side. */
+class PullCommand(
+    private val session: VcsSession,
+    private val onPulled: (PullOutcome) -> Unit = {},
+) : VcsCommand(session) {
+    private val author = session.author()
+
+    @Volatile
+    var outcome: PullOutcome? = null
+        private set
+
+    override fun action(vcs: VcsService) {
+        outcome = vcs.pull(session.credentialFor(vcs), author)
+    }
+
+    override fun succeeded() = onPulled(outcome ?: PullOutcome.UP_TO_DATE)
+    override fun getDisplayName(): String = "Pull"
+    override fun getTargetName(): String? = null
+}
+
+class PushCommand(private val session: VcsSession, onSuccess: () -> Unit = {}) : VcsCommand(session, onSuccess) {
+    override fun action(vcs: VcsService) = vcs.push(session.credentialFor(vcs))
+    override fun getDisplayName(): String = "Push"
+    override fun getTargetName(): String? = null
 }

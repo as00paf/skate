@@ -1,6 +1,7 @@
 package com.pafoid.skate.editor.ui.windows.vcs
 
 import com.pafoid.skate.editor.events.VcsAction
+import com.pafoid.skate.editor.events.VcsSignInRequested
 import com.pafoid.skate.editor.imgui.EditorModal
 import com.pafoid.skate.editor.imgui.FooterButton
 import com.pafoid.skate.editor.imgui.data.Icons
@@ -10,6 +11,8 @@ import com.pafoid.skate.editor.vcs.VcsSession
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.core.StringManager
 import imgui.ImGui
+import com.pafoid.skate.editor.vcs.auth.RemoteUrls
+import imgui.flag.ImGuiInputTextFlags
 import imgui.type.ImBoolean
 import imgui.type.ImString
 
@@ -38,6 +41,13 @@ class VcsModals(strings: StringManager, eventSystem: EventSystem, session: VcsSe
     }
 
     val newBranch = NewBranchModal(strings, eventSystem, session)
+    val remote = RemoteModal(strings, eventSystem, session)
+    val signIn = SignInModal(strings, eventSystem, session)
+
+    init {
+        // EDT-60 phase 2: a remote refused the credentials.
+        eventSystem.subscribe<VcsSignInRequested> { e -> signIn.show(e.host) }
+    }
 
     private val deleteBranch = object : EditorModal(strings, Icons.TRASH) {
         var branch: String = ""
@@ -80,6 +90,8 @@ class VcsModals(strings: StringManager, eventSystem: EventSystem, session: VcsSe
     fun render() {
         initialize.render()
         newBranch.render()
+        remote.render()
+        signIn.render()
         deleteBranch.render()
         discard.render()
     }
@@ -132,4 +144,90 @@ class NewBranchModal(
             eventSystem.publish(VcsAction.CreateBranch(name.get().trim(), from, checkout.get()))
         },
     )
+}
+
+/** EDT-60 phase 2: sets `origin`'s URL. Credentials typed into the URL are moved to the credential store. */
+class RemoteModal(
+    strings: StringManager,
+    private val eventSystem: EventSystem,
+    private val session: VcsSession,
+) : EditorModal(strings, Icons.LINK, minWidth = 460f) {
+    private val url = ImString(512)
+    private var focus = false
+
+    override val titleKey = "vcs.remote.title"
+
+    fun show() {
+        url.set(session.state.origin?.url.orEmpty())
+        focus = true
+        open()
+    }
+
+    override fun content() {
+        ImGui.textDisabled(strings.getString("vcs.remote.message"))
+        if (focus) {
+            ImGui.setKeyboardFocusHere()
+            focus = false
+        }
+        ImGui.setNextItemWidth(-1f)
+        ImGui.inputTextWithHint("##vcs_remote_url", strings.getString("vcs.remote.hint"), url)
+        if (RemoteUrls.strip(url.get()).hadCredentials) {
+            textColored(ThemeColors.warning, strings.getString("vcs.remote.credentials_moved"))
+        }
+    }
+
+    override fun buttons() = listOf(
+        FooterButton("btn.cancel", FooterButton.Role.CANCEL),
+        FooterButton("vcs.remote.save", FooterButton.Role.PRIMARY, enabled = url.get().isNotBlank() && !session.state.busy) {
+            eventSystem.publish(VcsAction.SetRemote(url.get()))
+        },
+    )
+}
+
+/**
+ * EDT-60 phase 2: sign in to an HTTPS host with a user name and a personal access token, kept in the credential store
+ * (never in the project). Browser sign-in for GitHub (`GitHubDeviceFlow`) joins it once the Skate OAuth App exists.
+ */
+class SignInModal(
+    strings: StringManager,
+    private val eventSystem: EventSystem,
+    private val session: VcsSession,
+) : EditorModal(strings, Icons.USER, minWidth = 440f) {
+    private val username = ImString(128)
+    private val token = ImString(512)
+    var host: String = ""
+        private set
+
+    override val titleKey = "vcs.signin.title"
+
+    fun show(forHost: String) {
+        host = forHost
+        username.set("")
+        token.set("")
+        open()
+    }
+
+    override fun content() {
+        ImGui.pushTextWrapPos(ImGui.getFontSize() * 30f)
+        ImGui.textWrapped(strings.getString("vcs.signin.message", host))
+        if (!session.credentials.store.persistent) textColored(ThemeColors.warning, strings.getString("vcs.signin.session_only"))
+        ImGui.popTextWrapPos()
+        ImGui.setNextItemWidth(-1f)
+        ImGui.inputTextWithHint("##vcs_signin_user", strings.getString("vcs.signin.username"), username)
+        ImGui.setNextItemWidth(-1f)
+        ImGui.inputTextWithHint("##vcs_signin_token", strings.getString("vcs.signin.token"), token, ImGuiInputTextFlags.Password)
+    }
+
+    override fun buttons() = buildList {
+        add(FooterButton("btn.cancel", FooterButton.Role.CANCEL))
+        if (session.credentials.has(host)) {
+            add(FooterButton("vcs.signin.sign_out", FooterButton.Role.DANGER) { eventSystem.publish(VcsAction.SignOut(host)) })
+        }
+        add(
+            FooterButton("vcs.signin.save", FooterButton.Role.PRIMARY, enabled = token.get().isNotBlank()) {
+                eventSystem.publish(VcsAction.SignIn(host, username.get(), token.get()))
+                token.set("")
+            },
+        )
+    }
 }

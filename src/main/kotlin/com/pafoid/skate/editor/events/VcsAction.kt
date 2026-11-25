@@ -14,7 +14,22 @@ sealed class VcsAction(eventName: String) : Event(eventName) {
     data class Discard(val paths: List<String>) : VcsAction("vcs.discard")
     /** Resolves every one of [paths] as a whole with [resolution], in one Git action (EDT-79: several files at once). */
     data class Resolve(val paths: List<String>, val resolution: Resolution) : VcsAction("vcs.resolve")
+
+    /** EDT-60 phase 2: sets `origin`. Credentials in [url] are moved to the OS store, never saved in the URL. */
+    data class SetRemote(val url: String) : VcsAction("vcs.set_remote")
+    object Fetch : VcsAction("vcs.fetch")
+    object Pull : VcsAction("vcs.pull")
+    object Push : VcsAction("vcs.push")
+
+    /** Stores a user name and token for [host] in the credential store (pasted personal access token). */
+    data class SignIn(val host: String, val username: String, val token: String) : VcsAction("vcs.sign_in") {
+        override fun toString(): String = "SignIn($host, $username, ***)"
+    }
+    data class SignOut(val host: String) : VcsAction("vcs.sign_out")
 }
+
+/** EDT-60 phase 2: a remote refused the stored credentials (or there were none); the UI opens Sign in for [host]. */
+data class VcsSignInRequested(val host: String) : Event("vcs.sign_in_requested")
 
 /** EDT-79: a commit was made ([commitId]); the Commit dialog clears its message. */
 data class VcsCommitted(val commitId: String) : Event("vcs.committed")
