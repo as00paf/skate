@@ -397,6 +397,9 @@ Round 27+ goals: the Asset Browser shows every asset type, one assets folder, ex
   - Do: (NEEDS from INP-11): confirm or make `Assets/Data/input.actions.json` packed in exports.
   - Done when: An exported game loads the project actions; test.
   - Deps: INP-11
+- [ ] **AST-49** `P1` AssetsManager.loadModel recurses forever when the default cube cannot load
+  - Do: (NEEDS from EDT-59): fix the path-compare bug that makes `loadModel` recurse endlessly when the default cube fails to load (seen without a headless RHI device).
+  - Done when: A failing default cube returns a fallback or error without recursion; regression test.
 
 ### ECS — `ECS` (`skate-ecs`)
 
@@ -1118,6 +1121,10 @@ Round 27+ goals (human, 2026-11-06): fix editor bugs, make every window, dialog 
   - Do: (human, 2026-11-18): the EDT-84 tool window sidebars need three visual fixes: (1) vertical separator lines between the icon buttons to visually group/divide them; (2) icons inside the sidebar buttons must be centered both horizontally and vertically, not offset; (3) the padding around each icon button must be equal on all four sides and slightly more generous than the current value. Fix all three in the sidebar rendering code; add a render test that checks button dimensions and icon centering.
   - Done when: Sidebars show separator lines; icons are centered; all four sides of each button have equal padding; render/layout tests pass.
   - Deps: EDT-84
+- [ ] **EDT-114** `P1` Wire the editor wizard to ProjectCreator (EDT-59 slice 2)
+  - Do: (NEEDS from EDT-59 slice 1): wire `ProjectWizardWindow` and `ProjectActionHandler` to `templates/ProjectCreator`, add the new `Project` settings fields and typed folders, remove `createDefaultScenes`.
+  - Done when: Each template created from the wizard opens and runs; tests for the settings and the wizard model.
+  - Deps: EDT-59 slice 1
 - [x] **EDT-82** `P2` Editor-wide "unsaved assets" prompt on close
   - Do: (ANI-21 design answer, 2026-11-10): one prompt when the project or editor closes, listing the unsaved scene, animation clips and animator controllers, with Save all / Discard / Cancel.
   - Done when: Closing with unsaved assets asks first; tests for the dirty-document registry.
