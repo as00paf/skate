@@ -16,7 +16,7 @@ class TerrainRuntime {
     private var overviewBuild: java.util.concurrent.CompletableFuture<TerrainOverview>? = null
 
     /** Far-field colour (REN-28 §6), baked by the renderer from the splat weights and layer colours; null before. */
-    var macro: TerrainMacro? = null
+    @Volatile var macro: TerrainMacro? = null
 
     /** Bumped on every rebuild and on [markEdited]. */
     var version = 0L

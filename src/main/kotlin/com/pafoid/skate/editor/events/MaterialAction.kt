@@ -11,6 +11,9 @@ sealed class MaterialAction(eventName: String) : Event(eventName) {
     class Edit(val material: Material, val before: MaterialState, val after: MaterialState, val targetName: String?) :
         MaterialAction("material.edit")
 
+    /** Changes [component]'s model to the asset at [path] (REN-47). */
+    class SetModel(val component: RenderComponent, val path: String) : MaterialAction("material.set_model")
+
     /** Gives [component] its own material, copied from the model's first part (or the default material). */
     class CreateOverride(val component: RenderComponent) : MaterialAction("material.create_override")
 
