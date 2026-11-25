@@ -14,6 +14,7 @@ import com.pafoid.skate.engine.input.InputContextStack
 import com.pafoid.skate.engine.input.InputHistory
 import com.pafoid.skate.engine.input.InputMappings
 import com.pafoid.skate.engine.input.InputProvider
+import com.pafoid.skate.engine.input.ProjectActions
 import com.pafoid.skate.engine.input.InputReader
 import com.pafoid.skate.engine.input.ProviderRawInput
 import com.pafoid.skate.engine.input.RumbleManager
@@ -27,6 +28,9 @@ import com.pafoid.skate.engine.input.UiNavigationActions
 class InputSystem(
     val inputProvider: InputProvider,
     private val eventSystem: EventSystem,
+    /** Reads a project asset (`AssetsManager.readText`); used to load the project's own actions (INP-11). */
+    readText: (String) -> String? = { null },
+    warn: (String) -> Unit = {},
 ) : System(priority = ExecutionPriority.EARLY) {
 
     /** Keeps reading actions while paused so the pause menu can be driven. */
@@ -54,10 +58,14 @@ class InputSystem(
     /** Controller rumble. Unsupported (no-op) until a backend is assigned: GLFW has no haptics API. */
     val rumble = RumbleManager()
 
+    /** The project's own actions and contexts (INP-11), loaded from [InputMappings.actionsPath]. */
+    val projectActions = ProjectActions(actionMap, readText, warn)
+
     var mappings: InputMappings = InputMappings()
         set(value) {
             field = value
             actionMap.loadProfile(value.bindings)
+            projectActions.load(value.actionsPath)
         }
 
     private var eventActions: List<String> = emptyList()
@@ -81,12 +89,20 @@ class InputSystem(
     }
 
     override fun update(dt: Float) {
+        syncStartContexts()
         inputProvider.refreshGamepadState()
         actionReader.update()
         time += dt
         history.sample(time)
         rumble.update(dt)
         publishActionEvents()
+    }
+
+    /** Holds the project's "active at start" contexts exactly while the scene plays (editor Play or export). */
+    private fun syncStartContexts() {
+        val playing = scene.isRunning
+        if (playing && !projectActions.holdsStartContexts) projectActions.pushStartContexts(contexts)
+        else if (!playing && projectActions.holdsStartContexts) projectActions.popStartContexts(contexts)
     }
 
     private fun publishActionEvents() {
