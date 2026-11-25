@@ -303,8 +303,8 @@ class ActionBindingsPanel(
             if (ImGui.smallButton(s("menu.keybindings.delete") + "##kb_ctx_delete_${ctx.id}")) {
                 editProject(set.withoutContext(ctx.id), "command.project_actions.delete_context", ctx.id)
             }
-            if (users.isNotEmpty()) ImGui.endDisabled()
             Tooltips.text(if (users.isEmpty()) s("tip.keybindings.delete_context") else strings.getString("tip.keybindings.context_in_use", users.joinToString(", ")))
+            if (users.isNotEmpty()) ImGui.endDisabled()
         }
         if (ImGui.button(s("btn.keybindings.new_context") + "##kb_new_context")) dialog.newContext()
         tip("tip.keybindings.new_context")

@@ -120,7 +120,7 @@ data class ActionDefinition(
  * names that older profiles were written with (`com.pafoid.skate.engine.input.ActionBinding.Key`, ...).
  */
 object ActionBindingSerializer : KSerializer<ActionBinding> {
-    private const val LEGACY_PREFIX = "com.pafoid.skate.engine.input.ActionBinding."
+    private val LEGACY_PREFIX = ActionBinding::class.qualifiedName + "."
 
     override val descriptor: SerialDescriptor = buildClassSerialDescriptor("ActionBinding")
 
