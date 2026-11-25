@@ -9,13 +9,18 @@ class FakeStoreHttp(private val routes: MutableMap<String, ByteArray> = mutableM
     val downloads = mutableListOf<String>()
     var failDownloads = false
     var contentType: String? = null
+    private val headers = mutableMapOf<String, Map<String, List<String>>>()
 
     fun route(url: String, body: String) = apply { routes[url] = body.toByteArray() }
+    fun route(url: String, body: String, responseHeaders: Map<String, List<String>>) = apply {
+        routes[url] = body.toByteArray()
+        headers[url] = responseHeaders
+    }
     fun route(url: String, body: ByteArray) = apply { routes[url] = body }
 
     override fun get(url: String, headers: Map<String, String>): HttpResult {
         gets += url
-        return routes[url]?.let { HttpResult(200, it) } ?: HttpResult(404, "not found".toByteArray())
+        return routes[url]?.let { HttpResult(200, it, this.headers[url].orEmpty()) } ?: HttpResult(404, "not found".toByteArray())
     }
 
     override fun download(url: String, headers: Map<String, String>, target: File, cancel: CancelToken, progress: (Long, Long?) -> Unit): String? {

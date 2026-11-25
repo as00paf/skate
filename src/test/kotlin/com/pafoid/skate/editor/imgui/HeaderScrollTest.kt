@@ -32,7 +32,9 @@ class HeaderScrollTest {
 
         override fun imgui() {
             windowPaddingY?.let { ImGui.pushStyleVar(imgui.flag.ImGuiStyleVar.WindowPadding, ImGui.getStyle().windowPaddingX, it) }
-            if (beginWindow(strings)) {
+            // No title bar: stands for a docked window, whose `?` is on the tools row (EDT-101); a floating window's is in
+            // its title bar and does not scroll.
+            if (beginWindow(strings, imgui.flag.ImGuiWindowFlags.NoTitleBar)) {
                 requestScroll?.let { ImGui.setScrollY(it); requestScroll = null }
                 header(strings) { ImGui.text("tools") }
                 bodyTop = ImGui.getCursorScreenPosY()

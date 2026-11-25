@@ -37,9 +37,19 @@ interface AssetStoreProvider {
      */
     fun postProcess(details: StoreAssetDetails, variant: StoreVariant, stagingDir: File, staged: List<String>): List<String> = staged
 
+    /**
+     * Like [postProcess], for providers that also convert (SimReady: USD → glTF) and so add ledger modifications or
+     * warnings for the user. [cancel] stops a long conversion. Default: [postProcess] alone.
+     */
+    fun prepare(details: StoreAssetDetails, variant: StoreVariant, stagingDir: File, staged: List<String>, cancel: CancelToken): PreparedFiles =
+        PreparedFiles(postProcess(details, variant, stagingDir, staged))
+
     /** Pure: maps the staged files of [variant] to the import folder. */
     fun importPlan(details: StoreAssetDetails, variant: StoreVariant, staged: List<String>): ImportPlan
 }
+
+/** Result of [AssetStoreProvider.prepare]: the staged paths for [AssetStoreProvider.importPlan], plus what the ledger and the user are told. */
+data class PreparedFiles(val staged: List<String>, val modifications: List<String> = emptyList(), val warnings: List<String> = emptyList())
 
 /** Built-in providers in display order. A `ServiceLoader` hook for third-party providers comes later (AST-16 §3). */
 class AssetStoreRegistry(val providers: List<AssetStoreProvider>) {

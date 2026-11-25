@@ -7,8 +7,8 @@ import kotlin.math.sin
 
 /**
  * Engine-wide water sounds (AUD-01, REN-29 task 16): a splash when a body enters a water volume (PHY-16's
- * `WaterEntered`) and a looping ambience heard near every `WaterComponent`. A water entity that has its own
- * `AudioComponent` gets no automatic ambience, so a scene can replace it.
+ * `WaterEntered`) and a looping ambience heard near every `WaterComponent`. These are the defaults; a
+ * `WaterComponent` overrides any of them with its own audio fields (AUD-15, [withOverrides]).
  */
 data class WaterAudioConfig(
     val enabled: Boolean = true,
@@ -29,7 +29,28 @@ data class WaterAudioConfig(
     /** Silent and released beyond this distance from the water's edge. */
     val ambienceMaxDistance: Float = 30f,
     val ambiencePriority: Int = 64,
-)
+) {
+    /** This config with each non-null value replacing its default: one water's own sounds (AUD-15). */
+    fun withOverrides(
+        ambienceClip: String? = null,
+        ambienceVolume: Float? = null,
+        ambienceMinDistance: Float? = null,
+        ambienceMaxDistance: Float? = null,
+        splashClips: List<String>? = null,
+        splashVolume: Float? = null,
+        splashMinDistance: Float? = null,
+        splashMaxDistance: Float? = null,
+    ): WaterAudioConfig = copy(
+        ambienceClip = ambienceClip ?: this.ambienceClip,
+        ambienceVolume = ambienceVolume ?: this.ambienceVolume,
+        ambienceMinDistance = ambienceMinDistance ?: this.ambienceMinDistance,
+        ambienceMaxDistance = ambienceMaxDistance ?: this.ambienceMaxDistance,
+        splashClips = splashClips?.takeIf { it.isNotEmpty() } ?: this.splashClips,
+        splashVolume = splashVolume ?: this.splashVolume,
+        splashMinDistance = splashMinDistance ?: this.splashMinDistance,
+        splashMaxDistance = splashMaxDistance ?: this.splashMaxDistance,
+    )
+}
 
 object WaterAudio {
     const val DEFAULT_AMBIENCE = "engine:Sounds/Water/water_ambience_loop.wav"

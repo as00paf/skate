@@ -37,6 +37,10 @@ class AddComponentCommand(
         gameObject.attachComponent(component)
         component.generateId()
         component.init(gameObject)
+        // REN-42: an editor-created terrain keeps its ground when the object is renamed later (EDT-92)
+        if (component is com.pafoid.skate.engine.ecs.components.TerrainComponent && component.seedName.isEmpty()) {
+            component.seedName = "terrain/${gameObject.name}"
+        }
         addedComponent = component
         requiredComponents = if (component.javaClass.packageName == UiRequirements::class.java.packageName) {
             UiRequirements.ensure(gameObject, component)

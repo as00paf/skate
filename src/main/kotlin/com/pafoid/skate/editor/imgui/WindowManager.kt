@@ -63,6 +63,8 @@ class WindowManager(
             if (!window.isOpen.get()) return@forEach
             if (!MaximizeSession.drawsWhileMaximized(window, full)) return@forEach
             window.imgui()
+            // EDT-101: a docked window's corner buttons are painted over its content.
+            WindowHeader.drawCornerOverlay(window)
         }
         if (activateDefaultTabs) {
             // After the windows' first begin of the new layout, so they exist in their dock nodes.
