@@ -55,6 +55,10 @@ Done tasks live in [`docs/backlog-archive.md`](docs/backlog-archive.md). A `Deps
 
 ---
 
+## Stabilization phase (human decision 2026-11-25)
+
+Engine stabilization comes before any new feature: no new P2/P3 feature work and no new slices of in-progress features until step 5 is done. Order: (1) finish EDT-108, then EDT-107; (2) QA-20 audit; (3) GPL-40 design, then rewrite; (4) bug and P0/P1 fixes (BUG-019/020/021, flaky tests, REN-47, REN-49, AST-49, EDT-114); (5) round 41b green and tested by the human, then features restart. Every engine feature must be represented and configurable in the editor.
+
 ## Ownership map
 
 | Prefix | Domain | Agent | Primary paths |
@@ -667,7 +671,7 @@ Round 27+ goals: input is too tightly coupled with skateboarding; it needs a gam
   - Do: (ANI-28 §6 slice i): own design note for parkour IK (vault, stairs, ledge grab, motion warping), using ANI-28b–g results.
   - Done when: The human approves the note and its slices are in the backlog.
   - Deps: ANI-28b, ANI-29, ANI-30, ANI-31
-- [ ] **ANI-34** `P1` Foot IK is editable in the inspector and the walk looks right again
+- [ ] **ANI-34** `P1` Foot IK is editable in the inspector and the walk looks right again (off by default since round 41a via FootIkConfig.enabled; do after GPL-40)
   - Do: (human, round 41a test): since GPL-38 foot IK runs on the skater and the walk looks wrong, and `PlayerController.footIk` (`FootIkConfig`) is not editable in the editor. Expose it in the PlayerController inspector: enabled toggle, global weight, per-leg bones and probe offset, blend speed, plus a debug view of the targets and resolved bones (strings and tooltips EN+FR). Find why the walk is distorted (targets, hip offset, weight while moving) and fix it; default to IK only when standing or slow if needed.
   - Done when: The Skater in MainScene can toggle and tune foot IK live from the inspector; walking looks natural with IK on and off; tests.
   - Deps: GPL-38
@@ -773,6 +777,10 @@ Round 27+ goals: menu parity between the editor and the game, and a map view.
   - Do: (ANI-28 review, approved (human, 2026-11-18)): the skater's ground foot IK never runs because of wrong bone names. Fix the bone names (or resolve by humanoid slot) and add a test that foot IK runs on the skater.
   - Done when: Foot IK runs on the skater in Play; test.
   - Deps: none
+- [ ] **GPL-40** `P0` REWRITE Player and skater control in the standard ECS way (design first)
+  - Do: (human, 2026-11-25): player/skater control is not ECS-standard today (PlayerController holds config, behavior, ground state and foot IK; PlayerMotionSystem drives it). Write `docs/design/GPL-40.md`: split into small data components and systems (input state, motion/intent, ground and character state, skate state, foot IK, camera follow); systems read and write components, no behaviour object with hidden state, everything serialized and shown in the inspector. InputStateComponent is part of the refactor (who writes it, who reads it, how the project input actions of INP-11 feed it). Include migration of saved scenes and prefabs and the MainScene and Feature Showcase impact. Folds in GPL-34 and ANI-34. Needs human approval before code.
+  - Done when: The human approves the design; the rewrite then lands with tests, the Skater is fully editable in the inspector, and walking, riding and tricks behave as before.
+  - Deps: EDT-107, EDT-108
 - [ ] **GPL-39** `P2` Board sockets as IkTargets; skater preset feet, hands and look-at (ANI-28 slice f)
   - Do: (ANI-28 §6 slice f): `IkTarget` GameObjects on the board prefab (front/back foot sockets); the Skater IK preset drives feet while riding, hands for grabs/handplants, and look-at the landing; tests.
   - Done when: The skater's feet track the board sockets while riding; the foot IK targets follow the sockets; tests.
@@ -1221,6 +1229,10 @@ Round 27+ goals: a warning-free build.
   - Do: (human, Discord 2026-11-17): the editor is sometimes sluggish when creating a project or pressing Play. Profile those paths and every other heavy editor operation, list what runs on the UI thread that shouldn't (rule 10), and propose one task per owning domain to move it to coroutines with progress. Add a guard or timing test for the worst offenders.
   - Done when: An audit note `docs/design/QA-19.md` with measured timings exists and each offender has a backlog task.
   - Deps: none
+- [ ] **QA-20** `P0` Editor coverage audit: every engine feature configurable, every component inspector complete
+  - Do: (human, 2026-11-25): list each engine feature and component and check it is configurable in the editor; for every existing component inspector, check each serialized field and setting is shown, editable (right widget, ranges, asset pickers, lists/maps/nested objects), tooltipped and translated. Write the gap list to `docs/design/QA-20.md` by domain (feature or field, where it is hardcoded, owner, proposed task); the lead adds the tasks to the backlog.
+  - Done when: The report covers every component and engine system; each gap has an owner and a task ID; a guard test fails when a serialized component field has no inspector entry (with an explicit allowlist).
+  - Deps: EDT-107, EDT-108
 
 ---
 

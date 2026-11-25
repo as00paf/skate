@@ -116,7 +116,7 @@ class PlayerMotionSystem(
             go.getComponent<Animator>()?.let { animator ->
                 val footIk = footBinders.getOrPut(controller) { FootIkBinder(controller.footIk) }
                 val riding = (controller.behavior as? Mountable)?.mounted == true
-                footIk.update(animator.ik, controller.footTargets, controller.ground.standing && !riding, dt, go.getComponent<SkeletonComponent>()?.pose?.skeleton)
+                footIk.update(animator.ik, controller.footTargets, controller.footIk.enabled && controller.ground.standing && !riding, dt, go.getComponent<SkeletonComponent>()?.pose?.skeleton)
             }
 
             controller.state = CharacterAnimationDriver.drive(controller.behavior, motion, controller.state, go.getComponent<Animator>())

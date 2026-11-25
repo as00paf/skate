@@ -27,6 +27,8 @@ data class LegIk(
 /** Tuning for planting feet on the ground; the default legs are humanoid slots, so they fit any humanoid rig. */
 @Serializable
 data class FootIkConfig(
+    /** Off by default until the player rewrite exposes foot IK in the inspector (ANI-34). */
+    val enabled: Boolean = false,
     val legs: List<LegIk> = listOf(
         LegIk(HumanoidBone.LEFT_UPPER_LEG.name, HumanoidBone.LEFT_LOWER_LEG.name, HumanoidBone.LEFT_FOOT.name, 0.1f),
         LegIk(HumanoidBone.RIGHT_UPPER_LEG.name, HumanoidBone.RIGHT_LOWER_LEG.name, HumanoidBone.RIGHT_FOOT.name, -0.1f),

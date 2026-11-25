@@ -87,6 +87,7 @@ class SkaterFootIkTest {
         val skater = Skater("Skater", james).also(scene::addChild)
         skater.getComponent<RigidBody3D>()!!.rawBody = StandingHandle()
         val controller = skater.getComponent<PlayerController>()!!
+        controller.footIk = FootIkConfig(enabled = true)
         (controller.behavior as SkateBehavior).mounted = false
         controller.ground = GroundInfo(found = true, distance = 0f, grounded = true)
         // Ground 5 cm above the clip's feet under both legs
