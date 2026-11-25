@@ -667,6 +667,10 @@ Round 27+ goals: input is too tightly coupled with skateboarding; it needs a gam
   - Do: (ANI-28 §6 slice i): own design note for parkour IK (vault, stairs, ledge grab, motion warping), using ANI-28b–g results.
   - Done when: The human approves the note and its slices are in the backlog.
   - Deps: ANI-28b, ANI-29, ANI-30, ANI-31
+- [~] @skate-animation **ANI-34** `P0` Foot IK is editable in the inspector and the walk looks right again
+  - Do: (human, round 41a test): since GPL-38 foot IK runs on the skater and the walk looks wrong, and `PlayerController.footIk` (`FootIkConfig`) is not editable in the editor. Expose it in the PlayerController inspector: enabled toggle, global weight, per-leg bones and probe offset, blend speed, plus a debug view of the targets and resolved bones (strings and tooltips EN+FR). Find why the walk is distorted (targets, hip offset, weight while moving) and fix it; default to IK only when standing or slow if needed.
+  - Done when: The Skater in MainScene can toggle and tune foot IK live from the inspector; walking looks natural with IK on and off; tests.
+  - Deps: GPL-38
 - [x] **INP-10** `P1` REWRITE Decouple input from skateboarding
   - Do: Design note `docs/design/INP-10.md` first. Generic action maps and input contexts (gameplay/UI/vehicle/...) with push/pop priority in the engine; skate-specific actions, bindings and gesture/flick logic move to the game layer (`game/**`, owned by gameplay). Scripts and in-game UI use the generic API.
   - Done when: The design is approved and implemented, `engine/input/**` has no skateboarding concepts (architecture-guard test), and the skate game plays as before.
