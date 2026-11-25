@@ -106,8 +106,9 @@ class ReferenceCollector(
     }
 
     /**
-     * The files of a folder asset (`.skterrain`, AST-36) referenced by GUID or path: `terrain.json` (scanned in turn
-     * for layer materials and stamp prefabs) and its region files.
+     * The files of a folder asset (`.skterrain`, AST-36) referenced by GUID or path: `terrain.json` and its region files.
+     * `terrain.json` is scanned in turn like any JSON asset, so layer materials, stamp prefabs and each biome's scatter
+     * `model`, `material` and `prefab` (GUIDs, paths or `engine:` references) are packed too (AST-38).
      */
     private fun resolveFolderAsset(token: String): List<File>? {
         if (token.isBlank() || token.length > 512 || token.contains("://")) return null
