@@ -166,7 +166,7 @@ Round 27+ goals (human, 2026-11-06): post-processing quality, render-graph clari
   - Do: (EDT-106 audit, `docs/design/EDT-106.md`; UI written by the owner, reviewed by skate-editor): a picker for `EnvironmentComponent.skyTexture`.
   - Done when: The sky can be picked or dropped, with undo; test.
   - Deps: EDT-108
-- [ ] **REN-47** `P0` Change the model of an existing RenderComponent
+- [~] @skate-render **REN-47** `P0` Change the model of an existing RenderComponent
   - Do: (EDT-106 audit, `docs/design/EDT-106.md`; UI written by the owner, reviewed by skate-editor): picker or drop to change the model, keeping material overrides where slot names match.
   - Done when: The model changes with undo and keeps matching overrides; test.
   - Deps: EDT-108
@@ -174,7 +174,7 @@ Round 27+ goals (human, 2026-11-06): post-processing quality, render-graph clari
   - Do: (EDT-106 audit, `docs/design/EDT-106.md`; UI written by the owner, reviewed by skate-editor): select a material in the Project window to edit it (a `FileInspector`).
   - Done when: A material file can be edited and saved from the inspector; test.
   - Deps: none
-- [ ] **REN-49** `P1` Flaky `TerrainStreamingRenderTest.FarField_DrawsTilesWhereNoChunkIsUploaded`
+- [~] @skate-render **REN-49** `P1` Flaky `TerrainStreamingRenderTest.FarField_DrawsTilesWhereNoChunkIsUploaded`
   - Do: (lead, round 39 integration, 2026-11-18): the test failed once in a full suite run and passes alone (3/3). Find the timing or shared-state dependency (async uploads, frame budget, a static streamer) and make it deterministic.
   - Done when: 20 full-suite runs pass it; or it is listed in `docs/bugs.md` with the cause.
   - Deps: REN-37
@@ -401,7 +401,7 @@ Round 27+ goals: the Asset Browser shows every asset type, one assets folder, ex
   - Do: (NEEDS from INP-11): confirm or make `Assets/Data/input.actions.json` packed in exports.
   - Done when: An exported game loads the project actions; test.
   - Deps: INP-11
-- [ ] **AST-49** `P1` AssetsManager.loadModel recurses forever when the default cube cannot load
+- [~] @skate-assets **AST-49** `P1` AssetsManager.loadModel recurses forever when the default cube cannot load
   - Do: (NEEDS from EDT-59): fix the path-compare bug that makes `loadModel` recurse endlessly when the default cube fails to load (seen without a headless RHI device).
   - Done when: A failing default cube returns a fallback or error without recursion; regression test.
 
@@ -1133,7 +1133,7 @@ Round 27+ goals (human, 2026-11-06): fix editor bugs, make every window, dialog 
   - Do: (human, 2026-11-18): the EDT-84 tool window sidebars need three visual fixes: (1) vertical separator lines between the icon buttons to visually group/divide them; (2) icons inside the sidebar buttons must be centered both horizontally and vertically, not offset; (3) the padding around each icon button must be equal on all four sides and slightly more generous than the current value. Fix all three in the sidebar rendering code; add a render test that checks button dimensions and icon centering.
   - Done when: Sidebars show separator lines; icons are centered; all four sides of each button have equal padding; render/layout tests pass.
   - Deps: EDT-84
-- [ ] **EDT-114** `P1` Wire the editor wizard to ProjectCreator (EDT-59 slice 2)
+- [~] @skate-tooling **EDT-114** `P1` Wire the editor wizard to ProjectCreator (EDT-59 slice 2)
   - Do: (NEEDS from EDT-59 slice 1): wire `ProjectWizardWindow` and `ProjectActionHandler` to `templates/ProjectCreator`, add the new `Project` settings fields and typed folders, remove `createDefaultScenes`.
   - Done when: Each template created from the wizard opens and runs; tests for the settings and the wizard model.
   - Deps: EDT-59 slice 1
