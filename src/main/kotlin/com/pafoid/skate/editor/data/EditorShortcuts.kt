@@ -137,6 +137,8 @@ object EditorShortcuts {
      * Viewport is focused, where Shift and Space move the camera.
      */
     val MAXIMIZE_WINDOW = key("maximize_window", "lbl.keybindings.maximize_window", ShortcutGroup.EDITOR, EditorInputMappings::maximizeWindow, shift = true)
+    /** EDT-101: opens the Help article of the focused window (F1); ignored while typing. */
+    val HELP = key("help", "lbl.keybindings.help", ShortcutGroup.EDITOR, EditorInputMappings::openHelp)
 
     val CAMERA_FORWARD = key("camera_forward", "lbl.keybindings.move_forward", ShortcutGroup.CAMERA, EditorInputMappings::moveForward, scope = ShortcutScope.CAMERA)
     val CAMERA_BACKWARD = key("camera_backward", "lbl.keybindings.move_backward", ShortcutGroup.CAMERA, EditorInputMappings::moveBackward, scope = ShortcutScope.CAMERA)
@@ -170,7 +172,7 @@ object EditorShortcuts {
     val fixedShortcuts: List<EditorShortcut> = listOf(UNDO, REDO, REDO_ALT, CUT, COPY, PASTE, NEW_SCENE, SAVE_SCENE, SAVE_SCENE_AS, OPEN_PROJECT, INPUT_TESTING, VCS_COMMIT)
 
     val rebindable: List<EditorShortcut> = listOf(
-        SEARCH, PLAY_TOGGLE, FULLSCREEN, MAXIMIZE_WINDOW, GIZMO_SELECT, GIZMO_TRANSLATE, GIZMO_ROTATE, GIZMO_SCALE, MEASURE, DESELECT, FOCUS,
+        SEARCH, PLAY_TOGGLE, FULLSCREEN, MAXIMIZE_WINDOW, HELP, GIZMO_SELECT, GIZMO_TRANSLATE, GIZMO_ROTATE, GIZMO_SCALE, MEASURE, DESELECT, FOCUS,
         CAMERA_FORWARD, CAMERA_BACKWARD, CAMERA_LEFT, CAMERA_RIGHT, CAMERA_UP, CAMERA_DOWN, CAMERA_RESET,
         CREATE_EMPTY, DELETE, DUPLICATE, RENAME, TOGGLE_VISIBILITY, TOGGLE_LOCK, NAVIGATE_UP, NAVIGATE_DOWN, SELECT_FIRST, SELECT_LAST,
     ) + TOOL_WINDOWS

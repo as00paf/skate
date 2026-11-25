@@ -89,7 +89,7 @@ class VersionControlWindow(
         wasFocused = focused
 
         val state = session.state
-        header(strings) { if (state.isRepository) toolbar() }
+        header(strings, if (state.isRepository) ({ toolbar() }) else null)
         when {
             projectManager.currentProject == null -> EmptyState.noProject(strings, eventSystem)
             !state.loaded -> EmptyState.nothingYet(strings, Icons.CODE_BRANCH, "vcs.loading")

@@ -153,7 +153,8 @@ abstract class EditorModal(
         ImGui.setNextWindowSizeConstraints(minWidth, 0f, 720f, 600f)
         if (!ImGui.beginPopupModal(title, null, ImGuiWindowFlags.AlwaysAutoResize or ImGuiWindowFlags.NoSavedSettings)) return
         helpWindow?.let {
-            if (WindowHeader.helpRow(strings)) showHelp = !showHelp
+            // EDT-101: the `?` sits in the modal's title bar (a modal has no close button).
+            if (WindowHeader.titleBar(strings, null, closeButton = false, onHelp = {})) showHelp = !showHelp
             if (showHelp) {
                 ImGui.beginChild("##modal_help", 0f, INLINE_HELP_HEIGHT, true)
                 HelpRouter.renderInline(it.helpId)

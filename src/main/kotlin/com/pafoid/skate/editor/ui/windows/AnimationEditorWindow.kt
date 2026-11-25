@@ -116,10 +116,10 @@ class AnimationEditorWindow(
 
     override fun imgui() {
         if (beginWindow(strings, ImGuiWindowFlags.NoScrollbar)) {
-            header(strings)
             controller.refresh()
             controller.tick(ImGui.getIO().deltaTime)
-            toolbar()
+            // EDT-101: the toolbar is the header's tools row, with Maximize and `?` at its right end.
+            header(strings) { toolbar() }
             controller.error?.let { MImGui.errorText(strings.getString("lbl.animation_editor.error", it)) }
             val clip = controller.clip
             if (clip == null) {

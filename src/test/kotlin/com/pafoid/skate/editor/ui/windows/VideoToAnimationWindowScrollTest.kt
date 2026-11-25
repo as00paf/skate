@@ -34,7 +34,8 @@ class VideoToAnimationWindowScrollTest {
     private val winX = 100f
     private val winY = 80f
     private val winW = 320f
-    private val winH = 140f
+    // Short enough that every case overflows: since EDT-101 the floating window has no header row (its ? is in the title bar).
+    private val winH = 120f
 
     /** Screen Y where the Setup header was drawn in the last frame (recorded when the window asks for its label). */
     private var setupY = Float.NaN

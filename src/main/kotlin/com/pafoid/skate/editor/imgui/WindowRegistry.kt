@@ -70,7 +70,7 @@ class WindowRegistry(
         CommitDialog(engine, editor.vcsSession, vcsModals, projectManager::hasProject),
         ConflictsDialog(engine, editor.vcsSession),
         ExportWizardWindow(engine, projectManager, editor.settingsManager),
-        AssetStoreWindow(engine, projectManager),
+        AssetStoreWindow(engine, projectManager, blenderPath = { editor.settingsManager.editorSettings.blenderPath }),
         VideoToAnimationWindow(engine, editor, projectManager),
         AnimationEditorWindow(engine, editor, projectManager),
         AnimatorWindow(engine, editor, projectManager),

@@ -123,7 +123,7 @@ class AssetPaths {
         /** JSON keys whose string values (or string arrays) are asset references. */
         val PATH_KEYS = setOf(
             "path", "filePath", "soundFilePath", "clips", "texturePath", "controllerPath", "materialPath", "configPath",
-            "defaultScene", "scenesPath", "iconPath", "splashPath", "projectPath",
+            "defaultScene", "scenesPath", "iconPath", "splashPath", "projectPath", "ambienceClip", "splashClips",
         )
 
         private val MODEL_EXTENSIONS = setOf("obj", "gltf", "dae", "fbx")

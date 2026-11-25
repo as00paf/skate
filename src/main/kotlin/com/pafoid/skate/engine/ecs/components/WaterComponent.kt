@@ -37,6 +37,19 @@ data class WaterComponent(
     var receiveShadows: Boolean = true,
     /** Over an ocean, the ocean is neither drawn nor queried inside this rectangle (REN-29 §6.7). */
     var cutsOcean: Boolean = true,
+    // Water sounds (AUD-15): null uses the engine default (`AudioSystem.waterAudio`).
+    /** Looping ambience heard near this water. */
+    var ambienceClip: String? = null,
+    var ambienceVolume: Float? = null,
+    /** Full ambience volume within this distance of the edge, in metres. */
+    var ambienceMinDistance: Float? = null,
+    /** Silent beyond this distance of the edge, in metres. */
+    var ambienceMaxDistance: Float? = null,
+    /** One is picked at random per splash when a body enters this water. */
+    var splashClips: List<String>? = null,
+    var splashVolume: Float? = null,
+    var splashMinDistance: Float? = null,
+    var splashMaxDistance: Float? = null,
 ) : Component() {
 
     /** Applies an inspector preset: waves, flow and material. */
@@ -54,6 +67,8 @@ data class WaterComponent(
         quadSize = 0.5f
         density = 1000f; linearDrag = 1f; angularDrag = 0.5f
         receiveShadows = true; cutsOcean = true
+        ambienceClip = null; ambienceVolume = null; ambienceMinDistance = null; ambienceMaxDistance = null
+        splashClips = null; splashVolume = null; splashMinDistance = null; splashMaxDistance = null
     }
 }
 
