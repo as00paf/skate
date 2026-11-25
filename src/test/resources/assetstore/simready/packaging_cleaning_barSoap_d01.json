@@ -1,0 +1,19 @@
+{
+  "format_version": "1.0",
+  "package_id": "simready.hf.nvidia.simready-assets.cleaning_barSoap_d01.2026.10.08_232807335422",
+  "license": "CC-BY-4.0",
+  "metadata": [
+    {
+      "name": "com.nvidia.simready.packaging.bom.json",
+      "hash": {
+        "sha256": "7225e51e6274242ec6be6de2ac922ea059e2822f7f52a6f16a4e73594bd5c9ab"
+      }
+    }
+  ],
+  "content_hash": {
+    "sha256": "f6adefcbe70a133db0bd7eea4d9a3a8230e04d710f8229f8a026af7c56cade9c"
+  },
+  "package_hash": {
+    "sha256": "49d1a1a472df7b503c0bb4774974b958f7e2c66764d38e49780cf136c457ce74"
+  }
+}

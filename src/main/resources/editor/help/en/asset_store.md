@@ -8,6 +8,7 @@ The store gathers several free libraries:
 
 - **Poly Haven** and **ambientCG**: the editor downloads the files for you.
 - **Kenney** and **Quaternius**: curated packs. You download the zip from their website, and the editor imports it.
+- **NVIDIA SimReady**: realistic props from NVIDIA, stored in the USD format. The editor converts them to glTF with Blender when you import them, so you need Blender 4.2 or newer (its path is in [Editor Settings](editor_settings.md)). Some materials may look plainer than in NVIDIA's previews.
 
 Free does not always mean "no conditions". Each item has a **license** that says how you may use it and whether you must credit the author. The store records the license and author of everything you import in the project's **attribution** list.
 

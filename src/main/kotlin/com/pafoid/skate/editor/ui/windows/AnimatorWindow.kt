@@ -100,8 +100,8 @@ class AnimatorWindow(
         // The window scrolls vertically (its scrollbar) when a small window cannot hold the panels; the wheel stays
         // with the graph's zoom and the side panels' own scrolling.
         if (beginWindow(strings, ImGuiWindowFlags.NoScrollWithMouse)) {
-            header(strings)
-            toolbar()
+            // EDT-101: the toolbar is the header's tools row, with Maximize and `?` at its right end.
+            header(strings) { toolbar() }
             controller.message?.let { wrapped { MImGui.errorText(it) } }
             val doc = controller.document
             if (doc == null) {

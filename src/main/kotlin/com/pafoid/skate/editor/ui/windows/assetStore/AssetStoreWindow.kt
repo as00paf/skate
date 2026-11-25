@@ -13,6 +13,10 @@ import com.pafoid.skate.editor.assetstore.StoreJobs
 import com.pafoid.skate.editor.assetstore.providers.ambientcg.AmbientCgProvider
 import com.pafoid.skate.editor.assetstore.providers.catalog.CatalogPackProvider
 import com.pafoid.skate.editor.assetstore.providers.polyhaven.PolyHavenProvider
+import com.pafoid.skate.editor.assetstore.providers.simready.SimReadyProvider
+import com.pafoid.skate.editor.assetstore.convert.BlenderUsdConverter
+import com.pafoid.skate.editor.assetstore.convert.StoreBlender
+import com.pafoid.skate.editor.tools.external.JdkProcessRunner
 import com.pafoid.skate.editor.events.AssetStoreEvent
 import com.pafoid.skate.editor.events.FileSystemEvent
 import com.pafoid.skate.editor.events.ProjectEvent
@@ -40,6 +44,8 @@ class AssetStoreWindow(
     private val engine: Engine,
     private val projectManager: ProjectManager,
     private val picker: PackFilePicker = TinyPackFilePicker(engine.stringManager),
+    /** Editor Settings Blender path (AST-19), used to convert SimReady USD; null or blank: automatic search. */
+    private val blenderPath: () -> String? = { null },
 ) : EditorWindow(NAME) {
     private val strings = engine.stringManager
 
@@ -60,10 +66,18 @@ class AssetStoreWindow(
                 AmbientCgProvider(http),
                 CatalogPackProvider.load("/assetstore/kenney.catalog.json", "assetstore.provider.kenney", "assetstore.provider.kenney.powered_by"),
                 CatalogPackProvider.load("/assetstore/quaternius.catalog.json", "assetstore.provider.quaternius", "assetstore.provider.quaternius.powered_by"),
+                SimReadyProvider(http, usdConverter()),
             )),
             http, jobs, engine.eventSystem::publish,
             projectDir = { projectManager.getProjectDirectory()?.absoluteFile },
         ).also { it.refreshLedger() }
+    }
+
+    private fun usdConverter(): BlenderUsdConverter {
+        val runner = JdkProcessRunner()
+        val blender = StoreBlender(runner, blenderPath)
+        val script by lazy { BlenderUsdConverter.extractScript() }
+        return BlenderUsdConverter(runner, blender::best, { script })
     }
 
     private val searchText = ImString(128)
@@ -185,7 +199,8 @@ class AssetStoreWindow(
 
     private fun status() {
         service.download?.let { dl ->
-            ImGui.progressBar(dl.fraction, max(100f, ImGui.getContentRegionAvailX() - 110f), 0f, strings.getString("assetstore.status.downloading", dl.title))
+            val label = if (dl.converting) "assetstore.status.converting" else "assetstore.status.downloading"
+            ImGui.progressBar(if (dl.converting) 1f else dl.fraction, max(100f, ImGui.getContentRegionAvailX() - 110f), 0f, strings.getString(label, dl.title))
             ImGui.sameLine()
             if (strings.tipped(ImGui.button(strings.label("assetstore.cancel")), "assetstore.cancel")) service.cancelDownload()
         }
@@ -194,6 +209,7 @@ class AssetStoreWindow(
             if (last.success) ImGui.textColored(0.4f, 0.9f, 0.4f, 1f, strings.getString("assetstore.status.imported", last.title))
             else ImGui.textColored(1f, 0.4f, 0.4f, 1f, strings.getString("assetstore.status.import_failed", last.title, last.reason ?: ""))
         }
+        service.importWarnings.forEach { ImGui.textColored(1f, 0.75f, 0.3f, 1f, strings.getString("assetstore.status.warning", it)) }
     }
 
     private fun browse() {
@@ -313,7 +329,8 @@ class AssetStoreWindow(
                 ImGui.endCombo()
             }
         }
-        val busy = service.download != null || !details.license.isKnown
+        details.blocker?.let { ImGui.textColored(1f, 0.75f, 0.3f, 1f, strings.getString("assetstore.details.blocked", it)) }
+        val busy = service.download != null || !details.license.isKnown || details.blocker != null
         if (busy) ImGui.beginDisabled()
         if (manual) {
             ImGui.textWrapped(strings.getString("assetstore.pack.manual_hint"))

@@ -60,7 +60,7 @@ herdr agent send-keys skate-render esc                       # dismiss a stuck d
 
    Use `--wait` only when the next step depends on the result. Otherwise dispatch to several agents and then `agent wait` on each.
 3. **Collect:** Read the last ~200 lines and find the final `DONE` / `BLOCKED` / `NEEDS` lines.
-   - `DONE`: Verify. Run the task's tests (`cmd.exe /c gradlew.bat test --tests ...`, from the agent's worktree if it has one) and skim the diff (`git -C <worktree> log -p main..HEAD` or `git diff`). If it is acceptable, mark `[x]`.
+   - `DONE`: Verify. Check rule 12: anything needing human testing must already be placed in `MainScene` (skateboarding-related) or the Feature Showcase scene (everything else); send it back if the human would have to create objects or components.  Run the task's tests (`cmd.exe /c gradlew.bat test --tests ...`, from the agent's worktree if it has one) and skim the diff (`git -C <worktree> log -p main..HEAD` or `git diff`). If it is acceptable, mark `[x]`.
    - `BLOCKED ... awaiting design approval`: Review `docs/design/<TASK-ID>.md`, then reply with approval or requested changes.
    - `BLOCKED` (other): Answer if you can. Otherwise mark `[!] <reason>` and escalate to the human.
    - `NEEDS <PREFIX>`: Add a new task to that domain's section (next free ID, with Do/Done when/Deps), then dispatch it when it is ready.
