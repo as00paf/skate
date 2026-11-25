@@ -4,6 +4,7 @@ import com.pafoid.skate.editor.systems.EditorResources
 import com.pafoid.skate.editor.systems.EditorPaths
 import com.pafoid.skate.app.Editor
 import com.pafoid.skate.editor.events.EditorEvent
+import com.pafoid.skate.editor.systems.CloseTarget
 import com.pafoid.skate.editor.events.ViewportAction
 import com.pafoid.skate.editor.events.WindowAction
 import com.pafoid.skate.editor.imgui.data.UiConstants
@@ -60,6 +61,10 @@ class ImGuiLayer(
 ) {
     private val stringManager = engine.stringManager
     private val settingsManager = editor.settingsManager
+    private val closeGuard = editor.closeGuard
+
+    /** The editor-wide unsaved-assets prompt (EDT-82), drawn after the windows. */
+    private val unsavedAssetsModal = UnsavedAssetsModal(engine.stringManager, closeGuard)
     private val logger = engine.logger
     private val eventSystem = engine.eventSystem
     private val renderer = engine.renderer
@@ -78,6 +83,7 @@ class ImGuiLayer(
 
     private val layoutStore = EditorLayoutStore(
         EditorPaths.file(EditorPaths.IMGUI_INI), EditorPaths.file(EditorPaths.OPEN_WINDOWS_FILE),
+        EditorPaths.file(EditorPaths.TOOL_BARS_FILE),
     )
 
     private val windowRegistry = WindowRegistry(engine, editor, projectManager)
@@ -90,6 +96,16 @@ class ImGuiLayer(
         saveLayout = { saveLayout() },
         setAutosave = { on -> getIO().iniFilename = if (on) layoutStore.iniFile.path else null },
     )
+
+    // EDT-84: the tool window bars on the left and right.
+    private val toolBars = ToolWindowBarsController(
+        windowOf = { windowRegistry.getWindow(it) },
+        load = { layoutStore.loadToolBars() },
+        save = { layoutStore.saveToolBars(it) },
+        show = { eventSystem.publish(WindowAction.Show(it)) },
+        focus = { maximize.focus(it) },
+    )
+    private val toolBarView = ToolWindowBarView(stringManager, toolBars) { windowRegistry.getWindow(it) }
 
     fun init(windowController: WindowController) {
         createContext()
@@ -118,11 +134,19 @@ class ImGuiLayer(
         MaximizeSession.defaultMode = { settingsManager.editorSettings.maximizeMode }
         eventSystem.subscribe<WindowAction.ToggleMaximizeFocused> { toggleMaximizeFocused() }
         eventSystem.subscribe<WindowAction.RestoreMaximized> { MaximizeSession.requestRestore() }
+        eventSystem.subscribe<WindowAction.ToggleToolWindow> { toolBars.toggle(it.name) }
         eventSystem.subscribe<WindowAction.Show> { event ->
             if (windowRegistry.getWindow(event.name)?.isDialog == false) maximize.model.onWindowShown(event.name)
         }
         windowController.onToggleMaximize = { maximized -> windowRegistry.menuBar.setMaximized(maximized) }
-        eventSystem.subscribe<EditorEvent.Exit> { windowController.close() }
+        // EDT-82: File > Quit, the title bar's close button and the OS close (Alt+F4) ask about unsaved assets first.
+        eventSystem.subscribe<EditorEvent.Exit> { closeGuard.request(CloseTarget.EDITOR) { windowController.close() } }
+        GLFW.glfwSetWindowCloseCallback(windowController.glfwWindow) { handle ->
+            if (closeGuard.unsaved().isNotEmpty()) {
+                GLFW.glfwSetWindowShouldClose(handle, false)
+                closeGuard.request(CloseTarget.EDITOR) { windowController.close() }
+            }
+        }
         eventSystem.subscribe<EditorEvent.Minimize> { windowController.minimize() }
         eventSystem.subscribe<EditorEvent.ToggleMaximize> { windowController.toggleMaximize() }
     }
@@ -138,12 +162,14 @@ class ImGuiLayer(
     private fun saveLayout(ini: String? = null) {
         if (ini == null) ImGui.saveIniSettingsToDisk(layoutStore.iniFile.path) else layoutStore.iniFile.writeText(ini)
         layoutStore.saveOpenWindows(windowRegistry.dockableWindows.filter { it.isOpen.get() }.map { it.name })
+        layoutStore.saveToolBars(toolBars.encode())
     }
 
     private fun resetLayout() {
         // EDT-88 §8: the maximize state is dropped, not restored: the layout is replaced anyway.
         maximize.onResetLayout()
         layoutStore.clear()
+        toolBars.reset() // EDT-84: buttons back to their default sections
         windowRegistry.showDefaultWindows()
         forceLayoutRebuild = true
         layoutInitialized = false
@@ -198,6 +224,8 @@ class ImGuiLayer(
         } else {
             setupDockSpace()
         }
+        // EDT-82: at the frame's root, so the unsaved-assets prompt also shows over F12 viewport full screen.
+        unsavedAssetsModal.render()
 
         endFrame()
     }
@@ -254,15 +282,20 @@ class ImGuiLayer(
 
         popStyleVar(4)
 
-        // EDT-88 §3: the full-editor host covers the dock space's area, between the menu bar and the status bar.
-        MaximizeSession.hostArea = MaximizeSession.Area(
-            ImGui.getCursorScreenPosX(), ImGui.getCursorScreenPosY(),
-            ImGui.getContentRegionAvailX(), ImGui.getContentRegionAvailY(),
+        // EDT-84: the tool window bars on the left and right, the dock space between them. EDT-88 §3: the full-editor
+        // host covers the dock space's area.
+        val frame = ToolWindowBarView.frame(
+            ImGui.getCursorScreenPosX(), ImGui.getCursorScreenPosY(), ImGui.getContentRegionAvailX(), ImGui.getContentRegionAvailY(),
+            barWidth = if (settingsManager.editorSettings.showToolWindowBars) ToolWindowBarView.width() else 0f,
         )
+        frame.left?.let { toolBarView.render(left = true, it.x, it.y, it.height) }
+        frame.right?.let { toolBarView.render(left = false, it.x, it.y, it.height) }
+        MaximizeSession.hostArea = frame.dock
+        ImGui.setCursorScreenPos(frame.dock.x, frame.dock.y)
         val dockspaceId = getID("DockSpace")
         setupLayout(dockspaceId)
         // While a window fills the editor the dock nodes stay alive but are not drawn, and their windows are skipped.
-        dockSpace(dockspaceId, 0f, 0f, maximize.dockSpaceFlags())
+        dockSpace(dockspaceId, frame.dock.width, frame.dock.height, maximize.dockSpaceFlags())
         maximize.afterDockSpace(ImGui.dockBuilderGetCentralNode(dockspaceId))
 
         windowManager.update()

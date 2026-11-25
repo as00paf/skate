@@ -31,7 +31,7 @@ class SceneVisualsGizmo(private val debugRenderer: DebugRenderer) {
         val out = ArrayList<GameObject>()
         fun walk(go: GameObject) {
             if (go !== scene && hasCameraOrLight(go)) out.add(go)
-            go.children.forEach { walk(it) }
+            go.persistentChildren.forEach { walk(it) }
         }
         walk(scene)
         return out

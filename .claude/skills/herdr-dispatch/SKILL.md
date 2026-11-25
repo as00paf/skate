@@ -7,7 +7,7 @@ description: Start, dispatch to, poll and read results from the Skate domain age
 
 ## Start agents
 
-`tools/herdr/herd.sh --kind claude --no-lead --worktrees <domain...>` (idempotent; skips agents already running; `--kind` defaults to `copilot`). Worktrees live in `../skate-worktrees/<domain>` on branch `agents/<domain>`. Agent definitions come from `.github/agents/*.agent.md`; `tools/herdr/sync-agents.sh` generates `.claude/agents/` and `.opencode/agents/` and mirrors `.github/skills` into `.claude/skills` (`herd.sh` runs it for non-Copilot kinds). Worktrees only contain committed files, so commit `.github/`, `.claude/` and `.opencode/agents/` first, and merge master into the agent branches. The script can exceed shell time limits, so start large batches in groups of 3 or fewer.
+`tools/herdr/herd.sh --kind claude --no-lead --worktrees <domain...>` (idempotent; skips agents already running; `--kind` defaults to `copilot`). Worktrees live in `../skate-worktrees/<domain>` on branch `agents/<domain>`. Agent definitions come from `.github/agents/*.agent.md`; `tools/herdr/sync-agents.sh` generates `.claude/agents/`, `.opencode/agents/` and `.kiro/agents/` and mirrors `.github/skills` into `.claude/skills` and `.kiro/skills` (`herd.sh` runs it for non-Copilot kinds). Worktrees only contain committed files, so commit `.github/`, `.claude/`, `.opencode/agents/` and `.kiro/agents/` first, and merge master into the agent branches. The script can exceed shell time limits, so start large batches in groups of 3 or fewer.
 
 ## Dispatch
 
@@ -35,6 +35,7 @@ Claude Code agents usually run in auto mode: most actions need no dialog, and th
 
 - `DONE`: verify by running the task's tests (from the agent's worktree) and skimming the diff, then mark `[x]`.
 - `BLOCKED`: answer, or mark `[!] reason` and escalate.
+- Questions for the human (GameEngine.md rule 11): domain agents never ask the human; their questions arrive in `BLOCKED` lines and in design notes (*Questions for the human*). Answer what you can; ask the rest yourself with the question tool (`AskUserQuestion` in Claude Code), one decision per question with the recommended option first, then relay the answer. An agent waiting on a question to the human breaks the rule: answer or relay it and remind the agent.
 - `NEEDS <PREFIX>`: add a task to that domain's section (next free ID) and dispatch it when ready.
 - Tests failing for reasons listed in `docs/bugs.md` are pre-existing and are not the agent's responsibility.
 - Filtered test runs go through the root project: `cmd.exe /c gradlew.bat :test --tests "<pattern>"` (without `:` the filter also hits `tools:cli` and fails).

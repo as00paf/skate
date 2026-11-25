@@ -14,6 +14,8 @@ L'éditeur est fait de fenêtres que l'on peut ancrer. La disposition par défau
 
 Chaque fenêtre a un onglet. Faites glisser un onglet pour déplacer une fenêtre, fermez-la avec le X et rouvrez-la depuis **Vue > Fenêtres**. Le bouton **?** dans l'en-tête d'une fenêtre ouvre l'article d'aide de cette fenêtre.
 
+Les barres sur les bords gauche et droit ont un bouton par fenêtre d'outil. Cliquez sur un bouton pour ouvrir sa fenêtre ; cliquez de nouveau pour la mettre devant, ou pour la fermer si elle est déjà devant. **Alt+1** à **Alt+9** font de même pour les fenêtres les plus utilisées (voir **Paramètres > Raccourcis clavier > Fenêtres d'outils**). Faites glisser un bouton ailleurs sur les barres, ou faites un clic droit et choisissez **Déplacer vers** : la fenêtre s'ancre de ce côté. **Vue > Barres de fenêtres d'outils** masque ou affiche les barres.
+
 Pour donner plus de place à une fenêtre d'outil, cliquez sur le bouton **Agrandir** à côté de son **?**, double-cliquez sur son onglet ou appuyez sur **Maj+Espace**. Par défaut, la fenêtre remplit tout l'éditeur ; vous pouvez plutôt l'ancrer par-dessus la vue du jeu dans **Paramètres de l'éditeur > Interface**, et le menu du clic droit sur l'onglet propose les deux. Cliquez sur **Restaurer** (dans l'en-tête de la fenêtre ou dans la barre d'état), ou appuyez de nouveau sur **Maj+Espace**, pour remettre chaque fenêtre à sa place.
 
 ## Les mots que vous verrez

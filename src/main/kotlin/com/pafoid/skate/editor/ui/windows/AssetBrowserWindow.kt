@@ -33,15 +33,7 @@ class AssetBrowserWindow(
      * One tab per type folder (EDT-69, AST-26 §8), in [AssetBrowserTabs.ORDER]. Animations, Textures, Sounds and
      * Prefabs have their own previews; the other types list their files as tiles.
      */
-    private val tabs: Map<AssetFolder, AssetBrowserTab> = AssetBrowserTabs.ORDER.associateWith { folder ->
-        when (folder) {
-            AssetFolder.ANIMATIONS -> AnimationsTab(engine, stringManager)
-            AssetFolder.TEXTURES -> TexturesTab(stringManager, engine, undoRedoManager)
-            AssetFolder.SOUNDS -> SoundsTab(engine, stringManager)
-            AssetFolder.PREFABS -> PrefabsTab(engine, stringManager)
-            else -> FileListTab(folder, engine.assetsManager, stringManager)
-        }
-    }
+    private val tabs: Map<AssetFolder, AssetBrowserTab> = createTabs(engine, undoRedoManager)
 
     private val listing = AssetBrowserListing()
     private val scan = AssetBrowserScan(
@@ -89,6 +81,20 @@ class AssetBrowserWindow(
         }
         ImGui.end()
     }
+    companion object {
+        /** The window's tabs, by folder; shared with the EDT-98 guard so it clicks through exactly these. */
+        fun createTabs(engine: Engine, undoRedoManager: UndoRedoManager): Map<AssetFolder, AssetBrowserTab> =
+            AssetBrowserTabs.ORDER.associateWith { folder ->
+                when (folder) {
+                    AssetFolder.ANIMATIONS -> AnimationsTab(engine, engine.stringManager)
+                    AssetFolder.TEXTURES -> TexturesTab(engine.stringManager, engine, undoRedoManager)
+                    AssetFolder.SOUNDS -> SoundsTab(engine, engine.stringManager)
+                    AssetFolder.PREFABS -> PrefabsTab(engine, engine.stringManager)
+                    else -> FileListTab(folder, engine.assetsManager, engine.stringManager)
+                }
+            }
+    }
+
     /** Header strip tools (EDT-51 §2.2): the search shared by every tab, then Refresh; `?` is drawn after them. */
     private fun renderHeaderTools() {
         val refresh = "${Icons.ARROW_ROTATE}##asset_browser_refresh"
