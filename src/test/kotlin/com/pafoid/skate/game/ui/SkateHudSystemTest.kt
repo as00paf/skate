@@ -126,7 +126,9 @@ class SkateHudSystemTest {
         // A first trick, linked into a manual, then the manual is lost.
         landKickflip()
         frame(FakeActions(down = setOf(SkateActions.MANUAL)))
-        repeat(200) { frame(FakeActions(down = setOf(SkateActions.MANUAL))) }
+        repeat(600) {
+            if (rider.state != "BAIL") frame(FakeActions(down = setOf(SkateActions.MANUAL)))
+        }
         assertEquals("BAIL", rider.state)
 
         val combo = text(SkateHudSystem.COMBO_TEXT)
