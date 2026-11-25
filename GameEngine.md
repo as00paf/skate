@@ -1104,7 +1104,7 @@ Round 27+ goals (human, 2026-11-06): fix editor bugs, make every window, dialog 
   - Do: (human, Discord 2026-11-17) "Plan all missing editor UI": list every engine component, system setting and asset type that has no editor UI (or only raw fields), and turn each gap into a task in the owning domain (domain agents write UIs for their own back ends, skate-editor reviews). Write the list to `docs/design/EDT-106.md` and report the proposed tasks to the lead.
   - Done when: The audit note exists and every gap has a backlog task.
   - Deps: none
-- [ ] **EDT-107** `P1` Generic inspector draws lists, maps and nested objects
+- [~] @skate-editor **EDT-107** `P1` Generic inspector draws lists, maps and nested objects
   - Do: (EDT-106 audit, `docs/design/EDT-106.md`; UI written by the owner, reviewed by skate-editor): `reflectedImgui` draws `List`/`MutableList` (add, remove, reorder), `Map<String, *>` and nested `@Serializable` data classes recursively, with undo. Unblocks VehicleComponent wheels, ScriptComponent properties, CameraFocusComponent targets, PlayerController `waterResponse`, PrefabInstance overrides.
   - Done when: A guard test finds no saved component field that the inspector silently skips.
   - Deps: none
