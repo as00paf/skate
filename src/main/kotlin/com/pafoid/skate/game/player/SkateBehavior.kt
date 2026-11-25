@@ -23,9 +23,12 @@ import com.pafoid.skate.engine.gameplay.appearance.SkeletonConfigs
 import com.pafoid.skate.engine.gameplay.items.ItemDatabase
 import com.pafoid.skate.game.items.SkateItems
 import com.pafoid.skate.game.input.SkateControls
+import com.pafoid.skate.game.camera.SpotCameraSystem
+import com.pafoid.skate.game.ui.ControlHints
 import com.pafoid.skate.game.ui.SkateHudSystem
 import com.pafoid.skate.game.input.SkateIntent
 import com.pafoid.skate.game.input.SkateTrickInput
+import com.pafoid.skate.game.input.TrickStyle
 import org.joml.Quaternionf
 import com.pafoid.skate.engine.gameplay.CharacterBehavior
 import com.pafoid.skate.engine.gameplay.CharacterBehaviors
@@ -39,6 +42,7 @@ import com.pafoid.skate.engine.gameplay.MountRequest
 import com.pafoid.skate.engine.gameplay.Mountable
 import com.pafoid.skate.engine.gameplay.StateMachine
 import org.joml.Vector3f
+import kotlin.math.PI
 import kotlin.math.abs
 
 class SkateContext(var config: SkateControllerConfig) {
@@ -56,8 +60,21 @@ class SkateContext(var config: SkateControllerConfig) {
     var manualHeld = false
     var jumpPressed = false
     var nearGrindable = false
-    /** Facing vs travel direction in degrees, 0 when unknown. */
+    /** Facing vs travel direction in degrees (0..180), 0 when unknown. */
     var landingErrorDeg = 0f
+    /** Rolling backward (landed a 180, GPL-23): the board travels opposite to the rider's facing. */
+    var fakie = false
+    /** Air turn since the pop in radians (+ = left); names the body spin on landing. */
+    var spinTurn = 0f
+    /** The pop started a body spin: the air turn rate is [TrickTuning.spinTurnRate]. */
+    var spinning = false
+    /**
+     * A board trick at the pop can spin too: only when tricks are not on the steering stick (EA Skate's flick stick).
+     * In the other schemes the stick direction at the pop picks the flip, so only a plain ollie spins.
+     */
+    var spinWithTrick = true
+    var grindType = GrindType.FIFTY_FIFTY
+    var manualType = ManualType.MANUAL
     /** Signed manual balance in degrees; 0 = perfectly balanced. */
     var manualAngle = 0f
     var ollie = false
@@ -68,6 +85,16 @@ class SkateContext(var config: SkateControllerConfig) {
     /** Trick in the air (null: none, e.g. rolled off a ledge) and how long it has been going. */
     var trick: TrickType? = null
     var trickTime = 0f
+
+    /** Landing error counting a backward (fakie) landing as straight: 0..90 degrees. */
+    val straightErrorDeg: Float get() = minOf(landingErrorDeg, 180f - landingErrorDeg)
+
+    /** Board across its travel, as for a boardslide. */
+    val acrossTravel: Boolean
+        get() = landingErrorDeg >= config.tricks.boardslideMinDeg && landingErrorDeg <= 180f - config.tricks.boardslideMinDeg
+
+    /** The board can lock onto the grindable edge under it now (falling or rolling onto it fast enough). */
+    val canLockGrind: Boolean get() = nearGrindable && speed >= config.grind.minEntrySpeed && verticalSpeed <= 0f
 
     /** The board has not finished [trick] yet: touching down now is a bail. */
     val trickUnfinished: Boolean get() = trick?.let { trickTime < config.tricks.duration(it) } ?: false
@@ -89,11 +116,35 @@ class SkateBehavior(
     /** Trick being done in the air, null when none. */
     val trick: TrickType? get() = context.trick?.takeIf { mounted && machine.current == SkateState.AIR }
 
-    /** Tricks landed cleanly so far and the last one (for the HUD and scoring). */
+    /** Body spin turned so far in the current air (null: under 90°, or no pop). */
+    val airSpin: BodySpin? get() = trick?.let { BodySpin.of(context.spinTurn, config.preferredStance) }
+
+    /** Tricks landed cleanly so far and the last one, with its spin (for the HUD). */
     var landedTricks = 0
         private set
-    var lastLandedTrick: TrickType? = null
+    var lastLanded: ComboMove.Air? = null
         private set
+    val lastLandedTrick: TrickType? get() = lastLanded?.trick
+
+    /** The combo chain (GPL-23): tricks, grinds and manuals between two flat-ground landings. */
+    val combo = ComboTracker { config.combo }
+
+    /** Rolling backward after a 180. */
+    val fakie: Boolean get() = context.fakie
+
+    /** Grind or manual in progress (null: neither), named as on the HUD. */
+    val balanceMove: ComboMove?
+        get() = when (machine.current.takeIf { mounted }) {
+            SkateState.GRIND -> ComboMove.Grind(context.grindType)
+            SkateState.MANUAL -> ComboMove.Manual(context.manualType)
+            else -> null
+        }
+
+    /** Manual balance from -1 to 1 (a bail at either end), null when not in a manual. */
+    val manualBalance: Float?
+        get() = if (mounted && machine.current == SkateState.MANUAL) {
+            (context.manualAngle / config.manual.bailAngleDeg).coerceIn(-1f, 1f)
+        } else null
 
     /** Board rotation of the trick in progress, in the board's frame ([Mountable.mountSpin]). */
     override val mountSpin: Quaternionf?
@@ -147,6 +198,7 @@ class SkateBehavior(
     override fun bail(): Float {
         if (!mounted) return 0f
         machine.force(SkateState.BAIL, context)
+        combo.bail()
         return config.bail.recoverySec
     }
 
@@ -160,6 +212,10 @@ class SkateBehavior(
         manualAngle = 0f
         trick = null
         trickTime = 0f
+        fakie = false
+        spinTurn = 0f
+        spinning = false
+        combo.reset()
         if (mounted) machine.force(SkateState.IDLE, context)
         onFoot.respawn()
     }
@@ -174,7 +230,9 @@ class SkateBehavior(
         // On the board the skate context sits above gameplay: the same keys push/manual/ollie (INP-10).
         SkateInputContext.sync(input.actions, mounted)
         // The selected control scheme turns the skate actions into tricks and, for the feet schemes, steering (GPL-21).
-        val tricks = trickInput.update(input.actions, input.move, SkateControls.scheme, dt)
+        val scheme = SkateControls.scheme
+        val tricks = trickInput.update(input.actions, input.move, scheme, dt)
+        context.spinWithTrick = scheme.style == TrickStyle.FLICK_IT
         val intent = SkateIntent.read(input, config.input, if (mounted) tricks else SkateTrickInput.Frame())
         return step(input, intent, dt).copy(mount = request)
     }
@@ -184,15 +242,33 @@ class SkateBehavior(
 
         fill(input, intent, dt)
         context.ollie = false
-        val wasAir = machine.current == SkateState.AIR
+        val before = machine.current
         machine.update(context, dt)
-        if (wasAir && machine.current != SkateState.AIR) {
-            context.landingImpact = context.fallSpeed
-            land()
-        }
-        if (wasAir && machine.current == SkateState.AIR) airTrick(dt)
-        if (machine.current == SkateState.MANUAL) updateManualBalance(dt)
+        val now = machine.current
+        if (before != now) changed(before, now)
+        if (before == SkateState.AIR && now == SkateState.AIR) airTrick(dt)
+        if (now == SkateState.MANUAL) updateManualBalance(dt)
+        combo.update(dt)
         return solve(input, dt)
+    }
+
+    /** Feeds the combo (GPL-23): a landed trick, then the grind or manual it led into, or a flat landing. */
+    private fun changed(from: SkateState, to: SkateState) {
+        if (from == SkateState.AIR) {
+            context.landingImpact = context.fallSpeed
+            land(to)
+        }
+        when (to) {
+            SkateState.BAIL -> {
+                context.fakie = false
+                combo.bail()
+            }
+            SkateState.GRIND -> combo.add(ComboMove.Grind(context.grindType))
+            SkateState.MANUAL -> combo.add(ComboMove.Manual(context.manualType))
+            SkateState.IDLE, SkateState.PUSH, SkateState.RIDE ->
+                if (from == SkateState.AIR || from == SkateState.MANUAL) combo.touchedFlat()
+            SkateState.AIR -> {}
+        }
     }
 
     private fun fill(input: CharacterInput, intent: SkateIntent, dt: Float) = with(context) {
@@ -228,21 +304,31 @@ class SkateBehavior(
         }
     }
 
-    /** Touchdown: a trick that was finished counts (a bail does not); the board is caught either way. */
-    private fun land() = with(context) {
+    /**
+     * Touchdown: a trick that was finished joins the combo with its body spin (a bail does not); the board is caught
+     * either way. Landing backward on the ground rides fakie.
+     */
+    private fun land(to: SkateState) = with(context) {
         val done = trick
-        if (done != null && machine.current != SkateState.BAIL) {
+        if (done != null && to != SkateState.BAIL) {
+            val move = ComboMove.Air(done, BodySpin.of(spinTurn, config.preferredStance))
             landedTricks++
-            lastLandedTrick = done
+            lastLanded = move
+            combo.add(move)
         }
+        if (to != SkateState.BAIL && to != SkateState.GRIND) fakie = landingErrorDeg > 90f
         trick = null
         trickTime = 0f
+        spinTurn = 0f
+        spinning = false
     }
 
     private fun updateManualBalance(dt: Float) {
         val m = config.manual
         val lean = context.move.y
-        val correction = if (abs(lean) > config.input.moveDeadZone) lean * m.balanceGain else 0f
+        // A nose manual tips the other way: stick back corrects it.
+        val sign = if (context.manualType == ManualType.NOSE_MANUAL) -1f else 1f
+        val correction = if (abs(lean) > config.input.moveDeadZone) sign * lean * m.balanceGain else 0f
         val drift = if (context.manualAngle == 0f) 1f else context.manualAngle
         context.manualAngle += (drift * m.instability - correction) * dt
     }
@@ -256,9 +342,11 @@ class SkateBehavior(
         val impulse = if (context.ollie) Vector3f(0f, config.air.ollieImpulse, 0f) else null
         val clip = config.animations[state.name]
 
-        fun rolling(newSpeed: Float, yaw: Float) = CharacterMotion(
+        // Fakie: the board rolls the way the rider's back faces.
+        val travelOffset = if (context.fakie) PI.toFloat() else 0f
+        fun rolling(newSpeed: Float, yaw: Float, travelYaw: Float = yaw + travelOffset) = CharacterMotion(
             state = state.name,
-            horizontalVelocity = MotionMath.directionOfYaw(yaw).mul(newSpeed),
+            horizontalVelocity = MotionMath.directionOfYaw(travelYaw).mul(newSpeed),
             targetYaw = yaw,
             snapYaw = true,
             animation = clip,
@@ -268,18 +356,20 @@ class SkateBehavior(
             SkateState.IDLE -> CharacterMotion(state.name, animation = clip, impulse = impulse)
             SkateState.PUSH -> rolling(MotionMath.approach(speed, config.push.maxSpeed, config.push.acceleration * dt), steered)
             SkateState.RIDE, SkateState.MANUAL -> {
-                val braking = context.move.y < -config.input.pushStickThreshold
+                // Stick back balances a nose manual instead of braking.
+                val noseManual = state == SkateState.MANUAL && context.manualType == ManualType.NOSE_MANUAL
+                val braking = !noseManual && context.move.y < -config.input.pushStickThreshold
                 val decel = if (braking) ride.brakeDecel else ride.rollingDrag
                 rolling(MotionMath.approach(speed, 0f, decel * dt), steered)
             }
-            SkateState.GRIND -> rolling(speed, input.yaw)
-            SkateState.AIR -> CharacterMotion(
-                state.name,
-                targetYaw = input.yaw - context.move.x * config.air.airTurnRate * dt,
-                snapYaw = true,
-                impulse = impulse,
-                animation = clip,
-            )
+            // Along the rail the way the board came in: a boardslide sits across its travel.
+            SkateState.GRIND -> rolling(speed, input.yaw, input.velocityYaw.takeIf { it.isFinite() } ?: (input.yaw + travelOffset))
+            SkateState.AIR -> {
+                val rate = if (context.spinning) config.tricks.spinTurnRate else config.air.airTurnRate
+                val turn = -context.move.x * rate * dt
+                if (context.trick != null) context.spinTurn += turn
+                CharacterMotion(state.name, targetYaw = input.yaw + turn, snapYaw = true, impulse = impulse, animation = clip)
+            }
             SkateState.BAIL -> rolling(MotionMath.approach(speed, 0f, config.bail.drag * dt), input.yaw)
         }
     }
@@ -292,8 +382,15 @@ class SkateBehavior(
                 c.ollie = c.jumpPressed && (c.grounded || previous == SkateState.GRIND)
                 c.trick = if (c.ollie) c.requestedTrick ?: TrickType.OLLIE else null
                 c.trickTime = 0f
+                c.spinTurn = 0f
+                c.spinning = c.ollie && abs(c.move.x) > c.config.tricks.spinStickThreshold &&
+                    (c.requestedTrick == null || c.spinWithTrick)
             }
-            onEnter(SkateState.MANUAL) { it.manualAngle = 0f }
+            onEnter(SkateState.MANUAL) {
+                it.manualAngle = 0f
+                it.manualType = if (it.move.y >= it.config.tricks.leanThreshold) ManualType.NOSE_MANUAL else ManualType.MANUAL
+            }
+            onEnter(SkateState.GRIND) { it.grindType = GrindType.of(it.move.y, it.landingErrorDeg, it.config.tricks) }
 
             // Airborne and grind entry
             (onGround + SkateState.MANUAL).forEach { from ->
@@ -302,9 +399,7 @@ class SkateBehavior(
             }
             transition(SkateState.RIDE, SkateState.GRIND, 15) { it.nearGrindable && it.speed >= it.config.grind.minEntrySpeed }
             // Only on the way down: an ollie out of a grind must not lock straight back onto the rail.
-            transition(SkateState.AIR, SkateState.GRIND, 15) {
-                it.nearGrindable && it.speed >= it.config.grind.minEntrySpeed && it.verticalSpeed <= 0f
-            }
+            transition(SkateState.AIR, SkateState.GRIND, 15) { it.canLockGrind }
             transition(SkateState.GRIND, SkateState.BAIL, 20) { it.speed < it.config.grind.minHoldSpeed }
             transition(SkateState.GRIND, SkateState.AIR, 10) {
                 it.jumpPressed || !it.nearGrindable || timeInState >= it.config.grind.maxDurationSec
@@ -312,9 +407,10 @@ class SkateBehavior(
 
             // Landing
             val landed = { c: SkateContext -> c.grounded && timeInState >= c.config.air.minAirTime }
+            // Backward (fakie) counts as straight; a board across a rail locks into a boardslide instead.
             transition(SkateState.AIR, SkateState.BAIL, 20) {
-                landed(it) && (it.landingErrorDeg > it.config.air.landingToleranceDeg ||
-                    it.fallSpeed >= it.config.air.bailImpactSpeed || it.trickUnfinished)
+                landed(it) && (it.fallSpeed >= it.config.air.bailImpactSpeed || it.trickUnfinished ||
+                    (it.straightErrorDeg > it.config.air.landingToleranceDeg && !(it.canLockGrind && it.acrossTravel)))
             }
             transition(SkateState.AIR, SkateState.RIDE, 10) { landed(it) && it.speed >= it.config.ride.idleSpeed }
             transition(SkateState.AIR, SkateState.IDLE, 5) { landed(it) }
@@ -358,14 +454,19 @@ class SkateBehavior(
 object SkateGameplay {
     /**
      * Per-engine setup, called by each host (editor and exported game) once the engine has started: the control
-     * scheme option in the pause menu, the trick HUD (GPL-21) and the item systems (GPL-24a, e); the water bail
+     * scheme and control hint options in the pause menu, the trick and combo HUD (GPL-21, GPL-23) and the item systems (GPL-24a, e); the water bail
      * (GPL-32) is engine wiring (ECS-18). Call [register] first. Safe to call again.
      */
     fun install(engine: Engine) {
         engine.gameOptions.register(SkateControls.option())
-        // Once per engine: a second HUD would score every trick twice (GPL-25).
+        engine.gameOptions.register(ControlHints.option())
+        // Once per engine: a second HUD would report every trick twice (GPL-25).
+        if (engine.systemManager.getSystem<SpotCameraSystem>() == null) engine.systemManager.addSystem(SpotCameraSystem())
         if (engine.systemManager.getSystem<SkateHudSystem>() == null) {
-            engine.systemManager.addSystem(SkateHudSystem(engine.eventSystem))
+            val strings = engine.gameStrings
+            engine.systemManager.addSystem(SkateHudSystem(engine.eventSystem) { key, args ->
+                if (args.isEmpty()) strings.getString(key) else strings.getString(key, *args)
+            })
         }
         // Items, equipment, health and interaction (GPL-24a, b, d, e); the item set reloads on each scene init. One database for both systems.
         if (engine.systemManager.getSystem<InventorySystem>() == null) {

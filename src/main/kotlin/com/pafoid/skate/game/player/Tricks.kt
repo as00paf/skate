@@ -1,8 +1,10 @@
 package com.pafoid.skate.game.player
 
+import com.pafoid.skate.game.skateboard.PreferredStance
 import kotlinx.serialization.Serializable
 import org.joml.Quaternionf
 import kotlin.math.PI
+import kotlin.math.abs
 
 /**
  * The core trick set (GPL-21): every control scheme can do each of these. [nameKey] is the HUD / game string.
@@ -16,7 +18,7 @@ enum class TrickType(val nameKey: String) {
     THREE_SIXTY_SHOVE_IT("trick.360shoveit"),
 }
 
-/** How long each trick takes in the air and what it scores; part of [SkateControllerConfig]. */
+/** How long each trick takes in the air, and how body spins and named grinds are read; part of [SkateControllerConfig]. */
 @Serializable
 data class TrickTuning(
     /** Seconds the board needs to finish a kickflip or heelflip; landing earlier is a bail. */
@@ -25,10 +27,14 @@ data class TrickTuning(
     val shoveItSec: Float = 0.3f,
     /** Seconds for a 360 shove-it. */
     val threeSixtyShoveItSec: Float = 0.5f,
-    val olliePoints: Int = 100,
-    val flipPoints: Int = 500,
-    val shoveItPoints: Int = 300,
-    val threeSixtyShoveItPoints: Int = 800,
+    /** Steering stick held past this (left or right) at the pop starts a body spin (GPL-23). */
+    val spinStickThreshold: Float = 0.5f,
+    /** Air turn rate in rad/s while spinning, instead of [AirTuning.airTurnRate]; about a 360 in a full ollie. */
+    val spinTurnRate: Float = 8f,
+    /** Stick back / forward past this when a grind starts makes it a 5-0 / nosegrind, and a manual a nose manual. */
+    val leanThreshold: Float = 0.5f,
+    /** Board this far (degrees) across its travel when it locks on a rail: a boardslide instead of a grind. */
+    val boardslideMinDeg: Float = 45f,
 ) {
     /** Air time [trick] needs before a clean landing (0 for an ollie). */
     fun duration(trick: TrickType): Float = when (trick) {
@@ -37,12 +43,50 @@ data class TrickTuning(
         TrickType.SHOVE_IT -> shoveItSec
         TrickType.THREE_SIXTY_SHOVE_IT -> threeSixtyShoveItSec
     }
+}
 
-    fun points(trick: TrickType): Int = when (trick) {
-        TrickType.OLLIE -> olliePoints
-        TrickType.KICKFLIP, TrickType.HEELFLIP -> flipPoints
-        TrickType.SHOVE_IT -> shoveItPoints
-        TrickType.THREE_SIXTY_SHOVE_IT -> threeSixtyShoveItPoints
+/** Named grinds (GPL-23): picked by the lean on entry, or how the board sits on the rail. */
+enum class GrindType(val nameKey: String) {
+    FIFTY_FIFTY("trick.5050"),
+    FIVE_O("trick.5_0"),
+    NOSEGRIND("trick.nosegrind"),
+    BOARDSLIDE("trick.boardslide");
+
+    companion object {
+        /** [lean] is the stick's forward axis on entry (+ = forward); [acrossDeg] the board's angle to its travel. */
+        fun of(lean: Float, acrossDeg: Float, tuning: TrickTuning): GrindType = when {
+            acrossDeg >= tuning.boardslideMinDeg && acrossDeg <= 180f - tuning.boardslideMinDeg -> BOARDSLIDE
+            lean <= -tuning.leanThreshold -> FIVE_O
+            lean >= tuning.leanThreshold -> NOSEGRIND
+            else -> FIFTY_FIFTY
+        }
+    }
+}
+
+/** Manual on the back wheels, or on the front ones when the stick is forward on entry (GPL-23). */
+enum class ManualType(val nameKey: String) {
+    MANUAL("trick.manual"),
+    NOSE_MANUAL("trick.nosemanual"),
+}
+
+/** Frontside or backside, from which way the rider turns and their stance. */
+enum class SpinSide(val nameKey: String) { FRONTSIDE("trick.fs"), BACKSIDE("trick.bs") }
+
+/** A body spin landed in the air, e.g. FS 180 (GPL-23). [degrees] is a multiple of 180. */
+data class BodySpin(val side: SpinSide, val degrees: Int) {
+    companion object {
+        /**
+         * The spin [turnRad] of accumulated air turn names, to the nearest 180° (null under 90°). Turning right
+         * (negative yaw, like the steering) is backside for a regular rider and frontside for a goofy one.
+         */
+        fun of(turnRad: Float, stance: PreferredStance): BodySpin? {
+            val deg = Math.toDegrees(turnRad.toDouble())
+            val halves = Math.round(abs(deg) / 180.0).toInt()
+            if (halves == 0) return null
+            val right = deg < 0
+            val frontside = right == (stance == PreferredStance.GOOFY)
+            return BodySpin(if (frontside) SpinSide.FRONTSIDE else SpinSide.BACKSIDE, halves * 180)
+        }
     }
 }
 
