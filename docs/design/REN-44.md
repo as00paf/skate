@@ -1,7 +1,8 @@
 # REN-44: Terrain surface types (sand, snow and others) — design
 
-Status: **approved, rev 2** (human decisions 2026-11-18, §13). Rev 2 adds the skate-specific surfaces (§3.1) and
-persistent, saved trails (§4.2).
+Status: **approved, rev 3** (human decisions 2026-11-18, §13). Rev 2 adds the skate-specific surfaces (§3.1) and
+persistent, saved trails (§4.2). Rev 3 aligns the rest of the note with the decisions (no content change) and adds
+the backlog proposal (§14).
 Request (human, Discord 2026-11-17): plan sand and snow (and other surfaces) as part of `TerrainComponent`, next to
 water: material layers, deformation or footprints/trails, physics response (friction, sinking, skate grip), audio, and
 how biomes assign them.
@@ -28,7 +29,7 @@ Builds on REN-28 (terrain layers, biomes, splat, streaming), REN-29 (water, wind
 
 **Non-goals (now)**
 - Fluid or granular simulation (sand piles, avalanches, snow accumulation physics).
-- Weather that falls and accumulates in real time (a global snow-cover amount is proposed as an optional slice, Q3).
+- Weather that falls and accumulates in real time (a static global snow-cover amount is task 13, Q3).
 - Hardware tessellation (GL 3.3 has none); depth comes from vertex displacement on near chunks plus parallax (§4.3).
 
 ## 2. Overview
@@ -54,7 +55,7 @@ Builds on REN-28 (terrain layers, biomes, splat, streaming), REN-29 (water, wind
 ### 3.1 `SurfaceType` (**new**, pure: `engine/terrain/surface/SurfaceType.kt`)
 
 Built-in surfaces live in a registry (`SurfaceTypes`), keyed by a stable id string. Projects can add or override
-surfaces later as `.sksurface` assets (AST, optional slice, Q4).
+surfaces later as `.sksurface` assets (AST, task 12, after the built-ins: Q4).
 
 | Field | Example (sand / snow) | Notes |
 |---|---|---|
@@ -65,7 +66,7 @@ surfaces later as `.sksurface` assets (AST, optional slice, Q4).
 | `skateGrip` | 0.3 / 0.15 | Lateral grip multiplier for the board (1 = concrete). |
 | `pushable` | false / false | Whether the skater can push off (false on deep snow: walk instead). |
 | `deform` | `TRAIL` / `TRAIL` | `NONE`, `TRAIL` (wheels and feet leave grooves), `PRINT` (only footprints). |
-| `trailRecovery` | 30 s / never | How fast trails fade (wind fills sand; snow stays until reset). |
+| `trailRecovery` | 10 min / never | Game time for a trail to fade fully (wind fills sand; snow stays until reset), §4.2. |
 | `audio` | `"surface.sand"` | Prefix of the sound sets: `.footstep`, `.roll`, `.land`, `.slide` (AUD). |
 | `particles` | `"sand_puff"` / `"snow_spray"` | Particle preset for landings, turns and bails. |
 | `wetness` / `sparkle` | 0 / 0.3 | Shading hints (wet sand darkening near water, snow glints). |
@@ -126,8 +127,8 @@ one **`DeformationField`** (**new**, `engine/render/terrain/deform/DeformationFi
   the field with a small max-blend shader each frame (a few hundred quads at most).
 - **Only deformable surfaces accept stamps:** the stamp shader multiplies by the deformability of the surface under
   each texel (from the splat), so a trail stops where sand turns to rock.
-- **Recovery:** the field's age channel and the surface's `trailRecovery` fade depth over time (sand fills in; snow
-  stays until the field scrolls away or a reset).
+- **Recovery:** decay is computed on the CPU `TrailStore` (§4.2) from the surface's `trailRecovery` and re-uploaded;
+  the field only caches it. Sand fills in; snow stays until a reset. Scrolling out of the field never loses a trail.
 
 ### 4.2 Persistent, saved trails (human Q2, rev 2)
 
@@ -164,7 +165,8 @@ difference from the untouched ground is stored, per chunk, never evicted with th
 - **Vertex (deep snow and mud):** LOD 0 chunks inside the field displace vertices down by the field depth (vertex
   texture fetch, available in GL 3.3 and Vulkan). Chunks at 1 m spacing are too coarse for footprints, so depth comes
   mostly from parallax; for deep surfaces (snow > 5 cm) a finer **trail patch mesh** (0.25 m grid, 32 m square,
-  following the camera) replaces the terrain mesh under the player. Q5 asks whether that extra mesh is wanted now.
+  following the camera) replaces the terrain mesh under the player. Decided (Q5): shading-only depth ships first
+  (task 5), the trail patch mesh right after (task 7).
 - **Physics stays on the undeformed heightfield.** Sinking is applied by controllers (§5), not by moving colliders,
   so streaming, colliders and determinism (REN-28 §15.8) are untouched.
 
@@ -205,7 +207,7 @@ difference from the untouched ground is stored, per chunk, never evicted with th
   and bails at the contact point, tinted by the macro colour so sand dust matches the beach.
 - Wet sand: a darkening band near water (thickness from `WaterQueries` depth) on the sand surface.
 - Snow: sparkle (high-frequency specular glints) and slightly blue shadows, reduced inside trails.
-- Optional global **snow cover** (Q3): `EnvironmentComponent.snowCover` (0..1) adds a snow layer weight on flat,
+- Global **snow cover** (Q3: yes, task 13): `EnvironmentComponent.snowCover` (0..1) adds a snow layer weight on flat,
   high ground in the shader and in `surfaceAt`, so a scene can be snowed in without editing biomes.
 
 ## 8. Editor (EDT)
@@ -220,7 +222,7 @@ difference from the untouched ground is stored, per chunk, never evicted with th
 |---|---|
 | `DeformationField` | 16 MB GPU (2048² RG16F); < 0.2 ms GPU per frame for tile uploads and scrolling |
 | `TrailStore` | ≤ `trailBudgetMB` (16 MB) CPU; stamping < 0.1 ms CPU per frame; decay a few tiles per frame |
-| Trail patch mesh (if Q5 yes) | 129² vertices, one draw; < 0.2 ms GPU |
+| Trail patch mesh (task 7) | 129² vertices, one draw; < 0.2 ms GPU |
 | `surfaceAt` / `surfaceOf` | < 1 µs, no allocation (splat byte read) |
 | Per-contact friction callbacks | < 0.1 ms per fixed step with 50 contacts |
 | Audio | one roll voice per board, footsteps through the existing voice manager |
@@ -250,7 +252,7 @@ difference from the untouched ground is stored, per chunk, never evicted with th
 | 5 | `TrailStore` (CPU tiles, stamping, decay, memory cap, world-change clear) and `DeformationField` (clipmap, toroidal scroll, tile uploads), terrain shading (normal, parallax, wetness) | REN | 1 |
 | 5b | `SKTR` save section and `TrailStateService` snapshot/restore (REN), stored in the save container | REN + AST (container, AST-41) | 5 |
 | 6 | Stamp writers: wheel contacts, ANI foot plants, bail craters | GPL (+ ANI events) | 5 |
-| 7 | Trail patch mesh for deep surfaces (if Q5) and vertex displacement on LOD 0 | REN | 5 |
+| 7 | Trail patch mesh for deep surfaces (Q5: right after task 5) and vertex displacement on LOD 0 | REN | 5 |
 | 8 | Particle presets and triggers (sand puff, snow spray, splash) | REN (presets) + GPL (triggers) | 1 |
 | 9 | Editor: surface pickers, debug view toggle, deformation overlay, clear trails | EDT | 1, 5 |
 | 10 | Vulkan parity: deformation field, stamp pass, trail patch | VK | 5, 7 |
@@ -304,3 +306,28 @@ Where each one landed:
 5. Task 5 shading only, task 7 (trail mesh) right after.
 6. §5 option 1; task 2.
 7. §5 skater bullet; task 3.
+
+## 14. Backlog proposal (for skate-lead)
+
+Proposed entries for `GameEngine.md`, one per §11 task. IDs are the next free number per domain at the time of
+writing; renumber if another agent claimed them first. Every entry links back to this note.
+
+| Proposed ID | §11 | Prio | Title | Done when | Deps |
+|---|---|---|---|---|---|
+| REN-50 | 1 | P2 | Surface types: `SurfaceType`, built-in registry (13 general + 6 skate surfaces), `TerrainLayer.surface`, `SurfaceQueries` (dominant layer, mesh, water, overview fallback, blend, hysteresis), surface debug view | Unit tests of §10 for the registry and queries; debug view tints terrain and meshes | REN-44, AST-49 |
+| AST-49 | 1 | P2 | `MaterialAsset.surface` (optional, default `concrete`), serialized with versioning | Old materials load as `concrete`; round-trip test | REN-44 |
+| PHY-36 | 2 | P2 | Per-contact friction and rolling resistance from `surfaceOf` on Bullet, Jolt and Simple | Box slides farther on ice than sand, ball stops sooner on sand, friction follows the splat at a border; every backend | REN-50 |
+| GPL-40 | 3 | P2 | Skater surface response: grip, rolling resistance, no-push surfaces, walking speed, soft landings, sink offset; step off on sand below walking speed, no bail (Q7) | GPL tests of §10 | REN-50, PHY-36 |
+| AUD-16 | 4 | P2 | Surface sound sets: footsteps from ANI events, wheel roll loop with border cross-fade, landing and slide sounds | AUD tests of §10; placeholder clips per built-in | REN-50 |
+| REN-51 | 5 | P2 | `TrailStore` (CPU tiles, stamping, decay + `EnvironmentComponent.trailDecay`, memory cap, world-change clear), `DeformationField` (clipmap, toroidal scroll, tile uploads), shading-only depth (normal, parallax, wetness) (Q5) | §10 trail tests; trails survive chunk unload | REN-50 |
+| REN-52 | 5b | P2 | `SKTR` save section and `TrailStateService` snapshot/restore, restored before spawn prefetch (Q2) | Byte-for-byte round-trip; restore after reload | REN-51, AST-41 |
+| GPL-41 | 6 | P2 | Stamp writers: wheel contacts, ANI foot plants, bail craters | Stamps queued per fixed step; tests | REN-51 |
+| REN-53 | 7 | P2 | Trail patch mesh for deep surfaces and LOD 0 vertex displacement (Q5: right after REN-51) | Real depth in deep snow within the §9 budget | REN-51 |
+| REN-54 | 8 | P3 | Surface particle presets (sand puff, snow spray, dirt kick, splash, grind sparks, concrete/brick dust); GPL triggers as a follow-up | Presets load and tint by macro colour; tests | REN-50 |
+| EDT-114 | 9 | P2 | Editor: surface pickers on layers and materials, debug view toggle, deformation overlay, clear trails | Pickers with undo | REN-50, REN-51 |
+| VK-12 | 10 | P2 | Vulkan parity: deformation field, stamp uploads, trail patch | GL/VK parity check | REN-51, REN-53 |
+| TLG-24 | 11 | P3 | Showcase "Surfaces" area: sand pit, snow slope, ice patch beside concrete and skate surfaces, with a board; `docs/samples.md` | Area playable in the showcase | PHY-36, GPL-40, AUD-16, REN-51 |
+| REN-55 | 13 | P3 | Global snow cover: `EnvironmentComponent.snowCover`, shader weight, `surfaceAt`, optional fresh-snowfall trail reset (Q3) | Tests; ECS reviews the field | REN-50, REN-51 |
+| AST-50 | 12 | P3 | Later: `.sksurface` project assets that add or override surfaces (Q4) | Parked until the built-ins ship | REN-50 |
+
+REN-44 itself can close once these entries are in the backlog.
