@@ -23,7 +23,7 @@ private val working = WeakHashMap<JointComponent, JointSettings>()
 private fun bodies(root: GameObject?, out: MutableList<GameObject> = ArrayList()): List<GameObject> {
     root ?: return out
     if (root.getComponent<RigidBody3D>() != null) out.add(root)
-    root.children.forEach { bodies(it, out) }
+    root.persistentChildren.forEach { bodies(it, out) }
     return out
 }
 

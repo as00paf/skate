@@ -15,12 +15,18 @@ object FirstPersonCameraRig {
         return dest.set(target.position).add(0f, camera.eyeHeight, 0f).fma(camera.forwardOffset, forward)
     }
 
-    /** Advances [camera] by [dt] seconds toward the eye pose of [target] and writes it to [out]. */
+    /** Puts [camera] on the eye pose of [target] at once (edit mode, a paused Play, a settings edit) and writes [out]. */
+    fun snap(camera: FirstPersonCameraComponent, target: FollowTarget, out: Transform) {
+        camera.state.initialized = false
+        update(camera, target, 0f, out)
+    }
+
+    /** Advances [camera] by [dt] seconds toward the eye pose of [target] and writes it to [out]; sharpness <= 0 snaps. */
     fun update(camera: FirstPersonCameraComponent, target: FollowTarget, dt: Float, out: Transform) {
         val s = camera.state
         val eye = eye(camera, target)
         val yaw = FollowCameraRig.yawBehind(target.yaw)
-        if (!s.initialized) {
+        if (!s.initialized || camera.followSharpness <= 0f) {
             s.initialized = true
             s.position.set(eye)
             s.yaw = yaw

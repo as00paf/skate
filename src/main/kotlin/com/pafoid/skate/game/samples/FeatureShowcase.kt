@@ -39,6 +39,10 @@ import com.pafoid.skate.engine.ecs.components.ScenePhysicsComponent
 import com.pafoid.skate.engine.ecs.components.SpotLightComponent
 import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.ecs.components.VehicleComponent
+import com.pafoid.skate.engine.ecs.components.CylinderCollider3D
+import com.pafoid.skate.engine.ecs.components.WaterComponent
+import com.pafoid.skate.engine.ecs.components.WaterMaterials
+import com.pafoid.skate.engine.ecs.components.WaterPreset
 import com.pafoid.skate.engine.getComponent
 import com.pafoid.skate.engine.physics3d.BodyType
 import com.pafoid.skate.engine.render.material.MaterialAsset
@@ -95,6 +99,8 @@ class FeatureShowcase(private val prefabs: PrefabsGenerator) {
         private const val BACK = -12f
         private const val MIDDLE = 2f
         private const val FRONT = 14.5f
+        /** TLG-17: the row behind the back row (REN-29 §11), where the floor was extended. */
+        private const val FAR = -27f
 
         val AREAS = listOf(
             Area("lights", "Lights", Vector3f(-22f, 0f, BACK), Vector3f(6f, 0f, 5f), Vector4f(0.35f, 0.3f, 0.45f, 1f)),
@@ -109,7 +115,44 @@ class FeatureShowcase(private val prefabs: PrefabsGenerator) {
             Area("netcode", "Netcode", Vector3f(6f, 0f, FRONT), Vector3f(3.5f, 0f, 4f), Vector4f(0.25f, 0.3f, 0.4f, 1f)),
             Area("animation", "Animation", Vector3f(13.5f, 0f, FRONT), Vector3f(3.5f, 0f, 4f), Vector4f(0.4f, 0.3f, 0.4f, 1f)),
             Area("fog", "Fog", Vector3f(24f, 0f, FRONT), Vector3f(4f, 0f, 4f), Vector4f(0.5f, 0.55f, 0.6f, 1f)),
+            Area("nature", "Nature", Vector3f(-15f, 0f, FAR), Vector3f(7.5f, 0f, 5f), Vector4f(0.55f, 0.72f, 0.78f, 1f)),
         )
+
+        /** The floor: 60 m wide, from z = -34 (behind the Nature row) to z = 20. */
+        val FLOOR_CENTER = Vector3f(0f, -0.5f, -7f)
+        val FLOOR_HALF = Vector3f(30f, 0.5f, 27f)
+
+        /**
+         * TLG-17 (REN-29 §11): the Nature area's pool, a raised basin whose floor is the showcase floor. The water is
+         * [POOL_SIZE_X] x [POOL_SIZE_Z] m and [POOL_DEPTH] m deep, its surface at [POOL_DEPTH]; [POOL_CENTER_X] is the
+         * pool's offset in the area (the steps stick out on the -X side).
+         */
+        const val POOL = "[Nature] Pool"
+        const val POOL_SIZE_X = 10f
+        const val POOL_SIZE_Z = 6f
+        const val POOL_DEPTH = 1.5f
+        const val POOL_CENTER_X = 0.9f
+        private const val POOL_WALL = 0.3f
+        private const val POOL_RIM = 0.1f
+        private const val STEP_RISE = 0.4f
+        private const val STEP_RUN = 0.6f
+        private const val STEP_HALF_WIDTH = 1f
+
+        /** Floating crates: name suffix to density in kg/m³ (lighter ones ride higher). */
+        val CRATE_DENSITIES = listOf("Light" to 200f, "Medium" to 500f, "Heavy" to 850f)
+        const val CRATE_HALF = 0.35f
+        const val BALL = "[Nature] Ball"
+        const val BALL_DENSITY = 100f
+        /** Uniform scale of `sphere.obj` (radius 0.7). */
+        private const val BALL_SCALE = 0.4f
+        const val LOG = "[Nature] Log"
+        const val LOG_DENSITY = 600f
+        /** Scale of `cylinder.obj` (radius 1, 2.85 m tall): a 0.22 m radius, 2 m log. */
+        private val LOG_SCALE = Vector3f(0.22f, 0.7f, 0.22f)
+        private const val CYLINDER_MODEL_HEIGHT = 2.85f
+        private const val SPHERE_MODEL_RADIUS = 0.7f
+
+        fun crateName(suffix: String) = "[Nature] Crate$suffix"
 
         const val NETCODE_SERVER = "[Netcode] Server"
         const val NETCODE_PREDICTED = "[Netcode] Predicted"
@@ -141,13 +184,15 @@ class FeatureShowcase(private val prefabs: PrefabsGenerator) {
         const val MAP_CLOSE = "MapClose"
         /** The map follows the scene camera (the showcase has no player character; the camera is "you"). */
         const val MAP_TARGET = "Camera"
-        /** The floor (60 x 40 m) with a 2 m margin: what the full map shows. */
-        val MAP_WORLD = MapBounds(-32f, -22f, 32f, 22f)
+        /** The floor ([FLOOR_HALF]) with a 2 m margin: what the full map shows. */
+        val MAP_WORLD = MapBounds(-32f, -36f, 32f, 22f)
         const val MINIMAP_VIEW = 36f
         const val MINIMAP_SIZE = 240f
 
         /** Overlay button that cycles the scene fog (off, linear, exp, exp², height) in Play; see [FogCycle]. */
         const val FOG_TOGGLE_BUTTON = "FogToggle"
+        /** TLG-17: overlay button that cycles the wind (calm, breeze, storm) in Play; see `WindCycle`. */
+        const val WIND_TOGGLE_BUTTON = "WindToggle"
 
         /**
          * TLG-16: groups of the overlay canvas, so the Hierarchy reads by screen region. [LEGEND_PANEL] and
@@ -168,12 +213,14 @@ class FeatureShowcase(private val prefabs: PrefabsGenerator) {
         )
 
         /** String keys the overlay uses; they live in the bundled game and editor string tables. */
-        val STRING_KEYS = listOf("showcase.title", "showcase.hint", "showcase.areas", "showcase.text", "showcase.button", "showcase.overview", "showcase.fog_toggle", "showcase.seed") +
+        val STRING_KEYS = listOf("showcase.title", "showcase.hint", "showcase.areas", "showcase.text", "showcase.button", "showcase.overview", "showcase.fog_toggle", "showcase.wind_toggle", "showcase.seed") +
             AREAS.map { "showcase.area.${it.key}" } +
             listOf("showcase.map.open", "showcase.map.title", "showcase.map.close", "showcase.map.hint") +
             AREAS.map { "showcase.map.${it.key}" }
 
         const val OVERVIEW = "overview"
+        /** Height of a legend row; 15 rows (overview + 14 areas) stay above the minimap at 1080p. */
+        const val LEGEND_ROW = 40f
         private val OVERVIEW_EYE = Vector3f(0f, 32f, 55f)
         private val OVERVIEW_LOOK_AT = Vector3f(0f, 0f, -2f)
 
@@ -200,7 +247,7 @@ class FeatureShowcase(private val prefabs: PrefabsGenerator) {
     }
 
     private val assets get() = prefabs.projectAssetsDir
-    private val legendRow = 46f
+    private val legendRow = LEGEND_ROW
     private lateinit var scene: Scene
 
     /** Adds the scene components and every demo area to [target] (normally an empty scene named [SCENE_NAME]). */
@@ -209,7 +256,7 @@ class FeatureShowcase(private val prefabs: PrefabsGenerator) {
         scene = target
         scene.addComponent(ScenePhysicsComponent())
             .addComponent(GridLines())
-            .addComponent(EnvironmentComponent(skyTexture = Texture(filePath = EngineDefaults.Textures.SKY_HDRI), fogColor = Vector3f(0.75f, 0.78f, 0.82f), renderFog = false, fogCycleButton = FOG_TOGGLE_BUTTON))
+            .addComponent(EnvironmentComponent(skyTexture = Texture(filePath = EngineDefaults.Textures.SKY_HDRI), fogColor = Vector3f(0.75f, 0.78f, 0.82f), renderFog = false, fogCycleButton = FOG_TOGGLE_BUTTON, windCycleButton = WIND_TOGGLE_BUTTON))
         // Ambient light in the environment, a "Sun" entity linked to the day/night cycle (REN-26)
         SceneSun.addDefaults(scene)
         val overview = overviewTarget()
@@ -218,14 +265,15 @@ class FeatureShowcase(private val prefabs: PrefabsGenerator) {
             .addComponent(Transform(Vector3f(overview.position), rotation = Vector3f(overview.rotation)))
             .addComponent(CameraFocusComponent(mutableListOf(overview).apply { AREAS.forEach { add(focusTarget(it)) } }))
             .addComponent(FreeFlyCameraComponent()))
-        add(staticBox("Floor", Vector3f(0f, -0.5f, 0f), Vector3f(30f, 0.5f, 20f), Vector4f(0.5f, 0.5f, 0.5f, 1f)))
+        add(staticBox("Floor", Vector3f(FLOOR_CENTER), Vector3f(FLOOR_HALF), Vector4f(0.5f, 0.5f, 0.5f, 1f)))
         AREAS.forEach { area ->
             add(mesh("[${area.label}] Area", EngineDefaults.Models.CUBE, Vector3f(area.center).add(0f, 0.01f, 0f),
                 Vector3f(area.size.x, 0.01f, area.size.z), Material(baseColor = area.color), castShadow = false))
         }
         lights(); shadows(); materials(); particles()
         physics(); joints(); vehicle(); audio()
-        prefabLibrary(); netcode(); animation(); fog(); ui()
+        prefabLibrary(); netcode(); animation(); fog()
+        nature(); ui()
         // Tests build the scene without a project folder; the script reference is still there.
         if (assets.isNotBlank() && File(assets).isDirectory) writeScripts(File(assets))
         add(GameObject("[UI] SeedController").addComponent(ScriptComponent(assets + "Scripts/" + SEED_SCRIPT)))
@@ -458,6 +506,61 @@ class FeatureShowcase(private val prefabs: PrefabsGenerator) {
         add(mesh("[Fog] Tower", EngineDefaults.Models.CUBE, at("fog", 0f, 4f, 0f), Vector3f(0.5f, 4f, 0.5f)))
     }
 
+    /**
+     * TLG-17 (REN-29 §11, PHY-16): a raised pool of calm, wind-driven water with steps up its -X wall and down into
+     * the water, and props that float at their density: three crates, a beach ball and a log. Masses are density x
+     * collider volume, so `BuoyancySystem` floats each one at its own height.
+     */
+    private fun nature() {
+        val center = at("nature", POOL_CENTER_X, 0f, 0f)
+        fun local(x: Float, y: Float, z: Float) = Vector3f(center).add(x, y, z)
+        val hx = POOL_SIZE_X / 2f
+        val hz = POOL_SIZE_Z / 2f
+        val wallTop = POOL_DEPTH + POOL_RIM
+        val tile = Vector4f(0.85f, 0.88f, 0.9f, 1f)
+        add(node(POOL, local(0f, POOL_DEPTH, 0f)).addComponent(WaterComponent(
+            sizeX = POOL_SIZE_X, sizeZ = POOL_SIZE_Z, depth = POOL_DEPTH, waves = WaterPreset.CALM_POOL.waves(),
+            windDrivenWaves = true, material = WaterMaterials.POOL,
+        )))
+        // Walls: the long ones run past the ends to close the corners.
+        val w = POOL_WALL / 2f
+        listOf(-1f, 1f).forEach { side ->
+            val end = if (side < 0) "West" else "East"
+            val edge = if (side < 0) "North" else "South"
+            add(staticBox("[Nature] Wall$end", local(side * (hx + w), wallTop / 2f, 0f), Vector3f(w, wallTop / 2f, hz), tile))
+            add(staticBox("[Nature] Wall$edge", local(0f, wallTop / 2f, side * (hz + w)), Vector3f(hx + POOL_WALL, wallTop / 2f, w), tile))
+        }
+        // Steps: three up the outside of the west wall to its rim, three down inside it into the water (shore foam).
+        // Each is a solid block from the floor up; the higher ones are shorter and sit against the wall.
+        (1..3).forEach { k ->
+            val top = k * STEP_RISE
+            val run = (4 - k) * STEP_RUN
+            add(staticBox("[Nature] StepOut_$k", local(-hx - POOL_WALL - run / 2f, top / 2f, 0f), Vector3f(run / 2f, top / 2f, STEP_HALF_WIDTH), tile))
+            add(staticBox("[Nature] StepIn_$k", local(-hx + run / 2f, top / 2f, 0f), Vector3f(run / 2f, top / 2f, STEP_HALF_WIDTH), tile))
+        }
+        // Floating props, dropped from just above the open water (east of the inner steps).
+        val drop = POOL_DEPTH + 0.7f
+        CRATE_DENSITIES.forEachIndexed { i, (suffix, density) ->
+            val volume = (2f * CRATE_HALF).let { it * it * it }
+            val shade = 0.75f - i * 0.2f
+            add(mesh(crateName(suffix), EngineDefaults.Models.CUBE, local(-1.5f + i * 2f, drop, -1.5f), Vector3f(CRATE_HALF),
+                Material(baseColor = Vector4f(shade, shade * 0.7f, shade * 0.4f, 1f)))
+                .addComponent(RigidBody3D(density * volume)).addComponent(BoxCollider3D(Vector3f(1f))))
+        }
+        val ballRadius = SPHERE_MODEL_RADIUS * BALL_SCALE
+        add(mesh(BALL, EngineDefaults.Models.SPHERE, local(-0.5f, drop, 1.3f), Vector3f(BALL_SCALE),
+            Material(baseColor = Vector4f(0.95f, 0.3f, 0.25f, 1f), roughnessFactor = 0.4f))
+            .addComponent(RigidBody3D(BALL_DENSITY * (4f / 3f * kotlin.math.PI.toFloat() * ballRadius * ballRadius * ballRadius)))
+            .addComponent(CapsuleCollider3D(SPHERE_MODEL_RADIUS, 0.01f)))
+        // The cylinder stands on Y; rolled 90 degrees about Z it floats lengthwise along X.
+        val logRadius = LOG_SCALE.x
+        val logLength = CYLINDER_MODEL_HEIGHT * LOG_SCALE.y
+        add(mesh(LOG, EngineDefaults.Models.CYLINDER, local(2.5f, drop, 1.3f), Vector3f(LOG_SCALE),
+            Material(baseColor = Vector4f(0.45f, 0.3f, 0.18f, 1f), roughnessFactor = 0.9f), rotation = Vector3f(0f, 0f, 90f))
+            .addComponent(RigidBody3D(LOG_DENSITY * kotlin.math.PI.toFloat() * logRadius * logRadius * logLength))
+            .addComponent(CylinderCollider3D(1f, CYLINDER_MODEL_HEIGHT, axis = 1)))
+    }
+
     private fun GameObject.labelled(area: String) = apply { name = "[$area] $name" }
 
     private fun uiNode(name: String, anchorX: Float, anchorY: Float, x: Float, y: Float, w: Float, h: Float) =
@@ -491,8 +594,10 @@ class FeatureShowcase(private val prefabs: PrefabsGenerator) {
         canvas.addChild(uiGroup(TOOLBAR).apply {
             addChild(uiNode(FOG_TOGGLE_BUTTON, 1f, 0f, -20f, 20f, 320f, 64f)
                 .addComponent(UIButtonComponent("showcase.fog_toggle", fontSize = 26f)))
+            addChild(uiNode(WIND_TOGGLE_BUTTON, 1f, 0f, -20f, 96f, 320f, 64f)
+                .addComponent(UIButtonComponent("showcase.wind_toggle", fontSize = 26f)))
             // Filled in Play by the seed script; "?" until then.
-            addChild(uiNode(SEED_LABEL, 1f, 0f, -20f, 96f, 520f, 36f)
+            addChild(uiNode(SEED_LABEL, 1f, 0f, -20f, 172f, 520f, 36f)
                 .addComponent(UITextComponent("showcase.seed", listOf("?", "?"), Vector4f(0.8f, 0.9f, 1f, 1f), 26f, alignX = 1f)))
         })
 
@@ -549,7 +654,7 @@ class FeatureShowcase(private val prefabs: PrefabsGenerator) {
                 follow = follow, viewSize = MINIMAP_VIEW, target = MAP_TARGET,
                 openButton = if (follow) "" else MAP_BUTTON, closeButton = if (follow) "" else MAP_CLOSE,
             ))
-        map.addChild(marker("Floor", 0f, 0f, 60f, 40f, Vector4f(0.3f, 0.3f, 0.32f, 1f)))
+        map.addChild(marker("Floor", FLOOR_CENTER.x, FLOOR_CENTER.z, FLOOR_HALF.x * 2f, FLOOR_HALF.z * 2f, Vector4f(0.3f, 0.3f, 0.32f, 1f)))
         AREAS.forEach { area ->
             val pad = marker("Area_${area.key}", area.center.x, area.center.z, area.size.x * 2f, area.size.z * 2f,
                 Vector4f(area.color).also { it.w = 1f }.mul(1.4f, 1.4f, 1.4f, 1f))

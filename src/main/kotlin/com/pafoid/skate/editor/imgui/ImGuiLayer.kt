@@ -4,6 +4,7 @@ import com.pafoid.skate.editor.systems.EditorResources
 import com.pafoid.skate.editor.systems.EditorPaths
 import com.pafoid.skate.app.Editor
 import com.pafoid.skate.editor.events.EditorEvent
+import com.pafoid.skate.editor.systems.CloseTarget
 import com.pafoid.skate.editor.events.ViewportAction
 import com.pafoid.skate.editor.events.WindowAction
 import com.pafoid.skate.editor.imgui.data.UiConstants
@@ -60,6 +61,10 @@ class ImGuiLayer(
 ) {
     private val stringManager = engine.stringManager
     private val settingsManager = editor.settingsManager
+    private val closeGuard = editor.closeGuard
+
+    /** The editor-wide unsaved-assets prompt (EDT-82), drawn after the windows. */
+    private val unsavedAssetsModal = UnsavedAssetsModal(engine.stringManager, closeGuard)
     private val logger = engine.logger
     private val eventSystem = engine.eventSystem
     private val renderer = engine.renderer
@@ -139,7 +144,14 @@ class ImGuiLayer(
             if (windowRegistry.getWindow(event.name)?.isDialog == false) maximize.model.onWindowShown(event.name)
         }
         windowController.onToggleMaximize = { maximized -> windowRegistry.menuBar.setMaximized(maximized) }
-        eventSystem.subscribe<EditorEvent.Exit> { windowController.close() }
+        // EDT-82: File > Quit, the title bar's close button and the OS close (Alt+F4) ask about unsaved assets first.
+        eventSystem.subscribe<EditorEvent.Exit> { closeGuard.request(CloseTarget.EDITOR) { windowController.close() } }
+        GLFW.glfwSetWindowCloseCallback(windowController.glfwWindow) { handle ->
+            if (closeGuard.unsaved().isNotEmpty()) {
+                GLFW.glfwSetWindowShouldClose(handle, false)
+                closeGuard.request(CloseTarget.EDITOR) { windowController.close() }
+            }
+        }
         eventSystem.subscribe<EditorEvent.Minimize> { windowController.minimize() }
         eventSystem.subscribe<EditorEvent.ToggleMaximize> { windowController.toggleMaximize() }
     }
@@ -217,6 +229,8 @@ class ImGuiLayer(
         } else {
             setupDockSpace()
         }
+        // EDT-82: at the frame's root, so the unsaved-assets prompt also shows over F12 viewport full screen.
+        unsavedAssetsModal.render()
 
         endFrame()
     }

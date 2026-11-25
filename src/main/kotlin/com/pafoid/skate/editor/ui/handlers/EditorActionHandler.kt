@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.ui.handlers
 
+import com.pafoid.skate.editor.systems.CloseGuard
 import com.pafoid.skate.editor.loading.LoadingRunner
 import com.pafoid.skate.editor.loading.StepExecutor
 import com.pafoid.skate.editor.gizmos.EditorCamera
@@ -15,13 +16,15 @@ class EditorActionHandler(
     projectManager: ProjectManager,
     stringManager: StringManager,
     settingsManager: EditorSettingsManager,
-    editorCamera: EditorCamera
+    editorCamera: EditorCamera,
+    /** Asks before closing the project with unsaved assets (EDT-82). */
+    closeGuard: CloseGuard? = null,
 ) {
     /** One long operation at a time behind the loading screen, whichever handler starts it (EDT-56). */
     private val loading = LoadingRunner(engine.eventSystem, StepExecutor.Jobs(engine.jobSystem))
     val sceneActionHandler = SceneActionHandler(engine, projectManager, undoRedoManager, editorCamera, loading)
     val projectActionHandler =
-        ProjectActionHandler(engine, projectManager, settingsManager, undoRedoManager, stringManager, loading)
+        ProjectActionHandler(engine, projectManager, settingsManager, undoRedoManager, stringManager, loading, closeGuard)
     val environmentActionHandler = EnvironmentActionHandler(undoRedoManager, engine.eventSystem)
     val consoleActionHandler = ConsoleActionHandler(engine.eventSystem, engine.logger, undoRedoManager)
     val renderGraphActionHandler = RenderGraphActionHandler(engine.eventSystem, undoRedoManager) { engine.renderer.renderGraph }
@@ -32,6 +35,7 @@ class EditorActionHandler(
     val componentFieldActionHandler = ComponentFieldActionHandler(engine.eventSystem, undoRedoManager, engine.sceneManager)
     val transformActionHandler = TransformActionHandler(engine.eventSystem, undoRedoManager, engine.sceneManager)
     val audioActionHandler = AudioActionHandler(engine.eventSystem, projectManager, undoRedoManager, engine.audioEngine)
+    val waterActionHandler = WaterActionHandler(engine.eventSystem, undoRedoManager, engine.sceneManager)
     val materialActionHandler = MaterialActionHandler(
         engine.eventSystem, undoRedoManager, engine.logger,
         projectDir = { projectManager.currentProject?.getProjectFile()?.absoluteFile?.parentFile },

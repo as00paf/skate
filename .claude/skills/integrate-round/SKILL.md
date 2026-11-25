@@ -45,7 +45,7 @@ Use `tools/herdr/discord-dm.sh` (`send`, `read`, `wait`, `files`) to talk to the
 ## Commit rules
 
 - Commit messages: `<TASK-ID>: <imperative summary>`; backlog/doc-only commits use `chore(...)`/`docs(...)`.
-- End commits with the co-author trailer of the CLI that made them. Claude Code: use the attribution line its harness provides (for example `Co-Authored-By: Claude <noreply@anthropic.com>`), and end PR bodies with its `Generated with Claude Code` line. Copilot CLI: `Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>`. OpenCode: no trailer.
+- End commits with the co-author trailer of the CLI that made them. Claude Code: use the attribution line its harness provides (for example `Co-Authored-By: Claude <noreply@anthropic.com>`), and end PR bodies with its `Generated with Claude Code` line. Copilot CLI: `Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>`. OpenCode: no trailer. Kiro: `Co-authored-by: Kiro <noreply@kiro.dev>`.
 - Run filtered tests through the root project: `cmd.exe /c gradlew.bat :test --tests "<pattern>"`. Without the `:` the filter also applies to `tools:cli`, which has no matching tests and fails.
 - Never commit secrets, `imgui.ini` from a developer machine, or `build/` output.
 - Files use LF line endings (see `.gitattributes`).
