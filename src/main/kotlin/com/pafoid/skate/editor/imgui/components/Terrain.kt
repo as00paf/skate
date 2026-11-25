@@ -137,7 +137,7 @@ private fun toolRadio(strings: StringManager, label: String, key: String, active
     if (radioWidth(label) <= ImGui.getContentRegionAvailX()) return strings.tipped(ImGui.radioButton(label, active), key)
     var clicked = strings.tipped(ImGui.radioButton("##$key", active), key)
     ImGui.sameLine()
-    MImGui.wrappedText(ImGui.calcTextSize(label, true).let { label.substringBefore("##") })
+    MImGui.wrappedText(label.substringBefore("##"))
     if (ImGui.isItemClicked()) clicked = true
     Tooltips.show(strings, Tooltips.keyFor(key))
     return clicked
