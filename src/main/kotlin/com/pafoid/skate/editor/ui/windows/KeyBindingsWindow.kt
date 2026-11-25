@@ -56,6 +56,7 @@ class KeyBindingsWindow(
         { engine.systemManager.getSystem<InputSystem>()?.actionMap.takeIf { projectManager.hasProject() } },
         ProviderRawInput(engine.inputProvider),
         { projectManager.getProjectDirectory()?.let { BindingProfileStore(File(it, BindingProfileStore.DIRECTORY)) } },
+        { engine.systemManager.getSystem<InputSystem>()?.projectActions.takeIf { projectManager.hasProject() } },
     )
 
     /** Key Bindings › Test: devices, contexts and the event log with its Action column (EDT-52I). */

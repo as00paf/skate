@@ -1,15 +1,19 @@
 package com.pafoid.skate.engine.input
 
-/** What an [InputContextStack] entry does to the contexts below it. */
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
+
+/** What an [InputContextStack] entry does to the contexts below it. Serial names match the script API's strings. */
+@Serializable
 enum class ContextBlocking {
     /** Lower contexts keep working (HUD-style overlays). */
-    NONE,
+    @SerialName("none") NONE,
 
     /** Physical sources bound in this context are hidden from lower contexts; other sources pass through. */
-    CONSUME_BOUND,
+    @SerialName("consume") CONSUME_BOUND,
 
     /** Every lower context is silenced (modal: pause menu, text entry, cutscene). */
-    ALL,
+    @SerialName("all") ALL,
 }
 
 /** Opaque token returned by [InputContextStack.push]; pop with it. */

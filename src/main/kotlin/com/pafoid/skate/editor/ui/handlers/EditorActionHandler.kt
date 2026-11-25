@@ -47,6 +47,7 @@ class EditorActionHandler(
         engine.eventSystem, undoRedoManager, projectManager, engine.sceneManager, stringManager, engine.logger,
     )
     val keyBindingsActionHandler = KeyBindingsActionHandler(
-        engine.eventSystem, projectManager, undoRedoManager
+        engine.eventSystem, projectManager, undoRedoManager,
+        projectActions = { engine.systemManager.getSystem<com.pafoid.skate.engine.ecs.systems.InputSystem>()?.projectActions },
     ) { engine.systemManager.getSystem<com.pafoid.skate.engine.ecs.systems.InputSystem>()?.actionMap }
 }

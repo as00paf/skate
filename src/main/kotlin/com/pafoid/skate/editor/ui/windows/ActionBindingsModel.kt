@@ -5,8 +5,11 @@ import com.pafoid.skate.engine.input.ActionBinding
 import com.pafoid.skate.engine.input.ActionConflict
 import com.pafoid.skate.engine.input.ActionDefinition
 import com.pafoid.skate.engine.input.ActionMap
+import com.pafoid.skate.engine.input.ActionOrigin
 import com.pafoid.skate.engine.input.InputContext
 import com.pafoid.skate.engine.input.Keys
+import com.pafoid.skate.engine.input.ProjectActionProblem
+import com.pafoid.skate.engine.input.ProjectActionSet
 import com.pafoid.skate.engine.input.RawInput
 
 data class ActionRow(
@@ -44,9 +47,50 @@ object ActionBindingsModel {
         is ActionBinding.GamepadAxis -> GamepadLayout.axisName(binding.axis) + if (binding.scale < 0f) " (-)" else ""
     }
 
-    /** Label of [context]: its `lbl.keybindings.context.<id>` translation, or the raw id for game contexts without one. */
-    fun contextLabel(context: InputContext, translate: (String) -> String?): String =
-        translate("lbl.keybindings.context.${context.id}") ?: context.id
+    /**
+     * Label of [context]: its `lbl.keybindings.context.<id>` translation, else the project context's name (INP-11),
+     * else the raw id.
+     */
+    fun contextLabel(context: InputContext, translate: (String) -> String?, project: ProjectActionSet? = null): String =
+        translate("lbl.keybindings.context.${context.id}") ?: project?.context(context.id)?.name?.ifBlank { null } ?: context.id
+
+    /** Shown name of an action: its translation, else a project action's plain name, else its id. */
+    fun actionName(definition: ActionDefinition, translate: (String) -> String?): String =
+        translate(definition.displayKey) ?: definition.displayName ?: definition.id
+
+    /** String key of the reason [id] cannot be used for a project action (INP-11), or null when it can. */
+    fun idErrorKey(id: String, codeIds: Set<String>, takenIds: Set<String>): String? =
+        when (ProjectActionSet.idProblem(id, codeIds, takenIds)) {
+            null -> null
+            ProjectActionProblem.INVALID_ID -> "msg.keybindings.id_invalid"
+            ProjectActionProblem.CODE_ID -> "msg.keybindings.id_code"
+            ProjectActionProblem.DUPLICATE_ID -> "msg.keybindings.id_taken"
+            ProjectActionProblem.UNKNOWN_CONTEXT -> "msg.keybindings.id_invalid"
+        }
+
+    /** Contexts an action can use: built in, then those of code actions, then the project's own. */
+    fun contextChoices(map: ActionMap, set: ProjectActionSet): List<String> =
+        (ProjectActionSet.BUILT_IN_CONTEXTS.sortedBy { InputContext(it).displayOrder } +
+            map.definitions().filter { it.origin == ActionOrigin.CODE }.map { it.context.id }.sorted() +
+            set.contexts.map { it.id }).distinct()
+
+    /** Existing categories, suggested when creating an action. */
+    fun categorySuggestions(map: ActionMap): List<String> =
+        map.definitions().map { it.category }.filter { it.isNotBlank() }.distinct().sorted()
+
+    /** First free id of the form `<id>_copy`, `<id>_copy2`, ... for Duplicate. */
+    fun duplicateId(id: String, taken: Set<String>): String {
+        val base = "${id}_copy"
+        if (base !in taken) return base
+        return generateSequence(2) { it + 1 }.map { "$base$it" }.first { it !in taken }
+    }
+
+    /** [set] with the action [from] renamed to [to] in place (Change id...). */
+    fun changeId(set: ProjectActionSet, from: String, to: String): ProjectActionSet =
+        set.copy(actions = set.actions.map { if (it.id == from) it.copy(id = to) else it })
+
+    /** Project actions that use the context [id]; a context in use cannot be deleted. */
+    fun contextUsers(set: ProjectActionSet, id: String): List<String> = set.actions.filter { it.context == id }.map { it.id }
 
     /**
      * Actions of *other* contexts bound to the same physical input as [binding] of [actionId] (INP-10 shadowing):
