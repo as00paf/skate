@@ -12,6 +12,9 @@ sealed class WindowAction(eventName: String) : Event(eventName) {
     /** EDT-88: the maximize shortcut; maximizes or restores the focused tool window. */
     object ToggleMaximizeFocused : WindowAction("window.toggleMaximizeFocused")
 
+    /** EDT-101: the Help shortcut (F1); opens the focused window's article. */
+    object HelpForFocused : WindowAction("window.helpForFocused")
+
     /** EDT-88: puts the layout back as it was before maximizing (Search Everywhere). */
     object RestoreMaximized : WindowAction("window.restoreMaximized")
 

@@ -103,7 +103,7 @@ class SceneHierarchyWindow(
     override fun imgui() {
         val scene = sceneManager.currentScene
         beginWindow(stringManager, closable = false)
-        header(stringManager) { if (scene != null) toolbar(scene) }
+        header(stringManager, scene?.let { s -> { toolbar(s) } })
         if (scene == null) {
             if (hasProject()) EmptyState.noScene(stringManager)
             else EmptyState.noProject(stringManager, eventSystem)

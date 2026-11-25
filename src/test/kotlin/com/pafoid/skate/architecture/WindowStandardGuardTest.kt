@@ -156,7 +156,8 @@ class WindowStandardGuardTest {
         val dialog = root.resolve("src/main/kotlin/com/pafoid/skate/editor/imgui/EditorDialog.kt").readText()
         assertTrue(Regex("""\bheader\s*\(""").containsMatchIn(dialog), "EditorDialog no longer draws the header with `?`")
         val modal = root.resolve("src/main/kotlin/com/pafoid/skate/editor/imgui/EditorModal.kt").readText()
-        assertTrue("helpWindow?.let" in modal && "WindowHeader.helpRow" in modal, "EditorModal no longer draws its host's `?`")
+        // EDT-101: the modal's `?` is in its title bar.
+        assertTrue("helpWindow?.let" in modal && "WindowHeader.titleBar" in modal, "EditorModal no longer draws its host's `?`")
     }
 
     @Test
