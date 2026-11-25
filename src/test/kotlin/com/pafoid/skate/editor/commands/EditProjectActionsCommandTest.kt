@@ -7,7 +7,6 @@ import com.pafoid.skate.engine.input.ActionBinding
 import com.pafoid.skate.engine.input.ActionMap
 import com.pafoid.skate.engine.input.ConflictResolution
 import com.pafoid.skate.engine.input.InputMappings
-import com.pafoid.skate.engine.input.Keys
 import com.pafoid.skate.engine.input.ProjectAction
 import com.pafoid.skate.engine.input.ProjectActionSet
 import com.pafoid.skate.engine.input.ProjectActions
@@ -118,7 +117,7 @@ class EditProjectActionsCommandTest {
     @Test
     fun Bake_IgnoresOperationsOnCodeActionsOnly() {
         cmd(ProjectActionSet(actions = listOf(fire))).execute()
-        assertNull(EditProjectActionsCommand.bake(map, actions.current, "Default", BindingOperation.Rebind(CharacterActions.JUMP, 0, ActionBinding.Key(Keys.J))))
+        assertNull(EditProjectActionsCommand.bake(map, actions.current, "Default", BindingOperation.Rebind(CharacterActions.JUMP, 0, ActionBinding.Key(74))))
     }
 
     @Test
