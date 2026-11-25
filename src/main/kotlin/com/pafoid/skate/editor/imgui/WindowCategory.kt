@@ -35,6 +35,9 @@ enum class WindowCategory(val labelKey: String) {
             "window.version_control" to PROJECT,
         )
 
+        /** Every window listed in View > Windows (the tool windows, EDT-84). */
+        val windows: Set<String> get() = byWindow.keys
+
         fun of(window: EditorWindow): WindowCategory? = of(window.name)
 
         fun of(windowName: String): WindowCategory? = byWindow[windowName]

@@ -43,25 +43,13 @@ fun DirectionalLightComponent.imgui(engine: Engine) {
             shadowDistance
         )
 
-    if (ImGui.checkbox(
-            engine.stringManager.getString("component.DirectionalLightComponent.castShadows"),
-            castShadows
-        )
-    ) {
+    if (MImGui.checkbox(engine.stringManager.getString("component.DirectionalLightComponent.castShadows"), castShadows, "castShadows")) {
         castShadows = !castShadows
     }
-    if (ImGui.checkbox(
-            engine.stringManager.getString("component.DirectionalLightComponent.stabilizeProjection"),
-            stabilizeProjection
-        )
-    ) {
+    if (MImGui.checkbox(engine.stringManager.getString("component.DirectionalLightComponent.stabilizeProjection"), stabilizeProjection, "stabilizeProjection")) {
         stabilizeProjection = !stabilizeProjection
     }
-    if (ImGui.checkbox(
-            engine.stringManager.getString("component.DirectionalLightComponent.autoCalculateBounds"),
-            autoCalculateBounds
-        )
-    ) {
+    if (MImGui.checkbox(engine.stringManager.getString("component.DirectionalLightComponent.autoCalculateBounds"), autoCalculateBounds, "autoCalculateBounds")) {
         autoCalculateBounds = !autoCalculateBounds
     }
 }
