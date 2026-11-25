@@ -2,6 +2,7 @@ package com.pafoid.skate.editor.imgui.components
 
 import com.pafoid.skate.editor.events.TerrainAction
 import com.pafoid.skate.editor.imgui.EnumLabels
+import com.pafoid.skate.editor.imgui.MImGui
 import com.pafoid.skate.editor.imgui.Tooltips
 import com.pafoid.skate.editor.imgui.label
 import com.pafoid.skate.editor.imgui.tipped
@@ -36,10 +37,12 @@ fun TerrainComponent.imgui(engine: Engine) {
 
     reflectedImgui(engine, skip = SKIPPED_FIELDS)
     if (spacingCapped()) {
-        ImGui.textWrapped(strings.getString("component.TerrainComponent.spacingCapped", effectiveSpacing()))
+        MImGui.wrappedText(strings.getString("component.TerrainComponent.spacingCapped", effectiveSpacing()))
+        Tooltips.show(strings, "component.TerrainComponent.spacingCapped.tooltip")
     }
     presetRow(engine)
-    if (strings.tipped(ImGui.button(strings.label("component.TerrainComponent.reroll")), "component.TerrainComponent.reroll")) reroll()
+    MImGui.sameLineIfFits(MImGui.buttonWidth(strings.label("component.TerrainComponent.reroll")))
+    if (strings.tipped(MImGui.fitButton(strings.label("component.TerrainComponent.reroll")), "component.TerrainComponent.reroll")) reroll()
 
     if (ImGui.collapsingHeader(strings.label("component.TerrainComponent.section.asset"))) assetSection(engine)
     if (ImGui.collapsingHeader(strings.label("component.TerrainComponent.section.tools"))) toolsSection(strings, state)
@@ -55,10 +58,12 @@ private val presetIndex = ImInt(TerrainPreset.ISLAND.ordinal)
 private fun TerrainComponent.presetRow(engine: Engine) {
     val strings = engine.stringManager
     val names = TerrainPreset.entries.map { EnumLabels.of(strings, it) }.toTypedArray()
-    ImGui.combo(strings.label("component.TerrainComponent.preset"), presetIndex, names, names.size)
+    MImGui.field(strings.getString("component.TerrainComponent.preset"), "component.TerrainComponent.preset") {
+        ImGui.combo("##preset", presetIndex, names, names.size)
+    }
     Tooltips.show(strings, "component.TerrainComponent.preset.tooltip")
-    ImGui.sameLine()
-    if (strings.tipped(ImGui.button(strings.label("component.TerrainComponent.applyPreset")), "component.TerrainComponent.applyPreset")) {
+    // Apply goes under the dropdown: side by side they overflowed a narrow dock (EDT-92 review)
+    if (strings.tipped(MImGui.fitButton(strings.label("component.TerrainComponent.applyPreset")), "component.TerrainComponent.applyPreset")) {
         engine.eventSystem.publish(TerrainAction.ApplyPreset(this, TerrainPreset.entries[presetIndex.get()]))
     }
 }
@@ -66,13 +71,13 @@ private fun TerrainComponent.presetRow(engine: Engine) {
 private fun TerrainComponent.assetSection(engine: Engine) {
     val strings = engine.stringManager
     if (asset.isBlank()) {
-        ImGui.textWrapped(strings.getString("component.TerrainComponent.asset.none"))
-        if (strings.tipped(ImGui.button(strings.label("component.TerrainComponent.asset.create")), "component.TerrainComponent.asset.create")) {
+        MImGui.wrappedText(strings.getString("component.TerrainComponent.asset.none"))
+        if (strings.tipped(MImGui.fitButton(strings.label("component.TerrainComponent.asset.create")), "component.TerrainComponent.asset.create")) {
             engine.eventSystem.publish(TerrainAction.CreateAsset(this))
         }
     } else {
         val name = runCatching { TerrainAssets.source.folder(asset)?.name }.getOrNull() ?: asset
-        ImGui.textWrapped(strings.getString("component.TerrainComponent.asset.linked", name))
+        MImGui.wrappedText(strings.getString("component.TerrainComponent.asset.linked", name))
         Tooltips.show(strings, "component.TerrainComponent.asset.linked.tooltip")
     }
 }
@@ -83,36 +88,64 @@ private val TOOLS = listOf(TerrainTool.NONE, TerrainTool.RAISE, TerrainTool.LOWE
 fun toolKey(tool: TerrainTool): String = "component.TerrainComponent.tool.${tool.name.lowercase()}"
 
 private fun TerrainComponent.toolsSection(strings: StringManager, state: TerrainToolState) {
+    // Radio buttons flow onto as many lines as the dock needs (EDT-92 review: four per line overflowed)
     TOOLS.forEachIndexed { index, tool ->
-        if (index > 0 && index % 4 != 0) ImGui.sameLine()
-        if (strings.tipped(ImGui.radioButton(strings.label(toolKey(tool)), state.tool == tool), toolKey(tool))) state.tool = tool
+        val label = strings.label(toolKey(tool))
+        if (index > 0) MImGui.sameLineIfFits(radioWidth(label))
+        if (toolRadio(strings, label, toolKey(tool), state.tool == tool)) state.tool = tool
     }
     if (state.tool.sculpt || state.tool == TerrainTool.PAINT_BIOME) {
         val radius = floatArrayOf(state.radius)
-        if (ImGui.dragFloat(strings.label("component.TerrainComponent.brush.radius"), radius, 0.1f, TerrainToolState.MIN_RADIUS, TerrainToolState.MAX_RADIUS)) state.radius = radius[0]
+        MImGui.field(strings.getString("component.TerrainComponent.brush.radius"), "component.TerrainComponent.brush.radius") {
+            if (ImGui.dragFloat("##radius", radius, 0.1f, TerrainToolState.MIN_RADIUS, TerrainToolState.MAX_RADIUS)) state.radius = radius[0]
+        }
         Tooltips.show(strings, "component.TerrainComponent.brush.radius.tooltip")
     }
     if (state.tool.sculpt) {
         val strength = floatArrayOf(state.strength)
-        if (ImGui.dragFloat(strings.label("component.TerrainComponent.brush.strength"), strength, 0.05f, TerrainToolState.MIN_STRENGTH, TerrainToolState.MAX_STRENGTH)) state.strength = strength[0]
+        MImGui.field(strings.getString("component.TerrainComponent.brush.strength"), "component.TerrainComponent.brush.strength") {
+            if (ImGui.dragFloat("##strength", strength, 0.05f, TerrainToolState.MIN_STRENGTH, TerrainToolState.MAX_STRENGTH)) state.strength = strength[0]
+        }
         Tooltips.show(strings, "component.TerrainComponent.brush.strength.tooltip")
     }
     if (state.tool == TerrainTool.PAINT_BIOME) {
         val names = biomes.map { it.name }.toTypedArray()
         if (names.isEmpty()) {
-            ImGui.textWrapped(strings.getString("component.TerrainComponent.brush.noBiomes"))
+            MImGui.wrappedText(strings.getString("component.TerrainComponent.brush.noBiomes"))
         } else {
             val index = ImInt(state.biome.coerceIn(0, names.size - 1))
-            if (ImGui.combo(strings.label("component.TerrainComponent.brush.biome"), index, names, names.size)) state.biome = index.get()
+            MImGui.field(strings.getString("component.TerrainComponent.brush.biome"), "component.TerrainComponent.brush.biome") {
+                if (ImGui.combo("##biome", index, names, names.size)) state.biome = index.get()
+            }
             Tooltips.show(strings, "component.TerrainComponent.brush.biome.tooltip")
         }
     }
     if (state.tool != TerrainTool.NONE) {
-        ImGui.textWrapped(strings.getString(if (state.tool == TerrainTool.STAMP) "component.TerrainComponent.tool.hint.stamp" else "component.TerrainComponent.tool.hint.brush"))
+        MImGui.wrappedText(strings.getString(if (state.tool == TerrainTool.STAMP) "component.TerrainComponent.tool.hint.stamp" else "component.TerrainComponent.tool.hint.brush"))
     }
-    if (ImGui.checkbox(strings.label("component.TerrainComponent.showBiomes"), TerrainDebug.showBiomes)) TerrainDebug.showBiomes = !TerrainDebug.showBiomes
+    if (MImGui.checkbox(strings.getString("component.TerrainComponent.showBiomes"), TerrainDebug.showBiomes, "component.TerrainComponent.showBiomes")) {
+        TerrainDebug.showBiomes = !TerrainDebug.showBiomes
+    }
     Tooltips.show(strings, "component.TerrainComponent.showBiomes.tooltip")
 }
+
+/**
+ * A tool radio button; when even a line of its own is too narrow for its label (French at 150 %), the circle is drawn
+ * alone and the label follows as wrapped text that also selects the tool.
+ */
+private fun toolRadio(strings: StringManager, label: String, key: String, active: Boolean): Boolean {
+    if (radioWidth(label) <= ImGui.getContentRegionAvailX()) return strings.tipped(ImGui.radioButton(label, active), key)
+    var clicked = strings.tipped(ImGui.radioButton("##$key", active), key)
+    ImGui.sameLine()
+    MImGui.wrappedText(ImGui.calcTextSize(label, true).let { label.substringBefore("##") })
+    if (ImGui.isItemClicked()) clicked = true
+    Tooltips.show(strings, Tooltips.keyFor(key))
+    return clicked
+}
+
+/** Width of a radio button labelled [label]: the circle, the inner spacing and the visible text. */
+private fun radioWidth(label: String): Float =
+    ImGui.getFrameHeight() + ImGui.getStyle().itemInnerSpacingX + ImGui.calcTextSize(label, true).x
 
 /** A stamp being edited in the inspector: committed as one command when its widget is released (EDT-92 §4). */
 internal object TerrainStampDraft {
@@ -136,19 +169,20 @@ private fun TerrainComponent.stampsSection(engine: Engine, state: TerrainToolSta
     if (state.selectedStamp !in stamps.indices) state.selectedStamp = -1
     stamps.forEachIndexed { i, s ->
         val text = strings.getString("component.TerrainComponent.stamp.row", i + 1, EnumLabels.of(strings, s.mode), EnumLabels.of(strings, s.footprint))
-        if (ImGui.selectable("$text##terrain_stamp_$i", state.selectedStamp == i)) {
+        // Full width, not the label's: a long row must not widen a narrow dock
+        if (ImGui.selectable("$text##terrain_stamp_$i", state.selectedStamp == i, 0, ImGui.getContentRegionAvailX(), 0f)) {
             state.selectedStamp = i
             TerrainStampDraft.clear()
         }
     }
-    if (strings.tipped(ImGui.button(strings.label("component.TerrainComponent.stamp.add")), "component.TerrainComponent.stamp.add")) {
+    if (strings.tipped(MImGui.fitButton(strings.label("component.TerrainComponent.stamp.add")), "component.TerrainComponent.stamp.add")) {
         val y = runtime.heightField?.heightAt(0f, 0f) ?: 0f
         events.publish(TerrainAction.SetStamps(this, stamps + TerrainStamp(y = y)))
         state.selectedStamp = stamps.size
     }
     val selected = stamps.getOrNull(state.selectedStamp) ?: return
-    ImGui.sameLine()
-    if (strings.tipped(ImGui.button(strings.label("component.TerrainComponent.stamp.remove")), "component.TerrainComponent.stamp.remove")) {
+    MImGui.sameLineIfFits(MImGui.buttonWidth(strings.label("component.TerrainComponent.stamp.remove")))
+    if (strings.tipped(MImGui.fitButton(strings.label("component.TerrainComponent.stamp.remove")), "component.TerrainComponent.stamp.remove")) {
         events.publish(TerrainAction.SetStamps(this, stamps.filterIndexed { i, _ -> i != state.selectedStamp }))
         state.selectedStamp = -1
         TerrainStampDraft.clear()
@@ -161,12 +195,16 @@ private fun TerrainComponent.stampsSection(engine: Engine, state: TerrainToolSta
     fun enumCombo(key: String, values: Array<out Enum<*>>, current: Enum<*>, pick: (Int) -> TerrainStamp) {
         val names = values.map { EnumLabels.of(strings, it) }.toTypedArray()
         val i = ImInt(current.ordinal)
-        if (ImGui.combo(strings.label(key), i, names, names.size)) { draft = pick(i.get()); commit = true }
+        MImGui.field(strings.getString(key), key) {
+            if (ImGui.combo("##value", i, names, names.size)) { draft = pick(i.get()); commit = true }
+        }
         Tooltips.show(strings, "$key.tooltip")
     }
     fun floatField(key: String, value: Float, speed: Float, apply: (Float) -> TerrainStamp) {
         val v = floatArrayOf(value)
-        if (ImGui.dragFloat(strings.label(key), v, speed)) draft = apply(v[0])
+        MImGui.field(strings.getString(key), key) {
+            if (ImGui.dragFloat("##value", v, speed)) draft = apply(v[0])
+        }
         Tooltips.show(strings, "$key.tooltip")
         if (ImGui.isItemDeactivatedAfterEdit()) commit = true
     }
