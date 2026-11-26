@@ -20,7 +20,6 @@ import com.pafoid.skate.editor.imgui.EditorWindow
 import com.pafoid.skate.editor.imgui.FooterButton
 import com.pafoid.skate.editor.imgui.MImGui
 import com.pafoid.skate.editor.imgui.data.Icons
-import com.pafoid.skate.editor.imgui.data.UiConstants
 import com.pafoid.skate.editor.project.ItemType
 import com.pafoid.skate.editor.project.ProjectWizard
 import com.pafoid.skate.engine.core.Engine
@@ -54,6 +53,8 @@ class ProjectWizardWindow(
     private companion object {
         const val TEMPLATES_WIDTH = 190f
         const val CARD_HEIGHT = 44f
+        const val SETTINGS_WIDTH = 480f
+        const val STRUCTURE_PANEL_WIDTH = SETTINGS_WIDTH - 24f
     }
 
     override fun imgui() = modal.render()
@@ -62,7 +63,7 @@ class ProjectWizardWindow(
      * A real modal (EDT-51 §3), the template cards, the form, then the standard footer
      * [Open Project] [Cancel] [Create Project]. Esc = Cancel, Enter = Create. Its open state is the window's.
      */
-    private val modal = object : EditorModal(stringManager, Icons.PLUS, minWidth = UiConstants.DIALOG_WIDTH * 1.5f) {
+    private val modal = object : EditorModal(stringManager, Icons.PLUS, minWidth = TEMPLATES_WIDTH + SETTINGS_WIDTH + 24f) {
         override val titleKey = "wizard.project.title"
         override val wantsOpen: Boolean get() = isOpen.get()
         override val helpWindow: EditorWindow get() = this@ProjectWizardWindow
@@ -100,7 +101,7 @@ class ProjectWizardWindow(
         renderTemplateCards()
         ImGui.endChild()
         ImGui.sameLine()
-        ImGui.beginChild("##wizard_settings", 0f, height, false)
+        ImGui.beginChild("##wizard_settings", SETTINGS_WIDTH, height, false)
         renderNameAndLocation()
         ImGui.separator()
         renderSettings()
@@ -254,7 +255,7 @@ class ProjectWizardWindow(
         val itemHeight = 18f
         val headerHeight = 26f
         val panelHeight = headerHeight + (structureItems.size * itemHeight) + (panelPadding * 3)
-        val panelWidth = ImGui.getContentRegionAvailX()
+        val panelWidth = STRUCTURE_PANEL_WIDTH
 
         // Draw panel background with border
         ImGui.pushStyleColor(ImGuiCol.Border, 0.35f, 0.35f, 0.35f, 1f)
