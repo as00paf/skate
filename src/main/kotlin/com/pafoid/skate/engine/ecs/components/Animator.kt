@@ -31,10 +31,14 @@ data class Animator(
     val animations: MutableList<Animation> = mutableListOf(),
     @Transient var currentAnimation: Animation? = null,
     @Transient var previousAnimation: Animation? = null,
+    @Transient
     var currentTime: Float = 0f,
     var isPlaying: Boolean = false,
+    @Transient
     var blendTime: Float = 0f,
+    @Transient
     var blendDuration: Float = 0.2f,
+    @Transient
     var previousTime: Float = 0f
 ) : Component() {
 

@@ -11,6 +11,7 @@ data class StreamingFocus(
     /** Also stream the physics ring (colliders) around it. */
     var physics: Boolean = true,
     /** Scales every ring around this focus. */
+    @Range(min = 0.1, max = 10.0, step = 0.05)
     var radiusScale: Float = 1f,
     /** Higher focuses load first; one step is worth 100 m of distance. */
     var priority: Int = 0,

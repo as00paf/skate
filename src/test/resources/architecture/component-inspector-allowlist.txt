@@ -2,11 +2,7 @@
 # Format: Type.field  # task that closes the gap (see docs/design/QA-20.md). Remove the line when the gap is fixed;
 # ComponentInspectorCoverageGuardTest fails on stale lines. Do not add new lines without a task.
 
-Animator.currentTime  # ANI-35
 Animator.isPlaying  # ANI-35
-Animator.blendTime  # ANI-35
-Animator.blendDuration  # ANI-35
-Animator.previousTime  # ANI-35
 CameraFocusComponent.targets  # GPL-41
 CameraFocusComponent.sharpness  # GPL-41
 CapsuleCollider3D.radius  # PHY-36
@@ -37,7 +33,6 @@ DestructibleComponent.broken  # PHY-38
 DestructibleComponent.fractureSeed  # PHY-38
 DestructibleComponent.fracturePoint  # PHY-38
 DestructibleComponent.fractureDepth  # PHY-38
-DirectionalLightComponent.lightSpaceMatrix  # REN-50
 EnvironmentComponent.skyTexture  # REN-50
 EquipmentComponent.equipped  # GPL-42
 FreeFlyCameraComponent.speed  # GPL-41
@@ -45,13 +40,6 @@ FreeFlyCameraComponent.fastMultiplier  # GPL-41
 FreeFlyCameraComponent.lookSensitivity  # GPL-41
 HealthComponent.resistances  # GPL-42
 IkSetup.chains  # ANI-36
-InputStateComponent.moveDirection  # INP-16
-InputStateComponent.sprintPressed  # INP-16
-InputStateComponent.crouchPressed  # INP-16
-InputStateComponent.jumpPressed  # INP-16
-InputStateComponent.jumpHeld  # INP-16
-InputStateComponent.mountPressed  # INP-16
-InputStateComponent.cameraLook  # INP-16
 InventoryComponent.slots  # GPL-42
 JointComponent.connectedBodyGuid  # PHY-39
 LoopbackPredictionComponent.modelId  # NET-09

@@ -91,11 +91,13 @@ private fun drawField(target: Any, field: Field, label: String, engine: Engine, 
     when {
         type == Int::class.javaPrimitiveType -> row {
             val v = intArrayOf(value as Int)
-            if (ImGui.dragInt("##value", v, 1f)) field.set(target, v[0])
+            val range = FieldRange.of(field)
+            if (MImGui.dragIntRanged("##value", v, 1f, range)) field.set(target, range.clamp(v[0]))
         }
         type == Float::class.javaPrimitiveType -> row {
             val v = floatArrayOf(value as Float)
-            if (ImGui.dragFloat("##value", v, 0.5f)) field.set(target, v[0])
+            val range = FieldRange.of(field)
+            if (MImGui.dragFloatRanged("##value", v, 0.5f, range)) field.set(target, range.clamp(v[0]))
         }
         type == Boolean::class.javaPrimitiveType -> row {
             if (ImGui.checkbox("##value", value as Boolean)) field.set(target, !(value))
