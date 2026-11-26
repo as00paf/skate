@@ -36,6 +36,7 @@ import javax.swing.filechooser.FileFilter
 
 class ProjectWizardWindow(
     engine: Engine,
+    private val configuredLocation: () -> String? = { null },
 ) : EditorWindow("window.project_wizard") {
 
     private val logger = engine.logger
@@ -296,9 +297,8 @@ class ProjectWizardWindow(
         ImGui.popStyleColor(2)
     }
 
-    /** Default parent folder for new projects in the user's documents ([EditorPaths]); created so it validates. */
     private fun defaultLocation(): String =
-        EditorPaths.defaultProjectsDir().also { it.mkdirs() }.absolutePath
+        EditorPaths.projectsDir(configuredLocation()).also { it.mkdirs() }.absolutePath
 
     private fun openExistingProjectDialog() {
         try {

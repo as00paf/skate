@@ -45,6 +45,9 @@ object EditorPaths {
         return File(if (documents.isDirectory) documents else File(home), PROJECTS_FOLDER)
     }
 
+    fun projectsDir(configured: String?, home: String = System.getProperty("user.home").orEmpty()): File =
+        configured?.trim()?.takeIf { it.isNotEmpty() }?.let(::File) ?: defaultProjectsDir(home)
+
     /** [userDataDir], created on first use. */
     val dir: File by lazy { userDataDir().also { it.mkdirs() } }
 

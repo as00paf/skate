@@ -24,6 +24,8 @@ import com.pafoid.skate.engine.ecs.components.TerrainComponent
 import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.ecs.components.WaterComponent
 import imgui.ImGui
+import imgui.flag.ImGuiDataType
+import imgui.type.ImDouble
 import imgui.type.ImInt
 import org.joml.Vector2f
 import org.joml.Vector3f
@@ -94,24 +96,25 @@ fun Component.reflectedImgui(engine: Engine, skip: Set<String> = emptySet()) {
             val name = field.name
             val localizedName = engine.stringManager.getString("component.${this.javaClass.simpleName}.$name")
             val isFinal = Modifier.isFinal(modifiers)
+            val saved = field in FieldKind.savedFields(this.javaClass)
 
             when (type) {
                 Int::class.java -> {
-                    if (!isFinal) {
+                    if (isFinal) { if (saved) readOnlyRow(engine, localizedName, name, value) } else {
                         val typedValue = value as Int
-                        field.set(this, MImGui.dragInt(localizedName, typedValue))
+                        field.set(this, MImGui.dragInt(localizedName, typedValue, FieldRange.of(field)).let { FieldRange.of(field).clamp(it) })
                     }
                 }
 
                 Float::class.java -> {
-                    if (!isFinal) {
+                    if (isFinal) { if (saved) readOnlyRow(engine, localizedName, name, value) } else {
                         val typedValue = value as Float
-                        field.set(this, MImGui.dragFloat(localizedName, typedValue))
+                        field.set(this, MImGui.dragFloat(localizedName, typedValue, FieldRange.of(field)).let { FieldRange.of(field).clamp(it) })
                     }
                 }
 
                 Boolean::class.java -> {
-                    if (!isFinal) {
+                    if (isFinal) { if (saved) readOnlyRow(engine, localizedName, name, value) } else {
                         val typedValue = value as Boolean
                         // A checkbox carries its label on its right; it wraps nothing, so a long label is clipped
                         // in a narrow window: keep it in the shared row like every other value (EDT-100).
@@ -121,9 +124,19 @@ fun Component.reflectedImgui(engine: Engine, skip: Set<String> = emptySet()) {
                     }
                 }
 
+                Double::class.java -> {
+                    if (isFinal) { if (saved) readOnlyRow(engine, localizedName, name, value) } else {
+                        val range = FieldRange.of(field)
+                        val v = ImDouble(value as Double)
+                        var changed = false
+                        MImGui.row(localizedName, name) { changed = ImGui.inputScalar("##value", ImGuiDataType.Double, v) }
+                        if (changed) field.set(this, range.clamp(v.get()))
+                    }
+                }
+
                 String::class.java -> {
-                    if (!isFinal && StringFields.isEditable(this.javaClass, field)) {
-                        StringFields.imgui(engine, this, field, localizedName)
+                    if (StringFields.isEditable(this.javaClass, field)) {
+                        if (isFinal) { if (saved) readOnlyRow(engine, localizedName, name, value) } else StringFields.imgui(engine, this, field, localizedName)
                     }
                 }
 
@@ -147,9 +160,10 @@ fun Component.reflectedImgui(engine: Engine, skip: Set<String> = emptySet()) {
 
                 else -> {
                     val kind = FieldKind.of(field.genericType)
-                    val saved = field in FieldKind.savedFields(this.javaClass)
-                    if (saved && (kind is FieldKind.ListOf || kind is FieldKind.MapOf || kind is FieldKind.Nested || kind == FieldKind.LongField || kind is FieldKind.JsonValue)) {
+                    if (saved && (kind is FieldKind.ListOf || kind is FieldKind.MapOf || kind is FieldKind.Nested || kind == FieldKind.LongField || kind == FieldKind.DoubleField || kind is FieldKind.JsonValue || kind is FieldKind.ArrayOf || kind is FieldKind.Unsupported)) {
                         StructuredFields.field(engine, this, field, localizedName, "component.${this.javaClass.simpleName}.$name${Tooltips.SUFFIX}")
+                    } else if (type.isEnum && isFinal && saved) {
+                        readOnlyRow(engine, localizedName, name, (value as Enum<*>).name)
                     } else if (type.isEnum && !isFinal) {
                         // EDT-100: the shared row, and translated value names (`enum.<Enum>.<VALUE>`).
                         val labels = EnumLabels.all(engine.stringManager, type.enumConstants.map { it as Enum<*> })
@@ -170,6 +184,14 @@ fun Component.reflectedImgui(engine: Engine, skip: Set<String> = emptySet()) {
         engine.logger.logEditor("Inspector failed to draw ${this.javaClass.simpleName}: ${e.message}", LogLevel.ERROR)
     } finally {
         ImGui.popID()
+    }
+}
+
+/** A saved field that cannot change (a Kotlin `val`), shown disabled so it is never invisible (ECS-29). */
+private fun readOnlyRow(engine: Engine, label: String, id: String, value: Any?) {
+    MImGui.row(label, id) {
+        ImGui.textDisabled(value.toString())
+        Tooltips.showIfPresent(engine.stringManager, "inspector.final.readonly")
     }
 }
 

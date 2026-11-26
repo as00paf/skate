@@ -421,7 +421,7 @@ Round 27+ goals: the Asset Browser shows every asset type, one assets folder, ex
 - [x] **AST-49** `P1` AssetsManager.loadModel recurses forever when the default cube cannot load
   - Do: (NEEDS from EDT-59): fix the path-compare bug that makes `loadModel` recurse endlessly when the default cube fails to load (seen without a headless RHI device).
   - Done when: A failing default cube returns a fallback or error without recursion; regression test.
-- [~] @skate-assets **AST-50** `P2` BUG-020: new projects reference a bundled `metal.png` that does not exist
+- [x] **AST-50** `P2` BUG-020: new projects reference a bundled `metal.png` that does not exist
   - Do: (docs/bugs.md BUG-020): add the texture or point `Assets.Bundled.METAL` at an existing one; make `EngineAssetCopier` (or a unit test over `Assets.Bundled.bundledAssets`) fail on a missing source; remove the entry from `KNOWN_ISSUES` in `ProjectLifecycleEndToEndTest`.
   - Done when: A new project opens MainScene and FeatureShowcase with no `metal.png` error and the rails textured; test.
   - Deps: none
@@ -434,7 +434,7 @@ Round 27+ goals: deterministic seeds for games and procedural generation.
   - Do: Engine RNG service with a project/game seed (project setting, runtime override), independent named streams per system so adding one system does not shift others, exposed to scripts. Show the seed in the Feature Showcase.
   - Done when: The same seed reproduces identical sequences per stream across runs; tests cover determinism and stream independence.
 
-- [ ] **ECS-15** `P3` Remove unused GridLines fields
+- [~] @skate-ecs **ECS-15** `P3` Remove unused GridLines fields
   - Do: From REN-25: `lodCloseDistance`, `lodFarDistance`, `edgeFadeEnabled` and `edgeFadeStart` on `GridLines` are unused now that the shader handles LOD and fade. Remove them and update the default scenes.
   - Done when: The fields are gone and scenes load; tests updated.
 - [x] **ECS-16** `P2` Register WaterComponent so it can be added in the editor (REN-35)
@@ -488,7 +488,7 @@ Round 27+ goals: deterministic seeds for games and procedural generation.
 - [ ] **ECS-28** `P2` PrefabInstance overrides viewer
   - Do: (QA-20 gap, docs/design/QA-20.md) `PrefabInstance.overrides` has no viewer: list the overridden fields with a per-field revert to prefab, through a Command.
   - Done when: Overrides are visible and revertable in the inspector; tests.
-- [~] @skate-ecs **ECS-29** `P1` Generic inspector: ranges, unsupported types and runtime state
+- [x] **ECS-29** `P1` Generic inspector: ranges, unsupported types and runtime state
   - Do: (QA-20 gap, docs/design/QA-20.md) cross-cutting items 1-5 of the report: `@Range(min,max,step)` metadata honoured by the generic and UI inspectors; widgets (or a visible 'not editable' row) for `Long`, `Double`, `List`, `Map`, arrays, nested objects and final scalars; audit plain `String` fields that hold asset paths or object ids; decide per field `@Transient` or inspector-visible for runtime state saved to scenes (Animator, SkeletonComponent.pose, RagdollComponent.state, DirectionalLight matrix, NetState, DestructibleComponent.broken). EDT consulted for widgets (EDT-107/108 base).
   - Done when: No serialized field is silently skipped by the generic inspector; the guard test's allowlist shrinks accordingly; tests.
 
@@ -598,7 +598,7 @@ Round 27+ goals: a Jolt backend selectable per project, a terrain heightfield co
 - [ ] **PHY-40** `P2` Expose fixed timestep, backend and solver iterations
   - Do: (QA-20 gap, docs/design/QA-20.md) verify and expose the physics fixed timestep, backend and solver iterations in project settings.
   - Done when: Each is editable in the editor and saved with the project; tests.
-- [~] @skate-physics **PHY-41** `P1` BUG-019: Showcase slider joint never moves
+- [x] **PHY-41** `P1` BUG-019: Showcase slider joint never moves
   - Do: (docs/bugs.md BUG-019): negate and swap the slider limits in the Bullet mapping (or the frames) so `[min, max]` means displacement of body A along the axis; add a backend unit test; do not change the showcase values.
   - Done when: `FeatureShowcaseSmokeTest.Showcase_Joints_SliderBlockDropsToItsLowerLimit` passes and the block drops 2 m in Play.
   - Deps: none
@@ -661,7 +661,7 @@ Round 27+ goals: an animation authoring tool and animation from video.
 - [ ] **ANI-38** `P3` Verify the retarget map editor is fully translated
   - Do: (QA-20 gap, docs/design/QA-20.md) the 4 retarget editor files have no strings found; check and fix.
   - Done when: Every retarget editor label and tooltip has EN+FR keys; tests.
-- [~] @skate-animation **ANI-39** `P1` BUG-021: exported game loses animator clips and controller
+- [x] **ANI-39** `P1` BUG-021: exported game loses animator clips and controller
   - Do: (docs/bugs.md BUG-021, with AST): resolve clips through `AssetsManager.paths` (pack or disk) in `Animator.resolveAnimationsFromPaths` instead of `File(path).exists()`, or do not re-resolve clips `openProject` already resolved; add a unit test.
   - Done when: `ProjectLifecycleEndToEndTest.Lifecycle_8_ExportedSkaterKeepsItsClipsAndControllerWithoutErrors` passes; the exported skater animates.
   - Deps: none
@@ -751,7 +751,7 @@ Round 27+ goals: input is too tightly coupled with skateboarding; it needs a gam
 - [x] **INP-10** `P1` REWRITE Decouple input from skateboarding
   - Do: Design note `docs/design/INP-10.md` first. Generic action maps and input contexts (gameplay/UI/vehicle/...) with push/pop priority in the engine; skate-specific actions, bindings and gesture/flick logic move to the game layer (`game/**`, owned by gameplay). Scripts and in-game UI use the generic API.
   - Done when: The design is approved and implemented, `engine/input/**` has no skateboarding concepts (architecture-guard test), and the skate game plays as before.
-- [~] @skate-input **INP-11** `P2` Project input actions
+- [x] **INP-11** `P2` Project input actions
   - Do: (EDT-106 audit, `docs/design/EDT-106.md`; UI written by the owner, reviewed by skate-editor): define actions and contexts in a project asset, edited in Key Bindings (add, rename, remove, default bindings), so a non-skate game needs no code for its actions. REWRITE-sized: design note first.
   - Done when: The note is approved; a project defines and rebinds its own actions; tests.
   - Decision (human, 2026-11-18): P2, design note first.
@@ -1050,7 +1050,7 @@ Round 27+ goals (human, 2026-11-06): fix editor bugs, make every window, dialog 
 - [~] @skate-ecs **EDT-60** `P2` Git version control (phases 0 and 1 done; later phases: GitHub sign-in, LFS) — approved 2026-11-06 (`docs/design/EDT-60.md`)
   - Do: Phase 0 (ECS/AST): persistent GameObject ids so an unchanged scene saves byte-identical; load→save→load→save test on MainScene and the Feature Showcase. Phase 1 (EDT): local repository panel with JGit (init, status, diff, commit, history, branches, discard, conflict-safe loading; no Git install needed). Conflicts: whole-file "Keep mine / Take theirs" for now (human). Human decisions for later phases: GitHub sign-in supports **both** browser sign-in (a registered "Skate" OAuth app, set up with the human when phase 2 starts) and pasting a personal access token; **Git LFS on by default** for new projects (models, textures, audio).
   - Done when: Phase 1 commits and diffs a project locally; tests.
-- [~] @skate-tooling **EDT-115** `P1` EDT-114 leftovers: default location, Project Settings rows, physics backend on open
+- [x] **EDT-115** `P1` EDT-114 leftovers: default location, Project Settings rows, physics backend on open
   - Do: (from EDT-114): default-location setting, Project Settings rows and commands for the new `Project` fields, and apply `Physics3DFactory.defaultBackend` on open. Rule 13 applies.
   - Done when: Each setting is editable and used by the wizard; tests.
   - Deps: none

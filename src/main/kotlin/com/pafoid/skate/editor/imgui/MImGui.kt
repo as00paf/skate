@@ -4,6 +4,7 @@ import com.pafoid.skate.editor.imgui.data.Color
 import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.engine.assets.AssetsManager
 import com.pafoid.skate.engine.assets.data.Texture
+import com.pafoid.skate.editor.imgui.components.FieldRange
 import imgui.ImGui
 import imgui.flag.ImGuiCol
 import imgui.flag.ImGuiCond
@@ -225,16 +226,28 @@ object MImGui {
     }
 
     /** A labelled drag-float. */
-    fun dragFloat(label: String, value: Float): Float {
+    fun dragFloat(label: String, value: Float, range: FieldRange = FieldRange.NONE): Float {
         val valArray = floatArrayOf(value)
-        row(label) { ImGui.dragFloat("##dragFloat", valArray, 0.1f) }
+        row(label) { dragFloatRanged("##dragFloat", valArray, 0.1f, range) }
         return valArray[0]
     }
 
+    /** A drag-float honouring [range]: bounded and stepped by its metadata (ECS-29). */
+    fun dragFloatRanged(id: String, values: FloatArray, defaultSpeed: Float, range: FieldRange): Boolean {
+        if (!range.bounded) return ImGui.dragFloat(id, values, range.floatSpeed(defaultSpeed))
+        return ImGui.dragFloat(id, values, range.floatSpeed(defaultSpeed), range.clamp(-Float.MAX_VALUE), range.clamp(Float.MAX_VALUE))
+    }
+
+    /** A drag-int honouring [range]. */
+    fun dragIntRanged(id: String, values: IntArray, defaultSpeed: Float, range: FieldRange): Boolean {
+        if (!range.bounded) return ImGui.dragInt(id, values, range.floatSpeed(defaultSpeed))
+        return ImGui.dragInt(id, values, range.floatSpeed(defaultSpeed), range.clamp(Int.MIN_VALUE), range.clamp(Int.MAX_VALUE))
+    }
+
     /** A labelled drag-int. */
-    fun dragInt(label: String, value: Int): Int {
+    fun dragInt(label: String, value: Int, range: FieldRange = FieldRange.NONE): Int {
         val valArray = intArrayOf(value)
-        row(label) { ImGui.dragInt("##dragInt", valArray, 1f) }
+        row(label) { dragIntRanged("##dragInt", valArray, 1f, range) }
         return valArray[0]
     }
 
