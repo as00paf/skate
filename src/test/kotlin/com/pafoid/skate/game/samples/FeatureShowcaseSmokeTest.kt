@@ -1,5 +1,6 @@
 package com.pafoid.skate.game.samples
 
+import com.pafoid.skate.templates.createWithShowcase
 import com.pafoid.skate.engine.getAllChildren
 import com.pafoid.skate.editor.systems.ProjectManager
 import com.pafoid.skate.engine.assets.AssetsManager
@@ -170,7 +171,7 @@ class FeatureShowcaseSmokeTest {
         val prefabs = PrefabsGenerator(engine)
         every { engine.prefabsGenerator } returns prefabs
 
-        val project = ProjectManager(engine).createProject("Smoke", dir)
+        val project = ProjectManager(engine).createWithShowcase(engine, serializer, "Smoke", dir)
         assertTrue(project.isSuccess, project.exceptionOrNull()?.toString())
         assertTrue(File(dir, "Smoke/Scenes/${FeatureShowcase.SCENE_NAME}.scene").exists())
         scene = sceneManager.openScenes.single { it.name == FeatureShowcase.SCENE_NAME }

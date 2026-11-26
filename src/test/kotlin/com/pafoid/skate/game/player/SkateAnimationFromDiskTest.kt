@@ -1,5 +1,6 @@
 package com.pafoid.skate.game.player
 
+import com.pafoid.skate.templates.createDefaultScenes
 import com.pafoid.skate.engine.assets.AssetsManager
 import com.pafoid.skate.engine.assets.PrefabsGenerator
 import com.pafoid.skate.engine.assets.data.Texture
@@ -71,7 +72,7 @@ class SkateAnimationFromDiskTest {
             every { it.logger } returns logger
         }
         val scenesDir = File(dir, "Scenes")
-        PrefabsGenerator(engine).apply { projectAssetsDir = File(dir, "Assets").path + File.separator }.createDefaultScenes(scenesDir)
+        PrefabsGenerator(engine).apply { projectAssetsDir = File(dir, "Assets").path + File.separator }.createDefaultScenes(serializer, scenesDir)
         sceneManager.closeAllScenes()
         listOf(GameObjectManager(), TransformSystem(), physics).forEach { systems.addSystem(it) }
         systems.start()

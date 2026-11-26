@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.systems
 
+import com.pafoid.skate.templates.NewProjectSettings
 import com.pafoid.skate.editor.commands.project.CreateProjectCommand
 import com.pafoid.skate.editor.events.ProjectEvent
 import com.pafoid.skate.editor.loading.LoadingRunner
@@ -42,12 +43,6 @@ class EngineDefaultsChoiceTest {
         every { engine.sceneManager } returns sceneManager
         every { engine.serializer } returns serializer
         every { engine.jobSystem.isMainThread() } returns true
-        every { engine.prefabsGenerator.createDefaultScenes(any()) } answers {
-            val main = Scene("MainScene")
-            val folder = firstArg<File>().also { it.mkdirs() }
-            File(folder, "MainScene.scene").writeText(serializer.encodeFile(FileKind.SCENE, main))
-            listOf(main)
-        }
     }
     private val projects = ProjectManager(engine)
     private val settings = EditorSettingsManager(serializer, events, mockk(relaxed = true), mockk(relaxed = true), File(dir, "editor.settings"))
@@ -67,7 +62,7 @@ class EngineDefaultsChoiceTest {
     }
 
     private fun create(name: String, copy: Boolean): File {
-        events.publish(ProjectEvent.CreateProjectRequested(name, dir.absolutePath, copyEngineDefaults = copy))
+        events.publish(ProjectEvent.CreateProjectRequested(name, dir.absolutePath, NewProjectSettings(copyEngineDefaults = copy)))
         projects.closeProject()
         return File(dir, name)
     }
@@ -80,7 +75,7 @@ class EngineDefaultsChoiceTest {
     @Test
     fun TheWizard_CopiesByDefault() {
         assertTrue(ProjectWizard().copyEngineDefaults)
-        assertTrue(ProjectEvent.CreateProjectRequested("P", "x").copyEngineDefaults)
+        assertTrue(ProjectEvent.CreateProjectRequested("P", "x").settings.copyEngineDefaults)
     }
 
     @Test
@@ -112,7 +107,7 @@ class EngineDefaultsChoiceTest {
     @Test
     fun TheCommand_HonoursTheChoice_WhenItPreparesTheFolderItself() {
         // A failed background step leaves no folder; the command then prepares it (EDT-56 retry).
-        val command = CreateProjectCommand(ProjectEvent.CreateProjectRequested("Retry", dir.absolutePath, copyEngineDefaults = false), projects)
+        val command = CreateProjectCommand(ProjectEvent.CreateProjectRequested("Retry", dir.absolutePath, NewProjectSettings(copyEngineDefaults = false)), projects)
         command.execute()
         assertTrue(command.wasSuccessful(), command.getFailureReason())
         assertFalse(file(File(dir, "Retry"), EngineDefaults.Models.JAMES).exists())

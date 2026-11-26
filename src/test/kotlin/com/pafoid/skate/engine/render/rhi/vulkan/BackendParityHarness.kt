@@ -1,5 +1,6 @@
 package com.pafoid.skate.engine.render.rhi.vulkan
 
+import com.pafoid.skate.templates.createWithShowcase
 import com.pafoid.skate.editor.systems.ProjectManager
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.assets.data.models.Material
@@ -67,7 +68,7 @@ class BackendParityHarness(private val out: File, private val width: Int = 1280,
         try {
             engine.start(window, device)
             engine.resizeFrameBuffer(width, height)
-            check(ProjectManager(engine).createProject("Parity", dir).isSuccess)
+            check(ProjectManager(engine).createWithShowcase(engine, engine.serializer, "Parity", dir).isSuccess)
             for (view in views) {
                 val scene = engine.sceneManager.openScenes.first { if (view.scene == MAIN) it.name != SHOWCASE else it.name == view.scene }
                 if (engine.sceneManager.currentScene !== scene) engine.sceneManager.switchScene(scene)

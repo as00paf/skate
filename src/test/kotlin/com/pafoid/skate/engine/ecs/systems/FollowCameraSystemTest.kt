@@ -1,5 +1,6 @@
 package com.pafoid.skate.engine.ecs.systems
 
+import com.pafoid.skate.templates.createDefaultScenes
 import com.pafoid.skate.engine.addComponent
 import com.pafoid.skate.engine.assets.AssetsManager
 import com.pafoid.skate.engine.assets.PrefabsGenerator
@@ -153,7 +154,7 @@ class FollowCameraFromDiskTest {
                 every { it.logger } returns logger
             }
             val scenesDir = File(dir, "Scenes")
-            PrefabsGenerator(engine).apply { projectAssetsDir = File(dir, "Assets").path + File.separator }.createDefaultScenes(scenesDir)
+            PrefabsGenerator(engine).apply { projectAssetsDir = File(dir, "Assets").path + File.separator }.createDefaultScenes(serializer, scenesDir)
             sceneManager.closeAllScenes()
 
             val physics = PhysicsSystem(debug, physics3d = world)

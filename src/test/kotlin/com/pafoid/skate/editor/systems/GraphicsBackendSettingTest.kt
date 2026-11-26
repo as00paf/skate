@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.systems
 
+import com.pafoid.skate.templates.NewProjectSettings
 import com.pafoid.skate.editor.loading.LoadingRunner
 import com.pafoid.skate.editor.loading.StepExecutor
 import com.pafoid.skate.editor.events.ProjectEvent
@@ -36,12 +37,6 @@ class GraphicsBackendSettingTest {
         every { engine.sceneManager } returns sceneManager
         every { engine.serializer } returns serializer
         every { engine.jobSystem.isMainThread() } returns true // handlers run their main-thread work inline
-        every { engine.prefabsGenerator.createDefaultScenes(any()) } answers {
-            val main = Scene("MainScene")
-            val folder = firstArg<File>().also { it.mkdirs() }
-            File(folder, "MainScene.scene").writeText(serializer.encodeFile(FileKind.SCENE, main))
-            listOf(main)
-        }
     }
     private val projects = ProjectManager(engine)
     private val settings = EditorSettingsManager(serializer, events, mockk(relaxed = true), mockk(relaxed = true), File(dir, "editor.settings"))
@@ -63,7 +58,7 @@ class GraphicsBackendSettingTest {
 
     private fun create(backend: GraphicsBackend? = null): File {
         val event = if (backend == null) ProjectEvent.CreateProjectRequested("P", dir.absolutePath)
-        else ProjectEvent.CreateProjectRequested("P", dir.absolutePath, backend)
+        else ProjectEvent.CreateProjectRequested("P", dir.absolutePath, NewProjectSettings(graphicsBackend = backend))
         events.publish(event)
         return File(dir, "P/P.skateproject")
     }

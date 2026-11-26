@@ -32,6 +32,8 @@ import com.pafoid.skate.engine.events.EngineAction
 import com.pafoid.skate.engine.getComponent
 import com.pafoid.skate.engine.utils.Atlas
 import com.pafoid.skate.editor.vcs.ConflictMarkers
+import com.pafoid.skate.templates.NewProjectSettings
+import com.pafoid.skate.templates.ProjectCreator
 import org.joml.Vector2i
 import java.io.File
 
@@ -45,6 +47,7 @@ class ProjectManager(
     private val engine: Engine,
 ) {
     private val engineAssetCopier = EngineAssetCopier()
+    private val projectCreator = ProjectCreator(engine.serializer, engineAssetCopier)
 
     private val eventSystem = engine.eventSystem
     private val logger = engine.logger
@@ -69,39 +72,23 @@ class ProjectManager(
 
     private val assetPaths get() = engine.serializer.assetPaths
 
-    /** Creates [name] in [folder]; [graphicsBackend] is what its exported games start with (EDT-43). */
+    /**
+     * Creates [name] in [folder] from [settings] through the shared [ProjectCreator] (EDT-59, EDT-114) and opens it.
+     * [preparedDir] is the folder [prepareProjectFolder] already filled off the main thread (EDT-56).
+     */
     fun createProject(
         name: String,
         folder: File,
-        graphicsBackend: GraphicsBackend = GraphicsBackend.DEFAULT,
+        settings: NewProjectSettings = NewProjectSettings(),
         preparedDir: File? = null,
-        /** Copy the engine defaults into the project (AST-26 §4.3); false references them (basic shaders still copied). */
-        copyDefaults: Boolean = true,
     ): Result<Project> {
         return try {
-            val projectDir = preparedDir ?: prepareProjectFolder(name, folder, copyDefaults).getOrElse { return Result.failure(it) }
-            val projectFile = File(projectDir, "$name.skateproject")
+            val projectDir = preparedDir ?: prepareProjectFolder(name, folder, settings).getOrElse { return Result.failure(it) }
 
             if (hasProject()) closeProject()
-            assetPaths.projectRoot = projectDir.absoluteFile // default scenes are saved project-relative (AST-09)
-            val assetsDir = ProjectLayout.assetsDir(projectDir)
-            val scenesDir = ProjectLayout.scenesDir(projectDir)
+            assetPaths.projectRoot = projectDir.absoluteFile // scenes are saved project-relative (AST-09)
 
-            // Create default scene with prefabs
-            engine.prefabsGenerator.projectAssetsDir = assetsDir.absolutePath + "\\"
-            val scenes = engine.prefabsGenerator.createDefaultScenes(scenesDir)
-
-            val project = Project(
-                name = name,
-                projectPath = projectFile.absolutePath,
-                // Saved as `engine:Textures/app_icon.png` (AST-26): the project's copy when it has one, else the engine's.
-                iconPath = assetPaths.absolute(EngineDefaults.Textures.APP_ICON),
-                defaultScene = scenesDir.path + "\\MainScene.scene",
-                scenesPath = scenes.map { "${scenesDir.path}\\${it.name}.scene" },
-                resolution = Vector2i(1920, 1080),
-                graphicsBackend = graphicsBackend,
-                randomSeed = RandomService.newSeed(),
-            )
+            val project = projectCreator.finish(projectDir, name, settings, engine.prefabsGenerator).getOrThrow()
             currentProject = project
             engine.random.reseed(RandomService.resolve(project.randomSeed))
             eventSystem.publish(EngineAction.ApplyMappings(project.gameplaySettings.inputMappings))
@@ -121,30 +108,14 @@ class ProjectManager(
 
     /**
      * The file part of [createProject], safe on a background thread (EDT-56): the project folder and its typed
-     * sub-folders, the strings file, and the engine defaults: all of them when [copyDefaults] (the default, AST-26
-     * §4.3), else only the basic shaders. Fails when the project exists.
+     * sub-folders, the strings file, the engine defaults, the template's own files, the splash image and the AI files
+     * ([ProjectCreator.prepare]). Fails when the project exists or [settings] are invalid.
      */
-    fun prepareProjectFolder(name: String, folder: File, copyDefaults: Boolean = true): Result<File> {
-        logger.logEditor("Creating project: $name in ${folder.absolutePath}")
-        return try {
-            val projectDir = File(folder, name)
-            if (!projectDir.exists()) projectDir.mkdirs()
-            if (File(projectDir, "$name.skateproject").exists()) {
-                return Result.failure(IllegalStateException("Project '$name' already exists in this folder"))
-            }
-            val assetsDir = ProjectLayout.create(projectDir)
-            File(assetsDir, ProjectLayout.STRINGS_FILE).writeText("project.name=$name")
-
-            val copyResult = engineAssetCopier.copyEngineDefaults(projectDir, copyAll = copyDefaults)
-            if (copyResult.isSuccess) {
-                logger.logEditor("Copied ${copyResult.getOrNull()?.copied?.size ?: 0} engine default assets to the project")
-            } else {
-                logger.logEditor("Failed to copy engine assets: ${copyResult.exceptionOrNull()?.message}", LogLevel.ERROR)
-            }
-            Result.success(projectDir)
-        } catch (e: Exception) {
-            logger.logEditor("Could not create project: ${e.message}", LogLevel.ERROR)
-            Result.failure(e)
+    fun prepareProjectFolder(name: String, folder: File, settings: NewProjectSettings = NewProjectSettings()): Result<File> {
+        logger.logEditor("Creating project: $name in ${folder.absolutePath} from the ${settings.template} template")
+        folder.mkdirs()
+        return projectCreator.prepare(name, folder, settings).onFailure {
+            logger.logEditor("Could not create project: ${it.message}", LogLevel.ERROR)
         }
     }
 
