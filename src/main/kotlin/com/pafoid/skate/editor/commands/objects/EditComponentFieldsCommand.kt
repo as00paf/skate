@@ -29,13 +29,13 @@ class EditComponentFieldsCommand(
 
 /** Reset to default (EDT-10): runs [Component.reset]; undo puts the previous values back. */
 class ResetComponentCommand(private val component: Component) : Command {
-    private val before = ComponentValues.snapshot(component)
+    private val before = ComponentValues.snapshot(component, structured = true)
     private var after: Map<Field, Any?> = emptyMap()
 
     override fun execute() {
         if (after.isEmpty()) {
             component.reset()
-            after = ComponentValues.snapshot(component)
+            after = ComponentValues.snapshot(component, structured = true)
         } else {
             after.forEach { (f, v) -> ComponentValues.write(component, f, v) }
         }

@@ -7,6 +7,7 @@ import com.pafoid.skate.editor.commands.objects.MaterialState
 import com.pafoid.skate.editor.events.MaterialAction
 import com.pafoid.skate.editor.imgui.MImGui
 import com.pafoid.skate.editor.imgui.label
+import com.pafoid.skate.engine.assets.AssetFolder
 import com.pafoid.skate.engine.assets.data.Texture
 import com.pafoid.skate.engine.assets.data.models.AlphaMode
 import com.pafoid.skate.engine.assets.data.models.Material
@@ -22,6 +23,8 @@ import java.io.File
 
 // TODO: use event system/commands to support undo/redo
 fun RenderComponent.imgui(engine: Engine) {
+    modelPicker(engine)
+
     textureScale = MImGui.dragFloat(
         engine.stringManager.getString("component.RenderComponent.textureScale"),
         textureScale
@@ -40,6 +43,26 @@ fun RenderComponent.imgui(engine: Engine) {
     }
 
     materialInspector(engine)
+}
+
+/** Model row (REN-47): current model, a picker and a drop target; the change is an undoable command. */
+private fun RenderComponent.modelPicker(engine: Engine) {
+    val strings = engine.stringManager
+    val kind = AssetFolder.MODELS
+    val current = model?.path?.takeIf { it.isNotEmpty() }
+    fun pick(path: String?) {
+        if (path != null && path != current) engine.eventSystem.publish(MaterialAction.SetModel(this, path))
+    }
+    ImGui.pushID("model_${System.identityHashCode(this)}")
+    ImGui.pushTextWrapPos(0f)
+    ImGui.textUnformatted(strings.getString("component.RenderComponent.model"))
+    ImGui.textDisabled(current ?: strings.getString("inspector.asset_ref.none"))
+    ImGui.popTextWrapPos()
+    Tooltips.showIfPresent(strings, "component.RenderComponent.model.tooltip")
+    AssetRefPicker.dropTarget(kind, ::pick)
+    AssetRefPicker.combo(engine, "model.${System.identityHashCode(this)}", current, kind, ::pick)
+    AssetRefPicker.flag(engine, current, kind)
+    ImGui.popID()
 }
 
 /** The Shader combo's choices, scanned once per opening (EDT-80). */

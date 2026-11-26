@@ -423,7 +423,7 @@ class AssetsManager(
             model
         } catch (e: Exception) {
             logger.log("Failed to load model from byte data. Error: ${e.message}", LogLevel.ERROR)
-            loadModel(Assets.Models.CUBE)
+            loadModel(EngineDefaults.Models.CUBE)
         }
     }
 
@@ -440,9 +440,13 @@ class AssetsManager(
             model
         } catch (e: Exception) {
             logger.log("Failed to load model: $path. Error: ${e.message}", LogLevel.ERROR)
-            if (path == Assets.Models.CUBE) throw RuntimeException("Critical Error: Default CUBE model not found!")
+            // Compare resolved files: `requested` may be the engine: reference, the legacy path or a project copy.
+            val cubeFile = File(paths.localPath(EngineDefaults.Models.CUBE)).absolutePath
+            if (absolutePath == cubeFile || requested == EngineDefaults.Models.CUBE || requested == Assets.Models.CUBE) {
+                throw RuntimeException("Critical Error: Default CUBE model not found!", e)
+            }
             logger.log("Loading default CUBE model instead of $path", LogLevel.ERROR)
-            loadModel(Assets.Models.CUBE)
+            loadModel(EngineDefaults.Models.CUBE)
         }
     }
 

@@ -63,6 +63,19 @@ private fun Component.dispatchInspector(engine: Engine) {
     }
 }
 
+/** Components with their own inspector in [dispatchInspector]; every other non-UI component is drawn by [reflectedImgui] alone. */
+private val CUSTOM_INSPECTORS: List<Class<*>> = listOf(
+    DirectionalLightComponent::class.java, PointLightComponent::class.java, SpotLightComponent::class.java,
+    Transform::class.java, RenderComponent::class.java, SpriteRenderer::class.java, CameraComponent::class.java,
+    ScriptComponent::class.java, JointComponent::class.java, ReverbZone::class.java, AudioComponent::class.java,
+    Animator::class.java, ParticleEmitter::class.java, TerrainComponent::class.java, WaterComponent::class.java,
+    EnvironmentComponent::class.java,
+)
+
+/** True when [type]'s whole inspector is [reflectedImgui] (EDT-107 guard: it must draw every saved field). */
+fun usesReflectedInspector(type: Class<*>): Boolean =
+    CUSTOM_INSPECTORS.none { it.isAssignableFrom(type) } && !type.name.startsWith("com.pafoid.skate.engine.ui.")
+
 /** Inspector built from the component's declared fields (numbers, booleans, strings, vectors, enums); [skip] hides fields by name. */
 fun Component.reflectedImgui(engine: Engine, skip: Set<String> = emptySet()) {
     try {
@@ -72,7 +85,7 @@ fun Component.reflectedImgui(engine: Engine, skip: Set<String> = emptySet()) {
         fields.forEach { field ->
             val modifiers = field.modifiers
             if (Modifier.isTransient(modifiers) || Modifier.isStatic(modifiers)) return@forEach
-            if (field.name in skip) return@forEach
+            if (field.name in skip || FieldKind.isHidden(this.javaClass, field)) return@forEach
 
             if (Modifier.isPrivate(modifiers)) field.isAccessible = true
 
@@ -133,7 +146,11 @@ fun Component.reflectedImgui(engine: Engine, skip: Set<String> = emptySet()) {
                 }
 
                 else -> {
-                    if (type.isEnum && !isFinal) {
+                    val kind = FieldKind.of(field.genericType)
+                    val saved = field in FieldKind.savedFields(this.javaClass)
+                    if (saved && (kind is FieldKind.ListOf || kind is FieldKind.MapOf || kind is FieldKind.Nested || kind == FieldKind.LongField || kind is FieldKind.JsonValue)) {
+                        StructuredFields.field(engine, this, field, localizedName, "component.${this.javaClass.simpleName}.$name${Tooltips.SUFFIX}")
+                    } else if (type.isEnum && !isFinal) {
                         // EDT-100: the shared row, and translated value names (`enum.<Enum>.<VALUE>`).
                         val labels = EnumLabels.all(engine.stringManager, type.enumConstants.map { it as Enum<*> })
                         val index = ImInt((value as Enum<*>).ordinal)

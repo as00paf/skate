@@ -31,11 +31,12 @@ class InspectorEditTracker(private val clock: () -> Long = { CommandClock.value 
     fun <T> track(component: Component, inspector: () -> T): T {
         if (component is Transform) return inspector()
         val ignored = IGNORED[component.javaClass].orEmpty()
-        val before = ComponentValues.snapshot(component, ignored)
+        val structured = usesReflectedInspector(component.javaClass)
+        val before = ComponentValues.snapshot(component, ignored, structured)
         val tick = clock()
         val result = inspector()
         if (clock() != tick) return result
-        val after = ComponentValues.snapshot(component, ignored)
+        val after = ComponentValues.snapshot(component, ignored, structured)
         for ((field, old) in before) {
             val new = after[field]
             if (old == new) continue
