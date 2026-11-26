@@ -44,6 +44,38 @@ class ProjectManagerCreateTest {
     }
 
     @Test
+    fun ProjectManager_CreateProject_EveryTemplateCreatesAndReopens() {
+        val serializer = Serializer()
+        val engine = mockk<Engine>(relaxed = true)
+        every { engine.eventSystem } returns EventSystem()
+        every { engine.serializer } returns serializer
+        val assets = mockk<com.pafoid.skate.engine.assets.AssetsManager>(relaxed = true)
+        val skeleton = com.pafoid.skate.engine.assets.data.models.animations.Skeleton(
+            com.pafoid.skate.engine.assets.data.models.animations.Bone(0, "root"), 1
+        )
+        every { assets.loadModel(any()) } answers { com.pafoid.skate.engine.assets.data.models.`3dModel`(firstArg(), skeleton = skeleton) }
+        every { assets.loadAnimationSync(any()) } answers {
+            com.pafoid.skate.engine.assets.data.models.animations.Animation("clip", emptyList(), 1f, firstArg())
+        }
+        every { assets.getTexture(any()) } answers { com.pafoid.skate.engine.assets.data.Texture(filePath = firstArg()) }
+        every { engine.assetsManager } returns assets
+        every { engine.prefabsGenerator } returns com.pafoid.skate.engine.assets.PrefabsGenerator(engine)
+        com.pafoid.skate.templates.TemplateRegistry.all().forEach { template ->
+            val sceneManager = SceneManager(mockk(relaxed = true), EventSystem(), serializer, mockk(relaxed = true), mockk(relaxed = true))
+            every { engine.sceneManager } returns sceneManager
+            val projects = ProjectManager(engine)
+            val name = "T_" + template.id.replace('-', '_')
+
+            val created = projects.createProject(name, dir, NewProjectSettings(template = template.id))
+
+            assertTrue(created.isSuccess, "${template.id}: ${created.exceptionOrNull()}")
+            assertEquals(template.sceneNames.toSet(), sceneManager.openScenes.map { it.name }.toSet(), template.id)
+            projects.closeProject()
+            assertTrue(projects.openProjectFile(File(dir, "$name/$name.skateproject")), template.id)
+        }
+    }
+
+    @Test
     fun ProjectManager_CreateProject_OpensMainSceneExactlyOnce() {
         val serializer = Serializer()
         val sceneManager = spyk(SceneManager(mockk(relaxed = true), EventSystem(), serializer, mockk(relaxed = true), mockk(relaxed = true)))
