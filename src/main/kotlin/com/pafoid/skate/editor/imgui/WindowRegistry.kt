@@ -60,7 +60,7 @@ class WindowRegistry(
         CommandHistoryWindow(engine, editor.undoRedoManager),
         RenderGraphWindow(engine),
         SearchEverywhereWindow(engine, projectManager::getProjectDirectory),
-        ProjectWizardWindow(engine),
+        ProjectWizardWindow(engine) { editor.settingsManager.editorSettings.defaultProjectsPath },
         ProjectSwitcherDialog(engine, editor.settingsManager),
         AudioInspectorWindow(engine, projectManager),
         ProjectWindow(engine, projectManager),

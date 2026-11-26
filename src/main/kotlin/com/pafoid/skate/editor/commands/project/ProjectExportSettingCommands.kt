@@ -2,6 +2,7 @@ package com.pafoid.skate.editor.commands.project
 
 import com.pafoid.skate.editor.commands.Command
 import com.pafoid.skate.editor.project.Project
+import com.pafoid.skate.engine.physics3d.Physics3DFactory
 import com.pafoid.skate.engine.physics3d.PhysicsBackend
 
 /**
@@ -55,8 +56,13 @@ class SetProjectPhysicsBackendCommand(private val project: Project, private val 
 
     val isNoOp: Boolean get() = before == backend
 
-    override fun execute() { project.physicsBackend = backend }
-    override fun undo() { project.physicsBackend = before }
+    override fun execute() { apply(backend) }
+    override fun undo() { apply(before) }
+
+    private fun apply(value: PhysicsBackend) {
+        project.physicsBackend = value
+        Physics3DFactory.defaultBackend = value
+    }
     override fun getDisplayName(): String = "Set Physics Backend"
     override fun getTargetName(): String = project.name
 }

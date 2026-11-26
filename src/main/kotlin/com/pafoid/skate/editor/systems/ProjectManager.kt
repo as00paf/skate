@@ -33,6 +33,8 @@ import com.pafoid.skate.engine.getComponent
 import com.pafoid.skate.engine.utils.Atlas
 import com.pafoid.skate.editor.vcs.ConflictMarkers
 import com.pafoid.skate.templates.NewProjectSettings
+import com.pafoid.skate.engine.physics3d.PhysicsBackend
+import com.pafoid.skate.engine.physics3d.Physics3DFactory
 import com.pafoid.skate.templates.ProjectCreator
 import org.joml.Vector2i
 import java.io.File
@@ -90,6 +92,7 @@ class ProjectManager(
 
             val project = projectCreator.finish(projectDir, name, settings, engine.prefabsGenerator).getOrThrow()
             currentProject = project
+            Physics3DFactory.defaultBackend = project.physicsBackend
             engine.random.reseed(RandomService.resolve(project.randomSeed))
             eventSystem.publish(EngineAction.ApplyMappings(project.gameplaySettings.inputMappings))
 
@@ -180,6 +183,7 @@ class ProjectManager(
         if (hasProject()) closeProject()
 
         currentProject = project
+        Physics3DFactory.defaultBackend = project.physicsBackend
         // ECS-14: Play and the exported game draw from the project's seed (unless -Dskate.seed overrides it).
         engine.random.reseed(RandomService.resolve(project.randomSeed))
         // Editor: references resolve in the project folder. Exported game: they stay relative and come from the pack.
@@ -256,6 +260,7 @@ class ProjectManager(
         engine.systemManager.resetSystemCaches()
 
         currentProject = null
+        Physics3DFactory.defaultBackend = PhysicsBackend.BULLET
         assetPaths.projectRoot = null
         CollisionMeshes.source = CollisionMeshSource.NONE
         TerrainAssets.source = TerrainAssetSource.NONE

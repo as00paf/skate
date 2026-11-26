@@ -83,6 +83,7 @@ class EditorSettingsWindow(
     private var tempSnap = GizmoSnapSettings()
     private var tempCamera = EditorCameraSettings()
     private val tempBlenderPath = ImString("", 512)
+    private val tempProjectsPath = ImString("", 512)
     private var tempBlenderTimeout = 120
     private var tempBlenderImportOnOpen = true
     private var blenderTest: BlenderTestResult? = null
@@ -193,6 +194,7 @@ class EditorSettingsWindow(
             tempSnap = editor.gizmoSnap
             tempCamera = editor.camera
             tempBlenderPath.set(editor.blenderPath.orEmpty())
+            tempProjectsPath.set(editor.defaultProjectsPath.orEmpty())
             tempBlenderTimeout = editor.blenderTimeoutSeconds
             tempBlenderImportOnOpen = editor.blenderImportOnOpen
         }
@@ -225,6 +227,27 @@ class EditorSettingsWindow(
         }
 
         boolRow("settings.editor.general.load_last_project", tempLoadLastProject, default = true) { tempLoadLastProject = it }
+        renderProjectsLocation()
+    }
+
+    private fun renderProjectsLocation() {
+        MImGui.propertyRow(
+            label = stringManager.getString("settings.editor.general.projects_location"),
+            helpTooltip = stringManager.getString("settings.editor.general.projects_location.desc"),
+            onReset = { tempProjectsPath.set(""); hasPendingChanges = true },
+        ) {
+            if (ImGui.inputTextWithHint("##projects_location", stringManager.getString("settings.editor.general.projects_location.hint"), tempProjectsPath)) {
+                hasPendingChanges = true
+            }
+        }
+        if (stringManager.tipped(button(stringManager.label("wizard.project.browse")), "wizard.project.browse")) {
+            val chooser = javax.swing.JFileChooser(tempProjectsPath.get().takeIf { it.isNotBlank() })
+            chooser.fileSelectionMode = javax.swing.JFileChooser.DIRECTORIES_ONLY
+            if (chooser.showOpenDialog(null) == javax.swing.JFileChooser.APPROVE_OPTION) {
+                tempProjectsPath.set(chooser.selectedFile.absolutePath)
+                hasPendingChanges = true
+            }
+        }
     }
 
     // ─── Key Bindings ───
@@ -560,6 +583,7 @@ class EditorSettingsWindow(
                 gizmoSnap = tempSnap,
                 camera = tempCamera,
                 blenderPath = tempBlenderPath.get().trim().ifBlank { null },
+                defaultProjectsPath = tempProjectsPath.get().trim().ifBlank { null },
                 blenderTimeoutSeconds = tempBlenderTimeout,
                 blenderImportOnOpen = tempBlenderImportOnOpen,
             )

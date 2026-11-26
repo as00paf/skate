@@ -134,6 +134,7 @@ class EditorSettingsManager(
             appearance = next.appearance.sanitized(),
             blenderTimeoutSeconds = next.blenderTimeoutSeconds.coerceIn(EditorSettings.MIN_BLENDER_TIMEOUT, EditorSettings.MAX_BLENDER_TIMEOUT),
             blenderPath = next.blenderPath?.trim()?.ifBlank { null },
+            defaultProjectsPath = next.defaultProjectsPath?.trim()?.ifBlank { null },
         )
         saveSettings()
     }
