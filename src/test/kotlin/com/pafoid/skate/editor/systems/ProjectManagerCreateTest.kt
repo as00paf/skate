@@ -76,6 +76,30 @@ class ProjectManagerCreateTest {
     }
 
     @Test
+    fun ProjectManager_OpenAndClose_ApplyTheProjectsPhysicsBackend() {
+        val serializer = Serializer()
+        val sceneManager = SceneManager(mockk(relaxed = true), EventSystem(), serializer, mockk(relaxed = true), mockk(relaxed = true))
+        val engine = mockk<Engine>(relaxed = true)
+        every { engine.eventSystem } returns EventSystem()
+        every { engine.sceneManager } returns sceneManager
+        every { engine.serializer } returns serializer
+        val projects = ProjectManager(engine)
+        try {
+            val settings = NewProjectSettings(template = "empty", physicsBackend = com.pafoid.skate.engine.physics3d.PhysicsBackend.SIMPLE)
+            assertTrue(projects.createProject("Phys", dir, settings).isSuccess)
+            assertEquals(com.pafoid.skate.engine.physics3d.PhysicsBackend.SIMPLE, com.pafoid.skate.engine.physics3d.Physics3DFactory.defaultBackend)
+
+            projects.closeProject()
+            assertEquals(com.pafoid.skate.engine.physics3d.PhysicsBackend.BULLET, com.pafoid.skate.engine.physics3d.Physics3DFactory.defaultBackend)
+
+            assertTrue(projects.openProjectFile(File(dir, "Phys/Phys.skateproject")))
+            assertEquals(com.pafoid.skate.engine.physics3d.PhysicsBackend.SIMPLE, com.pafoid.skate.engine.physics3d.Physics3DFactory.defaultBackend)
+        } finally {
+            com.pafoid.skate.engine.physics3d.Physics3DFactory.defaultBackend = com.pafoid.skate.engine.physics3d.PhysicsBackend.BULLET
+        }
+    }
+
+    @Test
     fun ProjectManager_CreateProject_OpensMainSceneExactlyOnce() {
         val serializer = Serializer()
         val sceneManager = spyk(SceneManager(mockk(relaxed = true), EventSystem(), serializer, mockk(relaxed = true), mockk(relaxed = true)))

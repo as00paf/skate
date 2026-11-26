@@ -27,6 +27,7 @@ data class EditorSettings(
     var completionDelayMs: Int = 200,
     /** Game jar (or folder holding it) used for exports when none is found next to the editor (AST-11). */
     var gameJarPath: String? = null,
+    var defaultProjectsPath: String? = null,
     /** `blender.exe` for `.blend` import (AST-19); null finds it on PATH, the file association or Program Files. */
     var blenderPath: String? = null,
     /** A `.blend` import is cancelled after this long. */

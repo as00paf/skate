@@ -1,6 +1,9 @@
 package com.pafoid.skate.editor.ui.windows
 
 import com.pafoid.skate.editor.commands.project.PhysicsRates
+import com.pafoid.skate.editor.commands.project.TargetFpsChoices
+import com.pafoid.skate.editor.project.Project
+import com.pafoid.skate.engine.physics3d.PhysicsBackend
 import com.pafoid.skate.editor.imgui.GraphicsBackendField
 import com.pafoid.skate.editor.imgui.tipped
 import com.pafoid.skate.editor.imgui.label
@@ -50,6 +53,7 @@ class ProjectSettingsWindow(
     private val eventSystem = engine.eventSystem
     private val stringManager: StringManager = engine.stringManager
     private val gameLocale = engine.gameLocale
+    private val customFps = ImInt(60)
 
     /** Dead-zone tuning, moved here from Input Testing (EDT-52I). Edits the open project's settings. */
     private val deadZonePanel = DeadZonePanel(stringManager, eventSystem, engine.inputProvider) {
@@ -73,8 +77,8 @@ class ProjectSettingsWindow(
     private val categories: List<Category> by lazy {
         listOf(
             Category("general", "settings.project.metadata", arrayOf("general", "metadata", "project", "name", "version", "engine", "path", "description", "recent")) { renderGeneral() },
-            Category("game", "settings.project.game", arrayOf("game", "language", "locale", "english", "french")) { renderGame() },
-            Category("physics", "settings.project.physics", arrayOf("physics", "rate", "fps", "step", "hz", "simulation")) { renderPhysics() },
+            Category("game", "settings.project.game", arrayOf("game", "language", "locale", "english", "french", "fps", "frame", "splash", "cap")) { renderGame() },
+            Category("physics", "settings.project.physics", arrayOf("physics", "rate", "fps", "step", "hz", "simulation", "backend", "bullet", "jolt")) { renderPhysics() },
             Category("graphics", "settings.project.graphics", arrayOf("graphics", "backend", "vulkan", "opengl", "render", "export")) { renderGraphics() },
             Category("random", "settings.project.random", arrayOf("random", "seed", "rng", "deterministic", "procedural")) { renderRandom() },
             Category("input", "settings.project.input", arrayOf("input", "gamepad", "dead", "zone", "deadzone", "stick", "trigger", "threshold")) { renderInput() },
@@ -170,6 +174,56 @@ class ProjectSettingsWindow(
                 eventSystem.publish(ProjectEvent.SetGameLanguageRequested(ProjectSettingsChoices.LANGUAGES[current.get()].first))
             }
         }
+        val project = projectManager.currentProject ?: return
+        renderTargetFps(project)
+        renderSplash(project)
+    }
+
+    private fun fpsLabel(fps: Int): String =
+        if (fps <= 0) stringManager.getString("lbl.export.target_fps.uncapped") else stringManager.getString("lbl.export.target_fps.value", fps)
+
+    private fun renderTargetFps(project: Project) {
+        val tooltip = stringManager.getString("lbl.export.target_fps.tooltip")
+        MImGui.propertyRow(stringManager.getString("lbl.export.target_fps"), tooltip) {
+            val custom = !TargetFpsChoices.isPreset(project.targetFps)
+            val shown = if (custom) stringManager.getString("lbl.export.target_fps.custom") else fpsLabel(project.targetFps)
+            if (ImGui.beginCombo("##project_target_fps", shown)) {
+                TargetFpsChoices.PRESETS.forEach { fps ->
+                    if (ImGui.selectable(fpsLabel(fps), !custom && fps == project.targetFps)) eventSystem.publish(ProjectEvent.SetProjectTargetFpsRequested(fps))
+                }
+                if (ImGui.selectable(stringManager.getString("lbl.export.target_fps.custom"), custom) && !custom) {
+                    eventSystem.publish(ProjectEvent.SetProjectTargetFpsRequested(ExportWizardWindow.CUSTOM_FPS_START))
+                }
+                ImGui.endCombo()
+            }
+            if (custom) {
+                ImGui.sameLine()
+                if (!ImGui.isAnyItemActive()) customFps.set(project.targetFps)
+                ImGui.setNextItemWidth(120f)
+                ImGui.inputInt("##project_custom_fps", customFps)
+                if (ImGui.isItemDeactivatedAfterEdit()) eventSystem.publish(ProjectEvent.SetProjectTargetFpsRequested(customFps.get()))
+            }
+        }
+    }
+
+    private fun renderSplash(project: Project) {
+        val change = stringManager.label("btn.export.splash_change")
+        val default = stringManager.label("btn.export.splash_default")
+        MImGui.propertyRow(stringManager.getString("lbl.export.splash"), stringManager.getString("lbl.export.splash.tooltip")) {
+            val shown = project.splashPath.ifBlank { stringManager.getString("lbl.export.splash.engine_default") }
+            ImGui.textDisabled(shown)
+            if (stringManager.tipped(ImGui.button(change), "btn.export.splash_change")) {
+                val chooser = javax.swing.JFileChooser()
+                if (chooser.showOpenDialog(null) == javax.swing.JFileChooser.APPROVE_OPTION) {
+                    val seconds = project.splashSeconds.takeIf { it > 0f } ?: Project.DEFAULT_SPLASH_SECONDS
+                    eventSystem.publish(ProjectEvent.SetProjectSplashRequested(chooser.selectedFile.absolutePath, seconds))
+                }
+            }
+            ImGui.sameLine()
+            if (stringManager.tipped(ImGui.button(default), "btn.export.splash_default")) {
+                eventSystem.publish(ProjectEvent.SetProjectSplashRequested("", Project.DEFAULT_SPLASH_SECONDS))
+            }
+        }
     }
 
     /** Physics steps per second (EDT-57), applied to the engine right away and saved with the project. */
@@ -186,6 +240,20 @@ class ProjectSettingsWindow(
                 eventSystem.publish(ProjectEvent.SetPhysicsRateRequested(rates[current.get()]))
             }
         }
+        MImGui.propertyRow(
+            stringManager.getString("lbl.export.physics_backend"),
+            stringManager.getString("lbl.export.physics_backend.tooltip"),
+        ) {
+            if (ImGui.beginCombo("##project_physics_backend", stringManager.getString(ExportWizardWindow.physicsKey(project.physicsBackend)))) {
+                PhysicsBackend.entries.forEach { backend ->
+                    if (ImGui.selectable(stringManager.getString(ExportWizardWindow.physicsKey(backend)), backend == project.physicsBackend)) {
+                        eventSystem.publish(ProjectEvent.SetProjectPhysicsBackendRequested(backend))
+                    }
+                }
+                ImGui.endCombo()
+            }
+        }
+        if (project.physicsBackend == PhysicsBackend.JOLT) MImGui.warningText(stringManager.getString("lbl.export.warning.physics_jolt_fallback"))
     }
 
     /** The backend exported games start with (EDT-43); each change is an undoable command, saved with OK/Apply. */

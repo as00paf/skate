@@ -44,6 +44,13 @@ class EditorPathsTest {
     }
 
     @Test
+    fun ProjectsDir_UsesTheConfiguredFolderElseTheDefault(@TempDir home: File) {
+        assertEquals(File("D:/Games"), EditorPaths.projectsDir(" D:/Games ", home.path))
+        assertEquals(EditorPaths.defaultProjectsDir(home.path), EditorPaths.projectsDir("  ", home.path))
+        assertEquals(EditorPaths.defaultProjectsDir(home.path), EditorPaths.projectsDir(null, home.path))
+    }
+
+    @Test
     fun EditorCode_DoesNotOpenUserFilesInTheWorkingDirectory() {
         val names = listOf(EditorPaths.SETTINGS_FILE, EditorPaths.IMGUI_INI, EditorPaths.OPEN_WINDOWS_FILE, EditorPaths.SEARCH_HISTORY_FILE)
         val bare = Regex("""File\(\s*"(${names.joinToString("|") { Regex.escape(it) }})"\s*\)""")
