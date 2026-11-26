@@ -1,5 +1,6 @@
 package com.pafoid.skate.game.samples
 
+import com.pafoid.skate.templates.createDefaultScenes
 import com.pafoid.skate.engine.getAllChildren
 import com.pafoid.skate.engine.assets.AssetsManager
 import com.pafoid.skate.engine.assets.PrefabsGenerator
@@ -71,7 +72,7 @@ class FeatureShowcasePlayTest {
         every { engine.logger } returns logger
         val scenesDir = File(dir, "Scenes")
         PrefabsGenerator(engine).apply { projectAssetsDir = File(dir, "Assets").path + File.separator }
-            .createDefaultScenes(scenesDir)
+            .createDefaultScenes(serializer, scenesDir)
         sceneManager.closeAllScenes()
 
         listOf(

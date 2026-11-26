@@ -3,6 +3,12 @@ package com.pafoid.skate.editor.ui.windows
 import com.pafoid.skate.editor.imgui.Tooltips
 import com.pafoid.skate.editor.imgui.label
 import imgui.type.ImBoolean
+import imgui.type.ImInt
+import imgui.flag.ImGuiSelectableFlags
+import javax.swing.filechooser.FileNameExtensionFilter
+import com.pafoid.skate.engine.physics3d.PhysicsBackend
+import com.pafoid.skate.templates.NewProjectSettings
+import com.pafoid.skate.templates.TemplateRegistry
 import com.pafoid.skate.editor.imgui.GraphicsBackendField
 import com.pafoid.skate.editor.imgui.tipped
 import com.pafoid.skate.editor.systems.EditorPaths
@@ -41,16 +47,22 @@ class ProjectWizardWindow(
 
     private val projectNameInput = ImString(128)
     private val projectPathInput = ImString(512)
+    private val customFps = ImInt(60)
 
     override val icon: String = Icons.PLUS
+
+    private companion object {
+        const val TEMPLATES_WIDTH = 190f
+        const val CARD_HEIGHT = 44f
+    }
 
     override fun imgui() = modal.render()
 
     /**
-     * A real modal (EDT-51 §3), kept minimal until the EDT-59 rewrite: the form, then the standard footer
+     * A real modal (EDT-51 §3), the template cards, the form, then the standard footer
      * [Open Project] [Cancel] [Create Project]. Esc = Cancel, Enter = Create. Its open state is the window's.
      */
-    private val modal = object : EditorModal(stringManager, Icons.PLUS, minWidth = UiConstants.DIALOG_WIDTH) {
+    private val modal = object : EditorModal(stringManager, Icons.PLUS, minWidth = UiConstants.DIALOG_WIDTH * 1.5f) {
         override val titleKey = "wizard.project.title"
         override val wantsOpen: Boolean get() = isOpen.get()
         override val helpWindow: EditorWindow get() = this@ProjectWizardWindow
@@ -73,6 +85,7 @@ class ProjectWizardWindow(
                 wizard.reset()
                 projectNameInput.set("")
                 projectPathInput.set("")
+                customFps.set(60)
             },
             // Stays open until the project exists: a successful create hides the wizard.
             FooterButton("wizard.project.create", FooterButton.Role.PRIMARY, enabled = wizard.canCreate(), closes = false) {
@@ -82,21 +95,43 @@ class ProjectWizardWindow(
     }
 
     private fun renderForm() {
+        val height = 430f
+        ImGui.beginChild("##wizard_templates", TEMPLATES_WIDTH, height, true)
+        renderTemplateCards()
+        ImGui.endChild()
+        ImGui.sameLine()
+        ImGui.beginChild("##wizard_settings", 0f, height, false)
+        renderNameAndLocation()
+        ImGui.separator()
+        renderSettings()
+        ImGui.separator()
+        ImGui.textWrapped(stringManager.getString(wizard.template.descriptionKey))
         ImGui.spacing()
+        renderProjectStructurePreview()
+        ImGui.endChild()
+    }
 
-        // Project Name
+    private fun renderTemplateCards() {
+        ImGui.text(stringManager.getString("wizard.project.templates"))
+        ImGui.separator()
+        for (template in TemplateRegistry.all()) {
+            val label = "${template.icon}  ${stringManager.getString(template.nameKey)}###template.${template.id}"
+            if (ImGui.selectable(label, template.id == wizard.templateId, ImGuiSelectableFlags.None, 0f, CARD_HEIGHT)) {
+                wizard.templateId = template.id
+            }
+            Tooltips.text(stringManager.getString(template.descriptionKey))
+        }
+    }
+
+    private fun renderNameAndLocation() {
         ImGui.text(stringManager.getString("wizard.project.name"))
-        ImGui.spacing()
-        ImGui.pushItemWidth(450f)
-        val nameFlags = ImGuiInputTextFlags.AutoSelectAll
+        ImGui.pushItemWidth(350f)
         // EDT-43: the name used to be reset to "test" every frame, so typing had no effect.
-        ImGui.inputText("##ProjectName", projectNameInput, nameFlags)
+        ImGui.inputText("##ProjectName", projectNameInput, ImGuiInputTextFlags.AutoSelectAll)
         ImGui.popItemWidth()
 
-        // Update wizard state and show validation
         wizard.setProjectName(projectNameInput.get())
-        val currentName = projectNameInput.get()
-        if (currentName.isNotBlank()) {
+        if (projectNameInput.get().isNotBlank()) {
             if (!wizard.isProjectNameValid()) {
                 MImGui.errorText("${Icons.WINDOW_CLOSE} ${stringManager.getString("wizard.project.invalid_chars")}")
             } else {
@@ -104,24 +139,17 @@ class ProjectWizardWindow(
             }
         }
 
-        ImGui.spacing()
-        ImGui.spacing()
-
-        // Project Location
         ImGui.text(stringManager.getString("wizard.project.location"))
-        ImGui.spacing()
-        ImGui.pushItemWidth(350f)
+        ImGui.pushItemWidth(270f)
         // Default once, then the field is the user's (typing and Browse used to be overwritten every frame).
         if (projectPathInput.get().isBlank()) projectPathInput.set(defaultLocation())
         ImGui.inputText("##ProjectPath", projectPathInput, ImGuiInputTextFlags.None)
         ImGui.popItemWidth()
-
         ImGui.sameLine()
         if (stringManager.tipped(ImGui.button(stringManager.getString("wizard.project.browse")), "wizard.project.browse")) {
             browseForFolder()
         }
 
-        // Update wizard state and show validation
         wizard.setProjectLocation(projectPathInput.get())
         val currentPath = projectPathInput.get()
         if (currentPath.isNotBlank()) {
@@ -132,27 +160,91 @@ class ProjectWizardWindow(
                 MImGui.errorText("${Icons.WINDOW_CLOSE} ${stringManager.getString("wizard.project.not_directory")}")
             } else if (!folder.canWrite()) {
                 MImGui.errorText("${Icons.WINDOW_CLOSE} ${stringManager.getString("wizard.project.not_writable")}")
+            } else if (wizard.projectFileExists()) {
+                MImGui.errorText("${Icons.WINDOW_CLOSE} ${stringManager.getString("wizard.project.exists", wizard.projectName)}")
             } else {
                 MImGui.successText("${Icons.CHECK} ${stringManager.getString("wizard.project.valid_location")}")
+                if (wizard.isTargetFolderNonEmpty()) MImGui.warningText(stringManager.getString("wizard.project.folder_not_empty"))
             }
         }
+    }
 
-        ImGui.spacing()
-        ImGui.spacing()
-
+    private fun renderSettings() {
+        renderTargetFps()
+        renderPhysicsBackend()
         // Graphics backend of exported games (EDT-43); the editor itself stays on OpenGL.
         GraphicsBackendField.render(stringManager, wizard.graphicsBackend)?.let { wizard.graphicsBackend = it }
+        renderSplash()
 
         // EDT-70: copy the engine defaults or reference them (AST-26 §4.3); applied once, not stored.
-        val copy = ImBoolean(wizard.copyEngineDefaults)
-        if (ImGui.checkbox(stringManager.label("wizard.project.copy_engine_defaults"), copy)) wizard.copyEngineDefaults = copy.get()
-        Tooltips.text(stringManager.getString("wizard.project.copy_engine_defaults.tooltip"))
+        toggleSetting("wizard.project.copy_engine_defaults", wizard.copyEngineDefaults) { wizard.copyEngineDefaults = it }
+        toggleSetting("wizard.project.ai_files", wizard.includeAiFiles) { wizard.includeAiFiles = it }
+        toggleSetting("wizard.project.version_control", wizard.versionControl) { wizard.versionControl = it }
+    }
 
-        ImGui.spacing()
-        ImGui.spacing()
+    private fun toggleSetting(key: String, value: Boolean, onChange: (Boolean) -> Unit) {
+        val box = ImBoolean(value)
+        if (ImGui.checkbox(stringManager.label(key), box)) onChange(box.get())
+        Tooltips.text(stringManager.getString("$key.tooltip"))
+    }
 
-        // Project Structure Preview
-        renderProjectStructurePreview()
+    private fun renderTargetFps() {
+        ImGui.text(stringManager.getString("wizard.project.target_fps"))
+        Tooltips.text(stringManager.getString("wizard.project.target_fps.tooltip"))
+        ImGui.sameLine()
+        if (ImGui.radioButton(stringManager.label("wizard.project.target_fps.uncapped"), wizard.targetFps == 0)) wizard.targetFps = 0
+        ImGui.sameLine()
+        if (ImGui.radioButton(stringManager.label("lbl.export.target_fps.custom"), wizard.targetFps != 0)) {
+            wizard.targetFps = customFps.get()
+        }
+        if (wizard.targetFps != 0) {
+            ImGui.sameLine()
+            ImGui.setNextItemWidth(90f)
+            if (ImGui.inputInt("##wizard_fps", customFps, 0, 0)) wizard.targetFps = customFps.get()
+            if (!wizard.isTargetFpsValid()) MImGui.errorText(stringManager.getString("wizard.project.fps_invalid"))
+        }
+    }
+
+    private fun renderPhysicsBackend() {
+        ImGui.setNextItemWidth(200f)
+        if (ImGui.beginCombo(stringManager.label("lbl.export.physics_backend"), stringManager.getString(ExportWizardWindow.physicsKey(wizard.physicsBackend)))) {
+            for (backend in PhysicsBackend.entries) {
+                if (ImGui.selectable(stringManager.getString(ExportWizardWindow.physicsKey(backend)), backend == wizard.physicsBackend)) {
+                    wizard.physicsBackend = backend
+                }
+            }
+            ImGui.endCombo()
+        }
+        Tooltips.text(stringManager.getString("lbl.export.physics_backend.tooltip"))
+        if (wizard.physicsBackend == PhysicsBackend.JOLT) MImGui.warningText(stringManager.getString("wizard.project.physics_backend.jolt_note"))
+    }
+
+    private fun renderSplash() {
+        ImGui.text(stringManager.getString("wizard.project.splash"))
+        Tooltips.text(stringManager.getString("wizard.project.splash.tooltip"))
+        ImGui.sameLine()
+        if (stringManager.tipped(ImGui.button(stringManager.label("wizard.project.splash_pick")), "wizard.project.splash_pick")) browseForSplash()
+        ImGui.sameLine()
+        ImGui.text(wizard.splashImage?.name ?: stringManager.getString("wizard.project.splash_default"))
+        if (wizard.splashImage != null) {
+            ImGui.sameLine()
+            if (stringManager.tipped(ImGui.button(stringManager.label("wizard.project.splash_clear")), "wizard.project.splash_clear")) {
+                wizard.splashImage = null
+            }
+            if (!wizard.isSplashValid()) MImGui.errorText(stringManager.getString("wizard.project.splash_invalid"))
+        }
+    }
+
+    private fun browseForSplash() {
+        try {
+            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName())
+            val fileChooser = JFileChooser()
+            fileChooser.dialogTitle = stringManager.getString("wizard.project.splash")
+            fileChooser.fileFilter = FileNameExtensionFilter("PNG, JPG", *NewProjectSettings.SPLASH_EXTENSIONS.toTypedArray())
+            if (fileChooser.showOpenDialog(null) == JFileChooser.APPROVE_OPTION) wizard.splashImage = fileChooser.selectedFile
+        } catch (e: Exception) {
+            logger.logEditor("Error choosing the splash image: ${e.message}", LogLevel.ERROR)
+        }
     }
 
     private fun renderProjectStructurePreview() {
@@ -258,6 +350,6 @@ class ProjectWizardWindow(
         val path = File(wizard.projectPath)
 
         logger.logEditor("Creating project: $name at ${path.absolutePath}")
-        eventSystem.publish(CreateProjectRequested(name, path.absolutePath, wizard.graphicsBackend, wizard.copyEngineDefaults))
+        eventSystem.publish(CreateProjectRequested(name, path.absolutePath, wizard.settings()))
     }
 }

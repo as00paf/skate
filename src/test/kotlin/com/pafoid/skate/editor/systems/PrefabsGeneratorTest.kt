@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.systems
 
+import com.pafoid.skate.templates.createDefaultScenes
 import com.pafoid.skate.engine.assets.EngineDefaults
 import com.pafoid.skate.engine.ecs.components.DayNightCycleComponent
 import com.pafoid.skate.engine.ecs.SceneSun
@@ -288,10 +289,10 @@ class PrefabsGeneratorTest {
     }
 
     @Test
-    fun `createDefaultScenes saves the lit MainScene and the feature showcase without opening them`() {
+    fun `default scenes are the lit MainScene and the feature showcase, built without opening them`() {
         val dir = kotlin.io.path.createTempDirectory("prefabs-default").toFile()
         val scenes = try {
-            PrefabsGenerator(engine).apply { projectAssetsDir = dir.path + File.separator }.createDefaultScenes(dir)
+            PrefabsGenerator(engine).apply { projectAssetsDir = dir.path + File.separator }.createDefaultScenes(Serializer(), dir)
         } finally {
             dir.deleteRecursively()
         }
@@ -304,8 +305,6 @@ class PrefabsGeneratorTest {
         assertEquals(SceneSun.NAME, SceneSun.of(scene)!!.gameObject!!.name)
         assertNotNull(scene.getComponent<DayNightCycleComponent>(), "the sun follows the day/night cycle")
         assertTrue(scene.children.flatMap { it.descendants() }.none { it.getComponent<SpriteRenderer>() != null })
-        verify { sceneManager.saveScene(scene, any()) }
-        verify { sceneManager.saveScene(scenes[1], any()) }
         // ProjectManager reopens the saved files; opening here too loaded every scene twice (PHY-12).
         verify(exactly = 0) { sceneManager.openScenes(any()) }
     }
@@ -318,7 +317,7 @@ class PrefabsGeneratorTest {
 
         val dir = kotlin.io.path.createTempDirectory("prefabs-query").toFile()
         val scenes = try {
-            PrefabsGenerator(engine).apply { projectAssetsDir = dir.path + File.separator }.createDefaultScenes(dir)
+            PrefabsGenerator(engine).apply { projectAssetsDir = dir.path + File.separator }.createDefaultScenes(Serializer(), dir)
         } finally {
             dir.deleteRecursively()
         }

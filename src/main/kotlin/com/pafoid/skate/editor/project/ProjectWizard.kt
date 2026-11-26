@@ -1,6 +1,10 @@
 package com.pafoid.skate.editor.project
 
+import com.pafoid.skate.engine.physics3d.PhysicsBackend
 import com.pafoid.skate.engine.render.rhi.GraphicsBackend
+import com.pafoid.skate.templates.NewProjectSettings
+import com.pafoid.skate.templates.ProjectTemplate
+import com.pafoid.skate.templates.TemplateRegistry
 import java.io.File
 
 class ProjectWizard {
@@ -24,6 +28,34 @@ class ProjectWizard {
      */
     var copyEngineDefaults: Boolean = true
 
+    /** Id of the selected template (EDT-59 §3); Skate Game is preselected. */
+    var templateId: String = TemplateRegistry.DEFAULT_ID
+
+    /** Frame cap of the exported game: 0 is uncapped, else [Project.MIN_TARGET_FPS]..[Project.MAX_TARGET_FPS]. */
+    var targetFps: Int = 0
+
+    var physicsBackend: PhysicsBackend = PhysicsBackend.BULLET
+
+    /** Optional PNG/JPG splash image; null keeps the engine's. */
+    var splashImage: File? = null
+
+    var includeAiFiles: Boolean = false
+
+    var versionControl: Boolean = false
+
+    val template: ProjectTemplate get() = TemplateRegistry.get(templateId) ?: TemplateRegistry.require(TemplateRegistry.DEFAULT_ID)
+
+    /** The wizard's choices as the settings the shared [com.pafoid.skate.templates.ProjectCreator] takes. */
+    fun settings(): NewProjectSettings = NewProjectSettings(
+        template = templateId,
+        targetFps = targetFps,
+        physicsBackend = physicsBackend,
+        graphicsBackend = graphicsBackend,
+        includeAiFiles = includeAiFiles,
+        splashImage = splashImage,
+        copyEngineDefaults = copyEngineDefaults,
+        versionControl = versionControl,
+    )
 
     fun setProjectName(name: String) {
         projectName = name.trim()
@@ -34,8 +66,21 @@ class ProjectWizard {
     }
 
     fun canCreate(): Boolean {
-        return isProjectNameValid() && isProjectPathValid()
+        return isProjectNameValid() && isProjectPathValid() && !projectFileExists() &&
+            NewProjectSettings.isValidTargetFps(targetFps) && NewProjectSettings.isValidSplash(splashImage)
     }
+
+    /** `<name>.skateproject` already exists in the target folder: creation is blocked (EDT-59 answer 6). */
+    fun projectFileExists(): Boolean =
+        isProjectNameValid() && File(getProjectDirectory(), "$projectName.skateproject").exists()
+
+    /** The target folder exists and holds other files: only a warning (EDT-59 decision 3). */
+    fun isTargetFolderNonEmpty(): Boolean =
+        isProjectNameValid() && !projectFileExists() && getProjectDirectory().list()?.isNotEmpty() == true
+
+    fun isTargetFpsValid(): Boolean = NewProjectSettings.isValidTargetFps(targetFps)
+
+    fun isSplashValid(): Boolean = NewProjectSettings.isValidSplash(splashImage)
 
     fun isProjectNameValid(): Boolean {
         if (projectName.isBlank()) return false
@@ -57,23 +102,19 @@ class ProjectWizard {
         return File(projectPath, projectName)
     }
 
-    fun getProjectStructureItems(): List<ProjectStructureItem> {
-        return listOf(
-            ProjectStructureItem("Assets/", ItemType.DIRECTORY),
-            ProjectStructureItem("Scenes/", ItemType.DIRECTORY),
-            ProjectStructureItem("  main.scene", ItemType.FILE),
-            ProjectStructureItem("Builds/", ItemType.DIRECTORY),
-            ProjectStructureItem("$projectName.skateproject", ItemType.FILE)
-        )
-    }
+    /** What the selected template creates, for the structure preview. */
+    fun getProjectStructureItems(): List<ProjectStructureItem> = template.structure(projectName.ifBlank { "Project" })
 
     fun reset() {
         projectName = ""
         projectPath = ""
+        templateId = TemplateRegistry.DEFAULT_ID
+        targetFps = 0
+        physicsBackend = PhysicsBackend.BULLET
+        splashImage = null
+        includeAiFiles = false
+        versionControl = false
     }
 
-    fun resetForNewProject() {
-        projectName = ""
-        projectPath = ""
-    }
+    fun resetForNewProject() = reset()
 }

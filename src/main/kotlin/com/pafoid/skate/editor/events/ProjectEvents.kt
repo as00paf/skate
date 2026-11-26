@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.events
 
+import com.pafoid.skate.templates.NewProjectSettings
 import com.pafoid.skate.engine.render.rhi.GraphicsBackend
 import com.pafoid.skate.editor.project.Project
 import com.pafoid.skate.engine.events.Event
@@ -21,16 +22,12 @@ sealed class ProjectEvent(eventName: String) : Event(eventName) {
     data class OpenProjectSucceeded(val projectPath: String?) : ProjectEvent("project.action.open_project_succeeded")
     data class OpenProjectFailed(val projectPath: String?, val reason: String) :
         ProjectEvent("project.action.open_project_failed")
+    /** The wizard's request: [settings] are the template and the project settings of EDT-59 (creation-time ones are never stored). */
     data class CreateProjectRequested(
         val name: String,
         val folderPath: String,
-        val graphicsBackend: GraphicsBackend = GraphicsBackend.DEFAULT,
-        /**
-         * EDT-70: copy the engine defaults into the project's type folders (true), or reference them (false; only the
-         * basic shaders and skater configs are copied). AST-26 §4.3. A creation-time action: never stored.
-         */
-        val copyEngineDefaults: Boolean = true,
-    ) : ProjectEvent("project.action.create_project_requested")
+        val settings: NewProjectSettings = NewProjectSettings(),
+) : ProjectEvent("project.action.create_project_requested")
 
     /** Change the open project's graphics backend (EDT-43), as an undoable command. */
     data class SetGraphicsBackendRequested(val backend: GraphicsBackend) : ProjectEvent("project.action.set_graphics_backend")

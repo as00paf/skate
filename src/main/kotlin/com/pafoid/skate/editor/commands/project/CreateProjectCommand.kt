@@ -20,7 +20,7 @@ class CreateProjectCommand(
 
     override fun execute() {
         val result = projectManager.createProject(
-            event.name, File(event.folderPath), event.graphicsBackend, preparedDir, copyDefaults = event.copyEngineDefaults,
+            event.name, File(event.folderPath), event.settings, preparedDir,
         )
         executeSucceeded = result.isSuccess
         failureReason = result.exceptionOrNull()?.message

@@ -67,11 +67,6 @@ class ExportDialogSettingsTest {
             every { e.sceneManager } returns sceneManager
             every { e.serializer } returns serializer
             every { e.jobSystem.isMainThread() } returns true
-            every { e.prefabsGenerator.createDefaultScenes(any()) } answers {
-                val folder = firstArg<File>().also { it.mkdirs() }
-                File(folder, "MainScene.scene").writeText(serializer.encodeFile(FileKind.SCENE, Scene("MainScene")))
-                listOf(Scene("MainScene"))
-            }
         }
         val projects = ProjectManager(engine)
         val settings = EditorSettingsManager(serializer, events, mockk(relaxed = true), mockk(relaxed = true), File(dir, "editor.settings"))
