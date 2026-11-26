@@ -1,6 +1,6 @@
 # GPL-40: ECS-standard player and skater control (design note)
 
-Status: **draft, awaiting human approval.** No code is written before approval (REWRITE task).
+Status: **approved** by the human on 2026-11-25 (decisions in §11).
 Origin: human, 2026-11-25 (stabilization phase, GameEngine.md step 3). Folds in **GPL-34** (PlayerController
 inspector) and **ANI-34** (foot IK editable, walk fix). Paths are relative to `src/main/kotlin/com/pafoid/skate/`;
 new files are marked **(new)**.
@@ -226,22 +226,14 @@ a to c leave the skate behavior untouched.
   "Add Character" menu entry so no one adds nine components by hand.
 - **Inspector work** depends on EDT-107/108, which the stabilization order finishes first.
 
-## 11. Questions for the human
+## 11. Decisions (human, 2026-11-25)
 
-Recommended option first.
-
-1. **Saved scenes and prefabs.** Follow rule 8 (no migration; schema bump; defaults regenerated; old files show
-   the "recreate" dialog), or do you have scenes you want kept, which needs a one-shot offline converter (extra
-   slice)? Recommended: **rule 8, no converter.**
-2. **Tuning home.** Tuning moves into the components and `*.character.json` become optional presets (load/save
-   buttons). Alternatively keep `configPath` as the source of truth and make the components thin views.
-   Recommended: **components own the values, presets optional.**
-3. **Component granularity.** Nine components is the split above. Merge `SkateComboComponent` and
-   `SkateTrickInputComponent` into `SkateStateComponent` (fewer components, bigger inspector)? Recommended:
-   **keep them separate**, merge only if the inspector feels heavy.
-4. **INP-11 ordering.** Land INP-11's loader before GPL-40b (recommended), or build `actionBindings` against the
-   current `ActionMap` and rebase when INP-11 lands?
-5. **Foot IK default.** Turn it on for the Skater by default after the walk is fixed, with the speed fade
-   (recommended: **on, `activeBelowSpeed` 0.5 m/s**), or leave off and only expose it?
-6. **Stop point.** Do all of a to h now, or stop after c (engine-side on-foot character) for human testing and do
-   the skate rewrite (e) in a following round? Recommended: **a to c, human test, then d to h.**
+1. **Saved scenes and prefabs:** rule 8, no migration and no converter. MainScene, the Skater prefab and the Feature
+   Showcase are updated by hand in the same PR as the rewrite.
+2. **Input:** one `InputSampleSystem` reads the INP-11 project actions and writes `InputStateComponent`; all other
+   systems only read it.
+3. **Component split:** approved as proposed (§2.1); keep the skate components separate.
+4. **Foot IK default:** off until the walk is verified; the distortion is fixed inside the rewrite (ANI-34), then the
+   default is revisited.
+5. **Not asked, recommended option applies:** components own the tuning and `*.character.json` become optional
+   presets; INP-11's loader lands before GPL-40b; slices a to c, then human test, then d to h.
