@@ -6,11 +6,13 @@ import com.pafoid.skate.editor.commands.objects.AssignMaterialCommand
 import com.pafoid.skate.editor.commands.objects.EditMaterialCommand
 import com.pafoid.skate.editor.commands.objects.MaterialState
 import com.pafoid.skate.editor.commands.objects.SaveMaterialAssetCommand
+import com.pafoid.skate.editor.commands.objects.SetRenderModelCommand
 import com.pafoid.skate.editor.events.MaterialAction
 import com.pafoid.skate.editor.systems.UndoRedoManager
 import com.pafoid.skate.engine.assets.ProjectLayout
 import com.pafoid.skate.engine.assets.data.Texture
 import com.pafoid.skate.engine.assets.data.models.Material
+import com.pafoid.skate.engine.assets.data.models.`3dModel`
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.core.LoggerService
 import com.pafoid.skate.engine.core.LoggerService.LogLevel
@@ -66,6 +68,7 @@ class MaterialActionHandler(
     private val projectDir: () -> File?,
     private val resolveTexture: (String) -> Texture?,
     private val dialogs: MaterialFileDialogs,
+    private val resolveModel: (String) -> `3dModel`? = { null },
 ) {
     init {
         eventSystem.subscribe<MaterialAction.Edit> { e ->
@@ -82,6 +85,16 @@ class MaterialActionHandler(
         eventSystem.subscribe<MaterialAction.Save> { e ->
             val path = e.component.materialPath ?: return@subscribe saveAs(e.component)
             write(e.component, File(path))
+        }
+        eventSystem.subscribe<MaterialAction.SetModel> { e ->
+            val model = try {
+                resolveModel(e.path)
+            } catch (ex: Exception) {
+                logger.logEditor("Failed to load model ${e.path}: ${ex.message}", LogLevel.ERROR)
+                null
+            } ?: return@subscribe
+            val command = SetRenderModelCommand(e.component, model)
+            if (!command.isNoOp) undoRedoManager.executeCommand(command)
         }
         eventSystem.subscribe<MaterialAction.Load> { e -> load(e.component) }
     }

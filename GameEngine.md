@@ -166,7 +166,7 @@ Round 27+ goals (human, 2026-11-06): post-processing quality, render-graph clari
   - Do: (EDT-106 audit, `docs/design/EDT-106.md`; UI written by the owner, reviewed by skate-editor): a picker for `EnvironmentComponent.skyTexture`.
   - Done when: The sky can be picked or dropped, with undo; test.
   - Deps: EDT-108
-- [ ] **REN-47** `P0` Change the model of an existing RenderComponent
+- [x] **REN-47** `P0` Change the model of an existing RenderComponent
   - Do: (EDT-106 audit, `docs/design/EDT-106.md`; UI written by the owner, reviewed by skate-editor): picker or drop to change the model, keeping material overrides where slot names match.
   - Done when: The model changes with undo and keeps matching overrides; test.
   - Deps: EDT-108
@@ -174,7 +174,7 @@ Round 27+ goals (human, 2026-11-06): post-processing quality, render-graph clari
   - Do: (EDT-106 audit, `docs/design/EDT-106.md`; UI written by the owner, reviewed by skate-editor): select a material in the Project window to edit it (a `FileInspector`).
   - Done when: A material file can be edited and saved from the inspector; test.
   - Deps: none
-- [ ] **REN-49** `P1` Flaky `TerrainStreamingRenderTest.FarField_DrawsTilesWhereNoChunkIsUploaded`
+- [x] **REN-49** `P1` Flaky `TerrainStreamingRenderTest.FarField_DrawsTilesWhereNoChunkIsUploaded`
   - Do: (lead, round 39 integration, 2026-11-18): the test failed once in a full suite run and passes alone (3/3). Find the timing or shared-state dependency (async uploads, frame budget, a static streamer) and make it deterministic.
   - Done when: 20 full-suite runs pass it; or it is listed in `docs/bugs.md` with the cause.
   - Deps: REN-37
@@ -401,7 +401,7 @@ Round 27+ goals: the Asset Browser shows every asset type, one assets folder, ex
   - Do: (NEEDS from INP-11): confirm or make `Assets/Data/input.actions.json` packed in exports.
   - Done when: An exported game loads the project actions; test.
   - Deps: INP-11
-- [ ] **AST-49** `P1` AssetsManager.loadModel recurses forever when the default cube cannot load
+- [x] **AST-49** `P1` AssetsManager.loadModel recurses forever when the default cube cannot load
   - Do: (NEEDS from EDT-59): fix the path-compare bug that makes `loadModel` recurse endlessly when the default cube fails to load (seen without a headless RHI device).
   - Done when: A failing default cube returns a fallback or error without recursion; regression test.
 
@@ -777,7 +777,7 @@ Round 27+ goals: menu parity between the editor and the game, and a map view.
   - Do: (ANI-28 review, approved (human, 2026-11-18)): the skater's ground foot IK never runs because of wrong bone names. Fix the bone names (or resolve by humanoid slot) and add a test that foot IK runs on the skater.
   - Done when: Foot IK runs on the skater in Play; test.
   - Deps: none
-- [ ] **GPL-40** `P0` REWRITE Player and skater control in the standard ECS way (design first)
+- [~] @skate-gameplay **GPL-40** `P0` REWRITE Player and skater control in the standard ECS way (design first)
   - Do: (human, 2026-11-25): player/skater control is not ECS-standard today (PlayerController holds config, behavior, ground state and foot IK; PlayerMotionSystem drives it). Write `docs/design/GPL-40.md`: split into small data components and systems (input state, motion/intent, ground and character state, skate state, foot IK, camera follow); systems read and write components, no behaviour object with hidden state, everything serialized and shown in the inspector. InputStateComponent is part of the refactor (who writes it, who reads it, how the project input actions of INP-11 feed it). Include migration of saved scenes and prefabs and the MainScene and Feature Showcase impact. Folds in GPL-34 and ANI-34. Needs human approval before code.
   - Done when: The human approves the design; the rewrite then lands with tests, the Skater is fully editable in the inspector, and walking, riding and tricks behave as before.
   - Deps: EDT-107, EDT-108
@@ -1104,11 +1104,11 @@ Round 27+ goals (human, 2026-11-06): fix editor bugs, make every window, dialog 
   - Do: (human, Discord 2026-11-17) "Plan all missing editor UI": list every engine component, system setting and asset type that has no editor UI (or only raw fields), and turn each gap into a task in the owning domain (domain agents write UIs for their own back ends, skate-editor reviews). Write the list to `docs/design/EDT-106.md` and report the proposed tasks to the lead.
   - Done when: The audit note exists and every gap has a backlog task.
   - Deps: none
-- [~] @skate-editor **EDT-107** `P1` Generic inspector draws lists, maps and nested objects
+- [x] **EDT-107** `P1` Generic inspector draws lists, maps and nested objects
   - Do: (EDT-106 audit, `docs/design/EDT-106.md`; UI written by the owner, reviewed by skate-editor): `reflectedImgui` draws `List`/`MutableList` (add, remove, reorder), `Map<String, *>` and nested `@Serializable` data classes recursively, with undo. Unblocks VehicleComponent wheels, ScriptComponent properties, CameraFocusComponent targets, PlayerController `waterResponse`, PrefabInstance overrides.
   - Done when: A guard test finds no saved component field that the inspector silently skips.
   - Deps: none
-- [~] @skate-editor **EDT-108** `P0` Asset reference fields: picker and drag and drop
+- [x] **EDT-108** `P0` Asset reference fields: picker and drag and drop
   - Do: (EDT-106 audit, `docs/design/EDT-106.md`; UI written by the owner, reviewed by skate-editor): an `@AssetRef(kind)` annotation (with skate-ecs, next to `@GameObjectRef`); the inspector shows a picker filtered by kind, accepts drops from the Asset Browser and flags missing files. Domain agents then annotate their fields (particle/UI texture, `configPath`, `meshRef`, `materialPath`, sound paths, …).
   - Done when: Annotated fields show a filtered picker, accept drops and flag missing files; tests.
   - Priority raised to P0 (human, 2026-11-25): RenderComponent's model cannot be changed from the editor, which blocks human testing; do EDT-108 then REN-47 first.
@@ -1133,7 +1133,7 @@ Round 27+ goals (human, 2026-11-06): fix editor bugs, make every window, dialog 
   - Do: (human, 2026-11-18): the EDT-84 tool window sidebars need three visual fixes: (1) vertical separator lines between the icon buttons to visually group/divide them; (2) icons inside the sidebar buttons must be centered both horizontally and vertically, not offset; (3) the padding around each icon button must be equal on all four sides and slightly more generous than the current value. Fix all three in the sidebar rendering code; add a render test that checks button dimensions and icon centering.
   - Done when: Sidebars show separator lines; icons are centered; all four sides of each button have equal padding; render/layout tests pass.
   - Deps: EDT-84
-- [ ] **EDT-114** `P1` Wire the editor wizard to ProjectCreator (EDT-59 slice 2)
+- [~] @skate-tooling **EDT-114** `P1` Wire the editor wizard to ProjectCreator (EDT-59 slice 2)
   - Do: (NEEDS from EDT-59 slice 1): wire `ProjectWizardWindow` and `ProjectActionHandler` to `templates/ProjectCreator`, add the new `Project` settings fields and typed folders, remove `createDefaultScenes`.
   - Done when: Each template created from the wizard opens and runs; tests for the settings and the wizard model.
   - Deps: EDT-59 slice 1
@@ -1229,7 +1229,7 @@ Round 27+ goals: a warning-free build.
   - Do: (human, Discord 2026-11-17): the editor is sometimes sluggish when creating a project or pressing Play. Profile those paths and every other heavy editor operation, list what runs on the UI thread that shouldn't (rule 10), and propose one task per owning domain to move it to coroutines with progress. Add a guard or timing test for the worst offenders.
   - Done when: An audit note `docs/design/QA-19.md` with measured timings exists and each offender has a backlog task.
   - Deps: none
-- [ ] **QA-20** `P0` Editor coverage audit: every engine feature configurable, every component inspector complete
+- [x] **QA-20** `P0` Editor coverage audit: every engine feature configurable, every component inspector complete
   - Do: (human, 2026-11-25): list each engine feature and component and check it is configurable in the editor; for every existing component inspector, check each serialized field and setting is shown, editable (right widget, ranges, asset pickers, lists/maps/nested objects), tooltipped and translated. Write the gap list to `docs/design/QA-20.md` by domain (feature or field, where it is hardcoded, owner, proposed task); the lead adds the tasks to the backlog.
   - Done when: The report covers every component and engine system; each gap has an owner and a task ID; a guard test fails when a serialized component field has no inspector entry (with an explicit allowlist).
   - Deps: EDT-107, EDT-108

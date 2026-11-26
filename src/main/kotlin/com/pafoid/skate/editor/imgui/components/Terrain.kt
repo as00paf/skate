@@ -49,8 +49,8 @@ fun TerrainComponent.imgui(engine: Engine) {
     if (ImGui.collapsingHeader(strings.label("component.TerrainComponent.section.stamps"))) stampsSection(engine, state)
 }
 
-/** Fields the terrain inspector draws itself, or that belong to EDT-96 (biomes, layers, climate). */
-private val SKIPPED_FIELDS = setOf("asset", "biomeSource")
+/** Fields the terrain inspector draws itself (stamps), or that belong to EDT-96 (recipe, biomes, layers, climate). */
+private val SKIPPED_FIELDS = setOf("asset", "biomeSource", "recipe", "stamps", "layers", "biomes", "climate")
 
 /** Preset combo selection, per editor session (not saved). */
 private val presetIndex = ImInt(TerrainPreset.ISLAND.ordinal)
