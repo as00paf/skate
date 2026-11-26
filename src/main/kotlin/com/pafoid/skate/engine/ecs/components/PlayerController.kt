@@ -5,7 +5,6 @@ import com.pafoid.skate.engine.gameplay.CharacterBehavior
 import com.pafoid.skate.engine.gameplay.CharacterBehaviors
 import com.pafoid.skate.engine.gameplay.LocomotionBehavior
 import com.pafoid.skate.engine.gameplay.WaterResponse
-import com.pafoid.skate.engine.gameplay.ground.GroundInfo
 import com.pafoid.skate.engine.gameplay.ik.FootIkConfig
 import com.pafoid.skate.engine.gameplay.ik.FootTarget
 import kotlinx.serialization.Serializable
@@ -23,30 +22,12 @@ class PlayerController(
     var waterResponse: WaterResponse = WaterResponse.NONE,
 ) : Component() {
 
-    /** Latest ground probe, written by the physics system each fixed step. */
-    @Transient
-    var ground = GroundInfo()
-
-    /** Tag of the object under the feet (e.g. `GRINDABLE`), from the last probe; null when none or untagged. */
-    @Transient
-    var groundTag: String? = null
-
-    /** Height of a climbable step ahead, if any (from the last probe). */
-    @Transient
-    var stepAhead: Float? = null
-
-    @Transient
-    var wasGrounded = false
-
-    /** Foot IK tuning and the latest per-leg ground targets (written by the physics system after each probe). */
+    /** Foot IK tuning and the latest per-leg ground targets (written by `GroundProbeSystem` after each probe). */
     @Transient
     var footIk = FootIkConfig()
 
     @Transient
     val footTargets: List<FootTarget> = List(footIk.legs.size) { FootTarget() }
-
-    /** Standing on walkable ground. Steep slopes count as airborne. */
-    val isGrounded: Boolean get() = ground.standing
 
     @Transient
     var state: String = ""

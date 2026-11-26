@@ -10,14 +10,10 @@ import com.pafoid.skate.engine.physics3d.HeightfieldCollider3D
 import com.pafoid.skate.engine.physics3d.ScatterCollider3D
 import com.pafoid.skate.engine.physics3d.ScenePhysicsQueries
 import com.pafoid.skate.engine.environment.WaterQueries
-import com.pafoid.skate.engine.ecs.components.PlayerController
 import com.pafoid.skate.engine.ecs.components.RagdollComponent
 import com.pafoid.skate.engine.ecs.components.RagdollState
 import com.pafoid.skate.engine.ecs.components.VehicleComponent
 import com.pafoid.skate.engine.physics3d.RaycastVehicleSolver
-import com.pafoid.skate.engine.gameplay.MotionMath
-import com.pafoid.skate.engine.gameplay.ground.GroundDetector
-import com.pafoid.skate.engine.gameplay.ik.FootPlacement
 import com.pafoid.skate.engine.ecs.components.RigidBody3D
 import com.pafoid.skate.engine.ecs.components.ScenePhysicsComponent
 import com.pafoid.skate.engine.ecs.components.Transform
@@ -30,6 +26,7 @@ import com.pafoid.skate.engine.events.PhysicsBackendFellBack
 import com.pafoid.skate.engine.events.TriggerEntered
 import com.pafoid.skate.engine.events.TriggerExited
 import com.pafoid.skate.engine.physics3d.ALL_LAYERS
+import com.pafoid.skate.engine.gameplay.ground.GroundQueries
 import com.pafoid.skate.engine.physics3d.ColliderShape
 import com.pafoid.skate.engine.physics3d.CollisionMeshes
 import com.pafoid.skate.engine.physics3d.IPhysics3D
@@ -337,7 +334,6 @@ class PhysicsSystem(
                 state.push(handle)
             }
 
-            go.getComponent<PlayerController>()?.let { probeGround(it, body) }
         }
         if (stateList.size != liveCount) removeStaleBodies(stamp)
 
@@ -453,36 +449,6 @@ class PhysicsSystem(
         activeJoints[joint] = constraint
     }
 
-    /** Probes the ground below a player-controlled body and any climbable step ahead of it. */
-    private fun probeGround(controller: PlayerController, body: RigidBody3D) {
-        val config = controller.behavior.ground
-        // Probe only what the character collides with: a ridden board (mount layer) must not count as ground
-        val detector = GroundDetector(config) { from, to -> physics3d.raycast(from, to, body.collisionMask, body)?.fraction }
-        val origin = body.getWorldPosition()
-        val feet = Vector3f(origin.x, origin.y - config.footOffset, origin.z)
-
-        controller.wasGrounded = controller.ground.standing
-        controller.ground = detector.probe(feet)
-        // What is underfoot: a sphere as wide as the ground samples, so a thin rail between the rays still counts.
-        controller.groundTag = physics3d.shapeCast(
-            ColliderShape.Capsule(maxOf(config.sampleRadius, GROUND_TAG_MIN_RADIUS), SPHERE_CAPSULE_HEIGHT, 1),
-            Vector3f(feet).add(0f, config.probeStartHeight + GROUND_TAG_MIN_RADIUS, 0f),
-            Vector3f(feet).sub(0f, config.snapDistance, 0f),
-            body.collisionMask, body,
-        )?.takeIf { it.normal.y > GROUND_TAG_MIN_NORMAL_Y }?.gameObject?.tag?.takeIf { it.isNotEmpty() }
-
-        val velocity = body.linearVelocity
-        controller.stepAhead = if (config.stepUp) detector.findStep(feet, velocity.x, velocity.z) else null
-
-        val yaw = MotionMath.yawOfRotation(body.getRotation())
-        controller.footIk.legs.forEachIndexed { i, leg ->
-            val target = controller.footTargets.getOrNull(i) ?: return@forEachIndexed
-            FootPlacement.compute(feet, yaw, leg, controller.footIk, target) { from, to ->
-                physics3d.raycast(from, to, body.collisionMask, body)
-            }
-        }
-    }
-
     /**
      * Flips the collider debug view. The scene's [ScenePhysicsComponent] is the source of truth when present,
      * so the toolbar state, scene saves and a re-[init] (play / snapshot restore) all agree with what is drawn.
@@ -502,12 +468,17 @@ class PhysicsSystem(
     fun sphereCast(from: Vector3f, to: Vector3f, radius: Float, exclude: IPhysicsBody3D? = null): Float? =
         physics3d.shapeCast(ColliderShape.Capsule(radius, SPHERE_CAPSULE_HEIGHT, 1), from, to, ALL_LAYERS, exclude)?.fraction
 
+    val groundQueries = object : GroundQueries {
+        override fun raycast(from: Vector3f, to: Vector3f, layerMask: Int, exclude: IPhysicsBody3D?) =
+            physics3d.raycast(from, to, layerMask, exclude)
+
+        override fun sphereCast(radius: Float, from: Vector3f, to: Vector3f, layerMask: Int, exclude: IPhysicsBody3D?) =
+            physics3d.shapeCast(ColliderShape.Capsule(radius, SPHERE_CAPSULE_HEIGHT, 1), from, to, layerMask, exclude)
+    }
+
     private companion object {
         /** A capsule this short is a sphere for every practical purpose (not every backend has a sphere shape). */
         const val SPHERE_CAPSULE_HEIGHT = 1e-3f
-        const val GROUND_TAG_MIN_RADIUS = 0.05f
-        /** Only a surface hit from above counts as underfoot, not the side of a ledge brushed in passing. */
-        const val GROUND_TAG_MIN_NORMAL_Y = 0.5f
     }
 }
 

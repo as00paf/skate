@@ -51,7 +51,6 @@ class LocomotionContext {
 /** Open so games can extend it (override [update] and call super for the walking part). */
 open class LocomotionBehavior(private val config: LocomotionConfig) : CharacterBehavior {
 
-    override val ground: GroundConfig get() = config.ground
     override val look: LookTuning get() = config.look
 
     private val context = LocomotionContext().also { it.config = config }

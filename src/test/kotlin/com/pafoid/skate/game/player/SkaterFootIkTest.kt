@@ -7,6 +7,7 @@ import com.pafoid.skate.engine.assets.loaders.AssimpLoader
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.components.Animator
 import com.pafoid.skate.engine.ecs.components.CameraComponent
+import com.pafoid.skate.engine.ecs.components.GroundStateComponent
 import com.pafoid.skate.engine.ecs.components.PlayerController
 import com.pafoid.skate.engine.ecs.components.RigidBody3D
 import com.pafoid.skate.engine.ecs.components.SkeletonComponent
@@ -89,7 +90,7 @@ class SkaterFootIkTest {
         val controller = skater.getComponent<PlayerController>()!!
         controller.footIk = FootIkConfig(enabled = true)
         (controller.behavior as SkateBehavior).mounted = false
-        controller.ground = GroundInfo(found = true, distance = 0f, grounded = true)
+        skater.getComponent<GroundStateComponent>()!!.ground = GroundInfo(found = true, distance = 0f, grounded = true)
         // Ground 5 cm above the clip's feet under both legs
         controller.footTargets.forEachIndexed { i, t ->
             t.position.set(if (i == 0) 0.1f else -0.1f, 0.13f, 0f)

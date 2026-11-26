@@ -19,6 +19,7 @@ import com.pafoid.skate.engine.net.LoopbackPredictionComponent
 import com.pafoid.skate.engine.net.NetState
 import com.pafoid.skate.engine.net.NetworkIdentity
 import com.pafoid.skate.engine.ecs.components.IkSetup
+import com.pafoid.skate.engine.ecs.components.GroundStateComponent
 import com.pafoid.skate.engine.ecs.components.IkTarget
 import com.pafoid.skate.engine.ecs.components.BoxCollider3D
 import com.pafoid.skate.engine.ecs.components.CameraComponent
@@ -118,6 +119,7 @@ class Serializer(val assetPaths: AssetPaths = AssetPaths()) {
 
             // Animation components
             subclass(IkSetup::class)
+            subclass(GroundStateComponent::class)
             subclass(IkTarget::class)
             subclass(SkeletonComponent::class)
             subclass(Animator::class)

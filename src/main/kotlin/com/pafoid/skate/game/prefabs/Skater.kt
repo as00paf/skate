@@ -14,7 +14,10 @@ import com.pafoid.skate.engine.ecs.components.InventoryComponent
 import com.pafoid.skate.engine.gameplay.items.ItemStack
 import com.pafoid.skate.game.items.SkateItems
 import com.pafoid.skate.engine.ecs.components.BoxCollider3D
+import com.pafoid.skate.engine.ecs.components.GroundStateComponent
 import com.pafoid.skate.engine.ecs.components.InputStateComponent
+import com.pafoid.skate.engine.gameplay.CharacterConfigs
+import com.pafoid.skate.game.player.SkateControllerConfig
 import com.pafoid.skate.engine.ecs.components.PlayerController
 import com.pafoid.skate.engine.ecs.components.RenderComponent
 import com.pafoid.skate.engine.ecs.components.RigidBody3D
@@ -68,6 +71,7 @@ class Skater(
             )
         )
         addComponent(InputStateComponent())
+        addComponent(GroundStateComponent.of(CharacterConfigs.load(CONFIG_PATH) { SkateControllerConfig() }.onFoot.ground))
         addComponent(playerController)
         addComponent(InventoryComponent())
         // Starts with the bundled hat and glasses on (GPL-24e); AppearanceSystem shows them on the head.

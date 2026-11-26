@@ -16,7 +16,9 @@ import com.pafoid.skate.engine.core.LoggerService
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.ecs.components.Animator
+import com.pafoid.skate.engine.ecs.components.GroundStateComponent
 import com.pafoid.skate.engine.ecs.components.PlayerController
+import com.pafoid.skate.engine.ecs.systems.GroundProbeSystem
 import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.ecs.systems.CharacterAnimationDriver
 import com.pafoid.skate.engine.ecs.systems.GameObjectManager
@@ -88,18 +90,21 @@ class SkateAnimationFromDiskTest {
         val skater = scene.children.single { it.name == "Skater" }
         val ledge = scene.children.single { it.name.endsWith("_Ledge") }
         val controller = skater.getComponent<PlayerController>()!!
+        val ground = skater.getComponent<GroundStateComponent>()!!
+        val probe = GroundProbeSystem(physics.groundQueries).also { it.init(scene) }
         scene.start()
 
         // On the floor at the spawn: nothing grindable underfoot.
-        repeat(5) { physics.fixedUpdate(1f / 60f) }
-        assertNull(controller.groundTag)
+        repeat(5) { physics.fixedUpdate(1f / 60f); probe.fixedUpdate(1f / 60f) }
+        assertNull(ground.groundTag)
 
         // Feet just above the ledge top (0.5 m): the probe reports its tag.
         val top = ledge.getComponent<Transform>()!!.translation
         skater.getComponent<Transform>()!!.translation.set(top.x, 0.55f, top.z)
         physics.teleport(skater)
         physics.fixedUpdate(1f / 60f)
-        assertEquals(PrefabsGenerator.GRINDABLE_TAG, controller.groundTag)
+        probe.fixedUpdate(1f / 60f)
+        assertEquals(PrefabsGenerator.GRINDABLE_TAG, ground.groundTag)
 
         // The saved skater's behavior and controller, driven with that probe result.
         val behavior = controller.behavior as SkateBehavior
@@ -114,7 +119,7 @@ class SkateAnimationFromDiskTest {
             animator.stateMachine!!.update(1f / 60f)
         }
         repeat(30) { frame(CharacterInput(horizontalSpeed = 4f)) }
-        repeat(30) { frame(CharacterInput(horizontalSpeed = 4f, groundTag = controller.groundTag)) }
+        repeat(30) { frame(CharacterInput(horizontalSpeed = 4f, groundTag = ground.groundTag)) }
 
         assertEquals("GRIND", behavior.state)
         assertEquals("grind", animator.stateMachine!!.currentState)

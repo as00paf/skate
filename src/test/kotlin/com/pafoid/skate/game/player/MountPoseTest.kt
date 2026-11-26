@@ -4,6 +4,7 @@ import com.pafoid.skate.engine.addComponent
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.components.CameraComponent
+import com.pafoid.skate.engine.ecs.components.GroundStateComponent
 import com.pafoid.skate.engine.ecs.components.InputStateComponent
 import com.pafoid.skate.engine.ecs.components.PlayerController
 import com.pafoid.skate.engine.ecs.components.RigidBody3D
@@ -159,6 +160,7 @@ class MountPoseTest {
             .addComponent(Transform())
             .addComponent(RigidBody3D(80f).apply { rawBody = rider })
             .addComponent(InputStateComponent())
+            .addComponent(GroundStateComponent())
             .addComponent(PlayerController(SkateBehavior.ID, Skater.CONFIG_PATH))
         val skateboard = GameObject("Skateboard")
             .addComponent(Transform())

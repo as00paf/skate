@@ -70,6 +70,7 @@ fun GameObject.getComponent(type: ComponentType) =
         ComponentType.INTERACTABLE -> getComponent<com.pafoid.skate.engine.ecs.components.InteractableComponent>()
         ComponentType.PICKUP -> getComponent<com.pafoid.skate.engine.ecs.components.PickupComponent>()
         ComponentType.GRID_LINES -> getComponent<GridLines>()
+        ComponentType.GROUND_STATE -> getComponent<com.pafoid.skate.engine.ecs.components.GroundStateComponent>()
         ComponentType.IK_SETUP -> getComponent<IkSetup>()
         ComponentType.IK_TARGET -> getComponent<IkTarget>()
         ComponentType.INPUT_STATE -> getComponent<InputStateComponent>()

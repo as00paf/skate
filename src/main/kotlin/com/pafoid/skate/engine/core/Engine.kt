@@ -35,6 +35,7 @@ import com.pafoid.skate.engine.ecs.systems.InputSystem
 import com.pafoid.skate.engine.gameplay.ActionPresets
 import com.pafoid.skate.engine.gameplay.CharacterActions
 import com.pafoid.skate.engine.gameplay.CharacterInputSampler
+import com.pafoid.skate.engine.ecs.systems.GroundProbeSystem
 import com.pafoid.skate.engine.ecs.systems.PhysicsFrameSystem
 import com.pafoid.skate.engine.ecs.systems.PhysicsSystem
 import com.pafoid.skate.engine.ecs.systems.MountFollowSystem
@@ -195,6 +196,7 @@ class Engine {
                 },
             ),
             physicsSystem,
+            GroundProbeSystem(physicsSystem.groundQueries),
             PhysicsFrameSystem(physicsSystem),
             DayNightCycleSystem(),
             DirectionalLightSystem(cameraManager),
