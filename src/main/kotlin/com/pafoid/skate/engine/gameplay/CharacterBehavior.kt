@@ -2,7 +2,6 @@ package com.pafoid.skate.engine.gameplay
 
 import com.pafoid.skate.engine.animation.graph.AnimParameters
 import com.pafoid.skate.engine.animation.graph.ParameterDef
-import com.pafoid.skate.engine.gameplay.ground.GroundConfig
 import org.joml.Vector2f
 import org.joml.Vector3f
 import java.util.concurrent.ConcurrentHashMap
@@ -57,9 +56,6 @@ data class CharacterMotion(
 /** Data-driven character logic. Pure: no window, GL or physics world required. */
 interface CharacterBehavior {
     val state: String
-
-    /** Ground probing, slope, step and snapping tuning used by the motion system for this character. */
-    val ground: GroundConfig get() = GroundConfig()
 
     /** `*.skeleton.json` with this character's sockets and equip slots (GPL-24 §6.1); blank = built-in humanoid. */
     val skeletonConfig: String get() = ""

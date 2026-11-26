@@ -188,16 +188,14 @@ class GroundMotionTest {
 }
 
 class CharacterExtensionTest {
-    /** A non-skate game extends the generic locomotion and tunes ground handling through its own config. */
     private class Explorer(config: com.pafoid.skate.engine.gameplay.LocomotionConfig) :
         com.pafoid.skate.engine.gameplay.LocomotionBehavior(config)
 
     @Test
-    fun CharacterExtension_CustomBehaviorUsesRegistryAndGroundConfig() {
-        val config = com.pafoid.skate.engine.gameplay.LocomotionConfig(ground = GroundConfig(stepHeight = 0.5f))
+    fun CharacterExtension_CustomBehaviorUsesRegistry() {
+        val config = com.pafoid.skate.engine.gameplay.LocomotionConfig()
         com.pafoid.skate.engine.gameplay.CharacterBehaviors.register("explorer") { Explorer(config) }
         val behavior = com.pafoid.skate.engine.gameplay.CharacterBehaviors.create("explorer", "")
         assertTrue(behavior is Explorer)
-        assertEquals(0.5f, behavior.ground.stepHeight)
     }
 }

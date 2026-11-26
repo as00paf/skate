@@ -99,6 +99,7 @@ abstract class Component {
                 is InteractableComponent -> ComponentType.INTERACTABLE
                 is PickupComponent -> ComponentType.PICKUP
                 is GridLines -> ComponentType.GRID_LINES
+                is GroundStateComponent -> ComponentType.GROUND_STATE
                 is InputStateComponent -> INPUT_STATE
                 is JointComponent -> JOINT
                 is MeshCollider3D -> ComponentType.MESH_COLLIDER

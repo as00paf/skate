@@ -7,6 +7,7 @@ import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.components.BoxCollider3D
 import com.pafoid.skate.engine.ecs.components.CameraComponent
+import com.pafoid.skate.engine.ecs.components.GroundStateComponent
 import com.pafoid.skate.engine.ecs.components.InputStateComponent
 import com.pafoid.skate.engine.ecs.components.PlayerController
 import com.pafoid.skate.engine.ecs.components.RigidBody3D
@@ -74,6 +75,7 @@ class SkateWaterBailTest {
             .addComponent(RigidBody3D(80f).apply { rawBody = handle })
             .addComponent(BoxCollider3D(Vector3f(0.2f, 0.91f, 0.2f)))
             .addComponent(InputStateComponent())
+            .addComponent(GroundStateComponent())
             .addComponent(PlayerController(SkateBehavior.ID, Skater.CONFIG_PATH, response))
         val pool = GameObject("Pool")
             .addComponent(Transform(Vector3f(poolCenter)).also { it.worldMatrix.translation(poolCenter) })

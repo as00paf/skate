@@ -6,6 +6,7 @@ import com.pafoid.skate.engine.ecs.components.Animator
 import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.events.WaterEntered
 import com.pafoid.skate.engine.gameplay.WaterRespawns
+import com.pafoid.skate.engine.ecs.components.GroundStateComponent
 import com.pafoid.skate.engine.ecs.components.InputStateComponent
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.components.PlayerController
@@ -42,7 +43,7 @@ class PlayerMotionSystem(
 
     private val footBinders = java.util.WeakHashMap<PlayerController, FootIkBinder>()
 
-    private val players = query(PlayerController::class, IPhysicsBody3D::class, topLevelOnly = true)
+    private val players = query(PlayerController::class, GroundStateComponent::class, IPhysicsBody3D::class, topLevelOnly = true)
     private val inputs = query(InputStateComponent::class, topLevelOnly = true)
 
     /** Per-character action views (stateless wrappers, cached to avoid a per-frame allocation). */
@@ -100,13 +101,14 @@ class PlayerMotionSystem(
             val controller = go.getComponent<PlayerController>() ?: return@forEach
             val body = go.getComponent<RigidBody3D>() ?: return@forEach
             val inputState = go.getComponent<InputStateComponent>() ?: return@forEach
+            val groundState = go.getComponent<GroundStateComponent>() ?: return@forEach
             seen += controller
             if (body.rawBody != null) startPoses.getOrPut(controller) { Pose(body.getWorldPosition(), body.getRotation()) }
             if (waterRespawns.tick(controller, dt)) respawn(controller, body)
 
             val mount = (controller.behavior as? Mountable)?.let { findMount(it.mountTargetName, go) }
-            val motion = controller.behavior.update(buildInput(controller, inputState, body, mount, body.getWorldPosition()), dt)
-            apply(motion, body, controller, dt)
+            val motion = controller.behavior.update(buildInput(controller, groundState, inputState, body, mount, body.getWorldPosition()), dt)
+            apply(motion, body, controller, groundState, dt)
             val mountable = controller.behavior as? Mountable
             if (mountable != null && mount != null) {
                 if (motion.mount == MountRequest.MOUNT) snapRiderOnto(mountable, mount, body)
@@ -116,7 +118,7 @@ class PlayerMotionSystem(
             go.getComponent<Animator>()?.let { animator ->
                 val footIk = footBinders.getOrPut(controller) { FootIkBinder(controller.footIk) }
                 val riding = (controller.behavior as? Mountable)?.mounted == true
-                footIk.update(animator.ik, controller.footTargets, controller.footIk.enabled && controller.ground.standing && !riding, dt, go.getComponent<SkeletonComponent>()?.pose?.skeleton)
+                footIk.update(animator.ik, controller.footTargets, controller.footIk.enabled && groundState.ground.standing && !riding, dt, go.getComponent<SkeletonComponent>()?.pose?.skeleton)
             }
 
             controller.state = CharacterAnimationDriver.drive(controller.behavior, motion, controller.state, go.getComponent<Animator>())
@@ -144,6 +146,7 @@ class PlayerMotionSystem(
 
     private fun buildInput(
         controller: PlayerController,
+        groundState: GroundStateComponent,
         input: InputStateComponent,
         body: IPhysicsBody3D,
         mount: RigidBody3D?,
@@ -161,11 +164,11 @@ class PlayerMotionSystem(
             mountDistance = mount?.getWorldPosition()?.distance(position) ?: Float.NaN,
             crouch = input.crouchPressed,
             grounded = (controller.behavior as? Mountable).let { m ->
-                MountMath.grounded(controller.ground, m?.mounted == true, m?.rideHeight ?: 0f, controller.behavior.ground.groundedDistance)
+                MountMath.grounded(groundState.ground, m?.mounted == true, m?.rideHeight ?: 0f, groundState.groundedDistance)
             },
             horizontalSpeed = speed,
             verticalSpeed = velocity.y,
-            groundTag = controller.groundTag,
+            groundTag = groundState.groundTag,
             velocityYaw = if (speed > MIN_HEADING_SPEED) kotlin.math.atan2(velocity.x, velocity.z) else Float.NaN,
             yaw = MotionMath.yawOfRotation(body.getRotation()),
             cameraForward = Vector3f(camera.camForward),
@@ -209,21 +212,21 @@ class PlayerMotionSystem(
     }
 
     /** Follows slopes, climbs steps and snaps to the ground by adjusting vertical velocity. */
-    private fun applyGround(motion: CharacterMotion, body: IPhysicsBody3D, controller: PlayerController, dt: Float) {
+    private fun applyGround(motion: CharacterMotion, body: IPhysicsBody3D, controller: PlayerController, groundState: GroundStateComponent, dt: Float) {
         val velocity = body.linearVelocity
         val mountable = controller.behavior as? Mountable
         if (mountable != null && mountable.mounted && motion.impulse == null) {
-            MountMath.hoverVelocity(controller.ground.found, controller.ground.distance, mountable.rideHeight)?.let {
+            MountMath.hoverVelocity(groundState.ground.found, groundState.ground.distance, mountable.rideHeight)?.let {
                 velocity.y = it
                 body.linearVelocity = velocity
                 return
             }
         }
         val vy = GroundMotion.verticalVelocity(
-            config = controller.behavior.ground,
-            ground = controller.ground,
-            step = controller.stepAhead,
-            wasGrounded = controller.wasGrounded,
+            config = groundState.config,
+            ground = groundState.ground,
+            step = groundState.stepAhead,
+            wasGrounded = groundState.wasGrounded,
             currentVy = velocity.y,
             horizontalX = velocity.x,
             horizontalZ = velocity.z,
@@ -238,7 +241,7 @@ class PlayerMotionSystem(
         const val MIN_HEADING_SPEED = 0.5f
     }
 
-    private fun apply(motion: CharacterMotion, body: IPhysicsBody3D, controller: PlayerController, dt: Float) {
+    private fun apply(motion: CharacterMotion, body: IPhysicsBody3D, controller: PlayerController, groundState: GroundStateComponent, dt: Float) {
         motion.horizontalVelocity?.let { target ->
             if (!target.x.isNaN() && !target.z.isNaN()) {
                 val velocity = body.linearVelocity
@@ -247,7 +250,7 @@ class PlayerMotionSystem(
                 body.linearVelocity = velocity
             }
         }
-        applyGround(motion, body, controller, dt)
+        applyGround(motion, body, controller, groundState, dt)
 
         if (!motion.targetYaw.isNaN()) {
             val current = MotionMath.yawOfRotation(body.getRotation())

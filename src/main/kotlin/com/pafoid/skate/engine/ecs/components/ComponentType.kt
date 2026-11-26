@@ -21,6 +21,7 @@ enum class ComponentType {
     FIRST_PERSON_CAMERA,
     FOLLOW_CAMERA,
     GRID_LINES,
+    GROUND_STATE,
     HEALTH,
     IK_SETUP,
     IK_TARGET,
@@ -81,6 +82,7 @@ enum class ComponentType {
             FIRST_PERSON_CAMERA -> FirstPersonCameraComponent()
             FOLLOW_CAMERA -> FollowCameraComponent()
             GRID_LINES -> GridLines()
+            GROUND_STATE -> GroundStateComponent()
             IK_SETUP -> IkSetup()
             IK_TARGET -> IkTarget()
             INPUT_STATE -> InputStateComponent()
