@@ -20,6 +20,7 @@ sealed interface FieldKind {
     object IntField : FieldKind
     object LongField : FieldKind
     object FloatField : FieldKind
+    object DoubleField : FieldKind
     object BoolField : FieldKind
     object TextField : FieldKind
     object Vec2Field : FieldKind
@@ -34,6 +35,9 @@ sealed interface FieldKind {
 
     /** A raw JSON value (prefab overrides): shown as text, removable with its map entry. */
     object JsonValue : FieldKind
+
+    /** A primitive or object array: shown read-only as its length (arrays are baked or replicated data). */
+    data class ArrayOf(val element: Class<*>) : FieldKind
 
     /** No widget. */
     data class Unsupported(val reason: String) : FieldKind
@@ -57,12 +61,14 @@ sealed interface FieldKind {
                 raw == Int::class.javaPrimitiveType || raw == java.lang.Integer::class.java -> IntField
                 raw == Long::class.javaPrimitiveType || raw == java.lang.Long::class.java -> LongField
                 raw == Float::class.javaPrimitiveType || raw == java.lang.Float::class.java -> FloatField
+                raw == Double::class.javaPrimitiveType || raw == java.lang.Double::class.java -> DoubleField
                 raw == Boolean::class.javaPrimitiveType || raw == java.lang.Boolean::class.java -> BoolField
                 raw == String::class.java -> TextField
                 raw == Vector2f::class.java -> Vec2Field
                 raw == Vector3f::class.java -> Vec3Field
                 raw == Vector4f::class.java -> Vec4Field
                 JsonElement::class.java.isAssignableFrom(raw) -> JsonValue
+                raw.isArray -> ArrayOf(raw.componentType)
                 raw.isEnum -> EnumValue(raw)
                 List::class.java.isAssignableFrom(raw) -> ListOf(typeArgument(type, 0))
                 Map::class.java.isAssignableFrom(raw) -> {

@@ -10,6 +10,7 @@ import com.pafoid.skate.engine.ecs.components.Component
 import imgui.ImGui
 import imgui.flag.ImGuiDataType
 import imgui.flag.ImGuiDir
+import imgui.type.ImDouble
 import imgui.type.ImInt
 import imgui.type.ImLong
 import imgui.type.ImString
@@ -50,6 +51,7 @@ object StructuredFields {
         FieldKind.IntField -> 0
         FieldKind.LongField -> 0L
         FieldKind.FloatField -> 0f
+        FieldKind.DoubleField -> 0.0
         FieldKind.BoolField -> false
         FieldKind.TextField -> ""
         FieldKind.Vec2Field -> Vector2f()
@@ -60,10 +62,13 @@ object StructuredFields {
         is FieldKind.ListOf -> ArrayList<Any?>()
         is FieldKind.MapOf -> LinkedHashMap<String, Any?>()
         is FieldKind.Nested -> runCatching { kind.type.getDeclaredConstructor().newInstance() }.getOrNull()
-        is FieldKind.Unsupported -> null
+        is FieldKind.ArrayOf, is FieldKind.Unsupported -> null
     }
 
-    private fun value(engine: Engine, id: String, label: String, tooltipKey: String?, type: Type, value: Any?, set: (Any?) -> Unit) {
+    private fun value(
+        engine: Engine, id: String, label: String, tooltipKey: String?, type: Type, value: Any?,
+        range: FieldRange = FieldRange.NONE, set: (Any?) -> Unit,
+    ) {
         val strings = engine.stringManager
         fun row(control: () -> Unit) = MImGui.row(label, id) {
             control()
@@ -72,15 +77,19 @@ object StructuredFields {
         when (val kind = FieldKind.of(type)) {
             FieldKind.IntField -> row {
                 val v = intArrayOf((value as? Int) ?: 0)
-                if (ImGui.dragInt("##value", v, 1f)) set(v[0])
+                if (MImGui.dragIntRanged("##value", v, 1f, range)) set(range.clamp(v[0]))
             }
             FieldKind.LongField -> row {
                 val v = ImLong((value as? Long) ?: 0L)
-                if (ImGui.inputScalar("##value", ImGuiDataType.S64, v)) set(v.get())
+                if (ImGui.inputScalar("##value", ImGuiDataType.S64, v)) set(range.clamp(v.get()))
+            }
+            FieldKind.DoubleField -> row {
+                val v = ImDouble((value as? Double) ?: 0.0)
+                if (ImGui.inputScalar("##value", ImGuiDataType.Double, v)) set(range.clamp(v.get()))
             }
             FieldKind.FloatField -> row {
                 val v = floatArrayOf((value as? Float) ?: 0f)
-                if (ImGui.dragFloat("##value", v, 0.1f)) set(v[0])
+                if (MImGui.dragFloatRanged("##value", v, 0.1f, range)) set(range.clamp(v[0]))
             }
             FieldKind.BoolField -> row {
                 if (ImGui.checkbox("##value", (value as? Boolean) ?: false)) set(!((value as? Boolean) ?: false))
@@ -102,6 +111,9 @@ object StructuredFields {
                 if (ImGui.combo("##value", index, labels, labels.size)) set(constants[index.get()])
             }
             FieldKind.JsonValue -> row { ImGui.textDisabled(value.toString()) }
+            is FieldKind.ArrayOf -> row {
+                ImGui.textDisabled(strings.getString("inspector.array.readonly", if (value == null) 0 else java.lang.reflect.Array.getLength(value)))
+            }
             is FieldKind.ListOf -> list(engine, id, label, tooltipKey, kind.element, value)
             is FieldKind.MapOf -> map(engine, id, label, tooltipKey, kind.value, value)
             is FieldKind.Nested -> nested(engine, id, label, tooltipKey, kind.type, value)
@@ -205,12 +217,12 @@ object StructuredFields {
             val label = engine.stringManager.getString(labelKey)
             // A Kotlin `val` scalar cannot change; vectors, lists, maps and objects are edited in place.
             val readOnly = Modifier.isFinal(f.modifiers) && FieldKind.of(f.genericType).let {
-                it is FieldKind.IntField || it is FieldKind.LongField || it is FieldKind.FloatField || it is FieldKind.BoolField ||
+                it is FieldKind.IntField || it is FieldKind.LongField || it is FieldKind.DoubleField || it is FieldKind.FloatField || it is FieldKind.BoolField ||
                     it is FieldKind.TextField || it is FieldKind.EnumValue
             }
             ImGui.pushID(f.name)
             if (readOnly) ImGui.beginDisabled()
-            value(engine, f.name, label, labelKey + Tooltips.SUFFIX, f.genericType, f.get(target)) { f.set(target, it) }
+            value(engine, f.name, label, labelKey + Tooltips.SUFFIX, f.genericType, f.get(target), FieldRange.of(f)) { f.set(target, it) }
             if (readOnly) ImGui.endDisabled()
             ImGui.popID()
         }

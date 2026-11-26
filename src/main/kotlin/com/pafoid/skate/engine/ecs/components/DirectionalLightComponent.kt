@@ -2,6 +2,7 @@ package com.pafoid.skate.engine.ecs.components
 
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
 import org.joml.Matrix4f
 import org.joml.Vector3f
 
@@ -17,7 +18,7 @@ data class DirectionalLightComponent(
     @Contextual
     val color: Vector3f = Vector3f(1f, 0.95f, 0.8f),
     var intensity: Float = 1f,
-    @Contextual
+    @Transient
     val lightSpaceMatrix: Matrix4f = Matrix4f(),
     var orthoLeft: Float = -20f,
     var orthoRight: Float = 20f,
