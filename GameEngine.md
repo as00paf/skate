@@ -196,6 +196,23 @@ Round 27+ goals (human, 2026-11-06): post-processing quality, render-graph clari
   - Do: Per (`docs/design/GPL-24.md` §8): (1) skin a child mesh with the nearest ancestor's `SkeletonComponent` in the Geometry, Shadow and Picking passes; (2) per-part visibility and per-material overrides; (3) composite tattoo layers into a per-character texture on request. Vulkan parity with skate-vulkan.
   - Done when: A skinned jacket follows the skater, hidden parts don't render, a composited tattoo shows; tests.
   - Deps: GPL-24, AST-33
+- [ ] **REN-50** `P1` Light, environment, render and sprite inspector gaps
+  - Do: (QA-20 gap, docs/design/QA-20.md) `DirectionalLightComponent.lightSpaceMatrix` becomes `@Transient`; `EnvironmentComponent.skyTexture` needs an asset picker; `RenderComponent.model` tooltip and `materialPath` label/tooltip; `SpriteRenderer.sprite` label/tooltip.
+  - Done when: every listed field is shown, editable with the right widget and range, tooltipped and translated (EN+FR); its entries leave `src/test/resources/architecture/component-inspector-allowlist.txt`; tests.
+- [ ] **REN-51** `P2` TerrainComponent inspector
+  - Do: (QA-20 gap, docs/design/QA-20.md) recipe, stamps, layers, biomes, climate, biomeSource, asset (and scatter rules, noise settings) have no inspector fields or keys; every value editable with list add/remove/reorder.
+  - Done when: every listed field is shown, editable with the right widget and range, tooltipped and translated (EN+FR); its entries leave `src/test/resources/architecture/component-inspector-allowlist.txt`; tests.
+  - Deps: ECS-29
+- [ ] **REN-52** `P2` WaterComponent ambience and splash fields
+  - Do: (QA-20 gap, docs/design/QA-20.md) ambience and splash clips, volumes and distances are not in the inspector (audio clip picker, ranges; AUD consulted for the clip list widget).
+  - Done when: every listed field is shown, editable with the right widget and range, tooltipped and translated (EN+FR); its entries leave `src/test/resources/architecture/component-inspector-allowlist.txt`; tests.
+  - Deps: ECS-29
+- [ ] **REN-53** `P3` Mesh LOD bias and thresholds in the editor
+  - Do: (QA-20 gap, docs/design/QA-20.md) `render/lod/ScreenErrorLod.kt` has no editor surface: LOD bias and thresholds in render settings and per model.
+  - Done when: Editable and saved; tests.
+- [ ] **REN-54** `P3` Confirm and complete wind settings
+  - Do: (QA-20 gap, docs/design/QA-20.md) verify every `environment/Wind*` parameter is editable.
+  - Done when: Every wind parameter is editable with keys EN+FR; tests.
 
 ### Vulkan — `VK` (`skate-vulkan`)
 
@@ -404,6 +421,10 @@ Round 27+ goals: the Asset Browser shows every asset type, one assets folder, ex
 - [x] **AST-49** `P1` AssetsManager.loadModel recurses forever when the default cube cannot load
   - Do: (NEEDS from EDT-59): fix the path-compare bug that makes `loadModel` recurse endlessly when the default cube fails to load (seen without a headless RHI device).
   - Done when: A failing default cube returns a fallback or error without recursion; regression test.
+- [ ] **AST-50** `P2` BUG-020: new projects reference a bundled `metal.png` that does not exist
+  - Do: (docs/bugs.md BUG-020): add the texture or point `Assets.Bundled.METAL` at an existing one; make `EngineAssetCopier` (or a unit test over `Assets.Bundled.bundledAssets`) fail on a missing source; remove the entry from `KNOWN_ISSUES` in `ProjectLifecycleEndToEndTest`.
+  - Done when: A new project opens MainScene and FeatureShowcase with no `metal.png` error and the rails textured; test.
+  - Deps: none
 
 ### ECS — `ECS` (`skate-ecs`)
 
@@ -461,6 +482,15 @@ Round 27+ goals: deterministic seeds for games and procedural generation.
   - Do: (NEEDS from INP-11): `Engine` passes `assetsManager::readText` to `InputSystem` so project actions load in the editor and the exported game.
   - Done when: Project actions load in both hosts; test.
   - Deps: INP-11
+- [ ] **ECS-27** `P2` StreamingFocus inspector keys
+  - Do: (QA-20 gap, docs/design/QA-20.md) `StreamingFocus` (physics, radiusScale, priority) has no label or tooltip keys.
+  - Done when: every listed field is shown, editable with the right widget and range, tooltipped and translated (EN+FR); its entries leave `src/test/resources/architecture/component-inspector-allowlist.txt`; tests.
+- [ ] **ECS-28** `P2` PrefabInstance overrides viewer
+  - Do: (QA-20 gap, docs/design/QA-20.md) `PrefabInstance.overrides` has no viewer: list the overridden fields with a per-field revert to prefab, through a Command.
+  - Done when: Overrides are visible and revertable in the inspector; tests.
+- [ ] **ECS-29** `P1` Generic inspector: ranges, unsupported types and runtime state
+  - Do: (QA-20 gap, docs/design/QA-20.md) cross-cutting items 1-5 of the report: `@Range(min,max,step)` metadata honoured by the generic and UI inspectors; widgets (or a visible 'not editable' row) for `Long`, `Double`, `List`, `Map`, arrays, nested objects and final scalars; audit plain `String` fields that hold asset paths or object ids; decide per field `@Transient` or inspector-visible for runtime state saved to scenes (Animator, SkeletonComponent.pose, RagdollComponent.state, DirectionalLight matrix, NetState, DestructibleComponent.broken). EDT consulted for widgets (EDT-107/108 base).
+  - Done when: No serialized field is silently skipped by the generic inspector; the guard test's allowlist shrinks accordingly; tests.
 
 ### Physics — `PHY` (`skate-physics`)
 
@@ -551,6 +581,31 @@ Round 27+ goals: a Jolt backend selectable per project, a terrain heightfield co
   - Do: Static oriented boxes (contacts and rays) and a broad phase, so the city box fallback behaves as boxes.
   - Done when: Box contacts and rays tested; a box city is walkable on Simple.
   - Deps: AST-17
+- [ ] **PHY-36** `P1` Collider and RigidBody inspector keys and layer widget
+  - Do: (QA-20 gap, docs/design/QA-20.md) `CapsuleCollider3D`, `CylinderCollider3D` and `RigidBody3D` show `!!component.X.f!!` (no label or tooltip keys); `collisionLayer`/`collisionMask` need a layer-name bitmask widget, not a raw int; size fields need ranges.
+  - Done when: every listed field is shown, editable with the right widget and range, tooltipped and translated (EN+FR); its entries leave `src/test/resources/architecture/component-inspector-allowlist.txt`; tests.
+- [ ] **PHY-37** `P2` MeshCollider, CustomCollider and CompoundHull inspector
+  - Do: (QA-20 gap, docs/design/QA-20.md) `MeshCollider3D` (baked vertices/indices, `meshRef` asset picker, offset), `CustomCollider3D.hullPoints`, `CompoundHullCollider3D.hulls`: show baked counts read-only plus a mesh-source picker and rebake.
+  - Done when: every listed field is shown, editable with the right widget and range, tooltipped and translated (EN+FR); its entries leave `src/test/resources/architecture/component-inspector-allowlist.txt`; tests.
+- [ ] **PHY-38** `P1` DestructibleComponent inspector
+  - Do: (QA-20 gap, docs/design/QA-20.md) 15 serialized fields with no keys (mode, integrity, impactThreshold, fractureSource, brokenPrefab picker, fractureSeed `Long`, ...); `broken` is runtime state and becomes `@Transient`.
+  - Done when: every listed field is shown, editable with the right widget and range, tooltipped and translated (EN+FR); its entries leave `src/test/resources/architecture/component-inspector-allowlist.txt`; tests.
+  - Deps: ECS-29
+- [ ] **PHY-39** `P2` VehicleComponent and JointComponent inspector
+  - Do: (QA-20 gap, docs/design/QA-20.md) `VehicleComponent.wheels` (`WheelConfig` list) has no editor and suspension/engine/brake/steer/tyre fields have no keys; `JointComponent.connectedBodyGuid` needs a label, tooltip and GameObject picker.
+  - Done when: every listed field is shown, editable with the right widget and range, tooltipped and translated (EN+FR); its entries leave `src/test/resources/architecture/component-inspector-allowlist.txt`; tests.
+  - Deps: ECS-29
+- [ ] **PHY-40** `P2` Expose fixed timestep, backend and solver iterations
+  - Do: (QA-20 gap, docs/design/QA-20.md) verify and expose the physics fixed timestep, backend and solver iterations in project settings.
+  - Done when: Each is editable in the editor and saved with the project; tests.
+- [ ] **PHY-41** `P1` BUG-019: Showcase slider joint never moves
+  - Do: (docs/bugs.md BUG-019): negate and swap the slider limits in the Bullet mapping (or the frames) so `[min, max]` means displacement of body A along the axis; add a backend unit test; do not change the showcase values.
+  - Done when: `FeatureShowcaseSmokeTest.Showcase_Joints_SliderBlockDropsToItsLowerLimit` passes and the block drops 2 m in Play.
+  - Deps: none
+- [ ] **PHY-42** `P2` BUG-022: JOLT-parameterized physics tests fail intermittently
+  - Do: (docs/bugs.md BUG-022): capture the failure message from `build/test-results/test/TEST-*.xml` on a failing first run and make Jolt native init idempotent and thread-safe across test JVM forks.
+  - Done when: Two consecutive full test runs after a test recompile pass all JOLT cases.
+  - Deps: none
 
 ### Animation — `ANI` (`skate-animation`)
 
@@ -592,6 +647,24 @@ Round 27+ goals: an animation authoring tool and animation from video.
   - Do: (human, Discord 2026-11-10): a user-friendly Animator window (state graph): add, rename, duplicate and delete states, assign clips, edit transitions, conditions and parameters, with undo; writes the animator controller asset. Design note first.
   - Done when: The human approves the note; then a controller can be built from scratch in the window and drives a character; tests.
   - Deps: ANI-14
+- [ ] **ANI-35** `P1` Runtime state saved to scenes: Animator, SkeletonComponent, RagdollComponent
+  - Do: (QA-20 gap, docs/design/QA-20.md) `Animator` currentTime/previousTime/blendTime/blendDuration/isPlaying, `SkeletonComponent.pose` and `RagdollComponent.state` are runtime state serialized to scene files: mark `@Transient` or show read-only (rule 8: no migration).
+  - Done when: Scenes no longer store that runtime state or the inspector shows it read-only; tests.
+  - Deps: ECS-29
+- [ ] **ANI-36** `P2` IkSetup chains editor
+  - Do: (QA-20 gap, docs/design/QA-20.md) `IkSetup.chains` (`IkChainDef`: bones, pole, weights) has no list editor or bone pickers.
+  - Done when: every listed field is shown, editable with the right widget and range, tooltipped and translated (EN+FR); its entries leave `src/test/resources/architecture/component-inspector-allowlist.txt`; tests.
+  - Deps: ECS-29
+- [ ] **ANI-37** `P2` Animation LOD settings in the editor
+  - Do: (QA-20 gap, docs/design/QA-20.md) `animation/AnimationLod.kt` distances and rates are not editable; add them to project or Animator settings.
+  - Done when: LOD distances and rates are editable and saved; tests.
+- [ ] **ANI-38** `P3` Verify the retarget map editor is fully translated
+  - Do: (QA-20 gap, docs/design/QA-20.md) the 4 retarget editor files have no strings found; check and fix.
+  - Done when: Every retarget editor label and tooltip has EN+FR keys; tests.
+- [ ] **ANI-39** `P1` BUG-021: exported game loses animator clips and controller
+  - Do: (docs/bugs.md BUG-021, with AST): resolve clips through `AssetsManager.paths` (pack or disk) in `Animator.resolveAnimationsFromPaths` instead of `File(path).exists()`, or do not re-resolve clips `openProject` already resolved; add a unit test.
+  - Done when: `ProjectLifecycleEndToEndTest.Lifecycle_8_ExportedSkaterKeepsItsClipsAndControllerWithoutErrors` passes; the exported skater animates.
+  - Deps: none
 
 ### Audio — `AUD` (`skate-audio`)
 
@@ -701,6 +774,16 @@ Round 27+ goals: input is too tightly coupled with skateboarding; it needs a gam
   - Do: (INP-11 Q4, human 2026-11-18): an `InputContext` component that pushes its context while its object is enabled, for games without scripts.
   - Done when: Enabling/disabling the object pushes/pops its context; tests.
   - Deps: INP-11
+- [ ] **INP-16** `P2` InputStateComponent runtime fields
+  - Do: (QA-20 gap, docs/design/QA-20.md) the 7 serialized per-frame fields have no keys. Covered by GPL-40b (InputStateComponent rework): decide there between `@Transient` and a read-only debug section.
+  - Done when: Resolved with GPL-40b; its allowlist entries removed.
+  - Deps: GPL-40
+- [ ] **INP-17** `P3` Rumble profile editor
+  - Do: (QA-20 gap, docs/design/QA-20.md) `input/Rumble.kt` has no editor surface: rumble profile editor in the input windows.
+  - Done when: Profiles editable and saved; tests.
+- [ ] **INP-18** `P3` Edit action presets next to the action map
+  - Do: (QA-20 gap, docs/design/QA-20.md) `gameplay/ActionPresets.kt` has no editor surface: pick and edit presets next to the action map.
+  - Done when: Presets editable in the input windows; tests.
 
 ### Gameplay — `GPL` (`skate-gameplay`)
 
@@ -739,6 +822,24 @@ Round 27+ goals: a fuller skate demo with camera modes and standard control sche
 - [x] **GPL-30** `P1` Remove the Camera button from MainScene
   - Do: (human, Discord 2026-11-10): remove the GPL-22 Camera button from the MainScene HUD.
   - Done when: MainScene has no Camera button; tests updated.
+- [ ] **GPL-41** `P2` FreeFlyCamera and CameraFocus inspector
+  - Do: (QA-20 gap, docs/design/QA-20.md) `FreeFlyCameraComponent` and `CameraFocusComponent` (targets list with GameObject pickers) have no keys.
+  - Done when: every listed field is shown, editable with the right widget and range, tooltipped and translated (EN+FR); its entries leave `src/test/resources/architecture/component-inspector-allowlist.txt`; tests.
+  - Deps: ECS-29
+- [ ] **GPL-42** `P2` Health, inventory and equipment inspector
+  - Do: (QA-20 gap, docs/design/QA-20.md) `HealthComponent.resistances`, `InventoryComponent.slots`, `EquipmentComponent.equipped` are not drawn: map and list editors with item pickers.
+  - Done when: every listed field is shown, editable with the right widget and range, tooltipped and translated (EN+FR); its entries leave `src/test/resources/architecture/component-inspector-allowlist.txt`; tests.
+  - Deps: ECS-29, GPL-45
+- [ ] **GPL-43** `P2` Camera shake and spring arm settings
+  - Do: (QA-20 gap, docs/design/QA-20.md) `gameplay/camera/CameraShake.kt`, spring arm and spot follow have no editor surface: settings on the camera components. Coordinate with GPL-40 (CameraFollowComponent).
+  - Done when: Editable on the camera components; tests.
+  - Deps: GPL-40
+- [ ] **GPL-44** `P2` Config-file inspector for skeleton configs and action presets
+  - Do: (QA-20 gap, docs/design/QA-20.md) `ConfigFileInspector` only handles `*.character.json` and `*.controller.json`; extend it to skeleton configs and action presets.
+  - Done when: Both file kinds open in the config-file inspector; tests.
+- [ ] **GPL-45** `P2` Item definition and damage-type editors
+  - Do: (QA-20 gap, docs/design/QA-20.md) no editor for `gameplay/items` item definitions or `combat` damage types.
+  - Done when: Items and damage types are created and edited in the editor; tests.
 
 ### In-game UI — `GUI` (`skate-gameui`)
 
@@ -779,7 +880,7 @@ Round 27+ goals: menu parity between the editor and the game, and a map view.
   - Deps: none
 - [~] @skate-gameplay **GPL-40** `P0` REWRITE Player and skater control in the standard ECS way (design first)
   - Do: (human, 2026-11-25): player/skater control is not ECS-standard today (PlayerController holds config, behavior, ground state and foot IK; PlayerMotionSystem drives it). Write `docs/design/GPL-40.md`: split into small data components and systems (input state, motion/intent, ground and character state, skate state, foot IK, camera follow); systems read and write components, no behaviour object with hidden state, everything serialized and shown in the inspector. InputStateComponent is part of the refactor (who writes it, who reads it, how the project input actions of INP-11 feed it). Include migration of saved scenes and prefabs and the MainScene and Feature Showcase impact. Folds in GPL-34 and ANI-34. Needs human approval before code.
-  - Done when: The design `docs/design/GPL-40.md` is approved (human, 2026-11-25, see its §11: one InputSampleSystem writes InputStateComponent from INP-11 actions; no migration, MainScene, Skater prefab and Showcase updated by hand; foot IK off by default until the walk is verified); the rewrite then lands in the slices of its §9 with tests, the Skater is fully editable in the inspector, and walking, riding and tricks behave as before.
+  - Done when: The design `docs/design/GPL-40.md` is approved (slice GPL-40a done in round 41d; human, 2026-11-25, see its §11: one InputSampleSystem writes InputStateComponent from INP-11 actions; no migration, MainScene, Skater prefab and Showcase updated by hand; foot IK off by default until the walk is verified); the rewrite then lands in the slices of its §9 with tests, the Skater is fully editable in the inspector, and walking, riding and tricks behave as before.
   - Deps: EDT-107, EDT-108
 - [ ] **GPL-39** `P2` Board sockets as IkTargets; skater preset feet, hands and look-at (ANI-28 slice f)
   - Do: (ANI-28 §6 slice f): `IkTarget` GameObjects on the board prefab (front/back foot sockets); the Skater IK preset drives feet while riding, hands for grabs/handplants, and look-at the landing; tests.
@@ -830,6 +931,13 @@ Round 27+ goals: menu parity between the editor and the game, and a map view.
   - Do: (EDT-106 audit, `docs/design/EDT-106.md`; UI written by the owner, reviewed by skate-editor): preview, size and atlas settings.
   - Done when: Fonts preview and their settings save; test.
   - Deps: none
+- [ ] **GUI-23** `P2` UIMap and UIMapMarker inspector keys
+  - Do: (QA-20 gap, docs/design/QA-20.md) `UIMapComponent` and `UIMapMarkerComponent` have no `ui.inspector.*` label/tooltip keys; the UI inspector skips final fields and has no GameObject/asset picker or Float range.
+  - Done when: every listed field is shown, editable with the right widget and range, tooltipped and translated (EN+FR); its entries leave `src/test/resources/architecture/component-inspector-allowlist.txt`; tests.
+  - Deps: ECS-29
+- [ ] **GUI-24** `P3` Game options registry editor
+  - Do: (QA-20 gap, docs/design/QA-20.md) `ui/GameOptions.kt` and `ui/FrameRate.kt` options registry has no editor: choose which options the pause menu shows.
+  - Done when: Editable and saved; tests.
 
 ### Scripting — `SCR` (`skate-scripting`)
 
@@ -851,6 +959,10 @@ Scripting needs to be implemented. Kotlin Script is the primary language; TypeSc
   - Do: (NEEDS from INP-11): an optional `pushContext(id)` overload in the script API that uses the project's context defaults.
   - Done when: Scripts push project contexts by id; test.
   - Deps: INP-11
+- [ ] **SCR-11** `P2` ScriptComponent properties in the inspector
+  - Do: (QA-20 gap, docs/design/QA-20.md) `ScriptComponent.properties` is not shown: list script-exposed properties and edit them by type; `path` needs a tooltip.
+  - Done when: every listed field is shown, editable with the right widget and range, tooltipped and translated (EN+FR); its entries leave `src/test/resources/architecture/component-inspector-allowlist.txt`; tests.
+  - Deps: ECS-29
 
 
 ### Networking & platform — `NET` (`skate-online`)
@@ -866,6 +978,16 @@ Multiplayer and Steam support need to be added.
   - Do: (EDT-106 audit, `docs/design/EDT-106.md`; UI written by the owner, reviewed by skate-editor): networking components and `NetConfig` in the editor, once multiplayer is user-facing (deferred).
   - Done when: Networking setup is editable; tests.
   - Deps: none
+- [ ] **NET-09** `P2` Network components inspector
+  - Do: (QA-20 gap, docs/design/QA-20.md) `NetworkIdentity`, `NetState.values` and `LoopbackPredictionComponent` have no keys and are mostly runtime state: `@Transient` or read-only.
+  - Done when: every listed field is shown, editable with the right widget and range, tooltipped and translated (EN+FR); its entries leave `src/test/resources/architecture/component-inspector-allowlist.txt`; tests.
+  - Deps: ECS-29
+- [ ] **NET-10** `P3` Network project settings panel
+  - Do: (QA-20 gap, docs/design/QA-20.md) lobby, replication rate, interpolation, lag compensation and transport choice (`engine/net`) have no editor surface.
+  - Done when: Editable in project settings and saved; tests.
+- [ ] **NET-11** `P3` Steam settings
+  - Do: (QA-20 gap, docs/design/QA-20.md) app id, achievements and networking are not clearly configurable (`platform/Steam*`).
+  - Done when: Editable in project settings; tests.
 
 
 ---
@@ -928,6 +1050,10 @@ Round 27+ goals (human, 2026-11-06): fix editor bugs, make every window, dialog 
 - [~] @skate-ecs **EDT-60** `P2` Git version control (phases 0 and 1 done; later phases: GitHub sign-in, LFS) — approved 2026-11-06 (`docs/design/EDT-60.md`)
   - Do: Phase 0 (ECS/AST): persistent GameObject ids so an unchanged scene saves byte-identical; load→save→load→save test on MainScene and the Feature Showcase. Phase 1 (EDT): local repository panel with JGit (init, status, diff, commit, history, branches, discard, conflict-safe loading; no Git install needed). Conflicts: whole-file "Keep mine / Take theirs" for now (human). Human decisions for later phases: GitHub sign-in supports **both** browser sign-in (a registered "Skate" OAuth app, set up with the human when phase 2 starts) and pasting a personal access token; **Git LFS on by default** for new projects (models, textures, audio).
   - Done when: Phase 1 commits and diffs a project locally; tests.
+- [ ] **EDT-115** `P1` EDT-114 leftovers: default location, Project Settings rows, physics backend on open
+  - Do: (from EDT-114): default-location setting, Project Settings rows and commands for the new `Project` fields, and apply `Physics3DFactory.defaultBackend` on open. Rule 13 applies.
+  - Done when: Each setting is editable and used by the wizard; tests.
+  - Deps: none
 ## Testing & tooling
 
 - [x] **EDT-61** `P0` Search Anywhere does not find asset files (e.g. `james.glb`)
@@ -1133,7 +1259,7 @@ Round 27+ goals (human, 2026-11-06): fix editor bugs, make every window, dialog 
   - Do: (human, 2026-11-18): the EDT-84 tool window sidebars need three visual fixes: (1) vertical separator lines between the icon buttons to visually group/divide them; (2) icons inside the sidebar buttons must be centered both horizontally and vertically, not offset; (3) the padding around each icon button must be equal on all four sides and slightly more generous than the current value. Fix all three in the sidebar rendering code; add a render test that checks button dimensions and icon centering.
   - Done when: Sidebars show separator lines; icons are centered; all four sides of each button have equal padding; render/layout tests pass.
   - Deps: EDT-84
-- [~] @skate-tooling **EDT-114** `P1` Wire the editor wizard to ProjectCreator (EDT-59 slice 2)
+- [x] **EDT-114** `P1` Wire the editor wizard to ProjectCreator (EDT-59 slice 2)
   - Do: (NEEDS from EDT-59 slice 1): wire `ProjectWizardWindow` and `ProjectActionHandler` to `templates/ProjectCreator`, add the new `Project` settings fields and typed folders, remove `createDefaultScenes`.
   - Done when: Each template created from the wizard opens and runs; tests for the settings and the wizard model.
   - Deps: EDT-59 slice 1
@@ -1233,6 +1359,10 @@ Round 27+ goals: a warning-free build.
   - Do: (human, 2026-11-25): list each engine feature and component and check it is configurable in the editor; for every existing component inspector, check each serialized field and setting is shown, editable (right widget, ranges, asset pickers, lists/maps/nested objects), tooltipped and translated. Write the gap list to `docs/design/QA-20.md` by domain (feature or field, where it is hardcoded, owner, proposed task); the lead adds the tasks to the backlog.
   - Done when: The report covers every component and engine system; each gap has an owner and a task ID; a guard test fails when a serialized component field has no inspector entry (with an explicit allowlist).
   - Deps: EDT-107, EDT-108
+- [ ] **QA-21** `P2` Inspector guard becomes a hard failure; widget pass
+  - Do: (from QA-20): once the allowlist of `component-inspector-allowlist.txt` is empty, make the guard a hard failure and add a reflection-driven widget test (widget, range, asset picker per field).
+  - Done when: The allowlist is empty and the guard fails on any gap.
+  - Deps: ECS-29, PHY-36, PHY-38, REN-50, ANI-35
 
 ---
 
